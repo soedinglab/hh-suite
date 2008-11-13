@@ -1,0 +1,1264 @@
+  // Log posterior using order statistics for fitting the EVD to the score distribution
+  double LogPosteriorEVD_orderstatistics(double* v);
+  static double LogPosteriorEVD_orderstatistics_static(void* pt2hitlist, double* v);
+
+  // Log posterior for fitting the EVD to the score distribution
+  double LogPosteriorEVD(double* v);
+  static double LogPosteriorEVD_static(void* pt2hitlist, double* v);
+
+// Static wrapper-function for calling the nonstatic member function PvalueDeviationSquared() 
+// ( see http://www.newty.de/fpt/callback.html#member )
+double HitList::PvalueDeviationSquared_static(void* pt2hitlist, double* v)
+{
+  HitList* mySelf = (HitList*) pt2hitlist;  // explicitly cast to a pointer to Hitlist
+  return mySelf->PvalueDeviationSquared(v); // call member function
+}
+
+/////////////////////////////////////////////////////////////////////////////////////
+//// Evaluate the *negative* log likelihood of the data at the vertex v = (lamda,mu)
+////    p(s) = lamda * exp{ -exp[-lamda*(s-mu)] - lamda*(s-mu) } = lamda * exp( -exp(-x) - x) 
+/////////////////////////////////////////////////////////////////////////////////////
+double HitList::LogPosteriorEVD_orderstatistics(double* v)
+{  
+  double sum=0.0, sumw=0.0;
+  for (int i=0; i<imax(int(0.1*Nprof),imin(50,Nprof)); i++)
+   {
+      double x = Pvalue(score[i],v[0],v[1]);
+      sum -= weight[i]*(i*log(x)+(Nprof-i-1)*log(1-x));
+      sumw += weight[i];
+   }
+  //  printf("lamda=%7.4f  mu=%7.4f  sum=%8.4f\n",v[0],v[1],sum);
+  return sum + 0.5*(v[0]-LAMDA)*(v[0]-LAMDA)/0.032/0.032 + 0.5*(v[1]+2.254)*(v[1]+2.254)/2.18/2.18;
+}
+// Static wrapper-function for calling the nonstatic member function LogLikelihoodEVD() 
+// ( see http://www.newty.de/fpt/callback.html#member )
+double HitList::LogPosteriorEVD_orderstatistics_static(void* pt2hitlist, double* v)
+{
+  HitList* mySelf = (HitList*) pt2hitlist; // explicitly cast to a pointer to Hitlist
+  return mySelf->LogPosteriorEVD_orderstatistics(v);  // call member function
+}
+
+/////////////////////////////////////////////////////////////////////////////////////
+//// Evaluate the *negative* log likelihood of the data at the vertex v = (lamda,mu)
+////    p(s) = lamda * exp{ -exp[-lamda*(s-mu)] - lamda*(s-mu) } = lamda * exp( -exp(-x) - x) 
+/////////////////////////////////////////////////////////////////////////////////////
+double HitList::LogPosteriorEVD(double* v)
+{  
+  double sum=0.0, sumw=0.0;
+  for (int i=0; i<Nprof; i++)
+    {
+      double x = v[0]*(score[i]-v[1]);
+      sum += weight[i]*(exp(-x)+x);
+      sumw += weight[i];
+    }
+  return sum - sumw*log(v[0]) + 0.5*(v[0]-LAMDA)*(v[0]-LAMDA)/0.032/0.032 + 0.5*(v[1]+2.254)*(v[1]+2.254)/2.18/2.18;
+}
+// Static wrapper-function for calling the nonstatic member function LogLikelihoodEVD() 
+// ( see http://www.newty.de/fpt/callback.html#member )
+double HitList::LogPosteriorEVD_static(void* pt2hitlist, double* v)
+{
+  HitList* mySelf = (HitList*) pt2hitlist; // explicitly cast to a pointer to Hitlist
+  return mySelf->LogPosteriorEVD(v);       // call member function
+}
+
+
+  // Needed to fit the correlation and score offset in HHblast
+  double PvalueDeviationSquared(double* v);
+  // Static wrapper-function for calling the nonstatic member function PvalueDeviationSquared() 
+  static double PvalueDeviationSquared_static(void* pt2hitlist, double* v);
+
+double HitList::PvalueDeviationSquared(double* v)
+{  
+  double sum=0.0;
+//   double sumw=0.0;
+//   printf("%8.2G  %8.2G  %i\n",v[0],v[1],Nprof);
+  for (int i=0; i<imax(int(0.1*Nprof),imin(50,Nprof)); i++)
+    {
+      double x = Pvalue_HHblast(fmax(0.0,score[i]+v[1]),v[0]);
+      sum -= weight[i]*(i*log(x)+(Nprof-i-1)*log(1-x));
+//       x = Pvalue_HHblast(score[i]+v[1],v[0]) - float(i+1)/(1.0+Nprof);
+//       sum += weight[i]*fabs(x);
+//       sumw += weight[i];
+//        printf("%-3i  Pval=%7.5f  Preal=%7.5f  diff=%7.5f  rmsd=%7.5f  sum=%7.5f\n",i,Pvalue_HHblast(score[i],v[0]),float(i)/(1.0+Nprof),x,sqrt(sum/sumw),sum);
+    }
+  double prior = (v[0]<=FLT_MIN || 1-v[0]<=FLT_MIN)? FLT_MAX: -log(v[0]*(1-v[0])) + 0.5*v[1]*v[1];
+  return sum + prior;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////
+//// Parametric fits of lamda and mu
+/////////////////////////////////////////////////////////////////////////////////////
+inline float lamda_length(float Lq, float Lt)
+{
+ return 0.8093*pow(Lt,-0.3555) + 0.8446*pow(Lq,-0.3312) + 0.10586;
+}
+inline float lamda_Neff(float Nq, float Nt)
+{
+ return 0.3731 + 0.01087*Nt + 0.01486*Nq - 0.0001732*Nt*Nq - (0.02575 + 0.001970*Nq)*log(Nt) - (0.03183 + 0.001517*Nt)*log(Nq);
+}
+inline float mu_length(float Lq, float Lt)
+{
+ return -3.443 + 1.097*log(Lt) + 1.086*log(Lq) + 0.1138*log(Lt)*log(Lq);;
+}
+inline float mu_Neff(float Nq, float Nt)
+{
+ return 1.722*log(Nt) + 1.511*log(Nq) + 11.75 - 0.7570*Nt - 0.6640*Nq + 0.02215*Nq*Nt;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////
+//// Calculate Pvalues as a function of query and template lengths and diversities
+/////////////////////////////////////////////////////////////////////////////////////
+void HitList::CalculatePvalues(HMM& q)
+{  
+  Hit hit; 
+  float lamda=0.4, mu=3.0;
+  const float lamda0 = 0.5*(lamda_length(200,200)+lamda_Neff(2.0,2.0));
+  const float mu0    = 0.5*(   mu_length(200,200)+   mu_Neff(2.0,2.0));
+  int nhits=0;
+
+  printf("lamda(200,200,2.0,2.0)=%6.4f=%6.4f?  mu(200,200,2.0,2.0)=%6.4f=%6.4f?\n",lamda_length(200,200),lamda_Neff(2.0,2.0),mu_length(200,200),mu_Neff(2.0,2.0));
+  if (par.idummy!=2) 
+    {
+      printf("WARNING: idummy should have been ==2 (no length correction)\n");
+      exit(4); 
+    }
+
+  if(N_searched==0) N_searched=1;
+  if (v>=2) 
+    printf("Calculate Pvalues as a function of query and template lengths and diversities...\n");
+  Reset();
+  while (!End()) 
+    {
+      hit = ReadNext();
+
+      if (par.loc)
+	{
+	  lamda = lamda_length(q.L,hit.L) + lamda_Neff(q.Neff_HMM,hit.Neff_HMM) - lamda0; 
+	  mu    =    mu_length(q.L,hit.L) +    mu_Neff(q.Neff_HMM,hit.Neff_HMM) - mu0; 
+	}
+      else 
+	{
+	  printf("WARNING: global calibration not yet implemented!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+	}
+      hit.logPval = logPvalue(hit.score,lamda,mu);
+      hit.Pval    = Pvalue(hit.score,lamda,mu);
+      if (nhits++<20)
+	printf("hit=%-10.10s  Lt=%-3i  Neff_t=%6.2f  => lamda=%6.4f  mu=%7.4f  => Pvalue(%6.1f)=%9.2g\n",hit.name,hit.L,hit.Neff_HMM,lamda,mu,hit.score,hit.Pval);
+
+      hit.Eval=exp(hit.logPval+log(N_searched));
+//    hit.score_aass = hit.logPval/LAMDA-3.0 - hit.score_ss;  // median(lamda)~0.45, median(mu)~3.0 in EVDs for scop20.1.63 HMMs
+      // P-value = 1- exp(-exp(-lamda*(Saa-mu))) => -lamda*(Saa-mu) = log(-log(1-Pvalue))
+      hit.score_aass = (hit.logPval<-10.0? hit.logPval : log(-log(1-hit.Pval)) )/0.45 - fmin(lamda*hit.score_ss,fmax(0.0,0.2*(hit.score-8.0)))/0.45 - 3.0;
+      hit.score_sort = hit.score_aass;
+      hit.Probab = Probab(hit);
+      Overwrite(hit);
+    }
+  SortList();
+  Reset();
+  return;
+}
+
+
+// from hitlist.C:  void HitList::MaxLikelihoodEVD(HMM& q, int nbest)
+//
+//   if (par.repmode)
+
+//     // CHECK UPDATE FROM score=-logpval to score=-logpval+SSSCORE2NATLOG*score_ss !!!!
+
+//     {
+//       int nrep;                             // number of multiple hits for template
+//       float logPval=0, Pval=1, Eval=1;      //whole-protein P-value and E-value 
+//       float logN_searched=log(N_searched);
+//       float score_ss=0;
+//      // Run backwards through hitlist
+//       nrep=1;      
+//       SetToEnd();
+//       while (!Start()) 
+// 	{
+// 	  hit = ReadPrevious();
+
+// 	  // Check whether single-rep P-value is above threshold -> delete single-rep hit
+// 	  hit.logPrep = logPvalue(hit.score,vertex);
+// 	  if (hit.irep>1 && hit.logPrep > log(PMAX)) {Delete(); ReadNext(); continue;} 
+// 	  hit.Erep = exp(hit.logPrep+log(Size()));
+
+// 	  // Set nrep to number of single-rep hits for template
+// 	  if (hit.irep>nrep) nrep=hit.irep;
+// 	  hit.nrep=nrep;
+
+// 	  // First step to calculate whole-protein P-value: Pval(irep)=Prep(nrep)*...*Prep(irep) 
+// 	  if (hit.irep == nrep)           // UPDATED:
+//  	    {
+// 	      logPval=hit.logPrep; 
+// 	      score_ss=hit.score_ss;
+// 	    } else {
+// 	      logPval+=hit.logPrep; 
+// 	      score_ss+=hit.score_ss;
+// 	    }
+// 	  hit.logPval = logPval;
+
+// 	  if (hit.irep==1) nrep=1;
+// 	  Overwrite(hit);
+// 	}
+
+//       // Second step to calculate whole-protein P-value: set Pval(irep) = Pval(1) 
+//       Reset();
+//       while (!End()) 
+// 	{
+// 	  hit = ReadNext();
+// 	  if (hit.irep==1) 
+// 	    {
+// 	      logPval = hit.logPval;
+// 	      Pval = hit.Pval = exp(logPval);
+// 	      Eval = hit.Eval = exp(logPval+logN_searched);
+// 	    }
+// 	  else 
+// 	    {
+// 	      hit.logPval=logPval; 	    
+// 	      hit.Pval=Pval; 	    
+// 	      hit.Eval=Eval; 	    
+// 	    }
+// 	  // Calculate total score in raw score units: P-value = 1- exp(-exp(-lamda*(Saa-mu))) ~  exp(-lamda*(Saa-mu)) if lamda*(Saa-mu)>>1
+// // 	  hit.score_aass = hit.logPval/0.45-3.0 - hit.score_ss; //  median(lamda)~0.45, median(mu)~3.0 in EVDs for scop20.1.63 HMMs
+// 	  hit.score_ss = fmin(hit.score_ss,0.5*hit.score-4.0);  // limit influence of SS score!!
+// 	  hit.score_aass = -q.lamda*(hit.score-q.mu)/0.45-3.0 - fmin(hit.score_ss,fmax(0.0,0.5*hit.score-5.0));  // median(lamda)~0.45, median(mu)~3.0 in EVDs for scop20.1.63 HMMs
+// 	  hit.score_sort = hit.score_aass;
+// 	  hit.Probab = Probab(hit);                    // needs to be UPDATED
+// 	  Overwrite(hit);
+// 	}
+
+//       // DEBUG P-value calculation
+//       if (v>=4) 
+// 	{
+// 	  Reset(); 
+// 	  while (!End()) 
+// 	    {
+// 	      hit = ReadNext();
+// 	      printf("%3i %-12.12s %-12.12s irep=%1i  nrep=%1i  Eval=%6.2e  Pval=%6.2e  Prep=%6.2e\n",GetPos(),hit.name,hit.fam,hit.irep,hit.nrep,hit.Eval,hit.Pval,hit.Prep);
+// 	    }
+// 	}	  
+//     }
+//   else // if not repmode
+    {
+
+/////////////////////////////////////////////////////////////////////////////////////
+// Generate an amino acid frequency matrix g[][] with full environment-specific pseudocounts
+/////////////////////////////////////////////////////////////////////////////////////
+void HMM::PrepareEnvSpecPseudocounts()
+{
+  int ss; // SS state -:0  H:1  E:2  C,B,S,T,G:3
+  int sa; // SA state -:0  A:1 (<2%)  B:2 (<14%)  C:3 (<33%)  D:4 (<55%)  E:5 (>55%)  F:7 (S-S bridge)
+  if ((nss_dssp<0 || nsa_dssp<0)) 
+    {
+      PreparePseudocounts(); 
+      if (v>=3) cerr<<"\nWARNING: no environment-specific pcs in HMM "<<name<<"\n"; 
+      return;
+    }
+  for (int i=0; i<=L+1; ++i) 
+    {
+      if ((ss_dssp[i]==0 && sa_dssp[i]!=0) || (ss_dssp[i]!=0 && sa_dssp[i]==0)) 
+	{cerr<<"Error in HMM "<<name<<": ss_dssp["<<i<<"]="<<ss_dssp[i]<<" and sa_dssp["<<i<<"]="<<sa_dssp[i]<<"\n"; exit(1);}
+      if (ss_dssp[i]>=3) ss=3; else ss=ss_dssp[i];
+      sa=sa_dssp[i];
+      for (int a=0; a<20; ++a)
+	g[i][a] = // produces fast code
+ 	   Renv[ss][sa][a][0]*f[i][0]  +Renv[ss][sa][a][1]*f[i][1]  +Renv[ss][sa][a][2]*f[i][2]  
+	  +Renv[ss][sa][a][3]*f[i][3]  +Renv[ss][sa][a][4]*f[i][4]  +Renv[ss][sa][a][5]*f[i][5]  
+	  +Renv[ss][sa][a][6]*f[i][6]  +Renv[ss][sa][a][7]*f[i][7]  +Renv[ss][sa][a][8]*f[i][8]
+	  +Renv[ss][sa][a][9]*f[i][9]  +Renv[ss][sa][a][10]*f[i][10]+Renv[ss][sa][a][11]*f[i][11]
+	  +Renv[ss][sa][a][12]*f[i][12]+Renv[ss][sa][a][13]*f[i][13]+Renv[ss][sa][a][14]*f[i][14]
+	  +Renv[ss][sa][a][15]*f[i][15]+Renv[ss][sa][a][16]*f[i][16]+Renv[ss][sa][a][17]*f[i][17]
+	  +Renv[ss][sa][a][18]*f[i][18]+Renv[ss][sa][a][19]*f[i][19];
+    }
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+// Read enviromment-specific rate matrices
+/////////////////////////////////////////////////////////////////////////////////////
+void ReadEnvSpecificRateMatrices(char* envfile)
+{
+  char* pt;  
+  int ss;       // secondary structure code
+  int sa;       // relative solvent accessability code
+  int a,b;      // amino acid index
+  char line[LINELEN]="";   
+
+  // Open contact score file
+  FILE* envf= fopen(envfile,"r");
+  if (!envf)
+    {
+      if (v>=2) cerr<<"Warning: could not find "<<envfile<<"\n";
+      par.envm=0;
+      return;
+    }
+
+  // Read a x b matrices one by one
+  while (fgets(line,LINELEN,envf))
+    {
+      if (line[0]=='>') 
+	{
+	  // Read sequence separation code, pair code, and spatial distance
+	  pt=line+1;
+	  ss=strint(pt);
+	  sa=strint(pt);
+	  if (!pt) {cerr<<"Error: wrong format in contact score file "<<envfile<<"\n"; par.envm=0; fclose(envf); return;}
+
+	  // Read one a x b matrix
+	  for (a=0; a<20; a++) 
+	    {
+	      fgets(line,LINELEN,envf);
+	      pt=line;
+	      for (b=0; b<20; b++) Renv[ss][sa][a][b] = par.envr*0.001*strint(pt) + (1-par.envr)*R[a][b];
+	      if (!pt) 
+		{cerr<<"Error: wrong format in contact score file "<<envfile<<"\n"; par.envm=0; fclose(envf); return;}
+	    }
+	}
+    }
+  fclose(envf); 
+  return;
+}
+
+
+
+
+	  // Maximize Entropy S = -Sum_i Sum_a f[i][a]*log(f[i][a])
+	  double S=0.01;
+	  double S_old=-1.0;
+	  float* delta=new(float[N_in]);
+	  float stepsize=0.01/N_filtered;
+	  float delta2;
+	  float delta2_old=0.0;
+	  float dd=0.0;
+	  float cos=0.0;
+	  int n=0;
+	  while (n<1) //1-S_old/S>1E-8 && 
+	    {
+	      // Calculate f[i][a] and S with approximate wg
+	      NormalizeTo1(wg,N_in);
+
+	      S_old=S; S=0.0;
+	      for (i=1; i<=L; i++) // for all positions i in alignment
+		{
+		  for (a=0; a<20; a++) q.f[i][a]=0.0;
+		  for (k=0; k<N_in; k++) if (in[k]) q.f[i][ (int)X[k][i] ] += wg[k];
+		  NormalizeTo1(q.f[i],20);
+		  for (a=0; a<20; a++) {q.p[i][a]=log2(q.f[i][a]); S -= q.p[i][a]*q.f[i][a];}
+		}
+	      printf("n=%-3i  S=%10.5E  cos=%5.3f => %+5.3f => step=%9.2E  ",n,S,cos,2.0*(cos-0.7)+0.7*(cos-0.7)*(cos-0.7),stepsize); 
+	      for (k=0; k<N_in; k++) if (in[k]) printf("w[%i]=%6.4f ",k,wg[k]);
+	      printf("\n"); 	      
+
+	      // Calculate delta = stepsize*gradient
+	      dd=delta2=0.0;
+	      for (k=0; k<N_in; k++) 
+		if (in[k]) 
+		  {
+		    float delta_k=-S; // derivative dS/dwk = -Sum_i log(f[i][a]) - S
+		    for (i=1; i<=L; i++) if (X[k][i]<20) delta_k -= q.p[i][ (int)X[k][i] ];
+		    dd += delta_k*delta[k];
+		    delta2 += delta_k*delta_k;
+		    delta[k]=delta_k;
+		    wg[k] += stepsize*delta_k;
+		    if (wg[k]<0) in[k]=0;
+		  }
+	      
+	      if (n>0) // change stepsize
+		{
+		  cos = dd/sqrt(delta2*delta2_old);
+ 		  stepsize *= exp(1.0*(cos-0.7)+0.3*(cos-0.7)*(cos-0.7)); // function runs through 1 at cos=0.7, i.e angle between steps = +/- 45 deg
+		}
+	      delta2_old=delta2;
+	      n++;
+	    }
+	  delete[](delta); 
+	  break;
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+// Read listfile and prepare hash with pdb ids to search through
+/////////////////////////////////////////////////////////////////////////////////////
+void PrepareIDList(Hash<char>* &ids)
+{
+  char* ptr;
+  char* nptr;
+  ids = new(Hash<char>);
+  ids->New(10000,0);
+  if (par.idlist==1) //id-list given as string in par.liststr ids seperated by ' '
+    {
+      ptr=par.liststr;
+      while (ptr)
+	{
+	  nptr=strcut(ptr);
+	  ids->Add(ptr);
+	  ptr=nptr;
+	}
+    }
+  else            //id-list given as file in par.listfile; ids seperated by newlines
+    {
+      char line[LINELEN]="";
+      ifstream listf;
+      listf.open(par.listfile, ios::in);
+      if (!listf) OpenFileError(par.listfile);
+      if (v>=3) cout<<"\nList of HMMs to search read from "<<par.listfile<<"\n";
+      while (listf.getline(line,LINELEN)) 
+	{
+	  ptr=line;
+	  while (ptr)
+	    {
+	      nptr=strcut(ptr);
+	      ids->Add(ptr);
+	      ptr=nptr;
+	    }
+	}
+      if (v>=3) cout<<line<<"\n";
+      listf.close();
+    }
+}
+
+
+      char* keep = new(char[pali->N_in]);
+      for (int k=0; k < pali->N_in; k++) keep[k]=pali->keep[k];
+
+      if (q.Neff_HMM>par.Neff) 
+	{
+	  float qsc = -1.0;
+	  float qsc0, Neff0;
+	  while (1)
+	    {      
+	      qsc0=qsc; Neff0=q.Neff_HMM;
+	      if (qsc<0.0) qsc=0.0; else qsc+=0.1;
+
+	      // Remove sequences with seq. identity larger than seqid percent (remove the shorter of two)
+	      pali->N_filtered = pali->Filter(par.max_seqid,par.coverage,par.qid,qsc,par.Ndiff);  
+	      // Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
+	      pali->FrequenciesAndTransitions(q);
+	      for (int k=0; k < pali->N_in; k++) pali->keep[k]=keep[k];
+	      
+	      if (v>=2) printf("qsc=%.1f: Neff=%.2f\n",qsc,q.Neff_HMM);
+	      if (q.Neff_HMM<=par.Neff) break;
+	    } 
+	  qsc = qsc0 + (qsc-qsc0)/(q.Neff_HMM-Neff0)*(par.Neff-Neff0);
+	  if (v>=2) printf(" => Setting -qsc to %.2f\n",qsc);
+	  // Remove sequences with seq. identity larger than seqid percent (remove the shorter of two)
+	  pali->N_filtered = pali->Filter(par.max_seqid,par.coverage,par.qid,qsc,par.Ndiff);  
+	  // Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
+	  pali->FrequenciesAndTransitions(q);
+	  if (v>=2) printf("qsc=%.1f: Neff=%.2f (%.2f)\n",qsc,q.Neff_HMM,par.Neff);
+	}
+      delete[] keep;
+
+
+
+	  // Realign hit to query HMM enforced by sequences from previously aligned hits?
+	  if (nhits<par.On && nhits>0) 
+	    { 
+	      // Build HMM Q from Qali
+	      Qali.N_filtered = Qali.Filter(par.max_seqid,par.coverage,par.qid,par.qsc,par.Ndiff);  
+	      Qali.FrequenciesAndTransitions(Q);
+	      Q.AddTransitionPseudocounts();
+	      Q.PreparePseudocounts();
+	      Q.AddAminoAcidPseudocounts();      
+	      Q.Log2LinTransitionProbs(1.0);	      
+
+	      // Build HMM T from Tali
+	      HMM T;
+	      Tali->FrequenciesAndTransitions(T);
+	      PrepareTemplate(Q,*T,0);
+	      T.Log2LinTransitionProbs(1.0);	      
+
+	      // Align Q to template in *hit[bin]
+	      const int bin=0;
+	      hit[bin]->Forward(q,*T); 
+	      hit[bin]->Backward(q,*T); 
+	      hit[bin]->MACAlignment(q,*T);
+	      hit[bin]->BacktraceMAC(q,*T);
+	      
+	    }
+	  
+
+
+////////////////////////////////////////////////////////////////////////////////////
+/////// From hhsearch.C:
+void AlignByWorker(int bin)
+{
+  // Prepare q ant t and compare
+  PrepareTemplate(q,*(t[bin]),format[bin]);
+
+  // Do HMM-HMM comparison, store results if score>SMIN, and try next best alignment
+  hit[bin]->irep=1;
+  if (par.forward==0)                                         
+    {
+      hit[bin]->Viterbi(q,*(t[bin]));
+      hit[bin]->Backtrace(q,*(t[bin]));
+    } 
+  else if (par.forward>=1) 
+    {
+      t[bin]->Log2LinTransitionProbs(1.0);
+      hit[bin]->Forward(q,*(t[bin])); 
+      if (par.forward==1)
+	{
+	  hit[bin]->StochasticBacktrace(q,*(t[bin]),1); // the 1 selects maximization instead of stochastic backtracing
+	}
+      else if (par.forward==2)
+	{
+	  hit[bin]->Backward(q,*(t[bin])); 
+	  hit[bin]->MAPAlignment(q,*(t[bin]));
+	  hit[bin]->BacktraceMAP(q,*(t[bin]));
+	}
+    }
+
+  hit[bin]->score_sort = hit[bin]->score_aass;
+
+  if (par.forward==0) 
+    {
+
+      while (hit[bin]->score > SMIN && hit[bin]->irep <= par.altali)
+	{
+#ifdef PTHREAD
+	  pthread_mutex_lock(&hitlist_mutex);   // lock access to hitlist
+#endif
+	  hitlist.Push(*(hit[bin]));            // insert hit at beginning of list (last repeats first!)
+#ifdef PTHREAD
+	  pthread_mutex_unlock(&hitlist_mutex); // unlock access to hitlist
+#endif
+	  
+	  (hit[bin]->irep)++;
+	  if (par.forward==0)                                         
+	    {
+	      hit[bin]->Viterbi(q,*(t[bin]));
+	      hit[bin]->Backtrace(q,*(t[bin]));
+	    } 
+	  else if (par.forward==1)
+	    {
+	      hit[bin]->Forward(q,*(t[bin])); 
+	      hit[bin]->StochasticBacktrace(q,*(t[bin]),1); // the 1 selects maximization instead of stochastic backtracing
+	    }
+	  else if (par.forward==2)
+	    {
+	      hit[bin]->Forward(q,*(t[bin])); 
+	      hit[bin]->Backward(q,*(t[bin])); 
+	      hit[bin]->MAPAlignment(q,*(t[bin]));
+	      hit[bin]->BacktraceMAP(q,*(t[bin]));
+	    }
+	  hit[bin]->score_sort = hit[bin]->score_aass;
+	} 
+    }
+
+  if (hit[bin]->irep==1) 
+    {
+#ifdef PTHREAD
+      pthread_mutex_lock(&hitlist_mutex);   // lock access to hitlist
+#endif
+      hitlist.Push(*(hit[bin]));            // insert hit at beginning of list (last repeats first!)
+#ifdef PTHREAD
+      pthread_mutex_unlock(&hitlist_mutex); // unlock access to hitlist
+#endif
+    }
+  else 
+  hit[bin]->Delete();                     // delete the i[], j[], states[], S[], S_ss[], for the suboptimal (non-)hit
+
+  return;  
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////////
+/////// From hhalign.C 
+/////// Replaced with -Oa3m and -Omode options
+
+  // Print a3m output alignment
+  if (strcmp("",par.alnfile)) 
+    {
+      HalfAlignment qa;
+      // Prepare query output alignment
+      if (!strcmp(inext,"hhm"))  
+      	{
+	  int n = imin(q.n_display,par.maxqnum+(q.nss_dssp>=0)+(q.nss_pred>=0)+(q.nss_conf>=0)+(q.ncons>=0));
+	  qa.Set(q.name,q.seq,q.sname,n,q.L,q.nss_dssp,q.nss_pred,q.nss_conf,q.nsa_dssp,q.ncons);
+	} else {
+	  qa.Set(qali.name,qali.seq,qali.sname,qali.N_in,qali.L,qali.kss_dssp,qali.kss_pred,qali.kss_conf,qali.ksa_dssp,q.ncons);
+	}
+      
+      qa.AlignToTemplate(hit); // build a3m alignment qa aligned to template (i.e. hit)
+      qa.Print(par.alnfile);   // print/append query alignment (aligned to template) to outfile in a3m format
+    }
+
+////////////////////////////////////////////////////////////////////////////////////
+/////// Set thread priorities; does not work with SCHED_OTHER scheduling policy. Used setpriority() instead to renice workers
+  sched_param schedparam;
+  if (pthread_attr_setinheritsched(&joinable,PTHREAD_EXPLICIT_SCHED)!=0)  // set attribute 'explicit scheduling'
+    cerr<<"Error "<<pthread_attr_setinheritsched(&joinable,PTHREAD_EXPLICIT_SCHED)<<": could not set explicit scheduling for thread attibute.\n";
+  schedparam.sched_priority = 10;
+//   if (pthread_attr_setschedpolicy(&joinable, SCHED_FIFO)!=0)
+//     cerr<<"Error: could not set scheduling policy to Round Robin\n";
+  if ((rc=pthread_attr_setschedparam(&joinable,&schedparam))!=0) {              // set attribute 'schedparam'
+    cerr<<"Error: could not set the scheduling parameters for the thread attibute: ";
+    if (rc==EINVAL) cerr<<"the attribute value is not valid.\n";
+    else if (rc==ENOTSUP) cerr<<"the priority value is not supported.\n";
+    else cerr<<"unknown error.\n";
+  }
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+//// Calculate superfamily scores
+/////////////////////////////////////////////////////////////////////////////////////
+void HitList::CalculateSuperfamilyScores(HMM& q)
+{  
+
+  Hash<float> score_fam(5000);  //Hash counts number of HMMs in family
+  Hash<float> score_sfam(5000); //Hash counts number of families in superfamily
+  Hash<int> size_sfam(5000);    //Hash counts number of members in superfamily
+  score_fam.Null(0.0);                //Set float value to return when no data can be retrieved
+  score_sfam.Null(0.0);               //Set float value to return when no data can be retrieved
+  size_sfam.Null(0);                  //Set int value to return when no data can be retrieved
+  Hit hit; 
+  char key[IDLEN];
+  
+  //       size_sfam.RemoveAll();            // up to here size_sfam() contained the number of families in each superfamily
+  // Calculate sums of scores in family and superfamily
+  Reset();
+  while (!End()) 
+    {
+      hit = ReadNext();
+      if (!strcmp(q.name,hit.name)) continue; // skip domain compared to itself (for benchmarking) 
+      if (hit.fam[0]=='\0') continue;         // skip domains without family classification   
+      // add hit.score to element hit.fam of hash size_fam; initialize to 0 if not defined	  
+ 	  (*score_fam(hit.fam))  +=(-hit.score_aass-4.0-3.0/0.45);
+ 	  (*score_sfam(hit.sfam))+=(-hit.score_aass-4.0-3.0/0.45);
+ 	  (*size_sfam(hit.sfam))++;  // count number of domain members in each superfamily
+// 	  printf("Score(%10.10s)=%7.3f Score(%8.8s)=%7.3f size_sfam=%i\n",hit.fam,score_fam[hit.fam],hit.sfam,score_sfam[hit.sfam],size_sfam[hit.sfam]);
+    }
+  // Divide superfamily scores by pow(size_sfam(key),par.powsfam)
+  score_sfam.Reset();
+  score_sfam.ReadNext(key);
+  while (*key!='\0') 
+	{
+	  *score_sfam(key)/=pow(size_sfam[key],par.sfamexp);
+//  	  printf("Score(%12.12s)=%7.3f size=%i\n",key,score_sfam[key],size_sfam[key]);
+	  score_sfam.ReadNext(key);
+	}
+
+  // Set family and superfamily score for each domain
+  Reset();
+  while (!End()) 
+    {
+      hit = ReadNext();
+//        printf("%s\n",hit.longname);
+      if (hit.fam[0]=='\0') 
+	{
+	  // pdb sequence or similar that may contain several SCOP (or DALI) domains
+	  char famstr[LINELEN];
+	  char sfam[IDLEN];
+	  char* ptr;
+	  char* nextptr;
+	  int num_sfams=0;
+	  if ((ptr=strfind(hit.longname,"SCOP:")) || (ptr=strfind(hit.longname,"DALI:")) ) 
+	    {
+	      strcpy(famstr,ptr);
+	      ptr=strcut(famstr);
+	      while(ptr)
+		{
+		  nextptr=strcut(ptr);
+		  //get scop superfamily ID
+		  strcpy(sfam,ptr); 
+		  ptr = strchr(sfam,'.');            //return adress of next '.' in name
+		  if(ptr) ptr = strchr(ptr+1,'.');   //return adress of next '.' in name
+		  if(ptr) ptr = strchr(ptr+1,'.');   //return adress of next '.' in name
+		  if(ptr) ptr[0]='\0';
+		  if (score_sfam[sfam]) 
+		    {
+		      hit.score_sfam+=score_sfam[sfam];
+		      num_sfams++;
+		    }
+//   		  printf("superfamily=%-13.13s  score_sfam=%-6.2f  nfams=%i\n",sfam,hit.score_sfam,num_sfams);
+		  ptr=nextptr;
+		}
+	      if (num_sfams>0) 
+		hit.score_sort = (1-par.sfamweight)*hit.score_aass - par.sfamweight*hit.score_sfam;
+	      else hit.score_sort = hit.score_aass;
+	    }
+	} 
+      else 
+	{
+	  hit.score_sfam = score_sfam[hit.sfam];
+//  	  printf("score_sfam=%-6.2f\n",hit.score_sfam);
+	  hit.score_sort = (1-par.sfamweight)*hit.score_aass - par.sfamweight*hit.score_sfam;
+	  // 	  printf("Score(%12.12s)=%7.3f Score(%8.8s)=%7.3f\n",hit.fam,hit.score_fam,hit.sfam,hit.score_sfam);
+	}
+      Overwrite(hit);
+    }
+  return;
+}
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+// Calculation of compositional similarity score in hhhit.C, Hit::Backtrace()
+
+  // Calculate compositional similarity score?
+  if (par.css==1) // use global average aa freqs
+    {
+      float sum=0.0;
+      for (int a=0; a<NAA; a++) 
+	sum += q.pav[a]*t.pav[a]/(q.pav[a]+t.pav[a]);
+      score_comp = -log2(-log2(2*sum)+1E-3);
+    }
+  else if (par.css>=2) // use local average aa freqs
+    {
+      int a;
+      float qloc[NAA], tloc[NAA];
+      // Initialize with pseudocounts (50 column)
+      for (a=0; a<NAA; a++) {qloc[a]=50*q.pav[a]; tloc[a]=50*t.pav[a];} 
+      for (step=1; step<=nsteps; step++) 
+	{
+	  if (states[step]!=MM) continue; // use only MM states for calc of local aa composition
+	  for (a=0; a<NAA; a++) qloc[a] += q.p[ this->i[step] ][a];
+	  for (a=0; a<NAA; a++) tloc[a] += t.p[ this->j[step] ][a]*t.pnul[a];
+	}
+      NormalizeTo1(qloc,NAA);
+      NormalizeTo1(tloc,NAA);
+      float sum=0.0;
+      if (par.columnscore==1) 
+	{
+	  for (a=0; a<NAA; a++) 
+	    sum += qloc[a]*tloc[a]/(qloc[a]+tloc[a]);
+	  score_comp = -log2(-log2(2*sum)+1E-2);
+	} 
+      else 
+	{
+	  for (a=0; a<NAA; a++) 
+	    sum += sqrt(qloc[a]*tloc[a]);
+	  score_comp = -log2(-log2(sum)+1E-3);
+	}
+//       cout<<"\nAverage amino acid frequencies\n";
+//       cout<<"         A    R    N    D    C    Q    E    G    H    I    L    K    M    F    P    S    T    W    Y    V\n";  
+//       cout<<"Q:    ";
+//       for (a=0; a<20; a++) printf("%4.1f ",100*q.pav[a]);
+//       cout<<"\nQloc: ";
+//       for (a=0; a<20; a++) printf("%4.1f ",100*qloc[a]);
+//       cout<<"\nT:    ";
+//       for (a=0; a<20; a++) printf("%4.1f ",100*t.pav[a]);
+//       cout<<"\nTloc: ";
+//       for (a=0; a<20; a++) printf("%4.1f ",100*tloc[a]);
+//       cout<<"\nBgr:  ";
+//       for (a=0; a<20; a++) printf("%4.1f ",100*pb[a]);
+//       cout<<"\n         A    R    N    D    C    Q    E    G    H    I    L    K    M    F    P    S    T    W    Y    V\n";  
+//       printf("score_comp = %6.3f\n",score_comp);
+     }
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+// Calculation of log of compositional similarity P-value in hhhitlist.C, HitList::MaxLikelihoodEVD()
+
+	  // Calculate compositional similarity P-value?
+	  if (par.css) 
+	    {
+	      float Pcomp = 0.5*erfc(0.7071*(hit.score_comp-q.mu_cs)/q.sigma_cs);
+	      hit.logPcomp = log(Pcomp);
+	      float Stot = hit.logPval + par.csw*hit.logPcomp;
+	      if (par.css==3)
+		{
+		  float csw = 1.0/sqrt(hit.matched_cols+1);
+		  hit.Pval = (exp(Stot) - csw*exp(Stot/csw))/(1.0-csw);
+		  hit.logPval = - log(1-csw) + Stot;
+		  if (Stot/csw-Stot>-20) hit.logPval += log(1-csw*exp(Stot/csw-Stot));
+		}
+	      else if (par.csw>=0.99) 
+		{
+		  hit.Pval = hit.Pval*Pcomp*(1-Stot);;  
+		  hit.logPval = Stot + log(1-Stot);  
+		}
+	      else 
+		{
+		  par.csw = 1.0/sqrt(hit.matched_cols+1);
+		  hit.Pval = (exp(Stot) - par.csw*exp(Stot/par.csw))/(1.0-par.csw);
+		  hit.logPval = - log(1-par.csw) + Stot;
+		  if (Stot/par.csw-Stot>-20) hit.logPval += log(1-par.csw*exp(Stot/par.csw-Stot));
+		}
+	    }
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+// Remove all sequences (1) with coverage below min_coverage, (2) with maximum sequence id TO QUERY below min_seqid,
+// (3) with sequence id above max_seqid (keep longer one) and (4) pick N most dissimilar sequences out of those left.
+// Return number of sequences which passed filter
+/////////////////////////////////////////////////////////////////////////////////////
+int Alignment::FilterSlow(char in[], int max_seqid, int min_coverage, int min_seqid, int N)
+{
+  int n=1, k;
+  int seqid;
+  if (min_seqid>max_seqid)
+   {
+     in[kfirst]=1; 
+     for (k=0; k<kfirst; k++) in[k]=0;
+     for (k=kfirst+1; k<N_in; k++) in[k]=0;
+     if (v) cerr<<"WARNING: minium sequence identity to query > maximum sequence identity. Keeping only query\n";
+   }
+  else
+    {
+      int vtmp=v; 
+      char in2[MAXSEQ];   
+      for (k=0; k<N_in; k++) in2[k]=in[k];
+      v=0;
+      for (seqid=min_seqid; seqid<=max_seqid; seqid++)
+	{
+	  for (k=0; k<N_in; k++) in[k]=in2[k]; // Reset in[k] 
+	  n=FilterFast(in,seqid,min_coverage,min_seqid);
+	  if (n>=N) {seqid++; break;}
+	}
+      v=vtmp;
+      seqid--;
+      if (v>=2) 
+	{
+	  cout<<n<<" out of "<<N_in-(kss_dssp>=0)-(ksa_dssp>=0)-(kss_pred>=0)-(kss_conf>=0)<<" sequences passed filter for "<<seqid<<"% maximum sequence identity";
+	  if (min_coverage || min_seqid) cout<<", "<<min_coverage<<"% minimum coverage, and "<<min_seqid<<"% minimum sequence identity to query";
+	  cout<<"\n";
+	}
+    }
+  return n;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+// Remove sequences with seq. identity larger than max_seqid% (keep longer one) or coverage<min_coverage
+// Return number of sequences which passed filter
+// Please note: sequence identity of sequence x with y when filtering x is calculated as 
+//   number of residues in sequence x that are identical to an aligned residue in y / number of residues in x
+// Example: two sequences x and y are 100% identical in their overlapping region but one overlaps by 10% of its 
+// length on the left and the other by 20% on the right. Then x has 10% seq.id with y and y has 20% seq.id. with x.
+/////////////////////////////////////////////////////////////////////////////////////
+int Alignment::FilterFast(char in[], int max_seqid, int min_coverage, int min_seqid)
+{
+  float diff_min_frac =0.9999-0.01*max_seqid; // minimum fraction of differing positions between sequence j and k needed to accept sequence k
+  float qdiff_max_frac=0.9999-0.01*min_seqid; // maximum allowable number of residues different from query sequence  
+  int diff;                 // number of differing positions between sequences j and k (counted so far) 
+  int diff_suff;            // number of differing positions between sequences j and k that would be sufficient 
+  int qdiff_max;            // maximum number of residues required to be different from query
+  int cov_kj;               // upper limit of number of positions where both sequence k and j have a residue
+  int first_kj;             // first non-gap position in sequence j AND k
+  int last_kj;              // last  non-gap position in sequence j AND k
+  int kk, jj;               // indices for sequence from 1 to N_in
+  int k, j;                 // kk=ksort[k], jj=ksort[j]
+  int i;                    // counts residues
+  int n=1;                  // number of sequences accepted so far
+
+  // Determine first[k], last[k]?
+  if (first==NULL) 
+    {
+      first=new(int[N_in]);// first non-gap position in sequence k
+      last =new(int[N_in]);// last  non-gap position in sequence k
+      for (k=0; k<N_in; k++)  // do this for ALL sequences, not only those with in[k]==1 (since in[k] may be display[k])
+	{
+	  for (i=1; i<=L; i++) 
+	    if (X[k][i]<NAA) break;
+	  first[k]=i; 
+	  for (i=L; i>=1; i--) 
+	    if (X[k][i]<NAA) break;
+	  last[k]=i;
+	}
+   }
+  
+  // Determine nres[k]?
+  if (nres==NULL) 
+    {
+      nres=new(int[N_in]);
+      for (k=0; k<N_in; k++)  // do this for ALL sequences, not only those with in[k]==1 (since in[k] may be display[k])
+	{
+	  int nr=0;
+	  for (i=1; i<=L; i++) 
+	    if (X[k][i]<NAA) nr++; 
+	  nres[k]=nr;
+	  //    printf("%20.20s nres=%3i  first=%3i  last=%3i\n",sname[k],nr,f,l);
+	}
+    }
+  
+  // Sort sequences according to length; afterwards, nres[ksort[kk]] is sorted by size
+  if (ksort==NULL) 
+    {
+      ksort=new(int[N_in]);
+      for (k=0; k<N_in; k++) ksort[k]=k;       
+      QSortInt(nres,ksort,kfirst+1,N_in-1,-1); //Sort sequences after kfirst (query) in descending order 
+    }
+
+//   //DEBUG
+//   for (kk=0; kk<N_in; kk++)
+//     {
+//       printf("kk=%4i  k=%4i  nres=%4i\n",kk,ksort[kk],nres[ksort[kk]]);
+//     }
+
+  for (kk=kfirst+1; kk<N_in; kk++)    //test sequence k: dissimilar to already accepted seqs?
+    {
+      k=ksort[kk];
+      if (!in[k]) continue;  // if in[k]==0 sequence k will be suppressed directly
+      if (keep[k]==2) {n++; continue;} // accept all marked sequences 
+      if (100*nres[k]<min_coverage*L) {in[k]=0; continue;} // coverage too low?
+
+      //Check if sequence similarity with query at least min_seqid?
+      if (qdiff_max_frac<0.999) 
+	{
+	  qdiff_max=int(qdiff_max_frac*nres[k]+0.9999); 
+	  //	  printf("k=%-4i  nres=%-4i  qdiff_max=%-4i first=%-4i last=%-4i",k,nres[k],qdiff_max,first[k],last[k]);
+	  diff=0;
+	  for (int i=first[k]; i<=last[k]; i++)
+	    // enough different residues to reject based on minimum qid with query? => break
+	    if (X[k][i]<20 && X[k][i]!=X[kfirst][i] && ++diff>=qdiff_max) break;
+	  //	  printf("  diff=%4i\n",diff);
+	  if (diff>=qdiff_max) {in[k]=0; continue;} //is sequence k too different from query => reject
+	}
+
+      if (diff_min_frac>0.001) 
+	{
+	  for (jj=kfirst; jj<kk; jj++)  //loop through accepted sequences 
+	    {
+	      j=ksort[jj];
+	      if (!in[j]) continue;
+	      first_kj=imax(first[k],first[j]);
+	      last_kj =imin(last[k],last[j]);
+	      cov_kj = last_kj-first_kj+1;
+	      diff_suff=int(diff_min_frac*imin(nres[k],cov_kj));  // nres[j]>nres[k] anyway because of sorting 
+	      diff=0; 
+	      for (int i=first_kj; i<=last_kj; i++)
+		{
+		  // enough different residues to accept? => break
+		  if (X[k][i]>=NAA || X[j][i]>=NAA) 
+		    cov_kj--;
+		  else 
+		    if (X[k][i]!=X[j][i] && ++diff>=diff_suff) break; // accept (k,j)
+		}
+//  	      printf("%20.20s with %20.20s:  diff=%i  diff_min_frac*cov_kj=%f  diff_suff=%i  nres=%i  cov_kj=%i\n",sname[k],sname[j],diff,diff_min_frac*cov_kj,diff_suff,nres[k],cov_kj);
+// 	      printf("%s\n%s\n\n",seq[k],seq[j]);
+	      if (float(diff)<fmin(diff_min_frac*cov_kj,diff_suff)) break; //similarity > acceptace threshold? Reject!
+
+	    }
+	  if (jj<kk)      //was loop interrupted before jj==kk? => reject shorter of the two
+	    {
+	      in[k]=0;      //j and k are too similar; the shorter one of them will be removed
+// 	      printf("%s rejected: too similar with seq %s  diff=%i  diff_min_frac*cov_kj=%f  diff_suff=%i  nres=%i  cov_kj=%i\n",sname[k],sname[j],diff,diff_min_frac*cov_kj,diff_suff,nres[k],cov_kj);
+// 	      printf("%s\n%s\n\n",seq[k],seq[j]);
+	    }
+	  else 
+	    {
+	      in[k]=1; n++;
+// 	      printf("%i %s accepted\n",k,sname[k]);
+	    } 
+	} 
+      else  {in[k]=1; n++;} 
+    }
+
+  if (v>=2)
+    {
+      cout<<n<<" out of "<<N_in-(kss_dssp>=0)-(ksa_dssp>=0)-(kss_pred>=0)-(kss_conf>=0)<<" sequences passed filter for "<<max_seqid<<"% maximum sequence identity";
+      if (par.coverage || min_seqid) cout<<", "<<min_coverage<<"% minimum coverage, and "<<min_seqid<<"% minimum sequence identity to query";
+      cout<<"\n";
+    }
+
+  return n;
+}
+
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+// Add contact score (from hhhit.C)
+
+  // Add contribution from contact score
+  //  step 19 18 17 16 15 14 13 12 11 10  9  8  7  6  5  4  3  2  1
+  //     i  0  0  1  2  3  4  5  6  7  8  9  9  9  9 10 11 12 13 14
+  // 
+  //     Q  ~  ~  X  X  X  X  X  X  X  X  X  ~  ~  ~  X  X  X  X  X
+  //     T  Y  Y  Y  Y  Y  Y  Y  Y  ~  Y  Y  Y  Y  Y  Y  Y  Y  ~  ~
+  //
+  //     j  7  8  9 10 11 12 13 14 14 15 16 17 18 19 20 21 22 22 22
+  // state IM IM MM MM MM MM MM MM DG MM MM GD GD GD MM MM MM MI MI
+  if (par.conm) 
+    {
+      contactscore=0.0;
+      float add1,add2;
+      int i1,i2,sep,pair,r;
+      short int ii[MAXRES];
+      for (j=1; j<=t.L; j++) ii[j]=0;
+      for (step=1; step<=nsteps; step++) 
+	if (states[step]==MM) {ii[this->j[step]] = this->i[step];}
+	else if (states[step]==GD || states[step]==IM) ii[this->j[step]]=0;
+      for (int c=0; c<t.Ncontacts; c++)
+	{
+	  if ( (i1=ii[t.contact[c].j1]) && (i2=ii[t.contact[c].j2]) ) 
+	    { 
+	      pair=t.contact[c].pair;
+	      if (pair==0) {if (t.contact[c].r>=par.conc) continue;}
+	      else if (pair<=2) {if (t.contact[c].r>=par.cond) continue;}
+	      else if (pair<=4) {if (t.contact[c].r>=par.cone) continue;} 
+	      r=t.contact[c].r-par.conrmin;
+	      if (r<0) r=0;
+	      if (r>=NDIST) continue;
+	      if (t.contact[c].j2-t.contact[c].j1>par.consep) {sep=1;} else {sep=0;} 
+	      add1=0;
+	      for (int a=0; a<20; a++)
+		{
+		  add2=0;
+		  for (int b=0; b<20; b++)
+ 		    add2 += q.f[i2][b]*Pcontact[sep][pair][r][a][b];
+		  add1 += q.f[i1][a]*add2;
+		}
+	      if (sep) {contactscore+=par.cona*log2(add1+0.001);} else {contactscore+=par.conb*log2(add1+0.001);}
+//      	      printf("%-4i i1=%-3i i2=%-3i   j1=%-3i j2=%-3i  sep=%i  pair=%1i  r=%1i  S=%-6.2f  Stot=%-6.2f\n",c,i1,i2,t.contact[c].j1,t.contact[c].j2,sep,pair,r+par.conrmin,log2(add1+0.001),contactscore);
+	    }
+	}
+      score+=contactscore;
+    }
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+// Calculate position-specific SS weights that depend on length of SS element
+/////////////////////////////////////////////////////////////////////////////////////
+void HMM::SecStrucWeights()
+{
+  int i;
+  int ll;     // counts number of residues in SS element from left
+  int l[L+2]; // contains number of residues in SS element from left
+  //           - H E C S T G B 
+  char HEC[8]={0,1,2,3,3,3,3,3};
+
+  // Calculate weight for DSSP states
+  ss_dssp[0]=0; ll=1;
+  for (i=1; i<=L; i++) // forward run 
+    {
+      if (HEC[(int)ss_dssp[i-1]]!=HEC[(int)ss_dssp[i]]) ll=1;
+      l[i]=ll++;
+    } 
+  ss_dssp[L+1]=0; ll=l[L]; 
+  for (i=L; i>=1; i--) // backward run 
+    {
+      if (HEC[(int)ss_dssp[i+1]]!=HEC[(int)ss_dssp[i]]) ll = imax(2,l[i]);
+      wss_dssp[i] = pow(7.0/ll,par.ssp);
+    }
+
+  // Calculate weight for predicted SS states
+  ss_pred[0]=0; ll=1;
+  for (i=1; i<=L; i++) // forward run 
+    {
+      if (ss_pred[i-1]!=ss_pred[i]) ll=1;
+      l[i]=ll++;
+    } 
+  ss_pred[L+1]=0; ll=l[L];
+  for (i=L; i>=1; i--) // backward run 
+    {
+      if (ss_pred[i+1]!=ss_pred[i]) ll = imax(2,l[i]);
+      wss_pred[i] = pow(7.0/ll,par.ssp);
+    }
+  if (v>=3) 
+    {
+      printf("SS weights for HMM %s:\n",name);
+      for (i=1; i<=L; i++)
+	printf("%3i: DSSP=%1i L=%6.3f  PRED=%1i L=%6.3f\n",i,HEC[(int)ss_dssp[i]],wss_dssp[i], ss_pred[i],wss_pred[i]);
+    }
+  return;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+// Functions for ForwardLog()
+/////////////////////////////////////////////////////////////////////////////////////
+inline float score2(const float& xMM, const float& xX, char& b) 
+{
+  if (xMM>xX) { b=MM;   return xMM + fast_addscore(xMM-xX); } 
+  else        { b=SAME; return xX + fast_addscore(xX-xMM);  }
+}
+inline float score5(const float& xMM, const float& xGD, const float& xIM, const float& xDG, const float& xMI, char& b) 
+{
+  float val;
+  if (xMM>xGD) { val=xMM; b=MM;} 
+  else         { val=xGD; b=GD;}
+  if (xIM>val) { val=xIM; b=IM;}
+  if (xDG>val) { val=xDG; b=DG;}
+  if (xMI>val) { val=xMI; b=MI;}
+  switch (b) 
+    {
+    case MM: return val + hh_fast_log2( 1+hh_fast_pow2(xGD-val)+hh_fast_pow2(xIM-val)+hh_fast_pow2(xDG-val)+hh_fast_pow2(xMI-val) );
+    case GD: return val + hh_fast_log2( 1+hh_fast_pow2(xMM-val)+hh_fast_pow2(xIM-val)+hh_fast_pow2(xDG-val)+hh_fast_pow2(xMI-val) );
+    case IM: return val + hh_fast_log2( 1+hh_fast_pow2(xMM-val)+hh_fast_pow2(xGD-val)+hh_fast_pow2(xDG-val)+hh_fast_pow2(xMI-val) );
+    case DG: return val + hh_fast_log2( 1+hh_fast_pow2(xMM-val)+hh_fast_pow2(xGD-val)+hh_fast_pow2(xIM-val)+hh_fast_pow2(xMI-val) );
+    case MI: return val + hh_fast_log2( 1+hh_fast_pow2(xMM-val)+hh_fast_pow2(xGD-val)+hh_fast_pow2(xIM-val)+hh_fast_pow2(xDG-val) );
+    }
+  return 0;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////
+// Compare two HMMs with Forward Algorithm in log space
+/////////////////////////////////////////////////////////////////////////////////////
+void Hit::ForwardLog(float** sMM_fwd, float** sGD_fwd, float** sIM_fwd, float** sDG_fwd, float** sMI_fwd, HMM& q, HMM& t, float** Sstruc)
+{
+
+  // Variable declarations
+  int i,j;      // query and template match state indices
+
+  // First alignment of this pair of HMMs
+  if(irep==1)
+    {
+      // if end gap mode = automatic, set endgap penalty for longer of two HMMs
+      if (par.eg>0)
+	{
+	  float f=float(q.L)/t.L;
+	  if (f>par.egf)    {par.egq=0; par.egt=par.eg;}
+	  if (1./f>par.egf) {par.egt=0; par.egq=par.eg;}
+	}
+      
+      // Set end gap penalties at the end of Q and T 
+      q.tr[q.L][M2I] = q.tr[q.L][I2I] = -par.egt;
+      t.tr[t.L][M2I] = t.tr[t.L][I2I] = -par.egq;
+      q.tr[q.L][M2M] = q.tr[q.L][I2M] = q.tr[q.L][D2M] = 0;
+      t.tr[t.L][M2M] = t.tr[t.L][I2M] = t.tr[t.L][D2M] = 0;
+      
+      // SS scoring during (ssm2>0) or after (ssm1>0) alignment? Query SS known or Template SS known?
+      switch (par.ssm) 
+	{
+	case 0:
+	  ssm1=0;
+	  ssm2=0;
+	  break;
+	case 1:
+	  ssm2=0;  // SS scoring after alignment
+	  if (t.nss_dssp>=0 && q.nss_pred>=0) ssm1=1;
+	  else if (q.nss_dssp>=0 && t.nss_pred>=0) ssm1=2;    
+	  else if (q.nss_pred>=0 && t.nss_pred>=0) ssm1=3;
+	  else ssm1=0;
+	  break;
+	case 2:
+	  ssm1=0;  // SS scoring during alignment
+	  if (t.nss_dssp>=0 && q.nss_pred>=0) ssm2=1;
+	  else if (q.nss_dssp>=0 && t.nss_pred>=0) ssm2=2;   
+	  else if (q.nss_pred>=0 && t.nss_pred>=0) ssm2=3;
+	  else ssm2=0;
+	  break;
+	case 3:
+	  ssm2=0;  // SS scoring after alignment
+	  if (q.nss_pred>=0 && t.nss_pred>=0) ssm1=3; else ssm1=0;  
+	  break;
+	case 4:
+	  ssm1=0;  // SS scoring during alignment
+	  if (q.nss_pred>=0 && t.nss_pred>=0) ssm2=3; else ssm2=0;
+	  break;
+	  //     case 5:
+	  //       ssm2=0;  // SS scoring after alignment
+	  //       if (q.nss_dssp>=0 && t.nss_dssp>=0) ssm1=4; else ssm1=0;  
+	  //       break;
+	  //     case 6:
+	  //       ssm1=0;  // SS scoring during alignment
+	  //       if (q.nss_dssp>=0 && t.nss_dssp>=0) ssm2=4; else ssm2=0;
+	  //       break;
+	}	  
+    }	
+
+
+  // Initialization of top row, i.e. cells (0,j)
+  score = -FLT_MAX;
+  sMM_fwd[0][0]=0;
+  for (j=1; j<=t.L; j++) 
+    {
+      sMM_fwd[0][j] = -j*par.egt;
+      sIM_fwd[0][j] = sMI_fwd[0][j] = sDG_fwd[0][j] = sGD_fwd[0][j] = -FLT_MAX; 
+    }
+
+  // Forward algorithm
+  for (i=1; i<=q.L; i++) // Loop through query positions i
+    {
+//       if (v>=5) printf("\n");
+      
+      // Initialize cells at (i,0)
+      sMM_fwd[i][0] = -i*par.egq; 
+      sIM_fwd[i][0] = sMI_fwd[i][0] = sDG_fwd[i][0] = sGD_fwd[i][0] = -FLT_MAX; 
+      
+      for (j=1; j<=t.L; j++) // Loop through template positions j
+	{
+	  // Recursion relations
+	  //	      printf("S[%i][%i]=%4.1f  ",i,j,Score(q.p[i],t.p[j]));
+	  sMM_fwd[i][j] = Score(q.p[i],t.p[j]) + ScoreSS(q,t,i,j) + par.shift + (Sstruc==NULL? 0: Sstruc[i][j]) 
+	    + score5( 
+		       sMM_fwd[i-1][j-1] + q.tr[i-1][M2M] + t.tr[j-1][M2M], 
+		       sGD_fwd[i-1][j-1] + q.tr[i-1][M2M] + t.tr[j-1][D2M],
+		       sIM_fwd[i-1][j-1] + q.tr[i-1][I2M] + t.tr[j-1][M2M],
+		       sDG_fwd[i-1][j-1] + q.tr[i-1][D2M] + t.tr[j-1][M2M],
+		       sMI_fwd[i-1][j-1] + q.tr[i-1][M2M] + t.tr[j-1][I2M],
+		       bMM[i][j]
+		       );
+	  sGD_fwd[i][j] = score2(
+		       sMM_fwd[i][j-1] + t.tr[j-1][M2D],
+		       sGD_fwd[i][j-1] + t.tr[j-1][D2D], //gap extension (DD) in template
+		       bGD[i][j]
+		     );
+	  sIM_fwd[i][j] = score2(
+		       sMM_fwd[i][j-1] + q.tr[i][M2I] + t.tr[j-1][M2M_GAPOPEN],
+		       sIM_fwd[i][j-1] + q.tr[i][I2I] + t.tr[j-1][M2M], //gap extension (II) in query
+		       bIM[i][j]
+		       );
+	  sDG_fwd[i][j] = score2(
+		       sMM_fwd[i-1][j] + q.tr[i-1][M2D] + t.tr[j][GAPOPEN],
+		       sDG_fwd[i-1][j] + q.tr[i-1][D2D] + t.tr[j][GAPEXTD], //gap extension (DD) in query
+		       bDG[i][j]
+		       );
+	  sMI_fwd[i][j] = score2(
+		       sMM_fwd[i-1][j] + q.tr[i-1][M2M] + t.tr[j][M2I],
+		       sMI_fwd[i-1][j] + q.tr[i-1][M2M] + t.tr[j][I2I], //gap extension (II) in template
+		       bMI[i][j]
+		       );
+
+	  // Find maximum score; global alignment: maxize only over last row and last column
+	  if(sMM_fwd[i][j]>score && i==q.L) 
+	    {
+	      i2=i; j2=j; 
+	      score=sMM_fwd[i][j];
+	    }
+
+	} //end for j
+      //        printf("\n");  
+      
+      // if global alignment: look for best cell in last column
+      if (sMM_fwd[i][t.L]>score) 
+	{
+	  i2=i; j2=t.L; 
+	  score=sMM_fwd[i][t.L];
+	}
+
+    } // end for i
+
+//     printf("Template=%-12.12s  score=%6.3f\n",t.name,score);
+  
+  score5( 
+	 sMM_fwd[q.L][t.L] + q.tr[q.L][M2M] + t.tr[t.L][M2M], 
+	 sGD_fwd[q.L][t.L] + q.tr[q.L][M2M] + t.tr[t.L][D2M],
+	 sIM_fwd[q.L][t.L] + q.tr[q.L][I2M] + t.tr[t.L][M2M],
+	 sDG_fwd[q.L][t.L] + q.tr[q.L][D2M] + t.tr[t.L][M2M],
+	 sMI_fwd[q.L][t.L] + q.tr[q.L][M2M] + t.tr[t.L][I2M],
+	 bMM[q.L+1][t.L+1]
+	 );
+  state = MM; // for normal backtracing
+//   state=bMM[q.L+1][t.L+1]; 
+//   i2=q.L; 
+//   j2=t.L;
+//   printf("score=%7.2f\n",score);
+  
+  
+  return;
+}
+
+#ifdef PTHREAD
+  for (int j=0; j<threads; j++) 
+    {
+      if (v>=3) fprintf(stderr,"Creating worker thread %i ...",j+1);
+      thread_id[j] = j+1;     // thread ids are 1 to N, not 0 to N-1
+      pthread_create(&pthread[j], &joinable, RealignByWorkerLoop, (void*)&thread_id[j]);
+      if (v>=3) fprintf(stderr," created!\n");
+     }
+#endif
+
+
+
