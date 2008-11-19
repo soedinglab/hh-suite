@@ -71,7 +71,7 @@ void CSCounts::prepare_pseudocounts(HMM& q) throw (std::exception)
     float* f     = new float[q.L+1];
 
     //init arrays
-    for(size_t i=1; i<=q.L; ++i) {
+    for(size_t i=1; i<=static_cast<size_t>(q.L); ++i) {
         pc[i] = new double[NAA];
         f[i] = lgamma(neffi[i]+1.0);
         for(int a=0; a<NAA; ++a) {
@@ -84,7 +84,7 @@ void CSCounts::prepare_pseudocounts(HMM& q) throw (std::exception)
     for(size_t k=0; k<K; ++k) {
         float** log_pk = clusters[k]->get_log_profile();
 
-        for(size_t i=1; i<=q.L; ++i) {
+        for(size_t i=1; i<=static_cast<size_t>(q.L); ++i) {
             double log_pki = clusters[k]->get_log_alpha();
             size_t beg = std::max(1, static_cast<int>(i)-static_cast<int>(center));
             size_t end = std::min(q.L,static_cast<int>(i+center));
@@ -146,13 +146,13 @@ void CSCounts::prepare_pseudocounts(HMM& q) throw (std::exception)
     }
 
     //add pseudocounts to profile
-    for(size_t i=1; i<=q.L; ++i) {
+    for(size_t i=1; i<=static_cast<size_t>(q.L); ++i) {
         normalize_to_one(pc[i], NAA);
         for(int a=0; a<NAA; ++a) q.g[i][a]=pc[i][a];
     }
 
     //free memory
-    for(size_t i=1; i<=q.L; ++i) delete [] pc[i];
+    for(size_t i=1; i<=static_cast<size_t>(q.L); ++i) delete [] pc[i];
     delete [] pc;
     delete [] f;
 }
