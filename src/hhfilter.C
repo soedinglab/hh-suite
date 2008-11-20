@@ -3,7 +3,7 @@
 // Compile with efence: g++ hhfilter.C -o hhfilter -g -O -lefence 
 #define MAIN
 #include <iostream>   // cin, cout, cerr
-#include <fstream>    // ofstream, ifstream 
+#include <fstream>    // ofstream, ifstream
 #include <stdio.h>    // printf
 #include <stdlib.h>   // exit
 #include <string.h>     // strcmp, strstr
@@ -12,6 +12,7 @@
 #include <float.h>    // FLT_MIN
 #include <time.h>     // clock
 #include <ctype.h>    // islower, isdigit etc
+#include <cassert>
 
 using std::cout;
 using std::cerr;
@@ -24,13 +25,31 @@ using std::ofstream;
 #include "list.C"        // list data structure
 #include "hash.C"        // hash data structure
 #include "hhdecl.C"      // Constants, global variables, struct Parameters
-#include "hhutil.C"      // MatchChr, InsertChr, aa2i, i2aa, log2, fast_log2, WriteToScreen,
+#include "hhutil.C"      // MatchChr, InsertChr, aa2i, i2aa, log2, fast_log2, ScopID, WriteToScreen,
 #include "hhmatrices.C"  // BLOSUM50, GONNET, HSDM
-#include "hhhmm.h"       // class HMM
+
+// includes needed for context specific pseudocounts
+#include "amino_acid.cpp"
+#include "sequence.cpp"
+#include "profile.cpp"
+#include "cluster.cpp"
+#include "simple_cluster.cpp"
+#include "matrix.cpp"
+#include "cs_counts.cpp"
+
 #include "hhhit.h"       // class Hit
 #include "hhalignment.h" // class Alignment
+#include "hhhalfalignment.h" // class HalfAlignment
+#include "hhfullalignment.h" // class FullAlignment
+#include "hhhitlist.h"   // class Hit
+
 #include "hhhmm.C"       // class HMM
 #include "hhalignment.C" // class Alignment
+#include "hhhit.C"       // class Hit
+#include "hhhalfalignment.C" // class HalfAlignment
+#include "hhfullalignment.C" // class FullAlignment
+#include "hhhitlist.C"   // class HitList
+#include "hhfunc.C"      // some functions common to hh programs
 
 float Neff=0.0;            // target diversity
 

@@ -112,21 +112,23 @@ void Hit::Delete()
     states = NULL;
     S = S_ss = P_posterior = NULL;
     Xcons = NULL;
-    if (irep==1) // if irep>1 then longname etc point to the same memory locations as the first repeat. 
-      {          // but these have already been deleted.
-// 	printf("Delete name = %s\n",name);////////////////////////////////////////////////////////////
-	delete[] longname; delete[] name; delete[] file; delete[] dbfile;
-	for (int k=0; k<n_display; k++) 
-	  {
-	    delete[] sname[k]; 
-	    delete[] seq[k];
-	  }
-	delete[] sname;
-	delete[] seq;
-	longname = name = file = dbfile = NULL;
-	sname = NULL;
-	seq = NULL;  
+//  printf("Delete name = %s\n",name);////////////////////////////////////////////////////////////
+
+
+    delete[] longname; delete[] name; delete[] file; delete[] dbfile;
+    for (int k=0; k<n_display; k++) 
+      {
+	delete[] sname[k]; 
+	delete[] seq[k];
       }
+    delete[] sname;
+    delete[] seq;
+
+
+     longname = name = file = NULL;
+     dbfile = NULL;
+     sname = NULL;
+     seq = NULL;  
   }
 
 
@@ -592,7 +594,8 @@ void Hit::Forward(HMM& q, HMM& t, float** Pstruc)
       Pforward = 1.0; // alignment contains no residues (see Mueckstein, Stadler et al.)
       for (i=1; i<=q.L; i++) // Loop through query positions i
 	{
-	  for (j=1; j<=t.L; j++) // Loop through template positions j
+	  if (self) jmin = imin(i+SELFEXCL+1,t.L); else jmin=1;
+	  for (j=jmin; j<=t.L; j++) // Loop through template positions j
 	    Pforward += F_MM[i][j];
 	  Pforward *= scale[i+1];
 	}
@@ -1510,54 +1513,72 @@ void Hit::InitializeForAlignment(HMM& q, HMM& t)
 /////////////////////////////////////////////////////////////////////////////////////
 void Hit::InitializeBacktrace(HMM& q, HMM& t)
 {
-  if (irep==1) //if this is the first single repeat repeat hit with this template
-    {
-      //Copy information about template profile to hit and reset template pointers to avoid destruction
-      longname=new(char[strlen(t.longname)+1]);
-      name    =new(char[strlen(t.name)+1]);
-      file    =new(char[strlen(t.file)+1]);
-      if (!file) MemoryError("space for alignments with database HMMs. \nNote that all alignments have to be kept in memory");
-      strcpy(longname,t.longname);
-      strcpy(name,t.name);
-      strcpy(fam ,t.fam);
-      strcpy(sfam ,t.sfam);
-      strcpy(fold ,t.fold);
-      strcpy(cl ,t.cl);
-      strcpy(file,t.file);
-      sname=new(char*[t.n_display]);   // Call Compare only once with irep=1
-      seq  =new(char*[t.n_display]);   // Call Compare only once with irep=1
-      if (!sname || !seq) 
-	MemoryError("space for alignments with database HMMs.\nNote that all sequences for display have to be kept in memory");
-
-      for (int k=0; k<t.n_display; k++)
-	{
-	  sname[k]=t.sname[k]; t.sname[k]=NULL;
-	  seq[k]  =t.seq[k];   t.seq[k]=NULL;
-	}
-      n_display=t.n_display; t.n_display=0;
-      ncons  = t.ncons;
-      nfirst = t.nfirst;
-      nss_dssp = t.nss_dssp;
-      nsa_dssp = t.nsa_dssp;
-      nss_pred = t.nss_pred;
-      nss_conf = t.nss_conf;
-      L = t.L;
-      Neff_HMM = t.Neff_HMM;
-      Eval   = 1.0;
-      logEval= 0.0;
-      Pval   = 1.0;
-      Pvalt  = 1.0;
-      logPval = 0.0;
-      logPvalt= 0.0;
-      Probab = 1.0;
-    }    
+  //Copy information about template profile to hit and reset template pointers to avoid destruction
+  longname=new(char[strlen(t.longname)+1]);
+  name    =new(char[strlen(t.name)+1]);
+  file    =new(char[strlen(t.file)+1]);
+  if (!file) MemoryError("space for alignments with database HMMs. \nNote that all alignments have to be kept in memory");
+  strcpy(longname,t.longname);
+  strcpy(name,t.name);
+  strcpy(fam ,t.fam);
+  strcpy(sfam ,t.sfam);
+  strcpy(fold ,t.fold);
+  strcpy(cl ,t.cl);
+  strcpy(file,t.file);
 
   // Allocate new space
   this->i = new( int[i2+j2+2]);
   this->j = new( int[i2+j2+2]);
   states  = new( char[i2+j2+2]);
-  S = S_ss = P_posterior = NULL; // set to NULL to avoid deleting data from irep=1 when hit with irep=2 is removed 
+  S = S_ss = P_posterior = NULL; 
   Xcons = NULL;
+
+  sname=new(char*[t.n_display]);   
+  seq  =new(char*[t.n_display]);   
+  if (!sname || !seq) 
+    MemoryError("space for alignments with database HMMs.\nNote that all sequences for display have to be kept in memory");
+  
+  if (irep==1)
+    {
+      // Make flat copy for first alignment of template seqs to save speed
+      for (int k=0; k<t.n_display; k++)
+	{
+	  sname[k]=t.sname[k];
+	  seq[k]  =t.seq[k];
+	}
+      t.dont_delete_seqs=1;
+    }
+  else 
+    {
+      // Make deep copy for all further alignments
+      for (int k=0; k<t.n_display; k++)
+	{
+	  sname[k] = new(char[strlen(t.sname[k])+1]);
+	  seq[k]   = new(char[strlen(t.seq[k])+1]);
+	  strcpy(sname[k],t.sname[k]);
+	  strcpy(seq[k],t.seq[k]);
+	}
+      char* ptr = dbfile;
+      dbfile = new(char[strlen(ptr)+1]);
+      strcpy(dbfile,ptr);
+    }
+
+  n_display=t.n_display; 
+  ncons  = t.ncons;
+  nfirst = t.nfirst;
+  nss_dssp = t.nss_dssp;
+  nsa_dssp = t.nsa_dssp;
+  nss_pred = t.nss_pred;
+  nss_conf = t.nss_conf;
+  L = t.L;
+  Neff_HMM = t.Neff_HMM;
+  Eval   = 1.0;
+  logEval= 0.0;
+  Pval   = 1.0;
+  Pvalt  = 1.0;
+  logPval = 0.0;
+  logPvalt= 0.0;
+  Probab = 1.0;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -1770,7 +1791,7 @@ inline double Probab(Hit& hit)
     }
   else
     {
-      if (par.ssm>0 & par.ssw>0) 
+      if (par.ssm>0 && par.ssw>0) 
 	{
 	  // global with SS
 	  const double a=sqrt(4000.0);

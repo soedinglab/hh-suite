@@ -630,6 +630,7 @@ void AlignByWorker(int bin)
       if (par.forward==0)
         {
           hit[bin]->Viterbi(q,*(t[bin]));
+	  if (hit[bin]->irep>1 && hit[bin]->score <= SMIN) break;
           hit[bin]->Backtrace(q,*(t[bin]));
         }
       else if (par.forward==1)
@@ -645,23 +646,18 @@ void AlignByWorker(int bin)
           hit[bin]->BacktraceMAC(q,*(t[bin]));
         }
       hit[bin]->score_sort = hit[bin]->score_aass;
-//    printf ("%-12.12s  %-12.12s   irep=%-2i  score=%6.2f\n",hit[bin]->name,hit[bin]->fam,hit[bin]->irep,hit[bin]->score);
+      //printf ("%-12.12s  %-12.12s   irep=%-2i  score=%6.2f\n",hit[bin]->name,hit[bin]->fam,hit[bin]->irep,hit[bin]->score);
 
-      if (hit[bin]->irep==1 || hit[bin]->score>SMIN)
-        {
 #ifdef PTHREAD
-          pthread_mutex_lock(&hitlist_mutex);   // lock access to hitlist
+      pthread_mutex_lock(&hitlist_mutex);   // lock access to hitlist
 #endif
-          hitlist.Push(*(hit[bin]));            // insert hit at beginning of list (last repeats first!)
+      hitlist.Push(*(hit[bin]));            // insert hit at beginning of list (last repeats first!)
 #ifdef PTHREAD
-          pthread_mutex_unlock(&hitlist_mutex); // unlock access to hitlist
+      pthread_mutex_unlock(&hitlist_mutex); // unlock access to hitlist
 #endif
-        }
-        else
-          hit[bin]->Delete();                     // delete the i[], j[], states[], S[], S_ss[], for the suboptimal (non-)hit
 
-      if (hit[bin]->score <= SMIN) break;
       if (par.forward>0) break; // find only best alignment for forward algorithm and stochastic sampling
+      if (hit[bin]->score <= SMIN) break;  // break if score for first hit is already worse than SMIN
     }
   return;
 }
@@ -680,12 +676,6 @@ void RealignByWorker(int bin)
   PrepareTemplate(q,*(t[bin]),format[bin]);
   t[bin]->Log2LinTransitionProbs(1.0);
 
-  // Align q to template in *hit[bin]
-  hit[bin]->Forward(q,*(t[bin]));
-  hit[bin]->Backward(q,*(t[bin]));
-  hit[bin]->MACAlignment(q,*(t[bin]));
-  hit[bin]->BacktraceMAC(q,*(t[bin]));
-
 #ifdef PTHREAD
           pthread_mutex_lock(&hitlist_mutex);   // lock access to hitlist
 #endif
@@ -702,22 +692,19 @@ void RealignByWorker(int bin)
       if (hit_cur.index==hit[bin]->index) // found position with correct template
         {
           //      fprintf(stderr,"  t->name=%s   hit_cur.irep=%i  hit[bin]->irep=%i  nhits=%i\n",t[bin]->name,hit_cur.irep,hit[bin]->irep,nhits);
-          if (hit[bin]->irep > 1)
-            {
-              pos = hitlist.GetPos();
+	  pos = hitlist.GetPos();
 #ifdef PTHREAD
-              pthread_mutex_unlock(&hitlist_mutex); // unlock access to hitlist
+	  pthread_mutex_unlock(&hitlist_mutex); // unlock access to hitlist
 #endif
-              // Align q to template in *hit[bin]
-              hit[bin]->Forward(q,*(t[bin]));
-              hit[bin]->Backward(q,*(t[bin]));
-              hit[bin]->MACAlignment(q,*(t[bin]));
-              hit[bin]->BacktraceMAC(q,*(t[bin]));
+	  // Align q to template in *hit[bin]
+	  hit[bin]->Forward(q,*(t[bin]));
+	  hit[bin]->Backward(q,*(t[bin]));
+	  hit[bin]->MACAlignment(q,*(t[bin]));
+	  hit[bin]->BacktraceMAC(q,*(t[bin]));
 #ifdef PTHREAD
-              pthread_mutex_lock(&hitlist_mutex);   // lock access to hitlist
+	  pthread_mutex_lock(&hitlist_mutex);   // lock access to hitlist
 #endif
-              hit_cur = hitlist.Read(pos);
-            }
+	  hit_cur = hitlist.Read(pos);
 
           // Overwrite *hit[bin] with Viterbi scores, Probabilities etc. of hit_cur
           hit[bin]->score      = hit_cur.score;
@@ -734,8 +721,8 @@ void RealignByWorker(int bin)
           hit[bin]->Probab     = hit_cur.Probab;
 
           // Replace original hit in hitlist with realigned hit
-          hitlist.ReadCurrentAddress()->irep=2;  // make sure that hit.name[], sname[][], seq[][] etc are not deleted
-          hitlist.Delete();               // delete the hit object itself (does not delete data in arrays!!)
+          //hitlist.ReadCurrent().Delete();
+	  hitlist.Delete().Delete();                // delete list record and hit object
           hitlist.Insert(*hit[bin]);
           hit[bin]->irep++;
         }
@@ -1131,7 +1118,7 @@ int main(int argc, char **argv)
               strcpy(hit[bin]->dbfile,dbfiles[idb]); // record db file name from which next HMM is read
 
               ++N_searched;
-              if (v>=1 & !(N_searched%20))
+              if (v>=1 && !(N_searched%20))
                 {
                   cout<<".";
                   if (!(N_searched%1000)) printf(" %-4i HMMs searched\n",N_searched);
@@ -1498,9 +1485,8 @@ int main(int argc, char **argv)
               hit[bin]->Probab     = hit_cur.Probab;
 
               // Replace original hit in hitlist with realigned hit
-              hitlist.ReadCurrentAddress()->irep=2;  // make sure that hit.name[], sname[][], seq[][] etc are not deleted
-              hitlist.ReadCurrent().Delete(); // delete the array data in hit (name, longname, S, S_SS, etc) by calling Hit::Delete()
-              hitlist.Delete();               // delete the hit object itself (does not delete data in arrays!!)
+              //hitlist.ReadCurrent().Delete();
+	      hitlist.Delete().Delete();               // delete the list record and hit object
               hitlist.Insert(*hit[bin]);
 
               // Read a3m alignment of hit and merge with Qali according to Q-T-alignment in hit[bin]
@@ -1724,6 +1710,12 @@ int main(int argc, char **argv)
       if (v1>=1) cout<<"\n";
       v=v1;
 
+      // Print for each HMM: n  score  -log2(Pval)  L  name  (n=5:same name 4:same fam 3:same sf...)
+      if (*par.scorefile) {
+	if (v>=3) printf("Printing scores file ...\n"); 
+	hitlist.PrintScoreFile(q);
+      }
+
       // Delete all hitlist entries with too short alignments
       nhits=0;
       hitlist.Reset();
@@ -1737,9 +1729,8 @@ int main(int argc, char **argv)
           if (hit_cur.matched_cols < MINCOLS_REALIGN)
             {
               if (v>=3) printf("Deleting alignment of %s with length %i\n",hit_cur.name,hit_cur.matched_cols);
-              hitlist.ReadCurrentAddress()->irep=2;  // make sure that hit.name[], sname[][], seq[][] etc are not deleted
-              hitlist.ReadCurrent().Delete(); // delete the array data in hit (S, S_SS, P_post etc.) by calling Hit::Delete()
-              hitlist.Delete();               // delete the hit object itself (does not delete data in arrays!!)
+              //hitlist.ReadCurrent().Delete();
+	      hitlist.Delete().Delete();               // delete the list record and hit object
               // Make sure only realigned alignments get displayed!
               if (par.B>par.Z) par.B--; else if (par.B==par.Z) {par.B--; par.Z--;} else par.Z--;
               if (par.b>par.z) par.b--; else if (par.b==par.z) {par.b--; par.z--;} else par.z--;
@@ -1752,9 +1743,17 @@ int main(int argc, char **argv)
       while (!realign->End())
         delete(realign->ReadNext()); // delete List<Posindex> to which realign->ReadNext() points
       delete(realign);
+      // End Realign all hits with MAC algorithm? 
+      ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    } else {
+    
+    // Print for each HMM: n  score  -log2(Pval)  L  name  (n=5:same name 4:same fam 3:same sf...)
+    if (*par.scorefile) {
+      if (v>=3) printf("Printing scores file ...\n"); 
+      hitlist.PrintScoreFile(q);
     }
-  // End Realign all hits with MAC algorithm?
-  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  }
+
 
 
   // Print for each HMM: n  score  -log2(Pval)  L  name  (n=5:same name 4:same fam 3:same sf...)
@@ -1833,7 +1832,10 @@ int main(int argc, char **argv)
       v=v1;
 
       // Remove sequences with seq. identity larger than seqid percent (remove the shorter of two)
-      Qali.N_filtered = Qali.Filter(par.max_seqid,par.coverage,par.qid,par.qsc,par.Ndiff);
+      float const COV_ABS = 25;     // min. number of aligned residues
+      int cov_tot = imax(imin((int)(COV_ABS / Qali.L * 100 + 0.5), 70), par.coverage);
+      if (v>2) printf("Filter new alignment with cov %3i\n", cov_tot);
+      Qali.N_filtered = Qali.Filter(par.max_seqid,cov_tot,par.qid,par.qsc,par.Ndiff);
 
       // Calculate (and write) output HMM?
       if (*par.hhmfile)
@@ -1883,8 +1885,8 @@ int main(int argc, char **argv)
   hitlist.Reset();
   while (!hitlist.End())
     {
-      hitlist.ReadCurrentAddress()->irep=1;  // make sure that hit.name[], sname[][], seq[][] etc are deleted
-      hitlist.ReadNext().Delete(); // Delete array content of hit objects
+      //hitlist.ReadCurrent().Delete();
+      hitlist.Delete().Delete(); // Delete list record and hit object
     }
 
 #ifdef PTHREAD

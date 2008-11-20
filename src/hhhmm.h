@@ -117,8 +117,8 @@ private:
   float pav[NAA];           // pav[a] = average freq of amino acids in HMM (including subst matrix pseudocounts)
   float pnul[NAA];          // null model probabilities used in comparison (only set in template/db HMMs)
   int* l;                   // l[i] = pos. of j'th match state in aligment
-/*   char trans_lin;           // transition probs are given in log or lin space? (0: p_tr  1: log(p_tr)  */
-
+  char dont_delete_seqs;    // set to one if flat copy of seqs and sname was made to a hit object, to avoid deletion 
+  
   // Utility for Read()
   int Warning(FILE* dbf, char line[], char name[])
     {

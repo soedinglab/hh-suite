@@ -6,18 +6,29 @@
 //
 // Error codes: 0: ok  1: file format error  2: file access error  3: memory error  4: internal numeric error  5: command line error
 
-#define PNG           // include options for making png files? (will need the png library)
+////#define WINDOWS
 #define MAIN
+#define PNG           // include options for making png files? (will need the png library)
+
 #include <iostream>   // cin, cout, cerr
-#include <fstream>    // ofstream, ifstream 
-#include <string.h>     // strcmp, strstr
-#include <stdio.h>    // printf
+#include <fstream>    // ofstream, ifstream
+#include <cstdio>     // printf
+#include <algorithm>  // min,max
 #include <stdlib.h>   // exit
+#include <string.h>     // strcmp, strstr
 #include <math.h>     // sqrt, pow
 #include <limits.h>   // INT_MIN
 #include <float.h>    // FLT_MIN
-#include <time.h>     // clock
 #include <ctype.h>    // islower, isdigit etc
+#include <time.h>     // clock_gettime etc. (in realtime library (-lrt compiler option))
+#include <errno.h>    // perror()
+#include <cassert>
+#include <stdexcept>
+
+#include <sys/time.h>
+//#include <new>
+//#include "efence.h"
+//#include "efence.c"
 
 using std::cout;
 using std::cerr;
@@ -26,25 +37,34 @@ using std::ios;
 using std::ifstream;
 using std::ofstream;
 
-#include "util.C"     // imax, fmax, iround, iceil, ifloor, strint, strscn, strcut, substr, uprstr, uprchr, Basename etc.
-#include "list.C"     // list data structure
-#include "hash.C"     // hash data structure
-
+#include "util.C"        // imax, fmax, iround, iceil, ifloor, strint, strscn, strcut, substr, uprstr, uprchr, Basename etc.
+#include "list.C"        // list data structure
+#include "hash.C"        // hash data structure
 #include "hhdecl.C"      // Constants, global variables, struct Parameters
-#include "hhutil.C"      // MatchChr, InsertChr, aa2i, i2aa, log2, fast_log2, WriteToScreen,
+#include "hhutil.C"      // MatchChr, InsertChr, aa2i, i2aa, log2, fast_log2, ScopID, WriteToScreen,
 #include "hhmatrices.C"  // BLOSUM50, GONNET, HSDM
-#include "hhhmm.h"       // class HMM
+
+// includes needed for context specific pseudocounts
+#include "amino_acid.cpp"
+#include "sequence.cpp"
+#include "profile.cpp"
+#include "cluster.cpp"
+#include "simple_cluster.cpp"
+#include "matrix.cpp"
+#include "cs_counts.cpp"
+
 #include "hhhit.h"       // class Hit
 #include "hhalignment.h" // class Alignment
 #include "hhhalfalignment.h" // class HalfAlignment
 #include "hhfullalignment.h" // class FullAlignment
 #include "hhhitlist.h"   // class Hit
+
 #include "hhhmm.C"       // class HMM
 #include "hhalignment.C" // class Alignment
 #include "hhhit.C"       // class Hit
 #include "hhhalfalignment.C" // class HalfAlignment
 #include "hhfullalignment.C" // class FullAlignment
-#include "hhhitlist.C"   // class HitList 
+#include "hhhitlist.C"   // class HitList
 #include "hhfunc.C"      // some functions common to hh programs
 
 #ifdef PNG
@@ -662,6 +682,11 @@ int main(int argc, char **argv)
   // Do self-comparison?
   if (!*par.tfile) 
     {
+      if (par.loc==0) {
+	cerr<<"WARNING: global alignment not allowed in self-comparison mode. Setting alignment mode to local\n";
+	par.loc=1;
+      }
+
       // Deep-copy q into t
       t = q;
       
@@ -736,15 +761,22 @@ int main(int argc, char **argv)
   
   // Do (self-)comparison, store results if score>SMIN, and try next best alignment
   if (v>=2) 
-    if (par.forward==2)       printf("Using maximum accuracy (MAC) alignment algorithm ...\n");
-    else if (par.forward==0) printf("Using Viterbi algorithm ...\n");
-    else if (par.forward==1) printf("Using stochastic sampling algorithm ...\n");
-    else printf("\nWhat alignment algorithm are we using??\n");
-  for (hit.irep=1; hit.irep<=imax(par.hitrank,par.altali); hit.irep++)
+    {
+      if (par.forward==2)       printf("Using maximum accuracy (MAC) alignment algorithm ...\n");
+      else if (par.forward==0) printf("Using Viterbi algorithm ...\n");
+      else if (par.forward==1) printf("Using stochastic sampling algorithm ...\n");
+      else printf("\nWhat alignment algorithm are we using??\n");
+    }
+  hit.irep=1; 
+  while (1)
     {
       if (par.forward==0)        // generate Viterbi alignment
 	{
 	  hit.Viterbi(q,t,Sstruc);
+	  if (hit.irep>1 && hit.irep>par.hitrank && hit.score<=SMIN && !(hit.Pvalt<pself && hit.score>0 )) {
+	    hit = hitlist.ReadLast(); // last alignment was not significant => read last (significant) hit from list
+	    break;
+	  }
 	  hit.Backtrace(q,t);
 	} 
       else if (par.forward==1)   // generate a single stochastically sampled alignment
@@ -761,18 +793,18 @@ int main(int argc, char **argv)
 	  hit.Forward(q,t,Pstruc); 
 	  hit.Backward(q,t); 
 	  hit.MACAlignment(q,t);
+	  if (hit.irep>1 && hit.irep>par.hitrank && hit.score<=SMIN && !(hit.Pvalt<pself && hit.score>0 )) {
+	    hit = hitlist.ReadLast(); // last alignment was not significant => read last (significant) hit from list
+	    break;
+	  }
 	  hit.BacktraceMAC(q,t);
 	}
-//       printf ("%-12.12s  %-12.12s   irep=%-2i  score=%6.2f hit.Pvalt=%.2g\n",hit.name,hit.fam,hit.irep,hit.score,hit.Pvalt);
-      
-      if (hit.irep<=par.hitrank || hit.score>SMIN || (hit.Pvalt<pself && hit.score>0 )) 
-	hitlist.Push(hit);      // insert hit at beginning of list (last repeats first!) and do next alignment
-      else 
-	{
-	  if (hit.irep==1) hitlist.Push(hit); // first hit will be inserted into hitlist anyway, even if not significant
-	  hit = hitlist.ReadLast(); // last alignment was not significant => read last (significant) hit from list
-	  break;
-	}
+      //fprintf (stderr,"%-12.12s  %-12.12s   irep=%-2i  score=%6.2f hit.Pvalt=%.2g\n",hit.name,hit.fam,hit.irep,hit.score,hit.Pvalt);
+
+      hitlist.Push(hit);      // insert hit at beginning of list (last repeats first!) and do next alignment
+      if (hit.irep>=par.hitrank && hit.score<=SMIN && !(hit.Pvalt<pself && hit.score>0 )) break; // last score too bad
+      if (hit.irep>=imax(par.hitrank,par.altali)) break; // max number of alignments reached
+      hit.irep++;
     } 
   Nali = hit.irep;
   
@@ -861,7 +893,7 @@ int main(int argc, char **argv)
     {
       hitlist.PrintHitList(q,par.outfile);
       hitlist.PrintAlignments(q,par.outfile);
-      if (v>=2) WriteToScreen(par.outfile,1000); //write only hit list to screen
+      if (v==2 && strcmp(par.outfile,"stdout")) WriteToScreen(par.outfile,1009); // write only hit list to screen
     }
 
 
@@ -1139,8 +1171,10 @@ int main(int argc, char **argv)
 //    }
 
   if (v>=2) 
-    if (par.hitrank==0) printf("Aligned %s with %s: Score = %-7.2f  P-value = %-7.2g\n",q.name,t.name,hit.score,hit.Pval);
-    else printf("Aligned %s with %s (rank %i): Score = %-7.2f  P-value = %-7.2g\n",q.name,t.name,par.hitrank,hit.score,hit.Pval);
+    {
+      if (par.hitrank==0) printf("Aligned %s with %s: Score = %-7.2f  P-value = %-7.2g\n",q.name,t.name,hit.score,hit.Pval);
+      else printf("Aligned %s with %s (rank %i): Score = %-7.2f  P-value = %-7.2g\n",q.name,t.name,par.hitrank,hit.score,hit.Pval);
+    }
 
 
   // Delete memory for dynamic programming matrix

@@ -70,6 +70,7 @@ HMM::HMM(int maxseqdis, int maxres)
   lamda=0.0; mu=0.0;
   name[0]=longname[0]=fam[0]='\0';
   trans_lin=0; // transition probs in log space
+  dont_delete_seqs=0;
 }
 
 
@@ -79,8 +80,11 @@ HMM::HMM(int maxseqdis, int maxres)
 HMM::~HMM()
 {
   //Delete name and seq matrices
-  for (int k=0; k<n_display; k++) delete [] sname[k];
-  for (int k=0; k<n_display; k++) delete [] seq[k];
+  if (!dont_delete_seqs) // don't delete sname and seq if flat copy to hit object has been made
+    {
+      for (int k=0; k<n_display; k++) delete [] sname[k];
+      for (int k=0; k<n_display; k++) delete [] seq[k];
+    }
   delete[] sname;
   delete[] seq;
   delete[] Neff_M;
@@ -1133,13 +1137,14 @@ void HMM::UseSecStrucDependentGapPenalties()
   // CCSTCCCHHHHHHHHHHHCCCCCEEEEECCSBGGGCCCCEECC
   // 0000000123444432100000012210000000000001000
   ii=0;
-  for (i=0; i<=L; ++i) // forward run
+  iis[L]=0;
+  for (i=0; i<L; ++i) // forward run
     {
       if (ss_dssp[i]==1 || ss_dssp[i]==2) {ii+=(ii<par.ssgapi);} else ii=0;
       iis[i]=ii;
-    }  for (i=0; i<=L; ++i)
+    }  
   ii=0;
-  iis[0]=iis[L]=0;
+  iis[0]=0;
   for (i=L; i>=0; i--) // backward run
     {
       if (ss_dssp[i]==1 || ss_dssp[i]==2) {ii+=(ii<par.ssgapi);} else ii=0;

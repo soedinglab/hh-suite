@@ -139,8 +139,8 @@ void HalfAlignment::Set(char* name, char** seq_in, char** sname_in, int n_in, in
   //DEBUG
   if (v>=5)
     {
-      printf("  i chr   m   l\n");
-      for(i=0;i<=L+1;i++) printf("%3i   %1c %3i %3i\n",i,seq[0][m[0][i]],m[0][i],l[0][i]);
+      fprintf(stderr,"  i chr   m   l\n");
+      for(i=0;i<=L+1;i++) fprintf(stderr,"%3i   %1c %3i %3i\n",i,seq[0][m[0][i]],m[0][i],l[0][i]);
       printf("\n");
     }
 }

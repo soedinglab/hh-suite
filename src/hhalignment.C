@@ -121,7 +121,7 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline)
 
   /////////////////////////////////////////////////////////////////////////
   // Read infile line by line
-  while(firstline || fgetline(line,LINELEN,inf) && k<MAXSEQ)
+  while(firstline || (fgetline(line,LINELEN,inf) && k<MAXSEQ))
     {
       linenr++;
       firstline=NULL;
@@ -799,7 +799,7 @@ int Alignment::Filter2(char keep[], int coverage, int qid, float qsc, int seqid1
    }
   
   // Determine number of residues nres[k]?
-  if (nres==NULL) 
+  if (nres==NULL || sizeof(nres)<N_in*sizeof(int))
     {
       nres=new(int[N_in]);
       for (k=0; k<N_in; k++)  // do this for ALL sequences, not only those with in[k]==1 (since in[k] may be display[k])
@@ -2034,11 +2034,12 @@ void Alignment::WriteToFile(char* alnfile, const char format[])
   FILE* alnf;
   if (!par.append) alnf = fopen(alnfile,"w"); else alnf = fopen(alnfile,"a");
   if (!alnf) OpenFileError(alnfile);
-  // If alignment name is different from that of query: write name into commentary line
-  if (strncmp(longname,sname[kfirst],DESCLEN-1)) fprintf(alnf,"#%s\n",longname);
+  
   if (!format || !strcmp(format,"a3m"))
     {
       if (v>=2) cout<<"Writing A3M alignment to "<<alnfile<<"\n";
+      // If alignment name is different from that of query: write name into commentary line
+      if (strncmp(longname,sname[kfirst],DESCLEN-1)) fprintf(alnf,"#%s\n",longname);
       for (int k=0; k<N_in; k++)
 	if (keep[k] || display[k]==2) // print if either in profile (keep[k]>0) or display obligatory (display[k]==2)
 	  fprintf(alnf,">%s\n%s\n",sname[k],seq[k]+1);

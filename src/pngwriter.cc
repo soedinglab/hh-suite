@@ -441,6 +441,7 @@ int pngwriter::read(int x, int y, int colour)
 	  }
      }
 
+   return 0; // should never get here
 }
 
 
@@ -1153,7 +1154,7 @@ void pngwriter::HSVtoRGB( double *r, double *g, double *b, double h, double s, d
 void pngwriter::RGBtoHSV( float r, float g, float b, float *h, float *s, float *v ) 
 {
    
-   float min, max, delta;
+   float min=0.0, max=0.0, delta;
    
 
    if( (r>=g)&&(r>=b) )
@@ -1273,7 +1274,8 @@ double pngwriter::dreadHSV(int x, int y, int colour)
      {
 	cerr << "PNGwriter::dreadHSV - ERROR **: Called with wrong colour argument: should be 1, 2 or 3; was: " << colour << "." << endl;   
      }
-   
+
+   return 0; // should never get here
 }
 
 
@@ -1315,6 +1317,8 @@ int pngwriter::readHSV(int x, int y, int colour)
      {
 	cerr << "PNGwriter::readHSV - ERROR **: Called with wrong colour argument: should be 1, 2 or 3; was: " << colour << "." << endl;   
      }
+
+   return 0; // should never get here
 }
 
 void pngwriter::setcompressionlevel(int level)
