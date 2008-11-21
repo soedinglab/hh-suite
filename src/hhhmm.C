@@ -71,6 +71,7 @@ HMM::HMM(int maxseqdis, int maxres)
   name[0]=longname[0]=fam[0]='\0';
   trans_lin=0; // transition probs in log space
   dont_delete_seqs=0;
+  has_pseudocounts=false;
 }
 
 
@@ -168,6 +169,7 @@ HMM& HMM::operator=(HMM& q)
 
   lamda=q.lamda;
   mu=q.mu;
+  has_pseudocounts=q.has_pseudocounts;
 
   for (int a=0; a<NAA; ++a) pav[a]=q.pav[a];
   N_in=q.N_in;
@@ -197,6 +199,7 @@ int HMM::Read(FILE* dbf, char* path)
   lamda=mu=0.0;
   trans_lin=0; // transition probs in log space
   name[0]=longname[0]=fam[0]='\0';
+  has_pseudocounts=false;
   //If at the end of while-loop L is still 0 then we have reached end of db file
 
   //Do not delete name and seq vectors because their adresses are transferred to hitlist as part of a hit!!
@@ -267,6 +270,7 @@ int HMM::Read(FILE* dbf, char* path)
 //        mu_hash.Add(key,mu);
         }
 
+      else if (!strcmp("PCT",str3)) { has_pseudocounts=true; }
       else if (!strcmp("DESC",str4)) continue;
       else if (!strcmp("COM",str3))  continue;
       else if (!strcmp("DATE",str4)) continue;
@@ -1142,7 +1146,7 @@ void HMM::UseSecStrucDependentGapPenalties()
     {
       if (ss_dssp[i]==1 || ss_dssp[i]==2) {ii+=(ii<par.ssgapi);} else ii=0;
       iis[i]=ii;
-    }  
+    }
   ii=0;
   iis[0]=0;
   for (i=L; i>=0; i--) // backward run
@@ -1204,6 +1208,23 @@ void HMM::PrepareContextSpecificPseudocounts()
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
+// Calculate amino acid background frequencies in HMM
+/////////////////////////////////////////////////////////////////////////////////////
+void HMM::CalculateAminoAcidBackground()
+{
+    int a, i;
+  // initialize vector of average aa freqs with pseudocounts
+  for (a=0; a<20; ++a) pav[a]=pb[a]*100.0f/Neff_HMM;
+  // calculate averages
+  for (i=1; i<=L; ++i)
+      for (a=0; a<20; ++a)
+          pav[a] += p[i][a];
+  // Normalize vector of average aa frequencies pav[a]
+  NormalizeTo1(pav,NAA);
+  for (a=0; a<20; ++a) p[0][a] = p[L+1][a] = pav[a];
+}
+
+/////////////////////////////////////////////////////////////////////////////////////
 // Add amino acid pseudocounts to HMM and calculate average protein aa probabilities pav[a]
 // Pseudocounts: t.p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
 /////////////////////////////////////////////////////////////////////////////////////
@@ -1214,21 +1235,19 @@ void HMM::AddAminoAcidPseudocounts(char pcm, float pca, float pcb, float pcc)
   float sum;
   float tau;           //tau = pseudocount admixture
 
-  for (a=0; a<20; ++a) pav[a]=pb[a]*100.0f/Neff_HMM; // initialize vector of average aa freqs with pseudocounts
-
   // Calculate amino acid frequencies p[i][a] = (1-tau(i))*f[i][a] + tau(i)*g[i][a]
   switch (pcm)
     {
     case 0: //no pseudocounts whatsoever: tau=0
       for (i=1; i<=L; ++i)
         for (a=0; a<20; ++a)
-          pav[a] += ( p[i][a]=f[i][a] );
+          p[i][a]=f[i][a];
       break;
     case 1: //constant pseudocounts (for optimization): tau = pca
       tau = pca;
       for (i=1; i<=L; ++i)
         for (a=0; a<20; ++a)
-          pav[a] += ( p[i][a] = (1.-tau)*f[i][a] + tau * g[i][a] );
+          p[i][a] = (1.-tau)*f[i][a] + tau * g[i][a];
       break;
     case 2: //divergence-dependent pseudocounts
     case 4: //divergence-dependent pseudocounts and rate matrix rescaling
@@ -1237,14 +1256,14 @@ void HMM::AddAminoAcidPseudocounts(char pcm, float pca, float pcb, float pcc)
           {
             tau = fmin(1.0, pca/(1. + Neff_M[i]/pcb ) );
             for (a=0; a<20; ++a)
-              pav[a] += ( p[i][a] = (1.-tau)*f[i][a] + tau * g[i][a] );
+              p[i][a] = (1.-tau)*f[i][a] + tau * g[i][a];
           }
       else
         for (i=1; i<=L; ++i)
           {
             tau = fmin(1.0, pca/(1. + pow((Neff_M[i])/pcb,pcc)));
             for (a=0; a<20; ++a)
-              pav[a] += ( p[i][a] = (1.-tau)*f[i][a] + tau * g[i][a] );
+              p[i][a] = (1.-tau)*f[i][a] + tau * g[i][a];
           }
       break;
     case 3: // constant-divergence pseudocounts
@@ -1254,18 +1273,15 @@ void HMM::AddAminoAcidPseudocounts(char pcm, float pca, float pcb, float pcc)
           pca = 0.793 + 0.048*(pcb-10.0);
           tau = fmax(0.0, pca*(1-x + pcc*x*(1-x)) );
           for (a=0; a<20; ++a)
-            pav[a] += ( p[i][a] = (1.-tau)*f[i][a] + tau * g[i][a] );
+            p[i][a] = (1.-tau)*f[i][a] + tau * g[i][a];
         }
       if (v>=2) { printf("Divergence before / after addition of amino acid pseudocounts: %5.2f / %5.2f\n",Neff_HMM, CalcNeff()); }
      break;
     } //end switch (pcm)
 
 
-  // Normalize vector of average aa frequencies pav[a]
-  NormalizeTo1(pav,NAA);
-
-  for (a=0; a<20; ++a)
-    p[0][a] = p[L+1][a] = pav[a];
+  //turn on pseudocount switch to indicate that HMM contains pseudocounts
+  if (pcm!=0) has_pseudocounts=true;
 
   // DEBUGGING output
   if (v>=3)
@@ -1446,6 +1462,7 @@ void HMM::WriteToFile(char* outfile)
   fprintf(outf,"LENG  %i match states, %i columns in multiple alignment\n",L,l[L]);
   fprintf(outf,"FILT  %i out of %i sequences passed filter (-id %i -cov %i -qid %i -qsc %.2f -diff %i)\n",N_filtered,N_in,par.max_seqid,par.coverage,par.qid,par.qsc,par.Ndiff);
   fprintf(outf,"NEFF  %-4.1f\n",Neff_HMM);
+  if (has_pseudocounts) { fprintf(outf,"PCT   true\n"); }
 
   // Print selected sequences from alignment (including secondary structure and confidence values, if known)
   fprintf(outf,"SEQ\n");

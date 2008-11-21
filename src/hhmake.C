@@ -209,6 +209,14 @@ void ProcessArguments(int argc,char** argv)
       else if (!strcmp(argv[i],"-gaph") && (i<argc-1)) par.gaph=atof(argv[++i]);
       else if (!strcmp(argv[i],"-gapi") && (i<argc-1)) par.gapi=atof(argv[++i]);
       else if (!strcmp(argv[i],"-def")) par.readdefaultsfile=1;
+      else if (!strcmp(argv[i],"-csb") && (i<argc-1)) par.csb=atof(argv[++i]);
+      else if (!strcmp(argv[i],"-csw") && (i<argc-1)) par.csw=atof(argv[++i]);
+      else if (!strcmp(argv[i],"-cs"))
+        {
+          if (++i>=argc || argv[i][0]=='-')
+            {help() ; cerr<<endl<<"Error in "<<program_name<<": no query file following -cs\n"; exit(4);}
+          else strcpy(par.clusterfile,argv[i]);
+        }
 
       else cerr<<endl<<"WARNING: Ignoring unknown option "<<argv[i]<<" ...\n";
       if (v>=4) cout<<i<<"  "<<argv[i]<<endl; //PRINT
@@ -229,6 +237,7 @@ int main(int argc, char **argv)
   strcpy(par.alnfile,"");
 
   //Default parameter settings
+  SetDefaults();
   par.showcons=1;              // write consensus sequence into hhm file
   par.append=0;                // overwrite output file
   par.nseqdis=10;              // maximum number of query or template sequences to be recoreded in HMM and diplayed in output alignments
@@ -248,7 +257,6 @@ int main(int argc, char **argv)
   par.pcw=0;                   // wc>0 weighs columns according to their intra-clomun similarity
   par.gapb=0.0;                // default values for transition pseudocounts; 0.0: add no transition pseudocounts!
   par.wg=0;                    // 0: use local sequence weights   1: use local ones
-
 
   // Make command line input globally available
   par.argv=argv;

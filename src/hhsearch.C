@@ -630,7 +630,7 @@ void AlignByWorker(int bin)
       if (par.forward==0)
         {
           hit[bin]->Viterbi(q,*(t[bin]));
-	  if (hit[bin]->irep>1 && hit[bin]->score <= SMIN) break;
+          if (hit[bin]->irep>1 && hit[bin]->score <= SMIN) break;
           hit[bin]->Backtrace(q,*(t[bin]));
         }
       else if (par.forward==1)
@@ -692,19 +692,19 @@ void RealignByWorker(int bin)
       if (hit_cur.index==hit[bin]->index) // found position with correct template
         {
           //      fprintf(stderr,"  t->name=%s   hit_cur.irep=%i  hit[bin]->irep=%i  nhits=%i\n",t[bin]->name,hit_cur.irep,hit[bin]->irep,nhits);
-	  pos = hitlist.GetPos();
+          pos = hitlist.GetPos();
 #ifdef PTHREAD
-	  pthread_mutex_unlock(&hitlist_mutex); // unlock access to hitlist
+          pthread_mutex_unlock(&hitlist_mutex); // unlock access to hitlist
 #endif
-	  // Align q to template in *hit[bin]
-	  hit[bin]->Forward(q,*(t[bin]));
-	  hit[bin]->Backward(q,*(t[bin]));
-	  hit[bin]->MACAlignment(q,*(t[bin]));
-	  hit[bin]->BacktraceMAC(q,*(t[bin]));
+          // Align q to template in *hit[bin]
+          hit[bin]->Forward(q,*(t[bin]));
+          hit[bin]->Backward(q,*(t[bin]));
+          hit[bin]->MACAlignment(q,*(t[bin]));
+          hit[bin]->BacktraceMAC(q,*(t[bin]));
 #ifdef PTHREAD
-	  pthread_mutex_lock(&hitlist_mutex);   // lock access to hitlist
+          pthread_mutex_lock(&hitlist_mutex);   // lock access to hitlist
 #endif
-	  hit_cur = hitlist.Read(pos);
+          hit_cur = hitlist.Read(pos);
 
           // Overwrite *hit[bin] with Viterbi scores, Probabilities etc. of hit_cur
           hit[bin]->score      = hit_cur.score;
@@ -722,7 +722,7 @@ void RealignByWorker(int bin)
 
           // Replace original hit in hitlist with realigned hit
           //hitlist.ReadCurrent().Delete();
-	  hitlist.Delete().Delete();                // delete list record and hit object
+          hitlist.Delete().Delete();                // delete list record and hit object
           hitlist.Insert(*hit[bin]);
           hit[bin]->irep++;
         }
@@ -1486,7 +1486,7 @@ int main(int argc, char **argv)
 
               // Replace original hit in hitlist with realigned hit
               //hitlist.ReadCurrent().Delete();
-	      hitlist.Delete().Delete();               // delete the list record and hit object
+              hitlist.Delete().Delete();               // delete the list record and hit object
               hitlist.Insert(*hit[bin]);
 
               // Read a3m alignment of hit and merge with Qali according to Q-T-alignment in hit[bin]
@@ -1505,6 +1505,7 @@ int main(int argc, char **argv)
 
               // Add amino acid pseudocounts to query (necessary to copy f[i][a] to p[i][a])
               q.AddAminoAcidPseudocounts(0, 0.0, 0.0, 1.0);
+              q.CalculateAminoAcidBackground();
 
               // Transform transition freqs to lin space if not already done
               q.Log2LinTransitionProbs(1.0); // transform transition freqs to lin space if not already done
@@ -1712,8 +1713,8 @@ int main(int argc, char **argv)
 
       // Print for each HMM: n  score  -log2(Pval)  L  name  (n=5:same name 4:same fam 3:same sf...)
       if (*par.scorefile) {
-	if (v>=3) printf("Printing scores file ...\n"); 
-	hitlist.PrintScoreFile(q);
+        if (v>=3) printf("Printing scores file ...\n");
+        hitlist.PrintScoreFile(q);
       }
 
       // Delete all hitlist entries with too short alignments
@@ -1730,7 +1731,7 @@ int main(int argc, char **argv)
             {
               if (v>=3) printf("Deleting alignment of %s with length %i\n",hit_cur.name,hit_cur.matched_cols);
               //hitlist.ReadCurrent().Delete();
-	      hitlist.Delete().Delete();               // delete the list record and hit object
+              hitlist.Delete().Delete();               // delete the list record and hit object
               // Make sure only realigned alignments get displayed!
               if (par.B>par.Z) par.B--; else if (par.B==par.Z) {par.B--; par.Z--;} else par.Z--;
               if (par.b>par.z) par.b--; else if (par.b==par.z) {par.b--; par.z--;} else par.z--;
@@ -1743,13 +1744,13 @@ int main(int argc, char **argv)
       while (!realign->End())
         delete(realign->ReadNext()); // delete List<Posindex> to which realign->ReadNext() points
       delete(realign);
-      // End Realign all hits with MAC algorithm? 
+      // End Realign all hits with MAC algorithm?
       ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     } else {
-    
+
     // Print for each HMM: n  score  -log2(Pval)  L  name  (n=5:same name 4:same fam 3:same sf...)
     if (*par.scorefile) {
-      if (v>=3) printf("Printing scores file ...\n"); 
+      if (v>=3) printf("Printing scores file ...\n");
       hitlist.PrintScoreFile(q);
     }
   }
@@ -1850,6 +1851,7 @@ int main(int argc, char **argv)
 
           // Add amino acid pseudocounts to query (necessary to copy f[i][a] to p[i][a])
           Q.AddAminoAcidPseudocounts(0, 0.0, 0.0, 1.0);
+          Q.CalculateAminoAcidBackground();
 
           // Write HMM to output file in HHsearch format?
           Q.WriteToFile(par.hhmfile);
