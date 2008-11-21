@@ -1319,7 +1319,7 @@ int main(int argc, char **argv)
           if (hit_cur.L<=Lmaxmem)
             {
 //            fprintf(stderr,"hit.name=%-15.15s  hit.index=%-5i hit.ftellpos=%-8i  hit.dbfile=%s\n",hit_cur.name,hit_cur.index,(unsigned int)hit_cur.ftellpos,hit_cur.dbfile);
-              if (nhits>=par.jdummy) // realign the first jdummy hits consecutively to query profile
+              if (nhits>=par.jdummy || hit_cur.irep>1) // realign the first jdummy hits consecutively to query profile
                 {
                   Posindex posindex;
                   posindex.ftellpos = hit_cur.ftellpos;
@@ -1359,6 +1359,9 @@ int main(int argc, char **argv)
         }
 
 
+      if (v>=1) printf("Realigning %i query-template alignments with maximum accuracy (MAC) algorithm ...\n",nhits);
+      if (v<=3) v=1; else v-=1;  // Supress verbose output during iterative realignment and realignment
+
       // Align the first par.jdummy templates?
       if (par.jdummy>0)
         {
@@ -1392,6 +1395,8 @@ int main(int argc, char **argv)
               if (nhits>=imax(par.b,par.z) && hit_cur.Eval > par.E) continue;
               nhits++;
 
+              if (hit_cur.irep>1) continue;  // Align only the best hit of the first par.jdummy templates
+
               // Open HMM database file dbfiles[idb]
               FILE* dbf=fopen(hit_cur.dbfile,"rb");
               if (!dbf) OpenFileError(hit_cur.dbfile);
@@ -1403,6 +1408,7 @@ int main(int argc, char **argv)
               fseek(dbf,hit_cur.ftellpos,SEEK_SET);
               hit[bin]->dbfile = new(char[strlen(hit_cur.dbfile)+1]);
               strcpy(hit[bin]->dbfile,hit_cur.dbfile); // record db file name from which next HMM is read
+              hit[bin]->irep = 1;  // Needed for min_overlap calculation in InitializeForAlignment in hhhit.C
 
               char path[NAMELEN];
               Pathname(path,hit_cur.dbfile);
@@ -1483,6 +1489,7 @@ int main(int argc, char **argv)
               hit[bin]->logEval    = hit_cur.logEval;
               hit[bin]->E1val      = hit_cur.E1val;
               hit[bin]->Probab     = hit_cur.Probab;
+              hit[bin]->irep       = hit_cur.irep;
 
               // Replace original hit in hitlist with realigned hit
               //hitlist.ReadCurrent().Delete();
@@ -1503,8 +1510,16 @@ int main(int argc, char **argv)
               // Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
               Qali.FrequenciesAndTransitions(q);
 
-              // Add amino acid pseudocounts to query (necessary to copy f[i][a] to p[i][a])
-              q.AddAminoAcidPseudocounts(0, 0.0, 0.0, 1.0);
+              if (!*par.clusterfile) { //compute context-specific pseudocounts?
+                // Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
+                q.PreparePseudocounts();
+              } else {
+                // Generate an amino acid frequency matrix from f[i][a] with full context specific pseudocount admixture (tau=1) -> g[i][a]
+                q.PrepareContextSpecificPseudocounts();
+              }
+
+              // Add amino acid pseudocounts to query: p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
+              q.AddAminoAcidPseudocounts();
               q.CalculateAminoAcidBackground();
 
               // Transform transition freqs to lin space if not already done
@@ -1512,9 +1527,6 @@ int main(int argc, char **argv)
               nhits++;
             }
         }
-
-      if (v>=1) printf("Realigning %i query-template alignments with maximum accuracy (MAC) algorithm ...\n",nhits);
-      if (v<=3) v=1; else v-=1;
 
 #ifdef PTHREAD
       // Start threads for realignment
@@ -1849,7 +1861,7 @@ int main(int argc, char **argv)
           // Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
           Qali.FrequenciesAndTransitions(Q);
 
-          // Add amino acid pseudocounts to query (necessary to copy f[i][a] to p[i][a])
+          // Add *no* amino acid pseudocounts to query. This is necessary to copy f[i][a] to p[i][a]
           Q.AddAminoAcidPseudocounts(0, 0.0, 0.0, 1.0);
           Q.CalculateAminoAcidBackground();
 
