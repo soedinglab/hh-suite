@@ -29,5 +29,5 @@ hhconsensus: hhconsensus.C $(SOURCES) $(HEADERS)
 	     $(CPP) hhconsensus.C -o ../bin/hhconsensus
 
 clean: 	
-	-rm -f *.o
-	-rm -f ../bin/$(TARGETS) hhsearch_valgrind
+	-rm -f *.o 
+	-rm -f ../bin/*

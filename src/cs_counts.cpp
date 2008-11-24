@@ -92,7 +92,7 @@ void CSCounts::prepare_pseudocounts(HMM& q) throw (std::exception)
             for(size_t l=beg; l<=end; ++l) {
                 size_t j = l-i+center;
 
-                double sum = f[l] + neffi[l]; // + neffi[l] to keep log_pki within range of -127 to +127
+                double sum = f[l] + 2.0*neffi[l]; // 2.0*neffi[l] to keep log_pki within range of -127 to +127
                 sum += neffi[l]*pq[l][0]*log_pk[j][0];
                 sum += neffi[l]*pq[l][1]*log_pk[j][1];
                 sum += neffi[l]*pq[l][2]*log_pk[j][2];
@@ -118,27 +118,34 @@ void CSCounts::prepare_pseudocounts(HMM& q) throw (std::exception)
 
 //            if (log_pki>127) std::cerr << "log_pki=" << log_pki << std::endl;
 
-            assert(log_pki<=127);
-            pc[i][0]  += fast_pow2(1.442695041 * (log_pki + log_pk[center][0]));
-            pc[i][1]  += fast_pow2(1.442695041 * (log_pki + log_pk[center][1]));
-            pc[i][2]  += fast_pow2(1.442695041 * (log_pki + log_pk[center][2]));
-            pc[i][3]  += fast_pow2(1.442695041 * (log_pki + log_pk[center][3]));
-            pc[i][4]  += fast_pow2(1.442695041 * (log_pki + log_pk[center][4]));
-            pc[i][5]  += fast_pow2(1.442695041 * (log_pki + log_pk[center][5]));
-            pc[i][6]  += fast_pow2(1.442695041 * (log_pki + log_pk[center][6]));
-            pc[i][7]  += fast_pow2(1.442695041 * (log_pki + log_pk[center][7]));
-            pc[i][8]  += fast_pow2(1.442695041 * (log_pki + log_pk[center][8]));
-            pc[i][9]  += fast_pow2(1.442695041 * (log_pki + log_pk[center][9]));
-            pc[i][10] += fast_pow2(1.442695041 * (log_pki + log_pk[center][10]));
-            pc[i][11] += fast_pow2(1.442695041 * (log_pki + log_pk[center][11]));
-            pc[i][12] += fast_pow2(1.442695041 * (log_pki + log_pk[center][12]));
-            pc[i][13] += fast_pow2(1.442695041 * (log_pki + log_pk[center][13]));
-            pc[i][14] += fast_pow2(1.442695041 * (log_pki + log_pk[center][14]));
-            pc[i][15] += fast_pow2(1.442695041 * (log_pki + log_pk[center][15]));
-            pc[i][16] += fast_pow2(1.442695041 * (log_pki + log_pk[center][16]));
-            pc[i][17] += fast_pow2(1.442695041 * (log_pki + log_pk[center][17]));
-            pc[i][18] += fast_pow2(1.442695041 * (log_pki + log_pk[center][18]));
-            pc[i][19] += fast_pow2(1.442695041 * (log_pki + log_pk[center][19]));
+            for(int a=0; a<NAA; ++a) {
+                float tmp = 1.442695041 * (log_pki + log_pk[center][a]);
+                if (tmp<=127)
+                    pc[i][a] += fast_pow2(tmp);
+                else
+                    pc[i][a] += exp(log_pki + log_pk[center][a]);
+            }
+
+//             pc[i][0]  += fast_pow2(1.442695041 * (log_pki + log_pk[center][0]));
+//             pc[i][1]  += fast_pow2(1.442695041 * (log_pki + log_pk[center][1]));
+//             pc[i][2]  += fast_pow2(1.442695041 * (log_pki + log_pk[center][2]));
+//             pc[i][3]  += fast_pow2(1.442695041 * (log_pki + log_pk[center][3]));
+//             pc[i][4]  += fast_pow2(1.442695041 * (log_pki + log_pk[center][4]));
+//             pc[i][5]  += fast_pow2(1.442695041 * (log_pki + log_pk[center][5]));
+//             pc[i][6]  += fast_pow2(1.442695041 * (log_pki + log_pk[center][6]));
+//             pc[i][7]  += fast_pow2(1.442695041 * (log_pki + log_pk[center][7]));
+//             pc[i][8]  += fast_pow2(1.442695041 * (log_pki + log_pk[center][8]));
+//             pc[i][9]  += fast_pow2(1.442695041 * (log_pki + log_pk[center][9]));
+//             pc[i][10] += fast_pow2(1.442695041 * (log_pki + log_pk[center][10]));
+//             pc[i][11] += fast_pow2(1.442695041 * (log_pki + log_pk[center][11]));
+//             pc[i][12] += fast_pow2(1.442695041 * (log_pki + log_pk[center][12]));
+//             pc[i][13] += fast_pow2(1.442695041 * (log_pki + log_pk[center][13]));
+//             pc[i][14] += fast_pow2(1.442695041 * (log_pki + log_pk[center][14]));
+//             pc[i][15] += fast_pow2(1.442695041 * (log_pki + log_pk[center][15]));
+//             pc[i][16] += fast_pow2(1.442695041 * (log_pki + log_pk[center][16]));
+//             pc[i][17] += fast_pow2(1.442695041 * (log_pki + log_pk[center][17]));
+//             pc[i][18] += fast_pow2(1.442695041 * (log_pki + log_pk[center][18]));
+//             pc[i][19] += fast_pow2(1.442695041 * (log_pki + log_pk[center][19]));
         }
     }
 
