@@ -70,7 +70,7 @@ static int iminarg1,iminarg2;
 #define IMIN(a,b) (iminarg1=(a),iminarg2=(b),(iminarg1) < (iminarg2) ? (iminarg1) : (iminarg2)) 
 #define SIGN(a,b) ((b) >= 0.0 ? fabs(a) : -fabs(a)) 
 
-/* Given a matrix a[0..m-1][0..n-1], this routine computes its singular value decomposition, A = U · W · V^t . 
+/* Given a matrix a[0..m-1][0..n-1], this routine computes its singular value decomposition, A = U Â· W Â· V^t . 
    The matrix U replaces a on output. The diagonal matrix of singular values W is out-put as a vector w[0..n-1]. 
    The matrix V (not the transpose V^t) is output as v[0..n-1][0..n-1] . */
 void SVD(float **a, int m, int n, float w[], float **v)
@@ -609,7 +609,7 @@ float PdbFile::MinimizeRMSD(PdbFile& pdb1, PdbFile& pdb2, int* i, int* j, int nu
 	printf("%6.2f  %6.2f  %6.2f  \n",U[a][0],U[a][1],U[a][2]);
     }
   // Do SVD of C: C = U W V^t
-  /* Given a matrix a[0..m-1][0..n-1], this routine computes its singular value decomposition, A = U · W · V^t . 
+  /* Given a matrix a[0..m-1][0..n-1], this routine computes its singular value decomposition, A = U Â· W Â· V^t . 
      The matrix U replaces a on output. The diagonal matrix of singular values W is output as a vector w[0..n-1]. 
      The matrix V (not the transpose V^t) is output as v[0..n-1][0..n-1] . */
   SVD(U,3,3,W,V);

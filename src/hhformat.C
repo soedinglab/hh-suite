@@ -774,7 +774,7 @@ static int iminarg1,iminarg2;
 // On a 400x400 matrix it runs in 1.6 s or 2.3 times faster than the original (n x m) version.
 // On a 4993x4993 matrix it runs in 2h03 or 4.5 times faster than the original (n x m) version.
 
-// Given a matrix a[0..n-1][0..n-1], this routine computes its singular value decomposition, A = U · W · V^t . 
+// Given a matrix a[0..n-1][0..n-1], this routine computes its singular value decomposition, A = U Â· W Â· V^t . 
 // The matrix U replaces a on output. The diagonal matrix of singular values W is out-put as a vector w[0..n-1]. 
 // The matrix V (not the transpose V^t) is output as V[0..n-1][0..n-1] ./
 void SVD(double **A, int n, double w[], double **V)

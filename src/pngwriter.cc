@@ -10,7 +10,7 @@
 //                             then be opened with a graphics program.
 //  
 //  License:                   GNU General Public License
-//                             © 2002, 2003 Paul Blackburn
+//                             Â© 2002, 2003 Paul Blackburn
 //                             
 //  Website: Main:             http://pngwriter.sourceforge.net/
 //           Sourceforge.net:  http://sourceforge.net/projects/pngwriter/
