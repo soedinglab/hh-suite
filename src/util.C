@@ -140,7 +140,7 @@ inline float fast_log_gamma(float x)
 inline float fpow2(float x)
 {
     if (x>=128) return FLT_MAX;
-    if (x<=-128) return FLT_MIN;
+    if (x<=-128) return 0.0f;
     int *px = (int*)(&x);                 // store address of float as pointer to long
     float tx = (x-0.5f) + (3<<22);        // temporary value for truncation: x-0.5 is added to a large integer (3<<22)
     int lx = *((int*)&tx) - 0x4b400000;   // integer value of x

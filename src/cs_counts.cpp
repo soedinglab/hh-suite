@@ -92,7 +92,7 @@ void CSCounts::prepare_pseudocounts(HMM& q) throw (std::exception)
             for(size_t l=beg; l<=end; ++l) {
                 size_t j = l-i+center;
 
-                double sum = f[l] + 1.5*neffi[l]; // 1.5 to keep log_pki within range of -127 to +127
+                double sum = f[l] + neffi[l]; // + neffi[l] to keep log_pki within range of -127 to +127
                 sum += neffi[l]*pq[l][0]*log_pk[j][0];
                 sum += neffi[l]*pq[l][1]*log_pk[j][1];
                 sum += neffi[l]*pq[l][2]*log_pk[j][2];
@@ -116,10 +116,7 @@ void CSCounts::prepare_pseudocounts(HMM& q) throw (std::exception)
                 log_pki += w[j] * sum;
             }
 
-//             if (log_pki>127) {
-//                 std::cerr << "log_pki=" << log_pki << std::endl;
-//                 for(int a=0; a<NAA; ++a) std::cerr << 1.442695041 * (log_pki + log_pk[center][a]) << std::endl;
-//             }
+//            if (log_pki>127) std::cerr << "log_pki=" << log_pki << std::endl;
 
             assert(log_pki<=127);
             pc[i][0]  += fast_pow2(1.442695041 * (log_pki + log_pk[center][0]));
@@ -148,7 +145,11 @@ void CSCounts::prepare_pseudocounts(HMM& q) throw (std::exception)
     //add pseudocounts to profile
     for(size_t i=1; i<=static_cast<size_t>(q.L); ++i) {
         normalize_to_one(pc[i], NAA);
-        for(int a=0; a<NAA; ++a) q.g[i][a]=pc[i][a];
+        for(int a=0; a<NAA; ++a) {
+            assert(pc[i][a]>0);
+            q.g[i][a]=pc[i][a];
+        }
+
     }
 
     //free memory
