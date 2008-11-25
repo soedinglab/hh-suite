@@ -1396,6 +1396,7 @@ int main(int argc, char **argv)
               nhits++;
 
               if (hit_cur.irep>1) continue;  // Align only the best hit of the first par.jdummy templates
+	      if (hit_cur.L>Lmaxmem) continue;  //Don't align to long sequences due to memory limit
 
               // Open HMM database file dbfiles[idb]
               FILE* dbf=fopen(hit_cur.dbfile,"rb");
