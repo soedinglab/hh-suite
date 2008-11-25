@@ -288,9 +288,12 @@ int main(int argc, char **argv)
 	} 
       else
 	outf = stdout;
-      // ">name_consensus" -> ">name consensus"
-      strsubst(q.sname[q.nfirst],"_consensus"," consensus");
-      fprintf(outf,">%s\n%s\n",q.sname[q.nfirst],q.seq[q.nfirst]+1); 
+      // OLD
+      //// ">name_consensus" -> ">name consensus"
+      //strsubst(q.sname[q.nfirst],"_consensus"," consensus");
+      //fprintf(outf,">%s\n%s\n",q.sname[q.nfirst],q.seq[q.nfirst]+1); 
+      // NEW (long header needed for NR30cons database)
+      fprintf(outf,">%s\n%s\n",q.longname,q.seq[q.nfirst]+1);
       fclose(outf);
     }
 
