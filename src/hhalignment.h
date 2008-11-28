@@ -86,5 +86,6 @@ private:
   int* last;              // last  residue in sequence k
   int* ksort;             // index for sorting sequences: X[ksort[k]]
   int FilterWithCoreHMM(char in[], float coresc, HMM& qcore);
-
+  
+  char readCommentLine;   // Set to 1, if a comment line with '#' is read
 };

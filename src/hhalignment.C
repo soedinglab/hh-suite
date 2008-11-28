@@ -62,6 +62,7 @@ Alignment::Alignment(int maxseq, int maxres)
   longname[0]='\0';    // no name defined yet
   fam[0]='\0';         // no name defined yet
   file[0]='\0';        // no name defined yet
+  readCommentLine = '0';
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -206,6 +207,7 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline)
 //        if (!strncmp(fam,"PF",2)) strcut_(fam,'.'); // if PFAM identifier contains '.' cut it off
 //        strcut_(ptr2);       // cut after first word ...
           strcpy(name,ptr1);   // ... and copy first word into name
+	  readCommentLine = '1';
         }
 
       //line contains sequence residues or SS information and does not belong to a >aa_ sequence
@@ -2040,7 +2042,7 @@ void Alignment::WriteToFile(char* alnfile, const char format[])
     {
       if (v>=2) cout<<"Writing A3M alignment to "<<alnfile<<"\n";
       // If alignment name is different from that of query: write name into commentary line
-      if (strncmp(longname,sname[kfirst],DESCLEN-1)) fprintf(alnf,"#%s\n",longname);
+      if (strncmp(longname,sname[kfirst],DESCLEN-1) || readCommentLine == '1') fprintf(alnf,"#%s\n",longname);
       for (int k=0; k<N_in; k++)
         if (keep[k] || display[k]==2) // print if either in profile (keep[k]>0) or display obligatory (display[k]==2)
           fprintf(alnf,">%s\n%s\n",sname[k],seq[k]+1);
