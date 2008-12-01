@@ -1400,6 +1400,7 @@ void Alignment::FrequenciesAndTransitions(HMM& q, char* in)
         }
     }
   q.trans_lin=0;
+  q.has_pseudocounts=false;
   return;
 }
 
