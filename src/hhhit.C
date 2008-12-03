@@ -522,8 +522,6 @@ void Hit::Forward(HMM& q, HMM& t, float** Pstruc)
   // Forward algorithm
   for (i=2; i<=q.L; i++) // Loop through query positions i
     {
-//       if (v>=5) printf("\n");
-      
       if (self) jmin = imin(i+SELFEXCL+1,t.L); else jmin=1;
       
       if (scale_prod<DBL_MIN*100) scale_prod = 0.0; else scale_prod *= scale[i];
@@ -543,7 +541,6 @@ void Hit::Forward(HMM& q, HMM& t, float** Pstruc)
       for (j=jmin+1; j<=t.L; j++) // Loop through template positions j
 	{
 	  // Recursion relations
-	  //	      printf("S[%i][%i]=%4.1f  ",i,j,Score(q.p[i],t.p[j]));
 
 	  if (cell_off[i][j]) 
 	    F_MM[i][j] = F_MI[i][j] = F_DG[i][j] = F_IM[i][j] = F_GD[i][j] = 0.0;

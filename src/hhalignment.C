@@ -1481,7 +1481,7 @@ void Alignment::Amino_acid_frequencies_and_transitions_from_M_state(HMM& q, char
             {
               // Initialize weights and numbers of residues for subalignment i
               ncol=0;
-              for (k=0; k<N_in; k++) wi[k]=0.0;
+              for (k=0; k<N_in; k++) wi[k]=1E-8; // for pathological alignments all wi[k] can get 0;
 
               // sum wi[k] over all columns j and sequences k of subalignment
               for (j=1; j<=L; j++)
@@ -1697,7 +1697,7 @@ void Alignment::Transitions_from_I_state(HMM& q, char* in)
             {
               // Initialize weights and numbers of residues for subalignment i
               ncol=0;
-              for (k=0; k<N_in; k++) wi[k]=0.0;
+              for (k=0; k<N_in; k++) wi[k]=1E-8; // for pathological alignments all wi[k] can get 0;
 
               // sum wi[k] over all columns j and sequences k of subalignment
               for (j=1; j<=L; j++)
@@ -1711,7 +1711,7 @@ void Alignment::Transitions_from_I_state(HMM& q, char* in)
                       if (in[k] && I[k][i]>0 && X[k][j]<ANY)
                         {
                           if (!n[j][ (int)X[k][j]]) {fprintf(stderr,"Error: Ii=%i: n[%i][X[%i]]=0! (X[%i]=%i)\n",i,j,k,k,X[k][j]);}
-                          wi[k]+=1.0/float(n[j][ (int)X[k][j] ]*naa);
+			  wi[k]+=1.0/float(n[j][ (int)X[k][j] ]*naa);
                         }
                     }
                 }
@@ -1891,7 +1891,7 @@ void Alignment::Transitions_from_D_state(HMM& q, char* in)
             {
               // Initialize weights and numbers of residues for subalignment i
               ncol=0;
-              for (k=0; k<N_in; k++) wi[k]=0.0;
+              for (k=0; k<N_in; k++) wi[k]=1E-8; // for pathological alignments all wi[k] can get 0;
 
               // sum wg[k][i] over all columns j and sequences k of subalignment
               for (j=1; j<=L; j++)

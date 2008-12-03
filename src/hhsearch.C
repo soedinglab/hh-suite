@@ -1524,6 +1524,7 @@ int main(int argc, char **argv)
               q.CalculateAminoAcidBackground();
 
               // Transform transition freqs to lin space if not already done
+	      q.AddTransitionPseudocounts();
               q.Log2LinTransitionProbs(1.0); // transform transition freqs to lin space if not already done
               nhits++;
             }
