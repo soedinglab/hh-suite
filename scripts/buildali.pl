@@ -1307,12 +1307,17 @@ sub UpdateDBLinks()
     $db90 = $dbbase."90";  
     $db70 = $dbbase."70";  
     $db   = $dbbase;  
+    $db =~ /^(\S+)\/\S+?$/;
+    my $base = $1;
     if    (-l $db90  && defined readlink($db90)) {$db90=readlink($db90);}
     elsif (-l "$db90.pal"  && defined readlink("$db90.pal")) {$db90=readlink("$db90.pal"); $db90=~s/\.pal$//;}
     if    (-l $db70 && defined readlink($db70)) {$db70=readlink($db70);}
     elsif (-l "$db70.pal"  && defined readlink("$db70.pal")) {$db70=readlink("$db70.pal"); $db70=~s/\.pal$//;}
     if    (-l $db  && defined readlink($db))  {$db =readlink($db);}
     elsif (-l "$db.pal"  && defined readlink("$db.pal")) {$db=readlink("$db.pal"); $db=~s/\.pal$//;}
+    if ($db !~ /^\//) { $db = "$base/$db"; }
+    if ($db70 !~ /^\//) { $db70 = "$base/$db70"; }
+    if ($db90 !~ /^\//)	{ $db90 = "$base/$db90"; }
 }
 
 
