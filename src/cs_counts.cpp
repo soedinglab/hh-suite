@@ -92,7 +92,7 @@ void CSCounts::prepare_pseudocounts(HMM& q) throw (std::exception)
             for(size_t l=beg; l<=end; ++l) {
                 size_t j = l-i+center;
 
-                double sum = f[l] + 3.0*neffi[l]; // 3.0*neffi[l] to keep log_pki within range of -127 to +127
+                double sum = f[l] + 2.0*neffi[l]; // 2.0*neffi[l] to keep log_pki within range of -127 to +127
                 sum += neffi[l]*pq[l][0]*log_pk[j][0];
                 sum += neffi[l]*pq[l][1]*log_pk[j][1];
                 sum += neffi[l]*pq[l][2]*log_pk[j][2];
