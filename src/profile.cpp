@@ -10,21 +10,21 @@ Profile::Profile() throw (std::exception):
     NAA_ANY(21),
     ANY(20),
     GAP(21),
-    aa2i(NULL),
-    i2aa(NULL),
-    al2i(NULL),
-    al2aa(NULL),
-    p_cond(NULL),
-    p_background(NULL),
-    p(NULL),
+    aa2i(0),
+    i2aa(0),
+    al2i(0),
+    al2aa(0),
+    p_cond(0),
+    p_background(0),
+    p(0),
     len(0),
     index(0),
     center(0),
     name(),
     file(),
     date(),
-    seq(NULL),
-    neffi(NULL),
+    seq(0),
+    neffi(0),
     neff(0.0)
 {
 }
@@ -41,16 +41,16 @@ Profile::Profile( AminoAcid* aa, Matrix* m ) throw (std::exception):
     al2aa(aa->get_al2aa()),
     p_cond(m->get_p_cond()),
     p_background(m->get_p_back()),
-    p(NULL),
-    logp(NULL),
+    p(0),
+    logp(0),
     len(0),
     index(0),
     center(0),
     name(),
     file(),
     date(),
-    seq(NULL),
-    neffi(NULL),
+    seq(0),
+    neffi(0),
     neff(0.0)
 {
 }
@@ -67,16 +67,16 @@ Profile::Profile( size_t l, AminoAcid* aa, Matrix* m ) throw (std::exception):
     al2aa(aa->get_al2aa()),
     p_cond(m->get_p_cond()),
     p_background(m->get_p_back()),
-    p(NULL),
-    logp(NULL),
+    p(0),
+    logp(0),
     len(l),
     index(0),
     center(len%2==1 ? (len-1)/2 : 0),
     name(),
     file(),
     date(),
-    seq(NULL),
-    neffi(NULL),
+    seq(0),
+    neffi(0),
     neff(0.0)
 {
     init();
@@ -95,16 +95,16 @@ Profile::Profile( std::istream& in,
     al2aa(aa->get_al2aa()),
     p_cond(m->get_p_cond()),
     p_background(m->get_p_back()),
-    p(NULL),
-    logp(NULL),
+    p(0),
+    logp(0),
     len(0),
     index(0),
     center(0),
     name(),
     file(),
     date(),
-    seq(NULL),
-    neffi(NULL),
+    seq(0),
+    neffi(0),
     neff(0.0)
 {
     read(in);
@@ -124,16 +124,16 @@ Profile::Profile( const Sequence& sequence,
     al2aa(aa->get_al2aa()),
     p_cond(m->get_p_cond()),
     p_background(m->get_p_back()),
-    p(NULL),
-    logp(NULL),
+    p(0),
+    logp(0),
     len(sequence.length()),
     index(0),
     center(sequence.length()%2==1 ? (sequence.length()-1)/2 : 0),
     name(sequence.get_header()),
     file(),
     date(),
-    seq(NULL),
-    neffi(NULL),
+    seq(0),
+    neffi(0),
     neff(0.0)
 {
     init();
@@ -170,16 +170,23 @@ Profile::~Profile() { free_memory(); }
 
 void Profile::free_memory()
 {
-    if (seq!=NULL) delete [] seq;
-    if (p!=NULL) {
+    if (p) {
         for(size_t i=0; i<len; ++i) delete [] p[i];
         delete [] p;
     }
-    if (logp!=NULL) {
+    if (logp) {
         for(size_t i=0; i<len; ++i) delete [] logp[i];
         delete [] logp;
     }
-    if (neffi!=NULL) delete [] neffi;
+    if (neffi)
+        delete [] neffi;
+    if (seq)
+        delete [] seq;
+
+    p     = 0;
+    logp  = 0;
+    neffi = 0;
+    seq   = 0;
 }
 
 Profile& Profile::operator=(const Profile& rhs)
@@ -242,32 +249,23 @@ void Profile::copy_internals(const Profile& rhs) throw (std::exception)
     seq = new char[rhs.len];
     for(size_t i=0; i<len; ++i) seq[i]=rhs.seq[i];
 
-    if (rhs.p!=NULL) {
-        p = new float*[rhs.len];
-        for(size_t i=0; i<rhs.len; ++i) {
-            p[i] = new float[rhs.NAA_ANY];
-            for(int a=0; a<rhs.NAA_ANY; ++a)
+    p = new float*[rhs.len];
+    for(size_t i=0; i<rhs.len; ++i) {
+        p[i] = new float[rhs.NAA_ANY];
+        for(int a=0; a<rhs.NAA_ANY; ++a)
             p[i][a] = rhs.p[i][a];
-        }
-    } else
-        p = NULL;
+    }
 
-    if (rhs.logp!=NULL) {
-        logp = new float*[rhs.len];
-        for(size_t i=0; i<rhs.len; ++i) {
-            logp[i] = new float[rhs.NAA_ANY];
-            for(int a=0; a<rhs.NAA_ANY; ++a)
-                logp[i][a] = rhs.logp[i][a];
-        }
-    } else
-        logp = NULL;
+    logp = new float*[rhs.len];
+    for(size_t i=0; i<rhs.len; ++i) {
+        logp[i] = new float[rhs.NAA_ANY];
+        for(int a=0; a<rhs.NAA_ANY; ++a)
+            logp[i][a] = rhs.logp[i][a];
+    }
 
-    if (rhs.neffi!=NULL) {
-        neffi = new float[rhs.len];
-        for(size_t i=0; i<rhs.len; ++i)
-            neffi[i] = rhs.neffi[i];
-    } else
-        neffi = NULL;
+    neffi = new float[rhs.len];
+    for(size_t i=0; i<rhs.len; ++i)
+        neffi[i] = rhs.neffi[i];
 }
 
 void Profile::set_index(const size_t idx) { index = idx; }
@@ -302,7 +300,7 @@ void Profile::reset() throw (std::exception)
             p[i][a] = 0.0;
             logp[i][a] = -std::numeric_limits<float>::infinity();
         }
-        if (neffi!=NULL) neffi[i]=0.0;
+        if (neffi!=0) neffi[i]=0.0;
     }
 }
 
@@ -393,6 +391,8 @@ void Profile::read_columns(std::istream &in) throw (std::exception) {
         neffi = new float[len];
         for(size_t i=0; i<len; ++i) neffi[i] = neff_tmp[i];
     }
+
+    for(std::vector<float*>::iterator it=p_tmp.begin(); it!=p_tmp.end(); ++it) delete [] *it;
     p_tmp.clear();
 
     //put sequence into seq

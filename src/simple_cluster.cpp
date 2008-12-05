@@ -82,10 +82,28 @@ void SimpleCluster::read_columns(std::istream &in) throw (std::exception) {
         neffi = new float[len];
         for(size_t i=0; i<len; ++i) neffi[i] = neff_tmp[i];
     }
+
+    for(std::vector<float*>::iterator it=p_tmp.begin(); it!=p_tmp.end(); ++it) delete [] *it;
     p_tmp.clear();
 
     //put sequence into seq
     seq = new char[len];
     for(size_t i=0; i<len; ++i) seq[i]=seq_tmp[i];
     seq_tmp.clear();
+}
+
+void SimpleCluster::free_memory()
+{
+    // no need to free matrix p since it's never allocated
+    if (logp) {
+        for(size_t i=0; i<len; ++i) delete [] logp[i];
+        delete [] logp;
+    }
+    if (neffi)
+        delete [] neffi;
+    if (seq)
+        delete [] seq;
+    logp  = 0;
+    neffi = 0;
+    seq   = 0;
 }

@@ -35,6 +35,7 @@ public:
 protected:
 
     virtual void read_columns(std::istream& in) throw (std::exception);
+    virtual void free_memory();
 };
 
 #endif
