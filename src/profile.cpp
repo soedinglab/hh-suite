@@ -392,7 +392,6 @@ void Profile::read_columns(std::istream &in) throw (std::exception) {
         for(size_t i=0; i<len; ++i) neffi[i] = neff_tmp[i];
     }
 
-    for(std::vector<float*>::iterator it=p_tmp.begin(); it!=p_tmp.end(); ++it) delete [] *it;
     p_tmp.clear();
 
     //put sequence into seq
