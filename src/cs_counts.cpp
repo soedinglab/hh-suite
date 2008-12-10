@@ -68,15 +68,12 @@ void CSCounts::prepare_pseudocounts(HMM& q) throw (std::exception)
     float** pq   = q.f;
     float* neffi = q.Neff_M;
     double** pc  = new double*[q.L+1];
-    float* f     = new float[q.L+1];
 
     //init arrays
     for(size_t i=1; i<=static_cast<size_t>(q.L); ++i) {
         pc[i] = new double[NAA];
-        f[i] = lgamma(neffi[i]+1.0);
         for(int a=0; a<NAA; ++a) {
             pc[i][a] =0.0;
-            f[i] -= lgamma( neffi[i]*pq[i][a]+1.0 );
         }
     }
 
@@ -92,7 +89,7 @@ void CSCounts::prepare_pseudocounts(HMM& q) throw (std::exception)
             for(size_t l=beg; l<=end; ++l) {
                 size_t j = l-i+center;
 
-                double sum = f[l] + 2.0*neffi[l]; // 2.0*neffi[l] to keep log_pki within range of -127 to +127
+                double sum = 3.0*neffi[l]; // 3.0*neffi[l] to keep log_pki within range of -127 to +127
                 sum += neffi[l]*pq[l][0]*log_pk[j][0];
                 sum += neffi[l]*pq[l][1]*log_pk[j][1];
                 sum += neffi[l]*pq[l][2]*log_pk[j][2];
@@ -162,7 +159,6 @@ void CSCounts::prepare_pseudocounts(HMM& q) throw (std::exception)
     //free memory
     for(size_t i=1; i<=static_cast<size_t>(q.L); ++i) delete [] pc[i];
     delete [] pc;
-    delete [] f;
 }
 
 
