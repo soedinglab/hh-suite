@@ -754,20 +754,17 @@ int Alignment::Filter2(char keep[], int coverage, int qid, float qsc, int seqid1
   // In the end, keep[k] will be 1 for all regular representative sequences kept in the alignment, 0 for all others
   char* in=new(char[N_in+1]);   // in[k]=1: seq k has been accepted; in[k]=0: seq k has not yet been accepted at current seqid
   char* inkk=new(char[N_in+1]); // inkk[k]=1 iff in[ksort[k]]=1 else 0;
-  int* idmax=new(int[L+2]);     // position-dependent maximum-sequence-identity threshold for filtering
+  //  int* idmax=new(int[L+2]);     // position-dependent maximum-sequence-identity threshold for filtering ///////////////////delete
+  int* Nmax=new(int[L+2]);     // position-dependent maximum-sequence-identity threshold for filtering
   int* idmaxwin=new(int[L+2]);      // minimum value of idmax[i-WFIL,i+WFIL]
   int* seqid_prev=new(int[N_in+1]); // maximum-sequence-identity threshold used in previous round of filtering (with lower seqid)
   int* N=new(int[L+2]);             // N[i] number of already accepted sequences at position i
   const int WFIL=25;            // see previous line
 
-//   char in[N_in+1];          // in[k]=1: seq k has been accepted; in[k]=0: seq k has not yet been accepted at current seqid
-//   char inkk[N_in+1];        // inkk[k]=1 iff in[ksort[k]]=1 else 0;
-//   int idmax[L+2];           // position-dependent maximum-sequence-identity threshold for filtering
-//   int idmaxwin[L+2];        // minimum value of idmax[i-WFIL,i+WFIL]
-//   const int WFIL=25;        // see previous line
-//   int seqid_prev[N_in+1];   // maximum-sequence-identity threshold used in previous round of filtering (with lower seqid)
-//   int N[L+2];               // N[i] number of already accepted sequences at position i
-  int seqid;                // current maximum value for the position-dependent maximum-sequence-identity thresholds in idmax[]
+  int diffNmax=Ndiff;       // current  maximum difference of Nmax[i] and Ndiff
+  int diffNmax_prev=0;      // previous maximum difference of Nmax[i] and Ndiff
+  int seqid;                // current  maximum value for the position-dependent maximum-sequence-identity thresholds in idmax[]
+  int seqid_step=0;         // previous increment of seqid
 
   float diff_min_frac;  // minimum fraction of differing positions between sequence j and k needed to accept sequence k
   float qdiff_max_frac=0.9999-0.01*qid; // maximum allowable number of residues different from query sequence
@@ -827,9 +824,10 @@ int Alignment::Filter2(char keep[], int coverage, int qid, float qsc, int seqid1
   for (i=1; i<first[kfirst]; i++) N[i]=0;
   for (i=first[kfirst]; i<=last[kfirst]; i++) N[i]=1;
   for (i=last[kfirst]+1; i<=L; i++) N[i]=0;
-  for (i=1; i<=L; i++) {idmax[i]=seqid1; idmaxwin[i]=-1;}
+  //  for (i=1; i<=L; i++) {idmax[i]=seqid1; idmaxwin[i]=-1;} //////////////////////////// CHANGE!
+  for (i=1; i<=L; i++) {Nmax[i]=0; idmaxwin[i]=-1;} //////////////////////////// CHANGE!
   for (k=0; k<N_in; k++) seqid_prev[k]=-1;
-  if (Ndiff<=0 || Ndiff>=N_in) {seqid1=seqid2; Ndiff=N_in;}
+  if (Ndiff<=0 || Ndiff>=N_in) {seqid1=seqid2; Ndiff=N_in; diffNmax=Ndiff;}
 
   // Check coverage and sim-to-query criteria for each sequence k
   for (k=0; k<N_in; k++)
@@ -889,21 +887,46 @@ int Alignment::Filter2(char keep[], int coverage, int qid, float qsc, int seqid1
     }
 
   // Successively increment idmax[i] at positons where N[i]<Ndiff
-  for (seqid=seqid1; seqid<=seqid2; seqid+=1+(seqid>=50))
+  seqid=seqid1; 
+  while (seqid<=seqid2)
     {
-      // Update idmax[i]
-      for (i=1; i<=L; i++) if (N[i]<Ndiff) idmax[i]=seqid;
-
-      // Update idmaxwin[i] as minimum of idmax[i-WFIL,i+WFIL]. If idmaxwin[] has not changed then stop
       char stop=1;
-      for (i=1; i<=L; i++)
-        {
-          int idmax_min=seqid2;
-          for (j=imax(1,imin(L-2*WFIL+1,i-WFIL)); j<=imin(L,imax(2*WFIL,i+WFIL)); j++)
-            if (idmax[j]<idmax_min) idmax_min=idmax[j];
-          if (idmax_min>idmaxwin[i]) stop=0; // idmaxwin[i] has changed => do not stop
-          idmaxwin[i]=idmax_min;
-        }
+      // if (0) {
+      // // Update idmax[i]
+      // for (i=1; i<=L; i++)
+      // 	if (N[i]<Ndiff) idmax[i]=seqid;
+      // printf("seqid=%3i  n=%-5i  N_in-N_ss=%-5i\n",seqid,n,N_in-N_ss);
+
+      // // Update idmaxwin[i] as minimum of idmax[i-WFIL,i+WFIL]. If idmaxwin[] has not changed then stop
+      
+      // for (i=1; i<=L; i++)
+      //   {
+      //     int idmax_min=seqid2;
+      //     for (j=imax(1,imin(L-2*WFIL+1,i-WFIL)); j<=imin(L,imax(2*WFIL,i+WFIL)); j++)
+      //       if (idmax[j]<idmax_min) idmax_min=idmax[j];
+      //     if (idmax_min>idmaxwin[i]) stop=0; // idmaxwin[i] has changed => do not stop
+      //     idmaxwin[i]=idmax_min;
+      //   }
+      // } else {
+	// Update Nmax[i]
+	diffNmax_prev = diffNmax;
+	diffNmax = 0;
+	for (i=1; i<=L; i++)
+	  {
+	    int max=0;
+	    for (j=imax(1,imin(L-2*WFIL+1,i-WFIL)); j<=imin(L,imax(2*WFIL,i+WFIL)); j++)
+	      if (N[j]>max) max=N[j];
+	    if (Nmax[i]<max) Nmax[i]=max;
+	    if (Nmax[i]<Ndiff) 
+	      {
+		stop=0;
+		idmaxwin[i]=seqid;
+		if (diffNmax<Ndiff-Nmax[i]) diffNmax=Ndiff-Nmax[i];
+	      }	   
+	  }
+
+	//printf("seqid=%3i  diffNmax_prev= %-4i   diffNmax= %-4i   n=%-5i  N_in-N_ss=%-5i\n",seqid,diffNmax_prev,diffNmax,n,N_in-N_ss);
+	//}
       if (stop) break;
 
 //       // DEBUG
@@ -979,7 +1002,11 @@ int Alignment::Filter2(char keep[], int coverage, int qid, float qsc, int seqid1
 //       for (k=0; k<N_in; k++) printf("%2i ",seqid_prev[k]);
 //       printf("\n");
 
-    } // End Loop over seqid
+      // Increment seqid
+      seqid_step = imax(1,imin(5,diffNmax/(diffNmax_prev-diffNmax+1)*seqid_step/2));
+      seqid += seqid_step;
+
+   } // End Loop over seqid
 
   if (v>=2)
     {
@@ -999,7 +1026,8 @@ int Alignment::Filter2(char keep[], int coverage, int qid, float qsc, int seqid1
   for (k=0; k<N_in; k++) keep[k]=in[k];
   delete[] in;
   delete[] inkk;
-  delete[] idmax;
+  //  delete[] idmax;
+  delete[] Nmax;
   delete[] idmaxwin;
   delete[] seqid_prev;
   delete[] N;

@@ -1849,7 +1849,7 @@ int main(int argc, char **argv)
       // Remove sequences with seq. identity larger than seqid percent (remove the shorter of two)
       float const COV_ABS = 25;     // min. number of aligned residues
       int cov_tot = imax(imin((int)(COV_ABS / Qali.L * 100 + 0.5), 70), par.coverage);
-      if (v>2) printf("Filter new alignment with cov %3i\n", cov_tot);
+      if (v>2) printf("Filter new alignment with cov %3i%%\n", cov_tot);
       Qali.N_filtered = Qali.Filter(par.max_seqid,cov_tot,par.qid,par.qsc,par.Ndiff);
 
       // Calculate (and write) output HMM?
