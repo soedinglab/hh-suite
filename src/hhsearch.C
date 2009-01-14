@@ -1004,7 +1004,7 @@ int main(int argc, char **argv)
                       dbfiles[ndb]=new(char[strlen(dbfile)+1]);
                       strcpy(dbfiles[ndb],dbfile);
                       if (ndb<5 && ndb>0 && access(dbfiles[ndb],R_OK)) OpenFileError(dbfiles[ndb]); // file not readable?
-//                    printf("dbfile[%i]='%s'\n",ndb,dbfile[ndb]);
+//	   	       printf("dbfiles[%i]='%s'\n",ndb,dbfiles[ndb]);
                       ndb++;
                     }
                   else
@@ -1017,7 +1017,7 @@ int main(int argc, char **argv)
               dbfiles[ndb]=new(char[strlen(dbfile_cur)+1]);
               strcpy(dbfiles[ndb],dbfile_cur);
               if (ndb<5 && ndb>0 && access(dbfiles[ndb],R_OK)) OpenFileError(dbfiles[ndb]); // file not readable?
-//            printf("dbfile[%i]='%s'\n",ndb,dbfile[ndb]);
+//            printf("dbfiles[%i]='%s'\n",ndb,dbfiles[ndb]);
               ndb++;
             }
         }
@@ -1026,7 +1026,10 @@ int main(int argc, char **argv)
 
      dbfile_cur=dbfile_next;
     }
-  if (v>=1 && ndb>=MAXNUMDB && *dbfiles[ndb])
+
+  //fprintf (stderr,"ndb: %i  MAXNUMDB: %i\n",ndb,MAXNUMDB);
+
+  if (v>=1 && ndb>=MAXNUMDB && *dbfiles[ndb-1])
     fprintf (stderr,"WARNING: maximum of %i allowed databases surpassed. Skipping the rest.\n",MAXNUMDB);
 
 

@@ -1555,9 +1555,11 @@ void Hit::InitializeBacktrace(HMM& q, HMM& t)
 	  strcpy(sname[k],t.sname[k]);
 	  strcpy(seq[k],t.seq[k]);
 	}
-      char* ptr = dbfile;
-      dbfile = new(char[strlen(ptr)+1]);
-      strcpy(dbfile,ptr);
+      if (dbfile) {
+	char* ptr = dbfile;
+	dbfile = new(char[strlen(ptr)+1]);
+	strcpy(dbfile,ptr);
+      }
     }
 
   n_display=t.n_display; 

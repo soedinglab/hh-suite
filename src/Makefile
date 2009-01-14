@@ -22,6 +22,9 @@ hhmake: hhmake.C $(SOURCES) $(HEADERS)
 hhalign: hhalign.C $(SOURCES) $(HEADERS)
 	 $(CPP) -I/usr/include/ -L/usr/lib -lpng -lz hhalign.C -o ../bin/hhalign
 
+hhalign_valgrind: hhalign.C $(SOURCES) $(HEADERS)
+	  $(CXX) -g -O -Wall -Wno-char-subscripts -fno-strict-aliasing -I/usr/include/ -L/usr/lib -lpng -lz hhalign.C -o ../bin/hhalign_valgrind
+
 hhfilter: hhfilter.C $(SOURCES) $(HEADERS)
 	  $(CPP) hhfilter.C -o ../bin/hhfilter
 
