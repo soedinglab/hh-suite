@@ -933,7 +933,7 @@ int main(int argc, char **argv)
       FILE* alitabf=NULL;
       if (strcmp(alitabfile,"stdout")) alitabf = fopen(alitabfile, "w"); else alitabf = stdout;
       if (!alitabf) OpenFileError(alitabfile);
-      if (par.forward==2) 
+      if (par.forward==2 || par.realign) 
 	{
 	  fprintf(alitabf,"    i     j  score     SS  probab\n");
 	  for (int step=hit.nsteps; step>=1; step--)
