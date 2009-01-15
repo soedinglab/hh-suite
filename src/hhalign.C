@@ -169,8 +169,10 @@ void help()
   printf("HMM-HMM alignment options:                                                  \n");
   printf(" -glob/-loc    global or local alignment mode (def=local)         \n");
   printf(" -alt <int>    show up to this number of alternative alignments (def=%i)    \n",par.altali);
-  printf(" -vit          use Viterbi algorithm for alignment instead of MAC algorithm \n");
-  printf(" -mac          use Maximum Accuracy (MAC) alignment (default)  \n");
+  //  printf(" -vit          use Viterbi algorithm for alignment instead of MAC algorithm \n");
+  //  printf(" -mac          use Maximum Accuracy (MAC) alignment (default)  \n");
+  printf(" -realign      realign displayed hits with max. accuracy (MAC) algorithm \n");
+  printf(" -norealign    do NOT realign displayed hits with MAC algorithm (def=realign)\n");
   printf(" -mact [0,1[   posterior probability threshold for MAC alignment (def=%.3f) \n",par.mact);
   printf("               A threshold value of 0.0 yields global alignments.\n");
   printf(" -sto <int>    use global stochastic sampling algorithm to sample this many alignments\n");
@@ -550,10 +552,13 @@ void ProcessArguments(int argc, char** argv)
       else if (!strncmp(argv[i],"-glo",3)) {par.loc=0; if (par.mact>0.3 && par.mact<0.301) {par.mact=0;} }
       else if (!strncmp(argv[i],"-loc",3)) par.loc=1;
       else if (!strncmp(argv[i],"-alt",4) && (i<argc-1)) par.altali=atoi(argv[++i]); 
-      else if (!strcmp(argv[i],"-map") || !strcmp(argv[i],"-MAP")) par.forward=2; 
-      else if (!strcmp(argv[i],"-mac") || !strcmp(argv[i],"-MAC")) par.forward=2; 
-      else if (!strcmp(argv[i],"-vit")) par.forward=0; 
-      else if (!strcmp(argv[i],"-sto") && (i<argc-1))  {Nstochali=atoi(argv[++i]); par.forward=1;}
+      else if (!strcmp(argv[i],"-map") || !strcmp(argv[i],"-MAP") || !strcmp(argv[i],"-mac") || !strcmp(argv[i],"-MAC")) 
+	SyntaxError("Please note that this option has been replaced by the '-realign' option."); 
+      else if (!strcmp(argv[i],"-vit")) 
+	SyntaxError("Please note that this option has been replaced by the '-norealign' option."); 
+      else if (!strcmp(argv[i],"-realign")) par.realign=1;
+      else if (!strcmp(argv[i],"-norealign")) par.realign=0;
+      else if (!strcmp(argv[i],"-sto") && (i<argc-1))  {Nstochali=atoi(argv[++i]); par.forward=1; par.realign=0;}
       else if (!strcmp(argv[i],"-r")) par.repmode=1; 
       else if (!strcmp(argv[i],"-M") && (i<argc-1)) 
 	if (!strcmp(argv[++i],"a2m") || !strcmp(argv[i],"a3m"))  par.M=1; 
@@ -561,7 +566,7 @@ void ProcessArguments(int argc, char** argv)
 	else if (argv[i][0]>='0' && argv[i][0]<='9') {par.Mgaps=atoi(argv[i]); par.M=2;}
 	else cerr<<endl<<"WARNING: Ignoring unknown argument: -M "<<argv[i]<<"\n";
       else if (!strcmp(argv[i],"-shift") && (i<argc-1)) par.shift=atof(argv[++i]); 
-      else if (!strcmp(argv[i],"-mact") && (i<argc-1)) {par.mact=atof(argv[++i]); par.forward=2;}
+      else if (!strcmp(argv[i],"-mact") && (i<argc-1)) {par.mact=atof(argv[++i]);}
       else if (!strcmp(argv[i],"-wstruc") && (i<argc-1)) par.wstruc=atof(argv[++i]); 
       else if (!strcmp(argv[i],"-opt") && (i<argc-1)) par.opt=atoi(argv[++i]); 
       else if (!strcmp(argv[i],"-sc") && (i<argc-1)) par.columnscore=atoi(argv[++i]); 
@@ -576,6 +581,77 @@ void ProcessArguments(int argc, char** argv)
 }
 
 
+///////////////////////////////////////////////////////////////////////////////////////
+//// Realign q and *(t[bin]) with the MAC algorithm (after the database search)
+//////////////////////////////////////////////////////////////////////////////////////
+void RealignByWorker(Hit& hit)
+{
+  Hit hit_cur;
+  int nhits=0;
+  hit.irep=1;
+
+  // Prepare MAC comparison(s)
+  q.Log2LinTransitionProbs(1.0);
+  t.Log2LinTransitionProbs(1.0);
+
+  // Allocate space
+  if (par.forward==0)
+    hit.AllocateForwardMatrix(q.L+2,t.L+2);
+  if (par.forward<=1)
+    hit.AllocateBackwardMatrix(q.L+2,t.L+2);
+  
+  // Search positions in hitlist with correct index of template
+  hitlist.Reset();
+  while (!hitlist.End())
+    {
+      hit_cur = hitlist.ReadNext();
+      //fprintf(stderr,"  t->name=%s   hit_cur.irep=%i  hit.irep=%i  nhits=%i\n",t.name,hit_cur.irep,hit.irep,nhits);
+      // Align q to template in *hit[bin]
+      hit.Forward(q,t);
+      hit.Backward(q,t);
+      hit.MACAlignment(q,t);
+      hit.BacktraceMAC(q,t);
+      
+      // Overwrite *hit[bin] with Viterbi scores, Probabilities etc. of hit_cur
+      hit.score      = hit_cur.score;
+      hit.score_aass = hit_cur.score_aass;
+      hit.score_ss   = hit_cur.score_ss; // comment out?? => Andrea
+      hit.Pval       = hit_cur.Pval;
+      hit.Pvalt      = hit_cur.Pvalt;
+      hit.logPval    = hit_cur.logPval;
+      hit.logPvalt   = hit_cur.logPvalt;
+      hit.logP1val   = hit_cur.logP1val;
+      hit.Eval       = hit_cur.Eval;
+      hit.logEval    = hit_cur.logEval;
+      hit.E1val      = hit_cur.E1val;
+      hit.Probab     = hit_cur.Probab;
+
+      // Replace original hit in hitlist with realigned hit
+      //hitlist.ReadCurrent().Delete();
+      //hitlist.Delete().Delete();                // delete list record and hit object
+      hit_cur = hitlist.Delete();                // delete list record and hit object
+      if (hit_cur.irep == 1) {
+	delete[] hit_cur.seq;
+	delete[] hit_cur.sname;
+	hit_cur.seq = NULL;      // Don't delete sname and seq if flat copy from template HMM
+	hit_cur.sname = NULL;
+      }
+      hit_cur.Delete();
+      
+      hitlist.Insert(hit);
+      hit.irep++;
+      nhits++;
+    }
+
+  if (hit.irep==1)
+    {
+      fprintf(stderr,"*************************************************\n");
+      fprintf(stderr,"\nError: could not find template %s in hit list \n\n",hit.name);
+      fprintf(stderr,"*************************************************\n");
+    }
+
+  return;
+}
 
 
 
@@ -606,7 +682,8 @@ int main(int argc, char **argv)
   par.hitrank=0;               // rank of hit to be printed as a3m alignment (default=0)
   par.outformat=3;             // default output format for alignment is a3m
   hit.self=0;                  // no self-alignment
-  par.forward=2;               // 0: Viterbi algorithm; 1: Viterbi+stochastic sampling; 2:Maximum Accuracy (MAC) algorithm
+  par.forward=0;               // 0: Viterbi algorithm; 1: Viterbi+stochastic sampling; 2:Maximum Accuracy (MAC) algorithm
+  par.realign=1;               // default: realign
 
   // Make command line input globally available
   par.argv=argv; 
@@ -798,7 +875,7 @@ int main(int argc, char **argv)
 	    break;
 	  }
 	  hit.BacktraceMAC(q,t);
-	}
+	} 
       //fprintf (stderr,"%-12.12s  %-12.12s   irep=%-2i  score=%6.2f hit.Pvalt=%.2g\n",hit.name,hit.fam,hit.irep,hit.score,hit.Pvalt);
 
       hitlist.Push(hit);      // insert hit at beginning of list (last repeats first!) and do next alignment
@@ -807,6 +884,11 @@ int main(int argc, char **argv)
       hit.irep++;
     } 
   Nali = hit.irep;
+
+  if (par.realign) {
+    printf("Realigning hits with maximum accuracy (MAC) alignment algorithm ...\n");
+    RealignByWorker(hit);
+  }
   
   // Write posterior probability matrix as TCoffee library file
   if (tcfile) 
@@ -1179,9 +1261,9 @@ int main(int argc, char **argv)
 
   // Delete memory for dynamic programming matrix
   hit.DeleteBacktraceMatrix(q.L+2);
-  if (par.forward>=1 || Nstochali) 
+  if (par.forward>=1 || Nstochali || par.realign) 
     hit.DeleteForwardMatrix(q.L+2);
-  if (par.forward==2) 
+  if (par.forward==2 || par.realign) 
     hit.DeleteBackwardMatrix(q.L+2);
 //   if (Pstruc) { for (int i=0; i<q.L+2; i++) delete[](Pstruc[i]); delete[](Pstruc);}
 

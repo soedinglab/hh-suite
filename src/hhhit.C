@@ -116,14 +116,12 @@ void Hit::Delete()
 
 
     delete[] longname; delete[] name; delete[] file; delete[] dbfile;
-    for (int k=0; k<n_display; k++) 
-      {
-	delete[] sname[k]; 
-	delete[] seq[k];
-      }
-    delete[] sname;
-    delete[] seq;
-
+    if (sname) {
+      for (int k=0; k<n_display; k++) delete[] sname[k]; delete[] sname;
+    }
+    if (seq) {
+      for (int k=0; k<n_display; k++) delete[] seq[k]; delete[] seq;
+    }
 
      longname = name = file = NULL;
      dbfile = NULL;

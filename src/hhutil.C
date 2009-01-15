@@ -308,6 +308,12 @@ int MemoryError(const char arrayname[])
   exit(3);
 }
 
+int SyntaxError(const char details[]="")
+{
+  cerr<<"Error in "<<par.argv[0]<<" on command line: "<<details<<"\n";
+  exit(4);
+}
+
 int InternalError(const char errstr[])
 {
   cerr<<"Error in "<<par.argv[0]<<":  "<<errstr<<". Please report this bug to developers\n";
