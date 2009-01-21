@@ -877,13 +877,17 @@ int HMM::ReadHMMer(FILE* dbf, char* filestr)
                   ss_dssp[i]=3;
                   seq[nss_dssp][i]=*ptr;
                   break;
-                case '-':
-                default:
-                  ss_dssp[i]=0;
-                  seq[nss_dssp][i]=*ptr;
-                  break;
-
-                }
+		case '-': // no SS available from any template
+		case '.': // no clear consensus SS structure
+		case 'X': // no clear consensus SS structure
+		  ss_dssp[i]=0;
+		  seq[nss_dssp][i]='-';
+		  break;
+		default:
+		  ss_dssp[i]=0;
+		  seq[nss_dssp][i]=*ptr;
+		  break;
+               }
 
               ptr+=2;
               for (a=0; a<=D2D && ptr; ++a)
@@ -932,6 +936,8 @@ int HMM::ReadHMMer(FILE* dbf, char* filestr)
       nss_dssp=-1;
       k--;
     }
+  else { seq[nss_dssp][0]='-'; seq[nss_dssp][L+1]='\0'; }
+
   if (nss_pred>=0)
     {
       for (i=1; i<=L; ++i) ss_pred[i] = ss2i(seq[nss_pred][i]);
