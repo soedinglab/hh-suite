@@ -7,6 +7,7 @@
 //
 // Error codes: 0: ok  1: file format error  2: file access error  3: memory error  4: command line error  6: internal logic error  7: internal numeric error
 
+
 ////#define WINDOWS
 #define PTHREAD
 #define MAIN
