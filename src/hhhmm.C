@@ -502,7 +502,7 @@ int HMM::Read(FILE* dbf, char* path)
                   cerr<<endl<<"WARNING: in HMM "<<name<<" there are more columns than the stated length "<<L<<". Skipping HMM\n";
                   return 2;
                 }
-              if (i>=MAXRES-2)
+              if (i>MAXRES-2)
                 {
                   fgetline(line,LINELEN-1,dbf); // Skip line
                   continue;

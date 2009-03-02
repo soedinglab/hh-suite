@@ -557,7 +557,7 @@ foreach $file (@files)
 	    for ($rank=1; $rank<=3; $rank++) {
 
 		# Align new file with $tmp-X.hhm
-		$Phh = &System("$hh/hhalign -vit -local -id $id -rank $rank -i $tmp"."-X.hhm -t $curr.a3m",$v2);
+		$Phh = &System("$hh/hhalign -norealign -local -id $id -rank $rank -i $tmp"."-X.hhm -t $curr.a3m",$v2);
 		if ($v>=2) {print ("returned $Phh\n");}
 		if ($Phh>$Phh_max) {last;}
 
@@ -1032,7 +1032,7 @@ sub BuildAlignment() {
 
     # Align new file with $tmp-X-noSS.hhm
 #    $Phh_prev=$Phh;
-    $Phh = &System("$hh/hhalign -vit -id $id -local -i $tmp"."-X-noSS.hhm -t $tmpa3mfile ",$v2);
+    $Phh = &System("$hh/hhalign -norealign -id $id -local -i $tmp"."-X-noSS.hhm -t $tmpa3mfile ",$v2);
     if ($v2>=2) {print ("returned $Phh\n");}
     if ($nhits>=10 && $Phh>$Phh_max) {return 2;} # return if Phh not sufficiently significant
 
@@ -1055,7 +1055,7 @@ sub BuildAlignment() {
 	# Align new file with $tmp-X-noSS.hhm
 #	$Phh_prev=$Phh;
 	$nhits=&System("$perl/alignhits.pl -cov $cov0 -e $E2 $qid $bopt $pmaxopt $best -a3m -q $seqfile $blafile $tmpfile",$v2);
-	$Phh = &System("$hh/hhalign -vit -local -i $tmp"."-X-noSS.hhm -t $tmpfile ",$v2);
+	$Phh = &System("$hh/hhalign -norealign -local -i $tmp"."-X-noSS.hhm -t $tmpfile ",$v2);
 	if ($v2>=2) {print ("returned $Phh\n");}
 	# Phh not sufficiently significant? 
 	if ($nhits>=10 && $Phh>$Phh_max) {  # alignment not significant enough and no dearth of seqs?
@@ -1117,7 +1117,7 @@ sub BuildAlignment() {
 		# Align new file with $tmp-X-noSS.hhm
 		$Phh_prev=$Phh; 
 		$nhits=&System("$perl/alignhits.pl -cov $cov0 -e $E3 $qid $bopt $pmaxopt $best -a3m -q $seqfile $blafile $tmpfile",$v2);
-		$Phh = &System("$hh/hhalign -vit -local -i $tmp"."-X-noSS.hhm -t $tmpfile",$v2);
+		$Phh = &System("$hh/hhalign -norealign -local -i $tmp"."-X-noSS.hhm -t $tmpfile",$v2);
 		if ($v2>=2) {print ("returned $Phh\n");}
 		if ($Phh>$Phh_prev) {$E3=$E3_prev; last;}
 	    }	    
