@@ -807,7 +807,9 @@ int Alignment::Filter2(char keep[], int coverage, int qid, float qsc, int seqid1
           for (i=first[k]; i<=last[k]; i++)
             if (X[k][i]<NAA) nr++;
           nres[k]=nr;
-          //    printf("%20.20s nres=%3i  first=%3i  last=%3i\n",sname[k],nr,f,l);
+          //printf("%20.20s nres=%3i  first=%3i  last=%3i\n",sname[k],nr,first[k],last[k]);
+	  if (nr == 0)
+	    keep[k]=0;
         }
     }
 
