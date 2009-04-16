@@ -11,7 +11,10 @@ TARGETS = hhsearch hhmake hhalign hhfilter hhconsensus
 all: $(TARGETS)
 
 hhsearch: hhsearch.C $(SOURCES) $(HEADERS)
-	  $(CPP) -lpthread -lrt hhsearch.C -o ../bin/hhsearch
+	 $(CPP) hhsearch.C -lpthread -lrt -o ../bin/hhsearch 
+
+hhsearch_static: hhsearch.C $(SOURCES) $(HEADERS)
+	 $(CPP) hhsearch.C -static -lpthread -lrt -o ../bin/hhsearch 
 
 hhsearch_valgrind: hhsearch.C $(SOURCES) $(HEADERS)
 	  $(CXX) -g -O -Wall -Wno-char-subscripts -fno-strict-aliasing -lpthread -lrt hhsearch.C -o ../bin/hhsearch_valgrind
@@ -19,8 +22,14 @@ hhsearch_valgrind: hhsearch.C $(SOURCES) $(HEADERS)
 hhmake: hhmake.C $(SOURCES) $(HEADERS)
 	$(CPP) hhmake.C -o ../bin/hhmake
 
+hhmake_static: hhmake.C $(SOURCES) $(HEADERS)
+	$(CPP) hhmake.C -static -o ../bin/hhmake 
+
 hhalign: hhalign.C $(SOURCES) $(HEADERS)
-	 $(CPP) -I/usr/include/ -L/usr/lib -lpng -lz hhalign.C -o ../bin/hhalign
+	 $(CPP) hhalign.C -I/usr/include/ -L/usr/lib -lpng -lz -o ../bin/hhalign
+
+hhalign_static: hhalign.C $(SOURCES) $(HEADERS)
+	 $(CPP) hhalign.C -static -I/usr/include/ -L/usr/lib -lpng -lz -o ../bin/hhalign 
 
 hhalign_valgrind: hhalign.C $(SOURCES) $(HEADERS)
 	  $(CXX) -g -O -Wall -Wno-char-subscripts -fno-strict-aliasing -I/usr/include/ -L/usr/lib -lpng -lz hhalign.C -o ../bin/hhalign_valgrind
@@ -28,8 +37,14 @@ hhalign_valgrind: hhalign.C $(SOURCES) $(HEADERS)
 hhfilter: hhfilter.C $(SOURCES) $(HEADERS)
 	  $(CPP) hhfilter.C -o ../bin/hhfilter
 
+hhfilter_static: hhfilter.C $(SOURCES) $(HEADERS)
+	  $(CPP) hhfilter.C -static -o ../bin/hhfilter 
+
 hhconsensus: hhconsensus.C $(SOURCES) $(HEADERS)
 	     $(CPP) hhconsensus.C -o ../bin/hhconsensus
+
+hhconsensus_static: hhconsensus.C $(SOURCES) $(HEADERS)
+	     $(CPP) hhconsensus.C -static -o ../bin/hhconsensus 
 
 clean: 	
 	-rm -f *.o 
