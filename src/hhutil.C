@@ -462,9 +462,10 @@ void SetDefaults()
   par.Z=500;                   // max number of lines in hit list
   par.e=1e-3f;                 // maximum E-value for inclusion in output alignment, output HMM, and PSI-BLAST checkpoint model
   par.showcons=1;              // show consensus sequence
-  par.showdssp=1;              // show predicted secondary structure
-  par.showpred=1;              // show dssp secondary structure
-  par.cons=0;                  // show first non-SS sequence as main representative sequence (not consensus)
+  par.showdssp=1;              // show predicted secondary structure ss_dssp
+  par.showpred=1;              // show predicted secondary structure ss_pred
+  par.showconf=0;              // don't show secondary structure confidence ss_conf
+  par.cons=0;                  // chose first non-SS sequence as main representative sequence (not consensus)
   par.nseqdis=1;               // maximum number of query sequences for output alignment
   par.mark=0;                  // 1: only marked sequences (or first) get displayed; 0: most divergent ones get displayed
   par.aliwidth=80;             // number of characters per line in output alignments for HMM search

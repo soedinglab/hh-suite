@@ -1,0 +1,28 @@
+\contentsline {section}{\numberline {1}Obtaining HHsearch and the databases}{3}
+\contentsline {section}{\numberline {2}Getting started}{3}
+\contentsline {subsection}{\numberline {2.1}Overview of programs}{3}
+\contentsline {subsection}{\numberline {2.2}The first step: search through a database}{4}
+\contentsline {subsection}{\numberline {2.3}Building an HMM for your own query sequence}{4}
+\contentsline {subsection}{\numberline {2.4}Calibrating your query HMM}{6}
+\contentsline {subsection}{\numberline {2.5}Building customized databases}{6}
+\contentsline {subsection}{\numberline {2.6}Maximum Accuracy alignment algorithm}{7}
+\contentsline {subsection}{\numberline {2.7}How can I verify if a database match is homologous?}{8}
+\contentsline {section}{\numberline {3}HHsearch output: hit list and pairwise alignments}{9}
+\contentsline {subsection}{\numberline {3.1}Summary hit list}{9}
+\contentsline {subsection}{\numberline {3.2}HMM-HMM pairwise alignments}{11}
+\contentsline {section}{\numberline {4}File formats}{12}
+\contentsline {subsection}{\numberline {4.1}Input alignment formats}{12}
+\contentsline {subsection}{\numberline {4.2}HHsearch model format (hhm-format)}{15}
+\contentsline {section}{\numberline {5}Summary of command-line parameters}{17}
+\contentsline {subsection}{\numberline {5.1}{\tt hhmake} -- build an HMM from an input MSA}{17}
+\contentsline {subsection}{\numberline {5.2}{\tt hhsearch} -- search a database of HMMs with a query MSA or HMM}{18}
+\contentsline {subsection}{\numberline {5.3}{\tt hhalign} -- Align a query MSA/HMM to a template MSA/HMMt}{19}
+\contentsline {subsection}{\numberline {5.4}{\tt hhfilter} -- filter an MSA}{20}
+\contentsline {subsection}{\numberline {5.5}{\tt reformat.pl} -- reformat one or many alignments}{21}
+\contentsline {subsection}{\numberline {5.6}{\tt buildali.pl} -- build a PSI-BLAST alignment from a sequence or MSA}{22}
+\contentsline {subsection}{\numberline {5.7}{\tt addpsipred.pl} -- add predicted secondary structure to an MSA or HMM}{23}
+\contentsline {subsection}{\numberline {5.8}{\tt alignhits.pl} -- extract an alignment from a BLAST/PSI-BLAST output}{23}
+\contentsline {subsection}{\numberline {5.9}{\tt hhmakemodel.pl} -- generate MSAs or coarse 3D models from HHsearch results file}{24}
+\contentsline {section}{\numberline {6}Changes from HHsearch 1.2.0 to 1.5.0}{25}
+\contentsline {section}{\numberline {7}License}{27}
+\contentsline {section}{References}{28}

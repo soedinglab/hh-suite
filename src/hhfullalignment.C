@@ -62,8 +62,7 @@ FullAlignment::FullAlignment(int maxseqdis)
 {
   qa = new HalfAlignment(maxseqdis);
   ta = new HalfAlignment(maxseqdis);
-  for (int h=0; h<LINELEN-1; h++) symbol[h]=' ';
-}
+  }
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Destructor
@@ -84,13 +83,14 @@ void FullAlignment::FreeMemory()
 /////////////////////////////////////////////////////////////////////////////////////
 // Add columns for match (and delete) states. 
 /////////////////////////////////////////////////////////////////////////////////////
-void FullAlignment::AddColumns(int i, int j, char prev_state, char state, float S)
+void FullAlignment::AddColumns(int i, int j, char prev_state, char state, float S, float PP)
 {
   switch(state)
     {
     case MM:  //MM pair state (both query and template in Match state)
       AddGaps(); //fill up gaps until query and template parts have same length
-      symbol[qa->pos] =ScoreChr(S);
+      symbol[qa->pos] = ScoreChr(S);
+      posterior[qa->pos] = PosteriorChr(PP);
       qa->AddColumn(i);
       ta->AddColumn(j);
       qa->AddInsertsAndFillUpGaps(i);
@@ -100,12 +100,14 @@ void FullAlignment::AddColumns(int i, int j, char prev_state, char state, float 
     case GD: //-D state
       if (prev_state==DG) AddGaps();
       symbol[ta->pos]='Q';
+      posterior[ta->pos] = ' ';
       ta->AddColumn(j); //query has gap -> add nothing
       ta->AddInsertsAndFillUpGaps(j);
       break;
     case IM: //IM state
       if (prev_state==MI) AddGaps();
       symbol[ta->pos]='Q';
+      posterior[ta->pos] = ' ';
       ta->AddColumn(j); //query has gap -> add nothing
       ta->AddInsertsAndFillUpGaps(j);
       break;
@@ -113,13 +115,15 @@ void FullAlignment::AddColumns(int i, int j, char prev_state, char state, float 
     case DG: //D- state
       if (prev_state==GD) AddGaps();
       symbol[qa->pos]='T';
-      qa->AddColumn(i);//template has gap -> add nothing
+      posterior[qa->pos] = ' ';
+      qa->AddColumn(i); //template has gap -> add nothing
       qa->AddInsertsAndFillUpGaps(i);
       break;
     case MI: //MI state
       if (prev_state==IM) AddGaps();
       symbol[qa->pos]='T';
-      qa->AddColumn(i);//template has gap -> add nothing
+      posterior[qa->pos] = ' ';
+      qa->AddColumn(i); //template has gap -> add nothing
       qa->AddInsertsAndFillUpGaps(i);
       break;
     }
@@ -165,7 +169,10 @@ void FullAlignment::Build(HMM& q, Hit& hit)
     state = hit.states[step];
     
     // Add column to alignment and compute identities and sequence-sequence similarity score
-    AddColumns(hit.i[step],hit.j[step],prev_state,state,hit.S[step]);
+    if (hit.P_posterior)
+      AddColumns(hit.i[step],hit.j[step],prev_state,state,hit.S[step],hit.P_posterior[step]);
+    else 
+      AddColumns(hit.i[step],hit.j[step],prev_state,state,hit.S[step],0.0);
     if (state==MM) 
       {
 	char qc=qa->seq[  q.nfirst][ qa->m[  q.nfirst][hit.i[step]] ];
@@ -196,6 +203,8 @@ void FullAlignment::Build(HMM& q, Hit& hit)
 	  for (k=0; k<ta->n; k++) if (ta->s[k][hh]=='.') ta->s[k][hh]='-';
 	}
     }
+
+  if (!hit.P_posterior) posterior[0]='\0'; // record in FullAlignment that no posteriors were calculated
 }
 
 
@@ -232,15 +241,19 @@ void FullAlignment::PrintHHR(FILE* outf, Hit& hit)
       // Print query secondary structure sequences
       for (k=0; k<qa->n; k++)
 	{
-	  if (k==qa->nsa_dssp) continue;
  	  if (!(k==qa->nss_dssp || k==qa->nsa_dssp || k==qa->nss_pred || k==qa->nss_conf)) continue;
+	  if (k==qa->nsa_dssp) continue;
 	  if (k==qa->nss_dssp && !par.showdssp) continue;
 	  if ((k==qa->nss_pred || k==qa->nss_conf) && !par.showpred) continue;
+	  if (k==qa->nss_conf && !par.showconf) continue;
 	  strncpy(namestr,qa->sname[k],NAMELEN-2);
 	  namestr[NAMELEN-1]='\0';
 	  strcut(namestr);
 	  fprintf(outf,"Q %-*.*s      ",NLEN,NLEN,namestr);
-	  for (h=hh; h<imin(hh+par.aliwidth,qa->pos-1); h++) fprintf(outf,"%1c",qa->s[k][h]);
+	  if (k==qa->nss_pred && qa->nss_conf>=0)
+	    for (h=hh; h<imin(hh+par.aliwidth,qa->pos-1); h++) fprintf(outf,"%1c",qa->s[qa->nss_conf][h]<='6' && qa->s[qa->nss_conf][h]>='0'? qa->s[k][h]+32 : qa->s[k][h] );
+	  else 
+	    for (h=hh; h<imin(hh+par.aliwidth,qa->pos-1); h++) fprintf(outf,"%1c",qa->s[k][h]);
 	  fprintf(outf,"\n");
 	}
 
@@ -312,18 +325,29 @@ void FullAlignment::PrintHHR(FILE* outf, Hit& hit)
       // Print template secondary structure sequences
       for (k=0; k<ta->n; k++)
 	{
-	  if (k==ta->nsa_dssp) continue;
 	  if (!(k==ta->nss_dssp || k==ta->nss_pred || k==ta->nss_conf)) continue;
+	  if (k==ta->nsa_dssp) continue;
 	  if (k==ta->nss_dssp && !par.showdssp) continue;
 	  if ((k==ta->nss_pred || k==ta->nss_conf)&& !par.showpred) continue;
+	  if (k==ta->nss_conf && !par.showconf) continue;
 	  strncpy(namestr,ta->sname[k],NAMELEN-2);
 	  namestr[NAMELEN-1]='\0';
 	  strcut(namestr);
 	  fprintf(outf,"T %-*.*s      ",NLEN,NLEN,namestr);
-	  for (h=hh; h<imin(hh+par.aliwidth,ta->pos-1); h++) fprintf(outf,"%1c",ta->s[k][h]); 
+	  if (k==ta->nss_pred && ta->nss_conf>=0)
+	    for (h=hh; h<imin(hh+par.aliwidth,ta->pos-1); h++) fprintf(outf,"%1c",ta->s[ta->nss_conf][h]<='6' && ta->s[ta->nss_conf][h]>='0'? ta->s[k][h]+32 : ta->s[k][h] );
+	  else 
+	    for (h=hh; h<imin(hh+par.aliwidth,ta->pos-1); h++) fprintf(outf,"%1c",ta->s[k][h]); 
 	  fprintf(outf,"\n");
 	}
 
+      // Print alignment confidence values (posterior probabilities)?
+      if (posterior[0]!='\0') 
+	{
+	  fprintf(outf,"%-*.*s        ",NLEN,NLEN,"Confidence                     ");
+	  for (h=hh; h<imin(hh+par.aliwidth,qa->pos-1); h++) fprintf(outf,"%1c",posterior[h]); 
+	  fprintf(outf,"\n");
+	}
       hh=h;
       fprintf(outf,"\n\n");
     } 

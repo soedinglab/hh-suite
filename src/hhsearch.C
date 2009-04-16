@@ -152,6 +152,7 @@ void help()
   printf(" -nocons       don't show consensus sequence in alignments (default=show)     \n");
   printf(" -nopred       don't show predicted 2ndary structure in alignments (default=show)\n");
   printf(" -nodssp       don't show DSSP 2ndary structure in alignments (default=show)  \n");
+  printf(" -ssconf       show confidences for predicted 2ndary structure in alignments\n");
   printf(" -aliw <int>   number of columns per line in alignment list (def=%i)\n",par.aliwidth);
   printf(" -p <float>    minimum probability in summary and alignment list (def=%G)   \n",par.p);
   printf(" -E <float>    maximum E-value in summary and alignment list (def=%G)       \n",par.E);
@@ -238,6 +239,7 @@ void help_out()
   printf(" -nocons       don't show consensus sequence in alignments (default=show) \n");
   printf(" -nopred       don't show predicted 2ndary structure in alignments (default=show) \n");
   printf(" -nodssp       don't show DSSP 2ndary structure in alignments (default=show) \n");
+  printf(" -ssconf       show confidences for predicted 2ndary structure in alignments\n");
   printf(" -aliw [40,..[ number of columns per line in alignment list (def=%i)\n",par.aliwidth);
   printf(" -cal          calibrate query HMM (write mu and lamda into hmm file)     \n");
   printf(" -dbstrlen     max length of database string to be printed in hhr file\n");
@@ -511,6 +513,7 @@ void ProcessArguments(int argc, char** argv)
       else if (!strncmp(argv[i],"-nocons",7)) par.showcons=0;
       else if (!strncmp(argv[i],"-nopred",7)) par.showpred=0;
       else if (!strncmp(argv[i],"-nodssp",7)) par.showdssp=0;
+      else if (!strncmp(argv[i],"-ssconf",7)) par.showconf=1;
       else if (!strncmp(argv[i],"-cons",5)) par.cons=1;
       else if (!strncmp(argv[i],"-mark",5)) par.mark=1;
       else if (!strcmp(argv[i],"-seq") && (i<argc-1))  par.nseqdis=atoi(argv[++i]);

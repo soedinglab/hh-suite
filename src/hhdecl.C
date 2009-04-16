@@ -2,7 +2,7 @@
 //// Constants
 /////////////////////////////////////////////////////////////////////////////////////
 
-const char VERSION_AND_DATE[]="version 1.5.1.2 (January 2009)";
+const char VERSION_AND_DATE[]="version 1.6.0.0 (April 2009)";
 const char REFERENCE[]="Soding, J. Protein homology detection by HMM-HMM comparison. Bioinformatics 2005, 21, 951-960.\n";
 const char COPYRIGHT[]="(C) Johannes Soeding (see LICENSE file)\n";
 const int MAXSEQ=65535; //max number of sequences in input alignment (must be <~30000 on cluster nodes)
@@ -87,11 +87,12 @@ public:
   int z;                  // min number of lines in hit list
   int B;                  // max number of lines in alignment list
   int b;                  // min number of lines in alignment list
-  int showcons;           // 0: don't show consensus sequence in alignments  1:show
-  int showdssp;           // 0: don't show consensus sequence in alignments  1:show
-  int showpred;           // 0: don't show consensus sequence in alignments  1:show
-  int nseqdis;          // maximum number of query or template sequences in output alignments
+  int showcons;           // in query-template alignments  0: don't show consensus sequence   1:show
+  int showdssp;           // in query-template alignments  0: don't show ss_dssp lines        1:show
+  int showpred;           // in query-template alignments  0: don't show ss_pred and ss_conf lines  1:show
+  int showconf;           // in query-template alignments  0: don't show ss_conf lines        1:show
   char cons;              // if set to 1, include consensus as first representative sequence of HMM
+  int nseqdis;            // maximum number of query or template sequences in output alignments
   char mark;              // which sequences to mark for display in output alignments? 0: auto; 1:all
   char outformat;         // 0: hhr  1: FASTA  2:A2M   3:A3M
   char mode;              //

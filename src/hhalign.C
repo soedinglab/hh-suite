@@ -130,6 +130,7 @@ void help()
   printf(" -nocons       don't show consensus sequence in alignments (default=show) \n");
   printf(" -nopred       don't show predicted 2ndary structure in alignments (default=show) \n");
   printf(" -nodssp       don't show DSSP 2ndary structure in alignments (default=show) \n");
+  printf(" -ssconf       show confidences for predicted 2ndary structure in alignments\n");
   printf(" -aliw int     number of columns per line in alignment list (def=%i)\n",par.aliwidth);
   printf(" -P <float>    for self-comparison: max p-value of alignments (def=%.2g\n",pself);
   printf(" -p <float>    minimum probability in summary and alignment list (def=%G) \n",par.p);
@@ -205,6 +206,7 @@ void help_out()
   printf(" -nocons       don't show consensus sequence in alignments (default=show) \n");
   printf(" -nopred       don't show predicted 2ndary structure in alignments (default=show) \n");
   printf(" -nodssp       don't show DSSP SS 2ndary structure in alignments (default=show) \n");
+  printf(" -ssconf       show confidences for predicted 2ndary structure in alignments\n");
   printf(" -seq  [1,inf[ max. number of query/template sequences displayed  (def=%i)  \n",par.nseqdis);
   printf(" -aliw [40,..[ number of columns per line in alignment list (def=%i)\n",par.aliwidth);
   printf(" -P <float>    for self-comparison: max p-value of alignments (def=%.2g\n",pself);
@@ -484,6 +486,7 @@ void ProcessArguments(int argc, char** argv)
       else if (!strncmp(argv[i],"-nocons",7)) par.showcons=0;
       else if (!strncmp(argv[i],"-nopred",7)) par.showpred=0;
       else if (!strncmp(argv[i],"-nodssp",7)) par.showdssp=0;
+      else if (!strncmp(argv[i],"-ssconf",7)) par.showconf=1;
       else if (!strncmp(argv[i],"-mark",7)) par.mark=1;
       else if (!strcmp(argv[i],"-seq") && (i<argc-1))  par.nseqdis=atoi(argv[++i]); 
       else if (!strcmp(argv[i],"-aliw") && (i<argc-1)) par.aliwidth=atoi(argv[++i]); 
