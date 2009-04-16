@@ -535,16 +535,15 @@ No 4
 Probab=94.69   E-value=0.062  Score=28.83  Aligned_columns=56  Identities=25%
 
 Q ss_dssp             HHHHHHHHTTCCHHHHHHHHHHHHHHH-HCCSCCC-CHHHHHTSTTCCHHHHHHHHHHH
-Q ss_pred             HHHHHHHHCCCCCCHHHHHHHHHHHHH-HCCCCCC-CHHHHHHCCCCCHHHHHHHHHHH
-Q ss_conf             999999863899723799999999997-2797755-75877408996767899999999
+Q ss_pred             HHHHHHHhcCCCCchHHHHHHHHHHHH-hCCCCcc-ChHHHhhCCCcChHHHHHHHHHH
 Q d1tv9a1          17 ELANFEKNVSQAIHKYNAYRKAASVIA-KYPHKIK-SGAEAKKLPGVGTKIAEKIDEFL   73 (87)
 Q Consensus        17 eia~~~e~~~en~~rv~AYr~Aa~~l~-~l~~~i~-~~~~l~~lpgIG~~ia~~I~Ei~   73 (87)
                       ++..+..-.|=. .|.+...+++..|. .+...+. +.++|.+|||||+.+|..|.-+.
 T Consensus        72 ~l~~~i~~~G~~-~ka~~l~~~~~~i~~~~~g~ip~~~~eL~~LpGVG~kTA~~VL~~a  129 (225)
 T d1mun__          72 EVLHLWTGLGYY-ARARNLHKAAQQVATLHGGKFPETFEEVAALPGVGRSTAGAILSLS  129 (225)
 T ss_dssp             HHHHHHTTSCCT-HHHHHHHHHHHHHHHHSTTSCCCSHHHHHTSTTCCHHHHHHHHHHH
-T ss_pred             HHHHHHHHHHHH-HHHHHHHHHHHHHHHHCCCCCCCCHHHHHHCCCCCHHHHHHHHHHH
-T ss_conf             999999863066-7788999999999987079654476999843897588999999986
+T ss_pred             HHHHHHHhhhhh-HHHHHHHHHHHHHHHHcCCccccChHHHHhcCCCcHHHHHHHHHHh
+Confidence            344433333332 25555666676654 4555554 46889999999999999998664
 \end{verbatim}\normalsize
 
 This is a typical example of local homology, detectable at both the sequence and the
@@ -560,10 +559,15 @@ The pairwise alignment consists of one or more blocks with the following lines:
 \small\begin{verbatim}
 Q ss_dssp:      the query secondary structure as determined by DSSP (when available)
 Q ss_pred:      the query secondary structure as predicted by PSIPRED (when available)
-Q ss_conf:      the PSIPRED confidence values (0-9) (when available)
 Q scop-id:      the query sequence
 Q Consensus:    the query alignment consensus sequence
 \end{verbatim}\normalsize
+
+The predicted secondary structure states are shown in capital letters if the PSIPRED
+confidence value is between 0.7 and 1.0, for lower confidence values they are given 
+in lower-case letters. With the option {\tt '-ssconf'}, {\tt 'ss\_conf'} lines can 
+be added to the alignments which report the PSIPRED confidence values by numbers 
+between 0 and 9 (as in versions up to 1.5).
 
 The consensus sequence uses capital letters for well conserved columns and
 lower case for partially conserved columns. Unconserved columns are marked by 
@@ -592,17 +596,24 @@ amino acid distributions. It gives a valuable indication for the alignment quali
 
 (A unit of column score corresponds approximately to 0.6 bits.)
 From the column score line the excellent alignment around the highly conserved 
-'LPGIG' motif in the turn between two helices is evident. The alignment around the 
+{\tt 'LPGIG'} motif in the turn between two helices is evident. The alignment around the 
 first helix by contrast scores only slightly better than zero per residue and is
 therefore not very reliable.
 
+After the template block, which consists of the following lines, 
 \small\begin{verbatim}
 T Consensus:    the target alignment consensus sequence
 T scop-id:      the target domain sequence
 T ss_dssp:      the target secondary structure as determined by DSSP (when available)
 T ss_pred:      the target secondary structure as predicted by PSIPRED (when available)
-T ss_conf:      the PSIPRED confidence values (0-9) (when available)
 \end{verbatim}\normalsize
+
+the last line in the block ({\tt 'Confidence'}) reports the reliability of the pairwise 
+query-template alignment. The confidence values are obtained from the posterior 
+probabilities calculated in the Forward-Backward algorithm. A value of 8 indicates
+a probability that this pair of HMM columns is correctly aligned between 0.8 and 0.8999. 
+The Confidence line is only displayed when the -realign option is acitive.
+
 
 
 
