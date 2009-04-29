@@ -1,3 +1,37 @@
+/////////////////////////////////////////////////////////////////////////////////////
+// fast 2^x
+// ATTENTION: need to compile with g++ -fno-strict-aliasing when using -O2 or -O3!!!
+// Relative deviation < ??  (< 2.3E-7 with 5'th order polynomial)
+// Speed: ???E-8s (??E-8s) per call! 
+// Internal representation of double number according to IEEE 754: 
+//   1bit sign, 11 bits exponent, 52 bits mantissa: seee eeee eeee mmmm mmmm mmmm mmmm mmmm mmmm mmmm mmmm mmmm mmmm mmmm mmmm mmmm
+//                                     0x4b400000 = 0100 1011 0100 1000 0000 0000 0000 0000 
+// In summary: x = (-1)^s * 1.mmmmmmmmmmmmmmmmmmmmmm... * 2^(eeeeeeeeee-1023)
+/////////////////////////////////////////////////////////////////////////////////////
+inline double fast_pow2(double x)
+{
+    if (x>DBL_MAX_EXP) return DBL_MAX;
+    if (x<DBL_MIN_EXP) return 0.0f;
+    int64_t *px = (int64_t*)(&x);         // store address of double as pointer to 64bit-integer
+    double tx = (x-0.5f) + (3<<51);       // temporary value for truncation: x-0.5 is added to a large integer (3<<51)
+                                          // 3<<51 = (1.1bin)*2^52 = (1.1bin)*2^(1075-1023) 
+                                          // which, in internal bits, is written 0x4338000000000000 (since 0100 0011 0011 bin = 1075)
+    int64_t lx = *((int64_t*)&tx) - 0x4338000000000000;   // integer value of x
+    double dx = x-(double)(lx);           // float remainder of x
+    // x = 1.0 + dx*(0.693019              // polynomial approximation of 2^x
+    //         + dx*(0.241404              // for x in the range [0, 1]
+    //         + dx*(0.0520749
+    //         + dx* 0.0134929 )));
+    x = 1.0 + dx*(0.693153               // polynomial approximation of 2^x
+            + dx*(0.240153               // for x in the range [0, 1]
+            + dx*(0.0558282
+            + dx*(0.00898898
+            + dx* 0.00187682 ))));
+    *px += (lx<<52);                     // add integer power of 2 to exponent
+    return x;
+}
+
+
   // Log posterior using order statistics for fitting the EVD to the score distribution
   double LogPosteriorEVD_orderstatistics(double* v);
   static double LogPosteriorEVD_orderstatistics_static(void* pt2hitlist, double* v);

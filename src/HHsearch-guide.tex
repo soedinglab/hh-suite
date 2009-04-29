@@ -491,12 +491,12 @@ Column 3 'Prob': & Probability of target to be a true positive
 For the probability of being a true positive, the secondary structure score 
 in column 7 is taken into account, together with the raw score in column 6 ('Score'). 
 True positives are defined to be either globally homologous or they are at least 
-locally similar in structure. More precisely, the latter criterion demands that 
-the MAXSUB score between query and hit is at least 0.1. In almost all cases the 
-structural similarity will we be due to a global OR LOCAL homology between query 
-and target. \\
+homologous in parts, and thereby locally similar in structure. More precisely, 
+the latter criterion demands that the MAXSUB score between query and hit is at 
+least 0.1. In almost all cases the structural similarity will we be due to a global
+OR LOCAL homology between query and target. \\
 
-Column 4 'E-value': & Expect-value
+Column 4 'E-value': & 
 E-value and P-value are calculated without taking the secondary structure into account!
 The E-value gives the average number of false positives ('wrong hits') with a score 
 better than the one for the target when scanning the datbase. It is a measure of 
@@ -504,7 +504,7 @@ reliability: E-values near to 0 signify a very reliable hit, an E-value of 10 me
 about 10 wrong hits are expected to be found in the database with a score at least 
 this good.\\
 
-Column 5 'P-value': & P-value
+Column 5 'P-value': & 
 The P-value is just the E-value divided by the number of sequences in the database.
 It is the probability that in a PAIRWISE comparison a wrong hit will score at least 
 this good.\\
@@ -608,11 +608,11 @@ T ss_dssp:      the target secondary structure as determined by DSSP (when avail
 T ss_pred:      the target secondary structure as predicted by PSIPRED (when available)
 \end{verbatim}\normalsize
 
-the last line in the block ({\tt 'Confidence'}) reports the reliability of the pairwise 
+the last line in the block ({\tt Confidence}) reports the reliability of the pairwise 
 query-template alignment. The confidence values are obtained from the posterior 
 probabilities calculated in the Forward-Backward algorithm. A value of 8 indicates
 a probability that this pair of HMM columns is correctly aligned between 0.8 and 0.8999. 
-The Confidence line is only displayed when the -realign option is acitive.
+The {\ttConfidence} line is only displayed when the -realign option is acitive.
 
 
 

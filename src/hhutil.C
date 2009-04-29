@@ -481,7 +481,7 @@ void SetDefaults()
   par.M=1;                     // match state assignment is by A2M/A3M
   par.Mgaps=50;                // Above this percentage of gaps, columns are assigned to insert states (for par.M=2)
   par.calibrate=0;             // default: no calibration
-  par.calm=3;                  // derive P-values from: 0:query calibration  1:template calibration  2:both   3:NN prediction
+  par.calm=3;                  // derive P-values from: 0:query calibration  1:template calibration  2:both  3:Neural Network prediction
   par.mode=0;                  //
 
   par.wg=0;                    // 0: use local sequence weights   1: use local ones
