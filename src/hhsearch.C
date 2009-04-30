@@ -341,7 +341,7 @@ void help_other()
 {
   printf("\n");
   printf("Other options: \n");
-  printf(" -calm 0-3     empirical score calibration of 0:query 1:template 2:both (def=off)\n",par.calm);
+  printf(" -calm 0-3     empirical score calibration of 0:query 1:template 2:both (def=off)\n");
   printf(" -opt  <file>  parameter optimization mode (def=off): return sum of ranks \n");
   printf("               of true positives (same superfamily) for minimization      \n");
   printf("               and write result into file                                 \n");
