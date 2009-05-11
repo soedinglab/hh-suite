@@ -389,8 +389,6 @@ foreach $file (@files)
 
     # Calibrate $tmp-X.hhm and $tmp-X-noSS.hhm
     &System("cp $tmp"."-X.hhm $tmp"."-X-noSS.hhm");
-    &System("$hh/hhsearch -cpu $cpu -cal -norealign -i $tmp"."-X.hhm -d $calhhm",$v2);
-    &System("$hh/hhsearch -cpu $cpu -cal -norealign -i $tmp"."-X-noSS.hhm -d $calhhm -ssm 0",$v2);
 
     &System("$perl/reformat.pl -noss a3m fas $tmp.a3m $tmp.fas",$v2);
     &System("$perl/reformat.pl -M first -r fas fas $tmp.fas $tmp.fas",$v2);
@@ -628,8 +626,6 @@ foreach $file (@files)
 			# Recalibrate $tmp-X.hhm and $tmp-X-noSS.hhm
 			&System("$hh/hhmake -id $id -i $tmp"."-X.a3m -o $tmp"."-X.hhm",$v2);
 			&System("cp $tmp"."-X.hhm $tmp"."-X-noSS.hhm");
-			&System("$hh/hhsearch -cpu $cpu -cal -norealign -i $tmp"."-X.hhm -d $calhhm",$v2);
-			&System("$hh/hhsearch -cpu $cpu -cal -norealign -i $tmp"."-X-noSS.hhm -d $calhhm -ssm 0",$v2);
 
 		    } else {  # accept new alignment not so strictly?
 
