@@ -15,11 +15,10 @@ use lib "/cluster/lib";              # for chimaera webserver: ConfigServer.pm
 
 use strict;
 use MyPaths;                         # config file with path variables for nr, blast, psipred, pdb, dssp etc.
-use Align;
 
 #my $bioprogs_dir="/home/soeding/programs";   # see next two lines
 #my $ncbidir="$bioprogs_dir/blast";           # Put the directory path with the BLAST executables 
-#my $perl="/home/soeding/perl";                 # Put the directory path where reformat.pl is lying
+#my $perl="/home/soeding/perl";               # Put the directory path where reformat.pl is lying
 #my $dummydb="/home/soeding/nr/do_no_delete"; # Put the name given to the dummy blast directory (or leave this name)
 
 my $psipreddir="$bioprogs_dir/psipred/";     # Put the directory path with the PSIPRED executables 
@@ -48,7 +47,7 @@ In this case the output file name is obligatory and must be different from the i
 (( For an explanation of the A3M format, see the HHsearch README file.     ))
 
 Usage: perl addpsipred.pl <ali file> [<outfile>] [-fas|-a3m|-clu|sto]  
-  or   perl addpsipred.pl <HMM file> <outfile>   -hmm  
+  or   perl addpsipred.pl <HMM file> <outfile> -hmm  
 \n";
 
 # Variable declarations
@@ -150,39 +149,17 @@ if ($informat ne "hmm")
     if ($q_match<=25) {                 # Psiblast needs at least 26 residues in query
 	my $addedXs=('X' x (26-$q_match))."\n";
 	$qseq.=$addedXs;     # add 'X' to query to make it at least 26 resiudes long
-	for ($i=0; $i<@seqs; $i++) {$seqs[$i].=$addedXs;}
+	for ($i=0; $i<@seqs; $i++) {	    
+	    $seqs[$i]=~s/\n$//g;
+	    $seqs[$i].=$addedXs;
+	}
+	open (INFILE,">$inbase.in.a3m");
+	for ($i=0; $i<@seqs; $i++) {
+	    printf(INFILE "%s",$seqs[$i]);
+	}
+	close INFILE;
     }
     $/="\n"; # set input field separator
-
-    # Thanks to Marc Offman for the following patch:
-    #HERE COMES THE X PATCH FOR THE FILE $inbase.in.a3m
-    if ($q_match<=25) {
-        print "patch a3m\n";            
-    	my $nrX = (26-$q_match);
-	open (OUT,">$inbase.in.a3m.patch");
-	open (IN,"$inbase.in.a3m");
-	my $cnt = 0;
-	while(<IN>){
-		chomp($_);
-		my $X = "";
-		if(/^>/){
-			print OUT "$_\n";
-			$seqs[$cnt] = $_."\n";
-		}
-		else{
-			$X = ('X' x ($nrX));
-			$_ .= $X;
-			$seqs[$cnt] .= $_."\n";
-			print OUT "$_\n";
-			$cnt++;
-		}
-
-	}
-	close IN;
-	close OUT;
-	`/bin/mv $inbase.in.a3m.patch $inbase.in.a3m`;
-    }
-    #HERE COMES THE X PATCH FOR THE FILE $inbase.in.a3m
 
     # Write query sequence file in FASTA format
     open (QFILE, ">$inbase.sq") or die("ERROR: can't open $inbase.sq: $!\n");

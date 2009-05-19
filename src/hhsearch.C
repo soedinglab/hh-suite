@@ -576,7 +576,7 @@ void ProcessArguments(int argc, char** argv)
         else if(!strcmp(argv[i],"first"))  par.M=3;
         else if (argv[i][0]>='0' && argv[i][0]<='9') {par.Mgaps=atoi(argv[i]); par.M=2;}
         else cerr<<endl<<"WARNING: Ignoring unknown argument: -M "<<argv[i]<<"\n";
-      else if (!strcmp(argv[i],"-cal")) par.calibrate=1;
+      else if (!strcmp(argv[i],"-cal")) {par.calibrate=1; par.calm=0;}
       else if (!strcmp(argv[i],"-calm") && (i<argc-1)) par.calm=atoi(argv[++i]);
       else if (!strcmp(argv[i],"-shift") && (i<argc-1)) par.shift=atof(argv[++i]);
       else if (!strcmp(argv[i],"-mact") && (i<argc-1)) par.mact=atof(argv[++i]);
