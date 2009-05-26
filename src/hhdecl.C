@@ -152,7 +152,7 @@ public:
   float mact;             // Score threshold (negative offset) in MAC alignment
 
   char calibrate;         // calibration of query HMM?  0:no, 1:yes (write lamda,mu into query profile)
-  char calm;              // derive P-values from: 0:query calibration  1:template calibration  2:both
+  char calm;              // derive P-values from: 0:query calibration  1:template calibration  2:both  3:Neural Network prediction
   int opt;                // for optimization: compare only every opt'th negative; 0: mode off
   int readdefaultsfile ;  // read defaults file ./.hhdefaults or HOME/.hhdefaults?
   int min_overlap;        // all cells of dyn. programming matrix with L_T-j+i or L_Q-i+j < min_overlap will be ignored

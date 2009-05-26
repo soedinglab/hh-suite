@@ -15,7 +15,7 @@
 #include <cstdio>     // printf
 #include <algorithm>  // min,max
 #include <stdlib.h>   // exit
-#include <string.h>     // strcmp, strstr
+#include <string.h>   // strcmp, strstr
 #include <math.h>     // sqrt, pow
 #include <limits.h>   // INT_MIN
 #include <float.h>    // FLT_MIN
@@ -299,7 +299,7 @@ void help_ali()
   printf("        1      = log2 Sum(tja*qia/pqa)  (pqa = 1/2*(pa+ta) )               \n");
   printf("        2      = log2 Sum(tja*qia/ta)   (ta: av. aa freqs in template)     \n");
   printf("        3      = log2 Sum(tja*qia/qa)   (qa: av. aa freqs in query)        \n");
-   printf(" -corr [0,1]   weight of term for pair correlations (def=%.2f)            \n",par.corr);
+  printf(" -corr [0,1]   weight of term for pair correlations (def=%.2f)            \n",par.corr);
   printf(" -shift [-1,1] score offset (def=%-.3f)                                   \n",par.shift);
   printf(" -r            repeat identification: multiple hits not treated as independent\n");
   printf(" -ssm  0-2     0:no ss scoring [default=%i]               \n",par.ssm);
@@ -316,6 +316,7 @@ void help_all()
   help_hmm();
   help_gap();
   help_ali();
+  printf(" -calm 0-3     empirical score calibration of 0:query 1:template 2:both (def=off)\n");
   printf("\n");
   printf("Default options can be specified in './.hhdefaults' or '~/.hhdefaults'\n");
 }
@@ -568,6 +569,7 @@ void ProcessArguments(int argc, char** argv)
 	else if(!strcmp(argv[i],"first"))  par.M=3; 
 	else if (argv[i][0]>='0' && argv[i][0]<='9') {par.Mgaps=atoi(argv[i]); par.M=2;}
 	else cerr<<endl<<"WARNING: Ignoring unknown argument: -M "<<argv[i]<<"\n";
+      else if (!strcmp(argv[i],"-calm") && (i<argc-1)) par.calm=atoi(argv[++i]);
       else if (!strcmp(argv[i],"-shift") && (i<argc-1)) par.shift=atof(argv[++i]); 
       else if (!strcmp(argv[i],"-mact") && (i<argc-1)) {par.mact=atof(argv[++i]);}
       else if (!strcmp(argv[i],"-wstruc") && (i<argc-1)) par.wstruc=atof(argv[++i]); 
@@ -953,6 +955,17 @@ int main(int argc, char **argv)
       fclose(alitabf);
     }
 
+  // Fit EVD (with lamda, mu) to score distribution?
+  if (par.forward==0)
+    {
+      if (par.calm==3)  
+	hitlist.CalculatePvalues(q);  // Use NN prediction of lamda and mu
+      else 
+	hitlist.GetPvalsFromCalibration(q);
+    }
+  else 
+    printf("Warning: E-values and Probabilities can only be calculated when the default Viterbi algorithm is used (with or without -norealign option)\n");
+
   // Do Stochastic backtracing?
   if (par.forward==1)
     for (int i=1; i<Nstochali; i++) 
@@ -961,11 +974,6 @@ int main(int argc, char **argv)
 	hitlist.Push(hit);      //insert hit at beginning of list (last repeats first!)
 	(hit.irep)++;
       }
-  else // Set P-value, E-value and probability
-    {
-      if (q.mu) hitlist.GetPvalsFromCalibration(q);
-      else if (t.mu) hitlist.GetPvalsFromCalibration(t);
-    }
 
   // Print FASTA or A2M alignments?
   if (*par.pairwisealisfile) {
@@ -973,7 +981,7 @@ int main(int argc, char **argv)
     hitlist.PrintAlignments(q,par.pairwisealisfile,par.outformat);
   }
 
-  // Print hit list and  alignments
+  // Print hit list and alignments
   if (*par.outfile) 
     {
       hitlist.PrintHitList(q,par.outfile);

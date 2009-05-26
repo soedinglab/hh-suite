@@ -234,7 +234,7 @@ HHsearch 1.6.0 sometime in 2009
   that E-values in global search mode are unreliable and that sensitivity is 
   reduced.
 
-* The previous version sometimes showed non-homologous hits with high 
+* The previous versions sometimes showed non-homologous hits with high 
   probabilities by matching long stretches of secondary structure states, 
   in particular long helices, in the absence of any similarity in the amino 
   acid profiles. Capping the SS score by a linear function of the profile score
@@ -267,6 +267,10 @@ HHsearch 1.6.0 sometime in 2009
   program execution and inter-thread signaling was unreliable.
 
 * Removed a memory leak and optimized memory management.
+
+* Removed a bug in hhalign that could lead to unreasonably significant E-values 
+  and probabilities
+
 
 -->
 

@@ -17,12 +17,12 @@
 \contentsline {subsection}{\numberline {5.1}{\tt hhmake} -- build an HMM from an input MSA}{17}
 \contentsline {subsection}{\numberline {5.2}{\tt hhsearch} -- search a database of HMMs with a query MSA or HMM}{18}
 \contentsline {subsection}{\numberline {5.3}{\tt hhalign} -- Align a query MSA/HMM to a template MSA/HMMt}{19}
-\contentsline {subsection}{\numberline {5.4}{\tt hhfilter} -- filter an MSA}{20}
+\contentsline {subsection}{\numberline {5.4}{\tt hhfilter} -- filter an MSA}{21}
 \contentsline {subsection}{\numberline {5.5}{\tt reformat.pl} -- reformat one or many alignments}{21}
 \contentsline {subsection}{\numberline {5.6}{\tt buildali.pl} -- build a PSI-BLAST alignment from a sequence or MSA}{22}
 \contentsline {subsection}{\numberline {5.7}{\tt addpsipred.pl} -- add predicted secondary structure to an MSA or HMM}{23}
-\contentsline {subsection}{\numberline {5.8}{\tt alignhits.pl} -- extract an alignment from a BLAST/PSI-BLAST output}{23}
+\contentsline {subsection}{\numberline {5.8}{\tt alignhits.pl} -- extract an alignment from a BLAST/PSI-BLAST output}{24}
 \contentsline {subsection}{\numberline {5.9}{\tt hhmakemodel.pl} -- generate MSAs or coarse 3D models from HHsearch results file}{24}
 \contentsline {section}{\numberline {6}Changes from HHsearch 1.2.0 to 1.5.0}{25}
 \contentsline {section}{\numberline {7}License}{27}
-\contentsline {section}{References}{28}
+\contentsline {section}{References}{29}
