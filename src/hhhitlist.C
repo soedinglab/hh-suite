@@ -779,7 +779,7 @@ void HitList::CalculateHHblastEvalues(HMM& q)
 	}
       else 
 	{
-	  printf("WARNING: global calibration not yet implemented!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+	  //printf("WARNING: global calibration not yet implemented!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
 	}
 
       hit.Eval = exp(hit.logPval+log(N_searched)+(alpha*par.hhblast_prefilter_pval - beta));     // overwrite E-value from HHsearch with composite E-value from HHblast
@@ -870,11 +870,11 @@ void HitList::ReadBlastFile(HMM& q)
 void HitList::CalculatePvalues(HMM& q)
 {  
   Hit hit; 
-  float lamda=0.4, mu=3.0;
+  float lamda=LAMDA_GLOB, mu=3.0;   // init for global search 
   const float log1000=log(1000.0);
 
   if(N_searched==0) N_searched=1;
-  if (v>=2) 
+  if (v>=3) 
     printf("Calculate Pvalues as a function of query and template lengths and diversities...\n");
   Reset();
   while (!End()) 
@@ -887,10 +887,6 @@ void HitList::CalculatePvalues(HMM& q)
 	  mu    =    mu_NN( log(q.L)/log1000, log(hit.L)/log1000, q.Neff_HMM/10.0, hit.Neff_HMM/10.0 ); 
 // 	  if (v>=3 && nhits++<20) 
 // 	     printf("hit=%-10.10s Lq=%-4i  Lt=%-4i  Nq=%5.2f  Nt=%5.2f  =>  lamda=%-6.3f  mu=%-6.3f\n",hit.name,q.L,hit.L,q.Neff_HMM,hit.Neff_HMM,lamda,mu);
-	}
-      else 
-	{
-	  printf("WARNING: global calibration not yet implemented!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
 	}
       hit.logPval = logPvalue(hit.score,lamda,mu);
       hit.Pval    = Pvalue(hit.score,lamda,mu);

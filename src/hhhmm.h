@@ -77,9 +77,6 @@ public:
     // Insert calibration line 'EVD   lamda   mu      hashvalue' into HMM file
     void InsertCalibration(char* infile);
 
-    // Write HMM to output file in HMMER format
-    void WriteToFileHMMER(char* outfile);
-
     // Transform log to lin transition probs
     void Log2LinTransitionProbs(float beta=1.0);
 

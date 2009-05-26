@@ -44,15 +44,15 @@ using std::ofstream;
 Alignment::Alignment(int maxseq, int maxres)
 {
   longname = new(char[DESCLEN]);
-  sname = new(char*[maxseq]);
-  seq = new(char*[maxseq]);
+  sname = new(char*[maxseq+2]);
+  seq = new(char*[maxseq+2]);
   l = new(int[maxres]);
-  X = new(char*[maxseq]);
-  I = new(short unsigned int*[maxseq]);
-  keep = new(char[maxseq]);
-  display = new(char[maxseq]);
-  wg = new(float[maxseq]);
-  nseqs = new(int[maxres]);
+  X = new(char*[maxseq+2]);
+  I = new(short unsigned int*[maxseq+2]);
+  keep = new(char[maxseq+2]);
+  display = new(char[maxseq+2]);
+  wg = new(float[maxseq+2]);
+  nseqs = new(int[maxres+2]);
   N_in=L=0;
   nres=NULL;           // number of residues per sequence k
   first=NULL;          // first residue in sequence k
@@ -2041,7 +2041,7 @@ void Alignment::Transitions_from_D_state(HMM& q, char* in)
 /////////////////////////////////////////////////////////////////////////////////////
 // Write alignment without insert states (lower case) to alignment file?
 /////////////////////////////////////////////////////////////////////////////////////
-void Alignment::WriteWithoutInsertsToFile(char* alnfile)
+void Alignment::WriteWithoutInsertsToFile(const char* alnfile)
 {
   if (v>=2) cout<<"Writing alignment to "<<alnfile<<"\n";
   FILE* alnf;
@@ -2050,8 +2050,18 @@ void Alignment::WriteWithoutInsertsToFile(char* alnfile)
   // If alignment name is different from that of query: write name into commentary line
   if (strncmp(longname,sname[kfirst],DESCLEN-1)) fprintf(alnf,"#%s\n",longname);
   if (v>=2) cout<<"Writing alignment to "<<alnfile<<"\n";
+
+  // Write ss_ lines
   for (int k=0; k<N_in; k++)
-    if (keep[k] || display[k]==2) // print if either in profile (keep[k]>0) or display is obligatory (display[k]==2)
+    if (k==kss_pred || k==kss_conf || k==kss_dssp || k==ksa_dssp)
+      {
+        fprintf(alnf,">%s\n",sname[k]);
+        for (int i=1; i<=L; i++) fprintf(alnf,"%c",i2aa(X[k][i]));
+        fprintf(alnf,"\n");
+      }
+  // Write other sequences
+  for (int k=0; k<N_in; k++)
+    if (!(k==kss_pred || k==kss_conf || k==kss_dssp || k==ksa_dssp) && (keep[k] || display[k]==2)) // print if either in profile (keep[k]>0) or display is obligatory (display[k]==2)
       {
         fprintf(alnf,">%s\n",sname[k]);
         for (int i=1; i<=L; i++) fprintf(alnf,"%c",i2aa(X[k][i]));
@@ -2063,7 +2073,7 @@ void Alignment::WriteWithoutInsertsToFile(char* alnfile)
 /////////////////////////////////////////////////////////////////////////////////////
 // Write stored,filtered sequences WITH insert states (lower case) to alignment file?
 /////////////////////////////////////////////////////////////////////////////////////
-void Alignment::WriteToFile(char* alnfile, const char format[])
+void Alignment::WriteToFile(const char* alnfile, const char format[])
 {
   FILE* alnf;
   if (!par.append) alnf = fopen(alnfile,"w"); else alnf = fopen(alnfile,"a");
@@ -2074,15 +2084,20 @@ void Alignment::WriteToFile(char* alnfile, const char format[])
       if (v>=2) cout<<"Writing A3M alignment to "<<alnfile<<"\n";
       // If alignment name is different from that of query: write name into commentary line
       if (strncmp(longname,sname[kfirst],DESCLEN-1) || readCommentLine == '1') fprintf(alnf,"#%s\n",longname);
+      // Write ss_ lines
       for (int k=0; k<N_in; k++)
-        if (keep[k] || display[k]==2) // print if either in profile (keep[k]>0) or display obligatory (display[k]==2)
+        if (k==kss_pred || k==kss_conf || k==kss_dssp || k==ksa_dssp)
+          fprintf(alnf,">%s\n%s\n",sname[k],seq[k]+1);
+      // Write other sequences
+      for (int k=0; k<N_in; k++)
+        if (!(k==kss_pred || k==kss_conf || k==kss_dssp || k==ksa_dssp) && (keep[k] || display[k]==2)) // print if either in profile (keep[k]>0) or display is obligatory (display[k]==2)
           fprintf(alnf,">%s\n%s\n",sname[k],seq[k]+1);
     }
   else // PSI-BLAST format
     {
       if (v>=2) cout<<"Writing PSI-BLAST-formatted alignment to "<<alnfile<<"\n";
-      for (int k=kfirst; k<N_in; k++) // skip sequences before kfirst!!
-        if (keep[k] || display[k]==2) // print if either in profile (keep[k]>0) or display obligatory (display[k]==2)
+      for (int k=0; k<N_in; k++) // skip sequences before kfirst!!
+        if (!(k==kss_pred || k==kss_conf || k==kss_dssp || k==ksa_dssp) && (keep[k] || display[k]==2)) // print if either in profile (keep[k]>0) or display is obligatory (display[k]==2)
           {
             strcut(sname[k]);
             fprintf(alnf,"%-20.20s ",sname[k]);
@@ -2318,6 +2333,65 @@ void Alignment::AddSequence(char Xk[], int Ik[])
   N_in++;
 }
 
+/////////////////////////////////////////////////////////////////////////////////////
+// Add secondary structure prediction to alignment (overwrite existing prediction)
+/////////////////////////////////////////////////////////////////////////////////////
+void Alignment::AddSSPrediction(char seq_pred[], char seq_conf[])
+{
+  unsigned int i;
+
+  if ((int)strlen(seq_pred)!=L+1)
+    {
+      cerr<<"WARNING! Could not add secondary struture prediction - unequal length!\n";
+      return;
+    }
+
+  if (kss_pred < 0)  // No ss prediction exists
+    {
+      kss_pred=N_in;
+      keep[N_in]=0;
+      display[N_in]=1;
+      seq[N_in]=new(char[L+2]);
+      strcpy(seq[N_in],seq_pred);
+      X[N_in]=new(char[L+2]);
+      for (i=0; i<strlen(seq_pred); i++) X[N_in][i]=ss2i(seq_pred[i]);
+      I[N_in]=new(short unsigned int[L+2]);
+      for (i=0; i<=strlen(seq_pred); i++) I[N_in][i]=0;
+      sname[N_in]=new(char[50]);
+      strcpy(sname[N_in],"ss_pred PSIPRED predicted secondary structure");
+      N_in++;
+      N_ss++;
+      n_display++;
+    }
+  else  // overwrite existing ss prediction
+    {
+      strcpy(seq[kss_pred],seq_pred);
+      for (i=0; i<strlen(seq_pred); i++) X[kss_pred][i]=ss2i(seq_pred[i]);
+    }
+
+  if (kss_conf < 0)  // No ss prediction confidence exists
+    {
+      kss_conf=N_in;
+      keep[N_in]=0;
+      display[N_in]=1;
+      seq[N_in]=new(char[L+2]);
+      strcpy(seq[N_in],seq_conf);
+      X[N_in]=new(char[L+2]);
+      for (i=0; i<strlen(seq_pred); i++) X[N_in][i]=cf2i(seq_conf[i]);
+      I[N_in]=new(short unsigned int[L+2]);
+      for (i=0; i<=strlen(seq_pred); i++) I[N_in][i]=0;
+      sname[N_in]=new(char[35]);
+      strcpy(sname[N_in],"ss_conf PSIPRED confidence values");
+      N_in++;
+      N_ss++;
+      n_display++;
+    }
+  else  // overwrite existing ss prediction confidence
+    {
+      strcpy(seq[kss_conf],seq_conf);
+      for (i=0; i<strlen(seq_pred); i++) X[kss_conf][i]=cf2i(seq_conf[i]);
+    }
+}
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Determine matrix of position-specific weights w[k][i] for multiple alignment

@@ -715,6 +715,7 @@ int strtrd(char* str, const char chars[])
       if (*plist=='\0') {*ptr0=*ptr1; ptr0++;}
       ptr1++;
     }
+  *ptr0=*ptr1;
   return ptr1-ptr0;
 }
 
@@ -729,6 +730,7 @@ int strtrd(char* str, char char1, char char2)
       if (*ptr1>=char1 && *ptr1<=char2) {*ptr0=*ptr1; ptr0++;}
       ptr1++;
     }
+  *ptr0=*ptr1;
   return ptr1-ptr0;
 }
 

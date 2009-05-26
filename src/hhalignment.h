@@ -57,10 +57,10 @@ public:
   void Transitions_from_I_state(HMM& q, char* in);
   
   // Write alignment without insert states to alignment file
-  void WriteWithoutInsertsToFile(char* alnfile);
+  void WriteWithoutInsertsToFile(const char* alnfile);
 
   // Write alignment to alignment file
-  void WriteToFile(char* alnfile, const char format[]=NULL);
+  void WriteToFile(const char* alnfile, const char format[]=NULL);
 
   // Read a3m slave alignment of hit from ta3mfile and merge into (query) master alignment
   void MergeMasterSlave(Hit& hit, char ta3mfile[]);
@@ -70,6 +70,9 @@ public:
 
   // Add a sequence to Qali
   void AddSequence(char Xk[], int Ik[]=NULL);
+
+  // Add SS prediction to Qali
+  void AddSSPrediction(char seq_pred[], char seq_conf[]);
 
   // Determine matrix of position-specific weights w[k][i] for multiple alignment
   void GetPositionSpecificWeights(float* w[]);

@@ -533,7 +533,8 @@ void SetDefaults()
   par.readdefaultsfile=0;      // Default = do not read a defaults file ./.hhdefaults or HOME/.hhdefaults
   par.maxdbstrlen=200;         // maximum length of database string to be printed in 'Command' line of hhr file
   par.mode=0;
-  par.idummy=par.jdummy=0;     //
+  par.idummy=0;
+  par.jdummy=0;
 
   par.notags=1;                // neutralize His-tags, FLAG-tags, C-myc-tags
 
