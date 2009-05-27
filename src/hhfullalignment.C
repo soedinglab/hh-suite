@@ -204,7 +204,9 @@ void FullAlignment::Build(HMM& q, Hit& hit)
 	}
     }
 
-  if (!hit.P_posterior) posterior[0]='\0'; // record in FullAlignment that no posteriors were calculated
+  // record in FullAlignment if posteriors were calculated
+  //if (!hit.P_posterior) posterior[0]='\0'; else posterior[0]=' '; 
+  if (!hit.P_posterior) posterior[0]='\0'; 
 }
 
 

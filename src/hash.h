@@ -173,6 +173,9 @@ public:
   //print out list of keys and data
   void Print();
 
+  //print out list of keys
+  void PrintKeys();
+
   //Print out hash with internal representation as array 
   void DebugPrint();
 };

@@ -103,7 +103,7 @@ inline unsigned int Hash<Typ>::HashValue(char* key)  //returns the hash value fo
       char* c = key;
       while(*c) i = ((i<<7) + *(c++)) % num_slots; 
       key_len = c - key;
-      //   cerr<<"      Hash value for \'"<<key<<"\' is "<<i<<"\n";
+      //cerr<<"      Hash value for \'"<<key<<"\' is "<<i<<"\n";
       return i;
     }
 
@@ -216,11 +216,13 @@ Typ Hash<Typ>::Remove(char* key)
     {
       if(!strcmp(pslot->ReadNext().key,key)) 
 	{
+	  Pair<Typ> pair = pslot->ReadCurrent();
 	  num_keys--; 
 	  pslot->Delete();
 	  // if key was the only element in pslot then delete whole list
 	  if (pslot->Size()==0) {delete pslot; slot[i]=0;} 
-	  return pslot->ReadCurrent().data;
+	  //	  return pslot->ReadCurrent().data;
+	  return pair.data;
 	} 
     } while(!pslot->End()); 
   return fail;
@@ -312,7 +314,8 @@ Typ Hash<Typ>::ReadCurrent()
   curr=prev;
   if (curr>=num_slots) {return fail;}
   pslot = slot[curr];  // current list is never empty, except when current=num_slots
-  pairp = &(pslot->ReadCurrent()); 
+  Pair<Typ> pair = pslot->ReadCurrent();
+  pairp = &pair; 
   if (pslot->End()) {
     do   // move on to next non-empty list
       {
@@ -337,7 +340,8 @@ Typ Hash<Typ>::ReadCurrent(char* key)
   curr=prev;
   if (curr>=num_slots) {*key='\0'; return fail;}
   pslot = slot[curr];  // current list is never empty, except when current=num_slots
-  pairp = &(pslot->ReadCurrent()); 
+  Pair<Typ> pair = pslot->ReadCurrent();
+  pairp = &pair; 
   strcpy(key,pairp->key);
   if (pslot->End()) {
     do   // move on to next non-empty list
@@ -362,7 +366,8 @@ Typ Hash<Typ>::RemoveCurrent()
 
   if (curr>=num_slots) {return fail;}
   pslot = slot[curr];  // current list is never empty, except when current=num_slots
-  pairp = &(pslot->Delete()); 
+  Pair<Typ> pair = pslot->Delete();
+  pairp = &pair; 
   num_keys--;
   // if key was the only element in pslot then delete whole list
   if (pslot->Size()==0) {delete pslot; slot[curr]=0;}  
@@ -466,6 +471,20 @@ void Hash<Typ>::Print()
   while(!End()) 
     cout<<key<<"->"<<ReadNext(key)<<"\n";
 }
+/////////////////////////////////////////////////////////////////////////////////////////////
+//print out list of keys and data
+/////////////////////////////////////////////////////////////////////////////////////////////
+template<class Typ> 
+void Hash<Typ>::PrintKeys()
+{
+  char key[MaxLen()+1];
+
+  cout<<"\nPrint hash-keys:\n";
+  Reset();
+  while(!End()) 
+    cout<<key<<"\n";
+}
+
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 //Print out hash with internal representation as array 

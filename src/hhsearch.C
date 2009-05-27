@@ -103,8 +103,6 @@ int* format;              // format[bin] = 0 if in HHsearch format => add pcs; f
 int read_from_db;         // The value of this flag is returned from HMM::Read(); 0:end of file  1:ok  2:skip HMM
 int N_searched;  // Number of HMMs searched
 
-
-
 struct Thread_args // data to hand to WorkerLoop thread
 {
   int thread_id;          // id of thread (for debugging)
@@ -125,6 +123,17 @@ pthread_mutex_t hitlist_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t finished_job = PTHREAD_COND_INITIALIZER;
 #endif
 
+///////////////////////////////////////////////////////////////////////////////////////
+//// For multi-threading: return a bin with the desired status, return -1 if no such bin found
+//////////////////////////////////////////////////////////////////////////////////////
+inline int PickBin(char status)
+{
+  for (int b=0; b<bins; b++) {if (bin_status[b]==status) return b;}
+ return -1;
+}
+
+// Include hhworker.C here, because it needs some of the above variables
+#include "hhworker.C"      // functions: AlignByWorker, RealignByWorker, WorkerLoop
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Help functions
@@ -609,215 +618,6 @@ void ProcessArguments(int argc, char** argv)
 
 
 
-///////////////////////////////////////////////////////////////////////////////////////
-//// For multi-threading: return a bin with the desired status, return -1 if no such bin found
-//////////////////////////////////////////////////////////////////////////////////////
-inline int PickBin(char status)
-{
-  for (int b=0; b<bins; b++) {if (bin_status[b]==status) return b;}
- return -1;
-}
-
-
-///////////////////////////////////////////////////////////////////////////////////////
-//// Do the pairwise comparison of q and *(t[bin]) for the database search
-//////////////////////////////////////////////////////////////////////////////////////
-void AlignByWorker(int bin)
-{
-
-  // Prepare q ant t and compare
-  PrepareTemplate(q,*(t[bin]),format[bin]);
-
-  // Do HMM-HMM comparison, store results if score>SMIN, and try next best alignment
-  for (hit[bin]->irep=1; hit[bin]->irep<=par.altali; hit[bin]->irep++)
-    {
-      if (par.forward==0)
-        {
-          hit[bin]->Viterbi(q,*(t[bin]));
-          if (hit[bin]->irep>1 && hit[bin]->score <= SMIN) break;
-          hit[bin]->Backtrace(q,*(t[bin]));
-        }
-      else if (par.forward==1)
-        {
-          hit[bin]->Forward(q,*(t[bin]));
-          hit[bin]->StochasticBacktrace(q,*(t[bin]),1); // the 1 selects maximization instead of stochastic backtracing
-        }
-      else if (par.forward==2)
-        {
-          hit[bin]->Forward(q,*(t[bin]));
-          hit[bin]->Backward(q,*(t[bin]));
-          hit[bin]->MACAlignment(q,*(t[bin]));
-          hit[bin]->BacktraceMAC(q,*(t[bin]));
-        }
-      hit[bin]->score_sort = hit[bin]->score_aass;
-      //printf ("%-12.12s  %-12.12s   irep=%-2i  score=%6.2f\n",hit[bin]->name,hit[bin]->fam,hit[bin]->irep,hit[bin]->score);
-
-#ifdef PTHREAD
-      pthread_mutex_lock(&hitlist_mutex);   // lock access to hitlist
-#endif
-      hitlist.Push(*(hit[bin]));            // insert hit at beginning of list (last repeats first!)
-#ifdef PTHREAD
-      pthread_mutex_unlock(&hitlist_mutex); // unlock access to hitlist
-#endif
-
-      if (par.forward>0) break; // find only best alignment for forward algorithm and stochastic sampling
-      if (hit[bin]->score <= SMIN) break;  // break if score for first hit is already worse than SMIN
-    }
-  return;
-}
-
-///////////////////////////////////////////////////////////////////////////////////////
-//// Realign q and *(t[bin]) with the MAC algorithm (after the database search)
-//////////////////////////////////////////////////////////////////////////////////////
-void RealignByWorker(int bin)
-{
-  Hit hit_cur;
-  int nhits=0;
-  int pos;
-  hit[bin]->irep=1;
-
-  // Prepare MAC comparison(s)
-  PrepareTemplate(q,*(t[bin]),format[bin]);
-  t[bin]->Log2LinTransitionProbs(1.0);
-
-#ifdef PTHREAD
-          pthread_mutex_lock(&hitlist_mutex);   // lock access to hitlist
-#endif
-
-  // Search positions in hitlist with correct index of template
-  hitlist.Reset();
-  while (!hitlist.End())
-    {
-      hit_cur = hitlist.ReadNext();
-      if (nhits>=imax(par.B,par.Z)) break;
-      //    fprintf(stderr,"t->name=%s  hit_cur.name=%s  hit[bin]->irep=%i  nhits=%i  hit_cur.index=%i  hit[bin]->index=%i\n",t[bin]->name,hit_cur.name,hit_cur.irep,nhits,hit_cur.index,hit[bin]->index);
-      if (nhits>=imax(par.b,par.z) && hit_cur.Probab < par.p) break;
-      if (nhits>=imax(par.b,par.z) && hit_cur.Eval > par.E) continue;
-      if (hit_cur.index==hit[bin]->index) // found position with correct template
-        {
-          //      fprintf(stderr,"  t->name=%s   hit_cur.irep=%i  hit[bin]->irep=%i  nhits=%i\n",t[bin]->name,hit_cur.irep,hit[bin]->irep,nhits);
-          pos = hitlist.GetPos();
-#ifdef PTHREAD
-          pthread_mutex_unlock(&hitlist_mutex); // unlock access to hitlist
-#endif
-          // Align q to template in *hit[bin]
-          hit[bin]->Forward(q,*(t[bin]));
-          hit[bin]->Backward(q,*(t[bin]));
-          hit[bin]->MACAlignment(q,*(t[bin]));
-          hit[bin]->BacktraceMAC(q,*(t[bin]));
-#ifdef PTHREAD
-          pthread_mutex_lock(&hitlist_mutex);   // lock access to hitlist
-#endif
-          hit_cur = hitlist.Read(pos);
-
-          // Overwrite *hit[bin] with Viterbi scores, Probabilities etc. of hit_cur
-          hit[bin]->score      = hit_cur.score;
-          hit[bin]->score_aass = hit_cur.score_aass;
-          hit[bin]->score_ss   = hit_cur.score_ss; // comment out?? => Andrea
-          hit[bin]->Pval       = hit_cur.Pval;
-          hit[bin]->Pvalt      = hit_cur.Pvalt;
-          hit[bin]->logPval    = hit_cur.logPval;
-          hit[bin]->logPvalt   = hit_cur.logPvalt;
-          hit[bin]->logP1val   = hit_cur.logP1val;
-          hit[bin]->Eval       = hit_cur.Eval;
-          hit[bin]->logEval    = hit_cur.logEval;
-          hit[bin]->E1val      = hit_cur.E1val;
-          hit[bin]->Probab     = hit_cur.Probab;
-
-          // Replace original hit in hitlist with realigned hit
-          //hitlist.ReadCurrent().Delete();
-          hitlist.Delete().Delete();                // delete list record and hit object
-          hitlist.Insert(*hit[bin]);
-          hit[bin]->irep++;
-        }
-      nhits++;
-    }
-#ifdef PTHREAD
-  pthread_mutex_unlock(&hitlist_mutex); // unlock access to hitlist
-#endif
-
-
-  if (hit[bin]->irep==1)
-    {
-      fprintf(stderr,"*************************************************\n");
-      fprintf(stderr,"\nError: could not find template %s in hit list (index:%i dbfile:%s ftell:%i\n\n",hit[bin]->name, hit[bin]->index,hit[bin]->dbfile,(unsigned int)hit[bin]->ftellpos);
-      fprintf(stderr,"*************************************************\n");
-    }
-
-    return;
-}
-
-
-
-#ifdef PTHREAD
-
-///////////////////////////////////////////////////////////////////////////////////////
-//// This is the main thread loop that waits for new jobs (i.e. pairwise alignment) and executes them
-//////////////////////////////////////////////////////////////////////////////////////
-void* WorkerLoop(void* data)
-{
-  int thread_id = (*((Thread_args*)data)).thread_id;  // typecast 'data' from pointer-to-void to pointer-to-Thread_args
-  void (*ExecuteJob)(int) = (*((Thread_args*)data)).function; // dito; data.function is a pointer to a function(int) that returns void
-  int rc;                            // return code for threading commands
-  int bin;                           // bin index
-
-  // Lock access to bin_status
-  rc = pthread_mutex_lock(&bin_status_mutex);
-
-  ///////////////////////////////////////////////////////////////////////////////////////
-  // Take jobs from one of the SUBMITTED bins and execute them. If no submitted jobs found, wait for signal 'new_job'
-  while (reading_dbs || jobs_submitted>0)
-    {
-
-     if (jobs_submitted>0 ) // submitted job in one of the bins?
-        {
-          bin = PickBin(SUBMITTED);
-          if (DEBUG_THREADS)
-            fprintf(stderr,"Thread %3i:   start job in bin %i       jobs running: %i  jobs_submitted:%i \n",thread_id,bin,jobs_running,jobs_submitted);
-          jobs_running++;            // the order of the following three lines is important, since...
-          jobs_submitted--;          // ... the main thread tries to find a free bin...
-          bin_status[bin] = RUNNING; // ... if jobs_running+jobs_submitted<bins !
-
-          // Execute job
-          rc = pthread_mutex_unlock(&bin_status_mutex); // unlock access to bin_status
-          if (DEBUG_THREADS)
-            fprintf(stderr,"Thread %3i:   executing HMM %-10.10s jobs running: %i  jobs_submitted:%i \n",thread_id,t[bin]->name,jobs_running,jobs_submitted);
-          ExecuteJob(bin);
-          rc = pthread_mutex_lock(&bin_status_mutex); // lock access to bin_status
-
-          bin_status[bin] = FREE;
-          jobs_running--;
-
-          // Signal completion of job
-          rc = pthread_cond_signal(&finished_job);
-
-          if (DEBUG_THREADS)
-            fprintf(stderr,"Thread %3i:   finished job in bin %i    jobs running: %i  jobs_submitted:%i \n",thread_id,bin,jobs_running,jobs_submitted);
-        }
-     else
-       {
-
-         if (DEBUG_THREADS)
-           fprintf(stderr,"Thread %3i:   waiting for new job ...   jobs running: %i  jobs_submitted:%i \n",thread_id,jobs_running,jobs_submitted);
-         rc = pthread_cond_wait(&new_job, &bin_status_mutex);
-       }
-
-      // Unlock access to bin_status
-      rc = pthread_mutex_unlock(&bin_status_mutex);
-      // Lock access to bin_status
-      rc = pthread_mutex_lock(&bin_status_mutex);
-    }
-  ///////////////////////////////////////////////////////////////////////////////////////
-
-  // Unlock access to bin_status
-  rc = pthread_mutex_unlock(&bin_status_mutex);
-
-  // Exit thread automatically
-  pthread_exit(NULL);
-  return NULL;
-}
-
-#endif
 
 /////////////////////////////////////////////////////////////////////////////////////
 //// MAIN PR_OGRAM
@@ -1308,7 +1108,7 @@ int main(int argc, char **argv)
       realign = new(Hash< List<Posindex>* >);
       realign->New(3601,NULL);
       Hit hit_cur;
-      const float MEMSPACE_DYNPROG = 512*1024*1024;
+      const float MEMSPACE_DYNPROG = 2.0*1024.0*1024.0*1024.0;
       int nhits=0;
       int Lmax=0;      // length of longest HMM to be realigned
       int Lmaxmem=(int)((float)MEMSPACE_DYNPROG/q.L/6.0/8.0/bins); // longest allowable length of database HMM
@@ -1533,7 +1333,6 @@ int main(int argc, char **argv)
               // Transform transition freqs to lin space if not already done
 	      q.AddTransitionPseudocounts();
               q.Log2LinTransitionProbs(1.0); // transform transition freqs to lin space if not already done
-              nhits++;
             }
         }
 

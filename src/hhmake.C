@@ -230,7 +230,6 @@ int main(int argc, char **argv)
 {
   char* argv_conf[MAXOPT];     // Input arguments from .hhdefaults file (first=1: argv_conf[0] is not used)
   int argc_conf;               // Number of arguments in argv_conf
-  char extension[NAMELEN];     // Input arguments from .hhdefaults file (first=1: argv_conf[0] is not used)
 
   strcpy(par.infile,"");
   strcpy(par.outfile,"");

@@ -8,12 +8,13 @@
 #include <fstream>    // ofstream, ifstream
 #include <stdio.h>    // printf
 #include <stdlib.h>   // exit
-#include <string>     // strcmp, strstr
+#include <string.h>     // strcmp, strstr
 #include <math.h>     // sqrt, pow
 #include <limits.h>   // INT_MIN
 #include <float.h>    // FLT_MIN
 #include <time.h>     // clock
 #include <ctype.h>    // islower, isdigit etc
+#include <cassert>
 
 using std::cout;
 using std::cerr;
@@ -22,19 +23,28 @@ using std::ios;
 using std::ifstream;
 using std::ofstream;
 
-#include "util.C"     // imax, fmax, iround, iceil, ifloor, strint, strscn, strcut, substr, uprstr, uprchr, Basename etc.
-#include "list.C"     // list data structure
-#include "hash.C"     // hash data structure
-
+#include "util.C"        // imax, fmax, iround, iceil, ifloor, strint, strscn, strcut, substr, uprstr, uprchr, Basename etc.
+#include "list.C"        // list data structure
+#include "hash.C"        // hash data structure
 #include "hhdecl.C"      // Constants, global variables, struct Parameters
-#include "hhutil.C"      // MatchChr, InsertChr, aa2i, i2aa, log2, fast_log2, WriteToScreen,
+#include "hhutil.C"      // MatchChr, InsertChr, aa2i, i2aa, log2, fast_log2, ScopID, WriteToScreen,
 #include "hhmatrices.C"  // BLOSUM50, GONNET, HSDM
-#include "hhhmm.h"       // class HMM
-#include "hhalignment.h" // class Alignment
+
+// includes needed for context specific pseudocounts
+#include "amino_acid.cpp"
+#include "sequence.cpp"
+#include "profile.cpp"
+#include "cluster.cpp"
+#include "simple_cluster.cpp"
+#include "matrix.cpp"
+#include "cs_counts.cpp"
+
 #include "hhhit.h"       // class Hit
+#include "hhalignment.h" // class Alignment
 #include "hhhalfalignment.h" // class HalfAlignment
 #include "hhfullalignment.h" // class FullAlignment
 #include "hhhitlist.h"   // class Hit
+
 #include "hhhmm.C"       // class HMM
 #include "hhalignment.C" // class Alignment
 #include "hhhit.C"       // class Hit
@@ -144,7 +154,7 @@ void help_gap()
   printf(" -gapi ]0,inf] factor for increasing/reducing the gap extension penalty for inserts(def=%-.1f)\n",par.gapi);
   printf(" -egq  [0,inf[ penalty (bits) for end gaps aligned to query residues (def=%-.1f)\n",par.egq);
   printf(" -egt  [0,inf[ penalty (bits) for end gaps aligned to template residues (def=%-.1f)\n",par.egt);
-  printf(" -eg   [0,inf[ penalty (bits) for end gaps aligned to shorter of two HMMs (def=off)\n");
+  //  printf(" -eg   [0,inf[ penalty (bits) for end gaps aligned to shorter of two HMMs (def=off)\n");
 }
 
 void help_ali()
@@ -208,7 +218,11 @@ void ProcessArguments(int argc, char** argv)
         {
           if (++i>=argc || argv[i][0]=='-')
             {help() ; cerr<<endl<<"Error in "<<program_name<<": no database file following -d\n"; exit(4);}
-          else strcpy(par.dbfiles,argv[i]);
+          else
+	    {
+              par.dbfiles = new(char[strlen(argv[i])+1]);
+              strcpy(par.dbfiles,argv[i]);
+            }
         }
       else if (!strcmp(argv[i],"-o"))
         {
@@ -267,7 +281,7 @@ void ProcessArguments(int argc, char** argv)
       else if (!strcmp(argv[i],"-gapg") && (i<argc-1)) par.gapg=atof(argv[++i]);
       else if (!strcmp(argv[i],"-gaph") && (i<argc-1)) par.gaph=atof(argv[++i]);
       else if (!strcmp(argv[i],"-gapi") && (i<argc-1)) par.gapi=atof(argv[++i]);
-      else if (!strcmp(argv[i],"-eg") && (i<argc-1))  par.eg =atof(argv[++i]);
+      //      else if (!strcmp(argv[i],"-eg") && (i<argc-1))  par.eg =atof(argv[++i]);
       else if (!strcmp(argv[i],"-egq") && (i<argc-1)) par.egq=atof(argv[++i]);
       else if (!strcmp(argv[i],"-egt") && (i<argc-1)) par.egt=atof(argv[++i]);
       else if (!strcmp(argv[i],"-ssm") && (i<argc-1)) par.ssm=atoi(argv[++i]);
@@ -285,7 +299,7 @@ void ProcessArguments(int argc, char** argv)
       else if (!strcmp(argv[i],"-shift") && (i<argc-1)) par.shift=atof(argv[++i]);
       else if (!strcmp(argv[i],"-sc") && (i<argc-1)) par.columnscore=atoi(argv[++i]);
       else if (!strcmp(argv[i],"-corr") && (i<argc-1)) par.corr=atof(argv[++i]);
-      else if (!strcmp(argv[i],"-best") && (i<argc-1)) par.best=atof(argv[++i]);
+      //else if (!strcmp(argv[i],"-best") && (i<argc-1)) par.best=atof(argv[++i]);
       else if (!strcmp(argv[i],"-def")) par.readdefaultsfile=1;
       else if (!strcmp(argv[i],"-psi2")) corr_q2_vs_HMMs_like_PSIBLAST=1;
       else cerr<<endl<<"WARNING: Ignoring unknown option "<<argv[i]<<" ...\n";
@@ -337,6 +351,7 @@ int main(int argc, char **argv)
   par.z=1;                     // min number of lines in hit list
   par.Z=1;                     // max number of lines in hit list
   par.altali=1;                // find up to FIVE (possibly overlapping) subalignments
+  strcpy(par.outfile,"stdout");
 
 
   //make command line input globally available

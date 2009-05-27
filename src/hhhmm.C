@@ -1429,7 +1429,7 @@ void HMM::WriteToFile(char* outfile)
   const int SEQLEN=100;      // number of residues per line for sequences to be displayed
   int i,a;
 
-  if (trans_lin) {fprintf(stderr,"Error: Writing transition pseudocounts in linear representation not allowed. Please report this error to the HHsearch developers.\n"); exit(6);}
+  if (trans_lin==1) {fprintf(stderr,"Error: Writing transition pseudocounts in linear representation not allowed. Please report this error to the HHsearch developers.\n"); exit(6);}
 
   FILE *outf=NULL;
   if (strcmp(outfile,"stdout"))
@@ -1442,7 +1442,7 @@ void HMM::WriteToFile(char* outfile)
   if (v>=2) cout<<"Writing HMM to "<<outfile<<"\n";
 
 //   fprintf(outf,"HHsearch HHM format 1.5\n");
-  fprintf(outf,"HHsearch 1.5\n");         // format specification
+  fprintf(outf,"HHsearch 1.6\n");         // format specification
   fprintf(outf,"NAME  %s\n",longname);    // name of first sequence
   fprintf(outf,"FAM   %s\n",fam);         // family name
   char file_nopath[NAMELEN];
@@ -1583,7 +1583,6 @@ void HMM::InsertCalibration(char* infile)
   delete[] lines;
   return;
 }
-
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Transform log to lin transition probs

@@ -71,7 +71,7 @@ void ReadAndPrepare(char* infile, HMM& q, Alignment* qali=NULL)
         }
 
         // Add amino acid pseudocounts to query:  q.p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
-        q.AddAminoAcidPseudocounts(!q.has_pseudocounts ? par.pcm : 0, par.pca, par.pcb, par.pcc);;
+        q.AddAminoAcidPseudocounts(q.has_pseudocounts ? 0:par.pcm, par.pca, par.pcb, par.pcc);;
         q.CalculateAminoAcidBackground();
     }
     // ... or is it an alignment file
@@ -120,7 +120,7 @@ void ReadAndPrepare(char* infile, HMM& q, Alignment* qali=NULL)
         }
 
         // Add amino acid pseudocounts to query:  p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
-        q.AddAminoAcidPseudocounts(!q.has_pseudocounts ? par.pcm : 0, par.pca, par.pcb, par.pcc);
+        q.AddAminoAcidPseudocounts(q.has_pseudocounts ? 0:par.pcm, par.pca, par.pcb, par.pcc);
         q.CalculateAminoAcidBackground();
 
         if (qali==NULL) delete(pali);
