@@ -75,7 +75,7 @@ public:
   char pngfile[NAMELEN];  // png image file for dotplot
   char wfile[NAMELEN];    // weights file generated with hhformat
   char* blafile;          // output of 'blastpgp -m 8' with PSI-BLAST E-values for HHblast
-  float hhblast_prefilter_pval;  // PSI-BLAST Prefilter P-value threshold of HHblast
+  float hhblast_prefilter_logpval;  // PSI-BLAST prefilter log P-value threshold of HHblast
   char* dbfiles;          // database filenames, separated by colons
   char* exclstr;          // optional string containing list of excluded residues, e.g. '1-33,97-168'
   int aliwidth;           // number of characters per line in output alignments for HMM search

@@ -775,15 +775,15 @@ void HitList::CalculateHHblastEvalues(HMM& q)
 	  alpha = alpha_NN( log(q.L)/log1000, log(hit.L)/log1000, q.Neff_HMM/10.0, hit.Neff_HMM/10.0 ); 
 	  beta = beta_NN( log(q.L)/log1000, log(hit.L)/log1000, q.Neff_HMM/10.0, hit.Neff_HMM/10.0 ); 
  	  if (v>=3 && nhits++<20) 
-	    printf("hit=%-10.10s Lq=%-4i  Lt=%-4i  Nq=%5.2f  Nt=%5.2f  =>  alpha=%-6.3f  beta=%-6.3f  S'=%-6.3f\n",hit.name,q.L,hit.L,q.Neff_HMM,hit.Neff_HMM,alpha,beta,par.hhblast_prefilter_pval);
+	    printf("hit=%-10.10s Lq=%-4i  Lt=%-4i  Nq=%5.2f  Nt=%5.2f  =>  alpha=%-6.3f  beta=%-6.3f  S'=%-6.3f\n",hit.name,q.L,hit.L,q.Neff_HMM,hit.Neff_HMM,alpha,beta,par.hhblast_prefilter_logpval);
 	}
       else 
 	{
 	  //printf("WARNING: global calibration not yet implemented!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
 	}
 
-      hit.Eval = exp(hit.logPval+log(N_searched)+(alpha*par.hhblast_prefilter_pval - beta));     // overwrite E-value from HHsearch with composite E-value from HHblast
-      hit.logEval = hit.logPval+log(N_searched)+(alpha*par.hhblast_prefilter_pval - beta);
+      hit.Eval = exp(hit.logPval+log(N_searched)+(alpha*par.hhblast_prefilter_logpval - beta));     // overwrite E-value from HHsearch with composite E-value from HHblast
+      hit.logEval = hit.logPval+log(N_searched)+(alpha*par.hhblast_prefilter_logpval - beta);
       //printf("      Eval: %7.4f    logEval: %7.4f   logPval: %7.4f\n",hit.Eval, hit.logEval, hit.logPval);
       Overwrite(hit);   // copy hit object into current position of hitlist
     }

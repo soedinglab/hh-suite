@@ -1718,7 +1718,7 @@ int main(int argc, char **argv)
   pclose(stream);
   if (dbsize == 0)
     {cerr<<endl<<"Error in "<<program_name<<": Could not determine DB-size of prefilter db ("<<db<<")\n"; exit(4);}
-  par.hhblast_prefilter_pval=-log(e_psi / dbsize);
+  par.hhblast_prefilter_logpval=-log(e_psi / dbsize);
 
   // Input parameters
   if (v>=3)

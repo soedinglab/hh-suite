@@ -232,9 +232,13 @@ HHsearch 1.6.0 sometime in 2009
   procedure is more reliable and noise-resistant. This change only applies to 
   the default local search mode. For global searches, nothing has changed. Note
   that E-values in global search mode are unreliable and that sensitivity is 
-  reduced.
+  reduced. Old calibrations can still be used:
+   -calm 0 : use empirical query HMM calibration (old default)
+   -calm 1 : use empirical db HMM calibration
+   -calm 2 : use both query and db HMM calibration
+   -calm 3 : use neural network calibration (new default)
 
-* The previous versions sometimes showed non-homologous hits with high 
+* Previous versions of HHsearch sometimes showed non-homologous hits with high 
   probabilities by matching long stretches of secondary structure states, 
   in particular long helices, in the absence of any similarity in the amino 
   acid profiles. Capping the SS score by a linear function of the profile score
@@ -269,7 +273,7 @@ HHsearch 1.6.0 sometime in 2009
 * Removed a memory leak and optimized memory management.
 
 * Removed a bug in hhalign that could lead to unreasonably significant E-values 
-  and probabilities
+  and probabilities due to calibration problems
 
 
 -->

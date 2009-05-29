@@ -585,7 +585,7 @@ void ProcessArguments(int argc, char** argv)
         else if(!strcmp(argv[i],"first"))  par.M=3;
         else if (argv[i][0]>='0' && argv[i][0]<='9') {par.Mgaps=atoi(argv[i]); par.M=2;}
         else cerr<<endl<<"WARNING: Ignoring unknown argument: -M "<<argv[i]<<"\n";
-      else if (!strcmp(argv[i],"-cal")) par.calibrate=1;
+      else if (!strcmp(argv[i],"-cal")) {par.calibrate=1; par.calm=0;}
       else if (!strcmp(argv[i],"-calm") && (i<argc-1)) par.calm=atoi(argv[++i]);
       else if (!strcmp(argv[i],"-shift") && (i<argc-1)) par.shift=atof(argv[++i]);
       else if (!strcmp(argv[i],"-mact") && (i<argc-1)) par.mact=atof(argv[++i]);
@@ -602,7 +602,7 @@ void ProcessArguments(int argc, char** argv)
       else if (!strncmp(argv[i],"-idummy",7) && (i<argc-1)) par.idummy=atoi(argv[++i]);
       else if (!strncmp(argv[i],"-jdummy",7) && (i<argc-1)) par.jdummy=atoi(argv[++i]);
       else if (!strncmp(argv[i],"-fdummy",7) && (i<argc-1)) par.fdummy=atof(argv[++i]);
-      else if (!strncmp(argv[i],"-hhb_pval",8) && (i<argc-1)) par.hhblast_prefilter_pval=-log(atof(argv[++i]));
+      else if (!strncmp(argv[i],"-hhb_pval",8) && (i<argc-1)) par.hhblast_prefilter_logpval=-log(atof(argv[++i]));
       else if (!strcmp(argv[i],"-csb") && (i<argc-1)) par.csb=atof(argv[++i]);
       else if (!strcmp(argv[i],"-csw") && (i<argc-1)) par.csw=atof(argv[++i]);
       else if (!strcmp(argv[i],"-cs"))
@@ -1088,7 +1088,7 @@ int main(int argc, char **argv)
 //     }
 
   // Calculate corrected E-values for HHblast by NN prediction of correlation of PSI-BLAST and HHsearch P-values
-  if (par.hhblast_prefilter_pval)
+  if (par.hhblast_prefilter_logpval)
     {
       hitlist.CalculateHHblastEvalues(q);
     }

@@ -572,11 +572,19 @@ foreach $file (@files)
 		# Reject if E-value too high
 		if ($Eseed>$Einter) {
 		    if ($corr==-1) {
-			# Make HMM with parameters as PSIBLAST profile, e.g. constant gap open/extend penalties of 0.5/5.5 bits
-			&System("$hh/hhmake -id $id -i $curr.seq -o $curr.seq.hhm -pcm 2 -Blosum65 -gapb 10000 -gapd 2.6 -gape 1 -gapf 1 -gapg 1",$v2); 
-			# Calculate correlation between single seed sequence and full alignment built from it 
-			$corr_seedHMM_seedSeq = &System("$hh/hhcorr -id $id -i $curr.a3m $curr.seq.hhm -d $calhhm -psi2",$v2);
-			$corr_X_parent        = &System("$hh/hhcorr -id $id -i $parent.a3m $tmp"."-X.hhm -d $calhhm",$v2);
+			# GET $Neff_parent,$Neff_curr,$L_parent,$Lcurr FROM?
+			my $Neff_parent=4;
+			my $L_parent=200;
+			my $Neff_curr=4; 
+			my $L_curr=200;
+			my $Neff_X=5; 
+			my $L_X=200;
+			&GetDiversityAndLength("$parent.hhm",\$Neff_parent,\$L_parent);
+			&GetDiversityAndLength("$curr.hhm",  \$Neff_curr,\$L_curr);
+			&GetDiversityAndLength("$tmp"."-X.hhm",\$Neff_X,\$L_X);
+			$corr_seedHMM_seedSeq = &alpha_NN($Neff_parent,$Neff_curr,$L_parent,$L_curr);
+#			$beta  = &beta_NN($Neff_parent,$Neff_curr,$L_parent,$Lcurr);
+			$corr_X_parent        = sqrt($Neff_parent/$Neff_X);
 			$corr=$corr_seedHMM_seedSeq*$corr_X_parent;
 			if ($v>=3) {
 			    printf("Correlation coeff. seed_HMM   <-> seed_seq:   %4.2f \n",$corr_seedHMM_seedSeq);
@@ -585,8 +593,9 @@ foreach $file (@files)
 			if ($corr==0) {die("Error: hhcorr returned $corr_seedHMM_seedSeq and $corr_X_parent. Something does not work. Stopping job\n");}
 		    }
 
-		    $Pmax=&max($Phh,$Eseed/$Nnr_eff);
-		    $Eval = $Pmax**(-$corr) * $Phh*$Eseed;
+		    $Pmax=&max($Phh,$Eseed/$Nnr_eff); 
+		    $Eval = $Pmax**(-$corr) * $Phh*$Eseed; 
+
 		    if ($v>=2) {
 			printf ("P(H2H)=%7.2G  E(seed)=%7.2G  corr=%4.2f x %4.2f => E-value=%7.2G  ",$Phh,$Eseed,$corr_seedHMM_seedSeq,$corr_X_parent,$Eval);
 		    } elsif ($v>=1) {
@@ -1628,6 +1637,90 @@ sub Overlap()
 	if ($y=~/$substr/) {$ovlap++};
     }
     return $ovlap;
+}
+
+
+sub GetDiversityAndLength() {
+    my $file=$_[0];
+    my $Neff=5;
+    my $L=200;
+    open(HMMFILE,"<$file") || die("Error: cannot open $file for reading!\n\n");
+    while (my $line=<HMMFILE>) {
+	if ($line=~/^LENG  (\d+)/) {$line=~/^LENG  (\d+)/; $L=$1; next;} 
+	if ($line=~/^NEFF  (\S+)/) {$line=~/^NEFF  (\S+)/; $Neff=$1; last;} 
+    }
+    close(HMMFILE);
+    return ($Neff,$L);
+}		
+
+##############################################
+# sub functions
+##############################################
+
+our $inputs = 4;
+our $hidden = 4;
+
+# Neural network regressions of alpha for Evalue correction factor
+sub alpha_NN()
+{
+    my $qneff=$_[0]*0.1;
+    my $tneff=$_[1]*0.1;
+    my $qlen=log($_[2])/6.9077; # log(1000)=6.9077
+    my $tlen=log($_[3])/6.9077;
+    my @biases = (7.89636,3.68944,2.05448,3.69149);  # bias for all hidden units
+    my $alpha_bias = 1.33439;
+    # Weights for the neural networks (column = start unit, row = end unit)
+    my @weights = (
+	-6.72336, -4.73393, -2.15446, -4.75140,
+	-14.54957, 4.05462, 0.57951, 3.55780,
+	2.08289, -1.81976, -1.19936, -17.35097,
+	1.53268, -8.13514, -2.50677, 1.51106,
+	6.37397, -0.36254, 0.16279, -1.32174
+	);
+    my $alpha=0.0;
+    my $res;
+    for (my $h = 0; $h<$hidden; $h+=1) {
+	my @tmp = @weights[($h*$inputs)..($h*$inputs+$hidden-1)];
+	#print "alpha:  $alpha    tmp: @tmp\n";
+	
+	# Calculate activation of hidden unit = sum of all inputs * weights + bias
+	$res = $qlen*$tmp[0] + $tlen*$tmp[1] + $qneff*$tmp[2] + $tneff*$tmp[3] + $biases[$h];
+	$res = 1.0 / (1.0 + exp(-($res)));
+	$alpha += $res * $weights[$hidden*$inputs+$h];
+    }
+    $alpha = 1.0 / (1.0 + exp(-($alpha + $alpha_bias)));
+    return $alpha;
+}
+
+# Neural network regressions of beta for Evalue correction factor
+sub beta_NN()
+{
+    my $qneff=$_[0]*0.1;
+    my $tneff=$_[1]*0.1;
+    my $qlen=log($_[2])/6.9077; # log(1000)=6.9077
+    my $tlen=log($_[3])/6.9077;
+    my @biases = (7.89636,3.68944,2.05448,3.69149);
+    my $beta_bias = 5.43347;
+    my @weights = (
+	-6.72336, -4.73393, -2.15446, -4.75140,
+	-14.54957, 4.05462, 0.57951, 3.55780,
+	2.08289, -1.81976, -1.19936, -17.35097,
+	1.53268, -8.13514, -2.50677, 1.51106,
+	-2.27841, -7.79426, -9.53092, 3.65717
+	);
+    my $beta=0.0;
+    my $res;
+    for (my $h = 0; $h<$hidden; $h+=1) {
+	my @tmp = @weights[($h*$inputs)..($h*$inputs+$hidden-1)];
+	#print "beta:  $beta    tmp: @tmp\n";
+
+	# Calculate activation of hidden unit = sum of all inputs * weights + bias
+	$res = $qlen*$tmp[0] + $tlen*$tmp[1] + $qneff*$tmp[2] + $tneff*$tmp[3] + $biases[$h];
+	$res = 1.0 / (1.0 + exp(-($res)));
+	$beta += $res * $weights[$hidden*$inputs+$h];
+    }
+    $beta = 1.0 / (1.0 + exp(-($beta + $beta_bias)));
+    return $beta;
 }
 
 sub Terminate()
