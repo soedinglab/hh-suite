@@ -102,6 +102,7 @@ char hhm_infile[NAMELEN];
 char psi_infile[NAMELEN];
 char alis_basename[NAMELEN];
 char base_filename[NAMELEN];
+char query_hhmfile[NAMELEN];
 
 string tmp_psifile="";
 string tmp_infile="";
@@ -357,6 +358,7 @@ void help_all()
   printf(" -opsi <file>   write pairwise alignments in PSI format (default=none)                   \n");
   printf(" -ohhm <file>   write HHM file of the pairwise alignments (default=none)                 \n");
   printf(" -oalis <base>  write pairwise alignments in A3M format after each round (default=none)  \n");
+  printf(" -qhhm <file>   write query input HHM file of last round (default=none)                  \n");
   printf(" -v <int>       verbose mode: 0:no screen output  1:only warings  2: verbose (def=%i)    \n",v);
   printf(" -seq <int>     max. number of query/template sequences displayed (def=%i)               \n",par.nseqdis);
   printf(" -nopred        don't add predicted 2ndary structure in output alignments                \n");
@@ -560,6 +562,12 @@ void ProcessArguments(int argc, char** argv)
           if (++i>=argc || argv[i][0]=='-')
             {help() ; cerr<<endl<<"Error in "<<program_name<<": no file basename following -oalis\n"; exit(4);}
           else strcpy(alis_basename,argv[i]);
+        }
+      else if (!strcmp(argv[i],"-qhhm"))
+        {
+          if (++i>=argc || argv[i][0]=='-')
+            {help() ; cerr<<endl<<"Error in "<<program_name<<": no filename following -qhhm\n"; exit(4);}
+          else strcpy(query_hhmfile,argv[i]);
         }
       else if (!strcmp(argv[i],"-scores"))
         {
@@ -1732,8 +1740,8 @@ int main(int argc, char **argv)
   int v1=v;
   if (v<=3) v=1; else v-=2;
 
-  // Read input file (HMM or alignment format), and add pseudocounts etc.
-  ReadAndPrepare(par.infile, q);
+  // Read input file (HMM or alignment format) without adding pseudocounts
+  ReadInput(par.infile, q);
   
   v=v1;
 
@@ -1789,6 +1797,24 @@ int main(int argc, char **argv)
 	par.Ndiff = 0;
       }
 
+    // Write query HHM file?
+    if (*query_hhmfile) q.WriteToFile(query_hhmfile);
+    
+    // Add Pseudocounts
+    if (!*par.clusterfile) { //compute context-specific pseudocounts?
+      // Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
+      q.PreparePseudocounts();
+    } else {
+      // Generate an amino acid frequency matrix from f[i][a] with full context specific pseudocount admixture (tau=1) -> g[i][a]
+      q.PrepareContextSpecificPseudocounts();
+    }
+    
+    // Add amino acid pseudocounts to query: p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
+    q.AddAminoAcidPseudocounts();
+    q.CalculateAminoAcidBackground();
+    
+    // Transform transition freqs to lin space if not already done
+    q.AddTransitionPseudocounts();
     
     // Prefilter with csBLAST/PSI-BLAST
     stringstream ss;
@@ -1834,6 +1860,10 @@ int main(int argc, char **argv)
 	    substr(tmp,tmp_name,3,11);
 	    substr(db_name,tmp,0,1);
 	    strcat(db_name,"/");
+	    // char tmp2[NAMELEN];
+	    // substr(tmp2,tmp,2,2);
+	    // strcat(db_name,tmp2);
+	    // strcat(db_name,"/");
 	    strcat(db_name,tmp);
 	    strcat(db_name,".db");
 	  }
@@ -1969,23 +1999,7 @@ int main(int argc, char **argv)
 	
     	// Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
     	Qali.FrequenciesAndTransitions(q);
-	
-    	if (!*par.clusterfile) { //compute context-specific pseudocounts?
-    	  // Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
-    	  q.PreparePseudocounts();
-    	} else {
-    	  // Generate an amino acid frequency matrix from f[i][a] with full context specific pseudocount admixture (tau=1) -> g[i][a]
-    	  q.PrepareContextSpecificPseudocounts();
-    	}
-	
-    	// Add amino acid pseudocounts to query: p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
-    	q.AddAminoAcidPseudocounts();
-    	q.CalculateAminoAcidBackground();
-	
-    	// Transform transition freqs to lin space if not already done
-    	q.AddTransitionPseudocounts();
-
-	
+    	
 	if (*alis_basename)
 	  {
 	    stringstream ss_tmp;
