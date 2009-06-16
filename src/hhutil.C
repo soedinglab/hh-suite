@@ -261,7 +261,7 @@ inline char i2cf(char c)
 inline float fast_addscore(float x)
 {
   static float val[2001];         // val[i]=log2(1+2^(-x))
-  static char initialized;
+  static char initialized=0;
   if (x>20) return 0.0;
   if (x<0)
     {
@@ -535,6 +535,14 @@ void SetDefaults()
   par.mode=0;
   par.idummy=0;
   par.jdummy=0;
+
+  par.hhblast_prefilter_logpval=0;
+
+  par.filter_thresh=0;
+  par.filter_length=200;
+  par.filter_evals=new double[par.filter_length];
+  par.filter_sum=0.0;
+  par.filter_counter=0;
 
   par.notags=1;                // neutralize His-tags, FLAG-tags, C-myc-tags
 

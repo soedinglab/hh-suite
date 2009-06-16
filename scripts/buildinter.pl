@@ -62,6 +62,8 @@ if (!-d $tmpdir) {mkdir($tmpdir,0777);}
 # my $tmpdir=".";                           
 
 # Default values
+our $inputs = 4;
+our $hidden = 4;
 our $v=2;                     # verbose mode
 my $update=0;                 # 0:overwrite  1:do not overwrite
 my $Einter=1E-3;              # maximum E-value in hhalign for HMM to be accepted as intermediary HMM
@@ -579,16 +581,18 @@ foreach $file (@files)
 			my $L_curr=200;
 			my $Neff_X=5; 
 			my $L_X=200;
-			&GetDiversityAndLength("$parent.hhm",\$Neff_parent,\$L_parent);
-			&GetDiversityAndLength("$curr.hhm",  \$Neff_curr,\$L_curr);
-			&GetDiversityAndLength("$tmp"."-X.hhm",\$Neff_X,\$L_X);
+			($Neff_parent,$L_parent) = &GetDiversityAndLength("$parent.hhm");
+			($Neff_curr,$L_curr) = &GetDiversityAndLength("$curr.hhm");
+			($Neff_X,$L_X) = &GetDiversityAndLength("$tmp"."-X.hhm");
 			$corr_seedHMM_seedSeq = &alpha_NN($Neff_parent,$Neff_curr,$L_parent,$L_curr);
 #			$beta  = &beta_NN($Neff_parent,$Neff_curr,$L_parent,$Lcurr);
 			$corr_X_parent        = sqrt($Neff_parent/$Neff_X);
 			$corr=$corr_seedHMM_seedSeq*$corr_X_parent;
 			if ($v>=3) {
-			    printf("Correlation coeff. seed_HMM   <-> seed_seq:   %4.2f \n",$corr_seedHMM_seedSeq);
-			    printf("Correlation coeff. root-X_HMM <-> parent_HMM: %4.2f \n",$corr_X_parent);
+			    printf("Neff_parent=%4.2f  Neff_curr=%4.2f  Neff_X=%4.2f\n",$Neff_parent,$Neff_curr,$Neff_X);
+			    printf("L_parent=%5i  L_curr=%5i  L_X=%5i\n",$L_parent,$L_curr,$L_X);
+			    printf("Correlation coeff. seed_HMM   <-> seed_seq:   %4.6f \n",$corr_seedHMM_seedSeq);
+			    printf("Correlation coeff. root-X_HMM <-> parent_HMM: %4.6f \n",$corr_X_parent);
 			}
 			if ($corr==0) {die("Error: hhcorr returned $corr_seedHMM_seedSeq and $corr_X_parent. Something does not work. Stopping job\n");}
 		    }
@@ -1644,6 +1648,10 @@ sub GetDiversityAndLength() {
     my $file=$_[0];
     my $Neff=5;
     my $L=200;
+    if (!-e $file) {    # HMM file doesn't exists -> run hhmake
+	$file =~ /^(\S+)\.hhm/;
+	&System("$hh/hhmake -i $1.a3m -o $file");
+    }
     open(HMMFILE,"<$file") || die("Error: cannot open $file for reading!\n\n");
     while (my $line=<HMMFILE>) {
 	if ($line=~/^LENG  (\d+)/) {$line=~/^LENG  (\d+)/; $L=$1; next;} 
@@ -1657,16 +1665,16 @@ sub GetDiversityAndLength() {
 # sub functions
 ##############################################
 
-our $inputs = 4;
-our $hidden = 4;
-
 # Neural network regressions of alpha for Evalue correction factor
 sub alpha_NN()
 {
-    my $qneff=$_[0]*0.1;
-    my $tneff=$_[1]*0.1;
-    my $qlen=log($_[2])/6.9077; # log(1000)=6.9077
-    my $tlen=log($_[3])/6.9077;
+    my $qneff=($_[0]*0.1);
+    my $tneff=($_[1]*0.1);
+    my $qlen=(log($_[2])/6.9077); # log(1000)=6.9077
+    my $tlen=(log($_[3])/6.9077);
+    
+    print "Qneff: $qneff  Tneff: $tneff  Qlen: $qlen  Tlen: $tlen\n";
+
     my @biases = (7.89636,3.68944,2.05448,3.69149);  # bias for all hidden units
     my $alpha_bias = 1.33439;
     # Weights for the neural networks (column = start unit, row = end unit)

@@ -73,10 +73,6 @@ void ReadInput(char* infile, HMM& q, Alignment* qali=NULL)
     }
     fclose(inf);
 
-    // Add *no* amino acid pseudocounts to query. This is necessary to copy f[i][a] to p[i][a]
-    q.AddAminoAcidPseudocounts(0, 0.0, 0.0, 1.0);
-    q.CalculateAminoAcidBackground();
-
     return;
 }
 

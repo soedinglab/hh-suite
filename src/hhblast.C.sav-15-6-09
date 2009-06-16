@@ -83,7 +83,7 @@ char* ptr;                // pointer for string manipulation
 
 // HHblast variables
 
-const char HHBLAST_VERSION[]="version 1.3.0 (June 2009)";
+const char HHBLAST_VERSION[]="version 1.2.2 (May 2009)";
 const char HHBLAST_REFERENCE[]="to be published.\n";
 const char HHBLAST_COPYRIGHT[]="(C) Michael Remmert and Johannes Soeding\n";
 
@@ -895,11 +895,17 @@ void search_loop(char *dbfiles[], int ndb)
 {
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Search databases
+  //double filter_cutoff = par.filter_length*(log(par.filter_thresh));
+  //double filter_cutoff = par.filter_length*(1/par.filter_thresh);
   double filter_cutoff = par.filter_length*par.filter_thresh;
+  //par.filter_sum=filter_cutoff;
   par.filter_sum=par.filter_length;
   par.filter_counter=0;
+  //for (int a=0; a<par.filter_length; a++) {par.filter_evals[a]=log(par.filter_thresh);}
+  //for (int a=0; a<par.filter_length; a++) {par.filter_evals[a]=1/par.filter_thresh;}
   for (int a=0; a<par.filter_length; a++) {par.filter_evals[a]=1;}
 
+  printf("Begin of search!   (sum: %4.2g  cutoff: %4.2g)\n",par.filter_sum,filter_cutoff);
   // For all the databases given in -d '...' option ...
   for (int idb=0; idb<ndb; idb++)
     {
@@ -907,8 +913,7 @@ void search_loop(char *dbfiles[], int ndb)
       // Check early stopping filter
       if (par.filter_sum < filter_cutoff)
 	{
-	  if (v>4)
-	    printf("Stop after DB-HHM %i from %i\n",idb,ndb);
+	  printf("Stop after DB-HHM %i from %i  (sum: %4.2f   cutoff: %4.2f)\n",idb,ndb,par.filter_sum,filter_cutoff);
 	  break;
 	}
       
@@ -1647,7 +1652,7 @@ int main(int argc, char **argv)
   SetDefaults();
   par.jdummy = 3;
   par.Ndiff = 1000;
-  par.filter_thresh=0.05;
+  par.filter_thresh=0.1;
   strcpy(pre_mode,"csblast");
   strcpy(par.outfile,"");
   N_searched=0;

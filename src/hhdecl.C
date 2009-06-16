@@ -33,6 +33,8 @@ const int SELFEXCL=3;   // exclude self-alignments with j-i<SELFEXCL
 const float PLTY_GAPOPEN=6.0f; // for -qsc option (filter for min similarity to query): 6 bits to open gap
 const float PLTY_GAPEXTD=1.0f; // for -qsc option (filter for min similarity to query): 1 bit to extend gap
 const int MINCOLS_REALIGN=6; // hits with MAC alignments with fewer matched columns will be deleted in hhsearch hitlist
+const float LOG1000=log(1000.0);
+
 
 enum transitions {M2M,M2I,M2D,I2M,I2I,D2M,D2D,M2M_GAPOPEN,GAPOPEN,GAPEXTD}; // index for transitions within a HMM
 enum pair_states {STOP=0,SAME=1,GD=2,IM=3,DG=4,MI=5,MS=6,ML=7,SM=8,LM=9,MM=10};
@@ -177,6 +179,12 @@ public:
   int idummy;
   int jdummy;
   float fdummy;
+
+  double filter_thresh;    // Threshold for early stopping
+  int filter_length;      // Length of array of 1/evalues
+  double *filter_evals;   // array of last 1/evalues
+  double filter_sum;       // sum of evalues in array
+  int filter_counter;     // counter for evalue array
 };
 
 /////////////////////////////////////////////////////////////////////////////////////

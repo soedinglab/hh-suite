@@ -61,7 +61,7 @@ inline float fast_log2(float x)
 {
   static float lg2[1025];         // lg2[i] = log2[1+x/1024]
   static float diff[1025];        // diff[i]= (lg2[i+1]-lg2[i])/8096 (for interpolation)
-  static char initialized;
+  static char initialized=0;
   if (x<=0) return -100000;
   if (!initialized)   //First fill in the arrays lg2[i] and diff[i]
     {
@@ -98,7 +98,7 @@ inline float fast_log_gamma(float x)
 {
   static float log_gamma[1025];   // log_gamma[i] = lgammaf(1+x/1024)
   static float diff[1025];        // diff[i]= (lg2[i+1]-lg2[i])/8096 (for interpolation)
-  static char initialized;
+  static char initialized=0;
 
   if (!initialized) {  //First fill in the arrays log_gamma[i] and diff[i]
       assert(x>=1.0);

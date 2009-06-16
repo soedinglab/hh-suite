@@ -37,6 +37,30 @@ void AlignByWorker(int bin)
       pthread_mutex_lock(&hitlist_mutex);   // lock access to hitlist
 #endif
       hitlist.Push(*(hit[bin]));            // insert hit at beginning of list (last repeats first!)
+
+      if (par.hhblast_prefilter_logpval!=0)
+	{
+	  // Calculate Evalue
+	  float q_len = log(q.L)/LOG1000;
+	  float hit_len = log(hit[bin]->L)/LOG1000;
+	  float q_neff = q.Neff_HMM/10.0;
+	  float hit_neff = hit[bin]->Neff_HMM/10.0;
+	  float lamda = lamda_NN( q_len, hit_len, q_neff, hit_neff ); 
+	  float mu    =    mu_NN( q_len, hit_len, q_neff, hit_neff ); 
+	  hit[bin]->logPval = logPvalue(hit[bin]->score,lamda,mu);
+	  float alpha = alpha_NN( q_len, hit_len, q_neff, hit_neff ); 
+	  float beta = beta_NN( q_len, hit_len, q_neff, hit_neff );
+	  hit[bin]->Eval = exp(hit[bin]->logPval+log(hitlist.N_searched)+(alpha*par.hhblast_prefilter_logpval - beta));
+	  hit[bin]->logEval = hit[bin]->logPval+log(hitlist.N_searched)+(alpha*par.hhblast_prefilter_logpval - beta);
+
+	  par.filter_sum -= par.filter_evals[par.filter_counter];
+	  par.filter_evals[par.filter_counter] = 1/(1+hit[bin]->Eval);
+	  par.filter_sum += par.filter_evals[par.filter_counter];
+
+	  //printf("E-val: %4.2g   1/(1+Eval): %4.2g  => new sum: %16.2f\n",hit[bin]->Eval,par.filter_evals[par.filter_counter],par.filter_sum);
+	  par.filter_counter++;
+	  if (par.filter_counter==par.filter_length) {par.filter_counter=0;}
+	}
 #ifdef PTHREAD
       pthread_mutex_unlock(&hitlist_mutex); // unlock access to hitlist
 #endif
