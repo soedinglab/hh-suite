@@ -637,7 +637,7 @@ void ProcessArguments(int argc, char** argv)
 	  par.filter_evals=new double[par.filter_length];
 	}
       else if (!strcmp(argv[i],"-filtercut") && (i<argc-1)) par.filter_thresh=(double)atof(argv[++i]);
-      else if (!strcmp(argv[i],"-nofilter")) {filter=false; par.filter_thresh=100000;}
+      else if (!strcmp(argv[i],"-nofilter")) {filter=false; par.filter_thresh=0;}
       else if (!strcmp(argv[i],"-realignoldhits")) realign_old_hits=true;
       else if (!strcmp(argv[i],"-realign")) par.realign=1;
       else if (!strcmp(argv[i],"-norealign")) par.realign=0;
