@@ -705,7 +705,7 @@ inline int Alignment::FilterForDisplay(int max_seqid, int coverage, int qid, flo
     {
       for (int k=0; k<N_in; k++) dummy[k]=display[k];
       n_display = Filter2(dummy,coverage,qid,qsc,20,seqid,0);
-//      printf("Seqid=%3i  n_display=%4i\n",seqid,n_display);
+      //printf("Seqid=%3i  n_display=%4i\n",seqid,n_display);
     }
   if (n_display>N)
     {
@@ -805,7 +805,7 @@ int Alignment::Filter2(char keep[], int coverage, int qid, float qsc, int seqid1
         {
           int nr=0;
           for (i=first[k]; i<=last[k]; i++)
-            if (X[k][i]<NAA) nr++;
+	    if (X[k][i]<NAA) nr++;
           nres[k]=nr;
           //printf("%20.20s nres=%3i  first=%3i  last=%3i\n",sname[k],nr,first[k],last[k]);
 	  if (nr == 0)
@@ -2331,6 +2331,10 @@ void Alignment::AddSequence(char Xk[], int Ik[])
   else
     for (i=0; i<=L+1; i++) I[N_in][i]=Ik[i];
   N_in++;
+
+  delete[] ksort; ksort=NULL; // if ksort already existed it will be to short for merged alignment
+  delete[] first; first=NULL; // if first already existed it will be to short for merged alignment
+  delete[] last; last=NULL;   // if last  already existed it will be to short for merged alignment
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -2346,6 +2350,13 @@ void Alignment::AddSSPrediction(char seq_pred[], char seq_conf[])
       return;
     }
 
+  if (kss_pred < 0 || kss_conf < 0)   // At least one sequence is added
+    {
+      delete[] ksort; ksort=NULL; // if ksort already existed it will be to short for merged alignment
+      delete[] first; first=NULL; // if first already existed it will be to short for merged alignment
+      delete[] last; last=NULL;   // if last  already existed it will be to short for merged alignment
+    }
+  
   if (kss_pred < 0)  // No ss prediction exists
     {
       kss_pred=N_in;

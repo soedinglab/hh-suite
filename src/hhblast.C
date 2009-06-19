@@ -224,6 +224,7 @@ void PerformViterbiByWorker(int bin)
       if (previous_hits->Contains((char*)ss_tmp.str().c_str()))
 	{
 	  hit_cur = previous_hits->Remove((char*)ss_tmp.str().c_str());   // Remove hit from hash -> add to hitlist
+	  previous_hits->Add((char*)ss_tmp.str().c_str(), *(new Hit));
 	  
 	  // Overwrite *hit[bin] with alignment, etc. of hit_cur
 	  hit_cur.score      = hit[bin]->score;
@@ -891,7 +892,7 @@ void CalculateSS(char *ss_pred, char *ss_conf)
 
 }
 
-void search_loop(char *dbfiles[], int ndb)
+void search_loop(char *dbfiles[], int ndb, bool alignByWorker=true)
 {
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Search databases
@@ -996,7 +997,10 @@ void search_loop(char *dbfiles[], int ndb)
 	  
 	  if (threads==0) // if no multi-threading mode, main thread executes job itself
 	    {
-	      AlignByWorker(bin);
+	      if (alignByWorker)
+		AlignByWorker(bin);
+	      else
+		PerformViterbiByWorker(bin);
 	      bin_status[bin] = FREE;
 	      jobs_submitted--;
 	    }
@@ -1116,7 +1120,7 @@ void perform_viterbi_search(int db_size)
 
   hitlist.N_searched=db_size; //hand over number of HMMs scanned to hitlist (for E-value calculation)
 
-  search_loop(dbfiles,ndb);
+  search_loop(dbfiles,ndb,false);
 
   if (v1>=1) cout<<"\n";
   v=v1;
@@ -1815,6 +1819,10 @@ int main(int argc, char **argv)
 	if (v>=3) printf("Set jdummy to 0! (jdummy: %i   round: %i   hits.Size: %i)\n",par.jdummy,round,previous_hits->Size());
 	par.jdummy = 0;
       }
+    else 
+      {
+	par.jdummy -= previous_hits->Size();
+      }
 
     if (round == num_rounds && nodiff)
       {
@@ -2005,7 +2013,7 @@ int main(int argc, char **argv)
     	    strcat(ta3mfile,".a3m");
     	    Qali.MergeMasterSlave(hit_cur,ta3mfile);
     	  }
-	
+
     	// Convert ASCII to int (0-20),throw out all insert states, record their number in I[k][i]
     	Qali.Compress("merged A3M file");
 	
