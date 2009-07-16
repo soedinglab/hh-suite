@@ -185,6 +185,8 @@ public:
   double *filter_evals;   // array of last 1/evalues
   double filter_sum;       // sum of evalues in array
   int filter_counter;     // counter for evalue array
+
+  Hash<char*>* block_shading;   // Cross out cells not covered by prefiltering hit in HHblast
 };
 
 /////////////////////////////////////////////////////////////////////////////////////

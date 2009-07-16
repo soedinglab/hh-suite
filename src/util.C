@@ -457,7 +457,7 @@ int strint(char*& ptr)
       ptr=0;
       return INT_MIN;
     }
-  if (*(ptr-1)=='-' && ptr>ptr0) i=-atoi(ptr); else i=atoi(ptr);
+  if (ptr>ptr0 && *(ptr-1)=='-') i=-atoi(ptr); else i=atoi(ptr);
   while (*ptr>='0' && *ptr<='9') ptr++;
   return i;
 }

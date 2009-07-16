@@ -544,6 +544,8 @@ void SetDefaults()
   par.filter_sum=0.0;
   par.filter_counter=0;
 
+  par.block_shading=NULL;
+
   par.notags=1;                // neutralize His-tags, FLAG-tags, C-myc-tags
 
   // Initialize strings

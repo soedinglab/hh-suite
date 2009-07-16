@@ -1501,6 +1501,52 @@ void Hit::InitializeForAlignment(HMM& q, HMM& t)
 	      cell_off[i][j]=1; 
 	}
     }
+
+  // Cross out cells not contained in the range of the prefiltering in HHblast
+  if (par.block_shading && par.block_shading->Contains(t.name))
+    {
+      int before = 0;
+      int after = 0;
+      for (i=1; i<=q.L; i++) 
+	for (j=1; j<=t.L; j++) 
+	  if (cell_off[i][j]==1)
+	    before++;
+
+      char* tmp = par.block_shading->Show(t.name);
+      int i0, i1, j0, j1;
+      //printf("Hit %s with block shading: %s\n", t.name,tmp);
+      i0 = strint(tmp);  // query start
+      i1 = strint(tmp);  // query end
+      j0 = strint(tmp);  // subject start
+      j1 = strint(tmp);  // subject end
+      //printf("cell_off in query: 1-%i\n",i0);
+      for (i=1; i<i0; i++) 
+	  for (j=1; j<=t.L; j++) 
+	    cell_off[i][j]=1; 
+      //printf("cell_off in query: %i-%i\n",i1+1,q.L);
+      for (i=i1+1; i<=q.L; i++)
+	  for (j=1; j<=t.L; j++) 
+	    cell_off[i][j]=1; 
+      //printf("cell_off in template: 1-%i\n",j0);
+      for (j=1; j<j0; j++) 
+	  for (i=1; i<=q.L; i++) 
+	    cell_off[i][j]=1; 
+      //printf("cell_off in template: %i-%i\n",j1+1,t.L);
+      for (j=j1+1; j<=t.L; j++)
+	  for (i=1; i<=q.L; i++) 
+	    cell_off[i][j]=1; 
+
+      for (i=1; i<=q.L; i++) 
+	for (j=1; j<=t.L; j++) 
+	  if (cell_off[i][j]==1)
+	    after++;
+
+      //printf("Zellen vorher schon aus: %i\n",before);
+      //printf("Zellen nachher aus     : %i\n",after);
+      //printf("Zellen gesamt: %i\n",q.L*t.L);
+      //printf("Ersparnis: %4.2f %%\n",(double)(after-before)/(double)(q.L*t.L)*100.0);
+
+    }
 }
 	
 /////////////////////////////////////////////////////////////////////////////////////
