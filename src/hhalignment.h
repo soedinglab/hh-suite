@@ -45,7 +45,7 @@ public:
   int HomologyFilter(int coverage_core, float qsc_core, float coresc);
 
   // Calculate AA frequencies q.p[i][a] and transition probabilities q.tr[i][a] from alignment
-  void FrequenciesAndTransitions(HMM& q, char* in=NULL);
+  void FrequenciesAndTransitions(HMM& q, char* in=NULL, bool time=false);
 
   // Calculate freqs q.f[i][a] and transitions q.tr[i][a] (a=MM,MI,MD) with pos-specific subalignments
   void Amino_acid_frequencies_and_transitions_from_M_state(HMM& q, char* in);

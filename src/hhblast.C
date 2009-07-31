@@ -83,14 +83,13 @@ char* ptr;                // pointer for string manipulation
 
 // HHblast variables
 
-const char HHBLAST_VERSION[]="version 1.3.5 (July 2009)";
+const char HHBLAST_VERSION[]="version 1.3.8 (July 2009)";
 const char HHBLAST_REFERENCE[]="to be published.\n";
 const char HHBLAST_COPYRIGHT[]="(C) Michael Remmert and Johannes Soeding\n";
 
 int num_rounds   = 2;                  // number of iterations
 float e_psi      = 100;                // E-value cutoff for prefiltering
 const int N_PSI  = 10000;              // number of max. PSI-BLAST hits to take as HMM-DB
-int block_shading_space = 200;         // space added to the rands of prefilter HSP
 bool nodiff = false;                   // if true, do not filter in last round
 bool filter = true;                    // Perform filtering of already seen HHMs
 bool block_filter = true;              // Perform viterbi and forward algorithm only on block given by prefiltering
@@ -226,7 +225,8 @@ void PerformViterbiByWorker(int bin)
       if (previous_hits->Contains((char*)ss_tmp.str().c_str()))
 	{
 	  hit_cur = previous_hits->Remove((char*)ss_tmp.str().c_str());   // Remove hit from hash -> add to hitlist
-	  previous_hits->Add((char*)ss_tmp.str().c_str(), *(new Hit));
+	  //previous_hits->Add((char*)ss_tmp.str().c_str(), *(new Hit));
+	  previous_hits->Add((char*)ss_tmp.str().c_str(), *(hit[bin]));
 	  
 	  // Overwrite *hit[bin] with alignment, etc. of hit_cur
 	  hit_cur.score      = hit[bin]->score;
@@ -641,8 +641,10 @@ void ProcessArguments(int argc, char** argv)
 	}
       else if (!strcmp(argv[i],"-filtercut") && (i<argc-1)) par.filter_thresh=(double)atof(argv[++i]);
       else if (!strcmp(argv[i],"-nofilter")) {filter=false; block_filter=false; par.filter_thresh=0;}
+      else if (!strcmp(argv[i],"-nodbfilter")) {par.filter_thresh=0;}
       else if (!strcmp(argv[i],"-noblockfilter")) {block_filter=false;}
-      else if (!strcmp(argv[i],"-block_len") && (i<argc-1)) block_shading_space = atoi(argv[++i]);
+      else if (!strcmp(argv[i],"-block_len") && (i<argc-1)) par.block_shading_space = atoi(argv[++i]);
+      else if (!strcmp(argv[i],"-shading_mode") && (i<argc-1)) strcpy(par.block_shading_mode,argv[++i]);
       else if (!strcmp(argv[i],"-realignoldhits")) realign_old_hits=true;
       else if (!strcmp(argv[i],"-realign")) par.realign=1;
       else if (!strcmp(argv[i],"-norealign")) par.realign=0;
@@ -797,6 +799,9 @@ void CheckInputFiles()
       runSystem(command);
       RemoveExtension(base_filename,par.infile);
       strcpy(par.infile,tmp_infile.c_str());
+      // Create simple PSI-file
+      command = (string)hh + "/reformat.pl fas psi " + (string)par.infile + " " + tmp_psifile + " -r -M first > /dev/null";
+      runSystem(command);
     }
 
   int v1=v;
@@ -806,6 +811,7 @@ void CheckInputFiles()
   FILE* qa3mf=fopen(par.infile,"r");
   if (!qa3mf) OpenFileError(par.infile);
   Qali.Read(qa3mf,par.infile);
+  Qali.Compress("compress Qali");
   fclose(qa3mf);
 
   v=v1;
@@ -1111,12 +1117,7 @@ void perform_viterbi_search(int db_size)
 
   par.block_shading->Reset();
   while (!par.block_shading->End())
-    {
-      delete (par.block_shading->ReadNext()); 
-      //char* tmp = par.block_shading->ReadNext();
-      //printf("Delete hit with data: %s\n",tmp);
-      //delete (tmp);
-    }
+      delete[] (par.block_shading->ReadNext()); 
   par.block_shading->New(16381,NULL);
 
   // Get dbfiles of previous hits
@@ -1134,24 +1135,29 @@ void perform_viterbi_search(int db_size)
       if (block_filter)
 	{
 	  //printf("Viterbi hit %s   q: %i-%i   t: %i-%i\n",hit_cur.name, hit_cur.i1, hit_cur.i2, hit_cur.j1, hit_cur.j2);
-	  int i1, i2, j1, j2;
-	  i1 = j1 = 100000;
-	  i2 = j2 = 0;
+	  int* block;
+	  int counter;
 	  if (par.block_shading->Contains(hit_cur.name))
 	    {
-	      char* tmp = par.block_shading->Show(hit_cur.name);
-	      i1 = strint(tmp);
-	      i2 = strint(tmp);
-	      j1 = strint(tmp);
-	      j2 = strint(tmp);
-	      delete (par.block_shading->Remove(hit_cur.name));
+	      block = par.block_shading->Show(hit_cur.name);
+	      counter = par.block_shading_counter->Remove(hit_cur.name);
 	    }
-	  stringstream ss_tmp;
-	  char* block = new(char[50]);
-	  ss_tmp << imax(1,imin(i1,hit_cur.i1-block_shading_space)) << ";" << imax(i2,hit_cur.i2+block_shading_space) << ";" << imax(1,imin(j1,hit_cur.j1-block_shading_space)) << ";" << imax(j2,hit_cur.j2+block_shading_space);
-	  strcpy(block,ss_tmp.str().c_str());
-	  par.block_shading->Add(hit_cur.name,block);
-	  //printf("Add to block shading in realign   key: %s    data: %s\n",hit_cur.name, block);
+	  else
+	    {
+	      block = new(int[400]);
+	      counter = 0;
+	    }
+	  block[counter++] = hit_cur.i1;
+	  block[counter++] = hit_cur.i2;
+	  block[counter++] = hit_cur.j1;
+	  block[counter++] = hit_cur.j2;
+	  par.block_shading_counter->Add(hit_cur.name,counter);
+	  if (!par.block_shading->Contains(hit_cur.name))
+	    par.block_shading->Add(hit_cur.name,block);
+	  // printf("Add to block shading   key: %s    data:",hit_cur.name);
+	  // for (int i = 0; i < counter; i++)
+	  //   printf(" %i,",block[i]);
+	  // printf("\n");
 	}
     }
   
@@ -1231,13 +1237,9 @@ void perform_realign(char *dbfiles[], int ndb)
   realign->New(3601,NULL);
   par.block_shading->Reset();
   while (!par.block_shading->End())
-    {
-      delete (par.block_shading->ReadNext()); 
-      //char* tmp = par.block_shading->ReadNext();
-      //printf("Delete hit with data: %s\n",tmp);
-      //delete (tmp);
-    }
+      delete[] (par.block_shading->ReadNext()); 
   par.block_shading->New(16381,NULL);
+  par.block_shading_counter->New(16381,NULL);
   Hit hit_cur;
   const float MEMSPACE_DYNPROG = 2.0*1024.0*1024.0*1024.0;
   int nhits=0;
@@ -1260,24 +1262,29 @@ void perform_realign(char *dbfiles[], int ndb)
 	  if (block_filter)
 	    {
 	      //printf("Viterbi hit %s   q: %i-%i   t: %i-%i\n",hit_cur.name, hit_cur.i1, hit_cur.i2, hit_cur.j1, hit_cur.j2);
-	      int i1, i2, j1, j2;
-	      i1 = j1 = 100000;
-	      i2 = j2 = 0;
+	      int* block;
+	      int counter;
 	      if (par.block_shading->Contains(hit_cur.name))
 		{
-		  char* tmp = par.block_shading->Show(hit_cur.name);
-		  i1 = strint(tmp);
-		  i2 = strint(tmp);
-		  j1 = strint(tmp);
-		  j2 = strint(tmp);
-		  delete (par.block_shading->Remove(hit_cur.name));
+		  block = par.block_shading->Show(hit_cur.name);
+		  counter = par.block_shading_counter->Remove(hit_cur.name);
 		}
-	      stringstream ss_tmp;
-	      char* block = new(char[50]);
-	      ss_tmp << imax(1,imin(i1,hit_cur.i1-block_shading_space)) << ";" << imax(i2,hit_cur.i2+block_shading_space) << ";" << imax(1,imin(j1,hit_cur.j1-block_shading_space)) << ";" << imax(j2,hit_cur.j2+block_shading_space);
-	      strcpy(block,ss_tmp.str().c_str());
-	      par.block_shading->Add(hit_cur.name,block);
-	      //printf("Add to block shading in realign   key: %s    data: %s\n",hit_cur.name, block);
+	      else
+		{
+		  block = new(int[400]);
+		  counter = 0;
+		}
+	      block[counter++] = hit_cur.i1;
+	      block[counter++] = hit_cur.i2;
+	      block[counter++] = hit_cur.j1;
+	      block[counter++] = hit_cur.j2;
+	      par.block_shading_counter->Add(hit_cur.name,counter);
+	      if (!par.block_shading->Contains(hit_cur.name))
+		par.block_shading->Add(hit_cur.name,block);
+	      // printf("Add to block shading in realign   key: %s    data:",hit_cur.name);
+	      // for (int i = 0; i < counter; i++)
+	      // 	printf(" %i,",block[i]);
+	      // printf("\n");
 	    }
 	  
 	  //fprintf(stderr,"hit.name=%-15.15s  hit.index=%-5i hit.ftellpos=%-8i  hit.dbfile=%s\n",hit_cur.name,hit_cur.index,(unsigned int)hit_cur.ftellpos,hit_cur.dbfile);
@@ -1726,7 +1733,8 @@ int main(int argc, char **argv)
   strcpy(par.outfile,"");
   N_searched=0;
   previous_hits = new Hash<Hit>(1631,hit_cur);
-  par.block_shading = new Hash<char*>;
+  par.block_shading = new Hash<int*>;
+  par.block_shading_counter = new Hash<int>;
   
   // Make command line input globally available
   par.argv=argv;
@@ -1956,15 +1964,14 @@ int main(int argc, char **argv)
     doubled->New(16381,0);
     par.block_shading->Reset();
     while (!par.block_shading->End())
-	delete (par.block_shading->ReadNext()); 
+	delete[] (par.block_shading->ReadNext()); 
     par.block_shading->New(16381,NULL);
+    par.block_shading_counter->New(16381,NULL);
     ndb_new = ndb_old = 0;
-    int start_q = 100000;
-    int start_t = 100000;
-    int end_q = 0;
-    int end_t = 0;
     int pos;
+    int count=0;
     char actual_hit[NAMELEN];
+    int* block = new(int[400]);
     strcpy(actual_hit,"");
 
     stream = popen(command.c_str(), "r");
@@ -1984,15 +1991,16 @@ int main(int argc, char **argv)
 	    // Write block for template
 	    if (strcmp(actual_hit,"") && strcmp(actual_hit,tmp_name))   // New template
 	      {
-		char* block = new(char[50]);
-		stringstream ss_tmp;
-		ss_tmp << start_q << ";" << end_q << ";" << start_t << ";" << end_t;
-		strcpy(block,ss_tmp.str().c_str());
-		//printf("Add to block shading   key: %s    data: %s\n",actual_hit, block);
+		//printf("Add to block shading   key: %s    data:",actual_hit);
+		// for (int i = 0; i < count; i++)
+		//   printf(" %i,",block[i]);
+		// printf("\n");
 		par.block_shading->Add(actual_hit,block);
-		start_q = start_t = 100000;
-		end_q = end_t = 0;
+		par.block_shading_counter->Add(actual_hit,count);
+		block = new(int[400]);
+		count = 0;
 	      }
+	    if (count >= 400) { continue; }
 	    strcpy(actual_hit,tmp_name);
 	    // Get block of HSP
 	    ptr=strwrd(tmp,ptr); // sequence identity
@@ -2000,17 +2008,13 @@ int main(int argc, char **argv)
 	    pos=strint(ptr); // mismatches
 	    pos=strint(ptr); // gap openings
 	    pos=strint(ptr); // query start
-	    if (imax(1,pos-block_shading_space) < start_q)
-	      start_q = imax(1,pos-block_shading_space);
+	    block[count++]=pos;
 	    pos=strint(ptr); // query end
-	    if (pos+block_shading_space > end_q)
-	      end_q = pos+block_shading_space;
+	    block[count++]=pos;
 	    pos=strint(ptr); // subject start
-	    if (imax(1,pos-block_shading_space) < start_t)
-	      start_t = imax(1,pos-block_shading_space);
+	    block[count++]=pos;
 	    pos=strint(ptr); // subject end
-	    if (pos+block_shading_space > end_t)
-	      end_t = pos+block_shading_space;
+	    block[count++]=pos;	    
 	  }
 	
 	if (!strncmp(tmp_name,"cl|",3))   // kClust formatted database (NR20, NR30)
@@ -2018,10 +2022,6 @@ int main(int argc, char **argv)
 	    substr(tmp,tmp_name,3,11);
 	    substr(db_name,tmp,0,1);
 	    strcat(db_name,"/");
-	    // char tmp2[NAMELEN];
-	    // substr(tmp2,tmp,2,2);
-	    // strcat(db_name,tmp2);
-	    // strcat(db_name,"/");
 	    strcat(db_name,tmp);
 	    strcat(db_name,".db");
 	  }
@@ -2060,13 +2060,14 @@ int main(int argc, char **argv)
     pclose(stream);
     if (block_filter && strcmp(actual_hit,""))   // New template
       {
-	char* block = new(char[50]);
-	stringstream ss_tmp;
-	ss_tmp << start_q << ";" << end_q << ";" << start_t << ";" << end_t;
-	strcpy(block,ss_tmp.str().c_str());
-	//printf("Add to block shading   key: %s    data: %s)\n",actual_hit, block);
+	// printf("Add to block shading   key: %s    data:",actual_hit);
+	// for (int i = 0; i < count; i++)
+	//   printf(" %i,",block[i]);
+	// printf("\n");
 	par.block_shading->Add(actual_hit,block);
+	par.block_shading_counter->Add(actual_hit,count);
       }
+
     if (v>=3) printf("Number of new extracted HMMs: %i\n",ndb_new);
     if (v>=3) printf("Number of extracted HMMs (previous searched): %i\n",ndb_old);
 
@@ -2117,62 +2118,71 @@ int main(int argc, char **argv)
     // Generate alignment for next iteration
     if (round < num_rounds || *par.alnfile || *par.psifile || *par.hhmfile || *alis_basename)
       {
-    	char ta3mfile[NAMELEN];
-
-    	if (v>=3) printf("Merging hits to query alignment ...\n");
-    	int v1=v;
+	int v1=v;
 	if (v<=3) v=1; else v-=2;
 	
-    	// For each template below threshold
-    	hitlist.Reset();
-    	while (!hitlist.End())
-    	  {
-    	    hit_cur = hitlist.ReadNext();
-    	    if (hit_cur.Eval > 100.0*par.e) break; // E-value much too large
-    	    if (hit_cur.Eval > par.e) continue; // E-value too large
-	    stringstream ss_tmp;
-	    ss_tmp << hit_cur.name << "__" << hit_cur.irep;
-	    if (previous_hits->Contains((char*)ss_tmp.str().c_str())) continue;  // Already in alignment
+	// If new hits found, merge hits to query alignment
+	if (new_hits != 0)
+	  {
+	    char ta3mfile[NAMELEN];
 	    
-    	    // Read a3m alignment of hit from <file>.a3m file and merge into Qali alignment
-    	    strcpy(ta3mfile,hit_cur.file); // copy filename including path but without extension
-    	    strcat(ta3mfile,".a3m");
-    	    Qali.MergeMasterSlave(hit_cur,ta3mfile);
-    	  }
-
-    	// Convert ASCII to int (0-20),throw out all insert states, record their number in I[k][i]
-    	Qali.Compress("merged A3M file");
-	
-    	// Sort out the nseqdis most dissimilar sequences for display in the output alignments
-    	Qali.FilterForDisplay(par.max_seqid,par.coverage,par.qid,par.qsc,par.nseqdis);
-	
-    	// Remove sequences with seq. identity larger than seqid percent (remove the shorter of two)
-    	float const COV_ABS = 25;     // min. number of aligned residues
-    	int cov_tot = imax(imin((int)(COV_ABS / Qali.L * 100 + 0.5), 70), par.coverage);
-    	if (v>2) printf("Filter new alignment with cov %3i%%\n", cov_tot);
-    	Qali.N_filtered = Qali.Filter(par.max_seqid,cov_tot,par.qid,par.qsc,par.Ndiff);
-
-	if (print_elapsed) ElapsedTimeSinceLastCall("(merge hits to Qali)");
-
-	// Write PSI-alignment for next round prefiltering
-	Qali.WriteToFile(tmp_psifile.c_str(),"psi");
-
+	    if (v>=2) printf("Merging hits to query alignment ...\n");
+	    
+	    // For each template below threshold
+	    hitlist.Reset();
+	    while (!hitlist.End())
+	      {
+		hit_cur = hitlist.ReadNext();
+		if (hit_cur.Eval > 100.0*par.e) break; // E-value much too large
+		if (hit_cur.Eval > par.e) continue; // E-value too large
+		stringstream ss_tmp;
+		ss_tmp << hit_cur.name << "__" << hit_cur.irep;
+		if (previous_hits->Contains((char*)ss_tmp.str().c_str())) continue;  // Already in alignment
+		
+		// Read a3m alignment of hit from <file>.a3m file and merge into Qali alignment
+		strcpy(ta3mfile,hit_cur.file); // copy filename including path but without extension
+		strcat(ta3mfile,".a3m");
+		Qali.MergeMasterSlave(hit_cur,ta3mfile);
+	      }
+	    
+	    // Convert ASCII to int (0-20),throw out all insert states, record their number in I[k][i]
+	    Qali.Compress("merged A3M file");
+	    
+	    // Sort out the nseqdis most dissimilar sequences for display in the output alignments
+	    Qali.FilterForDisplay(par.max_seqid,par.coverage,par.qid,par.qsc,par.nseqdis);
+	    
+	    // Remove sequences with seq. identity larger than seqid percent (remove the shorter of two)
+	    float const COV_ABS = 25;     // min. number of aligned residues
+	    int cov_tot = imax(imin((int)(COV_ABS / Qali.L * 100 + 0.5), 70), par.coverage);
+	    if (v>2) printf("Filter new alignment with cov %3i%%\n", cov_tot);
+	    Qali.N_filtered = Qali.Filter(par.max_seqid,cov_tot,par.qid,par.qsc,par.Ndiff);
+	    
+	    if (print_elapsed) ElapsedTimeSinceLastCall("(merge hits to Qali)");
+	    
+	    // Write PSI-alignment for next round prefiltering
+	    Qali.WriteToFile(tmp_psifile.c_str(),"psi");
+	    
+	    if (print_elapsed) ElapsedTimeSinceLastCall("(write PSI-alignment)");
+	  }
+	  
 	// if needed, calculate SSpred
 	if (par.showpred && Qali.L>25 && (*alis_basename || round == num_rounds || new_hits == 0))
 	  {
 	    char ss_pred[MAXRES];
 	    char ss_conf[MAXRES];
-
+	    
 	    CalculateSS(ss_pred, ss_conf);
-
+	    
 	    Qali.AddSSPrediction(ss_pred, ss_conf);
-
+	    
 	    if (print_elapsed) ElapsedTimeSinceLastCall("(calculate SS_Pred)");
 	  }
-
+	
 	// Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
-    	Qali.FrequenciesAndTransitions(q);
+    	Qali.FrequenciesAndTransitions(q,NULL,true);
     	
+	if (print_elapsed) ElapsedTimeSinceLastCall("(Calculate AA frequencies and transitions)");
+
 	if (*alis_basename)
 	  {
 	    stringstream ss_tmp;
@@ -2204,6 +2214,8 @@ int main(int argc, char **argv)
 	hitlist.Delete(); // Delete list record
 
       }
+
+    if (print_elapsed) ElapsedTimeSinceLastCall("(end of this round)");
 
   } // end for-loop rounds
   
@@ -2273,7 +2285,7 @@ int main(int argc, char **argv)
   delete doubled;
   par.block_shading->Reset();
   while (!par.block_shading->End())
-    delete (par.block_shading->ReadNext()); 
+    delete[] (par.block_shading->ReadNext()); 
   delete par.block_shading;
   previous_hits->Reset();
   while (!previous_hits->End())

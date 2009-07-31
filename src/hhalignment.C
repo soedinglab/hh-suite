@@ -1201,13 +1201,15 @@ int Alignment::FilterWithCoreHMM(char in[], float coresc, HMM& qcore)
 /////////////////////////////////////////////////////////////////////////////////////
 // Calculate AA frequencies q.p[i][a] and transition probabilities q.tr[i][a] from alignment
 /////////////////////////////////////////////////////////////////////////////////////
-void Alignment::FrequenciesAndTransitions(HMM& q, char* in)
+void Alignment::FrequenciesAndTransitions(HMM& q, char* in, bool time)
 {
   int k;                // index of sequence
   int i;                // position in alignment
   int a;                // amino acid (0..19)
   int ni[NAA+3];        // number of times amino acid a occurs at position i
   int naa;              // number of different amino acids
+
+  //if (time) { ElapsedTimeSinceLastCall("begin freq and trans"); }
 
   if (v>=3)
      cout<<"Calculating position-dependent weights on subalignments\n";
@@ -1231,6 +1233,7 @@ void Alignment::FrequenciesAndTransitions(HMM& q, char* in)
           // contribution is proportional to one over sequence length nres[k] plus 30.
         }
       NormalizeTo1(wg,N_in);
+      //if (time) { ElapsedTimeSinceLastCall("Calc global weights"); }
 
       // Do pos-specific sequence weighting and calculate amino acid frequencies and transitions
       for (k=0; k<N_in; k++) X[k][0]=ENDGAP;    // make sure that sequences ENTER subalignment j for j=1
@@ -1239,6 +1242,7 @@ void Alignment::FrequenciesAndTransitions(HMM& q, char* in)
       Amino_acid_frequencies_and_transitions_from_M_state(q,in); // use subalignments of seqs with residue in i
       Transitions_from_I_state(q,in); // use subalignments of seqs with insert in i
       Transitions_from_D_state(q,in); // use subalignments of seqs with delete in i. Must be last of these three calls if par.wg==1!
+      //if (time) { ElapsedTimeSinceLastCall("Do pos-specific sequence weighting and calculate amino acid frequencies and transitions"); }
     }
   else // N_filtered==1
     {
@@ -1303,6 +1307,8 @@ void Alignment::FrequenciesAndTransitions(HMM& q, char* in)
   if (kss_pred>=0) q.nss_pred=n++; // copy psipred sequence?
   if (kss_conf>=0) q.nss_conf=n++; // copy confidence value sequence?
 
+  //if (time) { ElapsedTimeSinceLastCall("Copy to HMM"); }
+
   // Calculate consensus sequence?
   if (par.showcons || par.cons)
     {
@@ -1359,6 +1365,8 @@ void Alignment::FrequenciesAndTransitions(HMM& q, char* in)
         }
     }
 
+  //if (time) { ElapsedTimeSinceLastCall("Calc consensus sequence"); }
+
   // Copy sequences to be displayed from alignment to HMM
   for (k=0; k<N_in; k++)
     {
@@ -1403,6 +1411,8 @@ void Alignment::FrequenciesAndTransitions(HMM& q, char* in)
   q.lamda=0.0;
   q.mu=0.0;
 
+  //if (time) { ElapsedTimeSinceLastCall("Copy sequences and SS"); }
+
   // Debug: print occurence of amino acids for each position i
   if (v>=2) printf("Effective number of sequences exp(entropy) = %-4.1f\n",q.Neff_HMM); //PRINT
   if (v>=3)
@@ -1431,6 +1441,7 @@ void Alignment::FrequenciesAndTransitions(HMM& q, char* in)
     }
   q.trans_lin=0;
   q.has_pseudocounts=false;
+
   return;
 }
 
@@ -1676,7 +1687,8 @@ void Alignment::Transitions_from_I_state(HMM& q, char* in)
   float scale=0.0;            // only for global weights
 
   // Global weights?
-  if (par.wg==1)
+  //if (par.wg==1)
+  if (1)
     {
       for (k=0; k<N_in; k++) wi[k]=wg[k];
       Nlim=fmax(10.0,q.Neff_HMM+1.0);    // limiting Neff
@@ -1691,7 +1703,8 @@ void Alignment::Transitions_from_I_state(HMM& q, char* in)
   // Main loop through alignment columns
   for (i=1; i<=L; i++) // Calculate wi[k] at position i as well as Neff[i]
     {
-      if (par.wg==0) // local weights?
+      //if (par.wg==0) // local weights?
+      if (0)
         {
 
           // Calculate n[j][a] and ri[j]
@@ -1867,7 +1880,8 @@ void Alignment::Transitions_from_D_state(HMM& q, char* in)
   float scale=0.0;            // only for global weights
 
   // Global weights?
-  if (par.wg==1)
+  //if (par.wg==1)
+  if(1)
     {
       for (k=0; k<N_in; k++) wi[k]=wg[k];
       Nlim=fmax(10.0,q.Neff_HMM+1.0);    // limiting Neff
@@ -1884,7 +1898,8 @@ void Alignment::Transitions_from_D_state(HMM& q, char* in)
   // Main loop through alignment columns
   for (i=1; i<=L; i++) // Calculate wi[k] at position i as well as Neff[i]
     {
-      if (par.wg==0) // if local weights
+      //if (par.wg==0) // if local weights
+      if(0)
         {
           change=0;
           // Check all sequences k and update n[j][a] and ri[j] if necessary

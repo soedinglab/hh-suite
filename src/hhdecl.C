@@ -186,7 +186,11 @@ public:
   double filter_sum;       // sum of evalues in array
   int filter_counter;     // counter for evalue array
 
-  Hash<char*>* block_shading;   // Cross out cells not covered by prefiltering hit in HHblast
+  Hash<int*>* block_shading;   // Cross out cells not covered by prefiltering hit in HHblast
+  Hash<int>* block_shading_counter;   // Cross out cells not covered by prefiltering hit in HHblast
+  int block_shading_space;         // space added to the rands of prefilter HSP
+  char block_shading_mode[NAMELEN];
+
 };
 
 /////////////////////////////////////////////////////////////////////////////////////

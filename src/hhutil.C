@@ -545,6 +545,9 @@ void SetDefaults()
   par.filter_counter=0;
 
   par.block_shading=NULL;
+  par.block_shading_counter=NULL;
+  par.block_shading_space = 100;
+  strcpy(par.block_shading_mode,"tube");
 
   par.notags=1;                // neutralize His-tags, FLAG-tags, C-myc-tags
 
