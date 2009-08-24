@@ -564,8 +564,8 @@ void SetDefaults()
   par.exclstr=NULL;
 
   // parameters for context-specific pseudocounts
-  par.csb = 0.9;
-  par.csw = 1.3;
+  par.csb = 0.85;
+  par.csw = 1.6;
   strcpy(par.clusterfile,"");
 
   return;

@@ -83,7 +83,7 @@ char* ptr;                // pointer for string manipulation
 
 // HHblast variables
 
-const char HHBLAST_VERSION[]="version 1.3.8 (July 2009)";
+const char HHBLAST_VERSION[]="version 1.4.0 (August 2009)";
 const char HHBLAST_REFERENCE[]="to be published.\n";
 const char HHBLAST_COPYRIGHT[]="(C) Michael Remmert and Johannes Soeding\n";
 
@@ -374,12 +374,17 @@ void help_all()
   printf(" -b <int>       minimum number of alignments in alignment list (def=%i)                  \n",par.b);
   printf("\n");
   printf("Directories for needed programs                                                          \n");
-  printf(" -pre_mode    <mode> prefilter mode (blast or csblast) (default=%s)                      \n",pre_mode);
-  printf(" -blast        <dir> directory with BLAST executables (default=%s)                       \n",blast);
-  printf(" -csblast      <dir> directory with csBLAST executables (default=%s)                     \n",csblast);
-  printf(" -csblast_db   <dir> directory with csBLAST database (default=%s)                        \n",csblast_db);
-  printf(" -psipred      <dir> directory with PsiPred executables (default=%s)                     \n",psipred);
-  printf(" -psipred_data <dir> directory with PsiPred data (default=%s)                            \n",psipred_data);
+  printf(" -pre_mode    <mode>  prefilter mode (blast or csblast) (default=%s)                     \n",pre_mode);
+  printf(" -blast        <dir>  directory with BLAST executables (default=%s)                      \n",blast);
+  printf(" -csblast      <dir>  directory with csBLAST executables (default=%s)                    \n",csblast);
+  printf(" -csblast_db   <dir>  directory with csBLAST database (default=%s)                       \n",csblast_db);
+  printf(" -psipred      <dir>  directory with PsiPred executables (default=%s)                    \n",psipred);
+  printf(" -psipred_data <dir>  directory with PsiPred data (default=%s)                           \n",psipred_data);
+  printf("\n");
+  printf("Filter options                                                                           \n");
+  printf(" -nofilter      disable all filter steps (except for PSI-BLAST prefiltering)             \n");
+  printf(" -nodbfilter    disable additional filtering of prefiltered HMMs                         \n");
+  printf(" -noblockfilter search complete matrix in Viterbi                                        \n");
   printf("\n");
   printf("Filter result alignment (options can be combined):                                       \n");
   printf(" -id   [0,100]  maximum pairwise sequence identity (%%) (def=%i)                         \n",par.max_seqid);
@@ -663,7 +668,7 @@ void ProcessArguments(int argc, char** argv)
 
   if (*csblast_db) {
     //cerr<<"CSBLAST DB given!\n";
-    strcpy(par.clusterfile,"/cluster/bioprogs/csblast_v1.0.2/data/clusters.prf");
+    strcpy(par.clusterfile,"/cluster/bioprogs/hhblast/nr30_neff2.5_1psi_N1000000_W13_K4000_wcenter1.6_wmax1.36_beta0.85.prf");
     // TODO: change back, when Andreas has rewritten hhhmm.C
     //strcpy(par.clusterfile,csblast_db);
   } else {
@@ -1780,7 +1785,10 @@ int main(int argc, char **argv)
     {help(); cerr<<endl<<"Error in "<<program_name<<": missing PsiPred directory (see config-file or -psipred and -psipred_data)\n"; exit(4);}
  
   // Create tmp-directory
-  mkstemp(tmp_file);
+  if (mkstemp(tmp_file) == -1) {
+    cerr << "ERROR! Could not create tmp-file!\n"; 
+    exit(4);
+  }
   tmp_infile = (string)tmp_file + ".fas";
   tmp_psifile = (string)tmp_file + ".psi";
 

@@ -181,14 +181,14 @@ public:
   float fdummy;
 
   double filter_thresh;    // Threshold for early stopping
-  int filter_length;      // Length of array of 1/evalues
-  double *filter_evals;   // array of last 1/evalues
+  int filter_length;       // Length of array of 1/evalues
+  double *filter_evals;    // array of last 1/evalues
   double filter_sum;       // sum of evalues in array
-  int filter_counter;     // counter for evalue array
+  int filter_counter;      // counter for evalue array
 
-  Hash<int*>* block_shading;   // Cross out cells not covered by prefiltering hit in HHblast
-  Hash<int>* block_shading_counter;   // Cross out cells not covered by prefiltering hit in HHblast
-  int block_shading_space;         // space added to the rands of prefilter HSP
+  Hash<int*>* block_shading;         // Cross out cells not covered by prefiltering hit in HHblast
+  Hash<int>* block_shading_counter;  // Cross out cells not covered by prefiltering hit in HHblast
+  int block_shading_space;           // space added to the rands of prefilter HSP
   char block_shading_mode[NAMELEN];
 
 };
