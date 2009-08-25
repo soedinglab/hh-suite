@@ -830,7 +830,12 @@ void Hit::MACAlignment(HMM& q, HMM& t)
 	{
 
 	  if (cell_off[i][j]) 
-	    S[i][j] = -FLT_MIN;
+	    {
+	      S[i][j] = -FLT_MIN;
+	      bMM[i][j] = STOP;
+	      //	      if (i>135 && i<140) 
+	      // 		printf("Cell off   i=%i  j=%i b:%i\n",i,j,bMM[i][j]);
+	    }
 	  else 
 	    {
 	      // Recursion
@@ -845,8 +850,8 @@ void Hit::MACAlignment(HMM& q, HMM& t)
 		 bMM[i][j]   // backtracing matrix
 		 );
 
-// 	      if (i==6 && j==8) 
-// 		printf("i=%i  j=%i  S[i][j]=%8.3f  MM:%7.3f  MI:%7.3f  IM:%7.3f  b:%i\n",i,j,S[i][j],S[i-1][j-1]+B_MM[i][j]-par.mact,S[i-1][j],S[i][j-1],bMM[i][j]);
+	      // 	      if (i>135 && i<140) 
+	      // 		printf("i=%i  j=%i  S[i][j]=%8.3f  MM:%7.3f  MI:%7.3f  IM:%7.3f  b:%i\n",i,j,S[i][j],S[i-1][j-1]+B_MM[i][j]-par.mact,S[i-1][j],S[i][j-1],bMM[i][j]);
 	      
 	      // Find maximum score; global alignment: maximize only over last row and last column
 	      if(S[i][j]>score_MAC && (par.loc || i==q.L)) { i2=i; j2=j; score_MAC=S[i][j]; }	      
@@ -1267,7 +1272,6 @@ void Hit::BacktraceMAC(HMM& q, HMM& t)
   for (i=0; i<=q.L; i++) b[i][1] = STOP;
   for (j=1; j<=t.L; j++) b[1][j] = STOP;
   
-
   // Back-tracing loop
   // In contrast to the Viterbi-Backtracing, STOP signifies the first Match-Match state, NOT the state before the first MM state
   matched_cols=1; // for each MACTH (or STOP) state matched_col is incremented by 1
@@ -1372,7 +1376,6 @@ void Hit::BacktraceMAC(HMM& q, HMM& t)
     }
   else { logPvalt=0; Pvalt=1;}
 //   printf("%-10.10s lamda=%-9f  score=%-9f  logPval=%-9g\n",name,t.lamda,score,logPvalt);
-
 
   //DEBUG: Print out MAC alignment path
   if (v>=4) 

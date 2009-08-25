@@ -83,7 +83,7 @@ char* ptr;                // pointer for string manipulation
 
 // HHblast variables
 
-const char HHBLAST_VERSION[]="version 1.4.0 (August 2009)";
+const char HHBLAST_VERSION[]="version 1.4.1 (August 2009)";
 const char HHBLAST_REFERENCE[]="to be published.\n";
 const char HHBLAST_COPYRIGHT[]="(C) Michael Remmert and Johannes Soeding\n";
 
@@ -1330,13 +1330,13 @@ void perform_realign(char *dbfiles[], int ndb)
   if (print_elapsed) ElapsedTimeSinceLastCall("(prepare realign)");
  
   if (v>=1) printf("Realigning %i query-template alignments with maximum accuracy (MAC) algorithm ...\n",nhits);
+
   int v1=v;
   if (v<=3) v=1; else v-=1;  // Supress verbose output during iterative realignment and realignment
   
   // Align the first par.jdummy templates?
   if (par.jdummy>0)
     {
-      
       if (v>=2) printf("Merging %i best hits to query alignment ...\n",par.jdummy);
       
       bin=0;
@@ -1501,7 +1501,7 @@ void perform_realign(char *dbfiles[], int ndb)
       if (DEBUG_THREADS) fprintf(stderr," created!\n");
     }
 #endif
-  
+
   // Read all HMMs whose position is given in list realign_pos
   for (int idb=0; idb<ndb; idb++)
     {
@@ -1524,7 +1524,6 @@ void perform_realign(char *dbfiles[], int ndb)
       realign->Show(dbfiles[idb])->Reset();
       while (! realign->Show(dbfiles[idb])->End())
 	{
-	  
 	  // Submit jobs until no bin is free anymore
 	  while (! realign->Show(dbfiles[idb])->End() && jobs_submitted+jobs_running<bins)
 	    {
