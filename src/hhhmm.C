@@ -470,6 +470,7 @@ int HMM::Read(FILE* dbf, char* path)
           fgetline(line,LINELEN-1,dbf); // Skip line with amino acid labels
           fgetline(line,LINELEN-1,dbf); // Skip line with transition labels
           ptr=line;
+
           for (a=0; a<=D2D && ptr; ++a)
             tr[0][a] = float(-strinta(ptr))/HMMSCALE; //store transition probabilites as log2 values
             // strinta returns next integer in string and puts ptr to first char
@@ -768,6 +769,9 @@ int HMM::ReadHMMer(FILE* dbf, char* filestr)
             // ptr is set to 0 if no integer is found after ptr.
           tr[0][I2M] = tr[0][D2M] = 0.0;
           tr[0][I2I] = tr[0][D2D] = -99999.0;
+	  tr[0][M2M_GAPOPEN]=tr[0][M2M];
+	  tr[0][GAPOPEN]=0.0;
+	  tr[0][GAPEXTD]=0.0;
           if (!ptr) return Warning(dbf,line,name);
           if (v>=4)
             {
@@ -892,6 +896,10 @@ int HMM::ReadHMMer(FILE* dbf, char* filestr)
               ptr+=2;
               for (a=0; a<=D2D && ptr; ++a)
                 tr[i][a] = float(strinta(ptr,-99999))/HMMSCALE; //store transition prob's as log2-values
+	      // SS-dependent gap penalties
+	      tr[i][M2M_GAPOPEN]=tr[i][M2M];
+	      tr[i][GAPOPEN]=0.0;
+	      tr[i][GAPEXTD]=0.0;
               if (!ptr) return Warning(dbf,line,name);
               if (v>=4)
                 {
@@ -1015,6 +1023,8 @@ int HMM::ReadHMMer(FILE* dbf, char* filestr)
     }
   Neff_HMM/=L;
   for (i=0; i<=L; ++i) Neff_M[i] = Neff_I[i] = Neff_D[i] = 10.0; // to add only little additional pseudocounts!
+  Neff_M[L+1]=1.0f;
+  Neff_I[L+1]=Neff_D[L+1]=0.0f;
   if (v>=2)
     cout<<"Read in HMM "<<name<<" with "<<L<<" match states and effective number of sequences = "<<Neff_HMM<<"\n";
 
@@ -1651,23 +1661,6 @@ float HMM::CalcNeff()
   return fpow2(Neff/L);
 }
 
-
-/////////////////////////////////////////////////////////////////////////////////////
-// Calculate consensus of HMM (needed to merge HMMs later)
-/////////////////////////////////////////////////////////////////////////////////////
-void HMM::CalculateConsensus()
-{
-  int i;      // position in query
-  int a;      // amino acid
-  if (!Xcons) Xcons = new char[MAXRES+2];
-  for (i=1; i<=L; ++i)
-    {
-      float max=f[i][0]-pb[0];
-      for (a=1; a<20; ++a)
-        if (f[i][a]-pb[a]>max) Xcons[i]=a;
-    }
-  Xcons[0]=Xcons[L+1]=ENDGAP;
-}
 
 // /////////////////////////////////////////////////////////////////////////////////////
 // // Store linear transition probabilities

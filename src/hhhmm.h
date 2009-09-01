@@ -86,9 +86,6 @@ public:
     // Calculate effective number of sequences using profiles INCLUDING pseudocounts
     float CalcNeff();
 
-    // Calculate consensus of HMM (needed to merge HMMs later)
-    void CalculateConsensus();
-
     // Store linear transition probabilities
     void StoreLinearTransitionProbs();
 

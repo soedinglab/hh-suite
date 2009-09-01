@@ -144,6 +144,7 @@ void ReadAndPrepare(char* infile, HMM& q, Alignment* qali=NULL)
         } else {
             // Generate an amino acid frequency matrix from f[i][a] with full context specific pseudocount admixture (tau=1) -> g[i][a]
             q.PrepareContextSpecificPseudocounts();
+            q.PreparePseudocounts();
         }
 
         // Add amino acid pseudocounts to query:  q.p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]

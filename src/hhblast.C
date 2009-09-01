@@ -83,7 +83,7 @@ char* ptr;                // pointer for string manipulation
 
 // HHblast variables
 
-const char HHBLAST_VERSION[]="version 1.4.1 (August 2009)";
+const char HHBLAST_VERSION[]="version 1.4.2 (August 2009)";
 const char HHBLAST_REFERENCE[]="to be published.\n";
 const char HHBLAST_COPYRIGHT[]="(C) Michael Remmert and Johannes Soeding\n";
 
@@ -669,6 +669,7 @@ void ProcessArguments(int argc, char** argv)
   if (*csblast_db) {
     //cerr<<"CSBLAST DB given!\n";
     strcpy(par.clusterfile,"/cluster/bioprogs/hhblast/nr30_neff2.5_1psi_N1000000_W13_K4000_wcenter1.6_wmax1.36_beta0.85.prf");
+    //strcpy(par.clusterfile,"/cluster/bioprogs/hhblast/clusters.prf");
     // TODO: change back, when Andreas has rewritten hhhmm.C
     //strcpy(par.clusterfile,csblast_db);
   } else {
@@ -1810,7 +1811,8 @@ int main(int argc, char **argv)
   if (par.z>par.Z) par.Z=par.z;
 
   // E-value shift of csBLAST
-  if (*par.clusterfile) {
+  if (*par.clusterfile && !strcmp(csblast,"/cluster/bioprogs/csblast-2.0.3-linux64/bin")) {
+    cout << "CS-BLAST 2.0.3\n";
     e_psi = e_psi / 2;
   }
 
@@ -1943,21 +1945,21 @@ int main(int argc, char **argv)
     q.AddTransitionPseudocounts();
     
     // Prefilter with csBLAST/PSI-BLAST
-    if (v>=2) printf("Pre-filtering with %s ...\n",(strcmp(pre_mode,"csblast"))?"PSI-BLAST":"csBLAST");
+    if (v>=2) printf("Pre-filtering with %s ...\n",(strcmp(pre_mode,"csblast"))?"PSI-BLAST":"CS-BLAST");
     stringstream ss;
     if (round == 1 && !is_regular_file(tmp_psifile.c_str())) 
       {
     	if (strcmp(pre_mode,"csblast")) 
     	  ss << blast << "/blastpgp -d " << db << " -a " << cpu << " -b " << N_PSI << " -e " << e_psi << " -i " << tmp_infile << " -m 8 2> /dev/null";
     	else
-    	  ss << csblast << "/csblast -d " << db << " -a " << cpu << " -b " << N_PSI << " -e " << e_psi << " -i " << tmp_infile << " -m 8 -D " << csblast_db << " --blast-path " << blast << " 2> /dev/null";
+    	  ss << csblast << "/csblast -d " << db << " -a " << cpu << " -b " << N_PSI << " -e " << e_psi << " -i " << tmp_infile << " -m 8 -D " << csblast_db << " --blast-path " << blast << " --no-penalty 2> /dev/null";
       } 
     else
       {
     	if (strcmp(pre_mode,"csblast")) 
     	  ss << blast << "/blastpgp -d " << db << " -a " << cpu << " -b " << N_PSI << " -e " << e_psi << " -i " << tmp_infile << " -m 8 -B " << tmp_psifile << " 2> /dev/null";
     	else
-    	  ss << csblast << "/csblast -d " << db << " -a " << cpu << " -b " << N_PSI << " -e " << e_psi << " -i " << tmp_infile << " -m 8 -B " << tmp_psifile << " -D " << csblast_db << " --blast-path " << blast << " 2> /dev/null";
+    	  ss << csblast << "/csblast -d " << db << " -a " << cpu << " -b " << N_PSI << " -e " << e_psi << " -i " << tmp_infile << " -m 8 -B " << tmp_psifile << " -D " << csblast_db << " --blast-path " << blast << " --no-penalty 2> /dev/null";
       }
     
     command = ss.str();
