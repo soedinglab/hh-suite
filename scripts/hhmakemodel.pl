@@ -453,15 +453,16 @@ sub MakeMultipleAlignment()
 	    $hit++;
 	    
 	    # Is alignment selected by user?
-	    if ($Pthr>0 || defined $picked{$hit}) {
+	    if ($Pthr || $Ethr || defined $picked{$hit}) {
 
 		if ($line=~/^>(\S+)(.*)/) {$tname=$1; $tnameline=$1.$2;}
 		else {die("\nError: bad format in $infile, line $.: code 1\n");}
 		
 		$line = <INFILE>;
-		if ($line=~/^Probab\s*=\s*(\S+)/) {
-		    if ($1<$Pthr) {last;} # Probability too low -> finished
-		} else { die("\nError: bad format in $infile, line $.: code 2\n");}
+		if ($line=~/Probab\s*=\s*(\S+).*E-value\s*=\s*(\S+)/) {
+		    if ($Pthr && $1<$Pthr) {last;}  # Probability too low -> finished
+		    if ($Ethr && $2>$Ethr) {last;} # Evalue too high > finished
+		} else { die("\nError: bad format in $infile, line $.: code 2\n"); }
 
 		# Read next alignment with $aaq, $qfirst, @tseq, @first, and @tname
 		&ReadAlignment();
@@ -694,7 +695,11 @@ sub FormatSequences()
     my $i;
     
     if ($v>=2) {
-	print("hit=$hit  picked=$picked{$hit} tname = $tname[0]");
+	if (defined $picked{$hit}) {
+	    print("hit=$hit  picked=$picked{$hit} tname=$tname[0]");
+	} else {
+	    print("hit=$hit  picked=evalue<$Ethr tname=$tname[0]");
+	}
 	for (my $i=1; $i<@{$p_tname}; $i++) {
 	    print(", $tname[$i]");
 	}
