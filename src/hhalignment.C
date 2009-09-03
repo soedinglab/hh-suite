@@ -179,7 +179,15 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline)
             skip_sequence=1; k--; continue;
           }
           //store first real seq
-          else if (kfirst<0)                    {display[k]=keep[k]=2; n_display++; kfirst=k;}
+          else if (kfirst<0)
+	    {
+	      char word[NAMELEN];
+	      strwrd(word,line); // Copies first word in ptr to str
+	      if (strstr(word,"_consensus"))
+		{display[k]=2; keep[k]=0; n_display++; kfirst=k;}
+	      else 
+		{display[k]=keep[k]=2; n_display++; kfirst=k;}
+	    }
           //store all sequences
           else if (par.mark==0)                 {display[k]=keep[k]=1; n_display++;}
           //store sequences up to nseqdis
@@ -223,7 +231,7 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline)
           h=0; //counts characters in current line
 
           // Check whether all characters are correct; store into cur_seq
-          if (keep[k]) // normal line containing residues
+          if (keep[k] || k == kfirst) // normal line containing residues
             {
               while (h<LINELEN && line[h]>'\0' && l<MAXCOL-1)
                 {
@@ -754,8 +762,7 @@ int Alignment::Filter2(char keep[], int coverage, int qid, float qsc, int seqid1
   // In the end, keep[k] will be 1 for all regular representative sequences kept in the alignment, 0 for all others
   char* in=new(char[N_in+1]);   // in[k]=1: seq k has been accepted; in[k]=0: seq k has not yet been accepted at current seqid
   char* inkk=new(char[N_in+1]); // inkk[k]=1 iff in[ksort[k]]=1 else 0;
-  //  int* idmax=new(int[L+2]);     // position-dependent maximum-sequence-identity threshold for filtering ///////////////////delete
-  int* Nmax=new(int[L+2]);     // position-dependent maximum-sequence-identity threshold for filtering
+  int* Nmax=new(int[L+2]);     // position-dependent maximum-sequence-identity threshold for filtering? (variable used in former version was idmax)
   int* idmaxwin=new(int[L+2]);      // minimum value of idmax[i-WFIL,i+WFIL]
   int* seqid_prev=new(int[N_in+1]); // maximum-sequence-identity threshold used in previous round of filtering (with lower seqid)
   int* N=new(int[L+2]);             // N[i] number of already accepted sequences at position i
@@ -826,8 +833,7 @@ int Alignment::Filter2(char keep[], int coverage, int qid, float qsc, int seqid1
   for (i=1; i<first[kfirst]; i++) N[i]=0;
   for (i=first[kfirst]; i<=last[kfirst]; i++) N[i]=1;
   for (i=last[kfirst]+1; i<=L; i++) N[i]=0;
-  //  for (i=1; i<=L; i++) {idmax[i]=seqid1; idmaxwin[i]=-1;} //////////////////////////// CHANGE!
-  for (i=1; i<=L; i++) {Nmax[i]=0; idmaxwin[i]=-1;} //////////////////////////// CHANGE!
+  for (i=1; i<=L; i++) {Nmax[i]=0; idmaxwin[i]=-1;}
   for (k=0; k<N_in; k++) seqid_prev[k]=-1;
   if (Ndiff<=0 || Ndiff>=N_in) {seqid1=seqid2; Ndiff=N_in; diffNmax=Ndiff;}
 
@@ -893,44 +899,26 @@ int Alignment::Filter2(char keep[], int coverage, int qid, float qsc, int seqid1
   while (seqid<=seqid2)
     {
       char stop=1;
-      // if (0) {
-      // // Update idmax[i]
-      // for (i=1; i<=L; i++)
-      // 	if (N[i]<Ndiff) idmax[i]=seqid;
-      // printf("seqid=%3i  n=%-5i  N_in-N_ss=%-5i\n",seqid,n,N_in-N_ss);
-
-      // // Update idmaxwin[i] as minimum of idmax[i-WFIL,i+WFIL]. If idmaxwin[] has not changed then stop
+      // Update Nmax[i]
+      diffNmax_prev = diffNmax;
+      diffNmax = 0;
+      for (i=1; i<=L; i++)
+	{
+	  int max=0;
+	  for (j=imax(1,imin(L-2*WFIL+1,i-WFIL)); j<=imin(L,imax(2*WFIL,i+WFIL)); j++)
+	    if (N[j]>max) max=N[j];
+	  if (Nmax[i]<max) Nmax[i]=max;
+	  if (Nmax[i]<Ndiff) 
+	    {
+	      stop=0;
+	      idmaxwin[i]=seqid;
+	      if (diffNmax<Ndiff-Nmax[i]) diffNmax=Ndiff-Nmax[i];
+	    }	   
+	}
       
-      // for (i=1; i<=L; i++)
-      //   {
-      //     int idmax_min=seqid2;
-      //     for (j=imax(1,imin(L-2*WFIL+1,i-WFIL)); j<=imin(L,imax(2*WFIL,i+WFIL)); j++)
-      //       if (idmax[j]<idmax_min) idmax_min=idmax[j];
-      //     if (idmax_min>idmaxwin[i]) stop=0; // idmaxwin[i] has changed => do not stop
-      //     idmaxwin[i]=idmax_min;
-      //   }
-      // } else {
-	// Update Nmax[i]
-	diffNmax_prev = diffNmax;
-	diffNmax = 0;
-	for (i=1; i<=L; i++)
-	  {
-	    int max=0;
-	    for (j=imax(1,imin(L-2*WFIL+1,i-WFIL)); j<=imin(L,imax(2*WFIL,i+WFIL)); j++)
-	      if (N[j]>max) max=N[j];
-	    if (Nmax[i]<max) Nmax[i]=max;
-	    if (Nmax[i]<Ndiff) 
-	      {
-		stop=0;
-		idmaxwin[i]=seqid;
-		if (diffNmax<Ndiff-Nmax[i]) diffNmax=Ndiff-Nmax[i];
-	      }	   
-	  }
-
-	//printf("seqid=%3i  diffNmax_prev= %-4i   diffNmax= %-4i   n=%-5i  N_in-N_ss=%-5i\n",seqid,diffNmax_prev,diffNmax,n,N_in-N_ss);
-	//}
+      //printf("seqid=%3i  diffNmax_prev= %-4i   diffNmax= %-4i   n=%-5i  N_in-N_ss=%-5i\n",seqid,diffNmax_prev,diffNmax,n,N_in-N_ss);
       if (stop) break;
-
+      
 //       // DEBUG
 //       printf("idmax    ");
 //       for (i=1; i<=L; i++) printf("%2i ",idmax[i]);
@@ -1246,7 +1234,7 @@ void Alignment::FrequenciesAndTransitions(HMM& q, char* in, bool time)
     }
   else // N_filtered==1
     {
-      X[kfirst][0]=X[kfirst][L+1]=ANY; // (to avoid anallowed access within loop)
+      X[kfirst][0]=X[kfirst][L+1]=ANY; // (to avoid unallowed access within loop)
       q.Neff_HMM=1.0f;
       for (i=0; i<=L+1; i++) // for all positions i in alignment
         {

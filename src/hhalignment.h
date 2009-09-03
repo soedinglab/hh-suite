@@ -77,6 +77,7 @@ public:
   // Determine matrix of position-specific weights w[k][i] for multiple alignment
   void GetPositionSpecificWeights(float* w[]);
 
+  char readCommentLine;   // Set to 1, if a comment line with '#' is read
 
 private:
   char** X;               // X[k][i] contains column i of sequence k in alignment (first seq=0, first char=1) (0-3: ARND ..., 20:X, 21:GAP)
@@ -90,5 +91,4 @@ private:
   int* ksort;             // index for sorting sequences: X[ksort[k]]
   int FilterWithCoreHMM(char in[], float coresc, HMM& qcore);
   
-  char readCommentLine;   // Set to 1, if a comment line with '#' is read
 };

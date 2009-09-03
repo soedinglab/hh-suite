@@ -274,7 +274,8 @@ int main(int argc, char **argv)
   SetSubstitutionMatrix();
 
   // Read input file (HMM, HHM, or alignment format), and add pseudocounts etc.
-  ReadAndPrepare(par.infile, q);
+  Alignment* qali=new(Alignment);
+  ReadAndPrepare(par.infile, q, qali);
 
   // Write consensus sequence to sequence file
   // Consensus sequence is calculated in hhalignment.C, Alignment::FrequenciesAndTransitions()
@@ -307,8 +308,13 @@ int main(int argc, char **argv)
       if      (par.outformat==1) qa.BuildFASTA();
       else if (par.outformat==2) qa.BuildA2M();
       else if (par.outformat==3) qa.BuildA3M();
-      qa.Print(par.alnfile);   // print alignment to outfile
+      if (qali->readCommentLine)
+	qa.Print(par.alnfile,qali->longname);   // print alignment to outfile
+      else
+	qa.Print(par.alnfile);   // print alignment to outfile
     }
+
+  delete(qali);
 
   // Print 'Done!'
   printf("Done!\n");
