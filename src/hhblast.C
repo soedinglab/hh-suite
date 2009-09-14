@@ -83,7 +83,7 @@ char* ptr;                // pointer for string manipulation
 
 // HHblast variables
 
-const char HHBLAST_VERSION[]="version 1.4.2 (August 2009)";
+const char HHBLAST_VERSION[]="version 1.4.3 (September 2009)";
 const char HHBLAST_REFERENCE[]="to be published.\n";
 const char HHBLAST_COPYRIGHT[]="(C) Michael Remmert and Johannes Soeding\n";
 
@@ -375,6 +375,7 @@ void help_all()
   printf("\n");
   printf("Directories for needed programs                                                          \n");
   printf(" -pre_mode    <mode>  prefilter mode (blast or csblast) (default=%s)                     \n",pre_mode);
+  printf(" -hh           <dir>  directory with HHBLAST executables and reformat.pl (default=%s)    \n",hh);
   printf(" -blast        <dir>  directory with BLAST executables (default=%s)                      \n",blast);
   printf(" -csblast      <dir>  directory with csBLAST executables (default=%s)                    \n",csblast);
   printf(" -csblast_db   <dir>  directory with csBLAST database (default=%s)                       \n",csblast_db);
@@ -492,6 +493,13 @@ void ProcessArguments(int argc, char** argv)
             {help() ; cerr<<endl<<"Error in "<<program_name<<": no database directory following -dbhhm\n"; exit(4);}
           else
               strcpy(dbhhm,argv[i]);
+        }
+      else if (!strcmp(argv[i],"-hh"))
+        {
+          if (++i>=argc || argv[i][0]=='-')
+            {help() ; cerr<<endl<<"Error in "<<program_name<<": no directory following -hh\n"; exit(4);}
+          else
+              strcpy(hh,argv[i]);
         }
       else if (!strcmp(argv[i],"-pre_mode"))
         {
@@ -668,7 +676,8 @@ void ProcessArguments(int argc, char** argv)
 
   if (*csblast_db) {
     //cerr<<"CSBLAST DB given!\n";
-    strcpy(par.clusterfile,"/cluster/bioprogs/hhblast/nr30_neff2.5_1psi_N1000000_W13_K4000_wcenter1.6_wmax1.36_beta0.85.prf");
+    strcpy(par.clusterfile,hh);
+    strcat(par.clusterfile,"/nr30_neff2.5_1psi_N1000000_W13_K4000_wcenter1.6_wmax1.36_beta0.85.prf");
     //strcpy(par.clusterfile,"/cluster/bioprogs/hhblast/clusters.prf");
     // TODO: change back, when Andreas has rewritten hhhmm.C
     //strcpy(par.clusterfile,csblast_db);
