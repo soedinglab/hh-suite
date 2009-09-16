@@ -1024,60 +1024,6 @@ int Alignment::Filter2(char keep[], int coverage, int qid, float qsc, int seqid1
   return n;
 }
 
-
-
-
-/////////////////////////////////////////////////////////////////////////////////////
-// Filter for min score per column coresc with core query profile, defined by coverage_core and qsc_core
-/////////////////////////////////////////////////////////////////////////////////////
-int Alignment::HomologyFilter(int coverage_core, float qsc_core, float coresc)
-{
-  const int seqid_core=90; //maximum sequence identity in core alignment
-  const int qid_core=0;
-  const int Ndiff_core=0;
-  int n;
-  HMM qcore;
-  char* coreseq=new(char[N_in]);   // coreseq[k]=1 if sequence belongs to core of alignment (i.e. it is very similar to query)
-  for (int k=0; k<N_in; k++) coreseq[k]=keep[k];   // Copy keep[] into coreseq[]
-
-  // Remove sequences with seq. identity larger than seqid percent (remove the shorter of two)
-  int v1=v; v=1;
-  n = Filter2(coreseq,coverage_core,qid_core,qsc_core,seqid_core,seqid_core,Ndiff_core);
-  v=v1;
-  if (v>=2)
-    {
-      printf("%i out of %i core alignment sequences passed filter (",n,N_in-N_ss);
-      if (par.coverage_core)
-        printf("%i%% min coverage, ",coverage_core);
-      if (qid_core)
-        printf("%i%% min sequence identity to query, ",qid_core);
-      if (qsc_core>-10)
-        printf("%.2f bits min score per column to query, ",qsc_core);
-      printf("%i%% max pairwise sequence identity)\n",seqid_core);
-    }
-
-  // Calculate bare AA frequencies and transition probabilities -> qcore.f[i][a], qcore.tr[i][a]
-  FrequenciesAndTransitions(qcore,coreseq);
-
-  // Add transition pseudocounts to query -> q.p[i][a] (gapd=1.0, gape=0.333, gapf=gapg=1.0, gaph=gapi=1.0, gapb=1.0
-  qcore.AddTransitionPseudocounts(1.0,0.333,1.0,1.0,1.0,1.0,1.0);
-
-  // Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
-  qcore.PreparePseudocounts();
-
-  // Add amino acid pseudocounts to query:  qcore.p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
-  qcore.AddAminoAcidPseudocounts(2,1.5,2.0,1.0); // pcm=2, pca=1.0, pcb=2.5, pcc=1.0
-  qcore.CalculateAminoAcidBackground();
-
-  // Filter out all sequences below min score per column with qcore
-  n=FilterWithCoreHMM(keep, coresc, qcore);
-
-  if (v>=2) cout<<n<<" out of "<<N_in-N_ss<<" sequences filtered by minimum score-per-column threshold of "<<qsc_core<<"\n";
-  delete[] coreseq;
-  return n;
-}
-
-
 /////////////////////////////////////////////////////////////////////////////////////
 // Filter out all sequences below a minimum score per column with profile qcore
 /////////////////////////////////////////////////////////////////////////////////////

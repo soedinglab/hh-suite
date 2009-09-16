@@ -411,17 +411,14 @@ void Hit::Viterbi(HMM& q, HMM& t, float** Sstruc)
 		       );
 	      sIM_i_j = max2
  	              (
-// 		       sMM[j-1] + q.tr[i][M2I] + t.tr[j-1][M2M] ,
-		       sMM[j-1] + q.tr[i][M2I] + t.tr[j-1][M2M_GAPOPEN], // MM->IM gap opening in query 
+ 		       sMM[j-1] + q.tr[i][M2I] + t.tr[j-1][M2M] ,
 		       sIM[j-1] + q.tr[i][I2I] + t.tr[j-1][M2M], // IM->IM gap extension in query 
 		       bIM[i][j]
 		       );
 	      sDG_i_j = max2
 	              (
-// 		       sMM[j] + q.tr[i-1][M2D],
-// 		       sDG[j] + q.tr[i-1][D2D], //gap extension (DD) in query
-		       sMM[j] + q.tr[i-1][M2D] + t.tr[j][GAPOPEN], // MM->DG gap opening in template 
-		       sDG[j] + q.tr[i-1][D2D] + t.tr[j][GAPEXTD], // DG->DG gap extension in template 
+ 		       sMM[j] + q.tr[i-1][M2D],
+ 		       sDG[j] + q.tr[i-1][D2D], //gap extension (DD) in query
 		       bDG[i][j]
 		       );
 	      sMI_i_j = max2
@@ -1170,7 +1167,7 @@ void Hit::StochasticBacktrace(HMM& q, HMM& t, char maximize)
 // 	  fprintf(stderr,"%4i  - %1c %4i %4i     IM %7.2f\n",step,q.seq[q.nfirst][j],i,j,Score(q.p[i],t.p[j])); 
 	  if (j>1) 
 	    state = (*pick3_IM)(
-			F_MM[i][j-1] * q.tr[i][M2I] * t.tr[j-1][M2M_GAPOPEN],
+			F_MM[i][j-1] * q.tr[i][M2I] * t.tr[j-1][M2M],
 			F_MI[i][j-1] * q.tr[i][M2I] * t.tr[j-1][I2M],  // MI -> IM
 			F_IM[i][j-1] * q.tr[i][I2I] * t.tr[j-1][M2M]   // gap extension (II) in query
 			); 
@@ -1181,8 +1178,8 @@ void Hit::StochasticBacktrace(HMM& q, HMM& t, char maximize)
 // 	  fprintf(stderr,"%4i  %1c - %4i %4i     DG %7.2f\n",step,q.seq[q.nfirst][i],i,j,Score(q.p[i],t.p[j])); 
 	  if (i>1) 
 	    state = (*pick2)(
-			F_MM[i-1][j] * q.tr[i-1][M2D] * t.tr[j][GAPOPEN],
-			F_DG[i-1][j] * q.tr[i-1][D2D] * t.tr[j][GAPEXTD], //gap extension (DD) in query
+			F_MM[i-1][j] * q.tr[i-1][M2D],
+			F_DG[i-1][j] * q.tr[i-1][D2D], //gap extension (DD) in query
 			DG
 			);
 	  else state=0;	  

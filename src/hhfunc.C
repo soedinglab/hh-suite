@@ -58,9 +58,6 @@ void ReadInput(char* infile, HMM& q, Alignment* qali=NULL)
         // Sort out the nseqdis most dissimilar sequences for display in the output alignments
         pali->FilterForDisplay(par.max_seqid,par.coverage,par.qid,par.qsc,par.nseqdis);
 
-//       // Filter alignment for min score per column with core query profile, defined by coverage_core and qsc_core
-//       if (par.coresc>-10) pali->HomologyFilter(par.coverage_core, par.qsc_core, par.coresc);
-
         // Remove sequences with seq. identity larger than seqid percent (remove the shorter of two)
         pali->N_filtered = pali->Filter(par.max_seqid,par.coverage,par.qid,par.qsc,par.Ndiff);
 
@@ -174,9 +171,6 @@ void ReadAndPrepare(char* infile, HMM& q, Alignment* qali=NULL)
         // Sort out the nseqdis most dissimilar sequences for display in the output alignments
         pali->FilterForDisplay(par.max_seqid,par.coverage,par.qid,par.qsc,par.nseqdis);
 
-//       // Filter alignment for min score per column with core query profile, defined by coverage_core and qsc_core
-//       if (par.coresc>-10) pali->HomologyFilter(par.coverage_core, par.qsc_core, par.coresc);
-
         // Remove sequences with seq. identity larger than seqid percent (remove the shorter of two)
         pali->N_filtered = pali->Filter(par.max_seqid,par.coverage,par.qid,par.qsc,par.Ndiff);
 
@@ -239,9 +233,6 @@ void PrepareTemplate(HMM& q, HMM& t, int format)
         t.AddAminoAcidPseudocounts(0, par.pca, par.pcb, par.pcc);
         t.CalculateAminoAcidBackground();
     }
-
-    // Modify transition probabilities to include SS-dependent penalties
-    if (par.ssgap) t.UseSecStrucDependentGapPenalties();
 
     if (par.forward>=1) t.Log2LinTransitionProbs(1.0);
 

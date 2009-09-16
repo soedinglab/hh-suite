@@ -41,12 +41,12 @@ const int NAA=20;       //number of amino acids (0-19)
 const int IDLEN=31;     //max length of scop hierarchy id and pdb-id
 const int DESCLEN=4095; //max length of sequence description (longname)
 const int NAMELEN=255;  //max length of file names etc.
-const int NTRANS=10;    //number of transitions recorded in HMM (M2M,M2I,M2D,I2M,I2I,D2M,D2D,M2M_GAPOPEN,GAPOPEN,GAPEXTD)
+const int NTRANS=7;    //number of transitions recorded in HMM (M2M,M2I,M2D,I2M,I2I,D2M,D2D)
 const int ANY=20;       //number representing an X (any amino acid) internally
 const int GAP=21;       //number representing a gap internally 
 const int ENDGAP=22;    //Important to distinguish because end gaps do not contribute to tansition counts 
 const int HMMSCALE=1000;//Scaling number for log2-values in HMMs
-enum transitions {M2M,M2I,M2D,I2M,I2I,D2M,D2D,M2M_GAPOPEN,GAPOPEN,GAPEXTD}; // index for transitions within a HMM
+enum transitions {M2M,M2I,M2D,I2M,I2I,D2M,D2D}; // index for transitions within a HMM
 
 
 float pb[21];         // pb[a] = background probability for chosen substitution matrix
@@ -539,7 +539,7 @@ class HMM
   float f[MAXRES][NAA+3];   // f[i][a] = prob of finding amino acid a in column i WITHOUT pseudocounts
   float g[MAXRES][NAA];     // f[i][a] = prob of finding amino acid a in column i WITH pseudocounts
   float p[MAXRES][NAA];     // p[i][a] = prob of finding amino acid a in column i WITH OPTIMUM pseudocounts
-  float tr[MAXRES][NTRANS]; // log2 of transition probabilities M2M M2I M2D I2M I2I D2M D2D M2M_GAPOPEN GAPOPEN GAPEXTD
+  float tr[MAXRES][NTRANS]; // log2 of transition probabilities M2M M2I M2D I2M I2I D2M D2D 
 
   // Read an HMM from a HHsearch .hhm file and return 0 at end of file
   int Read(FILE* dbf, char firstline[LINELEN]=NULL);

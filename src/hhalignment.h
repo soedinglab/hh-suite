@@ -41,9 +41,6 @@ public:
   inline int Filter(int max_seqid, int coverage=0, int qid=0, float qsc=0, int N=0);
   int Filter2(char keep[], int coverage, int qid, float qsc, int seqid1, int seqid2, int Ndiff);
 
-  // Filter alignment for min score per column with core query profile, defined by min_coverage_core and min_seqid_core
-  int HomologyFilter(int coverage_core, float qsc_core, float coresc);
-
   // Calculate AA frequencies q.p[i][a] and transition probabilities q.tr[i][a] from alignment
   void FrequenciesAndTransitions(HMM& q, char* in=NULL, bool time=false);
 

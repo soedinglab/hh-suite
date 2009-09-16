@@ -1,4 +1,174 @@
 /////////////////////////////////////////////////////////////////////////////////////
+// Use secondary structure-dependent gap penalties on top of the HMM transition penalties
+/////////////////////////////////////////////////////////////////////////////////////
+
+// hhhmm.h
+void UseSecStrucDependentGapPenalties();
+
+// hhhmm.C
+void HMM::UseSecStrucDependentGapPenalties()
+{
+  int i;   // column in HMM
+  int ii;
+  unsigned char iis[MAXRES]; // inside-integer array
+  float d; // Additional penalty for opening gap whithin SS element
+  float e; // Additional penalty for extending gap whithin SS element
+
+  // Determine inside-integers:
+  // CCSTCCCHHHHHHHHHHHCCCCCEEEEECCSBGGGCCCCEECC
+  // 0000000123444432100000012210000000000001000
+  ii=0;
+  iis[L]=0;
+  for (i=0; i<L; ++i) // forward run
+    {
+      if (ss_dssp[i]==1 || ss_dssp[i]==2) {ii+=(ii<par.ssgapi);} else ii=0;
+      iis[i]=ii;
+    }
+  ii=0;
+  iis[0]=0;
+  for (i=L; i>=0; i--) // backward run
+    {
+      if (ss_dssp[i]==1 || ss_dssp[i]==2) {ii+=(ii<par.ssgapi);} else ii=0;
+      iis[i-1]=imin(ii,iis[i-1]);
+    }
+
+  // Add SS-dependent gap penalties to HMM transition penalties
+  for (i=0; i<=L; ++i) //for all columns in HMM
+    {
+      d=-iis[i]*par.ssgapd;
+      e=-iis[i]*par.ssgape;
+      tr[i][GAPOPEN]=d;
+      tr[i][GAPEXTD]=e;
+      tr[i][M2M_GAPOPEN]+=d;
+      tr[i][M2I]+=d;
+      tr[i][I2M]+=d;
+      tr[i][I2I]+=e;
+      tr[i][M2D]+=d;
+      tr[i][D2M]+=d;
+      tr[i][D2D]+=e;
+    }
+
+  if (v>=3)
+    {
+      printf("Col SS II\n");
+      for (i=0; i<=L; ++i) printf("%3i  %c %2i\n",i,i2ss(ss_dssp[i]),iis[i]);
+    }
+  return;
+}
+
+// hhfunc.C in PrepareTemplate
+
+// Modify transition probabilities to include SS-dependent penalties
+if (par.ssgap) t.UseSecStrucDependentGapPenalties();
+
+// hhhit.C in Viterbi
+
+
+	      CALCULATE_MAX6( sMM_i_j,
+			      smin,
+			      sMM_i_1_j_1 + q.tr[i-1][M2M] + t.tr[j-1][M2M], 
+			      sGD_i_1_j_1 + q.tr[i-1][M2M] + t.tr[j-1][D2M],
+			      sIM_i_1_j_1 + q.tr[i-1][I2M] + t.tr[j-1][M2M],
+			      sDG_i_1_j_1 + q.tr[i-1][D2M] + t.tr[j-1][M2M],
+			      sMI_i_1_j_1 + q.tr[i-1][M2M] + t.tr[j-1][I2M],
+			      bMM[i][j]
+			      );
+ 	      sMM_i_j += Score(q.p[i],t.p[j]) + ScoreSS(q,t,i,j) + par.shift 
+		+ (Sstruc==NULL? 0: Sstruc[i][j]); 
+	      
+
+	      sGD_i_j = max2
+	              (
+		       sMM[j-1] + t.tr[j-1][M2D], // MM->GD gap opening in query 
+		       sGD[j-1] + t.tr[j-1][D2D], // GD->GD gap extension in query 
+		       bGD[i][j]
+		       );
+	      sIM_i_j = max2
+ 	              (
+// 		       sMM[j-1] + q.tr[i][M2I] + t.tr[j-1][M2M] ,
+		       sMM[j-1] + q.tr[i][M2I] + t.tr[j-1][M2M_GAPOPEN], // MM->IM gap opening in query 
+		       sIM[j-1] + q.tr[i][I2I] + t.tr[j-1][M2M], // IM->IM gap extension in query 
+		       bIM[i][j]
+		       );
+	      sDG_i_j = max2
+	              (
+// 		       sMM[j] + q.tr[i-1][M2D],
+// 		       sDG[j] + q.tr[i-1][D2D], //gap extension (DD) in query
+		       sMM[j] + q.tr[i-1][M2D] + t.tr[j][GAPOPEN], // MM->DG gap opening in template 
+		       sDG[j] + q.tr[i-1][D2D] + t.tr[j][GAPEXTD], // DG->DG gap extension in template 
+		       bDG[i][j]
+		       );
+	      sMI_i_j = max2
+	              (
+		       sMM[j] + q.tr[i-1][M2M] + t.tr[j][M2I], // MM->MI gap opening M2I in template 
+		       sMI[j] + q.tr[i-1][M2M] + t.tr[j][I2I], // MI->MI gap extension I2I in template 
+		       bMI[i][j]
+		       );
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+// Filter for min score per column coresc with core query profile, defined by coverage_core and qsc_core
+/////////////////////////////////////////////////////////////////////////////////////
+
+//HHalignment.h
+int HomologyFilter(int coverage_core, float qsc_core, float coresc);
+
+//HHalignment.C
+int Alignment::HomologyFilter(int coverage_core, float qsc_core, float coresc)
+{
+  const int seqid_core=90; //maximum sequence identity in core alignment
+  const int qid_core=0;
+  const int Ndiff_core=0;
+  int n;
+  HMM qcore;
+  char* coreseq=new(char[N_in]);   // coreseq[k]=1 if sequence belongs to core of alignment (i.e. it is very similar to query)
+  for (int k=0; k<N_in; k++) coreseq[k]=keep[k];   // Copy keep[] into coreseq[]
+
+  // Remove sequences with seq. identity larger than seqid percent (remove the shorter of two)
+  int v1=v; v=1;
+  n = Filter2(coreseq,coverage_core,qid_core,qsc_core,seqid_core,seqid_core,Ndiff_core);
+  v=v1;
+  if (v>=2)
+    {
+      printf("%i out of %i core alignment sequences passed filter (",n,N_in-N_ss);
+      if (par.coverage_core)
+        printf("%i%% min coverage, ",coverage_core);
+      if (qid_core)
+        printf("%i%% min sequence identity to query, ",qid_core);
+      if (qsc_core>-10)
+        printf("%.2f bits min score per column to query, ",qsc_core);
+      printf("%i%% max pairwise sequence identity)\n",seqid_core);
+    }
+
+  // Calculate bare AA frequencies and transition probabilities -> qcore.f[i][a], qcore.tr[i][a]
+  FrequenciesAndTransitions(qcore,coreseq);
+
+  // Add transition pseudocounts to query -> q.p[i][a] (gapd=1.0, gape=0.333, gapf=gapg=1.0, gaph=gapi=1.0, gapb=1.0
+  qcore.AddTransitionPseudocounts(1.0,0.333,1.0,1.0,1.0,1.0,1.0);
+
+  // Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
+  qcore.PreparePseudocounts();
+
+  // Add amino acid pseudocounts to query:  qcore.p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
+  qcore.AddAminoAcidPseudocounts(2,1.5,2.0,1.0); // pcm=2, pca=1.0, pcb=2.5, pcc=1.0
+  qcore.CalculateAminoAcidBackground();
+
+  // Filter out all sequences below min score per column with qcore
+  n=FilterWithCoreHMM(keep, coresc, qcore);
+
+  if (v>=2) cout<<n<<" out of "<<N_in-N_ss<<" sequences filtered by minimum score-per-column threshold of "<<qsc_core<<"\n";
+  delete[] coreseq;
+  return n;
+}
+
+
+// hhtuil.C
+par.coverage_core=80;        // Minimum coverage for sequences in core alignment
+par.qsc_core=0.3f;           // Minimum score per column of core sequence with query
+par.coresc=-20.0f;           // Minimum score per column with core alignment (HMM)
+
+
+/////////////////////////////////////////////////////////////////////////////////////
 // Write HMM to output file in HMMER format
 /////////////////////////////////////////////////////////////////////////////////////
 void HMM::WriteToFileHMMER(char* outfile)

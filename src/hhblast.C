@@ -630,8 +630,6 @@ void ProcessArguments(int argc, char** argv)
       else if (!strcmp(argv[i],"-cov") && (i<argc-1))  par.coverage=atoi(argv[++i]);
       else if (!strcmp(argv[i],"-diff") && (i<argc-1)) par.Ndiff=atoi(argv[++i]);
       else if (!strcmp(argv[i],"-nodiff")) nodiff=true;
-      else if (!strcmp(argv[i],"-qscc") && (i<argc-1))    par.qsc_core=atof(argv[++i]);
-      else if (!strcmp(argv[i],"-csc") && (i<argc-1))     par.coresc=atof(argv[++i]);
       else if (!strcmp(argv[i],"-pcm") && (i<argc-1)) par.pcm=atoi(argv[++i]);
       else if (!strcmp(argv[i],"-pca") && (i<argc-1)) par.pca=atof(argv[++i]);
       else if (!strcmp(argv[i],"-pcb") && (i<argc-1)) par.pcb=atof(argv[++i]);
@@ -827,6 +825,7 @@ void CheckInputFiles()
   if (!qa3mf) OpenFileError(par.infile);
   Qali.Read(qa3mf,par.infile);
   Qali.Compress("compress Qali");
+  //Qali.N_filtered = Qali.Filter(par.max_seqid,par.coverage,par.qid,par.qsc,par.Ndiff);
   fclose(qa3mf);
 
   v=v1;
@@ -985,7 +984,7 @@ void search_loop(char *dbfiles[], int ndb, bool alignByWorker=true)
 	      tali.Read(dbf,dbfiles[idb],line);
 	      tali.Compress(dbfiles[idb]);
 	      //              qali.FilterForDisplay(par.max_seqid,par.coverage,par.qid,par.qsc,par.nseqdis);
-	      tali.N_filtered = tali.Filter(par.max_seqid,par.coverage,par.qid,par.qsc,par.Ndiff);
+	      tali.N_filtered = tali.Filter(par.max_seqid_db,par.coverage_db,par.qid_db,par.qsc_db,par.Ndiff_db);
 	      char wg=par.wg; par.wg=1; // use global weights
 	      t[bin]->name[0]=t[bin]->longname[0]=t[bin]->fam[0]='\0';
 	      tali.FrequenciesAndTransitions(*(t[bin]));
@@ -1405,7 +1404,7 @@ void perform_realign(char *dbfiles[], int ndb)
 	      tali.Read(dbf,hit_cur.dbfile,line);
 	      tali.Compress(hit_cur.dbfile);
 	      //              qali.FilterForDisplay(par.max_seqid,par.coverage,par.qid,par.qsc,par.nseqdis);
-	      tali.N_filtered = tali.Filter(par.max_seqid,par.coverage,par.qid,par.qsc,par.Ndiff);
+	      tali.N_filtered = tali.Filter(par.max_seqid_db,par.coverage_db,par.qid_db,par.qsc_db,par.Ndiff_db);
 	      t[bin]->name[0]=t[bin]->longname[0]=t[bin]->fam[0]='\0';
 	      tali.FrequenciesAndTransitions(*(t[bin]));
 	      format[bin] = 0;
@@ -1582,7 +1581,7 @@ void perform_realign(char *dbfiles[], int ndb)
 		  tali.Read(dbf,dbfiles[idb],line);
 		  tali.Compress(dbfiles[idb]);
 		  //                  qali.FilterForDisplay(par.max_seqid,par.coverage,par.qid,par.qsc,par.nseqdis);
-		  tali.N_filtered = tali.Filter(par.max_seqid,par.coverage,par.qid,par.qsc,par.Ndiff);
+		  tali.N_filtered = tali.Filter(par.max_seqid_db,par.coverage_db,par.qid_db,par.qsc_db,par.Ndiff_db);
 		  t[bin]->name[0]=t[bin]->longname[0]=t[bin]->fam[0]='\0';
 		  tali.FrequenciesAndTransitions(*(t[bin]));
 		  format[bin] = 0;

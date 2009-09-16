@@ -54,8 +54,8 @@ HMM::HMM(int maxseqdis, int maxres)
   f = new float*[maxres];         // f[i][a] = prob of finding amino acid a in column i WITHOUT pseudocounts
   g = new float*[maxres];         // f[i][a] = prob of finding amino acid a in column i WITH pseudocounts
   p = new float*[maxres];         // p[i][a] = prob of finding amino acid a in column i WITH OPTIMUM pseudocounts
-  tr = new float*[maxres];        // log2 of transition probabilities M2M M2I M2D I2M I2I D2M D2D M2M_GAPOPEN GAPOPEN GAPEXTD
-//   tr_lin = new float*[maxres];    // linear transition probabilities M2M M2I M2D I2M I2I D2M D2D M2M_GAPOPEN GAPOPEN GAPEXTD
+  tr = new float*[maxres];        // log2 of transition probabilities M2M M2I M2D I2M I2I D2M D2D
+//   tr_lin = new float*[maxres];    // linear transition probabilities M2M M2I M2D I2M I2I D2M D2D
   for (int i=0; i<maxres; i++) f[i]=new(float[NAA+3]);
   for (int i=0; i<maxres; i++) g[i]=new(float[NAA]);
   for (int i=0; i<maxres; i++) p[i]=new(float[NAA]);
@@ -769,9 +769,6 @@ int HMM::ReadHMMer(FILE* dbf, char* filestr)
             // ptr is set to 0 if no integer is found after ptr.
           tr[0][I2M] = tr[0][D2M] = 0.0;
           tr[0][I2I] = tr[0][D2D] = -99999.0;
-	  tr[0][M2M_GAPOPEN]=tr[0][M2M];
-	  tr[0][GAPOPEN]=0.0;
-	  tr[0][GAPEXTD]=0.0;
           if (!ptr) return Warning(dbf,line,name);
           if (v>=4)
             {
@@ -896,10 +893,6 @@ int HMM::ReadHMMer(FILE* dbf, char* filestr)
               ptr+=2;
               for (a=0; a<=D2D && ptr; ++a)
                 tr[i][a] = float(strinta(ptr,-99999))/HMMSCALE; //store transition prob's as log2-values
-	      // SS-dependent gap penalties
-	      tr[i][M2M_GAPOPEN]=tr[i][M2M];
-	      tr[i][GAPOPEN]=0.0;
-	      tr[i][GAPEXTD]=0.0;
               if (!ptr) return Warning(dbf,line,name);
               if (v>=4)
                 {
@@ -1112,10 +1105,6 @@ void HMM::AddTransitionPseudocounts(float gapd, float gape, float gapf, float ga
       tr[i][D2M] = fast_log2(p0/sum);
       tr[i][D2D] = fast_log2(p1/sum)*gaph;
 
-      // SS-dependent gap penalties
-      tr[i][M2M_GAPOPEN]=tr[i][M2M];
-      tr[i][GAPOPEN]=0.0;
-      tr[i][GAPEXTD]=0.0;
     }
 
   if (v>=4)
@@ -1137,60 +1126,6 @@ void HMM::AddTransitionPseudocounts(float gapd, float gape, float gapf, float ga
         }
       printf("\n");
       printf("nss_dssp=%i  nss_pred=%i\n",nss_dssp,nss_pred);
-    }
-  return;
-}
-
-
-/////////////////////////////////////////////////////////////////////////////////////
-// Use secondary structure-dependent gap penalties on top of the HMM transition penalties
-/////////////////////////////////////////////////////////////////////////////////////
-void HMM::UseSecStrucDependentGapPenalties()
-{
-  int i;   // column in HMM
-  int ii;
-  unsigned char iis[MAXRES]; // inside-integer array
-  float d; // Additional penalty for opening gap whithin SS element
-  float e; // Additional penalty for extending gap whithin SS element
-
-  // Determine inside-integers:
-  // CCSTCCCHHHHHHHHHHHCCCCCEEEEECCSBGGGCCCCEECC
-  // 0000000123444432100000012210000000000001000
-  ii=0;
-  iis[L]=0;
-  for (i=0; i<L; ++i) // forward run
-    {
-      if (ss_dssp[i]==1 || ss_dssp[i]==2) {ii+=(ii<par.ssgapi);} else ii=0;
-      iis[i]=ii;
-    }
-  ii=0;
-  iis[0]=0;
-  for (i=L; i>=0; i--) // backward run
-    {
-      if (ss_dssp[i]==1 || ss_dssp[i]==2) {ii+=(ii<par.ssgapi);} else ii=0;
-      iis[i-1]=imin(ii,iis[i-1]);
-    }
-
-  // Add SS-dependent gap penalties to HMM transition penalties
-  for (i=0; i<=L; ++i) //for all columns in HMM
-    {
-      d=-iis[i]*par.ssgapd;
-      e=-iis[i]*par.ssgape;
-      tr[i][GAPOPEN]=d;
-      tr[i][GAPEXTD]=e;
-      tr[i][M2M_GAPOPEN]+=d;
-      tr[i][M2I]+=d;
-      tr[i][I2M]+=d;
-      tr[i][I2I]+=e;
-      tr[i][M2D]+=d;
-      tr[i][D2M]+=d;
-      tr[i][D2D]+=e;
-    }
-
-  if (v>=3)
-    {
-      printf("Col SS II\n");
-      for (i=0; i<=L; ++i) printf("%3i  %c %2i\n",i,i2ss(ss_dssp[i]),iis[i]);
     }
   return;
 }

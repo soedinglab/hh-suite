@@ -91,8 +91,6 @@ void help()
   printf(" -cov  [0,100] minimum coverage with query (%%) (def=%i) \n",par.coverage);
   printf(" -qid  [0,100] minimum sequence identity with query (%%) (def=%i) \n",par.qid);
   printf(" -qsc  [0,100] minimum score per column with query  (def=%.1f)\n",par.qsc);
-//   printf(" -csc  [0,100] minimum score per column with core alignment (def=%-.2f)\n",par.coresc);
-//   printf(" -qscc [0,100] minimum score per column of core sequence with query (def=%-.2f)\n",par.qsc_core);
   printf("\n");
   printf("Input alignment format:                                                    \n");
   printf(" -M a2m        use A2M/A3M (default): upper case = Match; lower case = Insert;\n");
@@ -111,8 +109,6 @@ void help()
 void help_adv()
 {
   printf("Filter input alignment (options can be combined):                         \n");
-  printf(" -csc  [0,100] minimum score per column with core alignment (def=%-.2f)\n",par.coresc);
-  printf(" -qscc [0,100] minimum score per column of core sequence with query (def=%-.2f)\n",par.qsc_core);
 }
 
 void help_all()
@@ -179,8 +175,6 @@ void ProcessArguments(int argc,char** argv)
       else if (!strcmp(argv[i],"-qsc") && (i<argc-1))  par.qsc=atof(argv[++i]);
       else if (!strcmp(argv[i],"-cov") && (i<argc-1))  par.coverage=atoi(argv[++i]);
       else if (!strcmp(argv[i],"-diff") && (i<argc-1)) par.Ndiff=atoi(argv[++i]);
-      else if (!strcmp(argv[i],"-qscc") && (i<argc-1)) par.qsc_core=atof(argv[++i]);
-      else if (!strcmp(argv[i],"-csc") && (i<argc-1))  par.coresc=atof(argv[++i]);
       else if (!strcmp(argv[i],"-M") && (i<argc-1))
         if(!strcmp(argv[++i],"a2m") || !strcmp(argv[i],"a3m"))  par.M=1;
         else if(!strcmp(argv[i],"first"))  par.M=3;
@@ -246,9 +240,6 @@ int main(int argc, char **argv)
   par.qsc=-20.0f;              // default for minimum score per column with query
   par.coverage=0;              // default for minimum coverage threshold
   par.Ndiff=100;               // pick Ndiff most different sequences from alignment
-  par.coverage_core=30;        // Minimum coverage for sequences in core alignment
-  par.qsc_core=0.3f;           // Minimum score per column with core alignment (HMM)
-  par.coresc=-20.0f;           // Minimum score per column with core alignment (HMM)
   par.M=1;                     // match state assignment is by A2M/A3M
   par.Mgaps=50;                // above this percentage of gaps, columns are assigned to insert states
   par.matrix=0;                // Subst.matrix 0: Gonnet, 1: HSDM, 2: BLOSUM50 3: BLOSUM62

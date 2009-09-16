@@ -469,14 +469,12 @@ void SetDefaults()
   par.nseqdis=1;               // maximum number of query sequences for output alignment
   par.mark=0;                  // 1: only marked sequences (or first) get displayed; 0: most divergent ones get displayed
   par.aliwidth=80;             // number of characters per line in output alignments for HMM search
+
   par.max_seqid=90;            // default for maximum sequence identity threshold
   par.qid=0;                   // default for minimum sequence identity with query
   par.qsc=-20.0f;              // default for minimum score per column with query
   par.coverage=0;              // default for minimum coverage threshold
   par.Ndiff=100;               // pick Ndiff most different sequences from alignment
-  par.coverage_core=80;        // Minimum coverage for sequences in core alignment
-  par.qsc_core=0.3f;           // Minimum score per column of core sequence with query
-  par.coresc=-20.0f;           // Minimum score per column with core alignment (HMM)
 
   par.M=1;                     // match state assignment is by A2M/A3M
   par.Mgaps=50;                // Above this percentage of gaps, columns are assigned to insert states (for par.M=2)
@@ -536,6 +534,9 @@ void SetDefaults()
   par.idummy=0;
   par.jdummy=0;
 
+  par.notags=1;                // neutralize His-tags, FLAG-tags, C-myc-tags
+
+  // HHblast parameters
   par.hhblast_prefilter_logpval=0;
 
   par.filter_thresh=0;
@@ -549,7 +550,12 @@ void SetDefaults()
   par.block_shading_space = 100;
   strcpy(par.block_shading_mode,"tube");
 
-  par.notags=1;                // neutralize His-tags, FLAG-tags, C-myc-tags
+  // for filtering database alignments in HHsearch and HHblast
+  par.max_seqid_db=par.max_seqid;
+  par.qid_db=par.qid;            
+  par.qsc_db=par.qsc;            
+  par.coverage_db=par.coverage;  
+  par.Ndiff_db=par.Ndiff;        
 
   // Initialize strings
   strcpy(par.infile,"stdin");

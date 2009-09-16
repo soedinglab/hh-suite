@@ -113,8 +113,6 @@ void help_hmm()
   printf(" -cov  [0,100] minimum coverage with query (%%) (def=%i) \n",par.coverage);
   printf(" -qid  [0,100] minimum sequence identity with query (%%) (def=%i) \n",par.qid);
   printf(" -qsc  [0,100] minimum score per column with query  (def=%.1f)\n",par.qsc);
-//   printf(" -csc  [0,100] minimum score per column with core alignment (def=%-.2f)\n",par.coresc);
-//   printf(" -qscc [0,100] minimum score per column of core sequence with query (def=%-.2f)\n",par.qsc_core);
   printf("                                                                          \n");
   printf("HMM-building options:                                                     \n");
   printf(" -M a2m        use A2M/A3M (default): upper case = Match; lower case = Insert;\n");
@@ -259,8 +257,6 @@ void ProcessArguments(int argc, char** argv)
       else if (!strcmp(argv[i],"-qsc") && (++i<=argc-1))  par.qsc=atof(argv[i]);
       else if (!strcmp(argv[i],"-cov") && (++i<=argc-1))  par.coverage=atoi(argv[i]);
       else if (!strcmp(argv[i],"-diff") && (++i<=argc-1)) par.Ndiff=atoi(argv[i]);
-      else if (!strcmp(argv[i],"-qscc") && (i<argc-1))    par.qsc_core=atof(argv[++i]);
-      else if (!strcmp(argv[i],"-csc") && (i<argc-1))     par.coresc=atof(argv[++i]);
       else if (!strcmp(argv[i],"-Gonnet")) par.matrix=0;
       else if (!strcmp(argv[i],"-HSDM")) par.matrix=1;
       else if (!strcmp(argv[i],"-BLOSUM50")) par.matrix=2;

@@ -50,9 +50,6 @@ public:
     // Add transition pseudocounts to HMM
     void AddTransitionPseudocounts(float gapd=par.gapd, float gape=par.gape, float gapf=par.gapf, float gapg=par.gapg, float gaph=par.gaph, float gapi=par.gapi, float gapb=par.gapb);
 
-    // Use secondary structure-dependent gap penalties on top of the HMM transition penalties
-    void UseSecStrucDependentGapPenalties();
-
     // Generate an amino acid frequency matrix g[][] with full pseudocount admixture (tau=1)
     void PreparePseudocounts();
 
@@ -103,7 +100,7 @@ private:
     float** f;                // f[i][a] = prob of finding amino acid a in column i WITHOUT pseudocounts
     float** g;                // f[i][a] = prob of finding amino acid a in column i WITH pseudocounts
     float** p;                // p[i][a] = prob of finding amino acid a in column i WITH OPTIMUM pseudocounts
-    float** tr;               // log2 of transition probabilities M2M M2I M2D I2M I2I D2M D2D M2M_GAPOPEN GAPOPEN GAPEXTD
+    float** tr;               // log2 of transition probabilities M2M M2I M2D I2M I2I D2M D2D
 /*   float** tr_lin;           // transition probs in log space */
     char trans_lin;           // transition probs are given in log or lin space? (0: p_tr  1: log(p_tr)
 

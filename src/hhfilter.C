@@ -78,8 +78,6 @@ void help()
   printf(" -qid  [0,100] minimum sequence identity with query (%%) (def=%i) \n",par.qid);
   printf(" -qsc  [0,100] minimum score per column with query  (def=%.1f)\n",par.qsc);
   printf(" -neff [1,inf] target diversity of alignment (default=off)\n");
-//   printf(" -csc  [0,100] minimum score per column with core alignment (def=%-.2f)\n",par.coresc);
-//   printf(" -qscc [0,100] minimum score per column of core sequence with query (def=%-.2f)\n",par.qsc_core);
   printf(" -def          read default options from ./.hhdefaults or <home>/.hhdefault. \n");
   printf("\n");         
   printf("Input alignment format:                                                    \n");
@@ -136,8 +134,6 @@ void ProcessArguments(int argc, char** argv)
       else if (!strcmp(argv[i],"-diff") && (i<argc-1)) par.Ndiff=atoi(argv[++i]); 
       else if (!strcmp(argv[i],"-neff") && (i<argc-1)) Neff=atof(argv[++i]); 
       else if (!strcmp(argv[i],"-Neff") && (i<argc-1)) Neff=atof(argv[++i]); 
-      else if (!strcmp(argv[i],"-qscc") && (i<argc-1))    par.qsc_core=atof(argv[++i]); 
-      else if (!strcmp(argv[i],"-csc") && (i<argc-1))     par.coresc=atof(argv[++i]); 
       else if (!strcmp(argv[i],"-M") && (i<argc-1)) 
 	if (!strcmp(argv[++i],"a2m") || !strcmp(argv[i],"a3m"))  par.M=1; 
 	else if(!strcmp(argv[i],"first"))  par.M=3; 
@@ -226,9 +222,6 @@ int main(int argc, char **argv)
   // Filter by minimum score per column with query sequence?
   if (0>-10) SetSubstitutionMatrix();
 
-  // Filter alignment for min score per column with core query profile, defined by coverage_core and qid_core
-  if (par.coresc>-10) qali.HomologyFilter(par.coverage_core, par.qsc_core, par.coresc);
-  
   // Remove sequences with seq. identity larger than seqid percent (remove the shorter of two)
   qali.N_filtered = qali.Filter(par.max_seqid,par.coverage,par.qid,par.qsc,par.Ndiff);
 
