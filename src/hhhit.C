@@ -34,22 +34,13 @@ else           { max=var2; varb=MM;}; \
 if (var3>max)  { max=var3; varb=GD;}; \
 if (var4>max)  { max=var4; varb=IM;}; \
 if (var5>max)  { max=var5; varb=DG;}; \
-if (var6>max)  { max=var6; varb=MI;}; 
-
-#define CALCULATE_SUM6(sum, var1, var2, var3, var4, var5, var6, varb) \
-if (var1>var2) { sum=var1; varb=STOP;} \
-else           { sum=var2; varb=MM;}; \
-if (var3>sum)  { sum=var3; varb=GD;}; \
-if (var4>sum)  { sum=var4; varb=IM;}; \
-if (var5>sum)  { sum=var5; varb=DG;}; \
-if (var6>sum)  { sum=var6; varb=MI;}; \
-sum = var1 + var2 + var3 + var4 + var5 + var6;
+if (var6>max)  { varb=MI;}; 
 
 #define CALCULATE_MAX4(max, var1, var2, var3, var4, varb) \
 if (var1>var2) { max=var1; varb=STOP;} \
 else           { max=var2; varb=MM;}; \
 if (var3>max)  { max=var3; varb=MI;}; \
-if (var4>max)  { max=var4; varb=IM;}; 
+if (var4>max)  { varb=IM;}; 
 
 // Generate random number in [0,1[
 #define frand() ((float) rand()/(RAND_MAX+1.0))
