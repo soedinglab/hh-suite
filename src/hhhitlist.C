@@ -1015,7 +1015,8 @@ void HitList::TransitiveScoring()
   Hash<int> excluded(13);      // Hash containing names of superfamilies to be excluded from fit
   excluded.Null(0);            // Set int value to return when no data can be retrieved
   Hit hit; 
-  
+  size_t dummy;
+
   // Read weights matrix W with index hash and names array
   fprintf(stderr,"Reading in weights file\n");
   FILE* wfile = fopen(par.wfile,"rb");
@@ -1027,7 +1028,7 @@ void HitList::TransitiveScoring()
       par.trans=0;
       return;
     }
-  fread(&N,sizeof(int),1,wfile);  // read matrix dimension (i.e. number of HMMs in database)
+  dummy=fread(&N,sizeof(int),1,wfile);  // read matrix dimension (i.e. number of HMMs in database)
   if (v>=1 && N!=N_searched) 
     {
       fprintf(stderr,"Error: Number %i of HMMs in weight file is different from number %i of HMMs in searched databases. \n",N,N_searched);
@@ -1039,7 +1040,7 @@ void HitList::TransitiveScoring()
   // Read names of HMMs (to specify mapping of HMM to matrix indices)
   for (k=0; k<N; k++) 
     {
-      fread(name,sizeof(char),IDLEN,wfile);
+      dummy=fread(name,sizeof(char),IDLEN,wfile);
       index.Add(name,k);
     }
   // Read symmetric Z-scores matrix
@@ -1048,7 +1049,7 @@ void HitList::TransitiveScoring()
     {
       Z[k] = new(float[N]);
       for (l=0; l<k; l++) Z[k][l] = Z[l][k];
-      fread(Z[k]+k,sizeof(float),N-k,wfile);   
+      dummy=fread(Z[k]+k,sizeof(float),N-k,wfile);   
     }
   // Read symmetric covariance matrix
   C = new(float*[N]);
@@ -1056,7 +1057,7 @@ void HitList::TransitiveScoring()
     {
       C[k] = new(float[N]);
       for (l=0; l<k; l++) C[k][l] = C[l][k];
-      fread(C[k]+k,sizeof(float),N-k,wfile);
+      dummy=fread(C[k]+k,sizeof(float),N-k,wfile);
     }
   fclose(wfile);
 
@@ -1361,7 +1362,8 @@ void HitList::TransitiveScoring2()
   Hash<int> excluded(13);      // Hash containing names of superfamilies to be excluded from fit
   excluded.Null(0);            // Set int value to return when no data can be retrieved
   Hit hit; 
-  
+  size_t dummy;
+
   // Read weights matrix W with index hash and names array
   fprintf(stderr,"Reading in weights file\n");
   FILE* wfile = fopen(par.wfile,"rb");
@@ -1373,7 +1375,7 @@ void HitList::TransitiveScoring2()
       par.trans=0;
       return;
     }
-  fread(&N,sizeof(int),1,wfile);  // read matrix dimension (i.e. number of HMMs in database)
+  dummy=fread(&N,sizeof(int),1,wfile);  // read matrix dimension (i.e. number of HMMs in database)
   if (v>=1 && N!=N_searched) 
     {
       fprintf(stderr,"Error: Number %i of HMMs in weight file is different from number %i of HMMs in searched databases. \n",N,N_searched);
@@ -1385,7 +1387,7 @@ void HitList::TransitiveScoring2()
   // Read names of HMMs (to specify mapping of HMM to matrix indices)
   for (k=0; k<N; k++) 
     {
-      fread(name,sizeof(char),IDLEN,wfile);
+      dummy=fread(name,sizeof(char),IDLEN,wfile);
       index.Add(name,k);
     }
   // Read symmetric Z-scores matrix
@@ -1394,7 +1396,7 @@ void HitList::TransitiveScoring2()
     {
       Z[k] = new(float[N]);
       for (l=0; l<k; l++) Z[k][l] = Z[l][k];
-      fread(Z[k]+k,sizeof(float),N-k,wfile);   
+      dummy=fread(Z[k]+k,sizeof(float),N-k,wfile);   
     }
   // Read symmetric covariance matrix
   C = new(float*[N]);
@@ -1402,7 +1404,7 @@ void HitList::TransitiveScoring2()
     {
       C[k] = new(float[N]);
       for (l=0; l<k; l++) C[k][l] = C[l][k];
-      fread(C[k]+k,sizeof(float),N-k,wfile);
+      dummy=fread(C[k]+k,sizeof(float),N-k,wfile);
     }
   fclose(wfile);
 
@@ -1712,7 +1714,8 @@ void HitList::TransitiveScoring3()
   Hash<int> excluded(13);      // Hash containing names of superfamilies to be excluded from fit
   excluded.Null(0);            // Set int value to return when no data can be retrieved
   Hit hit; 
-  
+  size_t dummy;
+
   // Read weights matrix W with index hash and names array
   fprintf(stderr,"Reading in weights file\n");
   FILE* wfile = fopen(par.wfile,"rb");
@@ -1724,7 +1727,7 @@ void HitList::TransitiveScoring3()
       par.trans=0;
       return;
     }
-  fread(&N,sizeof(int),1,wfile);  // read matrix dimension (i.e. number of HMMs in database)
+  dummy=fread(&N,sizeof(int),1,wfile);  // read matrix dimension (i.e. number of HMMs in database)
   if (v>=1 && N!=N_searched) 
     {
       fprintf(stderr,"Error: Number %i of HMMs in weight file is different from number %i of HMMs in searched databases. \n",N,N_searched);
@@ -1736,7 +1739,7 @@ void HitList::TransitiveScoring3()
   // Read names of HMMs (to specify mapping of HMM to matrix indices)
   for (k=0; k<N; k++) 
     {
-      fread(name,sizeof(char),IDLEN,wfile);
+      dummy=fread(name,sizeof(char),IDLEN,wfile);
       index.Add(name,k);
     }
   // Read symmetric Z-scores matrix
@@ -1745,7 +1748,7 @@ void HitList::TransitiveScoring3()
     {
       Z[k] = new(float[N]);
       for (l=0; l<k; l++) Z[k][l] = Z[l][k];
-      fread(Z[k]+k,sizeof(float),N-k,wfile);   
+      dummy=fread(Z[k]+k,sizeof(float),N-k,wfile);   
     }
   // Read symmetric covariance matrix
   C = new(float*[N]);
@@ -1753,7 +1756,7 @@ void HitList::TransitiveScoring3()
     {
       C[k] = new(float[N]);
       for (l=0; l<k; l++) C[k][l] = C[l][k];
-      fread(C[k]+k,sizeof(float),N-k,wfile);
+      dummy=fread(C[k]+k,sizeof(float),N-k,wfile);
     }
   fclose(wfile);
 
@@ -2058,7 +2061,8 @@ void HitList::TransitiveScoring4()
   Hash<int> excluded(13);      // Hash containing names of superfamilies to be excluded from fit
   excluded.Null(0);            // Set int value to return when no data can be retrieved
   Hit hit; 
-  
+  size_t dummy;
+
   // Read weights matrix W with index hash and names array
   fprintf(stderr,"Reading in weights file\n");
   FILE* wfile = fopen(par.wfile,"rb");
@@ -2070,7 +2074,7 @@ void HitList::TransitiveScoring4()
       par.trans=0;
       return;
     }
-  fread(&N,sizeof(int),1,wfile);  // read matrix dimension (i.e. number of HMMs in database)
+  dummy=fread(&N,sizeof(int),1,wfile);  // read matrix dimension (i.e. number of HMMs in database)
   if (v>=1 && N!=N_searched) 
     {
       fprintf(stderr,"Error: Number %i of HMMs in weight file is different from number %i of HMMs in searched databases. \n",N,N_searched);
@@ -2082,7 +2086,7 @@ void HitList::TransitiveScoring4()
   // Read names of HMMs (to specify mapping of HMM to matrix indices)
   for (k=0; k<N; k++) 
     {
-      fread(name,sizeof(char),IDLEN,wfile);
+      dummy=fread(name,sizeof(char),IDLEN,wfile);
       index.Add(name,k);
     }
   // Read symmetric Z-scores matrix
@@ -2091,7 +2095,7 @@ void HitList::TransitiveScoring4()
     {
       Z[k] = new(float[N]);
       for (l=0; l<k; l++) Z[k][l] = Z[l][k];
-      fread(Z[k]+k,sizeof(float),N-k,wfile);   
+      dummy=fread(Z[k]+k,sizeof(float),N-k,wfile);   
     }
   // Read symmetric covariance matrix
   C = new(float*[N]);
@@ -2099,7 +2103,7 @@ void HitList::TransitiveScoring4()
     {
       C[k] = new(float[N]);
       for (l=0; l<k; l++) C[k][l] = C[l][k];
-      fread(C[k]+k,sizeof(float),N-k,wfile);
+      dummy=fread(C[k]+k,sizeof(float),N-k,wfile);
     }
   fclose(wfile);
 

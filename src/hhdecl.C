@@ -15,7 +15,7 @@ const int DESCLEN=32765;//max length of sequence description (longname)
 const int NAMELEN=511;  //max length of file names etc.
 const int MAXOPT=127;   //Maximum number of options to be read in from .hhconfig or command line
 const int NAA=20;       //number of amino acids (0-19)
-const int NTRANS=10;    //number of transitions recorded in HMM (M2M,M2I,M2D,I2M,I2I,D2M,D2D,M2M_GAPOPEN,GAPOPEN,GAPEXTD)
+const int NTRANS=7;    //number of transitions recorded in HMM (M2M,M2I,M2D,I2M,I2I,D2M,D2D)
 const int NCOLMIN=10;   //min number of cols in subalignment for calculating pos-specific weights w[k][i]
 const int ANY=20;       //number representing an X (any amino acid) internally
 const int GAP=21;       //number representing a gap internally
@@ -33,8 +33,10 @@ const int SELFEXCL=3;   // exclude self-alignments with j-i<SELFEXCL
 const float PLTY_GAPOPEN=6.0f; // for -qsc option (filter for min similarity to query): 6 bits to open gap
 const float PLTY_GAPEXTD=1.0f; // for -qsc option (filter for min similarity to query): 1 bit to extend gap
 const int MINCOLS_REALIGN=6; // hits with MAC alignments with fewer matched columns will be deleted in hhsearch hitlist
+const float LOG1000=log(1000.0);
 
-enum transitions {M2M,M2I,M2D,I2M,I2I,D2M,D2D,M2M_GAPOPEN,GAPOPEN,GAPEXTD}; // index for transitions within a HMM
+
+enum transitions {M2M,M2I,M2D,I2M,I2I,D2M,D2D}; // index for transitions within a HMM
 enum pair_states {STOP=0,SAME=1,GD=2,IM=3,DG=4,MI=5,MS=6,ML=7,SM=8,LM=9,MM=10};
 
 // const char aa[]="ARNDCQEGHILKMFPSTWYVX-";
@@ -103,9 +105,6 @@ public:
   float qsc;              // Minimum score per column with query sequence (sequence 0)
   int coverage;           // Minimum coverage threshold
   int Ndiff;              // Pick Ndiff most different sequences that passed the other filter thresholds
-  int coverage_core;      // Minimum coverage for sequences in core alignment
-  float qsc_core;         // Minimum sequence identity with query for sequences in core alignment
-  float coresc;           // Minimum score per column with core alignment (HMM)
 
   int Mgaps;              // Maximum percentage of gaps for match states
   int M;                  // Match state assignment by  1:upper/lower case  2:percentage rule  3:marked sequence
@@ -169,14 +168,32 @@ public:
   float csw;
   char clusterfile[NAMELEN];
 
+  // For filtering database alignments in HHsearch and HHblast
+  int max_seqid_db;
+  int qid_db;      
+  float qsc_db;    
+  int coverage_db; 
+  int Ndiff_db;    
+
+  double filter_thresh;    // Threshold for early stopping
+  int filter_length;       // Length of array of 1/evalues
+  double *filter_evals;    // array of last 1/evalues
+  double filter_sum;       // sum of evalues in array
+  int filter_counter;      // counter for evalue array
+
+  Hash<int*>* block_shading;         // Cross out cells not covered by prefiltering hit in HHblast
+  Hash<int>* block_shading_counter;  // Cross out cells not covered by prefiltering hit in HHblast
+  int block_shading_space;           // space added to the rands of prefilter HSP
+  char block_shading_mode[NAMELEN];
+
   // SCRAP THE FOLLOWING VARIABLES?
 
   float wstruc;          // weight of structure scores
   char repmode;          // 1:repeat identification: multiple hits not treated as independent 0: repeat mode off
-
   int idummy;
   int jdummy;
   float fdummy;
+
 };
 
 /////////////////////////////////////////////////////////////////////////////////////

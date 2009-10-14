@@ -54,8 +54,8 @@ HMM::HMM(int maxseqdis, int maxres)
   f = new float*[maxres];         // f[i][a] = prob of finding amino acid a in column i WITHOUT pseudocounts
   g = new float*[maxres];         // f[i][a] = prob of finding amino acid a in column i WITH pseudocounts
   p = new float*[maxres];         // p[i][a] = prob of finding amino acid a in column i WITH OPTIMUM pseudocounts
-  tr = new float*[maxres];        // log2 of transition probabilities M2M M2I M2D I2M I2I D2M D2D M2M_GAPOPEN GAPOPEN GAPEXTD
-//   tr_lin = new float*[maxres];    // linear transition probabilities M2M M2I M2D I2M I2I D2M D2D M2M_GAPOPEN GAPOPEN GAPEXTD
+  tr = new float*[maxres];        // log2 of transition probabilities M2M M2I M2D I2M I2I D2M D2D
+//   tr_lin = new float*[maxres];    // linear transition probabilities M2M M2I M2D I2M I2I D2M D2D
   for (int i=0; i<maxres; i++) f[i]=new(float[NAA+3]);
   for (int i=0; i<maxres; i++) g[i]=new(float[NAA]);
   for (int i=0; i<maxres; i++) p[i]=new(float[NAA]);
@@ -470,6 +470,7 @@ int HMM::Read(FILE* dbf, char* path)
           fgetline(line,LINELEN-1,dbf); // Skip line with amino acid labels
           fgetline(line,LINELEN-1,dbf); // Skip line with transition labels
           ptr=line;
+
           for (a=0; a<=D2D && ptr; ++a)
             tr[0][a] = float(-strinta(ptr))/HMMSCALE; //store transition probabilites as log2 values
             // strinta returns next integer in string and puts ptr to first char
@@ -1015,6 +1016,8 @@ int HMM::ReadHMMer(FILE* dbf, char* filestr)
     }
   Neff_HMM/=L;
   for (i=0; i<=L; ++i) Neff_M[i] = Neff_I[i] = Neff_D[i] = 10.0; // to add only little additional pseudocounts!
+  Neff_M[L+1]=1.0f;
+  Neff_I[L+1]=Neff_D[L+1]=0.0f;
   if (v>=2)
     cout<<"Read in HMM "<<name<<" with "<<L<<" match states and effective number of sequences = "<<Neff_HMM<<"\n";
 
@@ -1102,10 +1105,6 @@ void HMM::AddTransitionPseudocounts(float gapd, float gape, float gapf, float ga
       tr[i][D2M] = fast_log2(p0/sum);
       tr[i][D2D] = fast_log2(p1/sum)*gaph;
 
-      // SS-dependent gap penalties
-      tr[i][M2M_GAPOPEN]=tr[i][M2M];
-      tr[i][GAPOPEN]=0.0;
-      tr[i][GAPEXTD]=0.0;
     }
 
   if (v>=4)
@@ -1127,60 +1126,6 @@ void HMM::AddTransitionPseudocounts(float gapd, float gape, float gapf, float ga
         }
       printf("\n");
       printf("nss_dssp=%i  nss_pred=%i\n",nss_dssp,nss_pred);
-    }
-  return;
-}
-
-
-/////////////////////////////////////////////////////////////////////////////////////
-// Use secondary structure-dependent gap penalties on top of the HMM transition penalties
-/////////////////////////////////////////////////////////////////////////////////////
-void HMM::UseSecStrucDependentGapPenalties()
-{
-  int i;   // column in HMM
-  int ii;
-  unsigned char iis[MAXRES]; // inside-integer array
-  float d; // Additional penalty for opening gap whithin SS element
-  float e; // Additional penalty for extending gap whithin SS element
-
-  // Determine inside-integers:
-  // CCSTCCCHHHHHHHHHHHCCCCCEEEEECCSBGGGCCCCEECC
-  // 0000000123444432100000012210000000000001000
-  ii=0;
-  iis[L]=0;
-  for (i=0; i<L; ++i) // forward run
-    {
-      if (ss_dssp[i]==1 || ss_dssp[i]==2) {ii+=(ii<par.ssgapi);} else ii=0;
-      iis[i]=ii;
-    }
-  ii=0;
-  iis[0]=0;
-  for (i=L; i>=0; i--) // backward run
-    {
-      if (ss_dssp[i]==1 || ss_dssp[i]==2) {ii+=(ii<par.ssgapi);} else ii=0;
-      iis[i-1]=imin(ii,iis[i-1]);
-    }
-
-  // Add SS-dependent gap penalties to HMM transition penalties
-  for (i=0; i<=L; ++i) //for all columns in HMM
-    {
-      d=-iis[i]*par.ssgapd;
-      e=-iis[i]*par.ssgape;
-      tr[i][GAPOPEN]=d;
-      tr[i][GAPEXTD]=e;
-      tr[i][M2M_GAPOPEN]+=d;
-      tr[i][M2I]+=d;
-      tr[i][I2M]+=d;
-      tr[i][I2I]+=e;
-      tr[i][M2D]+=d;
-      tr[i][D2M]+=d;
-      tr[i][D2D]+=e;
-    }
-
-  if (v>=3)
-    {
-      printf("Col SS II\n");
-      for (i=0; i<=L; ++i) printf("%3i  %c %2i\n",i,i2ss(ss_dssp[i]),iis[i]);
     }
   return;
 }
@@ -1651,23 +1596,6 @@ float HMM::CalcNeff()
   return fpow2(Neff/L);
 }
 
-
-/////////////////////////////////////////////////////////////////////////////////////
-// Calculate consensus of HMM (needed to merge HMMs later)
-/////////////////////////////////////////////////////////////////////////////////////
-void HMM::CalculateConsensus()
-{
-  int i;      // position in query
-  int a;      // amino acid
-  if (!Xcons) Xcons = new char[MAXRES+2];
-  for (i=1; i<=L; ++i)
-    {
-      float max=f[i][0]-pb[0];
-      for (a=1; a<20; ++a)
-        if (f[i][a]-pb[a]>max) Xcons[i]=a;
-    }
-  Xcons[0]=Xcons[L+1]=ENDGAP;
-}
 
 // /////////////////////////////////////////////////////////////////////////////////////
 // // Store linear transition probabilities

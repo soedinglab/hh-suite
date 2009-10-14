@@ -411,17 +411,14 @@ void Hit::Viterbi(HMM& q, HMM& t, float** Sstruc)
 		       );
 	      sIM_i_j = max2
  	              (
-// 		       sMM[j-1] + q.tr[i][M2I] + t.tr[j-1][M2M] ,
-		       sMM[j-1] + q.tr[i][M2I] + t.tr[j-1][M2M_GAPOPEN], // MM->IM gap opening in query 
+ 		       sMM[j-1] + q.tr[i][M2I] + t.tr[j-1][M2M] ,
 		       sIM[j-1] + q.tr[i][I2I] + t.tr[j-1][M2M], // IM->IM gap extension in query 
 		       bIM[i][j]
 		       );
 	      sDG_i_j = max2
 	              (
-// 		       sMM[j] + q.tr[i-1][M2D],
-// 		       sDG[j] + q.tr[i-1][D2D], //gap extension (DD) in query
-		       sMM[j] + q.tr[i-1][M2D] + t.tr[j][GAPOPEN], // MM->DG gap opening in template 
-		       sDG[j] + q.tr[i-1][D2D] + t.tr[j][GAPEXTD], // DG->DG gap extension in template 
+ 		       sMM[j] + q.tr[i-1][M2D],
+ 		       sDG[j] + q.tr[i-1][D2D], //gap extension (DD) in query
 		       bDG[i][j]
 		       );
 	      sMI_i_j = max2
@@ -830,7 +827,12 @@ void Hit::MACAlignment(HMM& q, HMM& t)
 	{
 
 	  if (cell_off[i][j]) 
-	    S[i][j] = -FLT_MIN;
+	    {
+	      S[i][j] = -FLT_MIN;
+	      bMM[i][j] = STOP;
+	      //	      if (i>135 && i<140) 
+	      // 		printf("Cell off   i=%i  j=%i b:%i\n",i,j,bMM[i][j]);
+	    }
 	  else 
 	    {
 	      // Recursion
@@ -845,8 +847,8 @@ void Hit::MACAlignment(HMM& q, HMM& t)
 		 bMM[i][j]   // backtracing matrix
 		 );
 
-// 	      if (i==6 && j==8) 
-// 		printf("i=%i  j=%i  S[i][j]=%8.3f  MM:%7.3f  MI:%7.3f  IM:%7.3f  b:%i\n",i,j,S[i][j],S[i-1][j-1]+B_MM[i][j]-par.mact,S[i-1][j],S[i][j-1],bMM[i][j]);
+	      // 	      if (i>135 && i<140) 
+	      // 		printf("i=%i  j=%i  S[i][j]=%8.3f  MM:%7.3f  MI:%7.3f  IM:%7.3f  b:%i\n",i,j,S[i][j],S[i-1][j-1]+B_MM[i][j]-par.mact,S[i-1][j],S[i][j-1],bMM[i][j]);
 	      
 	      // Find maximum score; global alignment: maximize only over last row and last column
 	      if(S[i][j]>score_MAC && (par.loc || i==q.L)) { i2=i; j2=j; score_MAC=S[i][j]; }	      
@@ -1165,7 +1167,7 @@ void Hit::StochasticBacktrace(HMM& q, HMM& t, char maximize)
 // 	  fprintf(stderr,"%4i  - %1c %4i %4i     IM %7.2f\n",step,q.seq[q.nfirst][j],i,j,Score(q.p[i],t.p[j])); 
 	  if (j>1) 
 	    state = (*pick3_IM)(
-			F_MM[i][j-1] * q.tr[i][M2I] * t.tr[j-1][M2M_GAPOPEN],
+			F_MM[i][j-1] * q.tr[i][M2I] * t.tr[j-1][M2M],
 			F_MI[i][j-1] * q.tr[i][M2I] * t.tr[j-1][I2M],  // MI -> IM
 			F_IM[i][j-1] * q.tr[i][I2I] * t.tr[j-1][M2M]   // gap extension (II) in query
 			); 
@@ -1176,8 +1178,8 @@ void Hit::StochasticBacktrace(HMM& q, HMM& t, char maximize)
 // 	  fprintf(stderr,"%4i  %1c - %4i %4i     DG %7.2f\n",step,q.seq[q.nfirst][i],i,j,Score(q.p[i],t.p[j])); 
 	  if (i>1) 
 	    state = (*pick2)(
-			F_MM[i-1][j] * q.tr[i-1][M2D] * t.tr[j][GAPOPEN],
-			F_DG[i-1][j] * q.tr[i-1][D2D] * t.tr[j][GAPEXTD], //gap extension (DD) in query
+			F_MM[i-1][j] * q.tr[i-1][M2D],
+			F_DG[i-1][j] * q.tr[i-1][D2D], //gap extension (DD) in query
 			DG
 			);
 	  else state=0;	  
@@ -1267,7 +1269,6 @@ void Hit::BacktraceMAC(HMM& q, HMM& t)
   for (i=0; i<=q.L; i++) b[i][1] = STOP;
   for (j=1; j<=t.L; j++) b[1][j] = STOP;
   
-
   // Back-tracing loop
   // In contrast to the Viterbi-Backtracing, STOP signifies the first Match-Match state, NOT the state before the first MM state
   matched_cols=1; // for each MACTH (or STOP) state matched_col is incremented by 1
@@ -1373,7 +1374,6 @@ void Hit::BacktraceMAC(HMM& q, HMM& t)
   else { logPvalt=0; Pvalt=1;}
 //   printf("%-10.10s lamda=%-9f  score=%-9f  logPval=%-9g\n",name,t.lamda,score,logPvalt);
 
-
   //DEBUG: Print out MAC alignment path
   if (v>=4) 
     {
@@ -1464,43 +1464,141 @@ void Hit::InitializeForAlignment(HMM& q, HMM& t)
 	    cell_off[i][j]=0;   // no other cells crossed out yet
 	}
     }
-  else 
-    // Compare two different HMMs Q and T
+  else
     {
-      // Activate all cells in dynamic programming matrix
-      for (i=1; i<=q.L; i++) 
-	for (j=1; j<=t.L; j++) 
-	  cell_off[i][j]=0;   // no other cells crossed out yet
-
-      // Cross out cells that are excluded by the minimum-overlap criterion
-      if (par.min_overlap==0) 
-	min_overlap = imin(60, (int)(0.333f*imin(q.L,t.L))+1); // automatic minimum overlap
-      else 
-	min_overlap = imin(par.min_overlap, (int)(0.8f*imin(q.L,t.L)));
-
-      for (i=0; i<min_overlap; i++) 
-	for (j=i-min_overlap+t.L+1; j<=t.L; j++) // Lt-j+i>=Ovlap => j<=i-Ovlap+Lt => jmax=min{Lt,i-Ovlap+Lt} 
-	  cell_off[i][j]=1;
-      for (i=q.L-min_overlap+1; i<=q.L; i++) 
-	for (j=1; j<i+min_overlap-q.L; j++)      // Lq-i+j>=Ovlap => j>=i+Ovlap-Lq => jmin=max{1, i+Ovlap-Lq} 
-	  cell_off[i][j]=1;
-    }
-
-  // Cross out rows which are contained in range given by exclstr ("3-57,238-314")
-  if (par.exclstr) 
-    {
-      char* ptr=par.exclstr;
-      int i0, i1;
-      while (1) 
+      if (par.block_shading && !strcmp(par.block_shading_mode,"tube") && par.block_shading->Contains(t.name))
 	{
-	  i0 = abs(strint(ptr));
-	  i1 = abs(strint(ptr));
-	  if (!ptr) break;
-	  for (i=i0; i<=imin(i1,q.L); i++) 
+
+	  // Deactivate all cells in dynamic programming matrix
+	  for (i=1; i<=q.L; i++) 
 	    for (j=1; j<=t.L; j++) 
-	      cell_off[i][j]=1; 
+	      cell_off[i][j]=1;   
+
+	  int* tmp = par.block_shading->Show(t.name);
+	  int counter = par.block_shading_counter->Show(t.name);
+
+	  //printf("Hit %s:\n",t.name);
+
+	  int m = 0;
+	  while (m < counter)
+	    {
+	      int i0 = tmp[m++];
+	      int i1 = tmp[m++];
+	      int j0 = tmp[m++];
+	      int j1 = tmp[m++];
+
+	      int d1 = imin(i0-j0,i1-j1) - par.block_shading_space;
+	      int d2 = imax(i0-j0,i1-j1) + par.block_shading_space;
+
+	      //printf("query: %i-%i   template: %i-%i    d1: %i  d2: %i\n",i0,i1,j0,j1,d1,d2);
+
+	      for (i = imax(1,i0-par.block_shading_space); i <= imin(q.L,i1+par.block_shading_space); i++)
+		for (j = imax(1,j0-par.block_shading_space); j <= imin(t.L,j1+par.block_shading_space); j++)
+		    if ((i-j) > d1 && (i-j) < d2)
+			cell_off[i][j]=0; 
+	    }
+
+	  // int after = 0;
+	  // for (i=1; i<=q.L; i++) 
+	  //   for (j=1; j<=t.L; j++) 
+	  //     {
+	  // 	if (cell_off[i][j]==1)
+	  // 	  after++;
+	  //     }
+	  // printf("cells cross out : %i\n",after);
+	  // printf("cells total     : %i\n",q.L*t.L);
+	  //printf("Ersparnis       : %4.2f %%\n",(double)after/(double)(q.L*t.L)*100.0);
+
+	  // Cross out cells that are excluded by the minimum-overlap criterion
+	  if (par.min_overlap==0) 
+	    min_overlap = imin(60, (int)(0.333f*imin(q.L,t.L))+1); // automatic minimum overlap
+	  else 
+	    min_overlap = imin(par.min_overlap, (int)(0.8f*imin(q.L,t.L)));
+
+	  for (i=0; i<min_overlap; i++) 
+	    for (j=i-min_overlap+t.L+1; j<=t.L; j++) // Lt-j+i>=Ovlap => j<=i-Ovlap+Lt => jmax=min{Lt,i-Ovlap+Lt} 
+	      cell_off[i][j]=1;
+	  for (i=q.L-min_overlap+1; i<=q.L; i++) 
+	    for (j=1; j<i+min_overlap-q.L; j++)      // Lq-i+j>=Ovlap => j>=i+Ovlap-Lq => jmin=max{1, i+Ovlap-Lq} 
+	      cell_off[i][j]=1;
+
 	}
-    }
+      else 
+	// Compare two different HMMs Q and T
+	{
+	  // Activate all cells in dynamic programming matrix
+	  for (i=1; i<=q.L; i++) 
+	    for (j=1; j<=t.L; j++) 
+	      cell_off[i][j]=0;   // no other cells crossed out yet
+	    
+	  // Cross out cells that are excluded by the minimum-overlap criterion
+	  if (par.min_overlap==0) 
+	    min_overlap = imin(60, (int)(0.333f*imin(q.L,t.L))+1); // automatic minimum overlap
+	  else 
+	    min_overlap = imin(par.min_overlap, (int)(0.8f*imin(q.L,t.L)));
+	  
+	  for (i=0; i<min_overlap; i++) 
+	    for (j=i-min_overlap+t.L+1; j<=t.L; j++) // Lt-j+i>=Ovlap => j<=i-Ovlap+Lt => jmax=min{Lt,i-Ovlap+Lt} 
+	      cell_off[i][j]=1;
+	  for (i=q.L-min_overlap+1; i<=q.L; i++) 
+	    for (j=1; j<i+min_overlap-q.L; j++)      // Lq-i+j>=Ovlap => j>=i+Ovlap-Lq => jmin=max{1, i+Ovlap-Lq} 
+	      cell_off[i][j]=1;
+      
+	  // Cross out rows which are contained in range given by exclstr ("3-57,238-314")
+	  if (par.exclstr) 
+	    {
+	      char* ptr=par.exclstr;
+	      int i0, i1;
+	      while (1) 
+		{
+		  i0 = abs(strint(ptr));
+		  i1 = abs(strint(ptr));
+		  if (!ptr) break;
+		  for (i=i0; i<=imin(i1,q.L); i++) 
+		    for (j=1; j<=t.L; j++) 
+		      cell_off[i][j]=1; 
+		}
+	    }
+	  // Cross out cells not contained in the range of the prefiltering in HHblast
+	  if (par.block_shading && par.block_shading->Contains(t.name))
+	    {
+	      int* tmp = par.block_shading->Show(t.name);
+	      int counter = par.block_shading_counter->Show(t.name);
+	      
+	      int i0, i1, j0, j1;
+	      i0 = j0 = 1000000;
+	      i1 = j1 = 0;
+	      
+	      int m = 0;
+	      while (m < counter)
+		{
+		  i0 = imin(tmp[m++]-par.block_shading_space,i0);
+		  i1 = imax(tmp[m++]+par.block_shading_space,i1);
+		  j0 = imin(tmp[m++]-par.block_shading_space,j0);
+		  j1 = imax(tmp[m++]+par.block_shading_space,j1);
+		}
+	      
+	      //printf("Hit: %40s query: %i-%i   template: %i-%i \n",t.name,i0,i1,j0,j1);
+	      
+	      //printf("cell_off in query: 1-%i\n",i0);
+	      for (i=1; i<i0; i++) 
+		for (j=1; j<=t.L; j++) 
+		  cell_off[i][j]=1; 
+	      //printf("cell_off in query: %i-%i\n",i1+1,q.L);
+	      for (i=i1+1; i<=q.L; i++)
+		for (j=1; j<=t.L; j++) 
+		  cell_off[i][j]=1; 
+	      //printf("cell_off in template: 1-%i\n",j0);
+	      for (j=1; j<j0; j++) 
+		for (i=1; i<=q.L; i++) 
+		  cell_off[i][j]=1; 
+	      //printf("cell_off in template: %i-%i\n",j1+1,t.L);
+	      for (j=j1+1; j<=t.L; j++)
+		for (i=1; i<=q.L; i++) 
+		  cell_off[i][j]=1; 
+	    }
+	}
+    } 
 }
 	
 /////////////////////////////////////////////////////////////////////////////////////
@@ -1586,27 +1684,21 @@ void Hit::InitializeBacktrace(HMM& q, HMM& t)
 // Calculate score between columns i and j of two HMMs (query and template)
 inline float Score(float* qi, float* tj)
 {
-//   if (par.columnscore==9)
-//     return (tj[0] *qi[0] +tj[1] *qi[1] +tj[2] *qi[2] +tj[3] *qi[3] +tj[4]*qi[4]
-//            +tj[5] *qi[5] +tj[6] *qi[6] +tj[7] *qi[7] +tj[8] *qi[8] +tj[9]*qi[9]
-//            +tj[10]*qi[10]+tj[11]*qi[11]+tj[12]*qi[12]+tj[13]*qi[13]+tj[14]*qi[14]
-//            +tj[15]*qi[15]+tj[16]*qi[16]+tj[17]*qi[17]+tj[18]*qi[18]+tj[19]*qi[19]);
-//   else
-  return fast_log2(
-          tj[0] *qi[0] +tj[1] *qi[1] +tj[2] *qi[2] +tj[3] *qi[3] +tj[4] *qi[4]
-         +tj[5] *qi[5] +tj[6] *qi[6] +tj[7] *qi[7] +tj[8] *qi[8] +tj[9] *qi[9]
-         +tj[10]*qi[10]+tj[11]*qi[11]+tj[12]*qi[12]+tj[13]*qi[13]+tj[14]*qi[14]
-         +tj[15]*qi[15]+tj[16]*qi[16]+tj[17]*qi[17]+tj[18]*qi[18]+tj[19]*qi[19]
-	  );
+   return fast_log2(		   
+           tj[0] *qi[0] +tj[1] *qi[1] +tj[2] *qi[2] +tj[3] *qi[3] +tj[4] *qi[4]
+          +tj[5] *qi[5] +tj[6] *qi[6] +tj[7] *qi[7] +tj[8] *qi[8] +tj[9] *qi[9]
+          +tj[10]*qi[10]+tj[11]*qi[11]+tj[12]*qi[12]+tj[13]*qi[13]+tj[14]*qi[14]
+          +tj[15]*qi[15]+tj[16]*qi[16]+tj[17]*qi[17]+tj[18]*qi[18]+tj[19]*qi[19]
+ 	  );
 }
 
 // Calculate score between columns i and j of two HMMs (query and template)
 inline float ProbFwd(float* qi, float* tj)
 {
   return  tj[0] *qi[0] +tj[1] *qi[1] +tj[2] *qi[2] +tj[3] *qi[3] +tj[4] *qi[4]
-         +tj[5] *qi[5] +tj[6] *qi[6] +tj[7] *qi[7] +tj[8] *qi[8] +tj[9] *qi[9]
-         +tj[10]*qi[10]+tj[11]*qi[11]+tj[12]*qi[12]+tj[13]*qi[13]+tj[14]*qi[14]
-         +tj[15]*qi[15]+tj[16]*qi[16]+tj[17]*qi[17]+tj[18]*qi[18]+tj[19]*qi[19];
+          +tj[5] *qi[5] +tj[6] *qi[6] +tj[7] *qi[7] +tj[8] *qi[8] +tj[9] *qi[9]
+          +tj[10]*qi[10]+tj[11]*qi[11]+tj[12]*qi[12]+tj[13]*qi[13]+tj[14]*qi[14]
+          +tj[15]*qi[15]+tj[16]*qi[16]+tj[17]*qi[17]+tj[18]*qi[18]+tj[19]*qi[19];
 }
 
 

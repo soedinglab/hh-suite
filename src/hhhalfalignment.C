@@ -352,7 +352,7 @@ void HalfAlignment::AlignToTemplate(Hit& hit)
 /////////////////////////////////////////////////////////////////////////////////////
 // Write the a2m/a3m alignment into alnfile 
 /////////////////////////////////////////////////////////////////////////////////////
-void HalfAlignment::Print(char* alnfile)
+void HalfAlignment::Print(char* alnfile, char* commentname)
 {
   int k;      //counts sequences
   int omitted=0; // counts number of sequences with no residues in match states
@@ -365,6 +365,8 @@ void HalfAlignment::Print(char* alnfile)
   else
     outf = stdout;
   if (v>=3) cout<<"Writing alignment to "<<alnfile<<"\n";
+
+  if (commentname != NULL) fprintf(outf,"#%s\n",commentname);
 
   for (k=0; k<n; k++)
     {

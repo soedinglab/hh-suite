@@ -17,7 +17,7 @@ public:
   void AlignToTemplate(Hit& hit); 
 
   // Write the a2m/a3m query alignment into alnfile 
-  void Print(char* outfile);
+  void Print(char* outfile, char* commentname = NULL);
 
   // Fill in insert states following match state i
   void AddInserts(int i);

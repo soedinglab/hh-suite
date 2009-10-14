@@ -179,7 +179,15 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline)
             skip_sequence=1; k--; continue;
           }
           //store first real seq
-          else if (kfirst<0)                    {display[k]=keep[k]=2; n_display++; kfirst=k;}
+          else if (kfirst<0)
+	    {
+	      char word[NAMELEN];
+	      strwrd(word,line); // Copies first word in ptr to str
+	      if (strstr(word,"_consensus"))
+		{display[k]=2; keep[k]=0; n_display++; kfirst=k;}
+	      else 
+		{display[k]=keep[k]=2; n_display++; kfirst=k;}
+	    }
           //store all sequences
           else if (par.mark==0)                 {display[k]=keep[k]=1; n_display++;}
           //store sequences up to nseqdis
@@ -223,7 +231,7 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline)
           h=0; //counts characters in current line
 
           // Check whether all characters are correct; store into cur_seq
-          if (keep[k]) // normal line containing residues
+          if (keep[k] || k == kfirst) // normal line containing residues
             {
               while (h<LINELEN && line[h]>'\0' && l<MAXCOL-1)
                 {
@@ -705,7 +713,7 @@ inline int Alignment::FilterForDisplay(int max_seqid, int coverage, int qid, flo
     {
       for (int k=0; k<N_in; k++) dummy[k]=display[k];
       n_display = Filter2(dummy,coverage,qid,qsc,20,seqid,0);
-//      printf("Seqid=%3i  n_display=%4i\n",seqid,n_display);
+      //printf("Seqid=%3i  n_display=%4i\n",seqid,n_display);
     }
   if (n_display>N)
     {
@@ -754,8 +762,7 @@ int Alignment::Filter2(char keep[], int coverage, int qid, float qsc, int seqid1
   // In the end, keep[k] will be 1 for all regular representative sequences kept in the alignment, 0 for all others
   char* in=new(char[N_in+1]);   // in[k]=1: seq k has been accepted; in[k]=0: seq k has not yet been accepted at current seqid
   char* inkk=new(char[N_in+1]); // inkk[k]=1 iff in[ksort[k]]=1 else 0;
-  //  int* idmax=new(int[L+2]);     // position-dependent maximum-sequence-identity threshold for filtering ///////////////////delete
-  int* Nmax=new(int[L+2]);     // position-dependent maximum-sequence-identity threshold for filtering
+  int* Nmax=new(int[L+2]);     // position-dependent maximum-sequence-identity threshold for filtering? (variable used in former version was idmax)
   int* idmaxwin=new(int[L+2]);      // minimum value of idmax[i-WFIL,i+WFIL]
   int* seqid_prev=new(int[N_in+1]); // maximum-sequence-identity threshold used in previous round of filtering (with lower seqid)
   int* N=new(int[L+2]);             // N[i] number of already accepted sequences at position i
@@ -805,7 +812,7 @@ int Alignment::Filter2(char keep[], int coverage, int qid, float qsc, int seqid1
         {
           int nr=0;
           for (i=first[k]; i<=last[k]; i++)
-            if (X[k][i]<NAA) nr++;
+	    if (X[k][i]<NAA) nr++;
           nres[k]=nr;
           //printf("%20.20s nres=%3i  first=%3i  last=%3i\n",sname[k],nr,first[k],last[k]);
 	  if (nr == 0)
@@ -826,8 +833,7 @@ int Alignment::Filter2(char keep[], int coverage, int qid, float qsc, int seqid1
   for (i=1; i<first[kfirst]; i++) N[i]=0;
   for (i=first[kfirst]; i<=last[kfirst]; i++) N[i]=1;
   for (i=last[kfirst]+1; i<=L; i++) N[i]=0;
-  //  for (i=1; i<=L; i++) {idmax[i]=seqid1; idmaxwin[i]=-1;} //////////////////////////// CHANGE!
-  for (i=1; i<=L; i++) {Nmax[i]=0; idmaxwin[i]=-1;} //////////////////////////// CHANGE!
+  for (i=1; i<=L; i++) {Nmax[i]=0; idmaxwin[i]=-1;}
   for (k=0; k<N_in; k++) seqid_prev[k]=-1;
   if (Ndiff<=0 || Ndiff>=N_in) {seqid1=seqid2; Ndiff=N_in; diffNmax=Ndiff;}
 
@@ -893,44 +899,26 @@ int Alignment::Filter2(char keep[], int coverage, int qid, float qsc, int seqid1
   while (seqid<=seqid2)
     {
       char stop=1;
-      // if (0) {
-      // // Update idmax[i]
-      // for (i=1; i<=L; i++)
-      // 	if (N[i]<Ndiff) idmax[i]=seqid;
-      // printf("seqid=%3i  n=%-5i  N_in-N_ss=%-5i\n",seqid,n,N_in-N_ss);
-
-      // // Update idmaxwin[i] as minimum of idmax[i-WFIL,i+WFIL]. If idmaxwin[] has not changed then stop
+      // Update Nmax[i]
+      diffNmax_prev = diffNmax;
+      diffNmax = 0;
+      for (i=1; i<=L; i++)
+	{
+	  int max=0;
+	  for (j=imax(1,imin(L-2*WFIL+1,i-WFIL)); j<=imin(L,imax(2*WFIL,i+WFIL)); j++)
+	    if (N[j]>max) max=N[j];
+	  if (Nmax[i]<max) Nmax[i]=max;
+	  if (Nmax[i]<Ndiff) 
+	    {
+	      stop=0;
+	      idmaxwin[i]=seqid;
+	      if (diffNmax<Ndiff-Nmax[i]) diffNmax=Ndiff-Nmax[i];
+	    }	   
+	}
       
-      // for (i=1; i<=L; i++)
-      //   {
-      //     int idmax_min=seqid2;
-      //     for (j=imax(1,imin(L-2*WFIL+1,i-WFIL)); j<=imin(L,imax(2*WFIL,i+WFIL)); j++)
-      //       if (idmax[j]<idmax_min) idmax_min=idmax[j];
-      //     if (idmax_min>idmaxwin[i]) stop=0; // idmaxwin[i] has changed => do not stop
-      //     idmaxwin[i]=idmax_min;
-      //   }
-      // } else {
-	// Update Nmax[i]
-	diffNmax_prev = diffNmax;
-	diffNmax = 0;
-	for (i=1; i<=L; i++)
-	  {
-	    int max=0;
-	    for (j=imax(1,imin(L-2*WFIL+1,i-WFIL)); j<=imin(L,imax(2*WFIL,i+WFIL)); j++)
-	      if (N[j]>max) max=N[j];
-	    if (Nmax[i]<max) Nmax[i]=max;
-	    if (Nmax[i]<Ndiff) 
-	      {
-		stop=0;
-		idmaxwin[i]=seqid;
-		if (diffNmax<Ndiff-Nmax[i]) diffNmax=Ndiff-Nmax[i];
-	      }	   
-	  }
-
-	//printf("seqid=%3i  diffNmax_prev= %-4i   diffNmax= %-4i   n=%-5i  N_in-N_ss=%-5i\n",seqid,diffNmax_prev,diffNmax,n,N_in-N_ss);
-	//}
+      //printf("seqid=%3i  diffNmax_prev= %-4i   diffNmax= %-4i   n=%-5i  N_in-N_ss=%-5i\n",seqid,diffNmax_prev,diffNmax,n,N_in-N_ss);
       if (stop) break;
-
+      
 //       // DEBUG
 //       printf("idmax    ");
 //       for (i=1; i<=L; i++) printf("%2i ",idmax[i]);
@@ -1035,60 +1023,6 @@ int Alignment::Filter2(char keep[], int coverage, int qid, float qsc, int seqid1
   delete[] N;
   return n;
 }
-
-
-
-
-/////////////////////////////////////////////////////////////////////////////////////
-// Filter for min score per column coresc with core query profile, defined by coverage_core and qsc_core
-/////////////////////////////////////////////////////////////////////////////////////
-int Alignment::HomologyFilter(int coverage_core, float qsc_core, float coresc)
-{
-  const int seqid_core=90; //maximum sequence identity in core alignment
-  const int qid_core=0;
-  const int Ndiff_core=0;
-  int n;
-  HMM qcore;
-  char* coreseq=new(char[N_in]);   // coreseq[k]=1 if sequence belongs to core of alignment (i.e. it is very similar to query)
-  for (int k=0; k<N_in; k++) coreseq[k]=keep[k];   // Copy keep[] into coreseq[]
-
-  // Remove sequences with seq. identity larger than seqid percent (remove the shorter of two)
-  int v1=v; v=1;
-  n = Filter2(coreseq,coverage_core,qid_core,qsc_core,seqid_core,seqid_core,Ndiff_core);
-  v=v1;
-  if (v>=2)
-    {
-      printf("%i out of %i core alignment sequences passed filter (",n,N_in-N_ss);
-      if (par.coverage_core)
-        printf("%i%% min coverage, ",coverage_core);
-      if (qid_core)
-        printf("%i%% min sequence identity to query, ",qid_core);
-      if (qsc_core>-10)
-        printf("%.2f bits min score per column to query, ",qsc_core);
-      printf("%i%% max pairwise sequence identity)\n",seqid_core);
-    }
-
-  // Calculate bare AA frequencies and transition probabilities -> qcore.f[i][a], qcore.tr[i][a]
-  FrequenciesAndTransitions(qcore,coreseq);
-
-  // Add transition pseudocounts to query -> q.p[i][a] (gapd=1.0, gape=0.333, gapf=gapg=1.0, gaph=gapi=1.0, gapb=1.0
-  qcore.AddTransitionPseudocounts(1.0,0.333,1.0,1.0,1.0,1.0,1.0);
-
-  // Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
-  qcore.PreparePseudocounts();
-
-  // Add amino acid pseudocounts to query:  qcore.p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
-  qcore.AddAminoAcidPseudocounts(2,1.5,2.0,1.0); // pcm=2, pca=1.0, pcb=2.5, pcc=1.0
-  qcore.CalculateAminoAcidBackground();
-
-  // Filter out all sequences below min score per column with qcore
-  n=FilterWithCoreHMM(keep, coresc, qcore);
-
-  if (v>=2) cout<<n<<" out of "<<N_in-N_ss<<" sequences filtered by minimum score-per-column threshold of "<<qsc_core<<"\n";
-  delete[] coreseq;
-  return n;
-}
-
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Filter out all sequences below a minimum score per column with profile qcore
@@ -1201,13 +1135,15 @@ int Alignment::FilterWithCoreHMM(char in[], float coresc, HMM& qcore)
 /////////////////////////////////////////////////////////////////////////////////////
 // Calculate AA frequencies q.p[i][a] and transition probabilities q.tr[i][a] from alignment
 /////////////////////////////////////////////////////////////////////////////////////
-void Alignment::FrequenciesAndTransitions(HMM& q, char* in)
+void Alignment::FrequenciesAndTransitions(HMM& q, char* in, bool time)
 {
   int k;                // index of sequence
   int i;                // position in alignment
   int a;                // amino acid (0..19)
   int ni[NAA+3];        // number of times amino acid a occurs at position i
   int naa;              // number of different amino acids
+
+  //if (time) { ElapsedTimeSinceLastCall("begin freq and trans"); }
 
   if (v>=3)
      cout<<"Calculating position-dependent weights on subalignments\n";
@@ -1231,6 +1167,7 @@ void Alignment::FrequenciesAndTransitions(HMM& q, char* in)
           // contribution is proportional to one over sequence length nres[k] plus 30.
         }
       NormalizeTo1(wg,N_in);
+      //if (time) { ElapsedTimeSinceLastCall("Calc global weights"); }
 
       // Do pos-specific sequence weighting and calculate amino acid frequencies and transitions
       for (k=0; k<N_in; k++) X[k][0]=ENDGAP;    // make sure that sequences ENTER subalignment j for j=1
@@ -1239,10 +1176,11 @@ void Alignment::FrequenciesAndTransitions(HMM& q, char* in)
       Amino_acid_frequencies_and_transitions_from_M_state(q,in); // use subalignments of seqs with residue in i
       Transitions_from_I_state(q,in); // use subalignments of seqs with insert in i
       Transitions_from_D_state(q,in); // use subalignments of seqs with delete in i. Must be last of these three calls if par.wg==1!
+      //if (time) { ElapsedTimeSinceLastCall("Do pos-specific sequence weighting and calculate amino acid frequencies and transitions"); }
     }
   else // N_filtered==1
     {
-      X[kfirst][0]=X[kfirst][L+1]=ANY; // (to avoid anallowed access within loop)
+      X[kfirst][0]=X[kfirst][L+1]=ANY; // (to avoid unallowed access within loop)
       q.Neff_HMM=1.0f;
       for (i=0; i<=L+1; i++) // for all positions i in alignment
         {
@@ -1303,6 +1241,8 @@ void Alignment::FrequenciesAndTransitions(HMM& q, char* in)
   if (kss_pred>=0) q.nss_pred=n++; // copy psipred sequence?
   if (kss_conf>=0) q.nss_conf=n++; // copy confidence value sequence?
 
+  //if (time) { ElapsedTimeSinceLastCall("Copy to HMM"); }
+
   // Calculate consensus sequence?
   if (par.showcons || par.cons)
     {
@@ -1359,6 +1299,8 @@ void Alignment::FrequenciesAndTransitions(HMM& q, char* in)
         }
     }
 
+  //if (time) { ElapsedTimeSinceLastCall("Calc consensus sequence"); }
+
   // Copy sequences to be displayed from alignment to HMM
   for (k=0; k<N_in; k++)
     {
@@ -1403,6 +1345,8 @@ void Alignment::FrequenciesAndTransitions(HMM& q, char* in)
   q.lamda=0.0;
   q.mu=0.0;
 
+  //if (time) { ElapsedTimeSinceLastCall("Copy sequences and SS"); }
+
   // Debug: print occurence of amino acids for each position i
   if (v>=2) printf("Effective number of sequences exp(entropy) = %-4.1f\n",q.Neff_HMM); //PRINT
   if (v>=3)
@@ -1431,6 +1375,7 @@ void Alignment::FrequenciesAndTransitions(HMM& q, char* in)
     }
   q.trans_lin=0;
   q.has_pseudocounts=false;
+
   return;
 }
 
@@ -1676,7 +1621,8 @@ void Alignment::Transitions_from_I_state(HMM& q, char* in)
   float scale=0.0;            // only for global weights
 
   // Global weights?
-  if (par.wg==1)
+  //if (par.wg==1)
+  if (1)
     {
       for (k=0; k<N_in; k++) wi[k]=wg[k];
       Nlim=fmax(10.0,q.Neff_HMM+1.0);    // limiting Neff
@@ -1691,7 +1637,8 @@ void Alignment::Transitions_from_I_state(HMM& q, char* in)
   // Main loop through alignment columns
   for (i=1; i<=L; i++) // Calculate wi[k] at position i as well as Neff[i]
     {
-      if (par.wg==0) // local weights?
+      //if (par.wg==0) // local weights?
+      if (0)
         {
 
           // Calculate n[j][a] and ri[j]
@@ -1867,7 +1814,8 @@ void Alignment::Transitions_from_D_state(HMM& q, char* in)
   float scale=0.0;            // only for global weights
 
   // Global weights?
-  if (par.wg==1)
+  //if (par.wg==1)
+  if(1)
     {
       for (k=0; k<N_in; k++) wi[k]=wg[k];
       Nlim=fmax(10.0,q.Neff_HMM+1.0);    // limiting Neff
@@ -1884,7 +1832,8 @@ void Alignment::Transitions_from_D_state(HMM& q, char* in)
   // Main loop through alignment columns
   for (i=1; i<=L; i++) // Calculate wi[k] at position i as well as Neff[i]
     {
-      if (par.wg==0) // if local weights
+      //if (par.wg==0) // if local weights
+      if(0)
         {
           change=0;
           // Check all sequences k and update n[j][a] and ri[j] if necessary
@@ -2331,6 +2280,10 @@ void Alignment::AddSequence(char Xk[], int Ik[])
   else
     for (i=0; i<=L+1; i++) I[N_in][i]=Ik[i];
   N_in++;
+
+  delete[] ksort; ksort=NULL; // if ksort already existed it will be to short for merged alignment
+  delete[] first; first=NULL; // if first already existed it will be to short for merged alignment
+  delete[] last; last=NULL;   // if last  already existed it will be to short for merged alignment
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -2346,6 +2299,13 @@ void Alignment::AddSSPrediction(char seq_pred[], char seq_conf[])
       return;
     }
 
+  if (kss_pred < 0 || kss_conf < 0)   // At least one sequence is added
+    {
+      delete[] ksort; ksort=NULL; // if ksort already existed it will be to short for merged alignment
+      delete[] first; first=NULL; // if first already existed it will be to short for merged alignment
+      delete[] last; last=NULL;   // if last  already existed it will be to short for merged alignment
+    }
+  
   if (kss_pred < 0)  // No ss prediction exists
     {
       kss_pred=N_in;
