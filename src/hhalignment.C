@@ -2027,6 +2027,7 @@ void Alignment::WriteWithoutInsertsToFile(const char* alnfile)
 void Alignment::WriteToFile(const char* alnfile, const char format[])
 {
   FILE* alnf;
+  char* tmp_name = new(char[50]);
   if (!par.append) alnf = fopen(alnfile,"w"); else alnf = fopen(alnfile,"a");
   if (!alnf) OpenFileError(alnfile);
 
@@ -2050,8 +2051,8 @@ void Alignment::WriteToFile(const char* alnfile, const char format[])
       for (int k=0; k<N_in; k++) // skip sequences before kfirst!!
         if (!(k==kss_pred || k==kss_conf || k==kss_dssp || k==ksa_dssp) && (keep[k] || display[k]==2)) // print if either in profile (keep[k]>0) or display is obligatory (display[k]==2)
           {
-            strcut(sname[k]);
-            fprintf(alnf,"%-20.20s ",sname[k]);
+	    strwrd(tmp_name,sname[k]);
+            fprintf(alnf,"%-20.20s ",tmp_name);
 //          for (int i=1; i<=L; i++) fprintf(alnf,"%c",i2aa(X[k][i]));
 //          fprintf(alnf,"\n");
             char* ptr=seq[k];
@@ -2060,7 +2061,8 @@ void Alignment::WriteToFile(const char* alnfile, const char format[])
             fprintf(alnf,"\n");
           }
     }
-
+  
+  delete[] tmp_name;
   fclose(alnf);
 }
 
