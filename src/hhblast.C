@@ -2161,7 +2161,7 @@ int main(int argc, char **argv)
 		strcat(ta3mfile,".a3m");
 		Qali.MergeMasterSlave(hit_cur,ta3mfile);
 	      }
-	    
+
 	    // Convert ASCII to int (0-20),throw out all insert states, record their number in I[k][i]
 	    Qali.Compress("merged A3M file");
 	    
@@ -2173,7 +2173,7 @@ int main(int argc, char **argv)
 	    int cov_tot = imax(imin((int)(COV_ABS / Qali.L * 100 + 0.5), 70), par.coverage);
 	    if (v>2) printf("Filter new alignment with cov %3i%%\n", cov_tot);
 	    Qali.N_filtered = Qali.Filter(par.max_seqid,cov_tot,par.qid,par.qsc,par.Ndiff);
-	    
+
 	    if (print_elapsed) ElapsedTimeSinceLastCall("(merge hits to Qali)");
 	    
 	    // Write PSI-alignment for next round prefiltering
