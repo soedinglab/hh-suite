@@ -139,8 +139,8 @@ HHsearch 1.5.0 August 2007
   are generated with -mact 0, whereas -mact 0.5 will produce quite conservative
   local alignments. Default value is -mact 0.35, which produces alignments of
   roughly the same length as the Viterbi algorithm. 
-     The -global and -local (default) option now refer to both the Viterbi search 
-  stage as well as the MAC realignment stage. With -global (-local), the 
+     The -global and -local (default) option now refer to both the Viterbi 
+  search stage as well as the MAC realignment stage. With -global (-local), the 
   posterior probability matrix will be calculated for global (local) 
   alignment. Note that '-local -mact 0' will produce global alignments from
   a local posterior probability matrix (which is not at all unreasonable).
@@ -262,6 +262,10 @@ HHsearch 1.6.0 sometime in 2009
   of probabilities for each pair of aligned residues from the MAC algorithm 
   is reported here (0 if no MAC alignment is performed).
 
+* The buildali.pl script now uses context-specific iterative BLAST (CSI-BLAST) 
+  instead of PSI-BLAST. This considerably increases the sensitivity of 
+  buildali.pl/HHsearch. 
+
 * Removed a bug which produced a segfault for input alignments with more than
   15000 match columns. Now, the HHsearch binaries will issue a warning and 
   will transform only the first 15000 match columns into an HMM.
@@ -273,11 +277,16 @@ HHsearch 1.6.0 sometime in 2009
 * Removed a memory leak and optimized memory management.
 
 * Removed a bug in hhalign that could lead to unreasonably significant E-values 
-  and probabilities due to calibration problems
+  and probabilities due to calibration problems.
 
 
 -->
 
+_______________________________________________________________________________
+
+Suggestions later releases
+
+	
 * HHsearch now scores similarity in (estimated) relative solvent accessibility 
   (RSA) of query and database sequences by default, in a similar way as for 
   secondary structure scoring. The A3M alignments and HHM alignments have added

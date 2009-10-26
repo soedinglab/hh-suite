@@ -265,7 +265,7 @@ const float p_acc[]={0.00,0.47,0.53,0.56,0.58,0.62,0.69,0.74,0.82,0.88,0.96};
 void SetBlosumMatrix(const float BlosumXX[])
 {
   int a,b,n=0;
-  if (v>=3) printf("Using the BLOSUM%2i matrix\n",par.matrix);
+  if (v>=3) printf("Using the BLOSUM%2i matrix",par.matrix);
   for (a=0; a<20; ++a)
     for (pb[a]=0.0f, b=0; b<=a; ++b,++n)
       P[a][b] = BlosumXX[n];
@@ -383,7 +383,7 @@ void SetSubstitutionMatrix()
 	  for (a=0; a<20; a++)  printf("%4.1f ",100*R[b][a]);
 	  cout<<endl;
 	}
-      cout<<endl<<"\nProbability matrix P(a,b) (in %):\n";
+      cout<<endl<<"\nProbability matrix P(a,b) (in 10E-6):\n";
       cout<<"      A     R     N     D     C     Q     E     G     H     I     L     K     M     F     P     S     T     W     Y     V\n";
       for (b=0; b<20; b++)
 	{

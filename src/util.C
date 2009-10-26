@@ -62,7 +62,7 @@ inline float fast_log2(float x)
   static float lg2[1025];         // lg2[i] = log2[1+x/1024]
   static float diff[1025];        // diff[i]= (lg2[i+1]-lg2[i])/8096 (for interpolation)
   static char initialized=0;
-  if (x<=0) return -100000;
+  if (x<=0) return -100000; 
   if (!initialized)   //First fill in the arrays lg2[i] and diff[i]
     {
       float prev = 0.0f;

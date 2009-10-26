@@ -111,10 +111,7 @@ class Hit
   void BacktraceMAC(HMM& q, HMM& t);
 
   // Calculate secondary structure score between columns i and j of two HMMs (query and template)
-  inline float ScoreSS(HMM& q, HMM& t, int i, int j, int ssm);
-
-  // Calculate secondary structure score between columns i and j of two HMMs (query and template)
-  inline float ScoreSS(HMM& q, HMM& t, int i, int j);
+  inline float ScoreSS(HMM& q, HMM& t, int i, int j, int ssm = ssm2);
 
   // Calculate total score (including secondary structure score and compositional bias correction
   inline float ScoreTot(HMM& q, HMM& t, int i, int j);
