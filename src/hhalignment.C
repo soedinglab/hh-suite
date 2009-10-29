@@ -1164,9 +1164,9 @@ void Alignment::FrequenciesAndTransitions(HMM& q, char* in, bool time)
           if (!naa) naa=1; //naa=0 when column consists of only gaps and Xs (=ANY)
           for (k=0; k<N_in; k++)
             if (in[k] && X[k][i]<20)
- 	      wg[k] += 1.0/float(nl[ (int)X[k][l]]*naa*(nres[k]+30.0));
-	      // wg[k] += 1.0/float(nl[ (int)X[k][l]]*(nres[k]+30.0));
- 	      // wg[k] += (naa-1.0)/float(nl[ (int)X[k][l]]*(nres[k]+30.0));
+ 	      wg[k] += 1.0/float(ni[ (int)X[k][i]]*naa*(nres[k]+30.0));
+	      // wg[k] += 1.0/float(ni[ (int)X[k][i]]*(nres[k]+30.0));
+ 	      // wg[k] += (naa-1.0)/float(ni[ (int)X[k][i]]*(nres[k]+30.0));
           // ensure that each residue of a short sequence contributes as much as a residue of a long sequence:
           // contribution is proportional to one over sequence length nres[k] plus 30.
         }

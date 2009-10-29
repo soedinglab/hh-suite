@@ -1712,6 +1712,13 @@ inline float Hit::ScoreSS(HMM& q, HMM& t, int i, int j, int ssm)
   return 0.0;
 }
 
+// Calculate secondary structure score between columns i and j of two HMMs (query and template)
+inline float Hit::ScoreSS(HMM& q, HMM& t, int i, int j)
+{
+  return ScoreSS(q,t,i,j,ssm2);
+}
+
+
 // Calculate score between columns i and j of two HMMs (query and template)
 inline float Hit::ScoreTot(HMM& q, HMM& t, int i, int j)
 {
