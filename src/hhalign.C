@@ -1203,16 +1203,16 @@ int main(int argc, char **argv)
 
 	    if (i==j && hit.self) {b=r=g=0.0;} 
 	    else if (Nstochali && alisto[i][j]) {r=b=1-0.9*alisto[i][j]; g=1;}
-	    else if ((sum<=0.05 && par.realign)|| (sum<=dotthr*l && !par.realign)) 
+	    else if ((sum<=0.05 && par.realign) || (sum<=dotthr*l && !par.realign)) 
 	      {
-		if (dotali && ali[i][j]) {r=g=1-dotsat; b=1.0;}
-		else 
-		  {
-		    // Score below threshold
-		    r=g=b=1.0;
-		    g -= dotsat/3*(0.7*(!(i%10) || !(j%10)) + (!(i%50) || !(j%50)) + (!(i%100) || !(j%100)));
-		    b -= dotsat/3*(0.7*(!(i%10) || !(j%10)) + (!(i%50) || !(j%50)) + (!(i%100) || !(j%100)));
-		  }
+	    	if (dotali && ali[i][j]) {r=g=1-dotsat; b=1.0;}
+	     	else 
+	     	  {
+	     	    // Score below threshold
+	     	    r=g=b=1.0;
+	     	    g -= dotsat/3*(0.7*(!(i%10) || !(j%10)) + (!(i%50) || !(j%50)) + (!(i%100) || !(j%100)));
+	     	    b -= dotsat/3*(0.7*(!(i%10) || !(j%10)) + (!(i%50) || !(j%50)) + (!(i%100) || !(j%100)));
+	     	  }
 	      }	    
 	    else
 	      {
@@ -1228,6 +1228,7 @@ int main(int argc, char **argv)
 		  png.plot(jj,ii,r,g,b);
 		}
 	  }
+
       png.close();
       for (i=0; i<q.L+2; i++) delete[] s[i];
       delete[] s;

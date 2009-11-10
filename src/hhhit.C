@@ -202,7 +202,9 @@ void Hit::AllocateForwardMatrix(int Nq, int Nt)
 	  fprintf(stderr,"3. Run on a computer with bigger memory\n");
 	  exit(3);
 	} 
-
+      for (int j=0; j<Nt; j++) 
+	F_MM[i][j]=F_MI[i][j]=F_DG[i][j]=F_IM[i][j]=F_GD[i][j]=0.0;
+	
     }
 }
 
@@ -247,6 +249,8 @@ void Hit::AllocateBackwardMatrix(int Nq, int Nt)
 	  fprintf(stderr,"3. Run on a computer with bigger memory\n");
 	  exit(3);
 	} 
+      for (int j=0; j<Nt; j++) 
+	B_MM[i][j]=0.0;
     }
 }
 
