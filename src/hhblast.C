@@ -83,7 +83,7 @@ char* ptr;                // pointer for string manipulation
 
 // HHblast variables
 
-const char HHBLAST_VERSION[]="version 1.4.4 (September 2009)";
+const char HHBLAST_VERSION[]="version 1.4.5 (November 2009)";
 const char HHBLAST_REFERENCE[]="to be published.\n";
 const char HHBLAST_COPYRIGHT[]="(C) Michael Remmert and Johannes Soeding\n";
 
@@ -920,6 +920,8 @@ void search_loop(char *dbfiles[], int ndb, bool alignByWorker=true)
 {
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Search databases
+  for (bin=0; bin<bins; bin++) {hit[bin]->realign_around_viterbi=false;}
+
   double filter_cutoff = par.filter_length*par.filter_thresh;
   par.filter_sum=par.filter_length;
   par.filter_counter=0;
@@ -1437,6 +1439,16 @@ void perform_realign(char *dbfiles[], int ndb)
 	  PrepareTemplate(q,*(t[bin]),format[bin]);
 	  t[bin]->Log2LinTransitionProbs(1.0);
 	  
+	  // Realign only around previous Viterbi hit
+	  hit[bin]->i1 = hit_cur.i1;
+	  hit[bin]->i2 = hit_cur.i2;
+	  hit[bin]->j1 = hit_cur.j1;
+	  hit[bin]->j2 = hit_cur.j2;
+	  hit[bin]->nsteps = hit_cur.nsteps;
+	  hit[bin]->i = hit_cur.i;
+	  hit[bin]->j = hit_cur.j;
+	  hit[bin]->realign_around_viterbi=true;
+
 	  // Align q to template in *hit[bin]
 	  hit[bin]->Forward(q,*(t[bin]));
 	  hit[bin]->Backward(q,*(t[bin]));
@@ -2344,7 +2356,7 @@ int main(int argc, char **argv)
   // Remove temp-files
   command = "rm " + (string)tmp_file + "*";
   runSystem(command);
-  //cout << "Command: " << command << "!\n";
+  // cerr << "Command: " << command << "!\n";
 
   exit(0);
 } //end main

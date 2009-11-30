@@ -108,10 +108,22 @@ void RealignByWorker(int bin)
         {
           //      fprintf(stderr,"  t->name=%s   hit_cur.irep=%i  hit[bin]->irep=%i  nhits=%i\n",t[bin]->name,hit_cur.irep,hit[bin]->irep,nhits);
           pos = hitlist.GetPos();
-#ifdef PTHREAD
+
+	  // Realign only around previous Viterbi hit
+	  hit[bin]->i1 = hit_cur.i1;
+	  hit[bin]->i2 = hit_cur.i2;
+	  hit[bin]->j1 = hit_cur.j1;
+	  hit[bin]->j2 = hit_cur.j2;
+	  hit[bin]->nsteps = hit_cur.nsteps;
+	  hit[bin]->i = hit_cur.i;
+	  hit[bin]->j = hit_cur.j;
+	  hit[bin]->realign_around_viterbi=true;
+
+ #ifdef PTHREAD
           pthread_mutex_unlock(&hitlist_mutex); // unlock access to hitlist
 #endif
-          // Align q to template in *hit[bin]
+
+         // Align q to template in *hit[bin]
           hit[bin]->Forward(q,*(t[bin]));
           hit[bin]->Backward(q,*(t[bin]));
           hit[bin]->MACAlignment(q,*(t[bin]));
@@ -134,6 +146,9 @@ void RealignByWorker(int bin)
           hit[bin]->logEval    = hit_cur.logEval;
           hit[bin]->E1val      = hit_cur.E1val;
           hit[bin]->Probab     = hit_cur.Probab;
+
+	  //fprintf(stderr,"Realign hit at position %4i (%s  index: %4i)\n",pos, hit[bin]->name, hit[bin]->index);
+	  //fprintf(stderr,"Irep: %2i  score: %6.2f   e-value: %6.2f   sum_probs: %6.2f\n", hit[bin]->irep, hit[bin]->score, hit[bin]->Eval, hit[bin]->sum_of_probs);
 
           // Replace original hit in hitlist with realigned hit
           //hitlist.ReadCurrent().Delete();

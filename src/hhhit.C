@@ -34,13 +34,13 @@ else           { max=var2; varb=MM;}; \
 if (var3>max)  { max=var3; varb=GD;}; \
 if (var4>max)  { max=var4; varb=IM;}; \
 if (var5>max)  { max=var5; varb=DG;}; \
-if (var6>max)  { varb=MI;}; 
+if (var6>max)  { max=var6; varb=MI;}; 
 
 #define CALCULATE_MAX4(max, var1, var2, var3, var4, varb) \
 if (var1>var2) { max=var1; varb=STOP;} \
 else           { max=var2; varb=MM;}; \
 if (var3>max)  { max=var3; varb=MI;}; \
-if (var4>max)  { varb=IM;}; 
+if (var4>max)  { max=var4; varb=IM;}; 
 
 // Generate random number in [0,1[
 #define frand() ((float) rand()/(RAND_MAX+1.0))
@@ -84,6 +84,7 @@ Hit::Hit()
   scale = NULL;
   sum_of_probs=0.0; 
   Neff_HMM=0.0;
+  realign_around_viterbi=false;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -467,7 +468,7 @@ void Hit::Forward(HMM& q, HMM& t, float** Pstruc)
   double Cshift = pow(2.0,par.shift);   // score offset transformed into factor in lin-space
   double Pmax_i;                        // maximum of F_MM in row i
   double scale_prod=1.0;                // Prod_i=1^i (scale[i])
-  int jmin;  
+  int jmin; 
 
   // First alignment of this pair of HMMs?
   if(irep==1) 
@@ -491,6 +492,48 @@ void Hit::Forward(HMM& q, HMM& t, float** Pstruc)
       t.tr[t.L][D2D] = 0.0;
       InitializeForAlignment(q,t);
     }	
+
+  if (realign_around_viterbi)
+    {
+      if (irep>1)
+	InitializeForAlignment(q,t);
+
+      int step;
+      // fprintf(stderr,"\nViterbi-hit  Query: %4i-%4i   Template %4i-%4i\n",i1,i2,j1,j2);
+      // fprintf(stderr,"Step Query Templ\n");
+      // for (step=nsteps; step>=1; step--)
+      // 	fprintf(stderr,"%4i  %4i %4i\n",step,this->i[step],this->j[step]);
+      
+      // Cross out regions
+      for (i=1; i<=q.L; i++) 
+	for (j=1; j<=t.L; j++) 
+	    if (!((i <= i1 && j <= j1) || (i >= i2 && j >= j2)))
+	      cell_off[i][j]=1;   
+      
+      // Clear Viterbi path
+      for (step=nsteps; step>=1; step--)
+	{
+	  int path_width=40;
+	  for (i=imax(1,this->i[step]-path_width); i <= imin(q.L,this->i[step]+path_width); i++)
+	    cell_off[i][this->j[step]]=0;
+	  for (j=imax(1,this->j[step]-path_width); j <= imin(t.L,this->j[step]+path_width); j++)
+	    cell_off[this->i[step]][j]=0;
+	}
+      
+      // DEBUG!!!
+      // fprintf(stdout,"\nCell_off Matrix:\n");
+      // fprintf(stdout,"----+----|----+----|----+----|----+----|----+----50---+----|----+----|----+----|----+----|----+---100");
+      // fprintf(stdout, "---+----|----+----|----+----|----+----|----+---150---+----|----+----|----+----|----+----|----+---200");
+      // fprintf(stdout, "---+----|----+----|----+----|----+----|----+---250---+----|----+----|----+----|----+----|----+---300");
+      // fprintf(stdout, "---+----|----+----|----+----|----+---340\n");
+      // for (j=1; j<=t.L; j++)
+      // 	{
+      // 	  for (i=1; i<=q.L; i++)
+      // 	    fprintf(stdout,"%1i", cell_off[i][j]);
+      // 	  fprintf(stdout,"\n");
+      // 	}
+
+    }
 
 
   // Initialization of top row, i.e. cells (0,j)
@@ -629,8 +672,8 @@ void Hit::Forward(HMM& q, HMM& t, float** Pstruc)
 // 	    printf("%7.4f ",F_MM[i][j]);
 // 	  printf("\n");
 	}
+      printf("Template=%-12.12s  score=%6.3f i2=%i  j2=%i \n",t.name,score,i2,j2);
     }
-//   printf("Template=%-12.12s  score=%6.3f i2=%i  j2=%i \n",t.name,score,i2,j2);
   return;
 }
 
@@ -871,8 +914,9 @@ void Hit::MACAlignment(HMM& q, HMM& t)
 	  printf("\n");
 	}
       printf("\n");
-      printf("Template=%-12.12s  i=%-4i j=%-4i score=%6.3f\n",t.name,i2,j2,score);
-    }  
+      printf("Template=%-12.12s  i=%-4i j=%-4i score=%6.3f\n",t.name,i2,j2,score_MAC);
+    }
+      
 
   return;
 }

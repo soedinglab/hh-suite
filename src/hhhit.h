@@ -74,6 +74,8 @@ class Hit
   float sum_of_probs;   // sum of probabilities for Maximum ACcuracy alignment (if dssp states defined, only aligned pairs with defined dssp state contribute to sum)
   float Neff_HMM;       // Diversity of underlying alignment
 
+  bool realign_around_viterbi;
+
   // Constructor (only set pointers to NULL)
   Hit();
   ~Hit(){};
