@@ -75,6 +75,8 @@ Hit::Hit()
   bMM = bGD = bDG = bIM = bMI = NULL;
   self = 0;
   i = j = NULL;
+  alt_i = new List<int>();
+  alt_j = new List<int>();
   states = NULL;
   S = S_ss = P_posterior = NULL;
   Xcons = NULL;
@@ -94,6 +96,8 @@ void Hit::Delete()
   {
     if (i) delete[] i; 
     if (j) delete[] j; 
+//     if (alt_i->Size()>0) delete alt_i;
+//     if (alt_j->Size()>0) delete alt_j;
     if (states) delete[] states; 
     if (S) delete[] S; 
     if (S_ss) delete[] S_ss; 
@@ -519,7 +523,21 @@ void Hit::Forward(HMM& q, HMM& t, float** Pstruc)
 	  for (j=imax(1,this->j[step]-path_width); j <= imin(t.L,this->j[step]+path_width); j++)
 	    cell_off[this->i[step]][j]=0;
 	}
-      
+
+      // Mask previous found alternative alignments
+      alt_i->Reset();
+      alt_j->Reset();
+      while (!alt_i->End())
+	{
+	  i=alt_i->ReadNext();
+	  j=alt_j->ReadNext();
+
+	  for (int ii=imax(i-2,1); ii<=imin(i+2,q.L); ii++)
+	    cell_off[ii][j]=1;     
+	  for (int jj=imax(j-2,1); jj<=imin(j+2,t.L); jj++)
+	    cell_off[i][jj]=1;
+	}
+
       // DEBUG!!!
       // fprintf(stdout,"\nCell_off Matrix:\n");
       // fprintf(stdout,"----+----|----+----|----+----|----+----|----+----50---+----|----+----|----+----|----+----|----+---100");
@@ -1320,6 +1338,8 @@ void Hit::BacktraceMAC(HMM& q, HMM& t)
       states[step] = state = b[i][j];
       this->i[step] = i;
       this->j[step] = j;
+      alt_i->Push(i);
+      alt_j->Push(j);
       // Exclude cells in direct neighbourhood from all further alignments
       for (int ii=imax(i-2,1); ii<=imin(i+2,q.L); ii++)
 	cell_off[ii][j]=1;     
@@ -1672,6 +1692,10 @@ void Hit::InitializeBacktrace(HMM& q, HMM& t)
   
   if (irep==1)
     {
+      if (alt_i->Size()>0) delete alt_i;
+      alt_i = new List<int>();
+      if (alt_j->Size()>0) delete alt_j;
+      alt_j = new List<int>();
       // Make flat copy for first alignment of template seqs to save speed
       for (int k=0; k<t.n_display; k++)
 	{

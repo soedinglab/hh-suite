@@ -119,7 +119,7 @@ void RealignByWorker(int bin)
 	  hit[bin]->j = hit_cur.j;
 	  hit[bin]->realign_around_viterbi=true;
 
- #ifdef PTHREAD
+#ifdef PTHREAD
           pthread_mutex_unlock(&hitlist_mutex); // unlock access to hitlist
 #endif
 
