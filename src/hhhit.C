@@ -631,6 +631,7 @@ void Hit::Forward(HMM& q, HMM& t, float** Pstruc)
 	} //end for j
 
       pmin *= scale[i];
+      if (pmin<DBL_MIN*100) pmin = 0.0;
       scale[i+1] = 1.0/(Pmax_i+1.0);
 //      scale[i+1] = 1.0;
      
@@ -670,7 +671,7 @@ void Hit::Forward(HMM& q, HMM& t, float** Pstruc)
     }
   
   // Debugging output
-  if (v>=6) 
+  if (v>=6)
     {
       const int i0=0, i1=q.L;
       const int j0=0, j1=t.L;
@@ -678,11 +679,11 @@ void Hit::Forward(HMM& q, HMM& t, float** Pstruc)
       printf("\nFwd      scale     ");
       for (j=j0; j<=j1; j++) printf("%3i     ",j);
       printf("\n");
-      for (i=i0; i<=i1; i++) 
+      for (i=i0; i<=i1; i++)
 	{
 	  scale_prod *= scale[i];
 	  printf("%3i: %9.3G ",i,1/scale_prod);
-	  for (j=j0; j<=j1; j++) 
+	  for (j=j0; j<=j1; j++)
 	    printf("%7.4f ",(F_MM[i][j]+F_MI[i][j]+F_IM[i][j]+F_DG[i][j]+F_GD[i][j]));
 	  printf("\n");
 // 	  printf(" MM  %9.5f ",1/scale[i]);
@@ -691,6 +692,7 @@ void Hit::Forward(HMM& q, HMM& t, float** Pstruc)
 // 	  printf("\n");
 	}
       printf("Template=%-12.12s  score=%6.3f i2=%i  j2=%i \n",t.name,score,i2,j2);
+      printf("\nForward total probability ratio: %8.3G\n",Pforward);
     }
   return;
 }
@@ -707,7 +709,7 @@ void Hit::Backward(HMM& q, HMM& t)
 
   // Variable declarations
   int i,j;      // query and template match state indices
-  double pmin=(par.loc? 1.0: 0.0);    // used to distinguish between SW and NW algorithms in maximization         
+  double pmin;  // this is the scaled 1 in the SW algorithm that represents a starting alignment         
   double Cshift = pow(2.0,par.shift);   // score offset transformed into factor in lin-space
   double scale_prod=scale[q.L+1];
   int jmin;
@@ -721,7 +723,7 @@ void Hit::Backward(HMM& q, HMM& t)
 	B_MM[q.L][j] = scale[q.L+1];
       B_IM[q.L][j] = B_MI[q.L][j] = B_DG[q.L][j] = B_GD[q.L][j] = 0.0;
     }
-  if (par.loc) pmin = scale[q.L+1]; // transform pmin (for local alignment) to scale of present (i'th) row 
+  if (par.loc) pmin = scale[q.L+1]; else pmin = 0.0; // transform pmin (for local alignment) to scale of present (i'th) row 
 
   // Backward algorithm
   for (i=q.L-1; i>=1; i--) // Loop through query positions i
@@ -732,12 +734,14 @@ void Hit::Backward(HMM& q, HMM& t)
 
       // Initialize cells at (i,t.L+1)
       scale_prod *= scale[i+1];
+      if (scale_prod<DBL_MIN*100) scale_prod = 0.0;
       if (cell_off[i][t.L]) 
 	B_MM[i][t.L] = 0.0;  
       else 
 	B_MM[i][t.L] = scale_prod;
       B_IM[i][t.L] = B_MI[i][t.L] = B_DG[i][t.L] = B_GD[i][t.L] = 0.0; 
       pmin *= scale[i+1]; // transform pmin (for local alignment) to scale of present (i'th) row 
+      if (pmin<DBL_MIN*100) pmin = 0.0;
  
       for (j=t.L-1; j>=jmin; j--) // Loop through template positions j
 	{
@@ -1568,18 +1572,20 @@ void Hit::InitializeForAlignment(HMM& q, HMM& t)
 	  // printf("cells total     : %i\n",q.L*t.L);
 	  //printf("Ersparnis       : %4.2f %%\n",(double)after/(double)(q.L*t.L)*100.0);
 
-	  // Cross out cells that are excluded by the minimum-overlap criterion
-	  if (par.min_overlap==0) 
-	    min_overlap = imin(60, (int)(0.333f*imin(q.L,t.L))+1); // automatic minimum overlap
-	  else 
-	    min_overlap = imin(par.min_overlap, (int)(0.8f*imin(q.L,t.L)));
+	  min_overlap = 0;
 
-	  for (i=0; i<min_overlap; i++) 
-	    for (j=i-min_overlap+t.L+1; j<=t.L; j++) // Lt-j+i>=Ovlap => j<=i-Ovlap+Lt => jmax=min{Lt,i-Ovlap+Lt} 
-	      cell_off[i][j]=1;
-	  for (i=q.L-min_overlap+1; i<=q.L; i++) 
-	    for (j=1; j<i+min_overlap-q.L; j++)      // Lq-i+j>=Ovlap => j>=i+Ovlap-Lq => jmin=max{1, i+Ovlap-Lq} 
-	      cell_off[i][j]=1;
+	  // Cross out cells that are excluded by the minimum-overlap criterion
+	  // if (par.min_overlap==0) 
+	  //   min_overlap = imin(60, (int)(0.333f*imin(q.L,t.L))+1); // automatic minimum overlap
+	  // else 
+	  //   min_overlap = imin(par.min_overlap, (int)(0.8f*imin(q.L,t.L)));
+
+	  // for (i=0; i<min_overlap; i++) 
+	  //   for (j=i-min_overlap+t.L+1; j<=t.L; j++) // Lt-j+i>=Ovlap => j<=i-Ovlap+Lt => jmax=min{Lt,i-Ovlap+Lt} 
+	  //     cell_off[i][j]=1;
+	  // for (i=q.L-min_overlap+1; i<=q.L; i++) 
+	  //   for (j=1; j<i+min_overlap-q.L; j++)      // Lq-i+j>=Ovlap => j>=i+Ovlap-Lq => jmin=max{1, i+Ovlap-Lq} 
+	  //     cell_off[i][j]=1;
 
 	}
       else 
