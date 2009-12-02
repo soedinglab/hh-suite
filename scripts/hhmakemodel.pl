@@ -840,6 +840,7 @@ sub FormatSequences()
 	    
 	    my $descrtmp=$descr;
 	    $descrtmp=~tr/:/;/;
+	    $organism=~tr/://d;
 	    push (@{$p_hitnames}, sprintf(">P1;%s\nstructureX:%4s: :%1s: :%1s:%s:%s:%-.2f:%-.2f\n",$struc,$struc,$chain,$chain,$descrtmp,$organism,$resolution,$rvalue) );
 	    push (@{$p_hitdiag}, $tfirst-$qfirst);
 	} else {
@@ -1170,6 +1171,7 @@ sub ExtractPdbcodeAndChain()
 	if (-e "$pdbdir/pdb$pdbcode.ent") {$pdbfile="$pdbdir/pdb$pdbcode.ent"; last;}
 	if (-e "$pdbdir/$pdbcode.pdb")    {$pdbfile="$pdbdir/$pdbcode.pdb"; last;}
 	if (-e "$pdbdir/$name.pdb")       {$pdbfile="$pdbdir/$name.pdb"; last;}
+	if (-e "$pdbdir/$pdbcode"."_$chain.pdb")    {$pdbfile="$pdbdir/$pdbcode"."_$chain.pdb"; last;}
     }
    return 0;
 }
