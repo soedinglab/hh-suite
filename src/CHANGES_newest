@@ -279,6 +279,7 @@ HHsearch 1.6.0 sometime in 2009
 * Removed a bug in hhalign that could lead to unreasonably significant E-values 
   and probabilities due to calibration problems.
 
+* Perform realign with MAC-alignment only around Viterbi-hit
 
 -->
 
