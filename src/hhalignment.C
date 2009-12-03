@@ -948,7 +948,6 @@ int Alignment::Filter2(char keep[], int coverage, int qid, float qsc, int seqid1
           if (seqid==seqid_prev[k]) continue; // sequence has already been rejected at this seqid threshold => reject this time
           seqid_prev[k]=seqid;
           diff_min_frac =0.9999-0.01*seqidk;  // min fraction of differing positions between sequence j and k needed to accept sequence k
-
           // Loop over already accepted sequences
           for (jj=0; jj<kk; jj++)
             {
@@ -970,7 +969,7 @@ int Alignment::Filter2(char keep[], int coverage, int qid, float qsc, int seqid1
 //            // DEBUG
 //            printf("%20.20s with %20.20s:  diff=%i  diff_min_frac*cov_kj=%f  diff_suff=%i  nres=%i  cov_kj=%i\n",sname[k],sname[j],diff,diff_min_frac*cov_kj,diff_suff,nres[k],cov_kj);
 //            printf("%s\n%s\n\n",seq[k],seq[j]);
-              if (float(diff)<fmin(diff_min_frac*cov_kj,diff_suff)) break; //similarity > acceptace threshold? Reject!
+              if (float(diff)<=fmin(diff_min_frac*cov_kj,diff_suff)) break; //similarity > acceptace threshold? Reject!
 
             }
           if (jj>=kk)      // did loop reach end? => accept k. Otherwise reject k (the shorter of the two)
