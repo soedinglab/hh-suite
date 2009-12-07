@@ -503,7 +503,7 @@ void Hit::Forward(HMM& q, HMM& t, float** Pstruc)
 	InitializeForAlignment(q,t);
 
       int step;
-      // fprintf(stderr,"\nViterbi-hit  Query: %4i-%4i   Template %4i-%4i\n",i1,i2,j1,j2);
+      // fprintf(stdout,"\nViterbi-hit (Index: %i  Irep: %i) Query: %4i-%4i   Template %4i-%4i\n",index,irep,i1,i2,j1,j2);
       // fprintf(stderr,"Step Query Templ\n");
       // for (step=nsteps; step>=1; step--)
       // 	fprintf(stderr,"%4i  %4i %4i\n",step,this->i[step],this->j[step]);
@@ -545,12 +545,11 @@ void Hit::Forward(HMM& q, HMM& t, float** Pstruc)
       // fprintf(stdout, "---+----|----+----|----+----|----+----|----+---250---+----|----+----|----+----|----+----|----+---300");
       // fprintf(stdout, "---+----|----+----|----+----|----+---340\n");
       // for (j=1; j<=t.L; j++)
-      // 	{
-      // 	  for (i=1; i<=q.L; i++)
-      // 	    fprintf(stdout,"%1i", cell_off[i][j]);
-      // 	  fprintf(stdout,"\n");
-      // 	}
-
+      //  	{
+      //  	  for (i=1; i<=q.L; i++)
+      //  	    fprintf(stdout,"%1i", cell_off[i][j]);
+      //  	  fprintf(stdout,"\n");
+      //  	}
     }
 
 
@@ -1476,6 +1475,12 @@ void Hit::InitializeForAlignment(HMM& q, HMM& t)
 {
   int i,j;
 
+  if (irep == 1) {
+    if (alt_i->Size()>0) delete alt_i;
+    alt_i = new List<int>();
+    if (alt_j->Size()>0) delete alt_j;
+    alt_j = new List<int>();
+  }
   // SS scoring during (ssm2>0) or after (ssm1>0) alignment? Query SS known or Template SS known?
   switch (par.ssm) 
     {
@@ -1698,10 +1703,6 @@ void Hit::InitializeBacktrace(HMM& q, HMM& t)
   
   if (irep==1)
     {
-      if (alt_i->Size()>0) delete alt_i;
-      alt_i = new List<int>();
-      if (alt_j->Size()>0) delete alt_j;
-      alt_j = new List<int>();
       // Make flat copy for first alignment of template seqs to save speed
       for (int k=0; k<t.n_display; k++)
 	{
