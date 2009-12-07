@@ -956,20 +956,19 @@ int Alignment::Filter2(char keep[], int coverage, int qid, float qsc, int seqid1
               first_kj=imax(first[k],first[j]);
               last_kj =imin(last[k],last[j]);
               cov_kj = last_kj-first_kj+1;
-              diff_suff=int(diff_min_frac*imin(nres[k],cov_kj));  // nres[j]>nres[k] anyway because of sorting
+              diff_suff=int(diff_min_frac*imin(nres[k],cov_kj)+0.999);  // nres[j]>nres[k] anyway because of sorting
               diff=0;
               for (int i=first_kj; i<=last_kj; i++)
                 {
                   // enough different residues to accept? => break
-                  if (X[k][i]>=NAA || X[j][i]>=NAA)
-                    cov_kj--;
+                  if (X[k][i]>=NAA || X[j][i]>=NAA) cov_kj--;
                   else
                     if (X[k][i]!=X[j][i] && ++diff>=diff_suff) break; // accept (k,j)
                 }
 //            // DEBUG
 //            printf("%20.20s with %20.20s:  diff=%i  diff_min_frac*cov_kj=%f  diff_suff=%i  nres=%i  cov_kj=%i\n",sname[k],sname[j],diff,diff_min_frac*cov_kj,diff_suff,nres[k],cov_kj);
 //            printf("%s\n%s\n\n",seq[k],seq[j]);
-              if (float(diff)<=fmin(diff_min_frac*cov_kj,diff_suff)) break; //similarity > acceptace threshold? Reject!
+              if (diff<diff_suff && float(diff)<=diff_min_frac*cov_kj) break; //dissimilarity < acceptace threshold? Reject!
 
             }
           if (jj>=kk)      // did loop reach end? => accept k. Otherwise reject k (the shorter of the two)
