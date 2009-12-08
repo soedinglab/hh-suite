@@ -453,6 +453,14 @@ void Alignment::Compress(const char infile[])
         }
       if (unequal_lengths) break;
 
+      //Replace GAP with ENDGAP for all end gaps
+      for (k=0; k<N_in; k++)
+	{
+	  if (!keep[k]) continue;
+	  for (i=1; i<=L && X[k][i]==GAP; i++) X[k][i]=ENDGAP;
+	  for (i=L; i>=1 && X[k][i]==GAP; i--) X[k][i]=ENDGAP;
+	}
+
       for (i=1; i<=L; i++) this->l[i]=i; //assign column indices to match states
       if (L<=0)
         {
@@ -508,15 +516,28 @@ void Alignment::Compress(const char infile[])
 	      // wg[k] += 1.0/float(nl[ (int)X[k][l]]*(nres[k]+30.0));
  	      // wg[k] += (naa-1.0)/float(nl[ (int)X[k][l]]*(nres[k]+30.0));
         }
+
+      //Replace GAP with ENDGAP for all end gaps
+      for (k=0; k<N_in; k++)
+	{
+	  if (!keep[k]) continue;
+	  for (i=1; i<=L && X[k][i]==GAP; i++) X[k][i]=ENDGAP;
+	  for (i=L; i>=1 && X[k][i]==GAP; i--) X[k][i]=ENDGAP;
+	}
+
       // Add up percentage of gaps
       for (l=1; l<=L; l++)
         {
           float res=0;
           float gap=0;
           for (k=0; k<  N_in; k++)
-            if (keep[k] && X[k][l]<20) res+=wg[k]; else  gap+=wg[k]; // else: ANY, GAP or ENDGAP
+            if (keep[k]) 
+	      {
+		if (X[k][l]<20) res+=wg[k]; 
+		else if (X[k][l]!=ENDGAP) gap+=wg[k]; // else: ANY or GAP. ENDGAPs are ignored for counting percentage
+	      }
           percent_gaps[l]=100.*gap/(res+gap);
-          if (v>=4) cout<<"percent gaps["<<l<<"]="<<percent_gaps[l]<<"\n";
+          if (v>=1) cout<<"percent gaps["<<l<<"]="<<percent_gaps[l]<<" first seq:"<<seq[0][l]<<"\n";
         }
       // Throw out insert states and keep only match states
       i=0;
@@ -640,6 +661,14 @@ void Alignment::Compress(const char infile[])
         }
       for (k=0; k<N_in; k++) seq[k][h[k]]='\0';
 
+      //Replace GAP with ENDGAP for all end gaps
+      for (k=0; k<N_in; k++)
+	{
+	  if (!keep[k]) continue;
+	  for (i=1; i<=L && X[k][i]==GAP; i++) X[k][i]=ENDGAP;
+	  for (i=L; i>=1 && X[k][i]==GAP; i--) X[k][i]=ENDGAP;
+	}
+
       if (v>=2) cout<<"Alignment in "<<infile<<" contains "<<L<<" columns and "<<i<<" match states\n";
       L = i;        //Number of match states
       break;
@@ -666,14 +695,6 @@ void Alignment::Compress(const char infile[])
             printf("NOTE: Use the '-cons' option to calculate a consensus sequence as first sequence of the alignment.\n");
             break;
           }
-    }
-
-  //Replace GAP with ENDGAP for all end gaps
-  for (k=0; k<N_in; k++)
-    {
-      if (!keep[k]) continue;
-      for (i=1; i<=L && X[k][i]==GAP; i++) X[k][i]=ENDGAP;
-      for (i=L; i>=1 && X[k][i]==GAP; i--) X[k][i]=ENDGAP;
     }
 
   // DEBUG
