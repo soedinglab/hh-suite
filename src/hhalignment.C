@@ -537,7 +537,7 @@ void Alignment::Compress(const char infile[])
 		else if (X[k][l]!=ENDGAP) gap+=wg[k]; // else: ANY or GAP. ENDGAPs are ignored for counting percentage
 	      }
           percent_gaps[l]=100.*gap/(res+gap);
-          if (v>=1) cout<<"percent gaps["<<l<<"]="<<percent_gaps[l]<<" first seq:"<<seq[0][l]<<"\n";
+          if (v>=4) cout<<"percent gaps["<<l<<"]="<<percent_gaps[l]<<" first seq:"<<seq[0][l]<<"\n";
         }
       // Throw out insert states and keep only match states
       i=0;
