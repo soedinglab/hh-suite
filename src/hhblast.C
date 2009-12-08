@@ -83,7 +83,7 @@ char* ptr;                // pointer for string manipulation
 
 // HHblast variables
 
-const char HHBLAST_VERSION[]="version 1.4.7 (December 2009)";
+const char HHBLAST_VERSION[]="version 1.4.8 (December 2009)";
 const char HHBLAST_REFERENCE[]="to be published.\n";
 const char HHBLAST_COPYRIGHT[]="(C) Michael Remmert and Johannes Soeding\n";
 
@@ -748,16 +748,74 @@ void CheckInputFiles()
       if (*a3m_infile && strcmp(a3m_infile,"")) 
 	{
 	  strcpy(par.infile,a3m_infile);
+
+	  //Check if first sequence (query) has gaps or insert - in this case create a consensus sequence
+	  bool consensus_needed = false;
+	  FILE* inf = NULL;
+	  inf = fopen(a3m_infile,"rb");
+	  if (!inf) OpenFileError(a3m_infile);
+	  while(fgetline(line,LINELEN,inf))
+	    {
+	      if (line[0] == '>' && strncmp(line,">ss",3) && strncmp(line,">sa",3))
+		break;
+	    }
+	  while(fgetline(line,LINELEN,inf))
+	    {
+	      if (line[0] == '>')
+		break;
+	      if (strtrd(line, "abcdefghijklmnopqrstuvwxyz-") > 0)
+		consensus_needed = true;
+	    }
+	  fclose(inf);
+	  if (consensus_needed)
+	    {
+	      int v1=v;
+	      if (v<=3) v=1; else v-=2;
+	      char cons_tmp = par.cons;
+	      par.cons = 1;
+	      strcpy(par.infile,tmp_file);
+	      strcat(par.infile,".a3m");
+	      HMM q_tmp;
+	      Alignment* qali_tmp=new(Alignment);
+	      // Calculate consensus sequence in Alignment::FrequenciesAndTransitions()
+	      ReadAndPrepare(a3m_infile, q_tmp, qali_tmp);
+	      
+	      // Write new alignment with consensus sequence
+	      FILE* inf = NULL;
+	      FILE* outf = NULL;
+	      inf = fopen(a3m_infile,"rb");
+	      outf = fopen(par.infile,"w");
+	      if (!inf) OpenFileError(a3m_infile);
+	      if (!outf) OpenFileError(par.infile);
+	      while(fgetline(line,LINELEN,inf))
+		{
+		  if (line[0] == '>' && strncmp(line,">ss",3) && strncmp(line,">sa",3))
+		    break;
+		  fprintf(outf,"%s\n",line);
+		}
+	      fprintf(outf,">%s\n%s\n",q_tmp.sname[q_tmp.nfirst],q_tmp.seq[q_tmp.nfirst]+1);
+	      fprintf(outf,"%s\n",line);
+	      while(fgetline(line,LINELEN,inf))
+		  fprintf(outf,"%s\n",line);
+	      fclose(inf);
+	      fclose(outf);
+
+	      par.cons = cons_tmp;
+	      v=v1;
+	      delete qali_tmp;
+	    }
+
+	  // Create PSI-file
 	  if (*psi_infile && strcmp(psi_infile,"")) 
 	    {
-	      command = (string)hh + "/reformat.pl psi psi " + (string)psi_infile + " " + tmp_psifile + " -r -M first > /dev/null";
+	      //command = (string)hh + "/reformat.pl psi psi " + (string)psi_infile + " " + tmp_psifile + " -r -M first > /dev/null";
+	      {help(); cerr<<endl<<"Error in "<<program_name<<": don't use -a3m and -psi together!\n"; exit(4);}
 	    }
 	  else
 	    {
-	      command = (string)hh + "/reformat.pl a3m psi " + (string)a3m_infile + " " + tmp_psifile + " -r > /dev/null";
+	      command = (string)hh + "/reformat.pl a3m psi " + (string)par.infile + " " + tmp_psifile + " -r > /dev/null";
 	    }
 	  runSystem(command);
-	  strcpy(par.infile,a3m_infile);
 	  RemoveExtension(base_filename,a3m_infile);
 	}
       else
@@ -805,7 +863,20 @@ void CheckInputFiles()
     }
   else 
     {
-      // TODO! Check for single sequence in FASTA!!!
+      // Check for single sequence in FASTA!!!
+      int sequence_count = 0;
+      FILE* inf = NULL;
+      inf = fopen(par.infile,"rb");
+      if (!inf) OpenFileError(par.infile);
+      while(fgetline(line,LINELEN,inf))
+	{
+	  if (line[0] == '>')
+	    sequence_count++;
+	}
+      if (sequence_count == 0)
+	{help(); cerr<<endl<<"Error in "<<program_name<<": Input sequence must be in FASTA format!\n"; exit(4);}
+      else if (sequence_count > 1)
+	{help(); cerr<<endl<<"Error in "<<program_name<<": Use -a3m or -psi when starting HHblast with an alignment!\n"; exit(4);}
 
       // Copy infile to tmp_file.fas as input for the BLAST prefilter searches
       command = (string)hh + "/reformat.pl fas fas " + (string)par.infile + " " + tmp_infile + " > /dev/null";
@@ -1811,9 +1882,6 @@ int main(int argc, char **argv)
   }
   tmp_infile = (string)tmp_file + ".fas";
   tmp_psifile = (string)tmp_file + ".psi";
-
-  // Check input files
-  CheckInputFiles();
   
   // Check for threads
   if (threads<=1) threads=0;
@@ -1859,6 +1927,15 @@ int main(int argc, char **argv)
     {cerr<<endl<<"Error in "<<program_name<<": Could not determine DB-size of prefilter db ("<<db<<")\n"; exit(4);}
   par.hhblast_prefilter_logpval=-log(e_psi / dbsize);
 
+  // Set secondary structure substitution matrix
+  if (par.ssm) SetSecStrucSubstitutionMatrix();
+
+  // Set (global variable) substitution matrix and derived matrices
+  SetSubstitutionMatrix();
+
+  // Check input files
+  CheckInputFiles();
+
   // Input parameters
   if (v>=3)
     {
@@ -1869,12 +1946,6 @@ int main(int argc, char **argv)
       cout<<"HHM DB           :   "<<dbhhm<<"\n";
       cout<<"Prefilter Pval   :   "<<(e_psi / dbsize)<<"\n";
     }
-
-  // Set secondary structure substitution matrix
-  if (par.ssm) SetSecStrucSubstitutionMatrix();
-
-  // Set (global variable) substitution matrix and derived matrices
-  SetSubstitutionMatrix();
 
   int v1=v;
   if (v<=3) v=1; else v-=2;
