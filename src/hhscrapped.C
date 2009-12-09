@@ -400,7 +400,7 @@ double HitList::LogPosteriorEVD_static(void* pt2hitlist, double* v)
 }
 
 
-  // Needed to fit the correlation and score offset in HHblast
+  // Needed to fit the correlation and score offset in HHblitss
   double PvalueDeviationSquared(double* v);
   // Static wrapper-function for calling the nonstatic member function PvalueDeviationSquared() 
   static double PvalueDeviationSquared_static(void* pt2hitlist, double* v);
@@ -412,12 +412,12 @@ double HitList::PvalueDeviationSquared(double* v)
 //   printf("%8.2G  %8.2G  %i\n",v[0],v[1],Nprof);
   for (int i=0; i<imax(int(0.1*Nprof),imin(50,Nprof)); i++)
     {
-      double x = Pvalue_HHblast(fmax(0.0,score[i]+v[1]),v[0]);
+      double x = Pvalue_HHblitss(fmax(0.0,score[i]+v[1]),v[0]);
       sum -= weight[i]*(i*log(x)+(Nprof-i-1)*log(1-x));
-//       x = Pvalue_HHblast(score[i]+v[1],v[0]) - float(i+1)/(1.0+Nprof);
+//       x = Pvalue_HHblitss(score[i]+v[1],v[0]) - float(i+1)/(1.0+Nprof);
 //       sum += weight[i]*fabs(x);
 //       sumw += weight[i];
-//        printf("%-3i  Pval=%7.5f  Preal=%7.5f  diff=%7.5f  rmsd=%7.5f  sum=%7.5f\n",i,Pvalue_HHblast(score[i],v[0]),float(i)/(1.0+Nprof),x,sqrt(sum/sumw),sum);
+//        printf("%-3i  Pval=%7.5f  Preal=%7.5f  diff=%7.5f  rmsd=%7.5f  sum=%7.5f\n",i,Pvalue_HHblitss(score[i],v[0]),float(i)/(1.0+Nprof),x,sqrt(sum/sumw),sum);
     }
   double prior = (v[0]<=FLT_MIN || 1-v[0]<=FLT_MIN)? FLT_MAX: -log(v[0]*(1-v[0])) + 0.5*v[1]*v[1];
   return sum + prior;

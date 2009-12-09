@@ -598,7 +598,7 @@ void ProcessArguments(int argc, char** argv)
       else if (!strncmp(argv[i],"-idummy",7) && (i<argc-1)) par.idummy=atoi(argv[++i]);
       else if (!strncmp(argv[i],"-jdummy",7) && (i<argc-1)) par.jdummy=atoi(argv[++i]);
       else if (!strncmp(argv[i],"-fdummy",7) && (i<argc-1)) par.fdummy=atof(argv[++i]);
-      else if (!strncmp(argv[i],"-hhb_pval",8) && (i<argc-1)) par.hhblast_prefilter_logpval=-log(atof(argv[++i]));
+      else if (!strncmp(argv[i],"-hhb_pval",8) && (i<argc-1)) par.hhblitss_prefilter_logpval=-log(atof(argv[++i]));
       else if (!strcmp(argv[i],"-csb") && (i<argc-1)) par.csb=atof(argv[++i]);
       else if (!strcmp(argv[i],"-csw") && (i<argc-1)) par.csw=atof(argv[++i]);
       else if (!strcmp(argv[i],"-cs"))
@@ -1074,19 +1074,19 @@ int main(int argc, char **argv)
     hitlist.GetPvalsFromCalibration(q);
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  // HHblast: read BLAST file with P-values?
+  // HHblitss: read BLAST file with P-values?
 //   if (par.blafile)
 //     {
 //       hitlist.ReadBlastFile(q);
 
-//       // Calculate composite P-values/E-values for HHblast from HHsearch and PSI-BLAST P-values
-//       hitlist.CalculateHHblastEvalues(q);
+//       // Calculate composite P-values/E-values for HHblitss from HHsearch and PSI-BLAST P-values
+//       hitlist.CalculateHHblitssEvalues(q);
 //     }
 
-  // Calculate corrected E-values for HHblast by NN prediction of correlation of PSI-BLAST and HHsearch P-values
-  if (par.hhblast_prefilter_logpval)
+  // Calculate corrected E-values for HHblitss by NN prediction of correlation of PSI-BLAST and HHsearch P-values
+  if (par.hhblitss_prefilter_logpval)
     {
-      hitlist.CalculateHHblastEvalues(q);
+      hitlist.CalculateHHblitssEvalues(q);
     }
 
   // Optimization mode?
