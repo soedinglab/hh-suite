@@ -14,7 +14,7 @@ public:
   int fams;                     // number of families found found in hitlist
   int sfams;                    // number of superfamilies found in hitlist
   int N_searched;               // number of sequences searched from HMM database
-  Hash<float>* blast_logPvals;  // Hash containing names and log(P-values) read from BLAST file (needed for HHblitss)
+  Hash<float>* blast_logPvals;  // Hash containing names and log(P-values) read from BLAST file (needed for HHblits)
 
   HitList() {blast_logPvals=NULL;}
   ~HitList() {if (blast_logPvals) delete blast_logPvals;}
@@ -46,8 +46,8 @@ public:
   // Do a maximum likelihood fit of the scores with an EV distribution with parameters lamda and mu 
   void MaxLikelihoodEVD(HMM& q, int nbest);
   
-  // Calculate HHblitss composite E-values 
-  void CalculateHHblitssEvalues(HMM& q);
+  // Calculate HHblits composite E-values 
+  void CalculateHHblitsEvalues(HMM& q);
 
   // Calculate Pvalues as a function of query and template lengths and diversities
   void CalculatePvalues(HMM& q);
@@ -55,7 +55,7 @@ public:
   // Set P-values, E-values and scores according to q.lamda and q.mu (if calibration from database scan is impossible)  
   void GetPvalsFromCalibration(HMM& q);
 
-  // HHblitss: read PSI-BLAST E-values to determine correlation
+  // HHblits: read PSI-BLAST E-values to determine correlation
   void ReadBlastFile(HMM& q);
 
   // Print first 20 hits of hitlist

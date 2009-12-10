@@ -536,8 +536,8 @@ void SetDefaults()
 
   par.notags=1;                // neutralize His-tags, FLAG-tags, C-myc-tags
 
-  // HHblitss parameters
-  par.hhblitss_prefilter_logpval=0;
+  // HHblits parameters
+  par.hhblits_prefilter_logpval=0;
 
   par.filter_thresh=0;
   par.filter_length=200;
@@ -550,7 +550,7 @@ void SetDefaults()
   par.block_shading_space = 100;
   strcpy(par.block_shading_mode,"tube");
 
-  // for filtering database alignments in HHsearch and HHblitss
+  // for filtering database alignments in HHsearch and HHblits
   par.max_seqid_db=par.max_seqid;
   par.qid_db=par.qid;            
   par.qsc_db=par.qsc;            

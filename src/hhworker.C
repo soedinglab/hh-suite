@@ -37,7 +37,7 @@ void AlignByWorker(int bin)
 #endif
       hitlist.Push(*(hit[bin]));            // insert hit at beginning of list (last repeats first!)
 
-      if (par.hhblitss_prefilter_logpval!=0)
+      if (par.hhblits_prefilter_logpval!=0)
 	{
 	  // Calculate Evalue
 	  float q_len = log(q.L)/LOG1000;
@@ -49,8 +49,8 @@ void AlignByWorker(int bin)
 	  hit[bin]->logPval = logPvalue(hit[bin]->score,lamda,mu);
 	  float alpha = alpha_NN( q_len, hit_len, q_neff, hit_neff ); 
 	  float beta = beta_NN( q_len, hit_len, q_neff, hit_neff );
-	  hit[bin]->Eval = exp(hit[bin]->logPval+log(hitlist.N_searched)+(alpha*par.hhblitss_prefilter_logpval - beta));
-	  hit[bin]->logEval = hit[bin]->logPval+log(hitlist.N_searched)+(alpha*par.hhblitss_prefilter_logpval - beta);
+	  hit[bin]->Eval = exp(hit[bin]->logPval+log(hitlist.N_searched)+(alpha*par.hhblits_prefilter_logpval - beta));
+	  hit[bin]->logEval = hit[bin]->logPval+log(hitlist.N_searched)+(alpha*par.hhblits_prefilter_logpval - beta);
 
 	  par.filter_sum -= par.filter_evals[par.filter_counter];
 	  par.filter_evals[par.filter_counter] = 1/(1+hit[bin]->Eval);

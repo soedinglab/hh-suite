@@ -76,8 +76,8 @@ public:
   char buffer[NAMELEN];   // buffer to write results for other programs into
   char pngfile[NAMELEN];  // png image file for dotplot
   char wfile[NAMELEN];    // weights file generated with hhformat
-  char* blafile;          // output of 'blastpgp -m 8' with PSI-BLAST E-values for HHblitss
-  float hhblitss_prefilter_logpval;  // PSI-BLAST prefilter log P-value threshold of HHblitss
+  char* blafile;          // output of 'blastpgp -m 8' with PSI-BLAST E-values for HHblits
+  float hhblits_prefilter_logpval;  // PSI-BLAST prefilter log P-value threshold of HHblits
   char* dbfiles;          // database filenames, separated by colons
   char* exclstr;          // optional string containing list of excluded residues, e.g. '1-33,97-168'
   int aliwidth;           // number of characters per line in output alignments for HMM search
@@ -168,7 +168,7 @@ public:
   float csw;
   char clusterfile[NAMELEN];
 
-  // For filtering database alignments in HHsearch and HHblitss
+  // For filtering database alignments in HHsearch and HHblits
   int max_seqid_db;
   int qid_db;      
   float qsc_db;    
@@ -181,8 +181,8 @@ public:
   double filter_sum;       // sum of evalues in array
   int filter_counter;      // counter for evalue array
 
-  Hash<int*>* block_shading;         // Cross out cells not covered by prefiltering hit in HHblitss
-  Hash<int>* block_shading_counter;  // Cross out cells not covered by prefiltering hit in HHblitss
+  Hash<int*>* block_shading;         // Cross out cells not covered by prefiltering hit in HHblits
+  Hash<int>* block_shading_counter;  // Cross out cells not covered by prefiltering hit in HHblits
   int block_shading_space;           // space added to the rands of prefilter HSP
   char block_shading_mode[NAMELEN];
 

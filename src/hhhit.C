@@ -1629,7 +1629,7 @@ void Hit::InitializeForAlignment(HMM& q, HMM& t)
 		      cell_off[i][j]=1; 
 		}
 	    }
-	  // Cross out cells not contained in the range of the prefiltering in HHblitss
+	  // Cross out cells not contained in the range of the prefiltering in HHblits
 	  if (par.block_shading && par.block_shading->Contains(t.name))
 	    {
 	      int* tmp = par.block_shading->Show(t.name);

@@ -1,7 +1,7 @@
-// hhblitss.C:
+// hhblits.C:
 // Iterative search for a multiple alignment in a profile HMM database
-// Compile:              g++ hhblitss.C -o hhblitss -O3 -lpthread -lrt -fno-strict-aliasing
-// Compile for Valgrind: g++ hhblitss.C -o hhblitss_valgrind -lpthread -lrt -O -g
+// Compile:              g++ hhblits.C -o hhblits -O3 -lpthread -lrt -fno-strict-aliasing
+// Compile for Valgrind: g++ hhblits.C -o hhblits_valgrind -lpthread -lrt -O -g
 //
 // Error codes: 0: ok  1: file format error  2: file access error  3: memory error  4: command line error  6: internal logic error  7: internal numeric error
 
@@ -77,15 +77,15 @@ char line[LINELEN]="";         // input line
 int bin;                       // bin index
 const char print_elapsed=0;
 string command;
-char tmp_file[]="/tmp/hhblitssXXXXXX";
+char tmp_file[]="/tmp/hhblitsXXXXXX";
 char dummydb [NAMELEN];
 char* ptr;                // pointer for string manipulation
 
-// HHblitss variables
+// HHblits variables
 
-const char HHBLITSS_VERSION[]="version 1.5.0 (December 2009)";
-const char HHBLITSS_REFERENCE[]="to be published.\n";
-const char HHBLITSS_COPYRIGHT[]="(C) Michael Remmert and Johannes Soeding\n";
+const char HHBLITS_VERSION[]="version 1.5.0 (December 2009)";
+const char HHBLITS_REFERENCE[]="to be published.\n";
+const char HHBLITS_COPYRIGHT[]="(C) Michael Remmert and Johannes Soeding\n";
 
 int num_rounds   = 2;                  // number of iterations
 float e_psi      = 100;                // E-value cutoff for prefiltering
@@ -110,7 +110,7 @@ string tmp_infile="";
 // Read from config-file:
 char db[NAMELEN];                    // BLAST formatted database with consensus sequences
 char dbhhm[NAMELEN];                 // directory with database HMMs
-char hh[NAMELEN];                    // directory with hhblitss
+char hh[NAMELEN];                    // directory with hhblits
 char pre_mode[NAMELEN];              // prefilter mode (csblast or blast)
 char blast[NAMELEN];                 // BLAST binaries (not needed with csBLAST)
 char csblast[NAMELEN];               // csBLAST binaries (not needed with BLAST)
@@ -282,10 +282,10 @@ void runSystem(string cmd)
 void help()
 {
   printf("\n");
-  printf("HHblitss %s\n",HHBLITSS_VERSION);
-  printf("Fast homology detection method HHblitss to iteratively search a filtered NR HMM database.\n");
-  printf("%s",HHBLITSS_REFERENCE);
-  printf("%s",HHBLITSS_COPYRIGHT);
+  printf("HHblits %s\n",HHBLITS_VERSION);
+  printf("Fast homology detection method HHblits to iteratively search a filtered NR HMM database.\n");
+  printf("%s",HHBLITS_REFERENCE);
+  printf("%s",HHBLITS_COPYRIGHT);
   printf("\n");
   printf("Usage: %s -i query [options]                                                             \n",program_name);
   printf("\n");
@@ -300,9 +300,9 @@ void help()
   printf(" -e_psi [1,inf[ E-value cutoff for prefiltering (default=%-.2f)                          \n",e_psi); 
   printf("\n");
   printf("Input options:                                                                           \n");
-  printf(" -a3m <file>    A3M alignment to restart HHblitss ('A3M' format)                         \n");
-  printf(" -psi <file>    PSI-BLAST alignment file to restart HHblitss ('PSI' format)              \n");
-  printf(" -hhm <file>    HMM File to restart HHblitss (in combination with -psi or -a3m)          \n");
+  printf(" -a3m <file>    A3M alignment to restart HHblits ('A3M' format)                         \n");
+  printf(" -psi <file>    PSI-BLAST alignment file to restart HHblits ('PSI' format)              \n");
+  printf(" -hhm <file>    HMM File to restart HHblits (in combination with -psi or -a3m)          \n");
   printf("\n");
   printf("Output options:                                                                          \n");
   printf(" -o <file>      write results in standard format to file (default=<infile.hhr>)          \n");
@@ -334,8 +334,8 @@ void help()
 void help_all()
 {
   printf("\n");
-  printf("HHblitss %s\n",HHBLITSS_VERSION);
-  printf("Fast homology detection method HHblitss to iteratively search a filtered NR HMM database.\n");
+  printf("HHblits %s\n",HHBLITS_VERSION);
+  printf("Fast homology detection method HHblits to iteratively search a filtered NR HMM database.\n");
   printf("%s",REFERENCE);
   printf("%s",COPYRIGHT);
   printf("\n\n");
@@ -351,9 +351,9 @@ void help_all()
   printf(" -e_psi [1,inf[ E-value cutoff for prefiltering (default=%-.0f)                          \n",e_psi); 
   printf("\n");
   printf("Input options:                                                                           \n");
-  printf(" -a3m <file>    A3M alignment to restart HHblitss ('A3M' format)                         \n");
-  printf(" -psi <file>    PSI-BLAST alignment file to restart HHblitss ('PSI' format)              \n");
-  printf(" -hhm <file>    HMM File to restart HHblitss (in combination with -psi or -a3m)          \n");
+  printf(" -a3m <file>    A3M alignment to restart HHblits ('A3M' format)                         \n");
+  printf(" -psi <file>    PSI-BLAST alignment file to restart HHblits ('PSI' format)              \n");
+  printf(" -hhm <file>    HMM File to restart HHblits (in combination with -psi or -a3m)          \n");
   printf("\n");
   printf("Output options:                                                                          \n");
   printf(" -o <file>      write results in standard format to file (default=<infile.hhr>)          \n");
@@ -375,7 +375,7 @@ void help_all()
   printf("\n");
   printf("Directories for needed programs                                                          \n");
   printf(" -pre_mode    <mode>  prefilter mode (blast or csblast) (default=%s)                     \n",pre_mode);
-  printf(" -hh           <dir>  directory with HHBLITSS executables and reformat.pl (default=%s)    \n",hh);
+  printf(" -hh           <dir>  directory with HHBLITS executables and reformat.pl (default=%s)    \n",hh);
   printf(" -blast        <dir>  directory with BLAST executables (default=%s)                      \n",blast);
   printf(" -csblast      <dir>  directory with csBLAST executables (default=%s)                    \n",csblast);
   printf(" -csblast_db   <dir>  directory with csBLAST database (default=%s)                       \n",csblast_db);
@@ -676,7 +676,7 @@ void ProcessArguments(int argc, char** argv)
     //cerr<<"CSBLAST DB given!\n";
     strcpy(par.clusterfile,hh);
     strcat(par.clusterfile,"/nr30_neff2.5_1psi_N1000000_W13_K4000_wcenter1.6_wmax1.36_beta0.85.prf");
-    //strcpy(par.clusterfile,"/cluster/bioprogs/hhblitss/clusters.prf");
+    //strcpy(par.clusterfile,"/cluster/bioprogs/hhblits/clusters.prf");
     // TODO: change back, when Andreas has rewritten hhhmm.C
     //strcpy(par.clusterfile,csblast_db);
   } else {
@@ -876,7 +876,7 @@ void CheckInputFiles()
       if (sequence_count == 0)
 	{help(); cerr<<endl<<"Error in "<<program_name<<": Input sequence must be in FASTA format!\n"; exit(4);}
       else if (sequence_count > 1)
-	{help(); cerr<<endl<<"Error in "<<program_name<<": Use -a3m or -psi when starting HHblitss with an alignment!\n"; exit(4);}
+	{help(); cerr<<endl<<"Error in "<<program_name<<": Use -a3m or -psi when starting HHblits with an alignment!\n"; exit(4);}
 
       // Copy infile to tmp_file.fas as input for the BLAST prefilter searches
       command = (string)hh + "/reformat.pl fas fas " + (string)par.infile + " " + tmp_infile + " > /dev/null";
@@ -1263,7 +1263,7 @@ void perform_viterbi_search(int db_size)
 
   hitlist.CalculatePvalues(q);  // Use NN prediction of lamda and mu
   
-  hitlist.CalculateHHblitssEvalues(q);
+  hitlist.CalculateHHblitsEvalues(q);
   
 }
 
@@ -1308,7 +1308,7 @@ void search_database(char *dbfiles[], int ndb, int db_size)
 
   hitlist.CalculatePvalues(q);  // Use NN prediction of lamda and mu
 
-  hitlist.CalculateHHblitssEvalues(q);
+  hitlist.CalculateHHblitsEvalues(q);
 
 }
 
@@ -1842,7 +1842,7 @@ int main(int argc, char **argv)
 
   // Set default for config-file
   Pathname(config_file,argv[0]);
-  strcat(config_file,"hhblitss.config");
+  strcat(config_file,"hhblits.config");
 
   // Enable changing verbose mode before command line are processed
   for (int i=1; i<argc; i++)
@@ -1928,7 +1928,7 @@ int main(int argc, char **argv)
   pclose(stream);
   if (dbsize == 0)
     {cerr<<endl<<"Error in "<<program_name<<": Could not determine DB-size of prefilter db ("<<db<<")\n"; exit(4);}
-  par.hhblitss_prefilter_logpval=-log(e_psi / dbsize);
+  par.hhblits_prefilter_logpval=-log(e_psi / dbsize);
 
   // Set secondary structure substitution matrix
   if (par.ssm) SetSecStrucSubstitutionMatrix();
@@ -1989,7 +1989,7 @@ int main(int argc, char **argv)
   // Main loop
   //////////////////////////////////////////////////////////
 
-  if (v>=2) printf("\n*******************************************************\n* Building alignment for query with %i rounds HHblitss *\n*******************************************************\n\n",num_rounds);
+  if (v>=2) printf("\n******************************************************\n* Building alignment for query with %i rounds HHblits *\n******************************************************\n\n",num_rounds);
 
   for (int round = 1; round <= num_rounds; round++) {
 

@@ -6,7 +6,7 @@ SOURCES = hhsearch.C hhhitlist.C hhhit.C hhalignment.C hhhmm.C hhmatrices.C hhde
 
 HEADERS = hhhitlist.h hhhit.h hhalignment.h hhhmm.h hhfullalignment.h hhfullalignment.h hash.h list.h cs_counts.h amino_acid.h simple_cluster.h cluster.h training_profile.h profile.h sequence.h matrix.h
 
-TARGETS = hhblitss hhsearch hhmake hhalign hhfilter hhconsensus
+TARGETS = hhblits hhsearch hhmake hhalign hhfilter hhconsensus
 
 all: $(TARGETS)
 
@@ -19,14 +19,14 @@ hhsearch_static: hhsearch.C $(SOURCES) $(HEADERS)
 hhsearch_valgrind: hhsearch.C $(SOURCES) $(HEADERS)
 	  $(CXX) -g -O -Wall -Wno-char-subscripts -fno-strict-aliasing -lpthread -lrt hhsearch.C -o ../bin/hhsearch_valgrind
 
-hhblitss: hhblitss.C $(SOURCES) $(HEADERS)
-	 $(CPP) hhblitss.C -lpthread -lrt -o ../bin/hhblitss 
+hhblits: hhblits.C $(SOURCES) $(HEADERS)
+	 $(CPP) hhblits.C -lpthread -lrt -o ../bin/hhblits 
 
-hhblitss_static: hhblitss.C $(SOURCES) $(HEADERS)
-	 $(CPP) hhblitss.C -static -lpthread -lrt -o ../bin/hhblitss 
+hhblits_static: hhblits.C $(SOURCES) $(HEADERS)
+	 $(CPP) hhblits.C -static -lpthread -lrt -o ../bin/hhblits 
 
-hhblitss_valgrind: hhblitss.C $(SOURCES) $(HEADERS)
-	  $(CXX) -g -O -Wall -Wno-char-subscripts -fno-strict-aliasing -lpthread -lrt hhblitss.C -o ../bin/hhblitss_valgrind
+hhblits_valgrind: hhblits.C $(SOURCES) $(HEADERS)
+	  $(CXX) -g -O -Wall -Wno-char-subscripts -fno-strict-aliasing -lpthread -lrt hhblits.C -o ../bin/hhblits_valgrind
 
 hhmake: hhmake.C $(SOURCES) $(HEADERS)
 	$(CPP) hhmake.C -o ../bin/hhmake
