@@ -28,6 +28,13 @@ using std::ofstream;
 #include "hhhitlist.h"   // class HitList
 #endif
 
+#ifdef __SUNPRO_C
+#include <sunmedia_intrin.h>
+#else
+#include <emmintrin.h>
+#include <pmmintrin.h>
+#endif
+
 #define CALCULATE_MAX6(max, var1, var2, var3, var4, var5, var6, varb) \
 if (var1>var2) { max=var1; varb=STOP;} \
 else           { max=var2; varb=MM;}; \
@@ -390,6 +397,13 @@ void Hit::Viterbi(HMM& q, HMM& t, float** Sstruc)
 	      // Recursion relations
 // 	      printf("S[%i][%i]=%4.1f  ",i,j,Score(q.p[i],t.p[j])); // DEBUG!!
 
+#ifdef HH_SSE3
+	      __m128 SMM;
+	      __m128 Qi1;
+	      __m128 Tj1;
+	      __m128 R;
+
+	      _mm_prefetch((char*) t.p+j, _MM_HINT_T0);
 	      CALCULATE_MAX6( sMM_i_j,
 			      smin,
 			      sMM_i_1_j_1 + q.tr[i-1][M2M] + t.tr[j-1][M2M], 
@@ -399,6 +413,48 @@ void Hit::Viterbi(HMM& q, HMM& t, float** Sstruc)
 			      sMI_i_1_j_1 + q.tr[i-1][M2M] + t.tr[j-1][I2M],
 			      bMM[i][j]
 			      );
+
+ 	      sMM_i_j += Score(q.p[i],t.p[j]) + ScoreSS(q,t,i,j) + par.shift 
+		+ (Sstruc==NULL? 0: Sstruc[i][j]); 
+	      
+
+	      sGD_i_j = max2
+	              (
+		       sMM[j-1] + t.tr[j-1][M2D], // MM->GD gap opening in query 
+		       sGD[j-1] + t.tr[j-1][D2D], // GD->GD gap extension in query 
+		       bGD[i][j]
+		       );
+	      sIM_i_j = max2
+ 	              (
+ 		       sMM[j-1] + q.tr[i][M2I] + t.tr[j-1][M2M] ,
+		       sIM[j-1] + q.tr[i][I2I] + t.tr[j-1][M2M], // IM->IM gap extension in query 
+		       bIM[i][j]
+		       );
+	      sDG_i_j = max2
+	              (
+ 		       sMM[j] + q.tr[i-1][M2D],
+ 		       sDG[j] + q.tr[i-1][D2D], //gap extension (DD) in query
+		       bDG[i][j]
+		       );
+	      sMI_i_j = max2
+	              (
+		       sMM[j] + q.tr[i-1][M2M] + t.tr[j][M2I], // MM->MI gap opening M2I in template 
+		       sMI[j] + q.tr[i-1][M2M] + t.tr[j][I2I], // MI->MI gap extension I2I in template 
+		       bMI[i][j]
+		       )	      
+
+
+#else
+	      CALCULATE_MAX6( sMM_i_j,
+			      smin,
+			      sMM_i_1_j_1 + q.tr[i-1][M2M] + t.tr[j-1][M2M], 
+			      sGD_i_1_j_1 + q.tr[i-1][M2M] + t.tr[j-1][D2M],
+			      sIM_i_1_j_1 + q.tr[i-1][I2M] + t.tr[j-1][M2M],
+			      sDG_i_1_j_1 + q.tr[i-1][D2M] + t.tr[j-1][M2M],
+			      sMI_i_1_j_1 + q.tr[i-1][M2M] + t.tr[j-1][I2M],
+			      bMM[i][j]
+			      );
+
  	      sMM_i_j += Score(q.p[i],t.p[j]) + ScoreSS(q,t,i,j) + par.shift 
 		+ (Sstruc==NULL? 0: Sstruc[i][j]); 
 	      
@@ -427,6 +483,7 @@ void Hit::Viterbi(HMM& q, HMM& t, float** Sstruc)
 		       sMI[j] + q.tr[i-1][M2M] + t.tr[j][I2I], // MI->MI gap extension I2I in template 
 		       bMI[i][j]
 		       );
+#endif
 
 	      sMM_i_1_j_1 = sMM[j];
 	      sGD_i_1_j_1 = sGD[j];
@@ -1749,25 +1806,74 @@ void Hit::InitializeBacktrace(HMM& q, HMM& t)
 // Some score functions 
 /////////////////////////////////////////////////////////////////////////////////////
 
-
-// Calculate score between columns i and j of two HMMs (query and template)
+//Calculate score between columns i and j of two HMMs (query and template)
 inline float Score(float* qi, float* tj)
 {
-   return fast_log2(		   
-           tj[0] *qi[0] +tj[1] *qi[1] +tj[2] *qi[2] +tj[3] *qi[3] +tj[4] *qi[4]
+  float res;
+
+#ifdef HH_SSE3
+  __m128 Q; // query 128bit SSE2 register holding 4 floats
+  __m128 T; // template
+  __m128 R; // result  
+  __m128* Qi = (__m128*) qi;
+  __m128* Tj = (__m128*) tj;
+
+  Q = _mm_load_ps(qi);
+  T = _mm_load_ps(tj);
+  R = _mm_mul_ps(*(Qi++),*(Tj++));
+  Q = _mm_mul_ps(*(Qi++),*(Tj++));
+  R = _mm_add_ps(R,Q);
+  Q = _mm_mul_ps(*(Qi++),*(Tj++));
+  R = _mm_add_ps(R,Q);
+  Q = _mm_mul_ps(*(Qi++),*(Tj++));
+  R = _mm_add_ps(R,Q);
+  Q = _mm_mul_ps(*Qi,*Tj);
+  R = _mm_add_ps(R,Q);
+  R = _mm_hadd_ps(R,R);
+  R = _mm_hadd_ps(R,R);
+  _mm_store_ss(&res, R);
+#else
+  res =	   tj[0] *qi[0] +tj[1] *qi[1] +tj[2] *qi[2] +tj[3] *qi[3] +tj[4] *qi[4]
           +tj[5] *qi[5] +tj[6] *qi[6] +tj[7] *qi[7] +tj[8] *qi[8] +tj[9] *qi[9]
           +tj[10]*qi[10]+tj[11]*qi[11]+tj[12]*qi[12]+tj[13]*qi[13]+tj[14]*qi[14]
-          +tj[15]*qi[15]+tj[16]*qi[16]+tj[17]*qi[17]+tj[18]*qi[18]+tj[19]*qi[19]
- 	  );
+          +tj[15]*qi[15]+tj[16]*qi[16]+tj[17]*qi[17]+tj[18]*qi[18]+tj[19]*qi[19];
+#endif
+  return fast_log2(res);
 }
 
 // Calculate score between columns i and j of two HMMs (query and template)
 inline float ProbFwd(float* qi, float* tj)
 {
-  return  tj[0] *qi[0] +tj[1] *qi[1] +tj[2] *qi[2] +tj[3] *qi[3] +tj[4] *qi[4]
+  float res;
+
+#ifdef HH_SSE3
+  __m128 Q; // query 128bit SSE2 register holding 4 floats
+  __m128 T; // template
+  __m128 R; // result  
+  __m128* Qi = (__m128*) qi;
+  __m128* Tj = (__m128*) tj;
+
+  Q = _mm_load_ps(qi);
+  T = _mm_load_ps(tj);
+  R = _mm_mul_ps(*(Qi++),*(Tj++));
+  Q = _mm_mul_ps(*(Qi++),*(Tj++));
+  R = _mm_add_ps(R,Q);
+  Q = _mm_mul_ps(*(Qi++),*(Tj++));
+  R = _mm_add_ps(R,Q);
+  Q = _mm_mul_ps(*(Qi++),*(Tj++));
+  R = _mm_add_ps(R,Q);
+  Q = _mm_mul_ps(*Qi,*Tj);
+  R = _mm_add_ps(R,Q);
+  R = _mm_hadd_ps(R,R);
+  R = _mm_hadd_ps(R,R);
+  _mm_store_ss(&res, R);
+#else
+  res =	   tj[0] *qi[0] +tj[1] *qi[1] +tj[2] *qi[2] +tj[3] *qi[3] +tj[4] *qi[4]
           +tj[5] *qi[5] +tj[6] *qi[6] +tj[7] *qi[7] +tj[8] *qi[8] +tj[9] *qi[9]
           +tj[10]*qi[10]+tj[11]*qi[11]+tj[12]*qi[12]+tj[13]*qi[13]+tj[14]*qi[14]
           +tj[15]*qi[15]+tj[16]*qi[16]+tj[17]*qi[17]+tj[18]*qi[18]+tj[19]*qi[19];
+#endif
+  return res;
 }
 
 

@@ -1,8 +1,8 @@
 // hhsearch.C:
 // Search for a multiple alignment (transformed into HMM) in a profile HMM database
-// Compile:              g++ hhsearch.C -o hhsearch -O3 -lpthread -lrt -fno-strict-aliasing
-// Compile with efence:  g++ hhsearch.C -o hhsearch -lefence -lpthread -lrt -O -g
-// Compile for Valgrind: g++ hhsearch.C -o hhsearch2 -lpthread -lrt -O -g
+// Compile:              g++ hhsearch.C -o hhsearch -O3 -lpthread -lrt -fno-strict-aliasing -DHH_SSE3
+// Compile with efence:  g++ hhsearch.C -o hhsearch -lefence -lpthread -lrt -O -g -DHH_SSE3
+// Compile for Valgrind: g++ hhsearch.C -o hhsearch2 -lpthread -lrt -O -g -DHH_SSE3
 // With wnlib:           g++ hhsearch.C /home/soeding/programs/wnlib/acc/text.a  -o hhsearch -O3 -lpthread -lrt -fno-strict-aliasing -g -I/home/soeding/programs/wnlib/acc/h/ -L/home/soeding/programs/electric-fence-2.1.13/
 //
 // Error codes: 0: ok  1: file format error  2: file access error  3: memory error  4: command line error  6: internal logic error  7: internal numeric error
