@@ -44,19 +44,18 @@ inline float log10(float x) {return (x<=0? (float)(-100000):0.434294481*log(x));
 // fast log base 2
 /////////////////////////////////////////////////////////////////////////////////////
 
-// This function returns log2 with a max abolute deviation of +/- 1.5E-5 (typically 0.8E-5).
+// This function returns log2 with a max absolute deviation of +/- 1.5E-5 (typically 0.8E-5).
 // It takes 1.42E-8 s  whereas log2(x) takes 9.5E-7 s. It is hence 9.4 times faster.
 // It makes use of the representation of 4-byte floating point numbers:
 // seee eeee emmm mmmm mmmm mmmm mmmm mmmm
 // s is the sign,
 // the following 8 bits, eee eee e, give the exponent + 127 (in hex: 0x7f).
-// The following 23 bits, m, give the mantisse, the binary digits behind the decimal point.
-// In summary: x = (-1)^s * 1.mmmmmmmmmmmmmmmmmmmmmm * 2^(eeeeeee-127)
-// The expression (((*(int *)&x) & 0x7f800000 ) >>23 )-0x7f is the exponent eeeeeeee, i.e.
-// the largest integer that is smaller than log2(x) (e.g. -1 for 0.9). *(int *)&x is an integer which
-// contains the bytes as the floating point variable x is represented in memory.
-// Check:  assert( sizeof(f) == sizeof(int) );
-// Check:  assert( sizeof(f) == 4 );
+// The following 23 bits give the mantisse, the binary digits after the decimal 
+// point:  x = (-1)^s * 1.mmmmmmmmmmmmmmmmmmmmmmm * 2^(eeeeeeee-127)
+// In the code, *(int *)&x is an integer which contains the bytes as the 
+// floating point variable x is represented in memory. The expression 
+//     (((*(int *)&x) & 0x7f800000 ) >>23 )-0x7f is the exponent eeeeeeee, 
+// i.e., the largest integer that is smaller than log2(x) (e.g. -1 for 0.9).
 inline float fast_log2(float x)
 {
   static float lg2[1025];         // lg2[i] = log2[1+x/1024]
@@ -75,9 +74,9 @@ inline float fast_log2(float x)
         }
       initialized=1;
     }
-  int a = (((*((int *)&x)) & 0x7F800000) >>23 )-0x7f;
-  int b =  ((*((int *)&x)) & 0x007FE000) >>13;
-  int c =  ((*((int *)&x)) & 0x00001FFF);
+  int a = (((*((int *)&x)) & 0x7F800000) >>23 )-0x7f; // exponent
+  int b =  ((*((int *)&x)) & 0x007FE000) >>13; // first 10 bits of mantisse
+  int c =  ((*((int *)&x)) & 0x00001FFF);      // further 13 bits of mantisse
   return a + lg2[b] + diff[b]*(float)(c);
 }
 
@@ -150,7 +149,7 @@ inline float fpow2(float x)
                                           // which, in internal bits, is written 0x4b400000 (since 10010110bin = 150)
     int lx = *((int*)&tx) - 0x4b400000;   // integer value of x 
     float dx = x-(float)(lx);             // float remainder of x
-    x = 1.0f + dx*(0.693019f              // polynomial apporoximation of 2^x
+    x = 1.0f + dx*(0.693019f              // polynomial approximation of 2^x
              + dx*(0.241404f              // for x in the range [0, 1]
              + dx*(0.0520749f
              + dx* 0.0134929f )));
@@ -935,6 +934,5 @@ void QSortFloat(float v[], int k[], int left, int right, int up=+1)
 
 //Return random number in the range [0,1]
 inline float frand() { return rand()/(RAND_MAX+1.0); }
-
 
 

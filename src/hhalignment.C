@@ -1210,7 +1210,7 @@ void Alignment::FrequenciesAndTransitions(HMM& q, char* in, bool time)
           q.Neff_M[i]=1.0f;
           q.Neff_I[i]=q.Neff_D[i]=0.0f;
           for (a=0; a<20; a++) q.f[i][a]=0.0;
-          q.f[i][ X[kfirst][i] ] = 1.0;
+          q.f[i][(unsigned int) X[kfirst][i] ] = 1.0;
           q.tr[i][M2M]=0;
           q.tr[i][M2I]=-100000.0;
           q.tr[i][M2D]=-100000.0;

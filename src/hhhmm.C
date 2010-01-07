@@ -58,8 +58,10 @@ HMM::HMM(int maxseqdis, int maxres)
 //   tr_lin = new float*[maxres];    // linear transition probabilities M2M M2I M2D I2M I2I D2M D2D
   for (int i=0; i<maxres; i++) f[i]=new(float[NAA+3]);
   for (int i=0; i<maxres; i++) g[i]=new(float[NAA]);
-  for (int i=0; i<maxres; i++) p[i]=new(float[NAA]);
-  for (int i=0; i<maxres; i++) tr[i]=new(float[NTRANS]);
+  // for (int i=0; i<maxres; i++) p[i]=new(float[NAA]);
+  // for (int i=0; i<maxres; i++) tr[i]=new(float[NTRANS]);
+  for (int i=0; i<maxres; i++) p[i]=(float*) memalign(16,NAA*sizeof(float));  // align memory on 16b boundaries for SSE2
+  for (int i=0; i<maxres; i++) tr[i]=(float*) memalign(16,NTRANS*sizeof(float));
 //   for (int i=0; i<maxres; i++) tr_lin[i]=new(float[NTRANS]);
   L=0;
   Neff_HMM=0;
@@ -100,14 +102,12 @@ HMM::~HMM()
   delete[] l;
   for (int i=0; i<MAXRES; i++) if (f[i]) delete[] f[i]; else break;
   for (int i=0; i<MAXRES; i++) if (g[i]) delete[] g[i]; else break;
-  for (int i=0; i<MAXRES; i++) if (p[i]) delete[] p[i]; else break;
-  for (int i=0; i<MAXRES; i++) if (tr[i]) delete[] tr[i]; else break;
-//   for (int i=0; i<MAXRES; i++) if (tr_lin[i]) delete[] tr_lin[i]; else break;
+  for (int i=0; i<MAXRES; i++) if (p[i])  free(p[i]);  else break;
+  for (int i=0; i<MAXRES; i++) if (tr[i]) free(tr[i]); else break;
   delete[] f;
   delete[] g;
   delete[] p;
   delete[] tr;
-//   delete[] tr_lin;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -1250,9 +1250,6 @@ void HMM::AddAminoAcidPseudocounts(char pcm, float pca, float pcb, float pcc)
               <<pca/(1.+pow((Neff_HMM-1.)/pcb,pcc))<<" to HMM "<<name<<"\n";
           break;
         } //end switch (pcm)
-      cout<<"\nAverage amino acid frequencies WITH pseudocounts in HMM: \nProf: ";
-      for (a=0; a<20; ++a) printf("%4.1f ",100*pav[a]);
-      cout<<"\n";
       if (v>=4)
         {
           cout<<"\nAmino acid frequencies WITHOUT pseudocounts:\n       A    R    N    D    C    Q    E    G    H    I    L    K    M    F    P    S    T    W    Y    V\n";
@@ -1544,7 +1541,9 @@ void HMM::Log2LinTransitionProbs(float beta)
 }
 
 
+/////////////////////////////////////////////////////////////////////////////////////
 // Set query columns in His-tags etc to Null model distribution
+/////////////////////////////////////////////////////////////////////////////////////
 void HMM::NeutralizeTags()
 {
   char* qseq = seq[nfirst];
@@ -1597,52 +1596,8 @@ float HMM::CalcNeff()
 }
 
 
-// /////////////////////////////////////////////////////////////////////////////////////
-// // Store linear transition probabilities
-// /////////////////////////////////////////////////////////////////////////////////////
-// void HMM::StoreLinearTransitionProbs()
-// {
-//   int i;      // position in query
-//   for (i=0; i<=L+1; ++i) if (!tr_lin[i]) tr_lin[i] = new(float[NTRANS]);
-//   for (i=0; i<=L+1; ++i)
-//     {
-//       tr_lin[i][M2M] = fpow2(tr[i][M2M]);
-//       tr_lin[i][M2I] = fpow2(tr[i][M2I]);
-//       tr_lin[i][M2D] = fpow2(tr[i][M2D]);
-//       tr_lin[i][D2M] = fpow2(tr[i][M2D]);
-//       tr_lin[i][D2D] = fpow2(tr[i][D2D]);
-//       tr_lin[i][I2M] = fpow2(tr[i][I2M]);
-//       tr_lin[i][I2I] = fpow2(tr[i][I2I]);
-//     }
-// }
-
 
 // #define Weff(Neff) (1.0+par.neffa*(Neff-1.0)+(par.neffb-4.0*par.neffa)/16.0*(Neff-1.0)*(Neff-1.0))
-
-// /////////////////////////////////////////////////////////////////////////////////////
-// // Initialize f[i][a] with query HMM
-// /////////////////////////////////////////////////////////////////////////////////////
-// void HMM::MergeQueryHMM(HMM& q, float wk[])
-// {
-//   int i;      // position in query
-//   int a;      // amino acid
-//   float Weff_M, Weff_D, Weff_I;
-//   for (i=1; i<=L; i++)
-//     {
-//       Weff_M = Weff(q.Neff_M[i]-1.0);
-//       Weff_D = Weff(q.Neff_D[i]-1.0);
-//       Weff_I = Weff(q.Neff_I[i]-1.0);
-//       for (a=0; a<20; a++) f[i][a] = q.f[i][a]*wk[i]*Weff_M;
-//       tr_lin[i][M2M] = q.tr_lin[i][M2M]*wk[i]*Weff_M;
-//       tr_lin[i][M2I] = q.tr_lin[i][M2I]*wk[i]*Weff_M;
-//       tr_lin[i][M2D] = q.tr_lin[i][M2D]*wk[i]*Weff_M;
-//       tr_lin[i][D2M] = q.tr_lin[i][D2M]*wk[i]*Weff_D;
-//       tr_lin[i][D2D] = q.tr_lin[i][D2D]*wk[i]*Weff_D;
-//       tr_lin[i][I2M] = q.tr_lin[i][I2M]*wk[i]*Weff_I;
-//       tr_lin[i][I2I] = q.tr_lin[i][I2I]*wk[i]*Weff_I;
-//     }
-// }
-
 
 
 // /////////////////////////////////////////////////////////////////////////////////////

@@ -31,9 +31,20 @@
 #endif
 
 #include <sys/time.h>
+#include <malloc.h>   // memalign()
 //#include <new>
 //#include "efence.h"
 //#include "efence.c"
+
+#ifdef HH_SSE3
+#ifdef __SUNPRO_C
+#include <sunmedia_intrin.h>
+#else
+#include <emmintrin.h>   // SSE2
+#include <pmmintrin.h>   // SSE3
+///#include <smmintrin.h>   // SSE4.1
+#endif
+#endif
 
 using std::cout;
 using std::cerr;
@@ -71,6 +82,7 @@ using std::ofstream;
 #include "hhfullalignment.C" // class FullAlignment
 #include "hhhitlist.C"   // class HitList
 #include "hhfunc.C"      // some functions common to hh programs
+
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Global variables

@@ -199,7 +199,6 @@ void ReadAndPrepare(char* infile, HMM& q, Alignment* qali=NULL)
     fclose(inf);
 
     if (par.forward>=1) q.Log2LinTransitionProbs(1.0);
-
     return;
 }
 

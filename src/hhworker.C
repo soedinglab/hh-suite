@@ -13,7 +13,7 @@ void AlignByWorker(int bin)
     {
       if (par.forward==0)
         {
-          hit[bin]->Viterbi(q,*(t[bin]));
+	  hit[bin]->Viterbi(q,*(t[bin]));
           if (hit[bin]->irep>1 && hit[bin]->score <= SMIN) break;
           hit[bin]->Backtrace(q,*(t[bin]));
         }

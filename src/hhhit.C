@@ -28,12 +28,6 @@ using std::ofstream;
 #include "hhhitlist.h"   // class HitList
 #endif
 
-#ifdef __SUNPRO_C
-#include <sunmedia_intrin.h>
-#else
-#include <emmintrin.h>
-#include <pmmintrin.h>
-#endif
 
 #define CALCULATE_MAX6(max, var1, var2, var3, var4, var5, var6, varb) \
 if (var1>var2) { max=var1; varb=STOP;} \
@@ -70,6 +64,7 @@ inline double Pvalue(float x, float lamda, float mu);
 inline double logPvalue(float x, float lamda, float mu);
 inline double logPvalue(float x, double a[]);
 inline double Probab(Hit& hit);
+inline __m128 _mm_flog2_ps(__m128 X); // Fast SSE2 log2 for four floats
 
 /////////////////////////////////////////////////////////////////////////////////////
 //// Constructor
@@ -317,6 +312,9 @@ void Hit::Viterbi(HMM& q, HMM& t, float** Sstruc)
   
   
   // Variable declarations
+#ifdef HH_SSE3
+  float __attribute__((aligned(16))) Si[MAXRES];  // sMM[i][j] = score of best alignment up to indices (i,j) ending in (Match,Match) 
+#endif
   float sMM[MAXRES];          // sMM[i][j] = score of best alignment up to indices (i,j) ending in (Match,Match) 
   float sGD[MAXRES];          // sGD[i][j] = score of best alignment up to indices (i,j) ending in (Gap,Delete) 
   float sDG[MAXRES];          // sDG[i][j] = score of best alignment up to indices (i,j) ending in (Delete,Gap)
@@ -379,7 +377,19 @@ void Hit::Viterbi(HMM& q, HMM& t, float** Sstruc)
       if (jmax<t.L) // initialize at (i-1,jmmax) if upper right triagonal is excluded due to min overlap
 	sMM[jmax] = sIM[jmax] = sMI[jmax] = sDG[jmax] = sGD[jmax] = -FLT_MAX; 
       sIM[jmin-1] = sMI[jmin-1] = sDG[jmin-1] = sGD[jmin-1] = -FLT_MAX; // initialize at (i,jmin-1)
-      
+
+      // Precalculate scores
+#ifdef HH_SSE3
+      for (j=jmin; j<=jmax; j++) 
+	Si[j] = ProbFwd(q.p[i],t.p[j]);
+      __m128* sij = (__m128*)(Si+(jmin/4)*4);
+      for (j=jmin/4; j<=jmax/4; j++, sij++) 
+	_mm_store_ps((float*)(sij),_mm_flog2_ps(*sij));	  
+#else
+      for (j=jmin; j<=jmax; j++) 
+	Si[j] = Score(q.p[i],t.p[j]);      
+#endif
+
       for (j=jmin; j<=jmax; j++) // Loop through template positions j
 	{
 
@@ -397,13 +407,6 @@ void Hit::Viterbi(HMM& q, HMM& t, float** Sstruc)
 	      // Recursion relations
 // 	      printf("S[%i][%i]=%4.1f  ",i,j,Score(q.p[i],t.p[j])); // DEBUG!!
 
-#ifdef HH_SSE3
-	      __m128 SMM;
-	      __m128 Qi1;
-	      __m128 Tj1;
-	      __m128 R;
-
-	      _mm_prefetch((char*) t.p+j, _MM_HINT_T0);
 	      CALCULATE_MAX6( sMM_i_j,
 			      smin,
 			      sMM_i_1_j_1 + q.tr[i-1][M2M] + t.tr[j-1][M2M], 
@@ -414,49 +417,7 @@ void Hit::Viterbi(HMM& q, HMM& t, float** Sstruc)
 			      bMM[i][j]
 			      );
 
- 	      sMM_i_j += Score(q.p[i],t.p[j]) + ScoreSS(q,t,i,j) + par.shift 
-		+ (Sstruc==NULL? 0: Sstruc[i][j]); 
-	      
-
-	      sGD_i_j = max2
-	              (
-		       sMM[j-1] + t.tr[j-1][M2D], // MM->GD gap opening in query 
-		       sGD[j-1] + t.tr[j-1][D2D], // GD->GD gap extension in query 
-		       bGD[i][j]
-		       );
-	      sIM_i_j = max2
- 	              (
- 		       sMM[j-1] + q.tr[i][M2I] + t.tr[j-1][M2M] ,
-		       sIM[j-1] + q.tr[i][I2I] + t.tr[j-1][M2M], // IM->IM gap extension in query 
-		       bIM[i][j]
-		       );
-	      sDG_i_j = max2
-	              (
- 		       sMM[j] + q.tr[i-1][M2D],
- 		       sDG[j] + q.tr[i-1][D2D], //gap extension (DD) in query
-		       bDG[i][j]
-		       );
-	      sMI_i_j = max2
-	              (
-		       sMM[j] + q.tr[i-1][M2M] + t.tr[j][M2I], // MM->MI gap opening M2I in template 
-		       sMI[j] + q.tr[i-1][M2M] + t.tr[j][I2I], // MI->MI gap extension I2I in template 
-		       bMI[i][j]
-		       )	      
-
-
-#else
-	      CALCULATE_MAX6( sMM_i_j,
-			      smin,
-			      sMM_i_1_j_1 + q.tr[i-1][M2M] + t.tr[j-1][M2M], 
-			      sGD_i_1_j_1 + q.tr[i-1][M2M] + t.tr[j-1][D2M],
-			      sIM_i_1_j_1 + q.tr[i-1][I2M] + t.tr[j-1][M2M],
-			      sDG_i_1_j_1 + q.tr[i-1][D2M] + t.tr[j-1][M2M],
-			      sMI_i_1_j_1 + q.tr[i-1][M2M] + t.tr[j-1][I2M],
-			      bMM[i][j]
-			      );
-
- 	      sMM_i_j += Score(q.p[i],t.p[j]) + ScoreSS(q,t,i,j) + par.shift 
-		+ (Sstruc==NULL? 0: Sstruc[i][j]); 
+ 	      sMM_i_j += Si[j] + ScoreSS(q,t,i,j) + par.shift + (Sstruc==NULL? 0: Sstruc[i][j]); 
 	      
 
 	      sGD_i_j = max2
@@ -483,7 +444,6 @@ void Hit::Viterbi(HMM& q, HMM& t, float** Sstruc)
 		       sMI[j] + q.tr[i-1][M2M] + t.tr[j][I2I], // MI->MI gap extension I2I in template 
 		       bMI[i][j]
 		       );
-#endif
 
 	      sMM_i_1_j_1 = sMM[j];
 	      sGD_i_1_j_1 = sGD[j];
@@ -1809,44 +1769,40 @@ void Hit::InitializeBacktrace(HMM& q, HMM& t)
 //Calculate score between columns i and j of two HMMs (query and template)
 inline float Score(float* qi, float* tj)
 {
-  float res;
-
 #ifdef HH_SSE3
-  __m128 Q; // query 128bit SSE2 register holding 4 floats
-  __m128 T; // template
+  float __attribute__((aligned(16))) res;
+  __m128 P; // product
   __m128 R; // result  
   __m128* Qi = (__m128*) qi;
   __m128* Tj = (__m128*) tj;
 
-  Q = _mm_load_ps(qi);
-  T = _mm_load_ps(tj);
   R = _mm_mul_ps(*(Qi++),*(Tj++));
-  Q = _mm_mul_ps(*(Qi++),*(Tj++));
-  R = _mm_add_ps(R,Q);
-  Q = _mm_mul_ps(*(Qi++),*(Tj++));
-  R = _mm_add_ps(R,Q);
-  Q = _mm_mul_ps(*(Qi++),*(Tj++));
-  R = _mm_add_ps(R,Q);
-  Q = _mm_mul_ps(*Qi,*Tj);
-  R = _mm_add_ps(R,Q);
+  P = _mm_mul_ps(*(Qi++),*(Tj++));
+  R = _mm_add_ps(R,P);
+  P = _mm_mul_ps(*(Qi++),*(Tj++));
+  R = _mm_add_ps(R,P);
+  P = _mm_mul_ps(*(Qi++),*(Tj++));
+  R = _mm_add_ps(R,P);
+  P = _mm_mul_ps(*Qi,*Tj);
+  R = _mm_add_ps(R,P);
   R = _mm_hadd_ps(R,R);
   R = _mm_hadd_ps(R,R);
   _mm_store_ss(&res, R);
-#else
-  res =	   tj[0] *qi[0] +tj[1] *qi[1] +tj[2] *qi[2] +tj[3] *qi[3] +tj[4] *qi[4]
-          +tj[5] *qi[5] +tj[6] *qi[6] +tj[7] *qi[7] +tj[8] *qi[8] +tj[9] *qi[9]
-          +tj[10]*qi[10]+tj[11]*qi[11]+tj[12]*qi[12]+tj[13]*qi[13]+tj[14]*qi[14]
-          +tj[15]*qi[15]+tj[16]*qi[16]+tj[17]*qi[17]+tj[18]*qi[18]+tj[19]*qi[19];
-#endif
   return fast_log2(res);
+#else
+  return fast_log2(
+		   tj[0] *qi[0] +tj[1] *qi[1] +tj[2] *qi[2] +tj[3] *qi[3] +tj[4] *qi[4]
+		  +tj[5] *qi[5] +tj[6] *qi[6] +tj[7] *qi[7] +tj[8] *qi[8] +tj[9] *qi[9]
+		  +tj[10]*qi[10]+tj[11]*qi[11]+tj[12]*qi[12]+tj[13]*qi[13]+tj[14]*qi[14]
+		  +tj[15]*qi[15]+tj[16]*qi[16]+tj[17]*qi[17]+tj[18]*qi[18]+tj[19]*qi[19]);
+#endif
 }
 
 // Calculate score between columns i and j of two HMMs (query and template)
 inline float ProbFwd(float* qi, float* tj)
 {
-  float res;
-
 #ifdef HH_SSE3
+  float __attribute__((aligned(16))) res;
   __m128 Q; // query 128bit SSE2 register holding 4 floats
   __m128 T; // template
   __m128 R; // result  
@@ -1867,13 +1823,13 @@ inline float ProbFwd(float* qi, float* tj)
   R = _mm_hadd_ps(R,R);
   R = _mm_hadd_ps(R,R);
   _mm_store_ss(&res, R);
+  return res;
 #else
-  res =	   tj[0] *qi[0] +tj[1] *qi[1] +tj[2] *qi[2] +tj[3] *qi[3] +tj[4] *qi[4]
+  return=  tj[0] *qi[0] +tj[1] *qi[1] +tj[2] *qi[2] +tj[3] *qi[3] +tj[4] *qi[4]
           +tj[5] *qi[5] +tj[6] *qi[6] +tj[7] *qi[7] +tj[8] *qi[8] +tj[9] *qi[9]
           +tj[10]*qi[10]+tj[11]*qi[11]+tj[12]*qi[12]+tj[13]*qi[13]+tj[14]*qi[14]
           +tj[15]*qi[15]+tj[16]*qi[16]+tj[17]*qi[17]+tj[18]*qi[18]+tj[19]*qi[19];
 #endif
-  return res;
 }
 
 
@@ -2078,6 +2034,59 @@ inline double Probab(Hit& hit)
     }
 
   return 100.0/(1.0+t*t);
+}
+
+// Fast SSE2 log2 for four floats
+// Calculate integer of log2 for four floats in parallel with SSE2
+// Maximum deviation: +/- 1.0E-3
+// Run time: ~4.4ns on Intel core2 2.13GHz.
+// For a negative argument, nonsense is returned. Otherwise, when <1E-38, a value 
+// close to -126 is returned and when >1.7E38, +128 is returned.
+// The function makes use of the representation of 4-byte floating point numbers:
+// seee eeee emmm mmmm mmmm mmmm mmmm mmmm
+// s is the sign, eee eee e gives the exponent + 127 (in hex: 0x7f).
+// The following 23 bits give the mantisse, the binary digits after the decimal 
+// point:  x = (-1)^s * 1.mmmmmmmmmmmmmmmmmmmmmmm * 2^(eeeeeeee-127)
+// Therefore,  log2(x) = eeeeeeee-127 + log2(1.mmmmmm...) 
+//                     = eeeeeeee-127 + log2(1+y),  where y = 0.mmmmmm... 
+//                     ~ eeeeeeee-127 + ((a*y+b)*y+c)*y 
+// The coefficients a, b  were determined by a least squares fit, and c=1-a-b to get 1 at y=1.
+// Lower/higher order polynomials may be used for faster or more precise calculation:
+// Order 1: log2(1+y) ~ y                 
+// Order 2: log2(1+y) = (a*y + 1-a)*y, a=-0.3427                                           
+//  => max dev = +/- 8E-3, run time ~ 3.8ns
+// Order 3: log2(1+y) = ((a*y+b) + 1-a-b)*y, a=0.1564, b=-0.5773   
+//  => max dev = +/- 1E-3, run time ~ 4.4ns
+// Order 4: log2(1+y) = (((a*y+b)+c)*y + 1-a-b-c)*y, a=-0.0803 b=0.3170 c=-0.6748 
+//  => max dev = +/- 1.4E-4, run time ~ 5.0ns?
+// Order 5: log2(1+y) = ((((a*y+b)+c)*y+d)*y + 1-a-b-c-d)*y, a=-0.0803 b=0.3170 c=-0.6748 
+//  => max dev = +/- 2.1E-5, run time ~ 5.6ns?
+
+__m128 _mm_flog2_ps(__m128 X)
+{
+  const __m128i CONST32_0x7f = _mm_set_epi32(0x7f,0x7f,0x7f,0x7f);
+  const __m128i CONST32_0x7fffff = _mm_set_epi32(0x7fffff,0x7fffff,0x7fffff,0x7fffff);
+  const __m128i CONST32_0x3f800000 = _mm_set_epi32(0x3f800000,0x3f800000,0x3f800000,0x3f800000);
+  const __m128  CONST32_1f = _mm_set_ps(1.0,1.0,1.0,1.0);
+  const float a=0.1564, b=-0.5773, c=1.0-a-b;
+  const __m128  CONST32_A = _mm_set_ps(a,a,a,a);
+  const __m128  CONST32_B = _mm_set_ps(b,b,b,b);
+  const __m128  CONST32_C = _mm_set_ps(c,c,c,c);
+  __m128i E; // exponents of X
+  __m128 R; //  result
+  
+  E = _mm_srli_epi32((__m128i) X, 23);    // shift right by 23 bits to obtain exponent+127
+  E = _mm_sub_epi32(E, CONST32_0x7f);     // subtract 127 = 0x7f 
+  X = (__m128) _mm_and_si128((__m128i) X, CONST32_0x7fffff);  // mask out exponent => mantisse
+  X = (__m128) _mm_or_si128((__m128i) X, CONST32_0x3f800000); // set exponent to 127 (i.e., 0) 
+  X = _mm_sub_ps(X, CONST32_1f);          // subtract one from mantisse
+  R = _mm_mul_ps(X, CONST32_A);           // R = a*X
+  R = _mm_add_ps(R, CONST32_B);           // R = a*X+b
+  R = _mm_mul_ps(R, X);                   // R = (a*x+b)*X 
+  R = _mm_add_ps(R, CONST32_C);           // R = (a*x+b)*X+c
+  R = _mm_mul_ps(R, X);                   // R = ((a*x+b)*X+c)*X ~ log2(1+X) !! 
+  R = _mm_add_ps(R, _mm_cvtepi32_ps(E));  // convert integer exponent to float and add to mantisse
+  return R;
 }
 
 // #define Weff(Neff) (1.0+par.neffa*(Neff-1.0)+(par.neffb-4.0*par.neffa)/16.0*(Neff-1.0)*(Neff-1.0))
