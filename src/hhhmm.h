@@ -38,7 +38,7 @@ public:
     float lamda, mu;          // coefficients for aa score distribution of HMM using parameters in 'Parameters par'
     bool has_pseudocounts;    // set to true if HMM contains pseudocounts
 
-    // Make a flat copy of q
+   // Make a flat copy of q
     void FlatCopyTo(HMM& t);
 
     // Read an HMM from a HHsearch .hhm file and return 0 at end of file
@@ -83,14 +83,8 @@ public:
     // Calculate effective number of sequences using profiles INCLUDING pseudocounts
     float CalcNeff();
 
-    // Store linear transition probabilities
-    void StoreLinearTransitionProbs();
-
     // Initialize f[i][a] with query HMM
     void MergeQueryHMM(HMM& q, float wk[]);
-
-    // Normalize probabilities in total merged super-HMM
-    void NormalizeHMMandTransitionsLin2Log();
 
     // Rescale rate matrices P[a][b], R[a][b] according to HMM av. aa composition in pav[a]
     void RescaleMatrix();
@@ -100,9 +94,7 @@ private:
     float** f;                // f[i][a] = prob of finding amino acid a in column i WITHOUT pseudocounts
     float** g;                // f[i][a] = prob of finding amino acid a in column i WITH pseudocounts
     float** p;                // p[i][a] = prob of finding amino acid a in column i WITH OPTIMUM pseudocounts
-    float** tr;               // log2 of transition probabilities M2M M2I M2D I2M I2I D2M D2D
-/*   float** tr_lin;           // transition probs in log space */
-    char trans_lin;           // transition probs are given in log or lin space? (0: p_tr  1: log(p_tr)
+    float** tr;               // tr[i][X2Y] = log2 of transition probabilities M2M M2I M2D I2M I2I D2M D2D
 
     char* ss_dssp;            // secondary structure determined by dssp 0:-  1:H  2:E  3:C  4:S  5:T  6:G  7:B
     char* sa_dssp;            // solvent accessibility state determined by dssp 0:-  1:A (absolutely buried) 2:B  3:C  4:D  5:E (exposed)
@@ -113,6 +105,7 @@ private:
     float pnul[NAA];          // null model probabilities used in comparison (only set in template/db HMMs)
     int* l;                   // l[i] = pos. of j'th match state in aligment
     char dont_delete_seqs;    // set to one if flat copy of seqs and sname was made to a hit object, to avoid deletion
+    char trans_lin;           // transition probs are given in log or lin space? (0: p_tr  1: log(p_tr)
 
     // Utility for Read()
     int Warning(FILE* dbf, char line[], char name[])

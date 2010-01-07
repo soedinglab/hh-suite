@@ -61,7 +61,7 @@ using std::ofstream;
 
 #include "hhhmm.C"       // class HMM
 #include "hhalignment.C" // class Alignment
-#include "hhhit.C"       // class Hit
+#include "hhhit.C"       // class Hit 
 #include "hhhalfalignment.C" // class HalfAlignment
 #include "hhfullalignment.C" // class FullAlignment
 #include "hhhitlist.C"   // class HitList

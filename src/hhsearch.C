@@ -1,8 +1,8 @@
 // hhsearch.C:
 // Search for a multiple alignment (transformed into HMM) in a profile HMM database
-// Compile:              g++ hhsearch.C -o hhsearch -O3 -lpthread -lrt -fno-strict-aliasing
-// Compile with efence:  g++ hhsearch.C -o hhsearch -lefence -lpthread -lrt -O -g
-// Compile for Valgrind: g++ hhsearch.C -o hhsearch2 -lpthread -lrt -O -g
+// Compile:              g++ hhsearch.C -o hhsearch -O3 -lpthread -lrt -fno-strict-aliasing -DHH_SSE3
+// Compile with efence:  g++ hhsearch.C -o hhsearch -lefence -lpthread -lrt -O -g -DHH_SSE3
+// Compile for Valgrind: g++ hhsearch.C -o hhsearch2 -lpthread -lrt -O -g -DHH_SSE3
 // With wnlib:           g++ hhsearch.C /home/soeding/programs/wnlib/acc/text.a  -o hhsearch -O3 -lpthread -lrt -fno-strict-aliasing -g -I/home/soeding/programs/wnlib/acc/h/ -L/home/soeding/programs/electric-fence-2.1.13/
 //
 // Error codes: 0: ok  1: file format error  2: file access error  3: memory error  4: command line error  6: internal logic error  7: internal numeric error
@@ -31,9 +31,20 @@
 #endif
 
 #include <sys/time.h>
+#include <malloc.h>   // memalign()
 //#include <new>
 //#include "efence.h"
 //#include "efence.c"
+
+#ifdef HH_SSE3
+#ifdef __SUNPRO_C
+#include <sunmedia_intrin.h>
+#else
+#include <emmintrin.h>   // SSE2
+#include <pmmintrin.h>   // SSE3
+///#include <smmintrin.h>   // SSE4.1
+#endif
+#endif
 
 using std::cout;
 using std::cerr;
@@ -71,6 +82,7 @@ using std::ofstream;
 #include "hhfullalignment.C" // class FullAlignment
 #include "hhhitlist.C"   // class HitList
 #include "hhfunc.C"      // some functions common to hh programs
+
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Global variables

@@ -244,7 +244,7 @@ int main(int argc, char **argv)
 	{
 	  x = x0 + (Neff-y0)*(x1-x0)/(y1-y0); // linear interpolation between (x0,y0) and (x1,y1)
 	  y = filter_by_qsc(x,qali,dummy);
-	  if (v>=0) printf(" %3i  x0=%6.3f -> %6.3f     x=%6.3f -> %6.3f     x1=%6.3f -> %6.3f \n",++i,x0,y0,x,y,x1,y1);
+	  if (v>=2) printf(" %3i  x0=%6.3f -> %6.3f     x=%6.3f -> %6.3f     x1=%6.3f -> %6.3f \n",++i,x0,y0,x,y,x1,y1);
 	  if (y>Neff) {x0=x; y0=y;} else {x1=x; y1=y;}
 	  if (fabs(Neff-y)<TOLY || x1-x0<TOLX) break;
 	}

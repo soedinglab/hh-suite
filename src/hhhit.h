@@ -1,5 +1,14 @@
 // hhhit.h
 
+#ifdef HH_SSE3
+#ifdef __SUNPRO_C
+#include <sunmedia_intrin.h>
+#else
+#include <emmintrin.h>
+#include <pmmintrin.h>
+#endif
+#endif
+
 /////////////////////////////////////////////////////////////////////////////////////
 // // Describes an alignment of two profiles. Used as list element in Hits : List<Hit> 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -129,8 +138,9 @@ class Hit
   // Comparison (used to sort list of hits)
   int operator<(const Hit& hit2)  {return score_sort<hit2.score_sort;}
 
-  // Merge HMM with next aligned HMM  
-  void MergeHMM(HMM& Q, HMM& t, float wk[]);
+
+  /* // Merge HMM with next aligned HMM   */
+  /* void MergeHMM(HMM& Q, HMM& t, float wk[]); */
 
   double** B_MM;        // Backward matrices
   
