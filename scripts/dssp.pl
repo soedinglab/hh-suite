@@ -2,20 +2,20 @@
 #
 # For each sequence found in infile, read dssp file and write secondary structure
 # assignments for each residue into a separate file in fasta format.
-# Make sure the amino acids of the dssp file match those of the infile sequence and 
+# Make sure the amino acids of the dssp file match those of the infile sequence and
 # warn if an assignment with <=6 mismatches cannot be done.
-# Usage: dssp.pl infile [dssp-dir] 
+# Usage: dssp.pl infile [dssp-dir]
 
 
 use strict;
 $|= 1; # Activate autoflushing on STDOUT
 
-if (scalar(@ARGV)<1) 
+if (scalar(@ARGV)<1)
 {
-    print("\nFor each sequence found in infile, read dssp file and write secondary structure assignments \n"); 
-    print("for each residue into a separate file in fasta format. Make sure the amino acids of the dssp file\n"); 
-    print("match those of the in file and warn if an assignment with <=6 mismatches cannot be done.\n"); 
-    print("Usage: dssp.pl infile [dssp-dir]\n\n"); 
+    print("\nFor each sequence found in infile, read dssp file and write secondary structure assignments \n");
+    print("for each residue into a separate file in fasta format. Make sure the amino acids of the dssp file\n");
+    print("match those of the in file and warn if an assignment with <=6 mismatches cannot be done.\n");
+    print("Usage: dssp.pl infile [dssp-dir]\n\n");
     exit;
 }
 
@@ -36,7 +36,7 @@ my %aas;         #amino acids from in file for each $name
 my $dsspfile;
 my $maxsproutfile;
 my $nfile=0;     #number of files read in
-my $pdbcode;     #pdb code for accessing dssp file; shortened from in code, e.g. 1g8m 
+my $pdbcode;     #pdb code for accessing dssp file; shortened from in code, e.g. 1g8m
 my @ss_dssp;     #dssp states for residues (H,E,L)
 my @aa_dssp;     #residues read from dssp file
 my @aa_astr;     #residues in infile
@@ -61,7 +61,7 @@ my $thischain;
 
 # Read infile and prepare hashes %first, %last, %chain, $longname
 open (INFILE, "<$infile") || die ("cannot open $infile: $!");
-while ($line=<INFILE>) 
+while ($line=<INFILE>)
 {
     if ($line=~/>(\S+)\s+\S+\s+\((\S+)\)/)
     {
@@ -97,34 +97,33 @@ foreach $name (keys(%range))
     $dsspfile="$dsspdir/$pdbcode.dssp";
     if (! open (DSSPFILE, "<$dsspfile"))
     {
-	printf(STDERR "Cannot open $dsspfile: $!\n"); 
+	printf(STDERR "Cannot open $dsspfile: $!\n");
 	$maxsproutfile="$pdbdir/$pdbcode.brk_ca_mod";
 	if (! -e $maxsproutfile)
+	{
+	    printf(STDERR "ERROR: could open $maxsproutfile either: $!  Skipping $name\n");
+	    next;
+	}
+	else
+	{
+	    &System("$dssp $maxsproutfile $dsspfile > dssp.out 2>&1");
+	    if (! open (DSSPFILE, "<$dsspfile"))
 	    {
-		printf(STDERR "ERROR: could open $maxsproutfile either: $!  Skipping $name\n"); 
+		printf(STDERR "ERROR: dssp couldn't generate file from maxsprout-file. Skipping $name\n");
 		next;
 	    }
-	    else
-	    {
-		&System("$dssp $maxsproutfile $dsspfile &> dssp.out");
-		if (! open (DSSPFILE, "<$dsspfile"))
-		{
-		    printf(STDERR "ERROR: dssp couldn't generate file from maxsprout-file. Skipping $name\n");
-		    next;
-		} 
-		
-	    }
+	}
     }
     while ($line=<DSSPFILE>) {if ($line=~/^\s*\#\s*RESIDUE\s+AA/) {last;}}
 
     $gap=0; $i=-1; $error=0; $assigned=0; $skipchain=""; $errinarow=0;
-    while ($line=<DSSPFILE>) 
+    while ($line=<DSSPFILE>)
     {
 	if ($line=~/^.{5}(.{5})(.)(.)\s(.).\s(.)/)
 	{
 	    $thisres=$1;
 	    $thisres=~tr/ //d;
-	    if ($2.$3 eq $skipchain) {next;} 
+	    if ($2.$3 eq $skipchain) {next;}
 	    $skipchain="";
 	    $thischain=$2.$3;
 	    $chain=$3;
@@ -146,32 +145,32 @@ foreach $name (keys(%range))
 	    } while($contained==0 && $range ne "");
 
 	    # line not contained in specified range for $name?
-	    if (!$contained) {$lastres=$thisres; $gap=0; next;}    
+	    if (!$contained) {$lastres=$thisres; $gap=0; next;}
 
 	    if (!exists $aa_astr[$i+1]) {last;}
 	    if($gap && $i!=-1)
 	    {
 		while ($aa_astr[$i+1] eq "X") {$i++;}
-		if ((exists($aa_astr[$i+$thisres-$lastres])) 
+		if ((exists($aa_astr[$i+$thisres-$lastres]))
 		    && $aa_astr[$i+$thisres-$lastres] eq $aa && $aa_astr[$i+1] ne $aa)
 		{
 		    $i+=$thisres-$lastres;
 		    if (!exists $aa_astr[$i]) {$error=1000; $i=0;}
 		}
-		else 
+		else
 		{
 		    $i++;
 		    if (!exists $aa_astr[$i]) {$error=1000; $i=0;}
 		}
 	    }
-	    else {$i++;}	
-	    
+	    else {$i++;}
+
 	    $aa=~tr/a-z/CCCCCCCCCCCCCCCCCCCCCCCCCC/;
 
 	    # Count wrong assignments
 	    if ($error<1000 && $aa ne $aa_astr[$i] && $aa ne "X")
 	    {
-		if ($errinarow>=1) 
+		if ($errinarow>=1)
 		{
 		    $error++; $errinarow++;
 		    my $j=$i;
@@ -184,7 +183,7 @@ foreach $name (keys(%range))
 	    else {$errinarow=0;}
 
 
-	    if ($error>6) 
+	    if ($error>6)
 	    {
 #		print("Errors:$error   i:$i   aa_astr:$aa_astr[$i]   aa:$aa\n");
 #		print("$longname{$name}\n");
@@ -206,16 +205,16 @@ foreach $name (keys(%range))
 #	    elsif ($ss eq "B") {$ss="~";}
 	    $ss_dssp[$i]=$ss;
 	    $aa_dssp[$i]=$aa;
-	    $lastres=$thisres; 
+	    $lastres=$thisres;
 	    $gap=0;
 	}
     }
     close(DSSPFILE);
     $nfile++;
 
-    if ($skipchain || $error>6) 
+    if ($skipchain || $error>6)
     {printf (STDERR "ERROR in $name ($nfile): too many wrong assingments of residues\n"); next;}
-    elsif ($assigned<0.5*$length) 
+    elsif ($assigned<0.5*$length)
     {printf (STDERR "ERROR in $name ($nfile): too few correct assignments of residues\n"); next;}
 
 #    printf(STDERR "%4i: %-100.100s  ",$nfile,$longname{$name});
@@ -228,14 +227,14 @@ foreach $name (keys(%range))
     $aa_dssp=~tr/ /-/;
     $ss_dssp=~tr/ /-/;
 
-    if (!open (SSFILE,">$name.ss")) 
+    if (!open (SSFILE,">$name.ss"))
     {printf(STDERR "ERROR: cannot open $name.ss: $!\n"); next;}
     printf(SSFILE ">ss_dssp $longname{$name}\n$ss_dssp\n");
     printf(SSFILE ">aa_dssp $longname{$name}\n$aa_dssp\n");
     printf(SSFILE ">aa_astral $longname{$name}\n$aa_astr\n\n");
     close (SSFILE);
 
-} 
+}
 
 
 exit;
@@ -244,7 +243,6 @@ exit;
 sub System()
 {
     my $command=$_[0];
-    print("\nCalling '$command'\n"); 
-    return system($command)/256; # && die("\nERROR: $!\n\n"); 
+    print("\nCalling '$command'\n");
+    return system($command)/256; # && die("\nERROR: $!\n\n");
 }
-

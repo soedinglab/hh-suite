@@ -482,7 +482,7 @@ sub ExtendSequence {
     my $ndbfile;
 
     # Fast psiblast search for very similar sequences
-    &System("$blastpgp -I T -b 10 -v 10 -e 1e-6 -A 10 -f 15 -d $dbfile -i $tmp.seq &> $tmp.bla");
+    &System("$blastpgp -I T -b 10 -v 10 -e 1e-6 -A 10 -f 15 -d $dbfile -i $tmp.seq > $tmp.bla 2>&1");
 
     # Search names of longest, highest-scoring template sequences in blast results 
     open (BLASTFILE, "<$tmp.bla") or die "ERROR: Couldn't open $tmp.bla: $!\n";
@@ -973,7 +973,7 @@ sub AppendDsspSequences() {
 	    return 1;
 	} else  {
 	    if (! open (DSSPFILE, "<$dsspfile")) {
-		&System("$dssp $pdbfile $tmp.dssp &> $tmp.log");
+		&System("$dssp $pdbfile $tmp.dssp > $tmp.log 2>&1");
 #	        &System("cp $tmp.dssp $dsspfile "); # dssp directory is on a read-only filesystem
 	    }
 	    $dsspfile="$tmp.dssp";
@@ -1145,7 +1145,7 @@ sub RunPsipred() {
     if (!-e "$dummydb.phr") {print("WARNING: did not find $dummydb.phr... using $db70\n"); $dummydb=$db70; } 
 
     # Start Psiblast from checkpoint file tmp.chk that was generated to build the profile
-    &System("$blastpgp -b 0 -j 1 -h 0.001 -d $dummydb -i $infile -B $basename.psi -C $basename.chk &> $basename.bla");
+    &System("$blastpgp -b 0 -j 1 -h 0.001 -d $dummydb -i $infile -B $basename.psi -C $basename.chk > $basename.bla 2>&1");
     
 #    print("Predicting secondary structure...\n");
     
@@ -1167,7 +1167,7 @@ sub RunPsipred() {
 ### Run blastpgp
 ################################################################################################
 sub blastpgp() {
-    if (&System("$blastpgp -b 20000 -v 1 $_[0] &> $_[1]")) {
+    if (&System("$blastpgp -b 20000 -v 1 $_[0] > $_[1] 2>&1")) {
 	print("\nError: PSI-BLAST returned with error:\n");
 	&System("cat $_[1]"); die();
     }
