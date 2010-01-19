@@ -879,7 +879,7 @@ void CheckInputFiles()
 	{help(); cerr<<endl<<"Error in "<<program_name<<": Use -a3m or -psi when starting HHblits with an alignment!\n"; exit(4);}
 
       // Copy infile to tmp_file.fas as input for the BLAST prefilter searches
-      command = (string)hh + "/reformat.pl fas fas " + (string)par.infile + " " + tmp_infile + " > /dev/null";
+      command = (string)hh + "/reformat.pl fas fas " + (string)par.infile + " " + tmp_infile + " -g '' > /dev/null";
       runSystem(command);
       RemoveExtension(base_filename,par.infile);
       strcpy(par.infile,tmp_infile.c_str());
