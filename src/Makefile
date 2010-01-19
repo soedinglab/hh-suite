@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -O3 -Wall -Wno-char-subscripts -fno-strict-aliasing -DHH_SSE3
+CXXFLAGS = -O3 -Wall -Wno-char-subscripts -fno-strict-aliasing -DHH_SSE3 -march=core2
 CPP = $(CXX) $(CXXFLAGS)
 
 SOURCES = hhsearch.C hhhitlist.C hhhit.C hhalignment.C hhhmm.C hhmatrices.C hhdecl.C hhfunc.C hhfullalignment.C hhfullalignment.C hash.C hhutil.C util.C list.C thread.C cs_counts.cpp amino_acid.cpp simple_cluster.cpp cluster.cpp training_profile.cpp profile.cpp sequence.cpp matrix.cpp
