@@ -446,6 +446,16 @@ void Alignment::Compress(const char infile[])
               while((c=seq[k][l++]))  // assign residue to c at same time
                 if (c!='.') X[k][i++]=cf2i(c); //match state = 0-9 or '-'
             }
+	  else if (k==kfirst)        // does alignment contain sequence of prediction confidence values?
+            {
+              while((c=seq[k][l++]))  // assign residue to c at same time
+                if (c!='.') 
+		  {
+		    X[k][i]=aa2i(c);
+		    I[k][i]=0;
+		    i++;
+		  }
+            }
           else continue;
           i--;
           if (L!=i && L!=MAXRES-2 && !unequal_lengths) unequal_lengths=k;   //sequences have different lengths
