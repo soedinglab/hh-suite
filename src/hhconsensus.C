@@ -18,6 +18,18 @@
 #include <cassert>
 #include <stdexcept>
 
+#include <malloc.h>   // memalign()
+
+#ifdef HH_SSE3
+#ifdef __SUNPRO_C
+#include <sunmedia_intrin.h>
+#else
+#include <emmintrin.h>   // SSE2
+#include <pmmintrin.h>   // SSE3
+///#include <smmintrin.h>   // SSE4.1
+#endif
+#endif
+
 //#include <new>
 //#include "efence.h"
 //#include "efence.c"
