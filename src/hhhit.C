@@ -314,6 +314,8 @@ void Hit::Viterbi(HMM& q, HMM& t, float** Sstruc)
   // Variable declarations
 #ifdef HH_SSE3
   float __attribute__((aligned(16))) Si[MAXRES];  // sMM[i][j] = score of best alignment up to indices (i,j) ending in (Match,Match) 
+#else
+  float Si[MAXRES];  // sMM[i][j] = score of best alignment up to indices (i,j) ending in (Match,Match) 
 #endif
   float sMM[MAXRES];          // sMM[i][j] = score of best alignment up to indices (i,j) ending in (Match,Match) 
   float sGD[MAXRES];          // sGD[i][j] = score of best alignment up to indices (i,j) ending in (Gap,Delete) 
@@ -1826,7 +1828,7 @@ inline float ProbFwd(float* qi, float* tj)
   _mm_store_ss(&res, R);
   return res;
 #else
-  return=  tj[0] *qi[0] +tj[1] *qi[1] +tj[2] *qi[2] +tj[3] *qi[3] +tj[4] *qi[4]
+  return  tj[0] *qi[0] +tj[1] *qi[1] +tj[2] *qi[2] +tj[3] *qi[3] +tj[4] *qi[4]
           +tj[5] *qi[5] +tj[6] *qi[6] +tj[7] *qi[7] +tj[8] *qi[8] +tj[9] *qi[9]
           +tj[10]*qi[10]+tj[11]*qi[11]+tj[12]*qi[12]+tj[13]*qi[13]+tj[14]*qi[14]
           +tj[15]*qi[15]+tj[16]*qi[16]+tj[17]*qi[17]+tj[18]*qi[18]+tj[19]*qi[19];
