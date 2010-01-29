@@ -380,20 +380,6 @@ void ProcessArguments(int argc, char** argv)
 	    {help() ; cerr<<endl<<"Error in "<<program_name<<": no output file following -Aa3m\n"; exit(4);}
 	  else strcpy(par.alnfile,argv[i]);
 	}
-      else if (!strcmp(argv[i],"-Ohhm"))
-	{
-	  par.append=0;
-	  if (++i>=argc || argv[i][0]=='-') 
-	    {help() ; cerr<<endl<<"Error in "<<program_name<<": no output file following -Ohhm\n"; exit(4);}
-	  else strcpy(par.hhmfile,argv[i]);
-	}
-      else if (!strcmp(argv[i],"-Ahhm"))
-	{
-	  par.append=1;
-	  if (++i>=argc || argv[i][0]=='-') 
-	    {help() ; cerr<<endl<<"Error in "<<program_name<<": no output file following -Ahhm\n"; exit(4);}
-	  else strcpy(par.hhmfile,argv[i]);
-	}
       else if (!strcmp(argv[i],"-Opsi"))
 	{
 	  par.append=0;
@@ -991,7 +977,7 @@ int main(int argc, char **argv)
   if (par.hitrank==0) hit=hitlist.Read(1); else hit=hitlist.Read(par.hitrank);
   
   // Generate output alignment or HMM file?
-  if (*par.alnfile || *par.psifile || *par.hhmfile) 
+  if (*par.alnfile || *par.psifile) 
     {
       if (par.append==0) 
 	{
