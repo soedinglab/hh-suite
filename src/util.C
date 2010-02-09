@@ -44,6 +44,42 @@ inline float log10(float x) {return (x<=0? (float)(-100000):0.434294481*log(x));
 // fast log base 2
 /////////////////////////////////////////////////////////////////////////////////////
 
+// Fast log2 
+// ATTENTION: need to compile with g++ -fno-strict-aliasing when using -O2 or -O3!!! 
+// Maximum deviation: +/- 2.1E-5
+// Run time: ~1.2E-8s on Intel core2 2.13GHz, log2(): 5.4E-8s
+// For a negative argument, -128 is returned.
+// The function makes use of the representation of 4-byte floating point numbers:
+// seee eeee emmm mmmm mmmm mmmm mmmm mmmm
+// s is the sign, eee eee e gives the exponent + 127 (in hex: 0x7f).
+// The following 23 bits give the mantisse, the binary digits after the decimal 
+// point:  x = (-1)^s * 1.mmmmmmmmmmmmmmmmmmmmmmm * 2^(eeeeeeee-127)
+// Therefore,  log2(x) = eeeeeeee-127 + log2(1.mmmmmm...) 
+//                     = eeeeeeee-127 + log2(1+y),  where y = 0.mmmmmm... 
+//                     ~ eeeeeeee-127 + ((a*y+b)*y+c)*y 
+// The coefficients a, b  were determined by a least squares fit, and c=1-a-b to get 1 at y=1.
+// Lower/higher order polynomials may be used for faster or more precise calculation:
+// Order 1: log2(1+y) ~ y                 
+// Order 2: log2(1+y) = (a*y + 1-a)*y, a=-0.3427                                           
+//  => max dev = +/- 8E-3, run time ~ ?
+// Order 3: log2(1+y) = ((a*y+b)*y + 1-a-b)*y, a=0.1564, b=-0.5773   
+//  => max dev = +/- 1E-3, run time ~ ?
+// Order 4: log2(1+y) = (((a*y+b)*y+c)*y + 1-a-b-c)*y, a=-0.0803 b=0.3170 c=-0.6748 
+//  => max dev = +/- 1.4E-4, run time ~ ?
+// Order 5: log2(1+y) = ((((a*y+b)*y+c)*y+d)*y + 1-a-b-c-d)*y, 
+//     a=0.0440047 b=-0.1903190 c=0.4123442 d=-0.7077702 1-a-b-c-d=1.441740
+//  => max dev = +/- 2.1E-5, run time ~ 1.2E-8s
+inline float flog2(float x)
+{
+  if (x<=0) return -128;
+  int *px = (int*)(&x);                 // store address of float as pointer to long int
+  float e = (float) (((*px & 0x7F800000) >>23 )-0x7f); // shift right by 23 bits and subtract 127 = 0x7f => exponent
+  *px =  ((*px & 0x007FFFFF) | 0x3f800000);  // set exponent to 127 (i.e., 0) 
+  x -= 1.0;         // and calculate x-1.0 
+  x *= (1.441740 + x*(-0.7077702 +x*(0.4123442 +x*(-0.1903190+x*0.0440047)))); // 5'th order polynomial approx. of log(1+x)
+  return x+e;
+}
+
 // This function returns log2 with a max absolute deviation of +/- 1.5E-5 (typically 0.8E-5).
 // It takes 1.42E-8 s  whereas log2(x) takes 9.5E-7 s. It is hence 9.4 times faster.
 // It makes use of the representation of 4-byte floating point numbers:

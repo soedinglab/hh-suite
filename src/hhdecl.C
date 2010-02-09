@@ -186,6 +186,19 @@ public:
   int block_shading_space;           // space added to the rands of prefilter HSP
   char block_shading_mode[NAMELEN];
 
+  // For HHblits prefiltering with SSE2
+  int prefilter_lmax;              // maximum block length of each DB-Sequence
+  int sse_shading_space;           // space added to the rands of prefilter HSP
+  short prefilter_gap_open;
+  short prefilter_gap_extend;
+  int prefilter_states;               // Anzahl der States im Alphabet
+  int prefilter_db_overlap;           // Overlap if DB-Sequence > par.prefilter_lmax
+  int prefilter_score_offset;
+  int prefilter_bit_factor;
+  int prefilter_smax_thresh;
+  int prefilter_rmax_thresh;
+  
+
   // SCRAP THE FOLLOWING VARIABLES?
 
   float wstruc;          // weight of structure scores

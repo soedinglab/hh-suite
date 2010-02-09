@@ -550,6 +550,18 @@ void SetDefaults()
   par.block_shading_space = 100;
   strcpy(par.block_shading_mode,"tube");
 
+  // For HHblits prefiltering with SSE2
+  par.prefilter_lmax = 500;
+  par.prefilter_db_overlap=100;   
+  par.sse_shading_space = 50;         
+  par.prefilter_gap_open = 20;
+  par.prefilter_gap_extend = 4;
+  par.prefilter_states=20;        
+  par.prefilter_score_offset = 30;
+  par.prefilter_bit_factor = 4;
+  par.prefilter_smax_thresh = 55;
+  par.prefilter_rmax_thresh = 50;
+
   // for filtering database alignments in HHsearch and HHblits
   par.max_seqid_db=par.max_seqid;
   par.qid_db=par.qid;            

@@ -1553,7 +1553,45 @@ void Hit::InitializeForAlignment(HMM& q, HMM& t)
     }
   else
     {
-      if (par.block_shading && !strcmp(par.block_shading_mode,"tube") && par.block_shading->Contains(t.name))
+      if (par.block_shading && !strcmp(par.block_shading_mode,"SSE") && par.block_shading->Contains(t.name))
+	{
+	  // Deactivate all cells in dynamic programming matrix
+	  for (i=1; i<=q.L; i++) 
+	    for (j=1; j<=t.L; j++) 
+	      cell_off[i][j]=1;   
+	  
+	  int* tmp = par.block_shading->Show(t.name);
+	  int counter = par.block_shading_counter->Show(t.name);
+	  
+	  //printf("Hit %s:\n",t.name);
+	  
+	  int m = 0;
+	  while (m < counter)
+	    {
+	      int beg = tmp[m++];
+	      int d1 = tmp[m++] - par.sse_shading_space;
+	      int d2 = tmp[m++] + par.sse_shading_space;
+
+	      for (i = 1; i <= q.L; i++)
+		for (j = beg; j <= imin(t.L,beg+par.prefilter_lmax); j++)
+		  if ((i-j) > d1 && (i-j) < d2)
+		    cell_off[i][j]=0; 
+	    }
+	  
+	  min_overlap = 0;
+
+	  // if (!strcmp(t.name, "cl|LAMVOCABA|6|883"))
+	  //   {
+	  //     printf("Cell_off matrix:\n");
+	  //     for (j=1; j<=t.L; j++) 
+	  // 	{
+	  // 	  for (i=1; i<=q.L; i++)
+	  // 	    printf("%1i",cell_off[i][j]);
+	  // 	  printf("\n");
+	  // 	}
+	  //   }
+	}
+      else if (par.block_shading && !strcmp(par.block_shading_mode,"tube") && par.block_shading->Contains(t.name))
 	{
 
 	  // Deactivate all cells in dynamic programming matrix

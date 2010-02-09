@@ -1247,7 +1247,7 @@ void HMM::AddAminoAcidPseudocounts(char pcm, float pca, float pcb, float pcc)
           break;
         case 2:
           cout<<"Adding divergence-dependent AA pseudocounts (-pcm 2) with admixture of "
-              <<pca/(1.+pow((Neff_HMM-1.)/pcb,pcc))<<" to HMM "<<name<<"\n";
+              <<fmin(1.0, pca/(1. + Neff_HMM/pcb ) )<<" to HMM "<<name<<"\n";
           break;
         } //end switch (pcm)
       if (v>=4)
@@ -1285,13 +1285,13 @@ void HMM::AddAminoAcidPseudocounts(char pcm, float pca, float pcb, float pcc)
 /////////////////////////////////////////////////////////////////////////////////////
 // Factor Null model into HMM t
 /////////////////////////////////////////////////////////////////////////////////////
-void HMM::IncludeNullModelInHMM(HMM& q, HMM& t)
+void HMM::IncludeNullModelInHMM(HMM& q, HMM& t, int columnscore )
 {
 
   int i,j;        //query and template match state indices
   int a;          //amino acid index
 
-  switch (par.columnscore)
+  switch (columnscore)
     {
     default:
     case 0: // Null model with background prob. from database

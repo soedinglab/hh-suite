@@ -66,7 +66,7 @@ public:
     void NoAminoAcidPseudocounts() {for(int i=1; i<=L; i++) for(int a=0; a<20; a++) p[i][a]=f[i][a];};
 
     // Factor Null model into HMM t
-    void IncludeNullModelInHMM(HMM& q, HMM& t);
+    void IncludeNullModelInHMM(HMM& q, HMM& t, int columnscore=par.columnscore);
 
     // Write HMM to output file
     void WriteToFile(char* outfile);
@@ -89,11 +89,13 @@ public:
     // Rescale rate matrices P[a][b], R[a][b] according to HMM av. aa composition in pav[a]
     void RescaleMatrix();
 
+    // Needed for SSE2 prefiltering with HHblits with amino acid alphabet
+    float** p;                // p[i][a] = prob of finding amino acid a in column i WITH OPTIMUM pseudocounts
 
 private:
     float** f;                // f[i][a] = prob of finding amino acid a in column i WITHOUT pseudocounts
-    float** g;                // f[i][a] = prob of finding amino acid a in column i WITH pseudocounts
-    float** p;                // p[i][a] = prob of finding amino acid a in column i WITH OPTIMUM pseudocounts
+    float** g;                // g[i][a] = prob of finding amino acid a in column i WITH pseudocounts
+    //float** p;                // p[i][a] = prob of finding amino acid a in column i WITH OPTIMUM pseudocounts
     float** tr;               // tr[i][X2Y] = log2 of transition probabilities M2M M2I M2D I2M I2I D2M D2D
 
     char* ss_dssp;            // secondary structure determined by dssp 0:-  1:H  2:E  3:C  4:S  5:T  6:G  7:B
