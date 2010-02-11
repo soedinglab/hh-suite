@@ -233,7 +233,7 @@ void ProcessArguments(int argc, char** argv)
         {
           if (++i>=argc || argv[i][0]=='-')
             {help(); cerr<<endl<<"Error in "<<program_name<<": no output file following -p\n"; exit(4);}
-          else strcpy(par.pngfile,argv[i]);
+          else {pngfile = new(char[strlen(argv[i])+1]); strcpy(pngfile,argv[i]);}
         }
        else if (!strcmp(argv[i],"-h"))
          {
@@ -337,7 +337,7 @@ int main(int argc, char **argv)
   int argc_conf;               // Number of arguments in argv_conf
   char in1ext[IDLEN];          // Extension of input file (hhm or a3m)
   char in2ext[IDLEN];          // Extension of input file (hhm or a3m)
-  strcpy(par.pngfile,"");
+  char* pngfile=NULL;
 
   SetDefaults();
   par.p=0.0;                   // minimum threshold for inclusion in hit list and alignment listing
@@ -534,9 +534,9 @@ int main(int argc, char **argv)
   for (int i=0; i<NPVAL; i++) f[i]=c12[i]*c1[0]/c1[i]/c2[i];
 
   // Write png file?
-  if (*par.pngfile)
+  if (*pngfile)
     {
-      pngwriter png(NPIX,NPIX,0.0,par.pngfile);
+      pngwriter png(NPIX,NPIX,0.0,pngfile);
       hitlist1.Reset();
       hitlist2.Reset();
       while (!hitlist1.End())
@@ -546,7 +546,7 @@ int main(int argc, char **argv)
           png.plot(1+ifloor(pval1*NPIX),1+ifloor(pval2*NPIX),1.,1.,1.);
         }
       png.close();
-      if (v>=2) printf("Dot plot written to %s\n",par.pngfile);
+      if (v>=2) printf("Dot plot written to %s\n",pngfile);
     }
 
   // Write results into par.outfile?

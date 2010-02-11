@@ -74,8 +74,8 @@ public:
   char scorefile[NAMELEN];// table of scores etc for all HMMs in searched database
   char tfile[NAMELEN];    // template filename (in hhalign)
   char buffer[NAMELEN];   // buffer to write results for other programs into
-  char pngfile[NAMELEN];  // png image file for dotplot
   char wfile[NAMELEN];    // weights file generated with hhformat
+  char alitabfile[NAMELEN]; // where to write pairs of aligned residues (-atab option)
   char* blafile;          // output of 'blastpgp -m 8' with PSI-BLAST E-values for HHblits
   float hhblits_prefilter_logpval;  // PSI-BLAST prefilter log P-value threshold of HHblits
   char* dbfiles;          // database filenames, separated by colons

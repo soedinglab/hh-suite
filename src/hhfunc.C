@@ -242,3 +242,21 @@ void PrepareTemplate(HMM& q, HMM& t, int format)
     return;
 }
 
+void WriteToAlifile(FILE* alitabf, Hit* hit)
+    {
+      if (par.forward==2 || par.realign) 
+	{
+	  fprintf(alitabf,"    i     j  score     SS  probab\n");
+	  for (int step=hit->nsteps; step>=1; step--)
+	    if (hit->states[step]>=MM) 
+	      fprintf(alitabf,"%5i %5i %6.2f %6.2f %7.4f\n",hit->i[step],hit->j[step],hit->S[step],hit->S_ss[step],hit->P_posterior[step]);
+	} 
+      else 
+	{
+	  fprintf(alitabf,"    i     j  score     SS\n");
+	  for (int step=hit->nsteps; step>=1; step--)
+	    if (hit->states[step]>=MM) 
+	      fprintf(alitabf,"%5i %5i %6.2f %6.2f\n",hit->i[step],hit->j[step],hit->S[step],hit->S_ss[step]);
+	}
+      return;
+   }
