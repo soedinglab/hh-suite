@@ -25,13 +25,13 @@
 #include <errno.h>    // perror()
 #include <cassert>
 #include <stdexcept>
+#include <malloc.h>   // memalign()
 
 #ifdef PTHREAD
 #include <pthread.h>  // POSIX pthread functions and data structures
 #endif
 
 #include <sys/time.h>
-#include <malloc.h>   // memalign()
 //#include <new>
 //#include "efence.h"
 //#include "efence.c"
@@ -111,6 +111,7 @@ HMM qrev;                 // Create query  HMM with maximum of MAXRES match stat
 HMM* t[MAXBINS];          // Each bin has a template HMM allocated that was read from the database file
 Hit* hit[MAXBINS];        // Each bin has an object of type Hit allocated with a separate dynamic programming matrix (memory!!)
 HitList hitlist;          // list of hits with one Hit object for each pairwise comparison done
+Hit hit_cur;              // current Hit element read from hitlist
 int* format;              // format[bin] = 0 if in HHsearch format => add pcs; format[bin] = 1 if in HMMER format => no pcs
 int read_from_db;         // The value of this flag is returned from HMM::Read(); 0:end of file  1:ok  2:skip HMM
 int N_searched;  // Number of HMMs searched
@@ -457,25 +458,25 @@ void ProcessArguments(int argc, char** argv)
       else if (!strcmp(argv[i],"-w"))
         {
           if (++i>=argc || argv[i][0]=='-')
-            {help() ; cerr<<endl<<"Error in "<<program_name<<": no weights file following -a\n"; exit(4);}
+            {help() ; cerr<<endl<<"Error in "<<program_name<<": no weights file following -w\n"; exit(4);}
           else {strcpy(par.wfile,argv[i]); par.trans=1;}
         }
       else if (!strcmp(argv[i],"-w2"))
         {
           if (++i>=argc || argv[i][0]=='-')
-            {help() ; cerr<<endl<<"Error in "<<program_name<<": no weights file following -a\n"; exit(4);}
+            {help() ; cerr<<endl<<"Error in "<<program_name<<": no weights file following -w2\n"; exit(4);}
           else {strcpy(par.wfile,argv[i]); par.trans=2;}
         }
       else if (!strcmp(argv[i],"-w3"))
         {
           if (++i>=argc || argv[i][0]=='-')
-            {help() ; cerr<<endl<<"Error in "<<program_name<<": no weights file following -a\n"; exit(4);}
+            {help() ; cerr<<endl<<"Error in "<<program_name<<": no weights file following -w3\n"; exit(4);}
           else {strcpy(par.wfile,argv[i]); par.trans=3;}
         }
       else if (!strcmp(argv[i],"-w4"))
         {
           if (++i>=argc || argv[i][0]=='-')
-            {help() ; cerr<<endl<<"Error in "<<program_name<<": no weights file following -a\n"; exit(4);}
+            {help() ; cerr<<endl<<"Error in "<<program_name<<": no weights file following -w4\n"; exit(4);}
           else {strcpy(par.wfile,argv[i]); par.trans=4;}
         }
       else if (!strcmp(argv[i],"-opt"))
@@ -500,6 +501,12 @@ void ProcessArguments(int argc, char** argv)
               strcpy(par.blafile,argv[i]);
           }
         }
+      else if (!strcmp(argv[i],"-atab") || !strcmp(argv[i],"-Aliout"))
+	{
+	  if (++i>=argc || argv[i][0]=='-') 
+	    {help(); cerr<<endl<<"Error in "<<program_name<<": no query file following -atab\n"; exit(4);}
+	  else strncpy(par.alitabfile,argv[i],NAMELEN);
+	}
       else if (!strcmp(argv[i],"-h")|| !strcmp(argv[i],"--help"))
         {
           if (++i>=argc || argv[i][0]=='-') {help(); exit(0);}
@@ -1115,7 +1122,6 @@ int main(int argc, char **argv)
       Hash< List<Posindex>* >* realign; // realign->Show(dbfile) is list with ftell positions for templates in dbfile to be realigned
       realign = new(Hash< List<Posindex>* >);
       realign->New(3601,NULL);
-      Hit hit_cur;
       const float MEMSPACE_DYNPROG = 2.0*1024.0*1024.0*1024.0;
       int nhits=0;
       int Lmax=0;      // length of longest HMM to be realigned
@@ -1692,6 +1698,29 @@ int main(int argc, char **argv)
       if (*par.psifile) Qali.WriteToFile(par.psifile,"psi");
    }
 
+
+  // Write alignments with posteriors etc. to alitabfile?
+  if (*par.alitabfile) 
+    {
+      FILE* alitabf=NULL;
+      if (strcmp(par.alitabfile,"stdout")) alitabf = fopen(par.alitabfile, "w"); else alitabf = stdout;
+      if (!alitabf) OpenFileError(par.alitabfile);
+      
+      // Store all dbfiles and ftell positions of templates to be displayed and realigned
+      int nhits=0;
+      hitlist.Reset();
+      while (!hitlist.End())
+        {
+          hit_cur = hitlist.ReadNext();
+          if (nhits>=imax(par.B,par.Z)) break;
+          if (nhits>=imax(par.b,par.z) && hit_cur.Probab < par.p) break;
+          if (nhits>=imax(par.b,par.z) && hit_cur.Eval > par.E) continue;
+	  WriteToAlifile(alitabf,&hit_cur);
+     	  nhits++;
+	}
+      fclose(alitabf);
+    }
+  
   // Delete memory for dynamic programming matrix
   for (bin=0; bin<bins; bin++)
     {
@@ -1711,7 +1740,6 @@ int main(int argc, char **argv)
   delete doubled;
 
   // Delete content of hits in hitlist
-  Hit hit_cur;
   hitlist.Reset();
   while (!hitlist.End())
     {

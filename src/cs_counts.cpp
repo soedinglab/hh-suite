@@ -118,31 +118,31 @@ void CSCounts::prepare_pseudocounts(HMM& q) throw (std::exception)
             for(int a=0; a<NAA; ++a) {
                 float tmp = 1.442695041 * (log_pki + log_pk[center][a]);
                 if (tmp<=127)
-                    pc[i][a] += fast_pow2(tmp);
+                    pc[i][a] += fpow2(tmp);
                 else
                     pc[i][a] += exp(log_pki + log_pk[center][a]);
             }
 
-//             pc[i][0]  += fast_pow2(1.442695041 * (log_pki + log_pk[center][0]));
-//             pc[i][1]  += fast_pow2(1.442695041 * (log_pki + log_pk[center][1]));
-//             pc[i][2]  += fast_pow2(1.442695041 * (log_pki + log_pk[center][2]));
-//             pc[i][3]  += fast_pow2(1.442695041 * (log_pki + log_pk[center][3]));
-//             pc[i][4]  += fast_pow2(1.442695041 * (log_pki + log_pk[center][4]));
-//             pc[i][5]  += fast_pow2(1.442695041 * (log_pki + log_pk[center][5]));
-//             pc[i][6]  += fast_pow2(1.442695041 * (log_pki + log_pk[center][6]));
-//             pc[i][7]  += fast_pow2(1.442695041 * (log_pki + log_pk[center][7]));
-//             pc[i][8]  += fast_pow2(1.442695041 * (log_pki + log_pk[center][8]));
-//             pc[i][9]  += fast_pow2(1.442695041 * (log_pki + log_pk[center][9]));
-//             pc[i][10] += fast_pow2(1.442695041 * (log_pki + log_pk[center][10]));
-//             pc[i][11] += fast_pow2(1.442695041 * (log_pki + log_pk[center][11]));
-//             pc[i][12] += fast_pow2(1.442695041 * (log_pki + log_pk[center][12]));
-//             pc[i][13] += fast_pow2(1.442695041 * (log_pki + log_pk[center][13]));
-//             pc[i][14] += fast_pow2(1.442695041 * (log_pki + log_pk[center][14]));
-//             pc[i][15] += fast_pow2(1.442695041 * (log_pki + log_pk[center][15]));
-//             pc[i][16] += fast_pow2(1.442695041 * (log_pki + log_pk[center][16]));
-//             pc[i][17] += fast_pow2(1.442695041 * (log_pki + log_pk[center][17]));
-//             pc[i][18] += fast_pow2(1.442695041 * (log_pki + log_pk[center][18]));
-//             pc[i][19] += fast_pow2(1.442695041 * (log_pki + log_pk[center][19]));
+//             pc[i][0]  += fpow2(1.442695041 * (log_pki + log_pk[center][0]));
+//             pc[i][1]  += fpow2(1.442695041 * (log_pki + log_pk[center][1]));
+//             pc[i][2]  += fpow2(1.442695041 * (log_pki + log_pk[center][2]));
+//             pc[i][3]  += fpow2(1.442695041 * (log_pki + log_pk[center][3]));
+//             pc[i][4]  += fpow2(1.442695041 * (log_pki + log_pk[center][4]));
+//             pc[i][5]  += fpow2(1.442695041 * (log_pki + log_pk[center][5]));
+//             pc[i][6]  += fpow2(1.442695041 * (log_pki + log_pk[center][6]));
+//             pc[i][7]  += fpow2(1.442695041 * (log_pki + log_pk[center][7]));
+//             pc[i][8]  += fpow2(1.442695041 * (log_pki + log_pk[center][8]));
+//             pc[i][9]  += fpow2(1.442695041 * (log_pki + log_pk[center][9]));
+//             pc[i][10] += fpow2(1.442695041 * (log_pki + log_pk[center][10]));
+//             pc[i][11] += fpow2(1.442695041 * (log_pki + log_pk[center][11]));
+//             pc[i][12] += fpow2(1.442695041 * (log_pki + log_pk[center][12]));
+//             pc[i][13] += fpow2(1.442695041 * (log_pki + log_pk[center][13]));
+//             pc[i][14] += fpow2(1.442695041 * (log_pki + log_pk[center][14]));
+//             pc[i][15] += fpow2(1.442695041 * (log_pki + log_pk[center][15]));
+//             pc[i][16] += fpow2(1.442695041 * (log_pki + log_pk[center][16]));
+//             pc[i][17] += fpow2(1.442695041 * (log_pki + log_pk[center][17]));
+//             pc[i][18] += fpow2(1.442695041 * (log_pki + log_pk[center][18]));
+//             pc[i][19] += fpow2(1.442695041 * (log_pki + log_pk[center][19]));
         }
     }
 

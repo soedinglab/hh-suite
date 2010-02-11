@@ -64,7 +64,9 @@ inline double Pvalue(float x, float lamda, float mu);
 inline double logPvalue(float x, float lamda, float mu);
 inline double logPvalue(float x, double a[]);
 inline double Probab(Hit& hit);
+#ifdef HH_SSE3
 inline __m128 _mm_flog2_ps(__m128 X); // Fast SSE2 log2 for four floats
+#endif
 
 /////////////////////////////////////////////////////////////////////////////////////
 //// Constructor
@@ -312,9 +314,7 @@ void Hit::Viterbi(HMM& q, HMM& t, float** Sstruc)
   
   
   // Variable declarations
-#ifdef HH_SSE3
   float __attribute__((aligned(16))) Si[MAXRES];  // sMM[i][j] = score of best alignment up to indices (i,j) ending in (Match,Match) 
-#endif
   float sMM[MAXRES];          // sMM[i][j] = score of best alignment up to indices (i,j) ending in (Match,Match) 
   float sGD[MAXRES];          // sGD[i][j] = score of best alignment up to indices (i,j) ending in (Gap,Delete) 
   float sDG[MAXRES];          // sDG[i][j] = score of best alignment up to indices (i,j) ending in (Delete,Gap)
@@ -1825,7 +1825,7 @@ inline float ProbFwd(float* qi, float* tj)
   _mm_store_ss(&res, R);
   return res;
 #else
-  return=  tj[0] *qi[0] +tj[1] *qi[1] +tj[2] *qi[2] +tj[3] *qi[3] +tj[4] *qi[4]
+  return   tj[0] *qi[0] +tj[1] *qi[1] +tj[2] *qi[2] +tj[3] *qi[3] +tj[4] *qi[4]
           +tj[5] *qi[5] +tj[6] *qi[6] +tj[7] *qi[7] +tj[8] *qi[8] +tj[9] *qi[9]
           +tj[10]*qi[10]+tj[11]*qi[11]+tj[12]*qi[12]+tj[13]*qi[13]+tj[14]*qi[14]
           +tj[15]*qi[15]+tj[16]*qi[16]+tj[17]*qi[17]+tj[18]*qi[18]+tj[19]*qi[19];
@@ -2061,7 +2061,7 @@ inline double Probab(Hit& hit)
 //  => max dev = +/- 1.4E-4, run time ~ 5.0ns?
 // Order 5: log2(1+y) = ((((a*y+b)+c)*y+d)*y + 1-a-b-c-d)*y, a=-0.0803 b=0.3170 c=-0.6748 
 //  => max dev = +/- 2.1E-5, run time ~ 5.6ns?
-
+#ifdef HH_SSE3
 __m128 _mm_flog2_ps(__m128 X)
 {
   const __m128i CONST32_0x7f = _mm_set_epi32(0x7f,0x7f,0x7f,0x7f);
@@ -2088,6 +2088,7 @@ __m128 _mm_flog2_ps(__m128 X)
   R = _mm_add_ps(R, _mm_cvtepi32_ps(E));  // convert integer exponent to float and add to mantisse
   return R;
 }
+#endif
 
 // #define Weff(Neff) (1.0+par.neffa*(Neff-1.0)+(par.neffb-4.0*par.neffa)/16.0*(Neff-1.0)*(Neff-1.0))
 

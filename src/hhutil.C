@@ -560,13 +560,14 @@ void SetDefaults()
   // Initialize strings
   strcpy(par.infile,"stdin");
   strcpy(par.outfile,"");
-  strcpy(par. pairwisealisfile,"");
+  strcpy(par.pairwisealisfile,"");
   strcpy(par.buffer,"buffer.txt");
   strcpy(par.scorefile,"");
   strcpy(par.wfile,"");
   strcpy(par.alnfile,"");
   strcpy(par.hhmfile,"");
   strcpy(par.psifile,"");
+  strcpy(par.alitabfile,"");
   par.exclstr=NULL;
 
   // parameters for context-specific pseudocounts
