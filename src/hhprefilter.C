@@ -12,6 +12,7 @@ struct triple {
 
 int dbsize = 0;
 int LDB = 0;
+int num_dbs = 0;
 Hash<char>* doubled;
 
 int pos;
@@ -739,16 +740,80 @@ void init_prefilter()
     {cerr<<endl<<"Error! Could not determine DB-size of prefilter db ("<<db<<")\n"; exit(4);}
   par.hhblits_prefilter_logpval=-log(e_psi / (float)dbsize);
 
+  if (!(!strcmp(pre_mode,"csblast") || !strcmp(pre_mode,"blast")))
+    {
+      printf("Prefilter DB with %6i sequences with %s ...\n",dbsize,pre_mode);
+
+      X = (unsigned char*)memalign(16,LDB*sizeof(unsigned char));                             // database string (concatenate all DB-seqs
+      first = (unsigned char**)memalign(16,(2*dbsize)*sizeof(unsigned char*));                // first characters of db sequences
+      length = (int*)memalign(16,(2*dbsize)*sizeof(int));                                     // lengths of db sequences
+      dbnames = new char*[dbsize*2];
+
+      /////////////////////////////////////////
+      // Read in database
+      num_dbs = 0;
+      int len = 0;
+      int pos = 0;
+      int blocknum = 0;
+      char word[NAMELEN];
+      FILE* dbf = NULL;
+      dbf = fopen(db,"rb");
+      if (!dbf) OpenFileError(db);
+      while(fgetline(line,LINELEN,dbf)) // read HMM files in pal file
+	{
+	  if (line[0]=='>')
+	    {
+	      if (len > 0)           // if it is not the first sequence
+		length[num_dbs++] = len;
+	      len = 0;
+	      blocknum = 0;
+	      
+	      strwrd(word,line+1);
+	      dbnames[num_dbs]=new(char[strlen(word)+5]);
+	      strcpy(dbnames[num_dbs],word);
+	      strcat(dbnames[num_dbs]," 0");
+	      
+	      first[num_dbs] = X + pos;
+	    }
+	  else
+	    {
+	      int h = 0;
+	      while (h<LINELEN && line[h]>'\0')
+		{
+		  if (aa2i(line[h])>=0) // ignore white-space characters ' ', \t and \n (aa2i()==-1)
+		    {
+		      X[pos++]=(unsigned char)(aa2i(line[h])); 
+		      len++;
+		    }
+		  else 
+		    cerr<<endl<<"WARNING: invalid symbol \'"<<line[h]<<"\' at pos. "<<h<<" of "<<db<<"\n";
+		  h++;
+		  if (len == par.prefilter_lmax && (!strcmp(pre_mode,"only_prefilt_ungapped_SW") || !strcmp(pre_mode,"ungapped_SW") || !strcmp(pre_mode,"only_prefilt_ungapped_SW_no_region") || !strcmp(pre_mode,"ungapped_SW_no_region")))
+		    {
+		      blocknum++;
+		      length[num_dbs++] = len;
+		      len = par.prefilter_db_overlap;
+		      first[num_dbs] = X + pos - par.prefilter_db_overlap;
+		      dbnames[num_dbs]=new(char[strlen(word)+10]);
+		      stringstream ss_tmp;
+		      ss_tmp << word << " " << (blocknum*(par.prefilter_lmax-par.prefilter_db_overlap));
+		      strcpy(dbnames[num_dbs],ss_tmp.str().c_str());
+		    }
+		}
+	    }
+	}
+      if (len > 0)
+	length[num_dbs++] = len;
+      
+      fclose(dbf);
+      
+    }
 }
 
-int init_sse_prefiltering()
+void init_sse_prefiltering()
 {
-  dbnames = new char*[dbsize*2];
   LQ=q.L;
   qc = (unsigned char*)memalign(16,(par.prefilter_states+1)*(LQ+15)*sizeof(unsigned char));   // query profile
-  X = (unsigned char*)memalign(16,LDB*sizeof(unsigned char));                             // database string (concatenate all DB-seqs
-  first = (unsigned char**)memalign(16,(2*dbsize)*sizeof(unsigned char*));                // first characters of db sequences
-  length = (int*)memalign(16,(2*dbsize)*sizeof(int));                                     // lengths of db sequences
   
   W = (LQ+15) / 16;   // band width = hochgerundetes LQ/16
   
@@ -768,66 +833,7 @@ int init_sse_prefiltering()
   // Divide by NullModel
   q_tmp.IncludeNullModelInHMM(q_tmp,q_tmp,1);
   //q_tmp.IncludeNullModelInHMM(q_tmp,q_tmp,0);
-  
-  /////////////////////////////////////////
-  // Read in database
-  printf("Prefilter DB with %6i sequences with %s ...\n",dbsize,pre_mode);
-  int len = 0;
-  int pos = 0;
-  int blocknum = 0;
-  int num_dbs = 0;
-  char word[NAMELEN];
-  FILE* dbf = NULL;
-  dbf = fopen(db,"rb");
-  if (!dbf) OpenFileError(db);
-  while(fgetline(line,LINELEN,dbf)) // read HMM files in pal file
-    {
-      if (line[0]=='>')
-	{
-	  if (len > 0)           // if it is not the first sequence
-	    length[num_dbs++] = len;
-	  len = 0;
-	  blocknum = 0;
-	  
-	  strwrd(word,line+1);
-	  dbnames[num_dbs]=new(char[strlen(word)+5]);
-	  strcpy(dbnames[num_dbs],word);
-	  strcat(dbnames[num_dbs]," 0");
-	  
-	  first[num_dbs] = X + pos;
-	}
-      else
-	{
-	  int h = 0;
-	  while (h<LINELEN && line[h]>'\0')
-	    {
-	      if (aa2i(line[h])>=0) // ignore white-space characters ' ', \t and \n (aa2i()==-1)
-		{
-		  X[pos++]=(unsigned char)(aa2i(line[h])); 
-		  len++;
-		}
-	      else 
-		cerr<<endl<<"WARNING: invalid symbol \'"<<line[h]<<"\' at pos. "<<h<<" of "<<db<<"\n";
-	      h++;
-	      if (len == par.prefilter_lmax && (!strcmp(pre_mode,"only_prefilt_ungapped_SW") || !strcmp(pre_mode,"ungapped_SW") || !strcmp(pre_mode,"only_prefilt_ungapped_SW_no_region") || !strcmp(pre_mode,"ungapped_SW_no_region")))
-	      	{
-	      	  blocknum++;
-	      	  length[num_dbs++] = len;
-	      	  len = par.prefilter_db_overlap;
-	      	  first[num_dbs] = X + pos - par.prefilter_db_overlap;
-	      	  dbnames[num_dbs]=new(char[strlen(word)+10]);
-	      	  stringstream ss_tmp;
-	      	  ss_tmp << word << " " << (blocknum*(par.prefilter_lmax-par.prefilter_db_overlap));
-	      	  strcpy(dbnames[num_dbs],ss_tmp.str().c_str());
-	      	}
-	    }
-	}
-    }
-  if (len > 0)
-    length[num_dbs++] = len;
-  
-  fclose(dbf);
-      
+        
   // printf("\n\nQuery profile:\n        ");
   // for (int j=1; j <= LQ; j++)
   //   printf("%4i  ", j);
@@ -986,15 +992,13 @@ int init_sse_prefiltering()
   // 	}
   //     printf("\n");
   //   }
-
-  return num_dbs;
 }
 
 void prefilter_with_ungapped_SW()
 {
   strcpy(par.block_shading_mode,"SSE");
   
-  int num_dbs = init_sse_prefiltering();
+  init_sse_prefiltering();
 
   unsigned char* smax = (unsigned char*)memalign(16,(LQ+par.prefilter_lmax+15)*sizeof(unsigned char));
   for (int a = 0; a < (LQ+par.prefilter_lmax+15); a++)
@@ -1131,20 +1135,14 @@ void prefilter_with_ungapped_SW()
   
   // Free memory
   free(qc);
-  free(X);
-  free(length);
   free(smax);
-  free(first);
   free(workspace);
-  for (int n = 0; n < num_dbs; n++)
-    delete[](dbnames[n]);
-  delete[](dbnames);
   delete[](res);
 }
 
 void prefilter_with_ungapped_SW_only()
 {
-  int num_dbs = init_sse_prefiltering();
+  init_sse_prefiltering();
 
   unsigned char* smax = (unsigned char*)memalign(16,(LQ+par.prefilter_lmax+15)*sizeof(unsigned char));
   for (int a = 0; a < (LQ+par.prefilter_lmax+15); a++)
@@ -1214,20 +1212,14 @@ void prefilter_with_ungapped_SW_only()
   
   // Free memory
   free(qc);
-  free(X);
-  free(length);
   free(smax);
-  free(first);
   free(workspace);
-  for (int n = 0; n < num_dbs; n++)
-    delete[](dbnames[n]);
-  delete[](dbnames);
   delete[](res);
 }
 
 void prefilter_with_ungapped_SW_no_region()
 {
-  int num_dbs = init_sse_prefiltering();
+  init_sse_prefiltering();
   
   if (print_elapsed) ElapsedTimeSinceLastCall("(init prefiltering)");
 
@@ -1317,19 +1309,145 @@ void prefilter_with_ungapped_SW_no_region()
       if (ndb_new >= MAXNUMDB) 
 	{
 	  printf("\nWARNING! To many hits through prefilter! (MAXNUM = %6i)\n",MAXNUMDB);
+	  break;
 	  //exit(4);
 	}
     }
 
   // Free memory
   free(qc);
-  free(X);
-  free(length);
-  free(first);
   free(workspace);
-  for (int n = 0; n < num_dbs; n++)
-    delete[](dbnames[n]);
-  delete[](dbnames);
+}
+
+void prefilter_with_SW_evalue_preprefilter()
+{
+  int* prefiltered_hits = new int[1000000];
+
+  init_sse_prefiltering();
+  
+  if (print_elapsed) ElapsedTimeSinceLastCall("(init prefiltering)");
+
+  __m128i** workspace = new(__m128i*[cpu]);
+  
+  for (int i = 0; i < cpu; i++)
+    workspace[i] = (__m128i*)memalign(16,3*(LQ+15)*sizeof(char));
+  
+  int score;
+  int thread_id = 0;
+  int count = 0;
+
+  float log_qlen = flog2(LQ);
+
+  #pragma omp parallel for schedule(static) private(score, thread_id)
+  for (int n = 0; n < num_dbs; n++)     // Loop over all database sequences
+    {
+      #ifdef _OPENMP
+      thread_id = omp_get_thread_num();
+      #endif
+  
+      // Perform search step
+      score = ungapped_sse_score (qc, LQ, first[n], length[n], par.prefilter_score_offset, workspace[thread_id]);
+  
+      score = score - par.prefilter_bit_factor * (log_qlen + flog2(length[n]));
+    
+      if (score > par.preprefilter_smax_thresh)
+	{
+          #pragma omp critical
+	  prefiltered_hits[count++] = n;
+	}
+    }
+  printf("%6i hits through preprefilter!\n", count);
+  
+  int gap_init = par.prefilter_gap_open + par.prefilter_gap_extend;
+  int gap_extend = par.prefilter_gap_extend;
+
+  float evalue;
+  char db_name[NAMELEN];
+  char tmp_name[NAMELEN];
+  char tmp[NAMELEN];
+
+  vector<pair<float, string> > hits;
+
+  const float factor = (float)dbsize * LQ;
+
+  #pragma omp parallel for schedule(static) private(evalue, score, thread_id)
+  for (int n = 0; n < count; n++)     // Loop over all database sequences
+    {
+      #ifdef _OPENMP
+      thread_id = omp_get_thread_num();
+      #endif
+
+      // Perform search step
+      score = swStripedByte(qc, LQ, first[prefiltered_hits[n]], length[prefiltered_hits[n]], gap_init, gap_extend, workspace[thread_id], workspace[thread_id] + W, workspace[thread_id] + 2*W, par.prefilter_score_offset);
+     
+      evalue = factor * length[prefiltered_hits[n]] * fpow2(-score/par.prefilter_bit_factor);
+ 
+      if (evalue < par.prefilter_smax_thresh)
+	{
+          #pragma omp critical
+	  hits.push_back(pair<float,string>(evalue, string(dbnames[prefiltered_hits[n]])));
+	}
+    }
+
+  sort(hits.begin(), hits.end());
+
+  vector<pair<float, string> >::iterator it;
+  
+  for ( it=hits.begin() ; it < hits.end(); it++ )
+    {
+      //printf("Hit %20s with score %6.2g\n", ((*it).second).c_str(), (*it).first);
+
+      strcpy(tmp, ((*it).second).c_str());
+
+      ptr=strwrd(tmp_name,tmp);
+
+      if (!strncmp(tmp_name,"cl|",3))   // kClust formatted database (NR20, NR30)
+	{
+	  substr(tmp,tmp_name,3,11);
+	  substr(db_name,tmp,0,1);
+	  strcat(db_name,"/");
+	  strcat(db_name,tmp);
+	  strcat(db_name,".db");
+	}
+      else                              // other database
+	{
+	  strcpy(db_name,tmp_name);
+	  strtr(db_name,"|", "_");
+	  strcat(db_name,".hhm");
+	}
+      
+      // check, if DB was searched in previous rounds 
+      strcat(tmp_name,"__1");  // irep=1
+      if (previous_hits->Contains(tmp_name))
+	{
+	  dbfiles_old[ndb_old]=new(char[strlen(dbhhm)+strlen(db_name)+2]);
+	  strcpy(dbfiles_old[ndb_old],dbhhm);
+	  strcat(dbfiles_old[ndb_old],"/");
+	  strcat(dbfiles_old[ndb_old],db_name);
+	  if (ndb_old<5 && ndb_old>0 && access(dbfiles_old[ndb_old],R_OK)) OpenFileError(dbfiles_old[ndb_old]); // file not readable?
+	  ndb_old++;
+	}
+      else 
+	{
+	 dbfiles_new[ndb_new]=new(char[strlen(dbhhm)+strlen(db_name)+2]);
+	  strcpy(dbfiles_new[ndb_new],dbhhm);
+	  strcat(dbfiles_new[ndb_new],"/");
+	  strcat(dbfiles_new[ndb_new],db_name);
+	  if (ndb_new<5 && ndb_new>0 && access(dbfiles_new[ndb_new],R_OK)) OpenFileError(dbfiles_new[ndb_new]); // file not readable?
+	  ndb_new++;
+	}
+      
+      if (ndb_new >= MAXNUMDB) 
+	{
+	  printf("\nWARNING! To many hits through prefilter! (MAXNUM = %6i)\n",MAXNUMDB);
+	  break;
+	  //exit(4);
+	}
+    }
+
+  // Free memory
+  free(qc);
+  free(workspace);
 }
 
 // void prefilter_with_ungapped_SW_no_region()
@@ -1444,7 +1562,7 @@ void prefilter_with_ungapped_SW_no_region()
 
 void prefilter_with_ungapped_SW_no_region_only()
 {
-  int num_dbs = init_sse_prefiltering();
+  init_sse_prefiltering();
 
   __m128i** workspace = new(__m128i*[cpu]);
   
@@ -1505,13 +1623,7 @@ void prefilter_with_ungapped_SW_no_region_only()
   
   // Free memory
   free(qc);
-  free(X);
-  free(length);
-  free(first);
   free(workspace);
-  for (int n = 0; n < num_dbs; n++)
-    delete[](dbnames[n]);
-  delete[](dbnames);
 }
 
 
@@ -1640,16 +1752,16 @@ void prefilter_with_BLAST_only()
   if (!is_regular_file(tmp_psifile.c_str())) 
     {
       if (strcmp(pre_mode,"csblast")) 
-	ss << blast << "/blastpgp -d " << db << " -a " << cpu << " -b " << N_PSI << " -e 1000000 -i " << tmp_infile << " -m 8 2> /dev/null";
+	ss << blast << "/blastpgp -d " << db << " -a " << cpu << " -b " << N_PSI << " -e " << e_psi << " -i " << tmp_infile << " -m 8 2> /dev/null";
       else
-	ss << csblast << "/csblast -d " << db << " -a " << cpu << " -b " << N_PSI << " -e 1000000 -i " << tmp_infile << " -m 8 -D " << csblast_db << " --blast-path " << blast << " --no-penalty 2> /dev/null";
+	ss << csblast << "/csblast -d " << db << " -a " << cpu << " -b " << N_PSI << " -e " << e_psi << " -i " << tmp_infile << " -m 8 -D " << csblast_db << " --blast-path " << blast << " --no-penalty 2> /dev/null";
     } 
   else
     {
       if (strcmp(pre_mode,"csblast")) 
-	ss << blast << "/blastpgp -d " << db << " -a " << cpu << " -b " << N_PSI << " -e 1000000 -i " << tmp_infile << " -m 8 -B " << tmp_psifile << " 2> /dev/null";
+	ss << blast << "/blastpgp -d " << db << " -a " << cpu << " -b " << N_PSI << " -e " << e_psi << " -i " << tmp_infile << " -m 8 -B " << tmp_psifile << " 2> /dev/null";
       else
-	ss << csblast << "/csblast -d " << db << " -a " << cpu << " -b " << N_PSI << " -e 1000000 -i " << tmp_infile << " -m 8 -B " << tmp_psifile << " -D " << csblast_db << " --blast-path " << blast << " --no-penalty 2> /dev/null";
+	ss << csblast << "/csblast -d " << db << " -a " << cpu << " -b " << N_PSI << " -e " << e_psi << " -i " << tmp_infile << " -m 8 -B " << tmp_psifile << " -D " << csblast_db << " --blast-path " << blast << " --no-penalty 2> /dev/null";
     }
   
   command = ss.str();
@@ -1676,7 +1788,8 @@ void prefilter_with_BLAST_only()
       ptr=strwrd(tmp_name,ptr);
       
       if (!strncmp(tmp_name,"cl|",3))   // kClust formatted database (NR20, NR30)
-	substr(db_name,tmp_name,3,11);
+	//substr(db_name,tmp_name,3,11);
+	continue;
       else                              // other database
 	strcpy(db_name,tmp_name);
 	  
@@ -1708,7 +1821,7 @@ void prefilter_with_BLAST_only()
 
 void prefilter_with_SW()
 {
-  int num_dbs = init_sse_prefiltering();
+  init_sse_prefiltering();
 
   if (print_elapsed) ElapsedTimeSinceLastCall("(init prefiltering)");
 
@@ -1737,7 +1850,9 @@ void prefilter_with_SW()
 
       // Perform search step
       score = swStripedByte(qc, LQ, first[n], length[n], gap_init, gap_extend, workspace[thread_id], workspace[thread_id] + W, workspace[thread_id] + 2*W, par.prefilter_score_offset);
-      
+     
+      //score = score / flog2(length[n]);
+ 
       if (score > par.prefilter_smax_thresh)
 	{
           #pragma omp critical
@@ -1796,19 +1911,223 @@ void prefilter_with_SW()
       if (ndb_new >= MAXNUMDB) 
 	{
 	  printf("\nWARNING! To many hits through prefilter! (MAXNUM = %6i)\n",MAXNUMDB);
+	  break;
 	  //exit(4);
 	}
     }
 
   // Free memory
   free(qc);
-  free(X);
-  free(length);
-  free(first);
   free(workspace);
-  for (int n = 0; n < num_dbs; n++)
-    delete[](dbnames[n]);
-  delete[](dbnames);
+}
+
+void prefilter_with_SW_score()
+{
+  init_sse_prefiltering();
+
+  if (print_elapsed) ElapsedTimeSinceLastCall("(init prefiltering)");
+
+  __m128i** workspace = new(__m128i*[cpu]);
+
+  for (int i = 0; i < cpu; i++)
+    workspace[i] = (__m128i*)memalign(16,3*(LQ+15)*sizeof(char));
+  
+  int gap_init = par.prefilter_gap_open + par.prefilter_gap_extend;
+  int gap_extend = par.prefilter_gap_extend;
+
+  int score;
+  int thread_id = 0;
+  char db_name[NAMELEN];
+  char tmp_name[NAMELEN];
+  char tmp[NAMELEN];
+
+  int log_qlen = flog2(LQ);
+
+  vector<pair<int, string> > hits;
+
+#pragma omp parallel for schedule(static) private(score, thread_id)
+  for (int n = 0; n < num_dbs; n++)     // Loop over all database sequences
+    {
+      #ifdef _OPENMP
+      thread_id = omp_get_thread_num();
+      #endif
+
+      // Perform search step
+      score = swStripedByte(qc, LQ, first[n], length[n], gap_init, gap_extend, workspace[thread_id], workspace[thread_id] + W, workspace[thread_id] + 2*W, par.prefilter_score_offset);
+     
+      score = score - par.prefilter_bit_factor * (log_qlen + flog2(length[n]));
+ 
+      if (score > par.prefilter_smax_thresh)
+	{
+          #pragma omp critical
+	  hits.push_back(pair<int,string>(score, string(dbnames[n])));
+	}
+    }
+
+  sort(hits.begin(), hits.end());
+
+  vector<pair<int, string> >::reverse_iterator it;
+  
+  for ( it=hits.rbegin() ; it < hits.rend(); it++ )
+    {
+      //printf("Hit %20s with score %4i\n", ((*it).second).c_str(), (*it).first);
+
+      strcpy(tmp, ((*it).second).c_str());
+
+      ptr=strwrd(tmp_name,tmp);
+
+      if (!strncmp(tmp_name,"cl|",3))   // kClust formatted database (NR20, NR30)
+	{
+	  substr(tmp,tmp_name,3,11);
+	  substr(db_name,tmp,0,1);
+	  strcat(db_name,"/");
+	  strcat(db_name,tmp);
+	  strcat(db_name,".db");
+	}
+      else                              // other database
+	{
+	  strcpy(db_name,tmp_name);
+	  strtr(db_name,"|", "_");
+	  strcat(db_name,".hhm");
+	}
+      
+      // check, if DB was searched in previous rounds 
+      strcat(tmp_name,"__1");  // irep=1
+      if (previous_hits->Contains(tmp_name))
+	{
+	  dbfiles_old[ndb_old]=new(char[strlen(dbhhm)+strlen(db_name)+2]);
+	  strcpy(dbfiles_old[ndb_old],dbhhm);
+	  strcat(dbfiles_old[ndb_old],"/");
+	  strcat(dbfiles_old[ndb_old],db_name);
+	  if (ndb_old<5 && ndb_old>0 && access(dbfiles_old[ndb_old],R_OK)) OpenFileError(dbfiles_old[ndb_old]); // file not readable?
+	  ndb_old++;
+	}
+      else 
+	{
+	 dbfiles_new[ndb_new]=new(char[strlen(dbhhm)+strlen(db_name)+2]);
+	  strcpy(dbfiles_new[ndb_new],dbhhm);
+	  strcat(dbfiles_new[ndb_new],"/");
+	  strcat(dbfiles_new[ndb_new],db_name);
+	  if (ndb_new<5 && ndb_new>0 && access(dbfiles_new[ndb_new],R_OK)) OpenFileError(dbfiles_new[ndb_new]); // file not readable?
+	  ndb_new++;
+	}
+      
+      if (ndb_new >= MAXNUMDB) 
+	{
+	  printf("\nWARNING! To many hits through prefilter! (MAXNUM = %6i)\n",MAXNUMDB);
+	  break;
+	  //exit(4);
+	}
+    }
+
+  // Free memory
+  free(qc);
+  free(workspace);
+}
+
+void prefilter_with_SW_evalue()
+{
+  init_sse_prefiltering();
+
+  if (print_elapsed) ElapsedTimeSinceLastCall("(init prefiltering)");
+
+  __m128i** workspace = new(__m128i*[cpu]);
+
+  for (int i = 0; i < cpu; i++)
+    workspace[i] = (__m128i*)memalign(16,3*(LQ+15)*sizeof(char));
+  
+  int gap_init = par.prefilter_gap_open + par.prefilter_gap_extend;
+  int gap_extend = par.prefilter_gap_extend;
+
+  int score;
+  float evalue;
+  int thread_id = 0;
+  char db_name[NAMELEN];
+  char tmp_name[NAMELEN];
+  char tmp[NAMELEN];
+
+  vector<pair<float, string> > hits;
+
+  const float factor = (float)dbsize * LQ;
+
+#pragma omp parallel for schedule(static) private(evalue, score, thread_id)
+  for (int n = 0; n < num_dbs; n++)     // Loop over all database sequences
+    {
+      #ifdef _OPENMP
+      thread_id = omp_get_thread_num();
+      #endif
+
+      // Perform search step
+      score = swStripedByte(qc, LQ, first[n], length[n], gap_init, gap_extend, workspace[thread_id], workspace[thread_id] + W, workspace[thread_id] + 2*W, par.prefilter_score_offset);
+     
+      evalue = factor * length[n] * fpow2(-score/par.prefilter_bit_factor);
+ 
+      if (evalue < par.prefilter_smax_thresh)
+	{
+          #pragma omp critical
+	  hits.push_back(pair<float,string>(evalue, string(dbnames[n])));
+	}
+    }
+
+  sort(hits.begin(), hits.end());
+
+  vector<pair<float, string> >::iterator it;
+  
+  for ( it=hits.begin() ; it < hits.end(); it++ )
+    {
+      //printf("Hit %20s with score %6.2g\n", ((*it).second).c_str(), (*it).first);
+
+      strcpy(tmp, ((*it).second).c_str());
+
+      ptr=strwrd(tmp_name,tmp);
+
+      if (!strncmp(tmp_name,"cl|",3))   // kClust formatted database (NR20, NR30)
+	{
+	  substr(tmp,tmp_name,3,11);
+	  substr(db_name,tmp,0,1);
+	  strcat(db_name,"/");
+	  strcat(db_name,tmp);
+	  strcat(db_name,".db");
+	}
+      else                              // other database
+	{
+	  strcpy(db_name,tmp_name);
+	  strtr(db_name,"|", "_");
+	  strcat(db_name,".hhm");
+	}
+      
+      // check, if DB was searched in previous rounds 
+      strcat(tmp_name,"__1");  // irep=1
+      if (previous_hits->Contains(tmp_name))
+	{
+	  dbfiles_old[ndb_old]=new(char[strlen(dbhhm)+strlen(db_name)+2]);
+	  strcpy(dbfiles_old[ndb_old],dbhhm);
+	  strcat(dbfiles_old[ndb_old],"/");
+	  strcat(dbfiles_old[ndb_old],db_name);
+	  if (ndb_old<5 && ndb_old>0 && access(dbfiles_old[ndb_old],R_OK)) OpenFileError(dbfiles_old[ndb_old]); // file not readable?
+	  ndb_old++;
+	}
+      else 
+	{
+	 dbfiles_new[ndb_new]=new(char[strlen(dbhhm)+strlen(db_name)+2]);
+	  strcpy(dbfiles_new[ndb_new],dbhhm);
+	  strcat(dbfiles_new[ndb_new],"/");
+	  strcat(dbfiles_new[ndb_new],db_name);
+	  if (ndb_new<5 && ndb_new>0 && access(dbfiles_new[ndb_new],R_OK)) OpenFileError(dbfiles_new[ndb_new]); // file not readable?
+	  ndb_new++;
+	}
+      
+      if (ndb_new >= MAXNUMDB) 
+	{
+	  printf("\nWARNING! To many hits through prefilter! (MAXNUM = %6i)\n",MAXNUMDB);
+	  break;
+	  //exit(4);
+	}
+    }
+
+  // Free memory
+  free(qc);
+  free(workspace);
 }
 
 // void prefilter_with_SW()
@@ -1894,7 +2213,7 @@ void prefilter_with_SW()
 
 void prefilter_with_SW_only()
 {
-  int num_dbs = init_sse_prefiltering();
+  init_sse_prefiltering();
 
   __m128i** workspace = new(__m128i*[cpu]);
 
@@ -1922,8 +2241,11 @@ void prefilter_with_SW_only()
       // Perform search step
       score = swStripedByte(qc, LQ, first[n], length[n], gap_init, gap_extend, workspace[thread_id], workspace[thread_id] + W, workspace[thread_id] + 2*W, par.prefilter_score_offset);
       
-      #pragma omp critical
-      hits.push_back(pair<int,string>(score, string(dbnames[n])));
+      if (score > par.prefilter_smax_thresh)
+	{
+          #pragma omp critical
+	  hits.push_back(pair<int,string>(score, string(dbnames[n])));
+	}
     }
 
   sort(hits.begin(), hits.end());
@@ -1943,7 +2265,8 @@ void prefilter_with_SW_only()
       ptr=strwrd(tmp_name,tmp);
 
       if (!strncmp(tmp_name,"cl|",3))   // kClust formatted database (NR20, NR30)
-	substr(db_name,tmp_name,3,11);
+	//substr(db_name,tmp_name,3,11);
+	continue;
       else                              // other database
 	strcpy(db_name,tmp_name);
 	  
@@ -1954,13 +2277,152 @@ void prefilter_with_SW_only()
 
   // Free memory
   free(qc);
-  free(X);
-  free(length);
-  free(first);
   free(workspace);
-  for (int n = 0; n < num_dbs; n++)
-    delete[](dbnames[n]);
-  delete[](dbnames);
+}
+
+void prefilter_with_SW_score_only()
+{
+  init_sse_prefiltering();
+
+  __m128i** workspace = new(__m128i*[cpu]);
+
+  for (int i = 0; i < cpu; i++)
+    workspace[i] = (__m128i*)memalign(16,3*(LQ+15)*sizeof(char));
+  
+  int gap_init = par.prefilter_gap_open + par.prefilter_gap_extend;
+  int gap_extend = par.prefilter_gap_extend;
+
+  int score;
+  int thread_id = 0;
+  char db_name[NAMELEN];
+  char tmp_name[NAMELEN];
+  char tmp[NAMELEN];
+
+  int log_qlen = flog2(LQ);
+
+  vector<pair<int, string> > hits;
+
+  #pragma omp parallel for schedule(static) private(score, thread_id)
+  for (int n = 0; n < num_dbs; n++)     // Loop over all database sequences
+    {
+      #ifdef _OPENMP
+      thread_id = omp_get_thread_num();
+      #endif
+
+      // Perform search step
+      score = swStripedByte(qc, LQ, first[n], length[n], gap_init, gap_extend, workspace[thread_id], workspace[thread_id] + W, workspace[thread_id] + 2*W, par.prefilter_score_offset);
+
+      score = score - par.prefilter_bit_factor * (log_qlen + flog2(length[n]));
+      
+      if (score > par.prefilter_smax_thresh)
+	{
+          #pragma omp critical
+	  hits.push_back(pair<int,string>(score, string(dbnames[n])));
+	}
+    }
+
+  sort(hits.begin(), hits.end());
+
+  vector<pair<int, string> >::reverse_iterator it;
+  
+  FILE* outf=NULL;
+  outf=fopen(par.outfile,"w");
+  fprintf(outf,"        Name        Score\n");
+
+  for ( it=hits.rbegin() ; it < hits.rend(); it++ )
+    {
+      strcpy(tmp, ((*it).second).c_str());
+
+      ptr=strwrd(tmp_name,tmp);
+
+      if (!strncmp(tmp_name,"cl|",3))   // kClust formatted database (NR20, NR30)
+	//substr(db_name,tmp_name,3,11);
+	continue;
+      else                              // other database
+	strcpy(db_name,tmp_name);
+	  
+      fprintf(outf,"%-20s   %4i\n", db_name, (*it).first);
+    }
+  fclose(outf);
+  printf("Scorefile of prefiltering-hits written to %s!\n",par.outfile);
+
+  // Free memory
+  free(qc);
+  free(workspace);
+}
+
+void prefilter_with_SW_evalue_only()
+{
+  init_sse_prefiltering();
+
+  if (print_elapsed) ElapsedTimeSinceLastCall("(init prefiltering)");
+
+  __m128i** workspace = new(__m128i*[cpu]);
+
+  for (int i = 0; i < cpu; i++)
+    workspace[i] = (__m128i*)memalign(16,3*(LQ+15)*sizeof(char));
+  
+  int gap_init = par.prefilter_gap_open + par.prefilter_gap_extend;
+  int gap_extend = par.prefilter_gap_extend;
+
+  int score;
+  float evalue;
+  int thread_id = 0;
+  char db_name[NAMELEN];
+  char tmp_name[NAMELEN];
+  char tmp[NAMELEN];
+
+  vector<pair<float, string> > hits;
+
+  const float factor = (float)dbsize * LQ;
+
+#pragma omp parallel for schedule(static) private(evalue, score, thread_id)
+  for (int n = 0; n < num_dbs; n++)     // Loop over all database sequences
+    {
+      #ifdef _OPENMP
+      thread_id = omp_get_thread_num();
+      #endif
+
+      // Perform search step
+      score = swStripedByte(qc, LQ, first[n], length[n], gap_init, gap_extend, workspace[thread_id], workspace[thread_id] + W, workspace[thread_id] + 2*W, par.prefilter_score_offset);
+     
+      evalue = factor * length[n] * fpow2(-score/par.prefilter_bit_factor);
+ 
+      if (evalue < par.prefilter_smax_thresh)
+	{
+          #pragma omp critical
+	  hits.push_back(pair<float,string>(evalue, string(dbnames[n])));
+	}
+    }
+
+  sort(hits.begin(), hits.end());
+
+  vector<pair<float, string> >::iterator it;
+  
+  FILE* outf=NULL;
+  outf=fopen(par.outfile,"w");
+  fprintf(outf,"        Name        Score\n");
+
+  for ( it=hits.begin() ; it < hits.end(); it++ )
+    {
+      strcpy(tmp, ((*it).second).c_str());
+
+      ptr=strwrd(tmp_name,tmp);
+
+      if (!strncmp(tmp_name,"cl|",3))   // kClust formatted database (NR20, NR30)
+	//substr(db_name,tmp_name,3,11);
+	continue;
+      else                              // other database
+	strcpy(db_name,tmp_name);
+	  
+      fprintf(outf,"%-20s   %6.2g\n", db_name, (*it).first);
+    }
+  fclose(outf);
+  printf("Scorefile of prefiltering-hits written to %s!\n",par.outfile);
+
+  // Free memory
+  free(qc);
+  free(workspace);
 }
 
 
@@ -1992,8 +2454,23 @@ void prefilter_db()
     prefilter_with_ungapped_SW_no_region_only();
   else if (!strcmp(pre_mode,"SW"))  // Smith-Waterman case
     prefilter_with_SW();
+  else if (!strcmp(pre_mode,"SW_score"))  // Smith-Waterman case
+    prefilter_with_SW_score();
+  else if (!strcmp(pre_mode,"SW_evalue"))  // Smith-Waterman case
+    prefilter_with_SW_evalue();
+  else if (!strcmp(pre_mode,"SW_evalue_preprefilter"))  // Smith-Waterman case
+    prefilter_with_SW_evalue_preprefilter();
   else if (!strcmp(pre_mode,"only_prefilt_SW"))  // Smith-Waterman case
     prefilter_with_SW_only();
+  else if (!strcmp(pre_mode,"only_prefilt_SW_score"))  // Smith-Waterman case
+    prefilter_with_SW_score_only();
+  else if (!strcmp(pre_mode,"only_prefilt_SW_evalue"))  // Smith-Waterman case
+    prefilter_with_SW_evalue_only();
+  else if (!strcmp(pre_mode,"combi"))  // Smith-Waterman case
+    {
+      prefilter_with_SW();
+      prefilter_with_BLAST();
+    }
   else if (!strcmp(pre_mode,"only_prefilt_csblast"))  // Smith-Waterman case
     prefilter_with_BLAST_only();
   else

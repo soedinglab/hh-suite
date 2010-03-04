@@ -494,6 +494,7 @@ sub MakeMultipleAlignment()
 	while ($line=<QFILE>) {
 	    if ($line=~/^>/ || $line=~/^\#/) {last;}
 	    $line=~tr/\n\.-//d; 
+	    $line=~tr/a-z/A-Z/;
 	    $hitseqs[0].=$line;
 	}
 	close(QFILE);

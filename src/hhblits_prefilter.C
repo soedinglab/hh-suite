@@ -101,7 +101,7 @@ char tmp_file[]="/tmp/hhblitsXXXXXX";
 char dummydb [NAMELEN];
 
 // HHblits variables
-const char HHBLITS_VERSION[]="version 1.5.0 (December 2009)";
+const char HHBLITS_VERSION[]="version 2.0.2 (Februar 2010)";
 const char HHBLITS_REFERENCE[]="to be published.\n";
 const char HHBLITS_COPYRIGHT[]="(C) Michael Remmert and Johannes Soeding\n";
 
@@ -112,7 +112,7 @@ bool nodiff = false;                   // if true, do not filter in last round
 bool filter = true;                    // Perform filtering of already seen HHMs
 bool block_filter = true;              // Perform viterbi and forward algorithm only on block given by prefiltering
 bool realign_old_hits = false;         // Realign old hits in last round or use previous alignments
-bool early_stopping_filter = true;
+bool early_stopping_filter = true;     // Break HMM search, when the sum of the last N HMM-hit-Evalues is below threshold
 
 int cpu = 1;
 
@@ -651,6 +651,7 @@ void ProcessArguments(int argc, char** argv)
       else if (!strcmp(argv[i],"-e_hh") && (i<argc-1)) par.e = atof(argv[++i]);
       else if (!strcmp(argv[i],"-e_psi") && (i<argc-1)) e_psi = atof(argv[++i]);
       else if (!strncmp(argv[i],"-nopred",7)) par.showpred=0;
+      else if (!strncmp(argv[i],"-noss",5)) par.showpred=0;
       else if (!strcmp(argv[i],"-seq") && (i<argc-1))  par.nseqdis=atoi(argv[++i]);
       else if (!strcmp(argv[i],"-aliw") && (i<argc-1)) par.aliwidth=atoi(argv[++i]);
       else if (!strcmp(argv[i],"-id") && (i<argc-1))   par.max_seqid=atoi(argv[++i]);
@@ -2040,6 +2041,9 @@ int main(int argc, char **argv)
 	par.Ndiff = 0;
       }
 
+    // Save HMM without pseudocounts for prefilter query-profile
+    q_tmp = q;
+
     // Write query HHM file?
     if (*query_hhmfile) 
       {
@@ -2055,8 +2059,6 @@ int main(int argc, char **argv)
 	v=v1;
       }
     
-    q_tmp = q;
-
     // Add Pseudocounts
     if (!*par.clusterfile) { //compute context-specific pseudocounts?
       // Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
@@ -2345,6 +2347,17 @@ int main(int argc, char **argv)
     }
   delete previous_hits;
   
+  // Delete prefilter database
+  if (!(!strcmp(pre_mode,"csblast") || !strcmp(pre_mode,"blast")))
+    {
+      free(X);
+      free(length);
+      free(first);
+      for (int n = 0; n < num_dbs; n++)
+	delete[](dbnames[n]);
+      delete[](dbnames);
+    }
+
   // Delete content of hits in hitlist
   hitlist.Reset();
   while (!hitlist.End())

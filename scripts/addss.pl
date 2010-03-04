@@ -131,7 +131,7 @@ while ($line=<INFILE>) {
     if ($line=~/^ss_/ || $line=~/^aa_/) {next;}
     $seqs[$i++]=">$line";
     if(!$qseq) {
-	$line=~s/^(\S*)[^\n]*//;
+	$line=~s/^(.*)[^\n]*//;
 	$name=$1;
 	$qseq=uc($line);
 	$qseq=~s/\n//g;

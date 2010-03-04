@@ -560,6 +560,7 @@ void SetDefaults()
   par.prefilter_score_offset = 30;
   par.prefilter_bit_factor = 4;
   par.prefilter_smax_thresh = 55;
+  par.preprefilter_smax_thresh = 10;
   par.prefilter_rmax_thresh = 50;
 
   // for filtering database alignments in HHsearch and HHblits

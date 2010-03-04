@@ -196,6 +196,7 @@ public:
   int prefilter_score_offset;
   int prefilter_bit_factor;
   int prefilter_smax_thresh;
+  int preprefilter_smax_thresh;
   int prefilter_rmax_thresh;
   
 
