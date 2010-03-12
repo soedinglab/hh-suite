@@ -64,7 +64,9 @@ inline double Pvalue(float x, float lamda, float mu);
 inline double logPvalue(float x, float lamda, float mu);
 inline double logPvalue(float x, double a[]);
 inline double Probab(Hit& hit);
+#ifdef HH_SSE3
 inline __m128 _mm_flog2_ps(__m128 X); // Fast SSE2 log2 for four floats
+#endif
 
 /////////////////////////////////////////////////////////////////////////////////////
 //// Constructor
@@ -1632,7 +1634,7 @@ void Hit::InitializeForAlignment(HMM& q, HMM& t)
 	  //     }
 	  // printf("cells cross out : %i\n",after);
 	  // printf("cells total     : %i\n",q.L*t.L);
-	  //printf("Ersparnis       : %4.2f %%\n",(double)after/(double)(q.L*t.L)*100.0);
+	  // printf("Ersparnis       : %4.2f %%\n",(double)after/(double)(q.L*t.L)*100.0);
 
 	  min_overlap = 0;
 
@@ -2103,6 +2105,8 @@ inline double Probab(Hit& hit)
 // Order 5: log2(1+y) = ((((a*y+b)+c)*y+d)*y + 1-a-b-c-d)*y, a=-0.0803 b=0.3170 c=-0.6748 
 //  => max dev = +/- 2.1E-5, run time ~ 5.6ns?
 
+#ifdef HH_SSE3
+
 __m128 _mm_flog2_ps(__m128 X)
 {
   const __m128i CONST32_0x7f = _mm_set_epi32(0x7f,0x7f,0x7f,0x7f);
@@ -2129,6 +2133,8 @@ __m128 _mm_flog2_ps(__m128 X)
   R = _mm_add_ps(R, _mm_cvtepi32_ps(E));  // convert integer exponent to float and add to mantisse
   return R;
 }
+
+#endif
 
 // #define Weff(Neff) (1.0+par.neffa*(Neff-1.0)+(par.neffb-4.0*par.neffa)/16.0*(Neff-1.0)*(Neff-1.0))
 

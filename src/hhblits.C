@@ -1,7 +1,7 @@
 // hhblits.C:
 // Iterative search for a multiple alignment in a profile HMM database
-// Compile:              g++ hhblits.C -o hhblits -O3 -lpthread -lrt -fno-strict-aliasing
-// Compile for Valgrind: g++ hhblits.C -o hhblits_valgrind -lpthread -lrt -O -g
+// Compile:              g++ hhblits.C -o ../bin/hhblits -O3 -lpthread -lrt -fno-strict-aliasing -DHH_SSE3 -march=core2 
+// Compile for Valgrind: g++ hhblits.C -o ../bin/hhblits_valgrind -O3 -lpthread -lrt -fno-strict-aliasing -DHH_SSE3 -march=core2 -g
 //
 // Error codes: 0: ok  1: file format error  2: file access error  3: memory error  4: command line error  6: internal logic error  7: internal numeric error
 

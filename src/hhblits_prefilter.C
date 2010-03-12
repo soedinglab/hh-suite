@@ -1,7 +1,7 @@
 // hhblits.C:
 // Iterative search for a multiple alignment in a profile HMM database
-// Compile:              g++ hhblits.C -o hhblits -O3 -lpthread -lrt -fno-strict-aliasing
-// Compile for Valgrind: g++ hhblits.C -o hhblits_valgrind -lpthread -lrt -O -g
+// Compile:              g++ -O3 -lpthread -lrt -fno-strict-aliasing -DHH_SSE3 -fopenmp -march=core2 hhblits_prefilter.C -o ../bin/hhblits_prefilter_omp
+// Compile for Valgrind: g++ -O3 -lpthread -lrt -fno-strict-aliasing -DHH_SSE3 -g -fopenmp -march=core2 hhblits_prefilter.C -o ../bin/hhblits_prefilter_omp_valgrind
 //
 // Error codes: 0: ok  1: file format error  2: file access error  3: memory error  4: command line error  6: internal logic error  7: internal numeric error
 
@@ -96,7 +96,7 @@ char line[LINELEN]="";         // input line
 string command;
 char* ptr;                // pointer for string manipulation
 int bin;                       // bin index
-const char print_elapsed=0;
+const char print_elapsed=1;
 char tmp_file[]="/tmp/hhblitsXXXXXX";
 char dummydb [NAMELEN];
 

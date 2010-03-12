@@ -2135,7 +2135,7 @@ void Alignment::MergeMasterSlave(Hit& hit, char ta3mfile[])
       // Advance to position of next T match state j
       while (hit.j[step]<j) step--;
       imatch[j] = hit.i[step];
-//       printf("step=%-3i  i=%-3i j=%-3i\n",step,imatch[j],j);
+      if (v>3) { printf("step=%-3i  i=%-3i j=%-3i\n",step,imatch[j],j); }
     }
 
   // Determine number of match states of Qali
@@ -2255,7 +2255,7 @@ void Alignment::MergeMasterSlave(Hit& hit, char ta3mfile[])
               for (; ll<=l; ll++)
                 cur_seq[h++]=uprchr(Tali.seq[k][ll]);
             }
-//        printf("i=%-3i j=%-3i l=%-3i cur_seq=%s\n",i,j,l,cur_seq);
+	  if (v>4) { printf("i=%-3i j=%-3i l=%-3i cur_seq=%s\n",i,j,l,cur_seq); }
 
           iprev=i; lprev=l;
           if (h>=maxcol-1000) // too few columns? Reserve double space
@@ -2285,9 +2285,11 @@ void Alignment::MergeMasterSlave(Hit& hit, char ta3mfile[])
       strcpy(sname[N_in],Tali.sname[k]);
       N_in++;
 
-//       printf("k=%-3i %s\n",k,Tali.seq[k]);
-//       printf("Query %s\n",seq[kfirst]);
-//       printf("k=%-3i %s\n\n",k,cur_seq);
+      if (v>3) {
+	printf("k=%-3i %s\n",k,Tali.seq[k]);
+	printf("Query %s\n",seq[kfirst]);
+	printf("k=%-3i %s\n\n",k,cur_seq);
+      }
 
     } // end for (k)
 

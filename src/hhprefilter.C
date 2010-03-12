@@ -10,6 +10,16 @@ struct triple {
   int third;
 };
 
+struct ali_pos {
+  int q_start;
+  int q_stop;
+  int t_start;
+  int t_stop;
+  float evalue;
+};
+
+#define SHORT_BIAS 32768
+
 int dbsize = 0;
 int LDB = 0;
 int num_dbs = 0;
@@ -27,6 +37,8 @@ unsigned char* X;
 unsigned char** first;
 int* length;
 int W;
+unsigned short* qw;
+int Ww;
 
 // int
 // swStripedByte(int              queryLength,
@@ -258,7 +270,7 @@ int swStripedByte(unsigned char   *querySeq,
   vZero = _mm_setzero_si128();
   
   /* Zero out the storage vector */
-  for (i = 0; i < iter; i++)
+  for (i = 0; i < iter; ++i)
     {
       _mm_store_si128 (pvE + i, vMaxScore);
       _mm_store_si128 (pvHStore + i, vMaxScore);
@@ -283,7 +295,7 @@ int swStripedByte(unsigned char   *querySeq,
       pvHLoad = pvHStore;
       pvHStore = pv;
       
-      for (j = 0; j < iter; j++)
+      for (j = 0; j < iter; ++j)
         {
 	  /* load values of vF and vH from previous row (one unit up) */
 	  vE = _mm_load_si128 (pvE + j);
@@ -363,7 +375,7 @@ int swStripedByte(unsigned char   *querySeq,
 	  /* update vF value */
 	  vF = _mm_subs_epu8 (vF, vGapExtend);
 	  
-	  j++;
+	  ++j;
 	  if (j >= iter)
             {
 	      j = 0;
@@ -411,6 +423,807 @@ int swStripedByte(unsigned char   *querySeq,
     
   /* return largest score */
   return score;
+}
+
+// int swStripedWord_backtrace(int              queryLength,
+// 			    unsigned char   *dbSeq,
+// 			    int              dbLength,
+// 			    unsigned short   gapOpen,
+// 			    unsigned short   gapExtend,
+// 			    __m128i         *pvQueryProf,
+// 			    __m128i         *pvHLoad,
+// 			    __m128i         *pvHStore,
+// 			    __m128i         *pvE,
+// 			    ali_pos          *res)
+// {
+
+//     int     i, j;
+//     // int     score;
+
+//     int     cmp = 0;
+//     int     iter = (queryLength + 7) / 8;
+//     int     LQ = iter*8;
+    
+//     __m128i *pv;
+
+//     __m128i vE, vF, vH;
+
+//     __m128i vMaxScore;
+//     __m128i vGapOpen;
+//     __m128i vGapExtend;
+
+//     __m128i vMin;
+//     __m128i vTemp;
+
+//     __m128i *pvScore;
+
+//     __m128i Bt;
+//     __m128i Bttmp;
+//     __m128i v0x01 = _mm_set1_epi16(0x0001);
+//     __m128i v0x02 = _mm_set1_epi16(0x0010);
+//     __m128i v0x03 = _mm_set1_epi16(0x0100);
+//     __m128i v0x04 = _mm_set1_epi16(0x1000);
+
+//     __m128i* Hmatrix = (__m128i*)memalign(16,dbLength*LQ*sizeof(unsigned short));
+//     __m128i* Btmatrix = (__m128i*)memalign(16,dbLength*LQ*sizeof(unsigned short));
+    
+//     __m128i* Hmatrix_it = Hmatrix;
+//     __m128i* Btmatrix_it = Btmatrix;
+
+//     /* Load gap opening penalty to all elements of a constant */
+//     vGapOpen = _mm_set1_epi16(gapOpen);
+    
+//     /* Load gap extension penalty to all elements of a constant */
+//     vGapExtend = _mm_set1_epi16(gapExtend);
+
+//     /*  load vMaxScore with the zeros.  since we are using signed */
+//     /*  math, we will bias the maxscore to -32768 so we have the */
+//     /*  full range of the short. */
+//     vMaxScore = _mm_set1_epi16(-1);
+//     vMaxScore = _mm_slli_epi16 (vMaxScore, 15);
+
+//     vMin = _mm_shuffle_epi32 (vMaxScore, 0);
+//     vMin = _mm_srli_si128 (vMin, 14);
+
+//     /* Zero out the storage vector */
+//     for (i = 0; i < iter; ++i)
+//     {
+//         _mm_store_si128 (pvE + i, vMaxScore);
+//         _mm_store_si128 (pvHStore + i, vMaxScore);
+//     }
+
+//     for (i = 0; i < dbLength; ++i)
+//     {
+//       Hmatrix_it = Hmatrix + iter*i;
+//       Btmatrix_it = Btmatrix + iter*i;
+
+//       /* fetch first data asap. */
+//       pvScore = pvQueryProf + dbSeq[i] * iter;
+      
+//       /* zero out F. */
+//       vF = _mm_set1_epi16(-1);
+//       vF = _mm_slli_epi16 (vF, 15);
+      
+//       /* load the next h value */
+//       vH = _mm_load_si128 (pvHStore + iter - 1);
+//       vH = _mm_slli_si128 (vH, 2);
+//       vH = _mm_or_si128 (vH, vMin);
+      
+//       pv = pvHLoad;
+//       pvHLoad = pvHStore;
+//       pvHStore = pv;
+      
+//       for (j = 0; j < iter; ++j)
+//         {
+// 	  /* load values of vF and vH from previous row (one unit up) */
+// 	  vE = _mm_load_si128 (pvE + j);
+	  
+// 	  /* add score to vH */
+// 	  vH = _mm_adds_epi16 (vH, *pvScore++);
+	  
+// 	  /* Update highest score encountered this far */
+// 	  vMaxScore = _mm_max_epi16 (vMaxScore, vH);
+	  
+// 	  /* get max from vH, vE and vF */
+// 	  vH = _mm_max_epi16 (vH, vE);
+// 	  vH = _mm_max_epi16 (vH, vF);
+
+// 	  // Set backtrace register
+// 	  Bt = _mm_setzero_si128();
+// 	  Bttmp = _mm_cmpeq_epi16(vH, vE);
+// 	  Bt = _mm_and_si128(Bttmp, v0x01);
+// 	  Bttmp = _mm_cmpeq_epi16(vH, vF);
+// 	  Bttmp = _mm_and_si128(Bttmp, v0x02);
+// 	  Bt = _mm_or_si128(Bt,Bttmp);
+	  
+// 	  /* save vH values */
+// 	  _mm_store_si128 (pvHStore + j, vH);
+// 	  _mm_store_si128 (Hmatrix_it + j, vH);
+
+// 	  /* update vE value */
+// 	  vH = _mm_subs_epi16 (vH, vGapOpen);
+// 	  vE = _mm_subs_epi16 (vE, vGapExtend);
+// 	  vE = _mm_max_epi16 (vE, vH);
+	  
+// 	  /* update vF value */
+// 	  vF = _mm_subs_epi16 (vF, vGapExtend);
+// 	  vF = _mm_max_epi16 (vF, vH);
+
+// 	  // Set backtrace register for gap matrices E and F
+// 	  Bttmp = _mm_cmpeq_epi16(vH, vE);
+// 	  Bttmp = _mm_and_si128(Bttmp, v0x03);
+// 	  Bt = _mm_or_si128(Bt,Bttmp);
+// 	  Bttmp = _mm_cmpeq_epi16(vH, vF);
+// 	  Bttmp = _mm_and_si128(Bttmp, v0x04);
+// 	  Bt = _mm_or_si128(Bt,Bttmp);
+	  
+// 	  /* save Bt values */
+// 	  _mm_store_si128 (Btmatrix_it + j, Bt);
+
+// 	  /* save vE values */
+// 	  _mm_store_si128 (pvE + j, vE);
+
+// 	  /* load the next h value */
+// 	  vH = _mm_load_si128 (pvHLoad + j);
+//         }
+      
+//       /* reset pointers to the start of the saved data */
+//       j = 0;
+//       vH = _mm_load_si128 (pvHStore + j);
+      
+//       /*  the computed vF value is for the given column.  since */
+//       /*  we are at the end, we need to shift the vF value over */
+//       /*  to the next column. */
+//       vF = _mm_slli_si128 (vF, 2);
+//       vF = _mm_or_si128 (vF, vMin);
+//       vTemp = _mm_subs_epi16 (vH, vGapOpen);
+//       vTemp = _mm_cmpgt_epi16 (vF, vTemp);
+//       cmp  = _mm_movemask_epi8 (vTemp);
+//       while (cmp != 0x0000) 
+//         {
+// 	  vE = _mm_load_si128 (pvE + j);
+	  
+// 	  vH = _mm_max_epi16 (vH, vF);
+
+// 	  // Set backtrace register
+// 	  Bt = _mm_setzero_si128();
+// 	  Bttmp = _mm_cmpeq_epi16(vH, vE);
+// 	  Bt = _mm_and_si128(Bttmp, v0x01);
+// 	  Bttmp = _mm_cmpeq_epi16(vH, vF);
+// 	  Bttmp = _mm_and_si128(Bttmp, v0x02);
+// 	  Bt = _mm_or_si128(Bt,Bttmp);
+
+// 	  /* save vH values */
+// 	  _mm_store_si128 (pvHStore + j, vH);
+// 	  _mm_store_si128 (Hmatrix_it + j, vH);
+
+// 	  /*  update vE incase the new vH value would change it */
+// 	  vH = _mm_subs_epi16 (vH, vGapOpen);
+// 	  vE = _mm_max_epi16 (vE, vH);
+
+// 	  _mm_store_si128 (pvE + j, vE);
+
+// 	  /* update vF value */
+// 	  vF = _mm_subs_epi16 (vF, vGapExtend);
+
+// 	  // Set backtrace register for gap matrices E and F
+// 	  Bttmp = _mm_cmpeq_epi16(vH, vE);
+// 	  Bttmp = _mm_and_si128(Bttmp, v0x03);
+// 	  Bt = _mm_or_si128(Bt,Bttmp);
+// 	  Bttmp = _mm_cmplt_epi16(vF, vH);
+// 	  Bttmp = _mm_and_si128(Bttmp, v0x04);
+// 	  Bt = _mm_or_si128(Bt,Bttmp);
+	  
+// 	  /* save Bt values */
+// 	  _mm_store_si128 (Btmatrix_it + j, Bt);
+
+// 	  ++j;
+// 	  if (j >= iter)
+//             {
+// 	      j = 0;
+// 	      vF = _mm_slli_si128 (vF, 2);
+// 	      vF = _mm_or_si128 (vF, vMin);
+//             }
+	  
+// 	  vH = _mm_load_si128 (pvHStore + j);
+	  
+// 	  vTemp = _mm_subs_epi16 (vH, vGapOpen);
+// 	  vTemp = _mm_cmpgt_epi16 (vF, vTemp);
+// 	  cmp  = _mm_movemask_epi8 (vTemp);
+//         }
+//     }
+    
+//     // printf("Query-pos:");
+//     // for (int b = 0; b < queryLength; b++) {
+//     //   printf("%5i ", b);
+//     // }
+//     // printf("\n");
+
+//     // short *tmp = (short*) Btmatrix;
+//     // for (int b = 0; b < dbLength; b++) {
+//     //   printf("DB: %3i   : ", b);
+//     //   for (int c = 0; c < 8; c++) {
+//     // 	for (int d = 0; d < iter; d++) {
+//     // 	  int i = b*iter*8 + d * 8 + c;
+//     // 	  if ((tmp[i]&0x1000) != 0) { printf("1"); } else { printf("0"); }
+//     // 	  if ((tmp[i]&0x0100) != 0) { printf("1"); } else { printf("0"); }
+//     // 	  if ((tmp[i]&0x0010) != 0) { printf("1"); } else { printf("0"); }
+//     // 	  if ((tmp[i]&0x0001) != 0) { printf("1"); } else { printf("0"); }
+//     // 	  printf(" |", tmp[i]);
+//     // 	}
+//     //   }
+//     //   printf("\n");
+//     // }
+//     // printf("\n");
+
+//     // /* find largest score in the vMaxScore vector */
+//     // vTemp = _mm_srli_si128 (vMaxScore, 8);
+//     // vMaxScore = _mm_max_epi16 (vMaxScore, vTemp);
+//     // vTemp = _mm_srli_si128 (vMaxScore, 4);
+//     // vMaxScore = _mm_max_epi16 (vMaxScore, vTemp);
+//     // vTemp = _mm_srli_si128 (vMaxScore, 2);
+//     // vMaxScore = _mm_max_epi16 (vMaxScore, vTemp);
+
+//     // /* store in temporary variable */
+//     // score = (short) _mm_extract_epi16 (vMaxScore, 0);
+
+//     // printf("Largest Score: %4i!\n", score + SHORT_BIAS);
+
+//     // Extract all alignments with score > threshold
+//     __m128i vMax;
+//     __m128i Dt;
+//     __m128i Dtmax;
+//     __m128i Dq;
+//     __m128i Dqmax;
+//     __m128i Tmp;
+//     __m128i Tmp2;
+//     __m128i One = _mm_set1_epi16(1);
+//     __m128i vIter = _mm_setr_epi16(0,iter,2*iter,3*iter,4*iter,5*iter,6*iter,7*iter);
+  
+//     int num = 0;
+//     int crossout_thresh = (int)(par.block_shading_space/1.3);
+//     double factor = (double)dbsize * (double)queryLength * (double)dbLength;
+
+//     int b,c,d,k,l;
+//     int q_pos, t_pos, pos;
+//     int d1, d2;
+//     int t_start, q_start, t_end, q_end;
+//     int kstart, lstart, h;
+
+//     while (num < 10) {
+
+//       // printf("Query-pos: ");
+//       // for (b = 0; b < queryLength; b++) {
+//       // 	printf("%3i ", b);
+//       // }
+//       // printf("\n");
+//       // tmp = (short*) Hmatrix;
+//       // for (b = 0; b < dbLength; b++) {
+//       // 	printf("DB: %3i  : ", b);
+//       // 	for (c = 0; c < 8; c++) {
+//       // 	  for (d = 0; d < iter; d++) {
+//       // 	  int i = b*iter*8 + d * 8 + c;
+//       // 	  printf("%3i|", tmp[i]+SHORT_BIAS);
+//       // 	  }
+//       // 	}
+//       // 	printf("\n");
+//       // }
+//       // printf("\n");
+      
+//       // Find maximum score with position
+//       vMax = _mm_set1_epi16(-SHORT_BIAS);
+//       Dtmax = _mm_setzero_si128();
+//       Dqmax = _mm_setzero_si128();
+
+//       Hmatrix_it = Hmatrix;
+      
+//       for (i = 0; i < dbLength; ++i)
+// 	{
+// 	  //printf("DB-pos: %3i\n",i);
+// 	  Dq = vIter;
+// 	  Dt = _mm_set1_epi16(i);
+	  
+// 	  for (j = 0; j < iter; ++j)
+// 	    {
+// 	      vH = _mm_load_si128(Hmatrix_it++);
+	      
+// 	      Tmp = _mm_cmpgt_epi16(vH, vMax);
+// 	      vMax = _mm_max_epi16(vH, vMax);
+	      
+// 	      Tmp2 = _mm_and_si128(Tmp,Dt);
+// 	      Dtmax = _mm_max_epi16(Dtmax, Tmp2);
+	      
+// 	      Dqmax = _mm_andnot_si128(Tmp,Dqmax);  // clear boxes, where new maximum is found
+// 	      Tmp2 = _mm_and_si128(Tmp,Dq);
+// 	      Dqmax = _mm_max_epi16(Dqmax, Tmp2);
+	      
+// 	      Dq = _mm_adds_epi16(Dq, One);
+// 	    }
+// 	}
+      
+//       // printf("Max and pos:\n");
+//       // for (int b = 0; b<8; b++) // loop over bytes in XMM registers
+//       // 	printf("Score: %3i  (q:%3i t:%3i) \n",*(((short*) &vMax) + b) + SHORT_BIAS,*(((short*) &Dqmax) + b),*(((short*) &Dtmax) + b));
+//       // printf("\n");
+      
+//       int max_score = _mm_extract_epi16(vMax,0) + SHORT_BIAS;
+//       int max_pos_q = _mm_extract_epi16(Dqmax,0);
+//       int max_pos_t = _mm_extract_epi16(Dtmax,0);
+
+//       for (b = 1; b<8; ++b) {
+//       	if ((_mm_extract_epi16(vMax,b) + SHORT_BIAS) > max_score) {
+//       	  max_score = _mm_extract_epi16(vMax,b) + SHORT_BIAS;
+// 	  max_pos_q = _mm_extract_epi16(Dqmax,b);
+// 	  max_pos_t = _mm_extract_epi16(Dtmax,b);
+//       	}
+//       }
+
+//       double evalue = factor * fpow2(-max_score/par.prefilter_bit_factor);
+      
+//       //printf("Score: %5i  Evalue: %8.4g   (num: %2i)\n", max_score, evalue, num);
+
+//       if (num == 0 || evalue < par.prefilter_smax_thresh) {
+	
+// 	// Backtrace alignment
+// 	short *Btmatrix_sit = (short*) Btmatrix;
+// 	short *Hmatrix_sit = (short*) Hmatrix;
+
+// 	q_pos = max_pos_q;
+// 	t_pos = max_pos_t;
+
+// 	pos = t_pos * LQ + (q_pos%iter) * 8 + (q_pos/iter);
+// 	while (q_pos != 0 && t_pos != 0 && Hmatrix_sit[pos] != -SHORT_BIAS) {
+// 	  if ((Btmatrix_sit[pos]&0x0001) != 0) {
+// 	    --t_pos;
+// 	    pos -= LQ;
+// 	    while (q_pos != 0 && t_pos != 0 && Hmatrix_sit[pos] != -SHORT_BIAS) {
+// 	      if ((Btmatrix_sit[pos]&0x0100) == 0) {
+// 		--t_pos;
+// 		pos -= LQ;
+// 	      } else {
+// 		--q_pos;
+// 		--t_pos;
+// 		break;
+// 	      }
+// 	    }
+// 	  } else if ((Btmatrix_sit[pos]&0x0010) != 0) {
+// 	    --q_pos;
+// 	    pos = t_pos * LQ + (q_pos%iter) * 8 + (q_pos/iter);
+// 	    while (q_pos != 0 && t_pos != 0 && Hmatrix_sit[pos] != -SHORT_BIAS) {
+// 	      if ((Btmatrix_sit[pos]&0x1000) == 0) {
+// 		--q_pos;
+// 		pos = t_pos * LQ + (q_pos%iter) * 8 + (q_pos/iter);
+// 	      } else {
+// 		--q_pos;
+// 		--t_pos;
+// 		break;
+// 	      }
+// 	    }
+// 	  } else {
+// 	    --q_pos;
+// 	    --t_pos;
+// 	  } 
+// 	  pos = t_pos * LQ + (q_pos%iter) * 8 + (q_pos/iter);
+// 	}
+
+// 	// Add 1 to each position because HHsearch counts sequences from position 1
+// 	res[num].q_start = q_pos + 1;
+// 	res[num].t_start = t_pos + 1;
+// 	res[num].q_stop = imin(queryLength,max_pos_q + 1);
+// 	res[num].t_stop = max_pos_t + 1;
+// 	res[num++].evalue = evalue;
+
+// 	// Cross out cells in H-matrix
+// 	d1 = imin(t_pos-q_pos,max_pos_t-max_pos_q) - crossout_thresh;
+// 	d2 = imax(t_pos-q_pos,max_pos_t-max_pos_q) + crossout_thresh;
+
+// 	t_start = imax(0, t_pos - crossout_thresh);
+// 	q_start = imax(0, q_pos - crossout_thresh);
+// 	t_end = imin(dbLength, max_pos_t + crossout_thresh);
+// 	q_end = imin(LQ, max_pos_q + crossout_thresh);
+
+// 	kstart = (q_start % iter) * 8;
+// 	lstart = q_start / iter;
+// 	h = t_start*LQ;
+
+// 	for (b = t_start; b < t_end; ++b) {
+// 	  k = kstart;
+// 	  l = lstart + h;
+// 	  d = b - q_end;
+// 	  for (c = b-q_start; c > d; --c) {
+// 	    if (d1 < c && c < d2) {
+// 	      Hmatrix_sit[k + l] = -SHORT_BIAS;
+// 	    }
+// 	    k+=8;
+// 	    if (k == LQ) {
+// 	      k = 0;
+// 	      ++l;
+// 	    }
+// 	  }
+// 	  h += LQ;
+// 	}
+// 	// for (int b = t_start; b < t_end; b++) {
+// 	//   int h = b*iter*8;
+// 	//   for (int c = q_start; c < q_end; c++) {
+// 	//     if ((b-c) > d1 && (b-c) < d2) {
+// 	//       Hmatrix_sit[h + (c%iter)*8 + (c/iter)] = -SHORT_BIAS;
+// 	//     }
+// 	//   }
+// 	// }
+//       } else {
+// 	break;
+//       }
+//     }
+    
+//     free(Hmatrix);
+//     free(Btmatrix);
+
+//     return num;
+// }
+
+int swStripedWord_backtrace(int              queryLength,
+			    unsigned char   *dbSeq,
+			    int              dbLength,
+			    unsigned short   gapOpen,
+			    unsigned short   gapExtend,
+			    __m128i         *pvQueryProf,
+			    __m128i         *pvHLoad,
+			    __m128i         *pvHStore,
+			    __m128i         *pvE,
+			    ali_pos          *res)
+{
+
+    int     i, j;
+    int     cmp = 0;
+    int     iter = (queryLength + 7) / 8;
+    int     LQ = iter*8;
+    
+    __m128i *pv;
+
+    __m128i vE, vF, vH;
+
+    __m128i vMaxScore;
+    __m128i vGapOpen;
+    __m128i vGapExtend;
+
+    __m128i vMin;
+    __m128i vTemp;
+
+    __m128i *pvScore;
+
+    __m128i Bt;
+    __m128i Bttmp;
+    __m128i v0x01 = _mm_set1_epi16(0x0001);
+    __m128i v0x02 = _mm_set1_epi16(0x0010);
+    __m128i v0x03 = _mm_set1_epi16(0x0100);
+    __m128i v0x04 = _mm_set1_epi16(0x1000);
+
+    __m128i* Hmatrix = (__m128i*)memalign(16,dbLength*LQ*sizeof(unsigned short));
+    __m128i* Btmatrix = (__m128i*)memalign(16,dbLength*LQ*sizeof(unsigned short));
+    
+    __m128i* Hmatrix_it = Hmatrix;
+    __m128i* Btmatrix_it = Btmatrix;
+
+    /* Load gap opening penalty to all elements of a constant */
+    vGapOpen = _mm_set1_epi16(gapOpen);
+    
+    /* Load gap extension penalty to all elements of a constant */
+    vGapExtend = _mm_set1_epi16(gapExtend);
+
+    /*  load vMaxScore with the zeros.  since we are using signed */
+    /*  math, we will bias the maxscore to -32768 so we have the */
+    /*  full range of the short. */
+    vMaxScore = _mm_set1_epi16(-1);
+    vMaxScore = _mm_slli_epi16 (vMaxScore, 15);
+
+    vMin = _mm_shuffle_epi32 (vMaxScore, 0);
+    vMin = _mm_srli_si128 (vMin, 14);
+
+    /* Zero out the storage vector */
+    for (i = 0; i < iter; ++i)
+    {
+        _mm_store_si128 (pvE + i, vMaxScore);
+        _mm_store_si128 (pvHStore + i, vMaxScore);
+    }
+
+    for (i = 0; i < dbLength; ++i)
+    {
+      Hmatrix_it = Hmatrix + iter*i;
+      Btmatrix_it = Btmatrix + iter*i;
+
+      /* fetch first data asap. */
+      pvScore = pvQueryProf + dbSeq[i] * iter;
+      
+      /* zero out F. */
+      vF = _mm_set1_epi16(-1);
+      vF = _mm_slli_epi16 (vF, 15);
+      
+      /* load the next h value */
+      vH = _mm_load_si128 (pvHStore + iter - 1);
+      vH = _mm_slli_si128 (vH, 2);
+      vH = _mm_or_si128 (vH, vMin);
+      
+      pv = pvHLoad;
+      pvHLoad = pvHStore;
+      pvHStore = pv;
+      
+      for (j = 0; j < iter; ++j)
+        {
+	  /* load values of vF and vH from previous row (one unit up) */
+	  vE = _mm_load_si128 (pvE + j);
+	  
+	  /* add score to vH */
+	  vH = _mm_adds_epi16 (vH, *pvScore++);
+	  
+	  /* Update highest score encountered this far */
+	  vMaxScore = _mm_max_epi16 (vMaxScore, vH);
+	  
+	  /* get max from vH, vE and vF */
+	  vH = _mm_max_epi16 (vH, vE);
+	  vH = _mm_max_epi16 (vH, vF);
+
+	  // Set backtrace register
+	  Bt = _mm_setzero_si128();
+	  Bttmp = _mm_cmpeq_epi16(vH, vE);
+	  Bt = _mm_and_si128(Bttmp, v0x01);
+	  Bttmp = _mm_cmpeq_epi16(vH, vF);
+	  Bttmp = _mm_and_si128(Bttmp, v0x02);
+	  Bt = _mm_or_si128(Bt,Bttmp);
+	  
+	  /* save vH values */
+	  _mm_store_si128 (pvHStore + j, vH);
+	  _mm_store_si128 (Hmatrix_it + j, vH);
+
+	  /* update vE value */
+	  vH = _mm_subs_epi16 (vH, vGapOpen);
+	  vE = _mm_subs_epi16 (vE, vGapExtend);
+	  vE = _mm_max_epi16 (vE, vH);
+	  
+	  /* update vF value */
+	  vF = _mm_subs_epi16 (vF, vGapExtend);
+	  vF = _mm_max_epi16 (vF, vH);
+
+	  // Set backtrace register for gap matrices E and F
+	  Bttmp = _mm_cmpeq_epi16(vH, vE);
+	  Bttmp = _mm_and_si128(Bttmp, v0x03);
+	  Bt = _mm_or_si128(Bt,Bttmp);
+	  Bttmp = _mm_cmpeq_epi16(vH, vF);
+	  Bttmp = _mm_and_si128(Bttmp, v0x04);
+	  Bt = _mm_or_si128(Bt,Bttmp);
+	  
+	  /* save Bt values */
+	  _mm_store_si128 (Btmatrix_it + j, Bt);
+
+	  /* save vE values */
+	  _mm_store_si128 (pvE + j, vE);
+
+	  /* load the next h value */
+	  vH = _mm_load_si128 (pvHLoad + j);
+        }
+      
+      /* reset pointers to the start of the saved data */
+      j = 0;
+      vH = _mm_load_si128 (pvHStore + j);
+      
+      /*  the computed vF value is for the given column.  since */
+      /*  we are at the end, we need to shift the vF value over */
+      /*  to the next column. */
+      vF = _mm_slli_si128 (vF, 2);
+      vF = _mm_or_si128 (vF, vMin);
+      vTemp = _mm_subs_epi16 (vH, vGapOpen);
+      vTemp = _mm_cmpgt_epi16 (vF, vTemp);
+      cmp  = _mm_movemask_epi8 (vTemp);
+      while (cmp != 0x0000) 
+        {
+	  vE = _mm_load_si128 (pvE + j);
+	  
+	  vH = _mm_max_epi16 (vH, vF);
+
+	  // Set backtrace register
+	  Bt = _mm_setzero_si128();
+	  Bttmp = _mm_cmpeq_epi16(vH, vE);
+	  Bt = _mm_and_si128(Bttmp, v0x01);
+	  Bttmp = _mm_cmpeq_epi16(vH, vF);
+	  Bttmp = _mm_and_si128(Bttmp, v0x02);
+	  Bt = _mm_or_si128(Bt,Bttmp);
+
+	  /* save vH values */
+	  _mm_store_si128 (pvHStore + j, vH);
+	  _mm_store_si128 (Hmatrix_it + j, vH);
+
+	  /*  update vE incase the new vH value would change it */
+	  vH = _mm_subs_epi16 (vH, vGapOpen);
+	  vE = _mm_max_epi16 (vE, vH);
+
+	  _mm_store_si128 (pvE + j, vE);
+
+	  /* update vF value */
+	  vF = _mm_subs_epi16 (vF, vGapExtend);
+
+	  // Set backtrace register for gap matrices E and F
+	  Bttmp = _mm_cmpeq_epi16(vH, vE);
+	  Bttmp = _mm_and_si128(Bttmp, v0x03);
+	  Bt = _mm_or_si128(Bt,Bttmp);
+	  Bttmp = _mm_cmplt_epi16(vF, vH);
+	  Bttmp = _mm_and_si128(Bttmp, v0x04);
+	  Bt = _mm_or_si128(Bt,Bttmp);
+	  
+	  /* save Bt values */
+	  _mm_store_si128 (Btmatrix_it + j, Bt);
+
+	  ++j;
+	  if (j >= iter)
+            {
+	      j = 0;
+	      vF = _mm_slli_si128 (vF, 2);
+	      vF = _mm_or_si128 (vF, vMin);
+            }
+	  
+	  vH = _mm_load_si128 (pvHStore + j);
+	  
+	  vTemp = _mm_subs_epi16 (vH, vGapOpen);
+	  vTemp = _mm_cmpgt_epi16 (vF, vTemp);
+	  cmp  = _mm_movemask_epi8 (vTemp);
+        }
+    }
+    
+    // Extract all alignments with score > threshold
+    __m128i vMax;
+    __m128i Dt;
+    __m128i Dtmax;
+    __m128i Dq;
+    __m128i Dqmax;
+    __m128i Tmp;
+    __m128i Tmp2;
+    __m128i One = _mm_set1_epi16(1);
+    __m128i vIter = _mm_setr_epi16(0,iter,2*iter,3*iter,4*iter,5*iter,6*iter,7*iter);
+  
+    int num = 0;
+    int crossout_thresh = (int)(par.block_shading_space/1.3);
+    double factor = (double)dbsize * (double)queryLength * (double)dbLength;
+
+    int b,c,d,k,l;
+    int q_pos, t_pos, pos;
+    int d1, d2;
+    int t_start, q_start, t_end, q_end;
+    int kstart, lstart, h;
+
+    while (num < 10) {
+
+      // Find maximum score with position
+      vMax = _mm_set1_epi16(-SHORT_BIAS);
+      Dtmax = _mm_setzero_si128();
+      Dqmax = _mm_setzero_si128();
+
+      Hmatrix_it = Hmatrix;
+      
+      for (i = 0; i < dbLength; ++i)
+	{
+	  //printf("DB-pos: %3i\n",i);
+	  Dq = vIter;
+	  Dt = _mm_set1_epi16(i);
+	  
+	  for (j = 0; j < iter; ++j)
+	    {
+	      vH = _mm_load_si128(Hmatrix_it++);
+	      
+	      Tmp = _mm_cmpgt_epi16(vH, vMax);
+	      vMax = _mm_max_epi16(vH, vMax);
+	      
+	      Tmp2 = _mm_and_si128(Tmp,Dt);
+	      Dtmax = _mm_max_epi16(Dtmax, Tmp2);
+	      
+	      Dqmax = _mm_andnot_si128(Tmp,Dqmax);  // clear boxes, where new maximum is found
+	      Tmp2 = _mm_and_si128(Tmp,Dq);
+	      Dqmax = _mm_max_epi16(Dqmax, Tmp2);
+	      
+	      Dq = _mm_adds_epi16(Dq, One);
+	    }
+	}
+      
+      int max_score = _mm_extract_epi16(vMax,0) + SHORT_BIAS;
+      int max_pos_q = _mm_extract_epi16(Dqmax,0);
+      int max_pos_t = _mm_extract_epi16(Dtmax,0);
+
+      for (b = 1; b<8; ++b) {
+      	if ((_mm_extract_epi16(vMax,b) + SHORT_BIAS) > max_score) {
+      	  max_score = _mm_extract_epi16(vMax,b) + SHORT_BIAS;
+	  max_pos_q = _mm_extract_epi16(Dqmax,b);
+	  max_pos_t = _mm_extract_epi16(Dtmax,b);
+      	}
+      }
+
+      double evalue = factor * fpow2(-max_score/par.prefilter_bit_factor);
+      
+      if (num == 0 || evalue < par.prefilter_smax_thresh) {
+	
+	// Backtrace alignment
+	short *Btmatrix_sit = (short*) Btmatrix;
+	short *Hmatrix_sit = (short*) Hmatrix;
+
+	q_pos = max_pos_q;
+	t_pos = max_pos_t;
+
+	pos = t_pos * LQ + (q_pos%iter) * 8 + (q_pos/iter);
+	while (q_pos != 0 && t_pos != 0 && Hmatrix_sit[pos] != -SHORT_BIAS) {
+	  if ((Btmatrix_sit[pos]&0x0001) != 0) {
+	    --t_pos;
+	    pos -= LQ;
+	    while (q_pos != 0 && t_pos != 0 && Hmatrix_sit[pos] != -SHORT_BIAS) {
+	      if ((Btmatrix_sit[pos]&0x0100) == 0) {
+		--t_pos;
+		pos -= LQ;
+	      } else {
+		--q_pos;
+		--t_pos;
+		break;
+	      }
+	    }
+	  } else if ((Btmatrix_sit[pos]&0x0010) != 0) {
+	    --q_pos;
+	    pos = t_pos * LQ + (q_pos%iter) * 8 + (q_pos/iter);
+	    while (q_pos != 0 && t_pos != 0 && Hmatrix_sit[pos] != -SHORT_BIAS) {
+	      if ((Btmatrix_sit[pos]&0x1000) == 0) {
+		--q_pos;
+		pos = t_pos * LQ + (q_pos%iter) * 8 + (q_pos/iter);
+	      } else {
+		--q_pos;
+		--t_pos;
+		break;
+	      }
+	    }
+	  } else {
+	    --q_pos;
+	    --t_pos;
+	  } 
+	  pos = t_pos * LQ + (q_pos%iter) * 8 + (q_pos/iter);
+	}
+
+	// Add 1 to each position because HHsearch counts sequences from position 1
+	res[num].q_start = q_pos + 1;
+	res[num].t_start = t_pos + 1;
+	res[num].q_stop = imin(queryLength,max_pos_q + 1);
+	res[num].t_stop = max_pos_t + 1;
+	res[num++].evalue = evalue;
+
+	// Cross out cells in H-matrix
+	d1 = imin(t_pos-q_pos,max_pos_t-max_pos_q) - crossout_thresh;
+	d2 = imax(t_pos-q_pos,max_pos_t-max_pos_q) + crossout_thresh;
+
+	t_start = imax(0, t_pos - crossout_thresh);
+	q_start = imax(0, q_pos - crossout_thresh);
+	t_end = imin(dbLength, max_pos_t + crossout_thresh);
+	q_end = imin(LQ, max_pos_q + crossout_thresh);
+
+	kstart = (q_start % iter) * 8;
+	lstart = q_start / iter;
+	h = t_start*LQ;
+
+	for (b = t_start; b < t_end; ++b) {
+	  k = kstart;
+	  l = lstart + h;
+	  d = b - q_end;
+	  for (c = b-q_start; c > d; --c) {
+	    if (d1 < c && c < d2) {
+	      Hmatrix_sit[k + l] = -SHORT_BIAS;
+	    }
+	    k+=8;
+	    if (k == LQ) {
+	      k = 0;
+	      ++l;
+	    }
+	  }
+	  h += LQ;
+	}
+      } else {
+	break;
+      }
+    }
+    
+    free(Hmatrix);
+    free(Btmatrix);
+
+    return num;
 }
 
 
@@ -814,7 +1627,6 @@ void init_sse_prefiltering()
 {
   LQ=q.L;
   qc = (unsigned char*)memalign(16,(par.prefilter_states+1)*(LQ+15)*sizeof(unsigned char));   // query profile
-  
   W = (LQ+15) / 16;   // band width = hochgerundetes LQ/16
   
   // Add Pseudocounts
@@ -902,6 +1714,45 @@ void init_sse_prefiltering()
       h++;
     }
 
+  if (!strcmp(pre_mode,"SW_evalue_preprefilter_backtrace"))
+    {
+      qw = (unsigned short*)memalign(16,(par.prefilter_states+1)*(LQ+7)*sizeof(unsigned short));   // query profile
+      Ww = (LQ+7) / 8;
+
+      // /////////////////////////////////////////
+      // // Stripe query profile
+      for (int a=0; a < par.prefilter_states; a++)  
+	{
+	  int h = a*Ww*8;
+	  for (int i=0; i < Ww; i++) 
+	    {
+	      int j = i;
+	      for (int k = 0; k < 8; k++)
+		{
+		  if (j >= LQ)
+		    qw[h] = 0;
+		  else
+		    {
+		      float dummy = flog2(q_tmp.p[j+1][a])*par.prefilter_bit_factor;
+		      qw[h] = (unsigned short) dummy;  // 1/3 bits & make scores >=0 everywhere
+		    }
+		  h++;
+		  j+=Ww;
+		}
+	    }
+	}
+      
+      // For K=20 alphabet add extra X-state
+      int h = par.prefilter_states*Ww*8;
+      for (int i=0; i < 8*Ww; i++)
+	{
+	  if (i >= LQ)
+	    qw[h]=0;
+	  else
+	    qw[h]= (unsigned short) -1;
+	  h++;
+	}
+    }
   // int matrix[500];
   // FILE* inf = NULL;
   // inf = fopen("/net/cluster/user/michael/tmp/sse_test/farrar/multi-threaded/blosum62.mat","rb");
@@ -1316,7 +2167,9 @@ void prefilter_with_ungapped_SW_no_region()
 
   // Free memory
   free(qc);
-  free(workspace);
+  for (int i = 0; i < cpu; i++)
+    free(workspace[i]);
+  delete[] workspace;
 }
 
 void prefilter_with_SW_evalue_preprefilter()
@@ -1361,14 +2214,14 @@ void prefilter_with_SW_evalue_preprefilter()
   int gap_init = par.prefilter_gap_open + par.prefilter_gap_extend;
   int gap_extend = par.prefilter_gap_extend;
 
-  float evalue;
+  double evalue;
   char db_name[NAMELEN];
   char tmp_name[NAMELEN];
   char tmp[NAMELEN];
 
-  vector<pair<float, string> > hits;
+  vector<pair<double, string> > hits;
 
-  const float factor = (float)dbsize * LQ;
+  const double factor = (double)dbsize * LQ;
 
   #pragma omp parallel for schedule(static) private(evalue, score, thread_id)
   for (int n = 0; n < count; n++)     // Loop over all database sequences
@@ -1385,13 +2238,13 @@ void prefilter_with_SW_evalue_preprefilter()
       if (evalue < par.prefilter_smax_thresh)
 	{
           #pragma omp critical
-	  hits.push_back(pair<float,string>(evalue, string(dbnames[prefiltered_hits[n]])));
+	  hits.push_back(pair<double,string>(evalue, string(dbnames[prefiltered_hits[n]])));
 	}
     }
 
   sort(hits.begin(), hits.end());
 
-  vector<pair<float, string> >::iterator it;
+  vector<pair<double, string> >::iterator it;
   
   for ( it=hits.begin() ; it < hits.end(); it++ )
     {
@@ -1447,7 +2300,206 @@ void prefilter_with_SW_evalue_preprefilter()
 
   // Free memory
   free(qc);
-  free(workspace);
+  for (int i = 0; i < cpu; i++)
+    free(workspace[i]);
+  delete[] workspace;
+  delete[] prefiltered_hits;
+}
+
+void prefilter_with_SW_evalue_preprefilter_backtrace()
+{
+  int* prefiltered_hits = new int[1000000];
+  int* backtrace_hits = new int[MAXNUMDB+1];
+
+  init_sse_prefiltering();
+  
+  if (print_elapsed) ElapsedTimeSinceLastCall("(init prefiltering)");
+
+  __m128i** workspace = new(__m128i*[cpu]);
+  
+  for (int i = 0; i < cpu; i++)
+    workspace[i] = (__m128i*)memalign(16,3*(LQ+15)*sizeof(char));
+  
+  int score;
+  int thread_id = 0;
+  int count_dbs = 0;
+
+  float log_qlen = flog2(LQ);
+
+  #pragma omp parallel for schedule(static) private(score, thread_id)
+  for (int n = 0; n < num_dbs; n++)     // Loop over all database sequences
+    {
+      #ifdef _OPENMP
+      thread_id = omp_get_thread_num();
+      #endif
+  
+      // Perform search step
+      score = ungapped_sse_score(qc, LQ, first[n], length[n], par.prefilter_score_offset, workspace[thread_id]);
+  
+      score = score - par.prefilter_bit_factor * (log_qlen + flog2(length[n]));
+    
+      if (score > par.preprefilter_smax_thresh)
+	{
+          #pragma omp critical
+	  prefiltered_hits[count_dbs++] = n;
+	}
+    }
+  printf("%6i hits through preprefilter!\n", count_dbs);
+  if (print_elapsed) ElapsedTimeSinceLastCall("(ungapped preprefilter)");
+  
+  int gap_init = par.prefilter_gap_open + par.prefilter_gap_extend;
+  int gap_extend = par.prefilter_gap_extend;
+
+  double evalue;
+
+  const double factor = (double)dbsize * LQ;
+
+  vector<pair<double, int> > hits;
+
+  #pragma omp parallel for schedule(static) private(evalue, score, thread_id)
+  for (int n = 0; n < count_dbs; n++)     // Loop over all database sequences
+    {
+      #ifdef _OPENMP
+      thread_id = omp_get_thread_num();
+      #endif
+
+      // Perform search step
+      score = swStripedByte(qc, LQ, first[prefiltered_hits[n]], length[prefiltered_hits[n]], gap_init, gap_extend, workspace[thread_id], workspace[thread_id] + W, workspace[thread_id] + 2*W, par.prefilter_score_offset);
+     
+      evalue = factor * length[prefiltered_hits[n]] * fpow2(-score/par.prefilter_bit_factor);
+ 
+      if (evalue < par.prefilter_smax_thresh)
+	{
+          #pragma omp critical
+	  hits.push_back(pair<double,int>(evalue, prefiltered_hits[n]));
+	}
+    }
+
+  sort(hits.begin(), hits.end());
+
+  vector<pair<double, int> >::iterator it;
+  count_dbs = 0;
+  
+  for ( it=hits.begin() ; it < hits.end(); it++ )
+    {
+      backtrace_hits[count_dbs++] = (*it).second;
+
+      if (count_dbs >= MAXNUMDB) 
+	{
+	  printf("\nWARNING! To many hits through prefilter! (MAXNUM = %6i)\n",MAXNUMDB);
+	  break;
+	}
+    }
+
+  if (print_elapsed) ElapsedTimeSinceLastCall("(SW prefilter)");
+
+  // Run SW with backtrace
+  for (int i = 0; i < cpu; i++) {
+    free(workspace[i]);
+    workspace[i] = (__m128i*)memalign(16,3*(LQ+7)*sizeof(short));
+  }
+  __m128i *qw_it = (__m128i*) qw;
+  
+  #pragma omp parallel for schedule(static) private(block, count, thread_id)
+  for (int n = 0; n < count_dbs; n++)     // Loop over all database sequences
+    {
+      #ifdef _OPENMP
+      thread_id = omp_get_thread_num();
+      #endif
+      
+      // Add hit to dbfiles
+      char tmp_name[NAMELEN];
+      char db_name[NAMELEN];
+      char tmp[NAMELEN];
+      ptr=strwrd(tmp_name,dbnames[backtrace_hits[n]]);
+      
+      if (!strncmp(tmp_name,"cl|",3))   // kClust formatted database (NR20, NR30)
+	{
+	  substr(tmp,tmp_name,3,11);
+	  substr(db_name,tmp,0,1);
+	  strcat(db_name,"/");
+	  strcat(db_name,tmp);
+	  strcat(db_name,".db");
+	}
+      else                              // other database
+	{
+	  strcpy(db_name,tmp_name);
+	  strtr(db_name,"|", "_");
+	  strcat(db_name,".hhm");
+	}
+      
+      #pragma omp critical
+      if (! doubled->Contains(db_name))
+	{
+	  doubled->Add(db_name);
+	  // check, if DB was searched in previous rounds 
+	  strcat(tmp_name,"__1");  // irep=1
+	  if (previous_hits->Contains(tmp_name))
+	    {
+	      dbfiles_old[ndb_old]=new(char[strlen(dbhhm)+strlen(db_name)+2]);
+	      strcpy(dbfiles_old[ndb_old],dbhhm);
+	      strcat(dbfiles_old[ndb_old],"/");
+	      strcat(dbfiles_old[ndb_old],db_name);
+	      if (ndb_old<5 && ndb_old>0 && access(dbfiles_old[ndb_old],R_OK)) OpenFileError(dbfiles_old[ndb_old]); // file not readable?
+	      ndb_old++;
+	    }
+	  else 
+	    {
+	      dbfiles_new[ndb_new]=new(char[strlen(dbhhm)+strlen(db_name)+2]);
+	      strcpy(dbfiles_new[ndb_new],dbhhm);
+	      strcat(dbfiles_new[ndb_new],"/");
+	      strcat(dbfiles_new[ndb_new],db_name);
+	      if (ndb_new<5 && ndb_new>0 && access(dbfiles_new[ndb_new],R_OK)) OpenFileError(dbfiles_new[ndb_new]); // file not readable?
+	      ndb_new++;
+	    }
+	}
+      
+      // Perform backtrace, if one of the profiles has length > 2*par.block_shading_space
+      if (LQ > 2*par.block_shading_space || length[backtrace_hits[n]] > 2*par.block_shading_space)
+      //if (1)
+	{
+	  ali_pos *res = new ali_pos[10];
+	  
+	  // Perform search step
+	  int num_res = swStripedWord_backtrace(LQ, first[backtrace_hits[n]], length[backtrace_hits[n]], gap_init, gap_extend, qw_it, workspace[thread_id], workspace[thread_id] + Ww, workspace[thread_id] + 2*Ww, res);
+	  
+	  if (num_res > 0) 
+	    {
+	      ptr=strwrd(tmp_name,dbnames[backtrace_hits[n]]);
+	      block = new(int[400]);
+	      count = 0;
+	      for (int a = 0; a < num_res; a++) 
+		{
+		  if (count >= 400) { continue; }
+		  // Get block of HSP
+		  block[count++]=res[a].q_start;
+		  block[count++]=res[a].q_stop;
+		  block[count++]=res[a].t_start;
+		  block[count++]=res[a].t_stop;
+		}
+              #pragma omp critical
+	      {
+		// printf("Add to block shading   key: %s    data:",tmp_name);
+		// for (int i = 0; i < count; i++)
+		//   printf(" %i,",block[i]);
+		// printf("\n");
+		par.block_shading->Add(tmp_name,block);
+		par.block_shading_counter->Add(tmp_name,count);
+	      }
+	    }
+	  delete[] res;
+	}
+    }
+  if (print_elapsed) ElapsedTimeSinceLastCall("(SW backtrace prefilter)");
+
+  // Free memory
+  free(qc);
+  free(qw);
+  for (int i = 0; i < cpu; i++)
+    free(workspace[i]);
+  delete[] workspace;
+  delete[] prefiltered_hits;
+  delete[] backtrace_hits;
 }
 
 // void prefilter_with_ungapped_SW_no_region()
@@ -1623,7 +2675,9 @@ void prefilter_with_ungapped_SW_no_region_only()
   
   // Free memory
   free(qc);
-  free(workspace);
+  for (int i = 0; i < cpu; i++)
+    free(workspace[i]);
+  delete[] workspace;
 }
 
 
@@ -1918,7 +2972,9 @@ void prefilter_with_SW()
 
   // Free memory
   free(qc);
-  free(workspace);
+  for (int i = 0; i < cpu; i++)
+    free(workspace[i]);
+  delete[] workspace;
 }
 
 void prefilter_with_SW_score()
@@ -2022,7 +3078,9 @@ void prefilter_with_SW_score()
 
   // Free memory
   free(qc);
-  free(workspace);
+  for (int i = 0; i < cpu; i++)
+    free(workspace[i]);
+  delete[] workspace;
 }
 
 void prefilter_with_SW_evalue()
@@ -2040,15 +3098,15 @@ void prefilter_with_SW_evalue()
   int gap_extend = par.prefilter_gap_extend;
 
   int score;
-  float evalue;
+  double evalue;
   int thread_id = 0;
   char db_name[NAMELEN];
   char tmp_name[NAMELEN];
   char tmp[NAMELEN];
 
-  vector<pair<float, string> > hits;
+  vector<pair<double, string> > hits;
 
-  const float factor = (float)dbsize * LQ;
+  const double factor = (double)dbsize * LQ;
 
 #pragma omp parallel for schedule(static) private(evalue, score, thread_id)
   for (int n = 0; n < num_dbs; n++)     // Loop over all database sequences
@@ -2065,13 +3123,13 @@ void prefilter_with_SW_evalue()
       if (evalue < par.prefilter_smax_thresh)
 	{
           #pragma omp critical
-	  hits.push_back(pair<float,string>(evalue, string(dbnames[n])));
+	  hits.push_back(pair<double,string>(evalue, string(dbnames[n])));
 	}
     }
 
   sort(hits.begin(), hits.end());
 
-  vector<pair<float, string> >::iterator it;
+  vector<pair<double, string> >::iterator it;
   
   for ( it=hits.begin() ; it < hits.end(); it++ )
     {
@@ -2127,7 +3185,9 @@ void prefilter_with_SW_evalue()
 
   // Free memory
   free(qc);
-  free(workspace);
+  for (int i = 0; i < cpu; i++)
+    free(workspace[i]);
+  delete[] workspace;
 }
 
 // void prefilter_with_SW()
@@ -2277,7 +3337,9 @@ void prefilter_with_SW_only()
 
   // Free memory
   free(qc);
-  free(workspace);
+  for (int i = 0; i < cpu; i++)
+    free(workspace[i]);
+  delete[] workspace;
 }
 
 void prefilter_with_SW_score_only()
@@ -2348,7 +3410,9 @@ void prefilter_with_SW_score_only()
 
   // Free memory
   free(qc);
-  free(workspace);
+  for (int i = 0; i < cpu; i++)
+    free(workspace[i]);
+  delete[] workspace;
 }
 
 void prefilter_with_SW_evalue_only()
@@ -2366,15 +3430,15 @@ void prefilter_with_SW_evalue_only()
   int gap_extend = par.prefilter_gap_extend;
 
   int score;
-  float evalue;
+  double evalue;
   int thread_id = 0;
   char db_name[NAMELEN];
   char tmp_name[NAMELEN];
   char tmp[NAMELEN];
 
-  vector<pair<float, string> > hits;
+  vector<pair<double, string> > hits;
 
-  const float factor = (float)dbsize * LQ;
+  const double factor = (double)dbsize * LQ;
 
 #pragma omp parallel for schedule(static) private(evalue, score, thread_id)
   for (int n = 0; n < num_dbs; n++)     // Loop over all database sequences
@@ -2391,13 +3455,13 @@ void prefilter_with_SW_evalue_only()
       if (evalue < par.prefilter_smax_thresh)
 	{
           #pragma omp critical
-	  hits.push_back(pair<float,string>(evalue, string(dbnames[n])));
+	  hits.push_back(pair<double,string>(evalue, string(dbnames[n])));
 	}
     }
 
   sort(hits.begin(), hits.end());
 
-  vector<pair<float, string> >::iterator it;
+  vector<pair<double, string> >::iterator it;
   
   FILE* outf=NULL;
   outf=fopen(par.outfile,"w");
@@ -2422,7 +3486,9 @@ void prefilter_with_SW_evalue_only()
 
   // Free memory
   free(qc);
-  free(workspace);
+  for (int i = 0; i < cpu; i++)
+    free(workspace[i]);
+  delete[] workspace;
 }
 
 
@@ -2460,6 +3526,13 @@ void prefilter_db()
     prefilter_with_SW_evalue();
   else if (!strcmp(pre_mode,"SW_evalue_preprefilter"))  // Smith-Waterman case
     prefilter_with_SW_evalue_preprefilter();
+  else if (!strcmp(pre_mode,"SW_evalue_preprefilter_backtrace"))  // Smith-Waterman case
+    {
+      if (block_filter) 
+	prefilter_with_SW_evalue_preprefilter_backtrace();
+      else
+	prefilter_with_SW_evalue_preprefilter();
+    }
   else if (!strcmp(pre_mode,"only_prefilt_SW"))  // Smith-Waterman case
     prefilter_with_SW_only();
   else if (!strcmp(pre_mode,"only_prefilt_SW_score"))  // Smith-Waterman case

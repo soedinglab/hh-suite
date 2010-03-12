@@ -547,7 +547,7 @@ void SetDefaults()
 
   par.block_shading=NULL;
   par.block_shading_counter=NULL;
-  par.block_shading_space = 100;
+  par.block_shading_space = 200;
   strcpy(par.block_shading_mode,"tube");
 
   // For HHblits prefiltering with SSE2
