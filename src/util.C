@@ -81,7 +81,7 @@ inline float flog2(float x)
 }
 
 // This function returns log2 with a max absolute deviation of +/- 1.5E-5 (typically 0.8E-5).
-// It takes 1.42E-8 s  whereas log2(x) takes 9.5E-7 s. It is hence 9.4 times faster.
+// It takes 0.80E-8 s  whereas log2(x) takes 5.4E-7 s. It is hence 9.4 times faster.
 // It makes use of the representation of 4-byte floating point numbers:
 // seee eeee emmm mmmm mmmm mmmm mmmm mmmm
 // s is the sign,
@@ -185,148 +185,23 @@ inline float fpow2(float x)
                                           // which, in internal bits, is written 0x4b400000 (since 10010110bin = 150)
     int lx = *((int*)&tx) - 0x4b400000;   // integer value of x 
     float dx = x-(float)(lx);             // float remainder of x
-    x = 1.0f + dx*(0.693019f              // polynomial approximation of 2^x
-             + dx*(0.241404f              // for x in the range [0, 1]
-             + dx*(0.0520749f
+//   x = 1.0f + dx*(0.69606564f           // cubic apporoximation of 2^x for x in the range [0, 1]
+//            + dx*(0.22449433f           // Gives relative deviation < 1.5E-4
+//            + dx*(0.07944023f)));       // Speed: 1.9E-8s
+    x = 1.0f + dx*(0.693019f             // polynomial approximation of 2^x for x in the range [0, 1]
+             + dx*(0.241404f             // Gives relative deviation < 4.6E-6 
+             + dx*(0.0520749f            // Speed: 2.1E-8s
              + dx* 0.0134929f )));
-//   x = 1.0f + dx*(0.693153f              // polynomial apporoximation of 2^x
-//            + dx*(0.240153f              // for x in the range [0, 1]
-//            + dx*(0.0558282f
+//   x = 1.0f + dx*(0.693153f             // polynomial apporoximation of 2^x for x in the range [0, 1]
+//            + dx*(0.240153f             // Gives relative deviation < 2.3E-7 
+//            + dx*(0.0558282f            // Speed: 2.3E-8s
 //            + dx*(0.00898898f
 //            + dx* 0.00187682f ))));
     *px += (lx<<23);                      // add integer power of 2 to exponent
     return x;
 }
 
-/////////////////////////////////////////////////////////////////////////////////////
-// fast 2^x
-// ATTENTION: need to compile with g++ -fno-strict-aliasing when using -O2 or -O3!!!
-// Relative deviation < 2.3E-7
-// Speed: 2.3E-8s per call! (exp(): 8.5E-8, pow(): 1.7E-7)
-//                        seee eeee emmm mmmm mmmm mmmm mmmm mmmm
-// In summary: x = (-1)^s * 1.mmmmmmmmmmmmmmmmmmmmmm * 2^(eeeeeee-127)
-/////////////////////////////////////////////////////////////////////////////////////
-inline float fast_pow2(float x)
-{
-  if (x>FLT_MAX_EXP) return FLT_MAX;
-  if (x<FLT_MIN_EXP) return 0.0f;
-  int *px = (int*)(&x);                 // store address of float as pointer to long
-  float tx = (x-0.5f) + (3<<22);        // temporary value for truncation: x-0.5 is added to a large integer (3<<22)
-  int lx = *((int*)&tx) - 0x4b400000;   // integer value of x
-  float dx = x-(float)(lx);             // float remainder of x
-  x = 1.0f + dx*(0.693153f              // polynomial approximation of 2^x
-           + dx*(0.240153f              // for x in the range [0, 1]
-           + dx*(0.0558282f
-           + dx*(0.00898898f
-           + dx* 0.00187682f ))));
-  *px += (lx<<23);                      // add integer power of 2 to exponent
-  return x;
-}
 
-/////////////////////////////////////////////////////////////////////////////////////
-// fast 2^x
-// ATTENTION: need to compile with g++ -fno-strict-aliasing when using -O2 or -O3!!!
-// Relative deviation < 1.5E-4
-/////////////////////////////////////////////////////////////////////////////////////
-// inline float fpow2(float x)
-// {
-//   if (x>=128) return FLT_MAX;
-//   if (x<=-128) return FLT_MIN;
-//   int *px = (int*)(&x);                 // store address of float as pointer to long
-//   float tx = (x-0.5f) + (3<<22);        // temporary value for truncation: x-0.5 is added to a large integer (3<<22)
-//   int lx = *((int*)&tx) - 0x4b400000;   // integer value of x
-//   float dx = x-(float)(lx);             // float remainder of x
-//   x = 1.0f + dx*(0.6960656421638072f          // cubic apporoximation of 2^x
-//            + dx*(0.224494337302845f           // for x in the range [0, 1]
-//            + dx*(0.07944023841053369f)));
-//   *px += (lx<<23);                            // add integer power of 2 to exponent
-//   return x;
-// }
-
-/////////////////////////////////////////////////////////////////////////////////////
-// ATTENTION:
-// Can't be used with -O2/-O3 optimization on some compilers !
-// Works with g++ version 4.1, but not with 3.4, in which case it returns values
-// that are a factor 1.002179942 too low
-//
-// Fast pow2 routine (Johannes Soeding)
-// Same speed as fpow2(), but *relative* deviation < 1.2E-7
-// Makes use of the binary representation of floats in memory:
-//   x = (-1)^s * 1.mmmmmmmmmmmmmmmmmmmmmm * 2^(eeeeeee-127)
-// is represented as
-// 31        23                   7654 3210
-//  seee eeee emmm mmmm mmmm mmmm mmmm mmmm
-// s is the sign, the 8 bits eee eee e are the exponent + 127 (in hex: 0x7f),
-// and the following 23 bits m give the mantisse.
-// We decompose the argument x = a + b, with integer a and 0 <= b < 1
-// Therefore 2^x = 2^a * 2^b  where a is the binary exponent of 2^x
-// and  1 <= 2^b < 2,  i.e. 2^b determines the mantisse uniquely.
-// To calculate 2^b, we split b into the first 10 bits and the last 13 bits,
-// b = b' + c, and then look up the mantisse of 2^b' in a precomputed table.
-// We use the residual c to interpolate between the mantisse for 2^b' and 2(b'+1/1024)
-/////////////////////////////////////////////////////////////////////////////////////
-// inline float fast_pow2(float x)
-// {
-//   if (x<=-127) return 5.9E-39;
-//   if (x>=128)  return 3.4E38;
-//   static char initialized=0;
-//   static unsigned int pow2[1025];
-//   static unsigned int diff[1025];
-//   static int y = 0;
-//   if (!initialized)   //First fill in the pow2-vector
-//     {
-//       float f;
-//       unsigned int prev = 0;
-//       pow2[0] = 0;
-//       for (int b=1; b<1024; b++)
-//         {
-//           f=pow(2.0,float(b)/1024.0);
-//           pow2[b]=(*((unsigned int *)(&f)) & 0x7FFFFF); // store the mantisse of 2^(1+b/1024)
-//           diff[b-1]=pow2[b]-prev;
-//           prev=pow2[b];
-//         }
-//       pow2[1024]=0x7FFFFF;
-//       diff[1023]=pow2[1024]-prev;
-//       initialized=1;
-//     }
-
-//   int *px = (int *)(&x);                              // store address of float as pointer to int
-//   int E = ((*px & 0x7F800000)>>23)-127;               // E is exponent of x and is <=6
-//   unsigned int M=(*px & 0x007FFFFF) | 0x00800000;     // M is the mantisse 1.mmm mmmm mmmm mmmm mmmm mmmm
-//   int a,b,c;
-//   if (x>=0)
-//     {
-//       if (E>=0) {
-//         a = 0x3F800000 + ((M<<E) & 0x7F800000);       // a is exponent of 2^x, beginning at bit 23
-//         b = ((M<<E) & 0x007FE000)>>13;
-//         c = ((M<<E) & 0x00001FFF);
-//       } else {
-//         a =  0x3F800000;                              // a = exponent of 2^x = 0
-//         b = ((M>>(-E)) & 0x007FE000)>>13;
-//         c = ((M>>(-E)) & 0x00001FFF);
-//       }
-//     }
-//   else
-//     {
-//       if (E>=0) {
-//         a = 0x3F000000 - ((M<<E) & 0x7F800000);       // a is exponent of 2^x
-//         b = (0x00800000-(int)((M<<E) & 0x007FFFFF)) >>13;
-//         c = (0x00800000-(int)((M<<E) & 0x007FFFFF)) & 0x00001FFF;
-//       } else {
-//         a = 0x3F000000;                               // a = exponent of 2^x = -1
-//         b = (0x00800000-(int)((M>>(-E)) & 0x007FFFFF)) >>13;
-//         c = (0x00800000-(int)((M>>(-E)) & 0x007FFFFF)) & 0x00001FFF;
-//       }
-//     }
-// /*   printf("x=%0X\n",*px); */
-// /*   printf("E=%0X\n",E); */
-// /*   printf("M=%0X\n",M); */
-// /*   printf("a=%0X\n",a); */
-// /*   printf("b=%0X\n",b); */
-//   y = a | (pow2[b] + ((diff[b]*c)>>13) );
-//   /*   printf("2^x=%0X\n",*px); */
-//   return *((float*)&y);
-// }
 
 // Normalize a double array such that it sums to one
 inline double normalize_to_one(double* array, size_t length, const float* def_array=NULL)

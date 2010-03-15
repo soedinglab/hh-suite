@@ -24,6 +24,7 @@
 #include <errno.h>    // perror()
 #include <cassert>
 #include <stdexcept>
+#include <malloc.h>   // memalign()
 
 #include <sys/time.h>
 //#include <new>
@@ -79,6 +80,16 @@ using std::ofstream;
 #include "hhhitlist.C"   // class HitList
 #include "hhfunc.C"      // some functions common to hh programs
 
+#ifdef HH_SSE3
+#ifdef __SUNPRO_C
+#include <sunmedia_intrin.h>
+#else
+#include <emmintrin.h>   // SSE2
+#include <pmmintrin.h>   // SSE3
+///#include <smmintrin.h>   // SSE4.1
+#endif
+#endif
+
 #ifdef PNG
 #include "pngwriter.h"   //PNGWriter (http://pngwriter.sourceforge.net/)
 #include "pngwriter.cc"  //PNGWriter (http://pngwriter.sourceforge.net/)
@@ -94,7 +105,6 @@ Hit hit;                     // Ceate new hit object pointed at by hit
 HitList hitlist;             // list of hits with one Hit object for each pairwise comparison done
 char aliindices[256];        // hash containing indices of all alignments which to show in dot plot
 char* dmapfile=NULL;         // where to write the coordinates for the HTML map file (to click the alignments)
-char* alitabfile=NULL;       // where to write pairs of aligned residues
 char* strucfile=NULL;        // where to read structure scores
 char* pngfile=NULL;          // pointer to pngfile
 char* tcfile=NULL;           // TCoffee output file name
@@ -134,8 +144,8 @@ void help()
   printf("Output options:                                                           \n");
   printf(" -o <file>     write output alignment to file\n"); 
   printf(" -ofas <file>  write alignments in FASTA, A2M (-oa2m) or A3M (-oa3m) format   \n"); 
-  printf(" -a <file>     write query alignment in a3m format to file (default=none)\n");
-  printf(" -aa <file>    append query alignment in a3m format to file (default=none)\n");
+  printf(" -Oa3m <file>  write query alignment in a3m format to file (default=none)\n");
+  printf(" -Aa3m <file>  append query alignment in a3m format to file (default=none)\n");
   printf(" -atab <file>  write alignment as a table (with posteriors) to file (default=none)\n");
   printf(" -v <int>      verbose mode: 0:no screen output  1:only warings  2: verbose\n");
   printf(" -seq  [1,inf[ max. number of query/template sequences displayed  (def=%i)  \n",par.nseqdis);
@@ -151,7 +161,7 @@ void help()
   printf(" -z <int>      minimum number of lines in summary hit list (def=%i)       \n",par.z);
   printf(" -B <int>      maximum number of alignments in alignment list (def=%i)    \n",par.B);
   printf(" -b <int>      minimum number of alignments in alignment list (def=%i)    \n",par.b);
-  printf(" -rank int     specify rank of alignment to write with -a or -aa option (default=1)\n");
+  printf(" -rank int     specify rank of alignment to write with -Oa3m or -Aa3m option (default=1)\n");
   printf("\n");         
 #ifdef PNG
   printf("Dotplot options:\n");
@@ -210,15 +220,19 @@ void help()
 void help_out()
 {
   printf("\n");
-  printf("Output options: \n");
-  printf(" -v            verbose mode (default: show only warnings)                 \n");
-  printf(" -v 0          suppress all screen output                                 \n");
+  printf("Output options:                                                           \n");
+  printf(" -o <file>     write output alignment to file\n"); 
+  printf(" -ofas <file>  write alignments in FASTA, A2M (-oa2m) or A3M (-oa3m) format   \n"); 
+  printf(" -Oa3m <file>  write query alignment in a3m format to file (default=none)\n");
+  printf(" -Aa3m <file>  append query alignment in a3m format to file (default=none)\n");
+  printf(" -atab <file>  write alignment as a table (with posteriors) to file (default=none)\n");
+  printf(" -v <int>      verbose mode: 0:no screen output  1:only warings  2: verbose\n");
+  printf(" -seq  [1,inf[ max. number of query/template sequences displayed  (def=%i)  \n",par.nseqdis);
   printf(" -nocons       don't show consensus sequence in alignments (default=show) \n");
   printf(" -nopred       don't show predicted 2ndary structure in alignments (default=show) \n");
-  printf(" -nodssp       don't show DSSP SS 2ndary structure in alignments (default=show) \n");
+  printf(" -nodssp       don't show DSSP 2ndary structure in alignments (default=show) \n");
   printf(" -ssconf       show confidences for predicted 2ndary structure in alignments\n");
-  printf(" -seq  [1,inf[ max. number of query/template sequences displayed  (def=%i)  \n",par.nseqdis);
-  printf(" -aliw [40,..[ number of columns per line in alignment list (def=%i)\n",par.aliwidth);
+  printf(" -aliw int     number of columns per line in alignment list (def=%i)\n",par.aliwidth);
   printf(" -P <float>    for self-comparison: max p-value of alignments (def=%.2g\n",pself);
   printf(" -p <float>    minimum probability in summary and alignment list (def=%G) \n",par.p);
   printf(" -E <float>    maximum E-value in summary and alignment list (def=%G)     \n",par.E);
@@ -226,7 +240,7 @@ void help_out()
   printf(" -z <int>      minimum number of lines in summary hit list (def=%i)       \n",par.z);
   printf(" -B <int>      maximum number of alignments in alignment list (def=%i)    \n",par.B);
   printf(" -b <int>      minimum number of alignments in alignment list (def=%i)    \n",par.b);
-  printf(" -rank int     specify rank of alignment to write with -a or -aa option (def=1)\n");
+  printf(" -rank int     specify rank of alignment to write with -Oa3m or -Aa3m option (default=1)\n");
   printf(" -tc <file>    write a TCoffee library file for the pairwise comparison   \n");         
   printf(" -tct [0,100]  min. probobability of residue pairs for TCoffee (def=%i%%)\n",iround(100*probmin_tc));         
   printf("\n");         
@@ -392,20 +406,6 @@ void ProcessArguments(int argc, char** argv)
 	    {help() ; cerr<<endl<<"Error in "<<program_name<<": no output file following -Aa3m\n"; exit(4);}
 	  else strcpy(par.alnfile,argv[i]);
 	}
-      else if (!strcmp(argv[i],"-Ohhm"))
-	{
-	  par.append=0;
-	  if (++i>=argc || argv[i][0]=='-') 
-	    {help() ; cerr<<endl<<"Error in "<<program_name<<": no output file following -Ohhm\n"; exit(4);}
-	  else strcpy(par.hhmfile,argv[i]);
-	}
-      else if (!strcmp(argv[i],"-Ahhm"))
-	{
-	  par.append=1;
-	  if (++i>=argc || argv[i][0]=='-') 
-	    {help() ; cerr<<endl<<"Error in "<<program_name<<": no output file following -Ahhm\n"; exit(4);}
-	  else strcpy(par.hhmfile,argv[i]);
-	}
       else if (!strcmp(argv[i],"-Opsi"))
 	{
 	  par.append=0;
@@ -443,12 +443,8 @@ void ProcessArguments(int argc, char** argv)
       else if (!strcmp(argv[i],"-atab") || !strcmp(argv[i],"-Aliout"))
 	{
 	  if (++i>=argc || argv[i][0]=='-') 
-	    {help(); cerr<<endl<<"Error in "<<program_name<<": no query file following -Struc\n"; exit(4);}
-	  else 
-	    {
-	      alitabfile = new(char[strlen(argv[i])+1]);
-	      strcpy(alitabfile,argv[i]);
-	    }
+	    {help(); cerr<<endl<<"Error in "<<program_name<<": no query file following -atab\n"; exit(4);}
+	  else strncpy(par.alitabfile,argv[i],NAMELEN);
 	}
       else if (!strcmp(argv[i],"-tc"))
 	{
@@ -938,26 +934,13 @@ int main(int argc, char **argv)
 //        printf("\n");
     }
 
-  // Write last alignment into alitabfile
-  if (alitabfile) 
+  // Append last alignment to alitabfile
+  if (*par.alitabfile) 
     {
       FILE* alitabf=NULL;
-      if (strcmp(alitabfile,"stdout")) alitabf = fopen(alitabfile, "w"); else alitabf = stdout;
-      if (!alitabf) OpenFileError(alitabfile);
-      if (par.forward==2 || par.realign) 
-	{
-	  fprintf(alitabf,"    i     j  score     SS  probab\n");
-	  for (int step=hit.nsteps; step>=1; step--)
-	    if (hit.states[step]>=MM) 
-	      fprintf(alitabf,"%5i %5i %6.2f %6.2f %7.4f\n",hit.i[step],hit.j[step],hit.S[step],hit.S_ss[step],hit.P_posterior[step]);
-	} 
-      else 
-	{
-	  fprintf(alitabf,"    i     j  score     SS\n");
-	  for (int step=hit.nsteps; step>=1; step--)
-	    if (hit.states[step]>=MM) 
-	      fprintf(alitabf,"%5i %5i %6.2f %6.2f\n",hit.i[step],hit.j[step],hit.S[step],hit.S_ss[step]);
-	}
+      if (strcmp(par.alitabfile,"stdout")) alitabf = fopen(par.alitabfile, "w"); else alitabf = stdout;
+      if (!alitabf) OpenFileError(par.alitabfile);
+      WriteToAlifile(alitabf,&hit);
       fclose(alitabf);
     }
 
@@ -1003,7 +986,7 @@ int main(int argc, char **argv)
   if (par.hitrank==0) hit=hitlist.Read(1); else hit=hitlist.Read(par.hitrank);
   
   // Generate output alignment or HMM file?
-  if (*par.alnfile || *par.psifile || *par.hhmfile) 
+  if (*par.alnfile || *par.psifile) 
     {
       if (par.append==0) 
 	{
@@ -1257,7 +1240,7 @@ int main(int argc, char **argv)
 	  delete[] alisto;
       }
 
-    } // if (strcmp("",par.pngfile))
+    } // if (*par.pngfile)
 #endif
 
 //   double log2Pvalue;
@@ -1301,7 +1284,6 @@ int main(int argc, char **argv)
     }
 
   if (pngfile) delete[] pngfile;
-  if (alitabfile) delete[] alitabfile;
   if (tcfile) delete[] tcfile;
   if (par.exclstr) delete[] par.exclstr;
 

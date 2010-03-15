@@ -314,11 +314,7 @@ void Hit::Viterbi(HMM& q, HMM& t, float** Sstruc)
   
   
   // Variable declarations
-#ifdef HH_SSE3
   float __attribute__((aligned(16))) Si[MAXRES];  // sMM[i][j] = score of best alignment up to indices (i,j) ending in (Match,Match) 
-#else
-  float Si[MAXRES];  // sMM[i][j] = score of best alignment up to indices (i,j) ending in (Match,Match) 
-#endif
   float sMM[MAXRES];          // sMM[i][j] = score of best alignment up to indices (i,j) ending in (Match,Match) 
   float sGD[MAXRES];          // sGD[i][j] = score of best alignment up to indices (i,j) ending in (Gap,Delete) 
   float sDG[MAXRES];          // sDG[i][j] = score of best alignment up to indices (i,j) ending in (Delete,Gap)
@@ -2110,7 +2106,6 @@ inline double Probab(Hit& hit)
 //  => max dev = +/- 2.1E-5, run time ~ 5.6ns?
 
 #ifdef HH_SSE3
-
 __m128 _mm_flog2_ps(__m128 X)
 {
   const __m128i CONST32_0x7f = _mm_set_epi32(0x7f,0x7f,0x7f,0x7f);
@@ -2137,6 +2132,7 @@ __m128 _mm_flog2_ps(__m128 X)
   R = _mm_add_ps(R, _mm_cvtepi32_ps(E));  // convert integer exponent to float and add to mantisse
   return R;
 }
+#endif
 
 #endif
 
