@@ -37,7 +37,7 @@ void AlignByWorker(int bin)
 #endif
       hitlist.Push(*(hit[bin]));            // insert hit at beginning of list (last repeats first!)
 
-      if (par.hhblits_prefilter_logpval!=0)
+      if (par.early_stopping_filter)
 	{
 	  // Calculate Evalue
 	  float q_len = log(q.L)/LOG1000;
@@ -53,7 +53,7 @@ void AlignByWorker(int bin)
 	  hit[bin]->logEval = hit[bin]->logPval+log(hitlist.N_searched)+(alpha*par.hhblits_prefilter_logpval - beta);
 
 	  par.filter_sum -= par.filter_evals[par.filter_counter];
-	  par.filter_evals[par.filter_counter] = 1/(1+hit[bin]->Eval);
+	  par.filter_evals[par.filter_counter] = 1.0/(1.0+hit[bin]->Eval);
 	  par.filter_sum += par.filter_evals[par.filter_counter];
 
 	  //printf("E-val: %4.2g   1/(1+Eval): %4.2g  => new sum: %16.2f\n",hit[bin]->Eval,par.filter_evals[par.filter_counter],par.filter_sum);

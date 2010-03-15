@@ -539,6 +539,8 @@ void SetDefaults()
   // HHblits parameters
   par.hhblits_prefilter_logpval=0;
 
+  par.early_stopping_filter = true;
+
   par.filter_thresh=0;
   par.filter_length=200;
   par.filter_evals=new double[par.filter_length];

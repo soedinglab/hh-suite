@@ -175,6 +175,8 @@ public:
   int coverage_db; 
   int Ndiff_db;    
 
+  bool early_stopping_filter; // Break HMM search, when the sum of the last N HMM-hit-Evalues is below threshold
+
   double filter_thresh;    // Threshold for early stopping
   int filter_length;       // Length of array of 1/evalues
   double *filter_evals;    // array of last 1/evalues

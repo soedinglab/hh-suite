@@ -112,7 +112,6 @@ bool nodiff = false;                   // if true, do not filter in last round
 bool filter = true;                    // Perform filtering of already seen HHMs
 bool block_filter = true;              // Perform viterbi and forward algorithm only on block given by prefiltering
 bool realign_old_hits = false;         // Realign old hits in last round or use previous alignments
-bool early_stopping_filter = true;     // Break HMM search, when the sum of the last N HMM-hit-Evalues is below threshold
 
 int cpu = 1;
 
@@ -681,10 +680,10 @@ void ProcessArguments(int argc, char** argv)
 	  par.filter_evals=new double[par.filter_length];
 	}
       else if (!strcmp(argv[i],"-filtercut") && (i<argc-1)) par.filter_thresh=(double)atof(argv[++i]);
-      else if (!strcmp(argv[i],"-nofilter")) {filter=false; block_filter=false; par.filter_thresh=0;}
+      else if (!strcmp(argv[i],"-nofilter")) {filter=false; block_filter=false; par.early_stopping_filter=false; par.filter_thresh=0;}
       else if (!strcmp(argv[i],"-nodbfilter")) {par.filter_thresh=0;}
       else if (!strcmp(argv[i],"-noblockfilter")) {block_filter=false;}
-      else if (!strcmp(argv[i],"-noearlystoppingfilter")) {early_stopping_filter=false;}
+      else if (!strcmp(argv[i],"-noearlystoppingfilter")) {par.early_stopping_filter=false;}
       else if (!strcmp(argv[i],"-block_len") && (i<argc-1)) par.block_shading_space = atoi(argv[++i]);
       else if (!strcmp(argv[i],"-shading_mode") && (i<argc-1)) strcpy(par.block_shading_mode,argv[++i]);
       else if (!strcmp(argv[i],"-smax_thresh") && (i<argc-1)) par.prefilter_smax_thresh = atoi(argv[++i]);
@@ -1040,10 +1039,11 @@ void search_loop(char *dbfiles[], int ndb, bool alignByWorker=true)
   for (int idb=0; idb<ndb; idb++)
     {
       // Check early stopping filter
-      if (early_stopping_filter && par.filter_sum < filter_cutoff)
+      if (par.early_stopping_filter && par.filter_sum < filter_cutoff)
 	{
 	  if (v>=4)
 	    printf("Stop after DB-HHM %i from %i\n",idb,ndb);
+	  printf("\n");
 	  break;
 	}
       

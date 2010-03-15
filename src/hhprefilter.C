@@ -2384,34 +2384,11 @@ void prefilter_with_SW_evalue_preprefilter_backtrace()
     {
       backtrace_hits[count_dbs++] = (*it).second;
 
-      if (count_dbs >= MAXNUMDB) 
-	{
-	  printf("\nWARNING! To many hits through prefilter! (MAXNUM = %6i)\n",MAXNUMDB);
-	  break;
-	}
-    }
-
-  if (print_elapsed) ElapsedTimeSinceLastCall("(SW prefilter)");
-
-  // Run SW with backtrace
-  for (int i = 0; i < cpu; i++) {
-    free(workspace[i]);
-    workspace[i] = (__m128i*)memalign(16,3*(LQ+7)*sizeof(short));
-  }
-  __m128i *qw_it = (__m128i*) qw;
-  
-  #pragma omp parallel for schedule(static) private(block, count, thread_id)
-  for (int n = 0; n < count_dbs; n++)     // Loop over all database sequences
-    {
-      #ifdef _OPENMP
-      thread_id = omp_get_thread_num();
-      #endif
-      
       // Add hit to dbfiles
       char tmp_name[NAMELEN];
       char db_name[NAMELEN];
       char tmp[NAMELEN];
-      ptr=strwrd(tmp_name,dbnames[backtrace_hits[n]]);
+      ptr=strwrd(tmp_name,dbnames[(*it).second]);
       
       if (!strncmp(tmp_name,"cl|",3))   // kClust formatted database (NR20, NR30)
 	{
@@ -2428,7 +2405,6 @@ void prefilter_with_SW_evalue_preprefilter_backtrace()
 	  strcat(db_name,".hhm");
 	}
       
-      #pragma omp critical
       if (! doubled->Contains(db_name))
 	{
 	  doubled->Add(db_name);
@@ -2453,7 +2429,31 @@ void prefilter_with_SW_evalue_preprefilter_backtrace()
 	      ndb_new++;
 	    }
 	}
-      
+
+
+      if (count_dbs >= MAXNUMDB) 
+	{
+	  printf("\nWARNING! To many hits through prefilter! (MAXNUM = %6i)\n",MAXNUMDB);
+	  break;
+	}
+    }
+
+  if (print_elapsed) ElapsedTimeSinceLastCall("(SW prefilter)");
+
+  // Run SW with backtrace
+  for (int i = 0; i < cpu; i++) {
+    free(workspace[i]);
+    workspace[i] = (__m128i*)memalign(16,3*(LQ+7)*sizeof(short));
+  }
+  __m128i *qw_it = (__m128i*) qw;
+  
+  #pragma omp parallel for schedule(static) private(block, count, thread_id)
+  for (int n = 0; n < count_dbs; n++)     // Loop over all database sequences
+    {
+      #ifdef _OPENMP
+      thread_id = omp_get_thread_num();
+      #endif
+            
       // Perform backtrace, if one of the profiles has length > 2*par.block_shading_space
       if (LQ > 2*par.block_shading_space || length[backtrace_hits[n]] > 2*par.block_shading_space)
       //if (1)
@@ -2465,6 +2465,7 @@ void prefilter_with_SW_evalue_preprefilter_backtrace()
 	  
 	  if (num_res > 0) 
 	    {
+	      char tmp_name[NAMELEN];
 	      ptr=strwrd(tmp_name,dbnames[backtrace_hits[n]]);
 	      block = new(int[400]);
 	      count = 0;
