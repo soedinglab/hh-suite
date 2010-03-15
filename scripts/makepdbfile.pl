@@ -87,7 +87,7 @@ while ($line=<INFILE>) {
     chomp($line);
     $aaq.=$line;
 }
-$aaq=~tr/X.-//d;  # Remove symbol for inserted domain / missing residues
+# $aaq=~tr/X.-//d;  # Remove symbol for inserted domain or missing residues
 if (&MakePdbFile($nameline,$aaq,$outfile) !=0) {exit(1);}
 close(INFILE);
 if ($v>=2) {print("Done\n");}
