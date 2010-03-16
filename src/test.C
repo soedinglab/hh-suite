@@ -4,6 +4,10 @@
 #include <stdlib.h>   // exit
 #include <string>     // strcmp, strstr
 #include <math.h>
+
+#include "cs.h"
+#include "sequence-inl.h"
+
 inline float log2(float x)  {return (x<=0? -100000.0:1.442695041*log(x));}
 
 
@@ -46,14 +50,18 @@ inline float flog2(float x)
 /////////////////////////////////////////////////////////////////////////
 int main(int argc, char **argv)
 {  
-  float sum=0.0;
-  for (int i=1; i<=100000000; i++)
-    {
-      sum += fast_log2((float)i);
-    } 
-  printf("sum=%8.3f\n",sum);
+  cs::Sequence<cs::AA> sequence("A --RNDCQEGHILKMFPSTWYV\n", "header");
+  
+  std::cout << sequence << std::endl;
 
-  float x = 1.5;
-  printf("flog2(%8.3e)=%8.4f log2(%8.3e)=%8.4f diff=%9.6f\n",x,flog2(x),x,log2(x),flog2(x)-log2(x));
+  // float sum=0.0;
+  // for (int i=1; i<=100000000; i++)
+  //   {
+  //     sum += fast_log2((float)i);
+  //   } 
+  // printf("sum=%8.3f\n",sum);
+
+  // float x = 1.5;
+  // printf("flog2(%8.3e)=%8.4f log2(%8.3e)=%8.4f diff=%9.6f\n",x,flog2(x),x,log2(x),flog2(x)-log2(x));
   exit(0);
 }
