@@ -26,7 +26,7 @@ int num_dbs = 0;
 Hash<char>* doubled;
 
 int pos;
-int count;
+int block_count;
 char actual_hit[NAMELEN];
 int* block;
 
@@ -1595,7 +1595,7 @@ void init_prefilter()
 		{
 		  if (aa2i(line[h])>=0) // ignore white-space characters ' ', \t and \n (aa2i()==-1)
 		    {
-		      X[pos++]=(unsigned char)(aa2i(line[h])); 
+		      X[pos++]=(unsigned char)(aa2i(line[h])); //  AS62::kCharToInt[line[h]]
 		      len++;
 		    }
 		  else 
@@ -1633,13 +1633,13 @@ void init_sse_prefiltering()
   if (!*par.clusterfile) { //compute context-specific pseudocounts?
     // Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
     q_tmp.PreparePseudocounts();
+    // Add amino acid pseudocounts to query: p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
+    q_tmp.AddAminoAcidPseudocounts(2,1.5,2,1);
   } else {
-    // Generate an amino acid frequency matrix from f[i][a] with full context specific pseudocount admixture (tau=1) -> g[i][a]
-    q_tmp.PrepareContextSpecificPseudocounts();
+    // Add context specific pseudocounts
+    q_tmp.AddContextSpecificPseudocounts(2,1.5,2,1);
   }
   
-  // Add amino acid pseudocounts to query: p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
-  q_tmp.AddAminoAcidPseudocounts(2,1.5,2,1);
   q_tmp.CalculateAminoAcidBackground();
 
   // Divide by NullModel
@@ -1889,15 +1889,15 @@ void prefilter_with_ungapped_SW()
 	      if (strcmp(actual_hit,"") && strcmp(actual_hit,tmp_name))   // New template
 		{
 		  // printf("Add to block shading   key: %s    data:",actual_hit);
-		  // for (int i = 0; i < count; i++)
+		  // for (int i = 0; i < block_count; i++)
 		  //   printf(" %i,",block[i]);
 		  // printf("\n");
 		  par.block_shading->Add(actual_hit,block);
-		  par.block_shading_counter->Add(actual_hit,count);
+		  par.block_shading_counter->Add(actual_hit,block_count);
 		  block = new(int[400]);
-		  count = 0;
+		  block_count = 0;
 		}
-	      if (count >= 400) { continue; }
+	      if (block_count >= 400) { continue; }
 	      strcpy(actual_hit,tmp_name);
 	      
 	      // Extract only best hit for each region
@@ -1917,18 +1917,18 @@ void prefilter_with_ungapped_SW()
 		  else
 		    {
 		      //printf("%4i-%4i (i-j: %4i - %4i), %4i |", beg, end, beg-length[n]+1, end-length[n]+1, rmax);
-		      block[count++]=block_start;
-		      block[count++]=beg-length[n]+1;  // d1
-		      block[count++]=end-length[n]+1;  // d2
+		      block[block_count++]=block_start;
+		      block[block_count++]=beg-length[n]+1;  // d1
+		      block[block_count++]=end-length[n]+1;  // d2
 		      beg = res[i].first;
 		      end = res[i].second;
 		      rmax = res[i].third;
 		    }
 		}
 	      //printf("%4i-%4i (i-j: %4i - %4i), %4i |", beg, end, beg-length[n]+1, end-length[n]+1, rmax);
-	      block[count++]=block_start;
-	      block[count++]=beg-length[n]+1;  // d1
-	      block[count++]=end-length[n]+1;  // d2
+	      block[block_count++]=block_start;
+	      block[block_count++]=beg-length[n]+1;  // d1
+	      block[block_count++]=end-length[n]+1;  // d2
 	    }
 	  
 	  if (!strncmp(tmp_name,"cl|",3))   // kClust formatted database (NR20, NR30)
@@ -1977,11 +1977,11 @@ void prefilter_with_ungapped_SW()
   if (block_filter && strcmp(actual_hit,""))   // New template
     {
       // printf("Add to block shading   key: %s    data:",actual_hit);
-      // for (int i = 0; i < count; i++)
+      // for (int i = 0; i < block_count; i++)
       //   printf(" %i,",block[i]);
       // printf("\n");
       par.block_shading->Add(actual_hit,block);
-      par.block_shading_counter->Add(actual_hit,count);
+      par.block_shading_counter->Add(actual_hit,block_count);
     }
   
   // Free memory
@@ -2187,7 +2187,7 @@ void prefilter_with_SW_evalue_preprefilter()
   
   int score;
   int thread_id = 0;
-  int count = 0;
+  int count_dbs = 0;
 
   float log_qlen = flog2(LQ);
 
@@ -2206,10 +2206,10 @@ void prefilter_with_SW_evalue_preprefilter()
       if (score > par.preprefilter_smax_thresh)
 	{
           #pragma omp critical
-	  prefiltered_hits[count++] = n;
+	  prefiltered_hits[count_dbs++] = n;
 	}
     }
-  printf("%6i hits through preprefilter!\n", count);
+  printf("%6i hits through preprefilter!\n", count_dbs);
   
   int gap_init = par.prefilter_gap_open + par.prefilter_gap_extend;
   int gap_extend = par.prefilter_gap_extend;
@@ -2224,7 +2224,7 @@ void prefilter_with_SW_evalue_preprefilter()
   const double factor = (double)dbsize * LQ;
 
   #pragma omp parallel for schedule(static) private(evalue, score, thread_id)
-  for (int n = 0; n < count; n++)     // Loop over all database sequences
+  for (int n = 0; n < count_dbs; n++)     // Loop over all database sequences
     {
       #ifdef _OPENMP
       thread_id = omp_get_thread_num();
@@ -2447,7 +2447,7 @@ void prefilter_with_SW_evalue_preprefilter_backtrace()
   }
   __m128i *qw_it = (__m128i*) qw;
   
-  #pragma omp parallel for schedule(static) private(block, count, thread_id)
+  #pragma omp parallel for schedule(static) private(block, block_count, thread_id)
   for (int n = 0; n < count_dbs; n++)     // Loop over all database sequences
     {
       #ifdef _OPENMP
@@ -2468,24 +2468,24 @@ void prefilter_with_SW_evalue_preprefilter_backtrace()
 	      char tmp_name[NAMELEN];
 	      ptr=strwrd(tmp_name,dbnames[backtrace_hits[n]]);
 	      block = new(int[400]);
-	      count = 0;
+	      block_count = 0;
 	      for (int a = 0; a < num_res; a++) 
 		{
-		  if (count >= 400) { continue; }
+		  if (block_count >= 400) { continue; }
 		  // Get block of HSP
-		  block[count++]=res[a].q_start;
-		  block[count++]=res[a].q_stop;
-		  block[count++]=res[a].t_start;
-		  block[count++]=res[a].t_stop;
+		  block[block_count++]=res[a].q_start;
+		  block[block_count++]=res[a].q_stop;
+		  block[block_count++]=res[a].t_start;
+		  block[block_count++]=res[a].t_stop;
 		}
               #pragma omp critical
 	      {
 		// printf("Add to block shading   key: %s    data:",tmp_name);
-		// for (int i = 0; i < count; i++)
+		// for (int i = 0; i < block_count; i++)
 		//   printf(" %i,",block[i]);
 		// printf("\n");
 		par.block_shading->Add(tmp_name,block);
-		par.block_shading_counter->Add(tmp_name,count);
+		par.block_shading_counter->Add(tmp_name,block_count);
 	      }
 	    }
 	  delete[] res;
@@ -2723,15 +2723,15 @@ void prefilter_with_BLAST()
 	  if (strcmp(actual_hit,"") && strcmp(actual_hit,tmp_name))   // New template
 	    {
 	      //printf("Add to block shading   key: %s    data:",actual_hit);
-	      // for (int i = 0; i < count; i++)
+	      // for (int i = 0; i < block_count; i++)
 	      //   printf(" %i,",block[i]);
 	      // printf("\n");
 	      par.block_shading->Add(actual_hit,block);
-	      par.block_shading_counter->Add(actual_hit,count);
+	      par.block_shading_counter->Add(actual_hit,block_count);
 	      block = new(int[400]);
-	      count = 0;
+	      block_count = 0;
 	    }
-	  if (count >= 400) { continue; }
+	  if (block_count >= 400) { continue; }
 	  strcpy(actual_hit,tmp_name);
 	  // Get block of HSP
 	  ptr=strwrd(tmp,ptr); // sequence identity
@@ -2739,13 +2739,13 @@ void prefilter_with_BLAST()
 	  pos=strint(ptr); // mismatches
 	  pos=strint(ptr); // gap openings
 	  pos=strint(ptr); // query start
-	  block[count++]=pos;
+	  block[block_count++]=pos;
 	  pos=strint(ptr); // query end
-	  block[count++]=pos;
+	  block[block_count++]=pos;
 	  pos=strint(ptr); // subject start
-	  block[count++]=pos;
+	  block[block_count++]=pos;
 	  pos=strint(ptr); // subject end
-	  block[count++]=pos;	    
+	  block[block_count++]=pos;	    
 	}
       
       if (!strncmp(tmp_name,"cl|",3))   // kClust formatted database (NR20, NR30)
@@ -2792,11 +2792,11 @@ void prefilter_with_BLAST()
   if (block_filter && strcmp(actual_hit,""))   // New template
     {
       // printf("Add to block shading   key: %s    data:",actual_hit);
-      // for (int i = 0; i < count; i++)
+      // for (int i = 0; i < block_count; i++)
       //   printf(" %i,",block[i]);
       // printf("\n");
       par.block_shading->Add(actual_hit,block);
-      par.block_shading_counter->Add(actual_hit,count);
+      par.block_shading_counter->Add(actual_hit,block_count);
     }
 }
 
@@ -3501,7 +3501,7 @@ void prefilter_db()
   for (int idb=0; idb<ndb_new; idb++) delete[](dbfiles_new[idb]);
   for (int idb=0; idb<ndb_old; idb++) delete[](dbfiles_old[idb]);
   ndb_new = ndb_old = 0;
-  count=0;
+  block_count=0;
   block = new(int[400]);
   strcpy(actual_hit,"");
 

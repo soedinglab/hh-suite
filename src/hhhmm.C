@@ -1147,15 +1147,57 @@ void HMM::PreparePseudocounts()
 /////////////////////////////////////////////////////////////////////////////////////
 // Generate an AA frequency matrix g[][] with full context specific pseudocount admixture (tau=1)
 /////////////////////////////////////////////////////////////////////////////////////
-void HMM::PrepareContextSpecificPseudocounts()
-{
-    Matrix mat;
-    AminoAcid aa;
-    CSCounts csc(par.clusterfile, &aa, &mat);
 
-    csc.set_beta(par.csb);
-    csc.set_weight_center(par.csw);
-    csc.prepare_pseudocounts(*this);
+void HMM::AddContextSpecificPseudocounts(char pcm, float pca, float pcb, float pcc)
+{
+  cs::CountProfile<cs::AA> ali_profile(L);
+  fillCountProfile(&ali_profile);
+
+  cs::Admix *admix = NULL;
+
+  switch (pcm)
+    {
+    case 1:
+      admix =  new cs::ConstantAdmix(pca);
+      break;
+    case 2:
+    case 4:
+      admix =  new cs::HHsearchAdmix(pca, pcb, pcc);
+      break;
+    case 3:
+      // TODO
+      break;
+    }      
+
+  if (admix == NULL)
+    {
+      // write cs-pseudocounts in HMM.p
+      for (int i=1; i<=L; ++i)
+	for (int a=0; a<20; ++a)
+	  p[i][a] = f[i][a];
+
+    }
+  else
+    {
+
+      cs::Profile<cs::AA> profile(lib_pc->AddTo(ali_profile, *admix));
+      delete admix;
+      
+      // write cs-pseudocounts in HMM.p
+      for (int i=1; i<=L; ++i)
+	for (int a=0; a<20; ++a)
+	  p[i][a] = profile[i-1][a];
+    }
+}
+
+void HMM::fillCountProfile(cs::CountProfile<cs::AA> *csProfile)
+{
+  for (int i=0; i<L; ++i)
+    {
+      csProfile->neff[i] = Neff_M[i+1];
+      for (int a=0; a<20; ++a)
+	csProfile->counts[i][a] = f[i+1][a] * Neff_M[i+1];
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////

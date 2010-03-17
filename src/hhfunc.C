@@ -108,13 +108,15 @@ void ReadAndPrepare(char* infile, HMM& q, Alignment* qali=NULL)
 
         // Don't add transition pseudocounts to query!!
 
-        if (!*par.clusterfile) { //compute context-specific pseudocounts?
-            // Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
-            q.PreparePseudocounts();
-        } else {
-            // Generate an amino acid frequency matrix from f[i][a] with full context specific pseudocount admixture (tau=1) -> g[i][a]
-            q.PrepareContextSpecificPseudocounts();
-        }
+	// NEEDED?????
+
+        // if (!*par.clusterfile) { //compute context-specific pseudocounts?
+        //     // Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
+        //     q.PreparePseudocounts();
+        // } else {
+        //     // Generate an amino acid frequency matrix from f[i][a] with full context specific pseudocount admixture (tau=1) -> g[i][a]
+        //     q.PrepareContextSpecificPseudocounts();
+        // }
 
         // DON'T ADD amino acid pseudocounts to query: pcm=0!  q.p[i][a] = f[i][a]
         q.AddAminoAcidPseudocounts(0, par.pca, par.pcb, par.pcc);
@@ -136,16 +138,15 @@ void ReadAndPrepare(char* infile, HMM& q, Alignment* qali=NULL)
         q.AddTransitionPseudocounts();
 
         if (!*par.clusterfile) { //compute context-specific pseudocounts?
-            // Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
-            q.PreparePseudocounts();
+	  // Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
+	  q.PreparePseudocounts();
+	  // Add amino acid pseudocounts to query:  q.p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
+	  q.AddAminoAcidPseudocounts(q.has_pseudocounts ? 0:par.pcm, par.pca, par.pcb, par.pcc);;
         } else {
-            // Generate an amino acid frequency matrix from f[i][a] with full context specific pseudocount admixture (tau=1) -> g[i][a]
-            q.PrepareContextSpecificPseudocounts();
-            q.PreparePseudocounts();
+	  // Add context specific pseudocount to query
+	  q.AddContextSpecificPseudocounts(q.has_pseudocounts ? 0:par.pcm);
         }
-
-        // Add amino acid pseudocounts to query:  q.p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
-        q.AddAminoAcidPseudocounts(q.has_pseudocounts ? 0:par.pcm, par.pca, par.pcb, par.pcc);;
+        
         q.CalculateAminoAcidBackground();
     }
     // ... or is it an alignment file
@@ -183,15 +184,15 @@ void ReadAndPrepare(char* infile, HMM& q, Alignment* qali=NULL)
         q.AddTransitionPseudocounts();
 
         if (!*par.clusterfile) { //compute context-specific pseudocounts?
-            // Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
-            q.PreparePseudocounts();
+	  // Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
+	  q.PreparePseudocounts();
+	  // Add amino acid pseudocounts to query:  p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
+	  q.AddAminoAcidPseudocounts(q.has_pseudocounts ? 0:par.pcm, par.pca, par.pcb, par.pcc);
         } else {
-            // Generate an amino acid frequency matrix from f[i][a] with full context specific pseudocount admixture (tau=1) -> g[i][a]
-            q.PrepareContextSpecificPseudocounts();
+	  // Add context specific pseudocount to query
+	  q.AddContextSpecificPseudocounts(q.has_pseudocounts ? 0:par.pcm);
         }
 
-        // Add amino acid pseudocounts to query:  p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
-        q.AddAminoAcidPseudocounts(q.has_pseudocounts ? 0:par.pcm, par.pca, par.pcb, par.pcc);
         q.CalculateAminoAcidBackground();
 
         if (qali==NULL) delete(pali);
@@ -212,11 +213,11 @@ void PrepareTemplate(HMM& q, HMM& t, int format)
         // Add transition pseudocounts to template
         t.AddTransitionPseudocounts();
 
-        // Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
-        t.PreparePseudocounts();
+	// Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
+	t.PreparePseudocounts();
 
-        // Add amino acid pseudocounts to template: t.p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
-        t.AddAminoAcidPseudocounts(!t.has_pseudocounts ? par.pcm : 0, par.pca, par.pcb, par.pcc);
+	// Add amino acid pseudocounts to query:  p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
+	t.AddAminoAcidPseudocounts(t.has_pseudocounts ? 0:par.pcm, par.pca, par.pcb, par.pcc);
 
         t.CalculateAminoAcidBackground();
     }
@@ -226,7 +227,7 @@ void PrepareTemplate(HMM& q, HMM& t, int format)
         // t.AddTransitionPseudocounts(par.gapd, par.gape, par.gapf, par.gapg, par.gaph, par.gapi, 0.0);
 
         // Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
-        t.PreparePseudocounts();
+        // t.PreparePseudocounts();
 
         // DON'T ADD amino acid pseudocounts to temlate: pcm=0!  t.p[i][a] = t.f[i][a]
         t.AddAminoAcidPseudocounts(0, par.pca, par.pcb, par.pcc);

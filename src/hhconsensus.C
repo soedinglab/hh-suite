@@ -41,6 +41,10 @@ using std::ios;
 using std::ifstream;
 using std::ofstream;
 
+#include "cs.h"          // context-specific pseudocounts
+#include "context_library.h"
+#include "library_pseudocounts-inl.h"
+
 #include "util.C"        // imax, fmax, iround, iceil, ifloor, strint, strscn, strcut, substr, uprstr, uprchr, Basename etc.
 #include "list.C"        // list data structure
 #include "hash.C"        // hash data structure
@@ -48,15 +52,7 @@ using std::ofstream;
 #include "hhutil.C"      // MatchChr, InsertChr, aa2i, i2aa, log2, fast_log2, ScopID, WriteToScreen,
 #include "hhmatrices.C"  // BLOSUM50, GONNET, HSDM
 
-// includes needed for context specific pseudocounts
-#include "amino_acid.cpp"
-#include "sequence.cpp"
-#include "profile.cpp"
-#include "cluster.cpp"
-#include "simple_cluster.cpp"
-#include "matrix.cpp"
-#include "cs_counts.cpp"
-
+#include "hhhmm.h"       // class HMM
 #include "hhhit.h"       // class Hit
 #include "hhalignment.h" // class Alignment
 #include "hhhalfalignment.h" // class HalfAlignment
@@ -210,6 +206,14 @@ void ProcessArguments(int argc,char** argv)
       else if (!strcmp(argv[i],"-gaph") && (i<argc-1)) par.gaph=atof(argv[++i]); 
       else if (!strcmp(argv[i],"-gapi") && (i<argc-1)) par.gapi=atof(argv[++i]); 
       else if (!strcmp(argv[i],"-def")) par.readdefaultsfile=1; 
+      else if (!strcmp(argv[i],"-csb") && (i<argc-1)) par.csb=atof(argv[++i]);
+      else if (!strcmp(argv[i],"-csw") && (i<argc-1)) par.csw=atof(argv[++i]);
+      else if (!strcmp(argv[i],"-cs"))
+        {
+          if (++i>=argc || argv[i][0]=='-')
+            {help() ; cerr<<endl<<"Error in "<<program_name<<": no query file following -cs\n"; exit(4);}
+          else strcpy(par.clusterfile,argv[i]);
+        }
 
       else cerr<<endl<<"WARNING: Ignoring unknown option "<<argv[i]<<" ...\n";
       if (v>=4) cout<<i<<"  "<<argv[i]<<endl; //PRINT
@@ -277,6 +281,16 @@ int main(int argc, char **argv)
       RemoveExtension(par.outfile,par.infile); 
       strcat(par.outfile,".seq");
     }
+
+  // Prepare CS pseudocounts lib
+  if (*par.clusterfile) {
+    FILE* fin = fopen(par.clusterfile, "r");
+    context_lib = new cs::ContextLibrary<cs::AA>(fin);
+    fclose(fin);
+    cs::TransformToLog(*context_lib);
+    
+    lib_pc = new cs::LibraryPseudocounts<cs::AA>(*context_lib, par.csw, par.csb);
+  }
 
   // Set substitution matrix; adjust to query aa distribution if par.pcm==3
   SetSubstitutionMatrix();

@@ -1,60 +1,76 @@
+CS_DIR = ../cs/src
+
 CXX = g++
-CXXFLAGS = -O3 -Wall -Wno-char-subscripts -fno-strict-aliasing -DHH_SSE3 -march=core2
+CXXFLAGS = -O3 -Wall -Wno-deprecated -Wno-char-subscripts -fno-strict-aliasing -DHH_SSE3 -march=core2 -I$(CS_DIR)
 CPP = $(CXX) $(CXXFLAGS)
+CPP_VALGRIND = $(CXX) -g $(CXXFLAGS)
 
-SOURCES = hhsearch.C hhhitlist.C hhhit.C hhalignment.C hhhmm.C hhmatrices.C hhdecl.C hhfunc.C hhfullalignment.C hhfullalignment.C hash.C hhutil.C util.C list.C thread.C cs_counts.cpp amino_acid.cpp simple_cluster.cpp cluster.cpp training_profile.cpp profile.cpp sequence.cpp matrix.cpp
+SOURCES = hhsearch.C hhhitlist.C hhhit.C hhalignment.C hhhmm.C hhmatrices.C hhdecl.C hhfunc.C hhfullalignment.C hhfullalignment.C hash.C hhutil.C util.C list.C thread.C 
 
-HEADERS = hhhitlist.h hhhit.h hhalignment.h hhhmm.h hhfullalignment.h hhfullalignment.h hash.h list.h cs_counts.h amino_acid.h simple_cluster.h cluster.h training_profile.h profile.h sequence.h matrix.h
+CS_SOURCES_WITH_APPS = $(filter-out $(wildcard $(CS_DIR)/*test*.cc), $(wildcard $(CS_DIR)/*.cc))
+CS_SOURCES = $(filter-out $(wildcard $(CS_DIR)/*app*.cc), $(CS_SOURCES_WITH_APPS))
+CS_OBJECTS = $(patsubst %.cc, %.o, $(CS_SOURCES))
+
+HEADERS = hhhitlist.h hhhit.h hhalignment.h hhhmm.h hhfullalignment.h hhfullalignment.h hash.h list.h
 
 TARGETS = hhblits hhsearch hhmake hhalign hhfilter hhconsensus
+TARGETS_STATIC = hhblits_static hhsearch_static hhmake_static hhalign_static hhfilter_static hhconsensus_static
+TARGETS_VALGRIND = hhblits_valgrind hhsearch_valgrind hhalign_valgrind
 
 all: $(TARGETS)
 
-hhsearch: hhsearch.C $(SOURCES) $(HEADERS)
-	 $(CPP) hhsearch.C -lpthread -lrt -o ../bin/hhsearch 
+all_static: $(TARGETS_STATIC)
 
-hhsearch_static: hhsearch.C $(SOURCES) $(HEADERS)
-	 $(CPP) hhsearch.C -static -lpthread -lrt -o ../bin/hhsearch 
+all_valgrind: $(TARGETS_VALGRIND)
 
-hhsearch_valgrind: hhsearch.C $(SOURCES) $(HEADERS)
-	  $(CXX) -g -O -Wall -Wno-char-subscripts -fno-strict-aliasing -lpthread -lrt hhsearch.C -o ../bin/hhsearch_valgrind
+$(CS_OBJECTS): $(CS_DIR)/%.o: $(CS_DIR)/%.cc
+	$(CPP) -fopenmp -c $< -o $@
 
-hhblits: hhblits.C $(SOURCES) $(HEADERS)
-	 $(CPP) hhblits.C -lpthread -lrt -o ../bin/hhblits 
+hhsearch: hhsearch.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
+	 $(CPP) -lpthread -lrt hhsearch.C -o ../bin/hhsearch $(CS_OBJECTS)
 
-hhblits_static: hhblits.C $(SOURCES) $(HEADERS)
-	 $(CPP) hhblits.C -static -lpthread -lrt -o ../bin/hhblits 
+hhsearch_static: hhsearch.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
+	 $(CPP) -static -lpthread -lrt hhsearch.C -o ../bin/hhsearch $(CS_OBJECTS)
 
-hhblits_valgrind: hhblits.C $(SOURCES) $(HEADERS)
-	  $(CXX) -g -O -Wall -Wno-char-subscripts -fno-strict-aliasing -lpthread -lrt hhblits.C -o ../bin/hhblits_valgrind
+hhsearch_valgrind: hhsearch.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
+	  $(CPP_VALGRIND) -lpthread -lrt hhsearch.C -o ../bin/hhsearch_valgrind $(CS_OBJECTS)
 
-hhmake: hhmake.C $(SOURCES) $(HEADERS)
-	$(CPP) hhmake.C -o ../bin/hhmake
+hhblits: hhblits.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
+	 $(CPP) -lpthread -lrt -fopenmp hhblits.C -o ../bin/hhblits $(CS_OBJECTS)
 
-hhmake_static: hhmake.C $(SOURCES) $(HEADERS)
-	$(CPP) hhmake.C -static -o ../bin/hhmake 
+hhblits_static: hhblits.C $(SOURCES) $(HEADERS)$(CS_OBJECTS) 
+	 $(CPP) -static -lpthread -lrt -fopenmp hhblits.C -o ../bin/hhblits $(CS_OBJECTS)
 
-hhalign: hhalign.C $(SOURCES) $(HEADERS)
-	 $(CPP) hhalign.C -I/usr/include/ -L/usr/lib -lpng -lz -o ../bin/hhalign
+hhblits_valgrind: hhblits.C $(SOURCES) $(HEADERS)$(CS_OBJECTS) 
+	  $(CPP_VALGRIND) -lpthread -lrt -fopenmp hhblits.C -o ../bin/hhblits_valgrind $(CS_OBJECTS)
 
-hhalign_static: hhalign.C $(SOURCES) $(HEADERS)
-	 $(CPP) hhalign.C -static -I/usr/include/ -L/usr/lib -lpng -lz -o ../bin/hhalign 
+hhmake: hhmake.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
+	$(CPP) hhmake.C -o ../bin/hhmake $(CS_OBJECTS)
 
-hhalign_valgrind: hhalign.C $(SOURCES) $(HEADERS)
-	  $(CXX) -g -O -Wall -Wno-char-subscripts -fno-strict-aliasing -I/usr/include/ -L/usr/lib -lpng -lz hhalign.C -o ../bin/hhalign_valgrind
+hhmake_static: hhmake.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
+	$(CPP) -static hhmake.C -o ../bin/hhmake $(CS_OBJECTS)
 
-hhfilter: hhfilter.C $(SOURCES) $(HEADERS)
-	  $(CPP) hhfilter.C -o ../bin/hhfilter
+hhalign: hhalign.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
+	 $(CPP) -I/usr/include/ -L/usr/lib -lpng -lz hhalign.C -o ../bin/hhalign $(CS_OBJECTS)
 
-hhfilter_static: hhfilter.C $(SOURCES) $(HEADERS)
-	  $(CPP) hhfilter.C -static -o ../bin/hhfilter 
+hhalign_static: hhalign.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
+	 $(CPP) -static -I/usr/include/ -L/usr/lib -lpng -lz hhalign.C -o ../bin/hhalign $(CS_OBJECTS)
 
-hhconsensus: hhconsensus.C $(SOURCES) $(HEADERS)
-	     $(CPP) hhconsensus.C -o ../bin/hhconsensus
+hhalign_valgrind: hhalign.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
+	  $(CPP_VALGRIND) -I/usr/include/ -L/usr/lib -lpng -lz hhalign.C -o ../bin/hhalign_valgrind $(CS_OBJECTS)
 
-hhconsensus_static: hhconsensus.C $(SOURCES) $(HEADERS)
-	     $(CPP) hhconsensus.C -static -o ../bin/hhconsensus 
+hhfilter: hhfilter.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
+	  $(CPP) hhfilter.C -o ../bin/hhfilter $(CS_OBJECTS)
+
+hhfilter_static: hhfilter.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
+	  $(CPP) -static hhfilter.C -o ../bin/hhfilter $(CS_OBJECTS) 
+
+hhconsensus: hhconsensus.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
+	     $(CPP) hhconsensus.C -o ../bin/hhconsensus $(CS_OBJECTS)
+
+hhconsensus_static: hhconsensus.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
+	     $(CPP) -static hhconsensus.C -o ../bin/hhconsensus $(CS_OBJECTS)
 
 clean: 	
-	-rm -f *.o 
+	-rm -f *.o ../cs/src/*.o
 	-rm -f ../bin/*

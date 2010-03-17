@@ -53,6 +53,10 @@ using std::ios;
 using std::ifstream;
 using std::ofstream;
 
+#include "cs.h"          // context-specific pseudocounts
+#include "context_library.h"
+#include "library_pseudocounts-inl.h"
+
 #include "util.C"        // imax, fmax, iround, iceil, ifloor, strint, strscn, strcut, substr, uprstr, uprchr, Basename etc.
 #include "list.C"        // list data structure
 #include "hash.C"        // hash data structure
@@ -60,15 +64,7 @@ using std::ofstream;
 #include "hhutil.C"      // MatchChr, InsertChr, aa2i, i2aa, log2, fast_log2, ScopID, WriteToScreen,
 #include "hhmatrices.C"  // BLOSUM50, GONNET, HSDM
 
-// includes needed for context specific pseudocounts
-#include "amino_acid.cpp"
-#include "sequence.cpp"
-#include "profile.cpp"
-#include "cluster.cpp"
-#include "simple_cluster.cpp"
-#include "matrix.cpp"
-#include "cs_counts.cpp"
-
+#include "hhhmm.h"       // class Hit
 #include "hhhit.h"       // class Hit
 #include "hhalignment.h" // class Alignment
 #include "hhhalfalignment.h" // class HalfAlignment
@@ -721,6 +717,17 @@ int main(int argc, char **argv)
       cout<<"Output file:   "<<par.outfile<<"\n";
     }
 
+  // Prepare CS pseudocounts lib
+  if (*par.clusterfile) {
+    FILE* fin = fopen(par.clusterfile, "r");
+    if (!fin) OpenFileError(par.clusterfile);
+    context_lib = new cs::ContextLibrary<cs::AA>(fin);
+    fclose(fin);
+    cs::TransformToLog(*context_lib);
+    
+    lib_pc = new cs::LibraryPseudocounts<cs::AA>(*context_lib, par.csw, par.csb);
+  }
+
   // Set secondary structure substitution matrix
   if (par.ssm) SetSecStrucSubstitutionMatrix();
 
@@ -1335,13 +1342,14 @@ int main(int argc, char **argv)
               if (!*par.clusterfile) { //compute context-specific pseudocounts?
                 // Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
                 q.PreparePseudocounts();
+		// Add amino acid pseudocounts to query: p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
+		q.AddAminoAcidPseudocounts();
               } else {
                 // Generate an amino acid frequency matrix from f[i][a] with full context specific pseudocount admixture (tau=1) -> g[i][a]
-                q.PrepareContextSpecificPseudocounts();
+                // q.PrepareContextSpecificPseudocounts(); //OLD
+		q.AddContextSpecificPseudocounts();
               }
 
-              // Add amino acid pseudocounts to query: p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
-              q.AddAminoAcidPseudocounts();
               q.CalculateAminoAcidBackground();
 
               // Transform transition freqs to lin space if not already done
@@ -1738,6 +1746,11 @@ int main(int argc, char **argv)
   if (par.blafile) delete[] par.blafile;
   if (par.exclstr) delete[] par.exclstr;
   delete doubled;
+
+  if (*par.clusterfile) {
+    delete context_lib;
+    delete lib_pc;
+  }
 
   // Delete content of hits in hitlist
   hitlist.Reset();

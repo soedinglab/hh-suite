@@ -233,3 +233,5 @@ float S73[NDSSP][NSSPRED][MAXCF];           // P[A][B][cf]       =  log2 P(A,B,c
 float S33[NSSPRED][MAXCF][NSSPRED][MAXCF];  // P[B][cf][B'][cf'] =  log2 sum_B' P(A,B',cf)/P(A)/P(B,cf) * P_b(B'|B)
 // float S77[NDSSP][DSSP];                  // P[A][B]           =  log2 P(A,B)/P(A)/P(B)
 
+cs::LibraryPseudocounts<cs::AA> *lib_pc;
+cs::ContextLibrary<cs::AA> *context_lib;

@@ -53,8 +53,11 @@ public:
     // Generate an amino acid frequency matrix g[][] with full pseudocount admixture (tau=1)
     void PreparePseudocounts();
 
-    // Generate an amino acid frequency matrix g[][] with full context specific pseudocount admixture (tau=1)
-    void PrepareContextSpecificPseudocounts();
+    // Add context specific amino acid pseudocounts to HMM: t.p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
+    void AddContextSpecificPseudocounts(char pcm=par.pcm, float pca=par.pca, float pcb=par.pcb, float pcc=par.pcc);
+
+    // Fill CountProfile with HMM-counts for CS pseudocount calculation
+    void fillCountProfile(cs::CountProfile<cs::AA> *csProfile);
 
     // Add amino acid pseudocounts to HMM: t.p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
     void AddAminoAcidPseudocounts(char pcm=par.pcm, float pca=par.pca, float pcb=par.pcb, float pcc=par.pcc);
