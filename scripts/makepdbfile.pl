@@ -172,7 +172,7 @@ sub MakePdbFile()
 	}
     }
     $l=0;
-    $nres=-10;
+    $nres=-1e6;
     while ($line=<PDBFILE>) {
 # ATOM      1  N   GLY A   1     -19.559   8.872   4.925  1.00 16.44           N
 # ATOM      2  CA  GLY A   1     -19.004   8.179   6.112  1.00 14.30           C
