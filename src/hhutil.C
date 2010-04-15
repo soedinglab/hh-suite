@@ -537,6 +537,8 @@ void SetDefaults()
   par.notags=1;                // neutralize His-tags, FLAG-tags, C-myc-tags
 
   // HHblits parameters
+  par.prefilt_alphabet = PRE_AA;
+
   par.hhblits_prefilter_logpval=0;
 
   par.early_stopping_filter = true;
@@ -553,16 +555,19 @@ void SetDefaults()
   strcpy(par.block_shading_mode,"tube");
 
   // For HHblits prefiltering with SSE2
-  par.prefilter_lmax = 500;
-  par.prefilter_db_overlap=100;   
-  par.sse_shading_space = 50;         
   par.prefilter_gap_open = 20;
   par.prefilter_gap_extend = 4;
   par.prefilter_states=20;        
   par.prefilter_score_offset = 30;
   par.prefilter_bit_factor = 4;
-  par.prefilter_smax_thresh = 55;
+  par.prefilter_evalue_thresh = 1000;
   par.preprefilter_smax_thresh = 10;
+
+  // OLD
+  par.prefilter_lmax = 500;
+  par.prefilter_db_overlap=100;   
+  par.sse_shading_space = 50;         
+  par.prefilter_smax_thresh = 55;
   par.prefilter_rmax_thresh = 50;
 
   // for filtering database alignments in HHsearch and HHblits
@@ -589,6 +594,9 @@ void SetDefaults()
   par.csb = 0.85;
   par.csw = 1.6;
   strcpy(par.clusterfile,"");
+
+  strcpy(par.as_library,"/cluster/user/michael/hh/cs/data/nr20f_151208_neff3_W1_N10M_n0_cspc_K62_wcenter1000_gauss_init.lib");
+  strcpy(par.as_matrix,"/cluster/user/michael/hh/cs/data/nr20f_151208_neff3_AS62_p7_soft.mat");
 
   return;
 }

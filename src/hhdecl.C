@@ -55,6 +55,9 @@ const int NSSPRED=4;    //number of different ss states predicted by psipred: 0-
 const int MAXCF=11;     //number of different confidence values: 0-10 (0: no prediction availabe)
 const int NSA=7;        //number of classes relative solvent accesiblity (0:no coord,  1:<2%, 2:<14%, 3:<33%, 4:<55%, 5:>55%, 6:S-S bridge)
 
+// HHblits prefilter alphabet
+enum pre_alphabets {PRE_AA=0,PRE_AS62=1};
+
 /////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////
 
@@ -168,12 +171,21 @@ public:
   float csw;
   char clusterfile[NAMELEN];
 
+  char as_library[NAMELEN];
+  char as_matrix[NAMELEN];
+
+  // HHblits
+  int jdummy;
+
   // For filtering database alignments in HHsearch and HHblits
   int max_seqid_db;
   int qid_db;      
   float qsc_db;    
   int coverage_db; 
   int Ndiff_db;    
+
+  // HHblits prefilter
+  char prefilt_alphabet;      // actual alphabet used for prefiltering
 
   bool early_stopping_filter; // Break HMM search, when the sum of the last N HMM-hit-Evalues is below threshold
 
@@ -189,25 +201,26 @@ public:
   char block_shading_mode[NAMELEN];
 
   // For HHblits prefiltering with SSE2
-  int prefilter_lmax;              // maximum block length of each DB-Sequence
-  int sse_shading_space;           // space added to the rands of prefilter HSP
   short prefilter_gap_open;
   short prefilter_gap_extend;
   int prefilter_states;               // Anzahl der States im Alphabet
-  int prefilter_db_overlap;           // Overlap if DB-Sequence > par.prefilter_lmax
   int prefilter_score_offset;
   int prefilter_bit_factor;
-  int prefilter_smax_thresh;
+  int prefilter_evalue_thresh;
   int preprefilter_smax_thresh;
+
+  // OLD...
+  int prefilter_lmax;              // maximum block length of each DB-Sequence
+  int sse_shading_space;           // space added to the rands of prefilter HSP
+  int prefilter_db_overlap;           // Overlap if DB-Sequence > par.prefilter_lmax
+  int prefilter_smax_thresh;
   int prefilter_rmax_thresh;
   
-
   // SCRAP THE FOLLOWING VARIABLES?
 
   float wstruc;          // weight of structure scores
   char repmode;          // 1:repeat identification: multiple hits not treated as independent 0: repeat mode off
   int idummy;
-  int jdummy;
   float fdummy;
 
 };
@@ -235,3 +248,10 @@ float S33[NSSPRED][MAXCF][NSSPRED][MAXCF];  // P[B][cf][B'][cf'] =  log2 sum_B' 
 
 cs::LibraryPseudocounts<cs::AA> *lib_pc;
 cs::ContextLibrary<cs::AA> *context_lib;
+
+#ifdef HHBLITS
+cs::ContextLibrary<cs::AA> *as_context_lib;
+cs::Emission<cs::AA> *as_emission;
+cs::AbstractStateMatrix<cs::AS62> *as_sm;
+cs::MatrixPseudocounts<cs::AS62> *as_pc;
+#endif
