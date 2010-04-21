@@ -102,6 +102,9 @@ class Hit
   void AllocateBackwardMatrix(int Nq, int Nt);
   void DeleteBackwardMatrix(int Nq);
   
+  void AllocateIndices(int len);
+  void DeleteIndices();
+
   // Compare an HMM with overlapping subalignments
   void Viterbi(HMM& q, HMM& t, float** Sstruc=NULL);
 
@@ -134,6 +137,9 @@ class Hit
 
   // Calculate score (excluding secondary structure score and compositional bias correction
   inline float ScoreAA(HMM& q, HMM& t, int i, int j);
+
+  // Calculate score for a given alignment
+  void ScoreAlignment(HMM& q, HMM& t, int steps);
 
   // Comparison (used to sort list of hits)
   int operator<(const Hit& hit2)  {return score_sort<hit2.score_sort;}

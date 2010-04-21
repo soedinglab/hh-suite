@@ -273,6 +273,20 @@ void Hit::DeleteBackwardMatrix(int Nq)
   B_MM=B_MI=B_IM=B_DG=B_GD=NULL;
 }
 
+/////////////////////////////////////////////////////////////////////////////////////
+//// Allocate/delete memory for indices by given alignment
+/////////////////////////////////////////////////////////////////////////////////////
+void Hit::AllocateIndices(int len)
+{
+  i = new(int[len]);
+  j = new(int[len]);
+}
+
+void Hit::DeleteIndices()
+{
+  delete[] i;
+  delete[] j;
+}
 
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -1809,6 +1823,20 @@ void Hit::InitializeBacktrace(HMM& q, HMM& t)
 // Some score functions 
 /////////////////////////////////////////////////////////////////////////////////////
 
+// Calculate score for a given alignment
+void Hit::ScoreAlignment(HMM& q, HMM& t, int steps) 
+{
+  score = 0;
+  for (int step = 0; step < steps; step++) {
+    if (v > 2) {
+      cout << "Score at step " << step << "!\n";
+      cout << "i: " << i[step] << "  j: " << j[step] << "   score: " << Score(q.p[i[step]], t.p[j[step]]) << "\n";
+    }
+    score += Score(q.p[i[step]], t.p[j[step]]);
+  }
+}
+
+
 //Calculate score between columns i and j of two HMMs (query and template)
 inline float Score(float* qi, float* tj)
 {
@@ -1968,8 +1996,7 @@ inline int pickmax3_GD(const double& xMM, const double& xDG, const double& xGD)
   else          {state=DG; x=xDG;}
   if ( xGD>x)   {state=GD; x=xGD;}
   return state;
-}
-inline int pickmax3_IM(const double& xMM, const double& xMI, const double& xIM) 
+}inline int pickmax3_IM(const double& xMM, const double& xMI, const double& xIM) 
 {
   char state;
   double x;
@@ -1990,6 +2017,7 @@ inline int pickmax6(const double& x0, const double& xMM, const double& xGD, cons
   if ( xMI>x)   {state=MI; x=xMI;}
   return state;
 }
+
 
 
 /////////////////////////////////////////////////////////////////////////////////////

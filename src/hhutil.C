@@ -583,6 +583,7 @@ void SetDefaults()
   strcpy(par.pairwisealisfile,"");
   strcpy(par.buffer,"buffer.txt");
   strcpy(par.scorefile,"");
+  strcpy(par.indexfile,""); 
   strcpy(par.wfile,"");
   strcpy(par.alnfile,"");
   strcpy(par.hhmfile,"");

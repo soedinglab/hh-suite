@@ -143,6 +143,7 @@ void help()
   printf(" -Oa3m <file>  write query alignment in a3m format to file (default=none)\n");
   printf(" -Aa3m <file>  append query alignment in a3m format to file (default=none)\n");
   printf(" -atab <file>  write alignment as a table (with posteriors) to file (default=none)\n");
+  printf(" -index <file> use given alignment to calculate Viterbi score (default=none)\n");
   printf(" -v <int>      verbose mode: 0:no screen output  1:only warings  2: verbose\n");
   printf(" -seq  [1,inf[ max. number of query/template sequences displayed  (def=%i)  \n",par.nseqdis);
   printf(" -nocons       don't show consensus sequence in alignments (default=show) \n");
@@ -441,6 +442,12 @@ void ProcessArguments(int argc, char** argv)
 	  if (++i>=argc || argv[i][0]=='-') 
 	    {help(); cerr<<endl<<"Error in "<<program_name<<": no query file following -atab\n"; exit(4);}
 	  else strncpy(par.alitabfile,argv[i],NAMELEN);
+	}
+      else if (!strcmp(argv[i],"-index"))
+	{
+	  if (++i>=argc || argv[i][0]=='-') 
+	    {help(); cerr<<endl<<"Error in "<<program_name<<": no index file following -index\n"; exit(4);}
+	  else strcpy(par.indexfile,argv[i]);
 	}
       else if (!strcmp(argv[i],"-tc"))
 	{
@@ -802,6 +809,84 @@ int main(int argc, char **argv)
   // Factor Null model into HMM t
   t.IncludeNullModelInHMM(q,t); 
   
+
+  //////////////////////////////////////////////////////////////
+  // Calculate Score for given alignment?
+  if (*par.indexfile) {
+
+    char line[LINELEN]="";    // input line
+    char* ptr;                // pointer for string manipulation
+    Hit hit;    
+    int step = 0;
+    int length = 0;
+
+    // read in indices from indexfile
+    FILE* indexf=NULL;
+    indexf = fopen(par.indexfile, "r");
+    fgetline(line,LINELEN-1,indexf);
+    if (!strncmp("#LEN",line,4)) 
+      {
+	ptr=strscn(line+4);              //advance to first non-white-space character
+	length = strint(ptr);
+      }
+    if (length == 0)
+      {
+	cerr<<endl<<"Error in "<<program_name<<": first line of index file must contain length of alignment (#LEN ...)\n"; 
+	exit(4);
+      }
+
+    hit.AllocateIndices(length);
+
+    while (fgetline(line,LINELEN-1,indexf)) 
+      {
+	if (strscn(line)==NULL) continue;
+	if (!strncmp("#QNAME",line,6)) {
+	  ptr=strscn(line+6);             // advance to first non-white-space character
+	  strncpy(q.name,ptr,NAMELEN-1);    // copy full name to name
+	  strcut(q.name);
+	  continue;
+	} 
+	else if (!strncmp("#TNAME",line,6)) {
+	  ptr=strscn(line+6);             // advance to first non-white-space character
+	  strncpy(t.name,ptr,NAMELEN-1);    // copy full name to name
+	  strcut(t.name); 
+	  continue;
+	} 
+	else if (line[0] == '#') continue;
+	ptr = line;
+	hit.i[step] = strint(ptr);
+	hit.j[step] = strint(ptr);
+	step++;
+      }
+    
+    fclose(indexf);
+
+    // calculate score for each pair of aligned residues
+    hit.ScoreAlignment(q,t,step);
+
+    printf("\nAligned %s with %s: Score = %-7.2f \n",q.name,t.name,hit.score);
+
+    // Print 'Done!'
+    FILE* outf=NULL;
+    if (!strcmp(par.outfile,"stdout")) printf("Done!\n");
+    else
+      {
+	if (*par.outfile)
+	  {
+	    outf=fopen(par.outfile,"a"); //open for append
+	    fprintf(outf,"Done!\n");
+	    fclose(outf);
+	  }
+	if (v>=2) printf("Done\n");
+      }
+
+    hit.DeleteIndices();
+
+    return(0);
+  } 
+  ////////////////////////////////////////////////////////////////
+
+
   // Allocate memory for dynamic programming matrix
   const float MEMSPACE_DYNPROG = 512*1024*1024;
   int Lmaxmem=(int)((float)MEMSPACE_DYNPROG/q.L/6/8); // longest allowable length of database HMM

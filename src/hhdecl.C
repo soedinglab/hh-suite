@@ -75,6 +75,7 @@ public:
   char hhmfile[NAMELEN];  // name of output HHM file for (iterative search)
   char psifile[NAMELEN];  // name of output alignmen file in PSI-BLAST format (iterative search)
   char scorefile[NAMELEN];// table of scores etc for all HMMs in searched database
+  char indexfile[NAMELEN];// optional file containing indeices of aligned residues in given alignment
   char tfile[NAMELEN];    // template filename (in hhalign)
   char buffer[NAMELEN];   // buffer to write results for other programs into
   char wfile[NAMELEN];    // weights file generated with hhformat
