@@ -1553,6 +1553,7 @@ void perform_realign(char *dbfiles[], int ndb)
 	    }
 
 	  if (v>=2) fprintf(stderr,"Realigning with %s ***** \n",t[bin]->name);
+
 	  ///////////////////////////////////////////////////
 	  
 	  N_aligned++;
@@ -1566,7 +1567,7 @@ void perform_realign(char *dbfiles[], int ndb)
 	  // Prepare MAC comparison(s)
 	  PrepareTemplate(q,*(t[bin]),format[bin]);
 	  t[bin]->Log2LinTransitionProbs(1.0);
-	  
+
 	  // Realign only around previous Viterbi hit
 	  hit[bin]->i1 = hit_cur.i1;
 	  hit[bin]->i2 = hit_cur.i2;

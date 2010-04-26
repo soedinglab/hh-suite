@@ -534,7 +534,7 @@ void Hit::Forward(HMM& q, HMM& t, float** Pstruc)
 	InitializeForAlignment(q,t);
 
       int step;
-      // fprintf(stdout,"\nViterbi-hit (Index: %i  Irep: %i) Query: %4i-%4i   Template %4i-%4i\n",index,irep,i1,i2,j1,j2);
+      // fprintf(stderr,"\nViterbi-hit (Index: %i  Irep: %i) Query: %4i-%4i   Template %4i-%4i\n",index,irep,i1,i2,j1,j2);
       // fprintf(stderr,"Step Query Templ\n");
       // for (step=nsteps; step>=1; step--)
       // 	fprintf(stderr,"%4i  %4i %4i\n",step,this->i[step],this->j[step]);
@@ -542,7 +542,7 @@ void Hit::Forward(HMM& q, HMM& t, float** Pstruc)
       // Cross out regions
       for (i=1; i<=q.L; ++i) 
 	for (j=1; j<=t.L; ++j) 
-	    if (!((i <= i1 && j <= j1) || (i >= i2 && j >= j2)))
+	    if (!((i < i1 && j < j1) || (i > i2 && j > j2)))
 	      cell_off[i][j]=1;   
       
       // Clear Viterbi path
@@ -576,11 +576,11 @@ void Hit::Forward(HMM& q, HMM& t, float** Pstruc)
       // fprintf(stdout, "---+----|----+----|----+----|----+----|----+---250---+----|----+----|----+----|----+----|----+---300");
       // fprintf(stdout, "---+----|----+----|----+----|----+---340\n");
       // for (j=1; j<=t.L; ++j)
-      //  	{
-      //  	  for (i=1; i<=q.L; ++i)
-      //  	    fprintf(stdout,"%1i", cell_off[i][j]);
-      //  	  fprintf(stdout,"\n");
-      //  	}
+      // 	{
+      // 	  for (i=1; i<=q.L; ++i)
+      // 	    fprintf(stderr,"%1i", cell_off[i][j]);
+      // 	  fprintf(stderr,"\n");
+      // 	}
     }
 
 
@@ -701,28 +701,28 @@ void Hit::Forward(HMM& q, HMM& t, float** Pstruc)
     }
   
   // Debugging output
-  if (v>=6)
+  if (v>=4)
     {
       const int i0=0, i1=q.L;
       const int j0=0, j1=t.L;
       scale_prod=1;
-      printf("\nFwd      scale     ");
-      for (j=j0; j<=j1; ++j) printf("%3i     ",j);
-      printf("\n");
+      fprintf(stderr,"\nFwd      scale     ");
+      for (j=j0; j<=j1; ++j) fprintf(stderr,"%3i     ",j);
+      fprintf(stderr,"\n");
       for (i=i0; i<=i1; ++i)
 	{
 	  scale_prod *= scale[i];
-	  printf("%3i: %9.3G ",i,1/scale_prod);
+	  fprintf(stderr,"%3i: %9.3G ",i,1/scale_prod);
 	  for (j=j0; j<=j1; ++j)
-	    printf("%7.4f ",(F_MM[i][j]+F_MI[i][j]+F_IM[i][j]+F_DG[i][j]+F_GD[i][j]));
-	  printf("\n");
+	    fprintf(stderr,"%7.4f ",(F_MM[i][j]+F_MI[i][j]+F_IM[i][j]+F_DG[i][j]+F_GD[i][j]));
+	  fprintf(stderr,"\n");
 // 	  printf(" MM  %9.5f ",1/scale[i]);
 // 	  for (j=j0; j<=j1; ++j) 
 // 	    printf("%7.4f ",F_MM[i][j]);
 // 	  printf("\n");
 	}
-      printf("Template=%-12.12s  score=%6.3f i2=%i  j2=%i \n",t.name,score,i2,j2);
-      printf("\nForward total probability ratio: %8.3G\n",Pforward);
+      fprintf(stderr,"Template=%-12.12s  score=%6.3f i2=%i  j2=%i \n",t.name,score,i2,j2);
+      fprintf(stderr,"\nForward total probability ratio: %8.3G\n",Pforward);
     }
   return;
 }

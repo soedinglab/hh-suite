@@ -245,7 +245,7 @@ int swStripedWord_backtrace(int              queryLength,
     __m128i v0x03 = _mm_set1_epi16(0x0100);
     __m128i v0x04 = _mm_set1_epi16(0x1000);
 
-    __m128i* Hmatrix = (__m128i*)memalign(16,dbLength*LQ*sizeof(unsigned short));
+    __m128i* Hmatrix = (__m128i*)memalign(16,dbLength*LQ*sizeof(unsigned short));   // 2GB für 35000*35000 (titin)
     __m128i* Btmatrix = (__m128i*)memalign(16,dbLength*LQ*sizeof(unsigned short));
     
     __m128i* Hmatrix_it = Hmatrix;

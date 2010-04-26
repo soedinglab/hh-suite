@@ -1616,9 +1616,13 @@ void Alignment::Amino_acid_frequencies_and_transitions_from_M_state(HMM& q, char
         {
           q.Neff_HMM+=Neff[i];
           q.Neff_M[i]=Neff[i];
+	  if (q.Neff_M[i] == 0) { q.Neff_M[i] = 1; }
         }
       q.Neff_HMM/=L;
     }
+  
+  
+
   return;
 }
 

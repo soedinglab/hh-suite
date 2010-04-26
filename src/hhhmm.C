@@ -1150,6 +1150,9 @@ void HMM::PreparePseudocounts()
 
 void HMM::AddContextSpecificPseudocounts(char pcm, float pca, float pcb, float pcc)
 {
+  int i;               //position in HMM
+  int a;               //amino acid (0..19)
+  
   cs::CountProfile<cs::AA> ali_profile(L);
   fillCountProfile(&ali_profile);
 
@@ -1172,8 +1175,8 @@ void HMM::AddContextSpecificPseudocounts(char pcm, float pca, float pcb, float p
   if (admix == NULL)
     {
       // write cs-pseudocounts in HMM.p
-      for (int i=1; i<=L; ++i)
-	for (int a=0; a<20; ++a)
+      for (i=1; i<=L; ++i)
+	for (a=0; a<20; ++a)
 	  p[i][a] = f[i][a];
 
     }
@@ -1184,10 +1187,58 @@ void HMM::AddContextSpecificPseudocounts(char pcm, float pca, float pcb, float p
       delete admix;
       
       // write cs-pseudocounts in HMM.p
-      for (int i=1; i<=L; ++i)
-	for (int a=0; a<20; ++a)
+      for (i=1; i<=L; ++i)
+	for (a=0; a<20; ++a)
 	  p[i][a] = profile[i-1][a];
     }
+
+  // DEBUGGING output
+  if (v>=3)
+    {
+      float sum;
+      
+      cout<<"Context specific pseudocounts added!\n\n";
+      switch (pcm)
+        {
+        case 0:
+          cout<<"No pseudocounts added (-pcm 0)\n";
+          return;
+        case 1:
+          cout<<"Adding constant AA pseudocount admixture of "<<pca<<" to HMM "<<name<<"\n";
+          break;
+        case 2:
+          cout<<"Adding divergence-dependent AA pseudocounts (-pcm 2) with admixture of "
+              <<fmin(1.0, pca/(1. + Neff_HMM/pcb ) )<<" to HMM "<<name<<"\n";
+          break;
+        } //end switch (pcm)
+      if (v>=4)
+        {
+          cout<<"\nAmino acid frequencies WITHOUT pseudocounts:\n       A    R    N    D    C    Q    E    G    H    I    L    K    M    F    P    S    T    W    Y    V\n";
+          for (i=1; i<=L; ++i)
+            {
+              printf("%3i:  ",i);
+              sum=0;
+              for (a=0; a<20; ++a)
+                {
+                  sum+=f[i][a];
+                  printf("%4.1f ",100*f[i][a]);
+                }
+              printf("  sum=%5.3f\n",sum);
+            }
+          cout<<"\nAmino acid frequencies WITH pseudocounts:\n       A    R    N    D    C    Q    E    G    H    I    L    K    M    F    P    S    T    W    Y    V\n";
+          for (i=1; i<=L; ++i)
+            {
+              printf("%3i:  ",i);
+              sum=0;
+              for (a=0; a<20; ++a)
+                {
+                  sum+=p[i][a];
+                  printf("%4.1f ",100*p[i][a]);
+                }
+              printf("  sum=%5.3f\n",sum);
+            }
+        }
+   }
 }
 
 void HMM::fillCountProfile(cs::CountProfile<cs::AA> *csProfile)
@@ -1386,7 +1437,7 @@ void HMM::IncludeNullModelInHMM(HMM& q, HMM& t, int columnscore )
       for (j=0; j<=t.L+1; j++)
         t.p[j][a]/=pnul[a];
 
-  if (v>=5)
+  if (v>=4)
     {
       cout<<"\nAverage amino acid frequencies\n";
       cout<<"         A    R    N    D    C    Q    E    G    H    I    L    K    M    F    P    S    T    W    Y    V\n";
@@ -1399,7 +1450,19 @@ void HMM::IncludeNullModelInHMM(HMM& q, HMM& t, int columnscore )
       cout<<"\npb:   ";
       for (a=0; a<20; ++a) printf("%4.1f ",100*pb[a]);
     }
-
+ 
+  // cout<<"\nWeighted amino acid frequencies WITH pseudocounts:\n       A    R    N    D    C    Q    E    G    H    I    L    K    M    F    P    S    T    W    Y    V\n";
+  // for (i=1; i<=L; ++i)
+  //   {
+  //     printf("%3i:  ",i);
+  //     float sum=0;
+  //     for (a=0; a<20; ++a)
+  // 	{
+  // 	  sum+=t.p[i][a];
+  // 	  printf("%4.1f ",100*t.p[i][a]);
+  // 	}
+  //     printf("  sum=%5.3f\n",sum);
+  //   }
 
   return;
 }
