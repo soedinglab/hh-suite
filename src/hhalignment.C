@@ -543,8 +543,8 @@ void Alignment::Compress(const char infile[])
           for (k=0; k<  N_in; k++)
             if (keep[k]) 
 	      {
-		if (X[k][l]<20) res+=wg[k]; 
-		else if (X[k][l]!=ENDGAP) gap+=wg[k]; // else: ANY or GAP. ENDGAPs are ignored for counting percentage
+		if (X[k][l]<GAP) res+=wg[k];   // AA or ANY; Changed from <ANY
+		else if (X[k][l]!=ENDGAP) gap+=wg[k]; // else: GAP. ENDGAPs are ignored for counting percentage
 	      }
           percent_gaps[l]=100.*gap/(res+gap);
           if (v>=4) cout<<"percent gaps["<<l<<"]="<<percent_gaps[l]<<" first seq:"<<seq[0][l]<<"\n";
@@ -1160,6 +1160,56 @@ int Alignment::FilterWithCoreHMM(char in[], float coresc, HMM& qcore)
   delete[] logodds;
   return n;
 }
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+// Filter alignment to given diversity/Neff
+/////////////////////////////////////////////////////////////////////////////////////
+bool Alignment::FilterNeff()
+{
+  int v1=v;
+  v=v1-1;
+  const float TOLX=0.001; 
+  const float TOLY=0.02; 
+  char dummy[N_in+1];   
+  for (int k=0; k<N_in; k++) dummy[k]=keep[k];
+  float x=0.0,y=0.0;
+  float x0=-1.0;
+  float x1=+2.0;
+  float y0=filter_by_qsc(x0,dummy);
+  float y1=filter_by_qsc(x1,dummy);
+  int i=2;
+  while (y0-par.Neff>0 && par.Neff-y1>0)
+    {
+      x = x0 + (par.Neff-y0)*(x1-x0)/(y1-y0); // linear interpolation between (x0,y0) and (x1,y1)
+      y = filter_by_qsc(x,dummy);
+      if (v>=2) printf(" %3i  x0=%6.3f -> %6.3f     x=%6.3f -> %6.3f     x1=%6.3f -> %6.3f \n",++i,x0,y0,x,y,x1,y1);
+      if (y>par.Neff) {x0=x; y0=y;} else {x1=x; y1=y;}
+      if (fabs(par.Neff-y)<TOLY || x1-x0<TOLX) break;
+    }
+  v=v1;
+
+  if (y0>=par.Neff && y1<=par.Neff) 
+    {
+      // Write filtered alignment WITH insert states (lower case) to alignment file
+      if (v>=2) printf("Found Neff=%6.3f at filter threshold qsc=%6.3f\n",y,x);
+      return true;
+    }
+  else if (v>=1) 
+    printf("Diversity of unfiltered alignment %.2f is below target diversity %.2f. No alignment written\n",y0,par.Neff);
+  
+  return false;
+}
+
+float Alignment::filter_by_qsc(float qsc, char* dummy)
+{
+  HMM q;
+  for (int k=0; k<N_in; k++) keep[k]=dummy[k];
+  Filter2(keep,par.coverage,0,qsc,par.max_seqid+1,par.max_seqid,0); 
+  FrequenciesAndTransitions(q);
+//   printf("qsc=%4.1f  N_filtered=%-3i  Neff=%6.3f\n",qsc,n,q.Neff_HMM);
+  return q.Neff_HMM;
+} 
 
 
 

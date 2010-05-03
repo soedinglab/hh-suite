@@ -719,7 +719,10 @@ void init_prefilter()
 
   if (dbsize == 0 || LDB == 0)
     {cerr<<endl<<"Error! Could not determine DB-size of prefilter db ("<<db<<")\n"; exit(4);}
-  par.hhblits_prefilter_logpval=-log(e_psi / (float)dbsize);
+  if (!(!strcmp(pre_mode,"csblast") || !strcmp(pre_mode,"blast")))
+    par.hhblits_prefilter_logpval=-log(par.prefilter_evalue_thresh / (float)dbsize);
+  else
+    par.hhblits_prefilter_logpval=-log(e_psi / (float)dbsize);
 
   // Set number of prefilter states
   switch (par.prefilt_alphabet)
@@ -867,45 +870,20 @@ void stripe_query_profile()
 	  q_tmp.fillCountProfile(&counts);
 	}
       
-      // FILE* fout = fopen("/cluster/user/michael/tmp/test/count_profile.prf", "w");
+      // FILE* fout = fopen("count_profile.prf", "w");
       // counts.Write(fout);
       // fclose (fout);
 
-      if (as_with_cs)
-	{
-	  //counts.counts = lib_pc->AddTo(counts, cs::HHsearchAdmix(par.pca, par.pcb, par.pcc));
-	  //counts.counts = lib_pc->AddTo(counts, cs::HHsearchAdmix(1.5,2,1));
-	  counts.counts = lib_pc->AddTo(counts, cs::ConstantAdmix(as_cs_pca));
-	  cs::Normalize(counts.counts, counts.neff);
-	}
+      cs::Emission<cs::AA> emission(context_lib->wlen(), par.csw, par.csb);
 
-      //FILE* fout = fopen("count_profile_pc.prf", "w");
-      //counts.Write(fout);
-      //fclose (fout);
-
-      cs::CountProfile<cs::AS62> as_profile(cs::TranslateIntoStateProfile<cs::AS62>(*as_context_lib, *as_emission, counts));
+      cs::CountProfile<cs::AS62> as_profile(cs::TranslateIntoStateProfile<cs::AS62>(counts, *context_lib, emission, *as_sm));
 
       //std::cerr << "Profile without PC" << std::endl;
       //std::cerr << as_profile << std::endl;
 
-      //fout = fopen("as_count_profile.prf", "w");
-      //as_profile.Write(fout);
-      //fclose (fout);
-
-      // as_profile.neff = counts.neff;
-      // cs::Normalize(as_profile.counts, as_profile.neff);
-      // as_profile.counts = as_pc->AddTo(as_profile, cs::HHsearchAdmix(1.5,2,1));  // OPTIMIZE!!!!!
-
-      as_profile.counts = as_pc->AddTo(as_profile, cs::ConstantAdmix(as_pca));  // OPTIMIZE!!!!!
-
-      //std::cerr << "Profile with PC" << std::endl;
-      //std::cerr << as_profile << std::endl;
-
-      //fout = fopen("as_count_profile_pc.prf", "w");
-      //as_profile.Write(fout);
-      //fclose (fout);
-
-      //std::cerr << *as_sm << std::endl;
+      // fout = fopen("as_count_profile.ap62", "w");
+      // as_profile.Write(fout);
+      // fclose (fout);
 
       // Divide by background
       query_profile = new float*[LQ+1];
@@ -919,51 +897,51 @@ void stripe_query_profile()
       break;
     }
 
-  // printf("\n\nQuery profile:\n        ");
-  // for (int j=1; j <= LQ; j++)
-  //   printf(" %4c|", q_tmp.seq[0][j]);
-  // printf("\n");
-  // for (int a=0; a < par.prefilter_states; a++)  
-  //   {
-  //     printf("a=%3i   ",a);
-  //     for (int j=1; j <= LQ; j++)
-  // 	{
-  // 	  printf("%5.2f|",query_profile[j][a]);
-  // 	}
-  //     printf("\n");
-  //   }
+//   printf("\n\nQuery profile:\n        ");
+//   for (int j=1; j <= LQ; j++)
+//     printf(" %4c|", q_tmp.seq[0][j]);
+//   printf("\n");
+//   for (int a=0; a < par.prefilter_states; a++)  
+//     {
+//       printf("a=%3i   ",a);
+//       for (int j=1; j <= LQ; j++)
+//   	{
+//   	  printf("%5.2f|",query_profile[j][a]);
+//   	}
+//       printf("\n");
+//     }
 
-  // printf("\n\nQuery profile (log):\n        ");
-  // for (int j=1; j <= LQ; j++)
-  //   printf(" %4c|", q_tmp.seq[0][j]);
-  // printf("\n");
-  // for (int a=0; a < par.prefilter_states; a++)  
-  //   {
-  //     printf("a=%3i   ",a);
-  //     for (int j=1; j <= LQ; j++)
-  // 	{
-  // 	  printf("%5.2f|",flog2(query_profile[j][a]));
-  // 	}
-  //     printf("\n");
-  //   }
+//   printf("\n\nQuery profile (log):\n        ");
+//   for (int j=1; j <= LQ; j++)
+//     printf(" %4c|", q_tmp.seq[0][j]);
+//   printf("\n");
+//   for (int a=0; a < par.prefilter_states; a++)  
+//     {
+//       printf("a=%3i   ",a);
+//       for (int j=1; j <= LQ; j++)
+//   	{
+//   	  printf("%5.2f|",flog2(query_profile[j][a]));
+//   	}
+//       printf("\n");
+//     }
 
-  // printf("\n\nQuery profile (log * bit-factor):\n       ");
-  // for (int j=1; j <= LQ; j++)
-  //   printf(" %c|", q_tmp.seq[0][j]);
-  // printf("\n");
-  // for (int a=0; a < par.prefilter_states; a++)  
-  //   {
-  //     printf("a=%2i   ",a);
-  //     for (int j=1; j <= LQ; j++)
-  // 	{
-  // 	  float dummy = flog2(query_profile[j][a])*par.prefilter_bit_factor + par.prefilter_score_offset+0.5;
-  // 	  if (dummy>255.99) dummy = 255.5;
-  // 	  if (dummy<0) dummy = 0.0;
-  // 	  unsigned char c = (unsigned char) dummy;  // 1/3 bits & make scores >=0 everywhere
-  // 	  printf("%2i|",(int)c);
-  // 	}
-  //     printf("\n");
-  //   }
+//   printf("\n\nQuery profile (log * bit-factor):\n       ");
+//   for (int j=1; j <= LQ; j++)
+//     printf(" %c|", q_tmp.seq[0][j]);
+//   printf("\n");
+//   for (int a=0; a < par.prefilter_states; a++)  
+//     {
+//       printf("a=%2i   ",a);
+//       for (int j=1; j <= LQ; j++)
+//   	{
+//   	  float dummy = flog2(query_profile[j][a])*par.prefilter_bit_factor + par.prefilter_score_offset+0.5;
+//   	  if (dummy>255.99) dummy = 255.5;
+//   	  if (dummy<0) dummy = 0.0;
+//   	  unsigned char c = (unsigned char) dummy;  // 1/3 bits & make scores >=0 everywhere
+//   	  printf("%2i|",(int)c);
+//   	}
+//       printf("\n");
+//     }
 
   /////////////////////////////////////////
   // Stripe query profile with chars

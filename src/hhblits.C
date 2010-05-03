@@ -99,7 +99,7 @@ char tmp_file[]="/tmp/hhblitsXXXXXX";
 char dummydb [NAMELEN];
 
 // HHblits variables
-const char HHBLITS_VERSION[]="version 2.0.3 (April 2010)";
+const char HHBLITS_VERSION[]="version 2.0.4 (April 2010)";
 const char HHBLITS_REFERENCE[]="to be published.\n";
 const char HHBLITS_COPYRIGHT[]="(C) Michael Remmert and Johannes Soeding\n";
 
@@ -112,12 +112,8 @@ bool block_filter = true;              // Perform viterbi and forward algorithm 
 bool realign_old_hits = false;         // Realign old hits in last round or use previous alignments
 
 bool input_single_sequence = false;
-bool as_with_cs = true;
-float as_emission_w = 1.6;
 
 int cpu = 1;
-float as_pca = 0.5;
-float as_cs_pca = 0.9;
 
 char config_file[NAMELEN];
 char a3m_infile[NAMELEN];
@@ -678,21 +674,11 @@ void ProcessArguments(int argc, char** argv)
       else if (!strcmp(argv[i],"-egq") && (i<argc-1)) par.egq=atof(argv[++i]);
       else if (!strcmp(argv[i],"-egt") && (i<argc-1)) par.egt=atof(argv[++i]);
       else if (!strcmp(argv[i],"-as62")) {par.prefilt_alphabet=PRE_AS62;}
-      else if (!strcmp(argv[i],"-as_without_cs")) {as_with_cs=false;}
-      else if (!strcmp(argv[i],"-aspca") && (i<argc-1)) as_pca=atof(argv[++i]);
-      else if (!strcmp(argv[i],"-as_cs_pca") && (i<argc-1)) as_cs_pca=atof(argv[++i]);
-      else if (!strcmp(argv[i],"-as_emission_w") && (i<argc-1)) as_emission_w=atof(argv[++i]);
       else if (!strcmp(argv[i],"-as_matrix"))
         {
           if (++i>=argc || argv[i][0]=='-')
             {help() ; cerr<<endl<<"Error in "<<program_name<<": no matrix following -as_matrix\n"; exit(4);}
           else strcpy(par.as_matrix,argv[i]);
-        }
-      else if (!strcmp(argv[i],"-as_library"))
-        {
-          if (++i>=argc || argv[i][0]=='-')
-            {help() ; cerr<<endl<<"Error in "<<program_name<<": no matrix following -as_library\n"; exit(4);}
-          else strcpy(par.as_library,argv[i]);
         }
       else if (!strcmp(argv[i],"-filterlen") && (i<argc-1)) 
 	{
@@ -708,7 +694,7 @@ void ProcessArguments(int argc, char** argv)
       else if (!strcmp(argv[i],"-block_len") && (i<argc-1)) par.block_shading_space = atoi(argv[++i]);
       else if (!strcmp(argv[i],"-shading_mode") && (i<argc-1)) strcpy(par.block_shading_mode,argv[++i]);
       else if (!strcmp(argv[i],"-prepre_smax_thresh") && (i<argc-1)) par.preprefilter_smax_thresh = atoi(argv[++i]);
-      else if (!strcmp(argv[i],"-pre_evalue_thresh") && (i<argc-1)) par.prefilter_evalue_thresh = atoi(argv[++i]);
+      else if (!strcmp(argv[i],"-pre_evalue_thresh") && (i<argc-1)) par.prefilter_evalue_thresh = atof(argv[++i]);
       else if (!strcmp(argv[i],"-smax_thresh") && (i<argc-1)) par.prefilter_smax_thresh = atoi(argv[++i]);
       else if (!strcmp(argv[i],"-rmax_thresh") && (i<argc-1)) par.prefilter_rmax_thresh = atoi(argv[++i]);
       else if (!strcmp(argv[i],"-sse_shading_space") && (i<argc-1)) par.sse_shading_space = atoi(argv[++i]);
@@ -1381,7 +1367,7 @@ void perform_realign(char *dbfiles[], int ndb)
   realign->New(3601,NULL);
   par.block_shading->Reset();
   while (!par.block_shading->End())
-      delete[] (par.block_shading->ReadNext()); 
+    delete[] (par.block_shading->ReadNext()); 
   par.block_shading->New(16381,NULL);
   par.block_shading_counter->New(16381,NULL);
   Hit hit_cur;
@@ -1459,12 +1445,25 @@ void perform_realign(char *dbfiles[], int ndb)
 	}
     }
   
+
+
   // Initialize and allocate space for dynamic programming
   jobs_running = 0;
   jobs_submitted = 0;
   reading_dbs=1;   // needs to be set to 1 before threads are created
   for (bin=0; bin<bins; bin++)
-    bin_status[bin] = FREE;
+    {
+      // Free previously allocated memory
+      if (hit[bin]->forward_allocated)
+	hit[bin]->DeleteForwardMatrix(q.L+2);
+      if (hit[bin]->backward_allocated)
+	hit[bin]->DeleteBackwardMatrix(q.L+2);
+      
+      hit[bin]->AllocateForwardMatrix(q.L+2,Lmax+1);
+      hit[bin]->AllocateBackwardMatrix(q.L+2,Lmax+1);
+
+      bin_status[bin] = FREE;
+    }
  
   if (print_elapsed) ElapsedTimeSinceLastCall("(prepare realign)");
  
@@ -1996,21 +1995,12 @@ int main(int argc, char **argv)
   if (print_elapsed) ElapsedTimeSinceLastCall("(prepare CS pseudocounts)"); 
 
   if (par.prefilt_alphabet == PRE_AS62) {
-    FILE* fin = fopen(par.as_library, "r");
-    if (!fin) OpenFileError(par.as_library);
-    as_context_lib = new cs::ContextLibrary<cs::AA>(fin);
-    fclose(fin);
-
-    // cs::TransformToLin(*as_context_lib);
-    // for (int k=0; k<(int)cs::AS62::kSize; ++k)
-    //   (*as_context_lib)[k].prior = 1.0/cs::AS62::kSize;
-
-    cs::TransformToLog(*as_context_lib);
-    as_emission = new cs::Emission<cs::AA>(as_context_lib->wlen(),as_emission_w,1);
-  
     as_sm = new cs::AbstractStateMatrix<cs::AS62>(par.as_matrix);
-    
-    as_pc = new cs::MatrixPseudocounts<cs::AS62>(*as_sm);
+    double s = 0.0;
+    for (size_t k = 0; k < as_sm->num_contexts(); ++k)
+      for (size_t a = 0; a < cs::AS62::kSize; ++a)
+	s += as_sm->px(k) * as_sm->py(a) * as_sm->s(k,a);
+    cout << "exptected score = " << s << std::endl;
   }
 
   if (print_elapsed) ElapsedTimeSinceLastCall("(prepare AS)"); 
@@ -2055,12 +2045,6 @@ int main(int argc, char **argv)
       t[bin]=new HMM;   // Each bin has a template HMM allocated that was read from the database file
       hit[bin]=new Hit; // Each bin has an object of type Hit allocated ...
       hit[bin]->AllocateBacktraceMatrix(q.L+2,MAXRES); // ...with a separate dynamic programming matrix (memory!!)
-      if (par.realign==1)
-	{
-	  hit[bin]->AllocateForwardMatrix(q.L+2,MAXRES);
-	  hit[bin]->AllocateBackwardMatrix(q.L+2,MAXRES);
-	}
-
     }
   format = new(int[bins]);
 
@@ -2377,11 +2361,10 @@ int main(int argc, char **argv)
   for (bin=0; bin<bins; bin++)
     {
       hit[bin]->DeleteBacktraceMatrix(q.L+2);
-      if (par.realign)
-	{
-	  hit[bin]->DeleteForwardMatrix(q.L+2);
-	  hit[bin]->DeleteBackwardMatrix(q.L+2);
-	}
+      if (hit[bin]->forward_allocated)
+	hit[bin]->DeleteForwardMatrix(q.L+2);
+      if (hit[bin]->backward_allocated)
+	hit[bin]->DeleteBackwardMatrix(q.L+2);
       delete hit[bin];
       delete t[bin];
     }
@@ -2419,10 +2402,7 @@ int main(int argc, char **argv)
   }
 
   if (par.prefilt_alphabet == PRE_AS62) {
-    delete as_context_lib;
-    delete as_emission;
     delete as_sm;
-    delete as_pc;
   }
 
   // Delete content of hits in hitlist

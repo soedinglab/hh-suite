@@ -476,6 +476,8 @@ void SetDefaults()
   par.coverage=0;              // default for minimum coverage threshold
   par.Ndiff=100;               // pick Ndiff most different sequences from alignment
 
+  par.Neff=0;                 // Filter alignment to a diversity (Neff) with a maximum Neff of par.Neff
+
   par.M=1;                     // match state assignment is by A2M/A3M
   par.Mgaps=50;                // Above this percentage of gaps, columns are assigned to insert states (for par.M=2)
   par.calibrate=0;             // default: no calibration
@@ -558,10 +560,10 @@ void SetDefaults()
   par.prefilter_gap_open = 20;
   par.prefilter_gap_extend = 4;
   par.prefilter_states=20;        
-  par.prefilter_score_offset = 30;
+  par.prefilter_score_offset = 50;
   par.prefilter_bit_factor = 4;
-  par.prefilter_evalue_thresh = 1000;
-  par.preprefilter_smax_thresh = 10;
+  par.prefilter_evalue_thresh = 100;
+  par.preprefilter_smax_thresh = 30;
 
   // OLD
   par.prefilter_lmax = 500;
@@ -596,8 +598,7 @@ void SetDefaults()
   par.csw = 1.6;
   strcpy(par.clusterfile,"");
 
-  strcpy(par.as_library,"/cluster/user/michael/hh/cs/data/nr20f_151208_neff3_W1_N10M_n0_cspc_K62_wcenter1000_gauss_init.lib");
-  strcpy(par.as_matrix,"/cluster/user/michael/hh/cs/data/nr20f_151208_neff3_AS62_p7_soft.mat");
+  strcpy(par.as_matrix,"/cluster/user/andreas/data/abstract_states/matrices/nr20f_151208_neff2.5_K62_r0.mat");
 
   return;
 }

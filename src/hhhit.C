@@ -91,6 +91,7 @@ Hit::Hit()
   sum_of_probs=0.0; 
   Neff_HMM=0.0;
   realign_around_viterbi=false;
+  forward_allocated = backward_allocated = false;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -215,6 +216,7 @@ void Hit::AllocateForwardMatrix(int Nq, int Nt)
 	F_MM[i][j]=F_MI[i][j]=F_DG[i][j]=F_IM[i][j]=F_GD[i][j]=0.0;
 	
     }
+  forward_allocated = true;
 }
 
 void Hit::DeleteForwardMatrix(int Nq)
@@ -234,6 +236,7 @@ void Hit::DeleteForwardMatrix(int Nq)
   delete[] F_GD;
   delete[] scale;
   F_MM=F_MI=F_IM=F_DG=F_GD=NULL;
+  forward_allocated = false;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -261,6 +264,7 @@ void Hit::AllocateBackwardMatrix(int Nq, int Nt)
       for (int j=0; j<Nt; ++j) 
 	B_MM[i][j]=0.0;
     }
+  backward_allocated = true;
 }
 
 void Hit::DeleteBackwardMatrix(int Nq)
@@ -271,6 +275,7 @@ void Hit::DeleteBackwardMatrix(int Nq)
     }
   delete[] B_MM;
   B_MM=B_MI=B_IM=B_DG=B_GD=NULL;
+  backward_allocated = false;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////

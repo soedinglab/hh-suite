@@ -87,6 +87,9 @@ class Hit
 
   bool realign_around_viterbi;
 
+  bool forward_allocated;
+  bool backward_allocated;
+
   // Constructor (only set pointers to NULL)
   Hit();
   ~Hit(){};

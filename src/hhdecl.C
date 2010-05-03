@@ -136,6 +136,8 @@ public:
   float neffa;            // Coefficients to estimate Neff-dependent weights for HMM merging procedure
   float neffb;            // Coefficients to estimate Neff-dependent weights for HMM merging procedure
 
+  float Neff;
+
   char ssgap;             // 1: add secondary structure-dependent gap penalties  0:off
   float ssgapd;           // secondary structure-dependent gap-opening penalty (per residue)
   float ssgape;           // secondary structure-dependent gap-extension penalty (per residue)
@@ -207,7 +209,7 @@ public:
   int prefilter_states;               // Anzahl der States im Alphabet
   int prefilter_score_offset;
   int prefilter_bit_factor;
-  int prefilter_evalue_thresh;
+  double prefilter_evalue_thresh;
   int preprefilter_smax_thresh;
 
   // OLD...
@@ -251,8 +253,5 @@ cs::LibraryPseudocounts<cs::AA> *lib_pc;
 cs::ContextLibrary<cs::AA> *context_lib;
 
 #ifdef HHBLITS
-cs::ContextLibrary<cs::AA> *as_context_lib;
-cs::Emission<cs::AA> *as_emission;
 cs::AbstractStateMatrix<cs::AS62> *as_sm;
-cs::MatrixPseudocounts<cs::AS62> *as_pc;
 #endif

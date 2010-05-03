@@ -61,6 +61,9 @@ void ReadInput(char* infile, HMM& q, Alignment* qali=NULL)
         // Remove sequences with seq. identity larger than seqid percent (remove the shorter of two)
         pali->N_filtered = pali->Filter(par.max_seqid,par.coverage,par.qid,par.qsc,par.Ndiff);
 
+	if (par.Neff>=0.999) 
+	  pali->FilterNeff();
+
         // Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
         pali->FrequenciesAndTransitions(q);
         if (v>=2 && q.Neff_HMM>11.0)
@@ -175,7 +178,10 @@ void ReadAndPrepare(char* infile, HMM& q, Alignment* qali=NULL)
         // Remove sequences with seq. identity larger than seqid percent (remove the shorter of two)
         pali->N_filtered = pali->Filter(par.max_seqid,par.coverage,par.qid,par.qsc,par.Ndiff);
 
-        // Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
+ 	if (par.Neff>=0.999) 
+	  pali->FilterNeff();
+
+	// Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
         pali->FrequenciesAndTransitions(q);
         if (v>=2 && q.Neff_HMM>11.0)
             fprintf(stderr,"WARNING: alignment %s looks too diverse (Neff=%.1f>11). Better check it with an alignment viewer... \n",q.name,q.Neff_HMM);
