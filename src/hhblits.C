@@ -96,10 +96,9 @@ char* ptr;                // pointer for string manipulation
 int bin;                       // bin index
 const char print_elapsed=0;
 char tmp_file[]="/tmp/hhblitsXXXXXX";
-char dummydb [NAMELEN];
 
 // HHblits variables
-const char HHBLITS_VERSION[]="version 2.0.4 (April 2010)";
+const char HHBLITS_VERSION[]="version 2.0.5 (May 2010)";
 const char HHBLITS_REFERENCE[]="to be published.\n";
 const char HHBLITS_COPYRIGHT[]="(C) Michael Remmert and Johannes Soeding\n";
 
@@ -110,6 +109,8 @@ bool nodiff = false;                   // if true, do not filter in last round
 bool filter = true;                    // Perform filtering of already seen HHMs
 bool block_filter = true;              // Perform viterbi and forward algorithm only on block given by prefiltering
 bool realign_old_hits = false;         // Realign old hits in last round or use previous alignments
+
+float neffmax = 10;                    // Break if Neff > Neffmax
 
 bool input_single_sequence = false;
 
@@ -130,11 +131,8 @@ char db[NAMELEN];                    // BLAST formatted database with consensus 
 char dbhhm[NAMELEN];                 // directory with database HMMs
 char hh[NAMELEN];                    // directory with hhblits
 char pre_mode[NAMELEN];              // prefilter mode (csblast or blast)
-char blast[NAMELEN];                 // BLAST binaries (not needed with csBLAST)
 char csblast[NAMELEN];               // csBLAST binaries (not needed with BLAST)
 char csblast_db[NAMELEN];            // csBLAST database (not needed with BLAST)
-char psipred[NAMELEN];               // PsiPred binaries
-char psipred_data[NAMELEN];          // PsiPred data
 
 const int MAXNUMDB=2*N_PSI;
 //Hash<char>* doubled;
@@ -277,23 +275,6 @@ void PerformViterbiByWorker(int bin)
   return;
 }
 
-
-/////////////////////////////////////////////////////////////////////////////////////
-//// Execute system command
-/////////////////////////////////////////////////////////////////////////////////////
-void runSystem(string cmd)
-{
-  if (v>2)
-    cout << "Command: " << cmd << "!\n";
-  int res = system(cmd.c_str());
-  if (res!=0) 
-    {
-      cerr << endl << "ERROR when executing: " << cmd << "!\n";
-      exit(1);
-    }
-    
-}
-
 /////////////////////////////////////////////////////////////////////////////////////
 // Help functions
 /////////////////////////////////////////////////////////////////////////////////////
@@ -365,6 +346,7 @@ void help_all()
   printf(" -db <file>     BLAST formatted database with consensus sequences (default=%s)           \n",db);
   printf(" -dbhhm <dir>   directory with database HMMs (default=%s)                                \n",dbhhm);
   printf(" -n     [1,5]   number of rounds (default=%i)                                            \n",num_rounds); 
+  printf(" -neffmax [0,15]  break if neff > neffmax (default=%f)                                   \n",neffmax); 
   printf(" -e_hh  [0,1]   E-value cutoff for inclusion in result alignment (default=%G)            \n",par.e); 
   printf(" -e_psi [1,inf[ E-value cutoff for prefiltering (default=%-.0f)                          \n",e_psi); 
   printf("\n");
@@ -394,11 +376,11 @@ void help_all()
   printf("Directories for needed programs                                                          \n");
   printf(" -pre_mode    <mode>  prefilter mode (blast or csblast) (default=%s)                     \n",pre_mode);
   printf(" -hh           <dir>  directory with HHBLITS executables and reformat.pl (default=%s)    \n",hh);
-  printf(" -blast        <dir>  directory with BLAST executables (default=%s)                      \n",blast);
+  printf(" -blast        <dir>  directory with BLAST executables (default=%s)                      \n",par.blast);
   printf(" -csblast      <dir>  directory with csBLAST executables (default=%s)                    \n",csblast);
   printf(" -csblast_db   <dir>  directory with csBLAST database (default=%s)                       \n",csblast_db);
-  printf(" -psipred      <dir>  directory with PsiPred executables (default=%s)                    \n",psipred);
-  printf(" -psipred_data <dir>  directory with PsiPred data (default=%s)                           \n",psipred_data);
+  printf(" -psipred      <dir>  directory with PsiPred executables (default=%s)                    \n",par.psipred);
+  printf(" -psipred_data <dir>  directory with PsiPred data (default=%s)                           \n",par.psipred_data);
   printf("\n");
   printf("Filter options                                                                           \n");
   printf(" -nofilter      disable all filter steps (except for PSI-BLAST prefiltering)             \n");
@@ -412,6 +394,7 @@ void help_all()
   printf(" -nodiff        do not filter sequences in last iteration (def=off)                      \n");
   printf(" -cov  [0,100]  minimum coverage with query (%%) (def=%i)                                \n",par.coverage);
   printf(" -qid  [0,100]  minimum sequence identity with query (%%) (def=%i)                       \n",par.qid);
+  printf(" -neff [1,inf] target diversity of alignment (default=off)\n");
   printf(" -qsc  [0,100]  minimum score per column with query  (def=%.1f)                          \n",par.qsc);
   printf("\n");
   printf("HMM-HMM alignment options:                                                               \n");
@@ -421,7 +404,8 @@ void help_all()
   printf("                Parameter controls alignment greediness: 0:global >0.1:local             \n");
   printf(" -glob/-loc     use global/local alignment mode for searching/ranking (def=local)        \n");
   printf(" -alt <int>     show up to this many significant alternative alignments(def=%i)          \n",par.altali);
-  printf(" -jdummy [0,20] ... (default=%i)                                                         \n",par.jdummy);       
+  printf(" -jdummy [0,20] ... (default=%i)                                                         \n",par.jdummy);       printf(" -realign_max <int>  realign max. <int> hits (default=%i)                                \n",par.realign_max);  
+
   printf("\n");
   printf("Pseudocount options:                                                                     \n");
   printf(" -pcm  0-2      Pseudocount mode (default=%-i)                                           \n",par.pcm);
@@ -531,7 +515,7 @@ void ProcessArguments(int argc, char** argv)
           if (++i>=argc || argv[i][0]=='-')
             {help() ; cerr<<endl<<"Error in "<<program_name<<": no directory following -blast\n"; exit(4);}
           else
-              strcpy(blast,argv[i]);
+              strcpy(par.blast,argv[i]);
         }
       else if (!strcmp(argv[i],"-csblast"))
         {
@@ -552,14 +536,14 @@ void ProcessArguments(int argc, char** argv)
           if (++i>=argc || argv[i][0]=='-')
             {help() ; cerr<<endl<<"Error in "<<program_name<<": no directory following -psipred\n"; exit(4);}
           else
-              strcpy(psipred,argv[i]);
+              strcpy(par.psipred,argv[i]);
         }
       else if (!strcmp(argv[i],"-psipred_data"))
         {
           if (++i>=argc || argv[i][0]=='-')
             {help() ; cerr<<endl<<"Error in "<<program_name<<": no database directory following -psipred_data\n"; exit(4);}
           else
-              strcpy(psipred_data,argv[i]);
+              strcpy(par.psipred_data,argv[i]);
         }
       else if (!strcmp(argv[i],"-conf"))
         {
@@ -647,9 +631,10 @@ void ProcessArguments(int argc, char** argv)
       else if (!strcmp(argv[i],"-B") && (i<argc-1)) par.B = atoi(argv[++i]);
       else if (!strcmp(argv[i],"-z") && (i<argc-1)) par.z = atoi(argv[++i]);
       else if (!strcmp(argv[i],"-Z") && (i<argc-1)) par.Z = atoi(argv[++i]);
+      else if (!strcmp(argv[i],"-realign_max") && (i<argc-1)) par.realign_max = atoi(argv[++i]);
       else if (!strcmp(argv[i],"-e_hh") && (i<argc-1)) par.e = atof(argv[++i]);
       else if (!strcmp(argv[i],"-e_psi") && (i<argc-1)) e_psi = atof(argv[++i]);
-      else if (!strncmp(argv[i],"-nopred",7)) par.showpred=0;
+      else if (!strncmp(argv[i],"-nopred",7)) par.showpre=0;
       else if (!strncmp(argv[i],"-noss",5)) par.showpred=0;
       else if (!strcmp(argv[i],"-seq") && (i<argc-1))  par.nseqdis=atoi(argv[++i]);
       else if (!strcmp(argv[i],"-aliw") && (i<argc-1)) par.aliwidth=atoi(argv[++i]);
@@ -659,6 +644,9 @@ void ProcessArguments(int argc, char** argv)
       else if (!strcmp(argv[i],"-cov") && (i<argc-1))  par.coverage=atoi(argv[++i]);
       else if (!strcmp(argv[i],"-diff") && (i<argc-1)) par.Ndiff=atoi(argv[++i]);
       else if (!strcmp(argv[i],"-nodiff")) nodiff=true;
+      else if (!strcmp(argv[i],"-neffmax") && (i<argc-1)) neffmax=atof(argv[++i]); 
+      else if (!strcmp(argv[i],"-neff") && (i<argc-1)) par.Neff=atof(argv[++i]); 
+      else if (!strcmp(argv[i],"-Neff") && (i<argc-1)) par.Neff=atof(argv[++i]); 
       else if (!strcmp(argv[i],"-pcm") && (i<argc-1)) par.pcm=atoi(argv[++i]);
       else if (!strcmp(argv[i],"-pca") && (i<argc-1)) par.pca=atof(argv[++i]);
       else if (!strcmp(argv[i],"-pcb") && (i<argc-1)) par.pcb=atof(argv[++i]);
@@ -765,11 +753,11 @@ void ReadConfigFile(char filename[])
       else if (!strcmp(param, "dbhhm")) strcpy(dbhhm,value);
       else if (!strcmp(param, "hh")) strcpy(hh,value);
       else if (!strcmp(param, "pre_mode")) strcpy(pre_mode,value);
-      else if (!strcmp(param, "blast")) strcpy(blast,value);
+      else if (!strcmp(param, "blast")) strcpy(par.blast,value);
       else if (!strcmp(param, "csblast")) strcpy(csblast,value);
       else if (!strcmp(param, "csblast_db")) strcpy(csblast_db,value);
-      else if (!strcmp(param, "psipred")) strcpy(psipred,value);
-      else if (!strcmp(param, "psipred_data")) strcpy(psipred_data,value);
+      else if (!strcmp(param, "psipred")) strcpy(par.psipred,value);
+      else if (!strcmp(param, "psipred_data")) strcpy(par.psipred_data,value);
       else cerr<<endl<<"WARNING: Ignoring unknown option "<<param<<" in config file...\n";
 
     }
@@ -857,7 +845,7 @@ void CheckInputFiles()
 	    {
 	      command = (string)hh + "/reformat.pl a3m psi " + (string)par.infile + " " + tmp_psifile + " -r > /dev/null";
 	    }
-	  runSystem(command);
+	  runSystem(command,v);
 	  RemoveExtension(base_filename,a3m_infile);
 	}
       else
@@ -865,9 +853,9 @@ void CheckInputFiles()
 	  if (*psi_infile && strcmp(psi_infile,"")) 
 	    {
 	      command = (string)hh + "/reformat.pl psi psi " + (string)psi_infile + " " + tmp_psifile + " -r -M first > /dev/null";
-	      runSystem(command);
+	      runSystem(command,v);
 	      command = (string)hh + "/reformat.pl psi a3m " + (string)psi_infile + " " + (string)tmp_file + ".a3m -M first > /dev/null";
-	      runSystem(command);
+	      runSystem(command,v);
 	      strcpy(par.infile,tmp_file);
 	      strcat(par.infile,".a3m");
 	      RemoveExtension(base_filename,psi_infile);
@@ -922,12 +910,12 @@ void CheckInputFiles()
 
       // Copy infile to tmp_file.fas as input for the BLAST prefilter searches
       command = (string)hh + "/reformat.pl fas fas " + (string)par.infile + " " + tmp_infile + " -g '' > /dev/null";
-      runSystem(command);
+      runSystem(command,v);
       RemoveExtension(base_filename,par.infile);
       strcpy(par.infile,tmp_infile.c_str());
       // Create simple PSI-file
       command = (string)hh + "/reformat.pl fas psi " + (string)par.infile + " " + tmp_psifile + " -r -M first > /dev/null";
-      runSystem(command);
+      runSystem(command,v);
       input_single_sequence=true;
     }
 
@@ -953,79 +941,6 @@ void CheckInputFiles()
       strcpy(par.outfile,base_filename);
       strcat(par.outfile,".hhr");
       if (v>=2) cout<<"Search results will be written to "<<par.outfile<<"\n";
-    }
-
-}
-
-// Calculate secondary structure prediction with PSIpred
-void CalculateSS(char *ss_pred, char *ss_conf)
-{
-  // Initialize
-  strcpy(ss_pred," ");
-  strcpy(ss_conf," ");
-  char rootname[NAMELEN];
-  RemovePath(rootname,tmp_file);
-
-  // Create dummy-DB if not exists
-  if (!*dummydb)
-    {
-      strcpy(dummydb,tmp_file);
-      strcat(dummydb,"_dummy_db");
-      command = "cp " + tmp_infile + " " + (string)dummydb;
-      runSystem(command);
-      command = (string)blast + "/formatdb -i " + (string)dummydb + " -l /dev/null > /dev/null";
-      runSystem(command);
-    }
-
-  // Create BLAST checkpoint file
-  command = (string)blast + "/blastpgp -b 1 -j 1 -h 0.001 -d " + (string)dummydb + " -i " + tmp_infile + " -B " + tmp_psifile + " -C " + (string)tmp_file + ".chk 1> /dev/null 2> /dev/null";
-  runSystem(command);
-  command = "echo " + (string)rootname + ".chk > " + (string)tmp_file + ".pn";
-  runSystem(command);
-  command = "echo " + (string)rootname + ".fas > " + (string)tmp_file + ".sn";
-  runSystem(command);
-  command =  (string)blast + "/makemat -P " + (string)tmp_file;
-  runSystem(command);
-
-  // Run PSIpred
-  command = (string)psipred + "/psipred " + (string)tmp_file + ".mtx " + (string)psipred_data + "/weights.dat " + (string)psipred_data + "/weights.dat2 " + (string)psipred_data + "/weights.dat3 " + (string)psipred_data + "/weights.dat4 > " + (string)tmp_file + ".ss";
-  runSystem(command);
-  command = (string)psipred + "/psipass2 " + (string)psipred_data + "/weights_p2.dat 1 0.98 1.09 " + (string)tmp_file + ".ss2 " + (string)tmp_file + ".ss > " + (string)tmp_file + ".horiz";
-  runSystem(command);
-
-  // Read results
-  char filename[NAMELEN];
-  strcpy(filename,tmp_file);
-  strcat(filename,".horiz");
-  FILE* horizf = fopen(filename,"r");
-  if (!horizf) return;
-
-  while (fgets(line,LINELEN,horizf))
-    {
-      char tmp_seq[NAMELEN]="";
-      char* ptr=line;
-      if (!strncmp(line,"Conf:",5))
-	{
-	  ptr+=5;
-	  strwrd(tmp_seq,ptr);
-	  strcat(ss_conf,tmp_seq);
-	}
-      if (!strncmp(line,"Pred:",5))
-	{
-	  ptr+=5;
-	  strwrd(tmp_seq,ptr);
-	  strcat(ss_pred,tmp_seq);
-	}
-    }
-  fclose(horizf);
-
-  // NEEDED???????
-  //$ss_conf=~tr/0-9/0/c; # replace all non-numerical symbols with a 0
-
-  if (v>3)
-    {
-      printf("SS-pred: %s\n",ss_pred);
-      printf("SS-conf: %s\n",ss_conf);
     }
 
 }
@@ -1382,9 +1297,14 @@ void perform_realign(char *dbfiles[], int ndb)
   while (!hitlist.End())
     {
       hit_cur = hitlist.ReadNext();
-      if (nhits>=imax(par.B,par.Z)) break;
-      if (nhits>=imax(par.b,par.z) && hit_cur.Probab < par.p) break;
-      if (nhits>=imax(par.b,par.z) && hit_cur.Eval > par.E) continue;
+      if (nhits >= par.realign_max && nhits>=imax(par.B,par.Z)) break;
+      if (hit_cur.Eval > par.e)
+	{
+	  if (nhits>=imax(par.B,par.Z)) continue;
+	  if (nhits>=imax(par.b,par.z) && hit_cur.Probab < par.p) continue;
+	  if (nhits>=imax(par.b,par.z) && hit_cur.Eval > par.E) continue;
+	}
+
       if (hit_cur.L>Lmax) Lmax=hit_cur.L;
       if (hit_cur.L<=Lmaxmem)
 	{
@@ -1417,9 +1337,10 @@ void perform_realign(char *dbfiles[], int ndb)
 	      // printf("\n");
 	    }
 	  
-	  //fprintf(stderr,"hit.name=%-15.15s  hit.index=%-5i hit.ftellpos=%-8i  hit.dbfile=%s\n",hit_cur.name,hit_cur.index,(unsigned int)hit_cur.ftellpos,hit_cur.dbfile);
 	  if (nhits>=par.jdummy || hit_cur.irep>1 || hit_cur.Eval > par.e) // realign the first jdummy hits consecutively to query profile
 	    {
+	      //fprintf(stderr,"hit.name=%-15.15s  hit.index=%-5i hit.ftellpos=%-8i  hit.dbfile=%s\n",hit_cur.name,hit_cur.index,(unsigned int)hit_cur.ftellpos,hit_cur.dbfile);
+
 	      Posindex posindex;
 	      posindex.ftellpos = hit_cur.ftellpos;
 	      posindex.index = hit_cur.index;
@@ -1466,8 +1387,17 @@ void perform_realign(char *dbfiles[], int ndb)
     }
  
   if (print_elapsed) ElapsedTimeSinceLastCall("(prepare realign)");
- 
-  if (v>=1) printf("Realigning %i HMM-HMM alignments with Maximum ACcuracy algorithm ",nhits);
+
+  if (v>=1)
+    {
+      int num_realign=0;
+      for (int idb=0; idb<ndb; idb++)
+	{
+	  if (realign->Contains(dbfiles[idb]))
+	    num_realign++;
+	}
+      printf("Realigning %i HMM-HMM alignments with Maximum ACcuracy algorithm\n",num_realign);
+    }
 
   int v1=v;
   if (v<=3) v=1; else v-=1;  // Supress verbose output during iterative realignment and realignment
@@ -1486,9 +1416,10 @@ void perform_realign(char *dbfiles[], int ndb)
 	  if (nhits>=imax(par.B,par.Z)) break;
 	  if (nhits>=imax(par.b,par.z) && hit_cur.Probab < par.p) break;
 	  if (nhits>=imax(par.b,par.z) && hit_cur.Eval > par.E) continue;
+	  if (hit_cur.irep>1) continue;  // Align only the best hit of the first par.jdummy templates
+	  
 	  nhits++;
 
-	  if (hit_cur.irep>1) continue;  // Align only the best hit of the first par.jdummy templates
 	  if (hit_cur.L>Lmaxmem) continue;  // Don't align to long sequences due to memory limit
 	  if (hit_cur.Eval > par.e) continue; // Don't align hits with an E-value below the inclusion threshold
 
@@ -1691,7 +1622,7 @@ void perform_realign(char *dbfiles[], int ndb)
 	      index_prev = hit[bin]->index;
 	      fseek(dbf,realign->Show(dbfiles[idb])->ReadCurrent().ftellpos,SEEK_SET);
 	      
-	      //                fprintf(stderr,"dbfile=%-40.40s  index=%-5i  ftellpos=%i\n",dbfiles[idb],realign->Show(dbfiles[idb])->ReadCurrent().index,(unsigned int) realign->Show(dbfiles[idb])->ReadCurrent().ftellpos);
+	      //fprintf(stderr,"dbfile=%-40.40s  index=%-5i  ftellpos=%i\n",dbfiles[idb],realign->Show(dbfiles[idb])->ReadCurrent().index,(unsigned int) realign->Show(dbfiles[idb])->ReadCurrent().ftellpos);
 	      
 	      char path[NAMELEN];
 	      Pathname(path,dbfiles[idb]);
@@ -1840,9 +1771,15 @@ void perform_realign(char *dbfiles[], int ndb)
     {
       hit_cur = hitlist.ReadNext();
       //        printf("Deleting alignment of %s with length %i? nhits=%-2i  par.B=%-3i  par.Z=%-3i par.e=%.2g par.b=%-3i  par.z=%-3i par.p=%.2g\n",hit_cur.name,hit_cur.matched_cols,nhits,par.B,par.Z,par.e,par.b,par.z,par.p);
-      if (nhits>=imax(par.B,par.Z)) break;
-      if (nhits>=imax(par.b,par.z) && hit_cur.Probab < par.p) break;
-      if (nhits>=imax(par.b,par.z) && hit_cur.Eval > par.E) continue;
+
+      if (nhits > par.realign_max && nhits>=imax(par.B,par.Z)) break;
+      if (hit_cur.Eval > par.e)
+	{
+	  if (nhits>=imax(par.B,par.Z)) continue;
+	  if (nhits>=imax(par.b,par.z) && hit_cur.Probab < par.p) continue;
+	  if (nhits>=imax(par.b,par.z) && hit_cur.Eval > par.E) continue;
+	}
+
       if (hit_cur.matched_cols < MINCOLS_REALIGN)
 	{
 	  if (v>=3) printf("Deleting alignment of %s with length %i\n",hit_cur.name,hit_cur.matched_cols);
@@ -1928,9 +1865,9 @@ int main(int argc, char **argv)
     {help(); cerr<<endl<<"Error in "<<program_name<<": database missing (see config-file or -db and -dbhhm)\n"; exit(4);}
   if (!strcmp(pre_mode,"csblast") && (!*csblast || !*csblast_db))
     {help(); cerr<<endl<<"Error in "<<program_name<<": missing csBLAST directory (see config-file or -csblast and -csblast_db)\n"; exit(4);}
-  if (!*blast)
+  if (!*par.blast)
     {help(); cerr<<endl<<"Error in "<<program_name<<": missing BLAST directory (see config-file or -blast)\n"; exit(4);}
-  if (par.showpred==1 && (!*psipred || !*psipred_data))
+  if (par.showpred==1 && (!*par.psipred || !*par.psipred_data))
     {help(); cerr<<endl<<"Error in "<<program_name<<": missing PsiPred directory (see config-file or -psipred and -psipred_data)\n"; exit(4);}
  
   par.block_shading = new Hash<int*>;
@@ -1996,11 +1933,11 @@ int main(int argc, char **argv)
 
   if (par.prefilt_alphabet == PRE_AS62) {
     as_sm = new cs::AbstractStateMatrix<cs::AS62>(par.as_matrix);
-    double s = 0.0;
-    for (size_t k = 0; k < as_sm->num_contexts(); ++k)
-      for (size_t a = 0; a < cs::AS62::kSize; ++a)
-	s += as_sm->px(k) * as_sm->py(a) * as_sm->s(k,a);
-    cout << "exptected score = " << s << std::endl;
+    // double s = 0.0;
+    // for (size_t k = 0; k < as_sm->num_contexts(); ++k)
+    //   for (size_t a = 0; a < cs::AS62::kSize; ++a)
+    // 	s += as_sm->px(k) * as_sm->py(a) * as_sm->s(k,a);
+    // cout << "exptected score = " << s << std::endl;
   }
 
   if (print_elapsed) ElapsedTimeSinceLastCall("(prepare AS)"); 
@@ -2063,7 +2000,7 @@ int main(int argc, char **argv)
     // Settings for different rounds
     if (par.jdummy > 0 && round > 1 && previous_hits->Size() > (par.jdummy-1))
       {
-	if (v>=3) printf("Set jdummy to 0! (jdummy: %i   round: %i   hits.Size: %i)\n",par.jdummy,round,previous_hits->Size());
+	if (v>3) printf("Set jdummy to 0! (jdummy: %i   round: %i   hits.Size: %i)\n",par.jdummy,round,previous_hits->Size());
 	par.jdummy = 0;
       }
     else 
@@ -2073,7 +2010,7 @@ int main(int argc, char **argv)
 
     if (round == num_rounds && nodiff)
       {
-	if (v>=4) printf("Set Ndiff to 0!\n");
+	if (v>=3) printf("Set Ndiff to 0!\n");
 	par.Ndiff = 0;
       }
 
@@ -2125,13 +2062,13 @@ int main(int argc, char **argv)
     if (!strncmp(pre_mode,"only",4))
       exit(0);
 
-    if (v>=2) printf("Number of new extracted HMMs: %i\n",ndb_new);
-    if (v>=2) printf("Number of extracted HMMs (previous searched): %i\n",ndb_old);
+    //if (v>=2) printf("Number of new extracted HMMs: %i\n",ndb_new);
+    //if (v>=2) printf("Number of extracted HMMs (previous searched): %i\n",ndb_old);
 
     if (print_elapsed) ElapsedTimeSinceLastCall("(prefiltering)"); 
 
     // Search datbases
-    if (v>=2) printf("Searching through pre-filtered matches by HMM-HMM comparison\n");
+    if (v>=2) printf("Searching through pre-filtered matches (new/old: %i/%i) by HMM-HMM comparison\n", ndb_new, ndb_old);
 
     search_database(dbfiles_new,ndb_new,(ndb_new + ndb_old));
 
@@ -2239,7 +2176,7 @@ int main(int argc, char **argv)
 	    char ss_pred[MAXRES];
 	    char ss_conf[MAXRES];
 	    
-	    CalculateSS(ss_pred, ss_conf);
+	    CalculateSS(ss_pred, ss_conf, tmp_file);
 	    
 	    Qali.AddSSPrediction(ss_pred, ss_conf);
 	    
@@ -2248,7 +2185,7 @@ int main(int argc, char **argv)
 	
 	// Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
     	Qali.FrequenciesAndTransitions(q,NULL,true);
-    	
+
 	if (print_elapsed) ElapsedTimeSinceLastCall("(Calculate AA frequencies and transitions)");
 
 	if (*alis_basename)
@@ -2289,8 +2226,15 @@ int main(int argc, char **argv)
     
     if (v>=2) printf("%i sequences in %i clusters found\n",seqs_found,cluster_found);
 
-    if (new_hits == 0 || round == num_rounds) 
-      break;
+    if (q.Neff_HMM > neffmax && round < num_rounds)
+      {
+	printf("Diversity of created alignment (%4.2f) is above threshold (%4.2f). Stop searching!\n", q.Neff_HMM, neffmax);
+      }
+
+    if (new_hits == 0 || round == num_rounds || q.Neff_HMM > neffmax) 
+      {
+	break;
+      }
 
     // Write good hits to previous_hits hash and clear hitlist
     hitlist.Reset();
@@ -2437,7 +2381,7 @@ int main(int argc, char **argv)
 
   // Remove temp-files
   command = "rm " + (string)tmp_file + "*";
-  runSystem(command);
+  runSystem(command,v);
   // cerr << "Command: " << command << "!\n";
 
   exit(0);

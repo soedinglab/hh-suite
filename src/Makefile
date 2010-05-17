@@ -71,6 +71,10 @@ hhconsensus: hhconsensus.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
 hhconsensus_static: hhconsensus.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
 	     $(CPP) -static hhconsensus.C -o ../bin/hhconsensus $(CS_OBJECTS)
 
+hhconsensus_valgrind: hhconsensus.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
+	     $(CPP_VALGRIND) hhconsensus.C -o ../bin/hhconsensus_valgrind $(CS_OBJECTS)
+
 clean: 	
 	-rm -f *.o ../cs/src/*.o
 	-rm -f ../bin/*
+	-cp hhblits.config ../bin/

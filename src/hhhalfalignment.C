@@ -352,11 +352,12 @@ void HalfAlignment::AlignToTemplate(Hit& hit)
 /////////////////////////////////////////////////////////////////////////////////////
 // Write the a2m/a3m alignment into alnfile 
 /////////////////////////////////////////////////////////////////////////////////////
-void HalfAlignment::Print(char* alnfile, char* commentname)
+void HalfAlignment::Print(char* alnfile, char* commentname, const char format[])
 {
   int k;      //counts sequences
   int omitted=0; // counts number of sequences with no residues in match states
   FILE *outf;
+  char* tmp_name = new(char[50]);
   if (strcmp(alnfile,"stdout"))
     {
       if (par.append) outf=fopen(alnfile,"a"); else outf=fopen(alnfile,"w");
@@ -366,20 +367,45 @@ void HalfAlignment::Print(char* alnfile, char* commentname)
     outf = stdout;
   if (v>=3) cout<<"Writing alignment to "<<alnfile<<"\n";
 
-  if (commentname != NULL) fprintf(outf,"#%s\n",commentname);
-
-  for (k=0; k<n; k++)
+  if (!format || strcmp(format,"psi"))
     {
-      // Print sequence only if it contains at least one residue in a match state
-      if (1) //strpbrk(s[k],"ABCDEFGHIKLMNPQRSTUVWXYZ1234567890")) 
+      if (commentname != NULL) fprintf(outf,"#%s\n",commentname);
+
+      for (k=0; k<n; k++)
+	if (k==nss_pred || k==nss_conf || k==nss_dssp || k==nsa_dssp)
+	  {
+	    fprintf(outf,">%s\n",sname[k]);
+	    fprintf(outf,"%s\n",s[k]);
+	  }
+      for (k=0; k<n; k++)
 	{
-	  fprintf(outf,">%s\n",sname[k]);
-	  fprintf(outf,"%s\n",s[k]);
-	} else {
-	  omitted++;
-	  if (v>=3) printf("%-14.14s contains no residue in match state. Omitting sequence\n",sname[k]);
+	  if (!(k==nss_pred || k==nss_conf || k==nss_dssp || k==nsa_dssp))
+	    {
+	      // Print sequence only if it contains at least one residue in a match state
+	      if (1) //strpbrk(s[k],"ABCDEFGHIKLMNPQRSTUVWXYZ1234567890")) 
+		{
+		  fprintf(outf,">%s\n",sname[k]);
+		  fprintf(outf,"%s\n",s[k]);
+		} else {
+		omitted++;
+		if (v>=3) printf("%-14.14s contains no residue in match state. Omitting sequence\n",sname[k]);
+	      }
+	    }
 	}
+      if (v>=2 && omitted) printf("Omitted %i sequences in %s which contained no residue in match state\n",omitted,alnfile);
     }
-  if (v>=2 && omitted) printf("Omitted %i sequences in %s which contained no residue in match state\n",omitted,alnfile);
+  else
+    {
+      for (k=0; k<n; k++)
+          {
+	    strwrd(tmp_name,sname[k]);
+            fprintf(outf,"%-20.20s ",tmp_name);
+            char* ptr=s[k];
+            for (; *ptr!='\0'; ptr++)
+              if (*ptr==45 || (*ptr>=65 && *ptr<=90)) fprintf(outf,"%c",*ptr);
+            fprintf(outf,"\n");
+          }
+    }
   fclose(outf);
+  delete[] tmp_name;
 }

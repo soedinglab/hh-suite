@@ -86,6 +86,9 @@ public:
     // Calculate effective number of sequences using profiles INCLUDING pseudocounts
     float CalcNeff();
 
+    // Add secondary structure prediction to HMM
+    void AddSSPrediction(char seq_pred[], char seq_conf[]);
+
     // Initialize f[i][a] with query HMM
     void MergeQueryHMM(HMM& q, float wk[]);
 

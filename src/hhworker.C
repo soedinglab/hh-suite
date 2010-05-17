@@ -100,14 +100,18 @@ void RealignByWorker(int bin)
   while (!hitlist.End())
     {
       hit_cur = hitlist.ReadNext();
-      if (nhits>=imax(par.B,par.Z)) break;
-      //    fprintf(stderr,"t->name=%s  hit_cur.name=%s  hit[bin]->irep=%i  nhits=%i  hit_cur.index=%i  hit[bin]->index=%i\n",t[bin]->name,hit_cur.name,hit_cur.irep,nhits,hit_cur.index,hit[bin]->index);
-      if (nhits>=imax(par.b,par.z) && hit_cur.Probab < par.p) break;
-      if (nhits>=imax(par.b,par.z) && hit_cur.Eval > par.E) continue;
+
+      if (nhits > (2*par.realign_max) && nhits>=imax(par.B,par.Z)) break;
+      if (hit_cur.Eval > par.e)
+      	{
+      	  if (nhits>=imax(par.B,par.Z)) continue;
+      	  if (nhits>=imax(par.b,par.z) && hit_cur.Probab < par.p) continue;
+      	  if (nhits>=imax(par.b,par.z) && hit_cur.Eval > par.E) continue;
+      	}
+
       if (hit_cur.index==hit[bin]->index) // found position with correct template
         {
-          //      fprintf(stderr,"  t->name=%s   hit_cur.irep=%i  hit[bin]->irep=%i  nhits=%i\n",t[bin]->name,hit_cur.irep,hit[bin]->irep,nhits);
-          pos = hitlist.GetPos();
+	  pos = hitlist.GetPos();
 
 	  // Realign only around previous Viterbi hit
 	  hit[bin]->i1 = hit_cur.i1;

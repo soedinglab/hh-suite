@@ -15,6 +15,7 @@
 #include <locale>
 #include <stdexcept>
 #include <stdint.h>
+#include <string.h>     // strcmp, strstr
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Arithmetics
@@ -847,3 +848,18 @@ void QSortFloat(float v[], int k[], int left, int right, int up=+1)
 inline float frand() { return rand()/(RAND_MAX+1.0); }
 
 
+/////////////////////////////////////////////////////////////////////////////////////
+//// Execute system command
+/////////////////////////////////////////////////////////////////////////////////////
+void runSystem(std::string cmd, int v = 2)
+{
+  if (v>2)
+    cout << "Command: " << cmd << "!\n";
+  int res = system(cmd.c_str());
+  if (res!=0) 
+    {
+      cerr << endl << "ERROR when executing: " << cmd << "!\n";
+      exit(1);
+    }
+    
+}

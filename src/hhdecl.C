@@ -155,6 +155,7 @@ public:
   float corr;             // Weight of correlations between scores with |i-j|<=4
   float shift;            // Score offset for match-match states
   float mact;             // Score threshold (negative offset) in MAC alignment
+  int realign_max;        // Realign max ... hits
 
   char calibrate;         // calibration of query HMM?  0:no, 1:yes (write lamda,mu into query profile)
   char calm;              // derive P-values from: 0:query calibration  1:template calibration  2:both  3:Neural Network prediction
@@ -169,13 +170,17 @@ public:
   float Emax_trans;       // max E-value for intermediate HMMs in transitive scoring (i.e. l is intermediate HMM if E_lq, E_lk <Emax_trans)
   float wtrans;           // Ztot[k] = Zq[k] + wtrans * (Zforward[k]+Zreverse[k])
 
+  // Directories for SS-prediction
+  int addss;                           // 1: calculate secondary structure 0: don't (default: 0)
+  char blast[NAMELEN];                 // BLAST binaries (not needed with csBLAST)
+  char psipred[NAMELEN];               // PsiPred binaries
+  char psipred_data[NAMELEN];          // PsiPred data
+  char dummydb [NAMELEN];
+
   // parameters for context-specific pseudocounts
   float csb;
   float csw;
   char clusterfile[NAMELEN];
-
-  char as_library[NAMELEN];
-  char as_matrix[NAMELEN];
 
   // HHblits
   int jdummy;
@@ -186,6 +191,10 @@ public:
   float qsc_db;    
   int coverage_db; 
   int Ndiff_db;    
+
+  // HHblits abstract state prefilter
+  char as_library[NAMELEN];
+  char as_matrix[NAMELEN];
 
   // HHblits prefilter
   char prefilt_alphabet;      // actual alphabet used for prefiltering

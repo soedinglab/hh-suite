@@ -461,6 +461,7 @@ void SetDefaults()
   par.z=10;                    // min number of lines in hit list
   par.Z=500;                   // max number of lines in hit list
   par.e=1e-3f;                 // maximum E-value for inclusion in output alignment, output HMM, and PSI-BLAST checkpoint model
+  par.realign_max=1000;
   par.showcons=1;              // show consensus sequence
   par.showdssp=1;              // show predicted secondary structure ss_dssp
   par.showpred=1;              // show predicted secondary structure ss_pred
@@ -537,6 +538,13 @@ void SetDefaults()
   par.jdummy=0;
 
   par.notags=1;                // neutralize His-tags, FLAG-tags, C-myc-tags
+
+   // Directories for SS-prediction
+  par.addss=0;
+  strcpy(par.blast,"/cluster/bioprogs/blast/bin");
+  strcpy(par.psipred,"/cluster/bioprogs/psipred/bin");
+  strcpy(par.psipred_data,"/cluster/bioprogs/psipred/data");
+  strcpy(par.dummydb,"/cluster/databases/do_not_delete/do_not_delete");
 
   // HHblits parameters
   par.prefilt_alphabet = PRE_AA;

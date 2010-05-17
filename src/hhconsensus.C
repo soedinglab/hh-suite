@@ -110,6 +110,7 @@ void help()
   printf(" -M [0,100]    use FASTA: columns with fewer than X%% gaps are match states   \n");
   printf("\n");    
   printf("Other options:                                                               \n");
+  printf(" -addss        add predicted secondary structure information from PSI-PRED   \n");
   printf(" -def          read default options from ./.hhdefaults or <home>/.hhdefault. \n");
   printf("\n");    
   printf("Example: %s -i stdin -s stdout\n",program_name);
@@ -206,6 +207,7 @@ void ProcessArguments(int argc,char** argv)
       else if (!strcmp(argv[i],"-gaph") && (i<argc-1)) par.gaph=atof(argv[++i]); 
       else if (!strcmp(argv[i],"-gapi") && (i<argc-1)) par.gapi=atof(argv[++i]); 
       else if (!strcmp(argv[i],"-def")) par.readdefaultsfile=1; 
+      else if (!strcmp(argv[i],"-addss")) par.addss=1; 
       else if (!strcmp(argv[i],"-csb") && (i<argc-1)) par.csb=atof(argv[++i]);
       else if (!strcmp(argv[i],"-csw") && (i<argc-1)) par.csw=atof(argv[++i]);
       else if (!strcmp(argv[i],"-cs"))

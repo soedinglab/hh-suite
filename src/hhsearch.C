@@ -272,6 +272,7 @@ void help_hmm()
   printf("               many sequences in each block of >50 columns (def=%i)\n",par.Ndiff);
   printf(" -cov  [0,100] minimum coverage with query (%%) (def=%i) \n",par.coverage);
   printf(" -qid  [0,100] minimum sequence identity with query (%%) (def=%i) \n",par.qid);
+  printf(" -neff [1,inf] target diversity of alignment (default=off)\n");
   printf(" -qsc  [0,100] minimum score per column with query  (def=%.1f)\n",par.qsc);
   printf("                                                                          \n");
   printf("HMM-building options:                                                     \n");
@@ -545,6 +546,8 @@ void ProcessArguments(int argc, char** argv)
       else if (!strcmp(argv[i],"-qsc") && (i<argc-1))  par.qsc=atof(argv[++i]);
       else if (!strcmp(argv[i],"-cov") && (i<argc-1))  par.coverage=atoi(argv[++i]);
       else if (!strcmp(argv[i],"-diff") && (i<argc-1)) par.Ndiff=atoi(argv[++i]);
+      else if (!strcmp(argv[i],"-neff") && (i<argc-1)) par.Neff=atof(argv[++i]); 
+      else if (!strcmp(argv[i],"-Neff") && (i<argc-1)) par.Neff=atof(argv[++i]); 
       else if (!strcmp(argv[i],"-Gonnet")) par.matrix=0;
       else if (!strncmp(argv[i],"-BLOSUM",7) || !strncmp(argv[i],"-Blosum",7))
         {
@@ -1588,23 +1591,22 @@ int main(int argc, char **argv)
       delete(realign);
       // End Realign all hits with MAC algorithm?
       ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    } else {
-
-    // Print for each HMM: n  score  -log2(Pval)  L  name  (n=5:same name 4:same fam 3:same sf...)
-    if (*par.scorefile) {
-      if (v>=3) printf("Printing scores file ...\n");
-      hitlist.PrintScoreFile(q);
+    } 
+  else 
+    {
+      // Print for each HMM: n  score  -log2(Pval)  L  name  (n=5:same name 4:same fam 3:same sf...)
+      if (*par.scorefile) {
+	if (v>=3) printf("Printing scores file ...\n");
+	hitlist.PrintScoreFile(q);
+      }
     }
-  }
-
-
-
-  // Print for each HMM: n  score  -log2(Pval)  L  name  (n=5:same name 4:same fam 3:same sf...)
-  if (*par.scorefile) {
-    if (v>=3) printf("Printing scores file ...\n");
-    hitlist.PrintScoreFile(q);
-  }
-
+  
+  // // Print for each HMM: n  score  -log2(Pval)  L  name  (n=5:same name 4:same fam 3:same sf...)
+  // if (*par.scorefile) {
+  //   if (v>=3) printf("Printing scores file ...\n");
+  //   hitlist.PrintScoreFile(q);
+  // }
+  
   // Print FASTA or A2M alignments?
   if (*par.pairwisealisfile) {
     if (v>=2) cout<<"Printing alignments in "<<(par.outformat==1? "FASTA" : par.outformat==2?"A2M" :"A3M")<<" format to "<<par.pairwisealisfile<<"\n";

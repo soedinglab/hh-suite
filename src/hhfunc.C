@@ -1,5 +1,127 @@
 // hhfunc.C
 
+
+// Calculate secondary structure prediction with PSIpred
+void CalculateSS(char *ss_pred, char *ss_conf, char *tmpfile)
+{
+  // Initialize
+  std::string command;
+  std::string tmpinfile = (std::string)tmpfile + ".fas";
+  std::string tmppsifile = (std::string)tmpfile + ".psi";
+  char line[LINELEN]=""; 
+
+  strcpy(ss_pred," ");
+  strcpy(ss_conf," ");
+  
+  // Create tmp-file
+  char rootname[NAMELEN];
+  RemovePath(rootname,tmpfile);
+
+  // Create dummy-DB if not exists
+  //if (!*dummydb)
+  if( access( par.dummydb, R_OK ) == -1 )
+    {
+      strcpy(par.dummydb,tmpfile);
+      strcat(par.dummydb,"_dummy_db");
+      command = "cp " + tmpinfile + " " + (std::string)par.dummydb;
+      runSystem(command,v);
+      command = (std::string)par.blast + "/formatdb -i " + (std::string)par.dummydb + " -l /dev/null > /dev/null";
+      runSystem(command,v);
+    }
+
+  // Create BLAST checkpoint file
+  command = (std::string)par.blast + "/blastpgp -b 1 -j 1 -h 0.001 -d " + (std::string)par.dummydb + " -i " + tmpinfile + " -B " + tmppsifile + " -C " + (std::string)tmpfile + ".chk 1> /dev/null 2> /dev/null";
+  runSystem(command,v);
+  command = "echo " + (std::string)rootname + ".chk > " + (std::string)tmpfile + ".pn";
+  runSystem(command,v);
+  command = "echo " + (std::string)rootname + ".fas > " + (std::string)tmpfile + ".sn";
+  runSystem(command,v);
+  command =  (std::string)par.blast + "/makemat -P " + (std::string)tmpfile;
+  runSystem(command,v);
+
+  // Run PSIpred
+  command = (std::string)par.psipred + "/psipred " + (std::string)tmpfile + ".mtx " + (std::string)par.psipred_data + "/weights.dat " + (std::string)par.psipred_data + "/weights.dat2 " + (std::string)par.psipred_data + "/weights.dat3 " + (std::string)par.psipred_data + "/weights.dat4 > " + (std::string)tmpfile + ".ss";
+  runSystem(command,v);
+  command = (std::string)par.psipred + "/psipass2 " + (std::string)par.psipred_data + "/weights_p2.dat 1 0.98 1.09 " + (std::string)tmpfile + ".ss2 " + (std::string)tmpfile + ".ss > " + (std::string)tmpfile + ".horiz";
+  runSystem(command,v);
+
+  // Read results
+  char filename[NAMELEN];
+  strcpy(filename,tmpfile);
+  strcat(filename,".horiz");
+  FILE* horizf = fopen(filename,"r");
+  if (!horizf) return;
+
+  while (fgets(line,LINELEN,horizf))
+    {
+      char tmp_seq[NAMELEN]="";
+      char* ptr=line;
+      if (!strncmp(line,"Conf:",5))
+	{
+	  ptr+=5;
+	  strwrd(tmp_seq,ptr);
+	  strcat(ss_conf,tmp_seq);
+	}
+      if (!strncmp(line,"Pred:",5))
+	{
+	  ptr+=5;
+	  strwrd(tmp_seq,ptr);
+	  strcat(ss_pred,tmp_seq);
+	}
+    }
+  fclose(horizf);
+
+  if (v>3)
+    {
+      printf("SS-pred: %s\n",ss_pred);
+      printf("SS-conf: %s\n",ss_conf);
+    }
+
+}
+
+// Calculate secondary structure for given HMM
+void CalculateSS(HMM& q)
+{
+  char ss_pred[MAXRES];
+  char ss_conf[MAXRES];
+
+  char tmpfile[]="/tmp/hhCalcSSXXXXXX";
+  if (mkstemp(tmpfile) == -1) {
+    cerr << "ERROR! Could not create tmp-file!\n"; 
+    exit(4);
+  }
+  
+  char queryfile[NAMELEN];
+  strcpy(queryfile,tmpfile);
+  strcat(queryfile,".fas");
+  char alifile[NAMELEN];
+  strcpy(alifile,tmpfile);
+  strcat(alifile,".psi");
+
+  // Write query-file
+  FILE* outf = fopen(queryfile,"w");
+  if (!outf) OpenFileError(queryfile);
+  fprintf(outf,">%s\n%s\n",q.longname,q.seq[q.nfirst]+1);
+  fclose(outf);
+
+  // Write ali-file
+  HalfAlignment qa;
+  int n = imin(q.n_display,par.nseqdis+(q.nss_dssp>=0)+(q.nss_pred>=0)+(q.nss_conf>=0)+(q.ncons>=0));
+  qa.Set(q.name,q.seq,q.sname,n,q.L,q.nss_dssp,q.nss_pred,q.nss_conf,q.nsa_dssp,q.ncons);
+  qa.BuildA3M();
+  qa.Print(alifile,NULL,"psi");   // print alignment to outfile
+
+  // Calculate secondary structure
+  CalculateSS(ss_pred, ss_conf, tmpfile);
+  
+  q.AddSSPrediction(ss_pred, ss_conf);
+  
+  // Remove temp-files
+  std::string command = "rm " + (std::string)tmpfile + "*";
+  runSystem(command,v);
+}
+
+
 // Read input file (HMM, HHM, or alignment format), and add pseudocounts etc.
 void ReadInput(char* infile, HMM& q, Alignment* qali=NULL)
 {
@@ -72,6 +194,9 @@ void ReadInput(char* infile, HMM& q, Alignment* qali=NULL)
         if (qali==NULL) delete(pali);
     }
     fclose(inf);
+
+    if (par.addss==1)
+      CalculateSS(q);
 
     return;
 }
@@ -204,6 +329,9 @@ void ReadAndPrepare(char* infile, HMM& q, Alignment* qali=NULL)
         if (qali==NULL) delete(pali);
     }
     fclose(inf);
+
+    if (par.addss==1)
+      CalculateSS(q);
 
     if (par.forward>=1) q.Log2LinTransitionProbs(1.0);
     return;

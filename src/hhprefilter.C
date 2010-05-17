@@ -666,7 +666,7 @@ void init_prefilter()
   if (par.prefilt_alphabet == PRE_AA)
     {
       FILE *stream;
-      command = (string)blast + "/fastacmd -d " + (string)db + " -I";
+      command = (string)par.blast + "/fastacmd -d " + (string)db + " -I";
       stream = popen(command.c_str(), "r");
       while (fgets(line, LINELEN, stream))
 	{
@@ -870,9 +870,9 @@ void stripe_query_profile()
 	  q_tmp.fillCountProfile(&counts);
 	}
       
-      // FILE* fout = fopen("count_profile.prf", "w");
-      // counts.Write(fout);
-      // fclose (fout);
+      FILE* fout = fopen("count_profile.prf", "w");
+      counts.Write(fout);
+      fclose (fout);
 
       cs::Emission<cs::AA> emission(context_lib->wlen(), par.csw, par.csb);
 
@@ -881,9 +881,9 @@ void stripe_query_profile()
       //std::cerr << "Profile without PC" << std::endl;
       //std::cerr << as_profile << std::endl;
 
-      // fout = fopen("as_count_profile.ap62", "w");
-      // as_profile.Write(fout);
-      // fclose (fout);
+      fout = fopen("as_count_profile.ap62", "w");
+      as_profile.Write(fout);
+      fclose (fout);
 
       // Divide by background
       query_profile = new float*[LQ+1];
@@ -1253,16 +1253,16 @@ void prefilter_with_BLAST()
   if (!is_regular_file(tmp_psifile.c_str())) 
     {
       if (strcmp(pre_mode,"csblast")) 
-	ss << blast << "/blastpgp -d " << db << " -a " << cpu << " -b " << N_PSI << " -e " << e_psi << " -i " << tmp_infile << " -m 8 2> /dev/null";
+	ss << par.blast << "/blastpgp -d " << db << " -a " << cpu << " -b " << N_PSI << " -e " << e_psi << " -i " << tmp_infile << " -m 8 2> /dev/null";
       else
-	ss << csblast << "/csblast -d " << db << " -a " << cpu << " -b " << N_PSI << " -e " << e_psi << " -i " << tmp_infile << " -m 8 -D " << csblast_db << " --blast-path " << blast << " --no-penalty 2> /dev/null";
+	ss << csblast << "/csblast -d " << db << " -a " << cpu << " -b " << N_PSI << " -e " << e_psi << " -i " << tmp_infile << " -m 8 -D " << csblast_db << " --blast-path " << par.blast << " --no-penalty 2> /dev/null";
     } 
   else
     {
       if (strcmp(pre_mode,"csblast")) 
-	ss << blast << "/blastpgp -d " << db << " -a " << cpu << " -b " << N_PSI << " -e " << e_psi << " -i " << tmp_infile << " -m 8 -B " << tmp_psifile << " 2> /dev/null";
+	ss << par.blast << "/blastpgp -d " << db << " -a " << cpu << " -b " << N_PSI << " -e " << e_psi << " -i " << tmp_infile << " -m 8 -B " << tmp_psifile << " 2> /dev/null";
       else
-	ss << csblast << "/csblast -d " << db << " -a " << cpu << " -b " << N_PSI << " -e " << e_psi << " -i " << tmp_infile << " -m 8 -B " << tmp_psifile << " -D " << csblast_db << " --blast-path " << blast << " --no-penalty 2> /dev/null";
+	ss << csblast << "/csblast -d " << db << " -a " << cpu << " -b " << N_PSI << " -e " << e_psi << " -i " << tmp_infile << " -m 8 -B " << tmp_psifile << " -D " << csblast_db << " --blast-path " << par.blast << " --no-penalty 2> /dev/null";
     }
   
   command = ss.str();
@@ -2559,16 +2559,16 @@ void prefilter_with_BLAST_only()
   if (!is_regular_file(tmp_psifile.c_str())) 
     {
       if (strcmp(pre_mode,"csblast")) 
-	ss << blast << "/blastpgp -d " << db << " -a " << cpu << " -b " << N_PSI << " -e " << e_psi << " -i " << tmp_infile << " -m 8 2> /dev/null";
+	ss << par.blast << "/blastpgp -d " << db << " -a " << cpu << " -b " << N_PSI << " -e " << e_psi << " -i " << tmp_infile << " -m 8 2> /dev/null";
       else
-	ss << csblast << "/csblast -d " << db << " -a " << cpu << " -b " << N_PSI << " -e " << e_psi << " -i " << tmp_infile << " -m 8 -D " << csblast_db << " --blast-path " << blast << " --no-penalty 2> /dev/null";
+	ss << csblast << "/csblast -d " << db << " -a " << cpu << " -b " << N_PSI << " -e " << e_psi << " -i " << tmp_infile << " -m 8 -D " << csblast_db << " --blast-path " << par.blast << " --no-penalty 2> /dev/null";
     } 
   else
     {
       if (strcmp(pre_mode,"csblast")) 
-	ss << blast << "/blastpgp -d " << db << " -a " << cpu << " -b " << N_PSI << " -e " << e_psi << " -i " << tmp_infile << " -m 8 -B " << tmp_psifile << " 2> /dev/null";
+	ss << par.blast << "/blastpgp -d " << db << " -a " << cpu << " -b " << N_PSI << " -e " << e_psi << " -i " << tmp_infile << " -m 8 -B " << tmp_psifile << " 2> /dev/null";
       else
-	ss << csblast << "/csblast -d " << db << " -a " << cpu << " -b " << N_PSI << " -e " << e_psi << " -i " << tmp_infile << " -m 8 -B " << tmp_psifile << " -D " << csblast_db << " --blast-path " << blast << " --no-penalty 2> /dev/null";
+	ss << csblast << "/csblast -d " << db << " -a " << cpu << " -b " << N_PSI << " -e " << e_psi << " -i " << tmp_infile << " -m 8 -B " << tmp_psifile << " -D " << csblast_db << " --blast-path " << par.blast << " --no-penalty 2> /dev/null";
     }
   
   command = ss.str();

@@ -1700,6 +1700,54 @@ float HMM::CalcNeff()
   return fpow2(Neff/L);
 }
 
+/////////////////////////////////////////////////////////////////////////////////////
+// Add secondary structure prediction to alignment (overwrite existing prediction)
+/////////////////////////////////////////////////////////////////////////////////////
+void HMM::AddSSPrediction(char seq_pred[], char seq_conf[])
+{
+  unsigned int i;
+
+  if ((int)strlen(seq_pred)!=L+1)
+    {
+      cerr<<"WARNING! Could not add secondary struture prediction - unequal length!\n";
+      return;
+    }
+
+  if (nss_pred < 0)  // No ss prediction exists
+    {
+      nss_pred=n_display;
+      seq[nss_pred]=new(char[L+2]);
+      strcpy(seq[nss_pred],seq_pred);
+      ss_pred=new(char[L+2]);
+      for (i=0; i<strlen(seq_pred); i++) ss_pred[i]=ss2i(seq_pred[i]);
+      sname[nss_pred]=new(char[50]);
+      strcpy(sname[nss_pred],"ss_pred PSIPRED predicted secondary structure");
+      n_display++;
+    }
+  else  // overwrite existing ss prediction
+    {
+      strcpy(seq[nss_pred],seq_pred);
+      for (i=0; i<strlen(seq_pred); i++) ss_pred[i]=ss2i(seq_pred[i]);
+    }
+
+  if (nss_conf < 0)  // No ss prediction exists
+    {
+      nss_conf=n_display;
+      seq[nss_conf]=new(char[L+2]);
+      strcpy(seq[nss_conf],seq_conf);
+      ss_conf=new(char[L+2]);
+      for (i=0; i<strlen(seq_conf); i++) ss_conf[i]=cf2i(seq_conf[i]);
+      sname[nss_conf]=new(char[50]);
+      strcpy(sname[nss_conf],"ss_conf PSIPRED confidence values");
+      n_display++;
+    }
+  else  // overwrite existing ss prediction
+    {
+      strcpy(seq[nss_conf],seq_conf);
+      for (i=0; i<strlen(seq_conf); i++) ss_conf[i]=cf2i(seq_conf[i]);
+    }
+
+}
 
 
 // #define Weff(Neff) (1.0+par.neffa*(Neff-1.0)+(par.neffb-4.0*par.neffa)/16.0*(Neff-1.0)*(Neff-1.0))
