@@ -634,7 +634,7 @@ void ProcessArguments(int argc, char** argv)
       else if (!strcmp(argv[i],"-realign_max") && (i<argc-1)) par.realign_max = atoi(argv[++i]);
       else if (!strcmp(argv[i],"-e_hh") && (i<argc-1)) par.e = atof(argv[++i]);
       else if (!strcmp(argv[i],"-e_psi") && (i<argc-1)) e_psi = atof(argv[++i]);
-      else if (!strncmp(argv[i],"-nopred",7)) par.showpre=0;
+      else if (!strncmp(argv[i],"-nopred",7)) par.showpred=0;
       else if (!strncmp(argv[i],"-noss",5)) par.showpred=0;
       else if (!strcmp(argv[i],"-seq") && (i<argc-1))  par.nseqdis=atoi(argv[++i]);
       else if (!strcmp(argv[i],"-aliw") && (i<argc-1)) par.aliwidth=atoi(argv[++i]);
