@@ -570,8 +570,8 @@ void SetDefaults()
   par.prefilter_states=20;        
   par.prefilter_score_offset = 50;
   par.prefilter_bit_factor = 4;
-  par.prefilter_evalue_thresh = 100;
-  par.preprefilter_smax_thresh = 30;
+  par.prefilter_evalue_thresh = 1000;
+  par.preprefilter_smax_thresh = 10;
 
   // OLD
   par.prefilter_lmax = 500;

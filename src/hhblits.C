@@ -1821,7 +1821,7 @@ int main(int argc, char **argv)
   SetDefaults();
   par.jdummy = 3;
   par.Ndiff = 1000;
-  par.filter_thresh=0.05;
+  par.filter_thresh=0.01;
   strcpy(pre_mode,"csblast");
   strcpy(par.outfile,"");
   N_searched=0;
