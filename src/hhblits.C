@@ -98,7 +98,7 @@ const char print_elapsed=0;
 char tmp_file[]="/tmp/hhblitsXXXXXX";
 
 // HHblits variables
-const char HHBLITS_VERSION[]="version 2.0.5 (May 2010)";
+const char HHBLITS_VERSION[]="version 2.0.6 (June 2010)";
 const char HHBLITS_REFERENCE[]="to be published.\n";
 const char HHBLITS_COPYRIGHT[]="(C) Michael Remmert and Johannes Soeding\n";
 
@@ -662,6 +662,7 @@ void ProcessArguments(int argc, char** argv)
       else if (!strcmp(argv[i],"-egq") && (i<argc-1)) par.egq=atof(argv[++i]);
       else if (!strcmp(argv[i],"-egt") && (i<argc-1)) par.egt=atof(argv[++i]);
       else if (!strcmp(argv[i],"-as62")) {par.prefilt_alphabet=PRE_AS62;}
+      else if (!strcmp(argv[i],"-as20")) {par.prefilt_alphabet=PRE_AS20;}
       else if (!strcmp(argv[i],"-as_matrix"))
         {
           if (++i>=argc || argv[i][0]=='-')
@@ -1939,6 +1940,9 @@ int main(int argc, char **argv)
     // 	s += as_sm->px(k) * as_sm->py(a) * as_sm->s(k,a);
     // cout << "exptected score = " << s << std::endl;
   }
+  if (par.prefilt_alphabet == PRE_AS20) {
+    as_sm20 = new cs::AbstractStateMatrix<cs::AA>(par.as_matrix);
+  }
 
   if (print_elapsed) ElapsedTimeSinceLastCall("(prepare AS)"); 
 
@@ -2347,6 +2351,10 @@ int main(int argc, char **argv)
 
   if (par.prefilt_alphabet == PRE_AS62) {
     delete as_sm;
+  }
+
+  if (par.prefilt_alphabet == PRE_AS20) {
+    delete as_sm20;
   }
 
   // Delete content of hits in hitlist

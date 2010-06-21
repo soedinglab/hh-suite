@@ -663,7 +663,7 @@ int ungapped_sse_score(const unsigned char* query_profile,
 void init_prefilter()
 {
   // Get Prefilter Pvalue (Evalue / DBsize)
-  if (par.prefilt_alphabet == PRE_AA)
+  if (par.prefilt_alphabet == PRE_AA || par.prefilt_alphabet == PRE_AS20)
     {
       FILE *stream;
       command = (string)par.blast + "/fastacmd -d " + (string)db + " -I";
@@ -730,6 +730,9 @@ void init_prefilter()
     case PRE_AA:
       par.prefilter_states = NAA;
       break;
+    case PRE_AS20:
+      par.prefilter_states = 20;
+      break;
     case PRE_AS62:
       par.prefilter_states = cs::AS62::kSize;
       break;
@@ -756,6 +759,7 @@ void init_prefilter()
       switch (par.prefilt_alphabet)
 	{
 	case PRE_AA: // Amino acid database
+	case PRE_AS20:
 	  while(fgetline(line,LINELEN,dbf)) // read HMM files in pal file
 	    {
 	      if (line[0]=='>')
@@ -834,10 +838,8 @@ void stripe_query_profile()
   float** query_profile = NULL;
   int a,h,i,j,k;
 
-  switch(par.prefilt_alphabet)
+  if (par.prefilt_alphabet==PRE_AA)
     {
-    case PRE_AA:
-
       // Add Pseudocounts
       if (!*par.clusterfile) { //compute context-specific pseudocounts?
 	// Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
@@ -848,17 +850,15 @@ void stripe_query_profile()
 	// Add context specific pseudocounts
 	q_tmp.AddContextSpecificPseudocounts(2,1.5,2,1);
       }
-  
+      
       q_tmp.CalculateAminoAcidBackground();
-
+      
       // Divide by NullModel
       q_tmp.IncludeNullModelInHMM(q_tmp,q_tmp);
-
+      
       query_profile = (float**) q_tmp.p;
-        
-      break;
-
-    case PRE_AS62:
+      
+    } else if (par.prefilt_alphabet==PRE_AS62) {
 
       cs::CountProfile<cs::AA> counts(q_tmp.L);
       if (input_single_sequence) //single sequence, use q_tmp.seq[]
@@ -894,7 +894,31 @@ void stripe_query_profile()
 	for (i=0; i<LQ; i++)
 	  query_profile[i+1][k] = (float)(as_profile.counts[i][k] / as_sm->py(k));    // as_sm.f(k);  0 <= k < AS62::kSize
 
-      break;
+    } else if (par.prefilt_alphabet==PRE_AS20) {
+      
+      cs::CountProfile<cs::AA> counts20(q_tmp.L);
+      if (input_single_sequence) //single sequence, use q_tmp.seq[]
+	{
+	  q_tmp.fillCountProfile(&counts20);
+	}
+      else  // (profile)
+	{
+	  q_tmp.fillCountProfile(&counts20);
+	}
+      
+      cs::Emission<cs::AA> emission20(context_lib->wlen(), par.csw, par.csb);
+      
+      cs::CountProfile<cs::AA> as_profile20(cs::TranslateIntoStateProfile<cs::AA>(counts20, *context_lib, emission20, *as_sm20));
+      
+      // Divide by background
+      query_profile = new float*[LQ+1];
+      for (i=0; i<LQ+1; ++i) 
+	query_profile[i]=(float*) memalign(16,cs::AA::kSize*sizeof(float));
+      
+      for (k=0; k<(int)cs::AA::kSize; ++k)
+	for (i=0; i<LQ; i++)
+	  query_profile[i+1][k] = (float)(as_profile20.counts[i][k] / as_sm20->py(k));    // as_sm.f(k);  0 <= k < AA::kSize
+      
     }
 
 //   printf("\n\nQuery profile:\n        ");

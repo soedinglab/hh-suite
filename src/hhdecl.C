@@ -56,7 +56,7 @@ const int MAXCF=11;     //number of different confidence values: 0-10 (0: no pre
 const int NSA=7;        //number of classes relative solvent accesiblity (0:no coord,  1:<2%, 2:<14%, 3:<33%, 4:<55%, 5:>55%, 6:S-S bridge)
 
 // HHblits prefilter alphabet
-enum pre_alphabets {PRE_AA=0,PRE_AS62=1};
+enum pre_alphabets {PRE_AA=0,PRE_AS62=1,PRE_AS20=2};
 
 /////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////
@@ -263,4 +263,5 @@ cs::ContextLibrary<cs::AA> *context_lib;
 
 #ifdef HHBLITS
 cs::AbstractStateMatrix<cs::AS62> *as_sm;
+cs::AbstractStateMatrix<cs::AA> *as_sm20;
 #endif
