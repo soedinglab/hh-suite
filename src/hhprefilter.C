@@ -851,6 +851,23 @@ void stripe_query_profile()
 	q_tmp.AddContextSpecificPseudocounts(2,1.5,2,1);
       }
       
+      ///////////////////////////////////////////////////
+      // DEBUG
+
+      // cs::CountProfile<cs::AA> counts(q_tmp.L);
+      // for (int i=0; i<q_tmp.L; ++i)
+      // 	{
+      // 	  counts.neff[i] = q_tmp.Neff_M[i+1];
+      // 	  for (int a=0; a<20; ++a)
+      // 	    counts.counts[i][a] = q_tmp.p[i+1][a] * q_tmp.Neff_M[i+1];
+      // 	}
+
+      // FILE* fout = fopen("aa_count_profile.prf", "w");
+      // counts.Write(fout);
+      // fclose (fout);
+
+      ///////////////////////////////////////////////////
+
       q_tmp.CalculateAminoAcidBackground();
       
       // Divide by NullModel
@@ -870,9 +887,9 @@ void stripe_query_profile()
 	  q_tmp.fillCountProfile(&counts);
 	}
       
-      FILE* fout = fopen("count_profile.prf", "w");
-      counts.Write(fout);
-      fclose (fout);
+      // FILE* fout = fopen("count_profile.prf", "w");
+      // counts.Write(fout);
+      // fclose (fout);
 
       cs::Emission<cs::AA> emission(context_lib->wlen(), par.csw, par.csb);
 
@@ -881,9 +898,9 @@ void stripe_query_profile()
       //std::cerr << "Profile without PC" << std::endl;
       //std::cerr << as_profile << std::endl;
 
-      fout = fopen("as_count_profile.ap62", "w");
-      as_profile.Write(fout);
-      fclose (fout);
+      // fout = fopen("as_count_profile.ap62", "w");
+      // as_profile.Write(fout);
+      // fclose (fout);
 
       // Divide by background
       query_profile = new float*[LQ+1];
@@ -909,7 +926,43 @@ void stripe_query_profile()
       cs::Emission<cs::AA> emission20(context_lib->wlen(), par.csw, par.csb);
       
       cs::CountProfile<cs::AA> as_profile20(cs::TranslateIntoStateProfile<cs::AA>(counts20, *context_lib, emission20, *as_sm20));
-      
+
+      float pav[20];
+      // initialize vector of average aa freqs with pseudocounts
+      for (a=0; a<20; ++a) pav[a]=pb[a]*100.0f/q_tmp.Neff_HMM;
+      // calculate averages
+      for (i=1; i<=q_tmp.L; ++i)
+	for (a=0; a<20; ++a)
+          pav[a] += as_profile20.counts[i-1][a];
+      // Normalize vector of average aa frequencies pav[a]
+      NormalizeTo1(pav,20);
+
+      ///////////////////////////////////////////////////
+      // DEBUG
+
+      // FILE* fout = fopen("as20_count_profile.prf", "w");
+      // as_profile20.Write(fout);
+      // fclose (fout);
+
+      // cs::BlosumMatrix b62;
+      // // Print as-matrix
+      // std::cerr << "Blosum62 matrix:" << std::endl;
+      // std::cerr << b62 << std::endl;
+
+      // // Print as-matrix
+      // std::cerr << "Abstract state matrix:" << std::endl;
+      // std::cerr << *as_sm20 << std::endl;
+
+      // std::cerr << "Query background (as20):" << std::endl;
+      // for (a=0; a<20; ++a) 
+      // 	std::cerr << i2aa(a) << "\t\t";
+      // std::cerr << std::endl;
+      // for (a=0; a<20; ++a) 
+      // 	std::cerr << pav[a] << "\t";
+      // std::cerr << std::endl;
+
+      ///////////////////////////////////////////////////
+
       // Divide by background
       query_profile = new float*[LQ+1];
       for (i=0; i<LQ+1; ++i) 
@@ -917,7 +970,8 @@ void stripe_query_profile()
       
       for (k=0; k<(int)cs::AA::kSize; ++k)
 	for (i=0; i<LQ; i++)
-	  query_profile[i+1][k] = (float)(as_profile20.counts[i][k] / as_sm20->py(k));    // as_sm.f(k);  0 <= k < AA::kSize
+	  query_profile[i+1][k] = (float)(as_profile20.counts[i][k] / pav[k]);    // as_sm.f(k);  0 <= k < AA::kSize
+          //query_profile[i+1][k] = (float)(as_profile20.counts[i][k] / as_sm20->py(k));    // as_sm.f(k);  0 <= k < AA::kSize
       
     }
 

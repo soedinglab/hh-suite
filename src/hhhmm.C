@@ -734,7 +734,7 @@ int HMM::ReadHMMer(FILE* dbf, char* filestr)
           if (v>=4)
             {
               printf("\nNULL  ");
-              for (a=0; a<20; ++a) printf("%5.1f ",100.*pb[s2a[a]]);
+              for (a=0; a<20; ++a) printf("%6.3g ",100.*pb[s2a[a]]);
               printf("\n");
             }
         }
@@ -773,7 +773,7 @@ int HMM::ReadHMMer(FILE* dbf, char* filestr)
           if (v>=4)
             {
               printf("       ");
-              for (a=0; a<=D2D && ptr; ++a) printf("%5.1f ",100*fpow2(tr[i][a]));
+              for (a=0; a<=D2D && ptr; ++a) printf("%6.3g ",100*fpow2(tr[i][a]));
               printf("\n");
             }
 
@@ -821,7 +821,7 @@ int HMM::ReadHMMer(FILE* dbf, char* filestr)
               if (v>=4)
                 {
                   printf("%6i ",i);
-                  for (a=0; a<20; ++a) printf("%5.1f ",100*f[i][s2a[a]]);
+                  for (a=0; a<20; ++a) printf("%6.3g ",100*f[i][s2a[a]]);
                   printf("\n");
                 }
 
@@ -897,7 +897,7 @@ int HMM::ReadHMMer(FILE* dbf, char* filestr)
               if (v>=4)
                 {
                   printf("       ");
-                  for (a=0; a<=D2D; ++a) printf("%5.1f ",100*fpow2(tr[i][a]));
+                  for (a=0; a<=D2D; ++a) printf("%6.3g ",100*fpow2(tr[i][a]));
                   printf("\n");
                 }
             }
@@ -1028,6 +1028,462 @@ int HMM::ReadHMMer(FILE* dbf, char* filestr)
   return 1; //return status: ok
 }
 
+/////////////////////////////////////////////////////////////////////////////////////
+//// Read an HMM from a HMMER3 .hmm file; return 0 at end of file
+/////////////////////////////////////////////////////////////////////////////////////
+int HMM::ReadHMMer3(FILE* dbf, char* filestr)
+{
+  char line[LINELEN]="";    // input line
+  char desc[DESCLEN]="";    // description of family
+  char str4[5]="";          // first 4 letters of input line
+  char* ptr;                // pointer for string manipulation
+  int i=0;                  // index for match state (first=1)
+  int a;                    // amino acid index
+  char dssp=0;              // 1 if a consensus SS has been found in the transition prob lines
+  char annot=0;             // 1 if at least one annotation character in insert lines is ne '-' or ' '
+  int k=0;                  // index for seq[k]
+  char* annotchr;           // consensus amino acids in ASCII format, or, in HMMER format, the reference annotation character in insert line
+  annotchr = new char[MAXRES]; // consensus amino acids in ASCII format, or, in HMMER format, the reference annotation character in insert line
+  static int warn=0;
+
+  trans_lin=0;
+  L=0;
+  Neff_HMM=0;
+  n_display=N_in=N_filtered=0;
+  nss_dssp=nsa_dssp=nss_pred=nss_conf=nfirst=ncons=-1;
+  lamda=mu=0.0;
+  trans_lin=0; // transition probs in log space
+  name[0]=longname[0]=desc[0]=fam[0]='\0';
+  //If at the end of while-loop L is still 0 then we have reached end of db file
+
+  // Do not delete name and seq vectors because their adresses are transferred to hitlist as part of a hit!!
+
+  while (fgetline(line,LINELEN-1,dbf) && !(line[0]=='/' && line[1]=='/'))
+    {
+
+      if (strscn(line)==NULL) continue;   // skip lines that contain only white space
+      if (!strncmp("HMMER",line,5)) continue;
+
+      substr(str4,line,0,3);              // copy the first four characters into str4
+
+      if (!strcmp("NAME",str4) && name[0]=='\0')
+        {
+          ptr=strscn(line+4);             // advance to first non-white-space character
+          strncpy(name,ptr,NAMELEN-1);    // copy full name to name
+          strcut(name);                   // ...cut after first word...
+          if (v>=4) cout<<"Reading in HMM "<<name<<":\n";
+        }
+
+      else if (!strcmp("ACC ",str4))
+        {
+          ptr=strscn(line+4);              // advance to first non-white-space character
+          strncpy(longname,ptr,DESCLEN-1); // copy Accession id to longname...
+        }
+
+      else if (!strcmp("DESC",str4))
+        {
+          ptr=strscn(line+4);             // advance to first non-white-space character
+          if (ptr)
+            {
+              strncpy(desc,ptr,DESCLEN-1);   // copy description to name...
+              desc[DESCLEN-1]='\0';
+              strcut(ptr);                   // ...cut after first word...
+            }
+          if (!ptr || ptr[1]!='.' || strchr(ptr+3,'.')==NULL) strcpy(fam,""); else strcpy(fam,ptr); // could not find two '.' in name?
+        }
+
+      else if (!strcmp("LENG",str4))
+        {
+          ptr=line+4;
+          L=strint(ptr);                  //read next integer (number of match states)
+        }
+
+      else if (!strcmp("ALPH",str4)) continue;
+      else if (!strcmp("RF  ",str4)) continue;
+      else if (!strcmp("CS  ",str4)) continue;
+      else if (!strcmp("MAP ",str4)) continue;
+      else if (!strcmp("COM ",str4)) continue;
+      else if (!strcmp("EFFN",str4)) continue;
+      else if (!strcmp("NSEQ",str4))
+        {
+          ptr=line+4;
+          N_in=N_filtered=strint(ptr);    //read next integer: number of sequences after filtering
+        }
+
+      else if (!strcmp("DATE",str4)) continue;
+      else if (!strncmp("CKSUM ",line,5)) continue;
+      else if (!strcmp("GA  ",str4)) continue;
+      else if (!strcmp("TC  ",str4)) continue;
+      else if (!strcmp("NC  ",str4)) continue;
+
+      //////////////////////////////////////////////////////////////////////////////////////////////////////
+      // Still needed???
+
+      else if (!strncmp("SADSS",line,5))
+        {
+          if (nsa_dssp<0)
+            {
+              nsa_dssp=k++;
+              seq[nsa_dssp] = new(char[MAXRES+2]);
+              sname[nsa_dssp] = new(char[15]);
+              strcpy(seq[nsa_dssp]," ");
+              strcpy(sname[nsa_dssp],"sa_dssp");
+
+            }
+          ptr=strscn(line+5);
+          if (ptr)
+            {
+              strcut(ptr);
+              if (strlen(seq[nsa_dssp])+strlen(ptr)>=(unsigned)(MAXRES))
+                printf("\nWARNING: HMM %s has SADSS records with more than %i residues.\n",name,MAXRES);
+              else strcat(seq[nsa_dssp],ptr);
+            }
+        }
+
+      else if (!strncmp("SSPRD",line,5))
+        {
+          if (nss_pred<0)
+            {
+              nss_pred=k++;
+              seq[nss_pred] = new(char[MAXRES+2]);
+              sname[nss_pred] = new(char[15]);
+              strcpy(seq[nss_pred]," ");
+              strcpy(sname[nss_pred],"ss_pred");
+
+            }
+          ptr=strscn(line+5);
+          if (ptr)
+            {
+              strcut(ptr);
+              if (strlen(seq[nss_pred])+strlen(ptr)>=(unsigned)(MAXRES))
+                printf("\nWARNING: HMM %s has SSPRD records with more than %i residues.\n",name,MAXRES);
+              else strcat(seq[nss_pred],ptr);
+            }
+        }
+
+      else if (!strncmp("SSCON",line,5))
+        {
+          if (nss_conf<0)
+            {
+              nss_conf=k++;
+              seq[nss_conf] = new(char[MAXRES+2]);
+              sname[nss_conf] = new(char[15]);
+              strcpy(seq[nss_conf]," ");
+              strcpy(sname[nss_conf],"ss_conf");
+            }
+          ptr=strscn(line+5);
+          if (ptr)
+            {
+              strcut(ptr);
+              if (strlen(seq[nss_conf])+strlen(ptr)>=(unsigned)(MAXRES))
+                printf("\nWARNING: HMM %s has SSPRD records with more than %i residues.\n",name,MAXRES);
+              else strcat(seq[nss_conf],ptr);
+            }
+        }
+
+      else if (!strncmp("SSCIT",line,5)) continue;
+      else if (!strcmp("XT  ",str4)) continue;
+      //////////////////////////////////////////////////////////////////////////////////////////////////////
+
+      else if (!strncmp("STATS LOCAL",line,11)) continue;
+
+      /////////////////////////////////////////////////////////////////////////////////////
+      // Read transition probabilities from start state
+      else if (!strncmp("HMM",line,3))
+        {
+          fgetline(line,LINELEN-1,dbf); // Skip line with amino acid labels
+          fgetline(line,LINELEN-1,dbf); // Skip line with transition labels
+          ptr=strscn(line);
+
+	  if (!strncmp("COMPO",ptr,5))
+	    {
+	      ptr=ptr+5;
+	      for (a=0; a<20 && ptr; ++a)
+		//s2a[a]: transform amino acids Sorted by alphabet -> internal numbers for amino acids
+		pb[s2a[a]] = (float) exp(-1.0*strflta(ptr,99999));
+	      if (!ptr) return Warning(dbf,line,name);
+	      if (v>=4)
+		{
+		  printf("\nNULL ");
+		  for (a=0; a<20; ++a) printf("%6.3g ",100.*pb[s2a[a]]);
+		  printf("\n");
+		}
+	      fgetline(line,LINELEN-1,dbf); // Read next line
+	    }
+	      
+	  fgetline(line,LINELEN-1,dbf); // Skip line with 0-states insert probabilities
+
+	  ptr = strscn(line);
+	  for (a=0; a<=D2D && ptr; ++a)
+	    tr[0][a] = log2((float) exp(-1.0*strflta(ptr,99999))); //store transition probabilites as log2 values
+	  // strinta returns next integer in string and puts ptr to first char
+	  // after the integer. Returns -99999 if '*' is found.
+	  // ptr is set to 0 if no integer is found after ptr.
+          if (!ptr) return Warning(dbf,line,name);
+          if (v>=4)
+            {
+              printf("       ");
+              for (a=0; a<=D2D && ptr; ++a) printf("%6.3g ",100*fpow2(tr[i][a]));
+              printf("\n");
+            }
+	  
+          // Prepare to store DSSP states (if there are none, delete afterwards)
+          nss_dssp=k++;
+          seq[nss_dssp] = new(char[MAXRES+2]);
+          sname[nss_dssp] = new(char[15]);
+          strcpy(sname[nss_dssp],"ss_dssp");
+
+	  /////////////////////////////////////////////////////////////////////////////////////
+          // Read columns of HMM
+          int next_i=0;  // index of next column
+          while (fgetline(line,LINELEN-1,dbf) &&  !(line[0]=='/' && line[1]=='/') && line[0]!='#')
+            {
+              if (strscn(line)==NULL) continue; // skip lines that contain only white space
+
+              // Read in AA probabilities
+              ptr=line;
+              int prev_i = next_i;
+              next_i = strint(ptr); ++i;
+              if (v && next_i!=prev_i+1)
+                if (++warn<5)
+                  {
+                    cerr<<endl<<"WARNING: in HMM "<<name<<" state "<<prev_i<<" is followed by state "<<next_i<<"\n";
+                    if (warn==5) cerr<<endl<<"WARNING: further warnings while reading HMMs will be suppressed.\n";
+                  }
+              if (i>L)
+                {
+                  cerr<<endl<<"Error: in HMM "<<name<<" there are more columns than the stated length "<<L<<"\n";
+                  return 2;
+                }
+              if (i>L && v)
+                cerr<<endl<<"WARNING: in HMM "<<name<<" there are more columns than the stated length "<<L<<"\n";
+              if (i>=MAXRES-2)
+                {
+                  fgetline(line,LINELEN-1,dbf); // Skip two lines
+                  fgetline(line,LINELEN-1,dbf);
+                  continue;
+                }
+
+              for (a=0; a<20 && ptr; ++a)
+                f[i][s2a[a]] = (float) exp(-1.0*strflta(ptr,99999));
+              //s2a[a]: transform amino acids Sorted by alphabet -> internal numbers for amino acids
+              if (!ptr) return Warning(dbf,line,name);
+              if (v>=4)
+                {
+                  printf("%6i ",i);
+                  for (a=0; a<20; ++a) printf("%6.3g ",100*f[i][s2a[a]]);
+                  printf("\n");
+                }
+
+	      // Ignore MAP annotation
+	      ptr = strscn(line); //find next word
+	      ptr = strscn_ws(line); // ignore word
+
+	      // Read RF and CS annotation
+	      ptr = strscn(line);
+              if (!ptr) return Warning(dbf,line,name);
+              annotchr[i]=uprchr(*ptr);
+              if (*ptr!='-' && *ptr!=' ') annot=1;
+
+              ptr = strscn(line);
+              switch (*ptr)
+                {
+                case 'H':
+                  ss_dssp[i]=1;
+                  seq[nss_dssp][i]=*ptr;
+                  dssp=1;
+                  break;
+                case 'E':
+                  ss_dssp[i]=2;
+                  seq[nss_dssp][i]=*ptr;
+                  dssp=1;
+                  break;
+                case 'C':
+                  ss_dssp[i]=3;
+                  seq[nss_dssp][i]=*ptr;
+                  dssp=1;
+                  break;
+                case 'S':
+                  ss_dssp[i]=4;
+                  seq[nss_dssp][i]=*ptr;
+                  dssp=1;
+                  break;
+                case 'T':
+                  ss_dssp[i]=5;
+                  seq[nss_dssp][i]=*ptr;
+                  dssp=1;
+                  break;
+                case 'G':
+                  ss_dssp[i]=6;
+                  seq[nss_dssp][i]=*ptr;
+                  dssp=1;
+                  break;
+                case 'B':
+                  ss_dssp[i]=7;
+                  seq[nss_dssp][i]=*ptr;
+                  dssp=1;
+                  break;
+                case 'I':
+                  dssp=1;
+                case '~':
+                  ss_dssp[i]=3;
+                  seq[nss_dssp][i]=*ptr;
+                  break;
+		case '-': // no SS available from any template
+		case '.': // no clear consensus SS structure
+		case 'X': // no clear consensus SS structure
+		  ss_dssp[i]=0;
+		  seq[nss_dssp][i]='-';
+		  break;
+		default:
+		  ss_dssp[i]=0;
+		  seq[nss_dssp][i]=*ptr;
+		  break;
+               }
+
+              // Read insert emission line
+              fgetline(line,LINELEN-1,dbf);
+
+              // Read seven transition probabilities
+              fgetline(line,LINELEN-1,dbf);
+             
+              ptr+=2;
+              for (a=0; a<=D2D && ptr; ++a)
+                tr[i][a] = log2((float) exp(-1.0*strflta(ptr,99999))); //store transition prob's as log2-values
+              if (!ptr) return Warning(dbf,line,name);
+              if (v>=4)
+                {
+                  printf("       ");
+                  for (a=0; a<=D2D; ++a) printf("%6.3g ",100*fpow2(tr[i][a]));
+                  printf("\n");
+                }
+            }
+
+          if (line[0]=='/' && line[1]=='/') break;
+
+        }
+
+    } //while(getline)
+
+  if (L==0) return 0; //End of db file -> stop reading in
+
+  if (v && i!=L) cerr<<endl<<"Warning: in HMM "<<name<<" there are only "<<i<<" columns while the stated length is "<<L<<"\n";
+  if (v && i>=MAXRES-2) {i=MAXRES-2; cerr<<endl<<"WARNING: maximum number "<<MAXRES-2<<" of residues exceeded while reading HMM "<<name<<"\n";}
+  if (v && !i)  cerr<<endl<<"WARNING: HMM "<<name<<" contains no match states. Check the alignment that gave rise to this HMM.\n";
+  L = i;
+
+  if (strlen(longname)>0) strcat(longname," ");
+  strncat(longname,name,DESCLEN-strlen(longname)-1);  // longname = ACC NAME DESC
+  if (strlen(name)>0) strcat(longname," ");
+  strncat(longname,desc,DESCLEN-strlen(longname)-1);
+  longname[DESCLEN-1]='\0';
+  ScopID(cl,fold,sfam,fam);// get scop classification from basename (e.g. a.1.2.3.4)
+  RemoveExtension(file,filestr); // copy name of dbfile without extension into 'file'
+
+  // Secondary structure
+  if (!dssp)
+    {
+      // remove dssp sequence
+      delete[] seq[nss_dssp];    // memory that had been allocated in case ss_dssp was given needs to be freed
+      delete[] sname[nss_dssp];  // memory that had been allocated in case ss_dssp was given needs to be freed
+      nss_dssp=-1;
+      k--;
+    }
+  else { seq[nss_dssp][0]='-'; seq[nss_dssp][L+1]='\0'; }
+
+  if (nss_pred>=0)
+    {
+      for (i=1; i<=L; ++i) ss_pred[i] = ss2i(seq[nss_pred][i]);
+      if (nss_conf>=0)
+        for (i=1; i<=L; ++i) ss_conf[i] = cf2i(seq[nss_conf][i]);
+      else
+        for (i=1; i<=L; ++i) ss_conf[i] = 5;
+    }
+
+  // Copy query (first sequence) and consensus  residues?
+  if (par.showcons)
+    {
+      sname[k]=new(char[10]);
+      strcpy(sname[k],"Consensus");
+      sname[k+1]=new(char[strlen(longname)+1]);
+      strcpy(sname[k+1],longname);
+      seq[k]=new(char[L+2]);
+      seq[k][0]=' ';
+      seq[k][L+1]='\0';
+      seq[k+1]=new(char[L+2]);
+      seq[k+1][0]=' ';
+      seq[k+1][L+1]='\0';
+      for (i=1; i<=L; ++i)
+        {
+          float pmax=0.0;
+          int amax=0;
+          for (a=0; a<NAA; ++a)
+            if (f[i][a]>pmax) {amax=a; pmax=f[i][a];}
+          if (pmax>0.6) seq[k][i]=i2aa(amax);
+          else if (pmax>0.4) seq[k][i]=lwrchr(i2aa(amax));
+          else seq[k][i]='x';
+          seq[k+1][i]=i2aa(amax);
+        }
+      ncons=k++; // nfirst is set later!
+    }
+  else
+    {
+      sname[k]=new(char[strlen(longname)+1]);
+      strcpy(sname[k],longname);
+      seq[k]=new(char[L+2]);
+      seq[k][0]=' ';
+      seq[k][L+1]='\0';
+    }
+
+  if (annot) // read in some annotation characters?
+    {
+      annotchr[0]=' ';
+      annotchr[L+1]='\0';
+      strcpy(seq[k],annotchr); // overwrite the consensus sequence with the annotation characters
+    }
+  else if (!par.showcons)  // we have not yet calculated the consensus, but we need it now as query (first sequence)
+    {
+      for (i=1; i<=L; ++i)
+        {
+          float pmax=0.0;
+          int amax=0;
+          for (a=0; a<NAA; ++a)
+            if (f[i][a]>pmax) {amax=a; pmax=f[i][a];}
+          seq[k][i]=i2aa(amax);
+        }
+    }
+//   printf("%i query name=%s  seq=%s\n",n,sname[n],seq[n]);
+  nfirst=k++;
+
+  n_display=k;
+
+  ///////////////////////////////////////////////////////////////////
+  // TODO
+
+  // Calculate overall Neff_HMM
+  Neff_HMM=0;
+  for (i=1; i<=L; ++i)
+    {
+      float S=0.0;
+      for (a=0; a<20; ++a)
+        if (f[i][a]>1E-10) S-=f[i][a]*fast_log2(f[i][a]);
+      Neff_HMM+=(float) fpow2(S);
+    }
+  Neff_HMM/=L;
+  for (i=0; i<=L; ++i) Neff_M[i] = Neff_I[i] = Neff_D[i] = 10.0; // to add only little additional pseudocounts!
+  Neff_M[L+1]=1.0f;
+  Neff_I[L+1]=Neff_D[L+1]=0.0f;
+  if (v>=2)
+    cout<<"Read in HMM "<<name<<" with "<<L<<" match states and effective number of sequences = "<<Neff_HMM<<"\n";
+
+  ///////////////////////////////////////////////////////////////////
+
+  // Set emission probabilities of zero'th (begin) state and L+1st (end) state to background probabilities
+  for (a=0; a<20; ++a) f[0][a]=f[L+1][a]=pb[a];
+  delete[] annotchr;
+
+  return 1; //return status: ok
+}
 
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -1266,6 +1722,7 @@ void HMM::CalculateAminoAcidBackground()
   // Normalize vector of average aa frequencies pav[a]
   NormalizeTo1(pav,NAA);
   for (a=0; a<20; ++a) p[0][a] = p[L+1][a] = pav[a];
+
 }
 
 /////////////////////////////////////////////////////////////////////////////////////

@@ -906,7 +906,12 @@ int main(int argc, char **argv)
               ///////////////////////////////////////////////////
               // Read next HMM from database file
               if (!fgetline(line,LINELEN,dbf)) {read_from_db=0; break;}
-              if (!strncmp(line,"HMMER",5))      // read HMMER format
+              if (!strncmp(line,"HMMER3",6))      // read HMMER3 format
+                {
+                  format[bin] = 1;
+                  read_from_db = t[bin]->ReadHMMer3(dbf,dbfiles[idb]);
+                }
+              else if (!strncmp(line,"HMMER",5))      // read HMMER format
                 {
                   format[bin] = 1;
                   read_from_db = t[bin]->ReadHMMer(dbf,dbfiles[idb]);
@@ -1248,7 +1253,12 @@ int main(int argc, char **argv)
               ///////////////////////////////////////////////////
               // Read next HMM from database file
               if (!fgetline(line,LINELEN,dbf)) {fprintf(stderr,"Error: end of file %s reached prematurely!\n",hit_cur.dbfile); exit(1);}
-              if (!strncmp(line,"HMMER",5))      // read HMMER format
+              if (!strncmp(line,"HMMER3",6))      // read HMMER3 format
+                {
+                  format[bin] = 1;
+                  read_from_db = t[bin]->ReadHMMer3(dbf,hit_cur.dbfile);
+                }
+              else if (!strncmp(line,"HMMER",5))      // read HMMER format
                 {
                   format[bin] = 1;
                   read_from_db = t[bin]->ReadHMMer(dbf,hit_cur.dbfile);
@@ -1422,7 +1432,12 @@ int main(int argc, char **argv)
                   ///////////////////////////////////////////////////
                   // Read next HMM from database file
                   if (!fgetline(line,LINELEN,dbf)) {fprintf(stderr,"Error: end of file %s reached prematurely!\n",dbfiles[idb]); exit(1);}
-                  if (!strncmp(line,"HMMER",5))      // read HMMER format
+                  if (!strncmp(line,"HMMER3",6))      // read HMMER3 format
+                    {
+                      format[bin] = 1;
+                      read_from_db = t[bin]->ReadHMMer3(dbf,dbfiles[idb]);
+                    }
+                  else if (!strncmp(line,"HMMER",5))      // read HMMER format
                     {
                       format[bin] = 1;
                       read_from_db = t[bin]->ReadHMMer(dbf,dbfiles[idb]);

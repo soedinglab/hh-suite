@@ -98,7 +98,7 @@ const char print_elapsed=0;
 char tmp_file[]="/tmp/hhblitsXXXXXX";
 
 // HHblits variables
-const char HHBLITS_VERSION[]="version 2.0.6 (June 2010)";
+const char HHBLITS_VERSION[]="version 2.0.7 (June 2010)";
 const char HHBLITS_REFERENCE[]="to be published.\n";
 const char HHBLITS_COPYRIGHT[]="(C) Michael Remmert and Johannes Soeding\n";
 
@@ -994,7 +994,12 @@ void search_loop(char *dbfiles[], int ndb, bool alignByWorker=true)
 	  ///////////////////////////////////////////////////
 	  // Read next HMM from database file
 	  if (!fgetline(line,LINELEN,dbf)) {continue;}
-	  if (!strncmp(line,"HMMER",5))      // read HMMER format
+	  if (!strncmp(line,"HMMER3",6))      // read HMMER3 format
+	    {
+	      format[bin] = 1;
+	      t[bin]->ReadHMMer3(dbf,dbfiles[idb]);
+	    }
+	  else if (!strncmp(line,"HMMER",5))      // read HMMER format
 	    {
 	      format[bin] = 1;
 	      t[bin]->ReadHMMer(dbf,dbfiles[idb]);
@@ -1443,7 +1448,12 @@ void perform_realign(char *dbfiles[], int ndb)
 	  ///////////////////////////////////////////////////
 	  // Read next HMM from database file
 	  if (!fgetline(line,LINELEN,dbf)) {fprintf(stderr,"Error: end of file %s reached prematurely!\n",hit_cur.dbfile); exit(1);}
-	  if (!strncmp(line,"HMMER",5))      // read HMMER format
+	  if (!strncmp(line,"HMMER3",5))      // read HMMER3 format
+	    {
+	      format[bin] = 1;
+	      read_from_db = t[bin]->ReadHMMer3(dbf,hit_cur.dbfile);
+	    }
+	  else if (!strncmp(line,"HMMER",5))      // read HMMER format
 	    {
 	      format[bin] = 1;
 	      read_from_db = t[bin]->ReadHMMer(dbf,hit_cur.dbfile);
@@ -1631,7 +1641,12 @@ void perform_realign(char *dbfiles[], int ndb)
 	      ///////////////////////////////////////////////////
 	      // Read next HMM from database file
 	      if (!fgetline(line,LINELEN,dbf)) {fprintf(stderr,"Error: end of file %s reached prematurely!\n",dbfiles[idb]); exit(1);}
-	      if (!strncmp(line,"HMMER",5))      // read HMMER format
+	      if (!strncmp(line,"HMMER3",5))      // read HMMER3 format
+		{
+		  format[bin] = 1;
+		  read_from_db = t[bin]->ReadHMMer3(dbf,dbfiles[idb]);
+		}
+	      else if (!strncmp(line,"HMMER",5))      // read HMMER format
 		{
 		  format[bin] = 1;
 		  read_from_db = t[bin]->ReadHMMer(dbf,dbfiles[idb]);

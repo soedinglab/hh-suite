@@ -224,8 +224,24 @@ void ReadAndPrepare(char* infile, HMM& q, Alignment* qali=NULL)
 
     fgetline(line,LINELEN-1,inf);
 
-    // Is infile a HMMER file?
-    if (!strncmp(line,"HMMER",5))
+    // Is infile a HMMER3 file?
+    if (!strncmp(line,"HMMER3",6))
+    {
+        if (v>=2) cout<<"Query file is in HMMER3 format\n";
+
+        // Read 'query HMMER file
+        q.ReadHMMer3(inf,path);
+        if (v>=2 && q.Neff_HMM>11.0)
+            fprintf(stderr,"WARNING: HMM %s looks too diverse (Neff=%.1f>11). Better check the underlying alignment... \n",q.name,q.Neff_HMM);
+
+        // Don't add transition pseudocounts to query!!
+        // DON'T ADD amino acid pseudocounts to query: pcm=0!  q.p[i][a] = f[i][a]
+        q.AddAminoAcidPseudocounts(0, par.pca, par.pcb, par.pcc);
+        q.CalculateAminoAcidBackground();
+    }
+
+    // ... or is infile an old HMMER file?
+    else if (!strncmp(line,"HMMER",5))
     {
         if (v>=2) cout<<"Query file is in HMMER format\n";
 

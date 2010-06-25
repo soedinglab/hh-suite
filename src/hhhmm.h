@@ -47,6 +47,9 @@ public:
     // Read an HMM from a HMMer .hmm file; return 0 at end of file
     int ReadHMMer(FILE* dbf, char* filestr=NULL);
 
+    // Read an HMM from a HMMer3 .hmm file; return 0 at end of file
+    int ReadHMMer3(FILE* dbf, char* filestr=NULL);
+
     // Add transition pseudocounts to HMM
     void AddTransitionPseudocounts(float gapd=par.gapd, float gape=par.gape, float gapf=par.gapf, float gapg=par.gapg, float gaph=par.gaph, float gapi=par.gapi, float gapb=par.gapb);
 
@@ -98,7 +101,7 @@ public:
     // Needed for SSE2 prefiltering with HHblits with amino acid alphabet
     float** p;                // p[i][a] = prob of finding amino acid a in column i WITH OPTIMUM pseudocounts
 
-private:
+ private:
     float** f;                // f[i][a] = prob of finding amino acid a in column i WITHOUT pseudocounts
     float** g;                // g[i][a] = prob of finding amino acid a in column i WITH pseudocounts
     //float** p;                // p[i][a] = prob of finding amino acid a in column i WITH OPTIMUM pseudocounts
