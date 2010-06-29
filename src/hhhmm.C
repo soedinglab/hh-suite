@@ -1103,7 +1103,6 @@ int HMM::ReadHMMer3(FILE* dbf, char* filestr)
       else if (!strcmp("CS  ",str4)) continue;
       else if (!strcmp("MAP ",str4)) continue;
       else if (!strcmp("COM ",str4)) continue;
-      else if (!strcmp("EFFN",str4)) continue;
       else if (!strcmp("NSEQ",str4))
         {
           ptr=line+4;
@@ -1186,6 +1185,14 @@ int HMM::ReadHMMer3(FILE* dbf, char* filestr)
       //////////////////////////////////////////////////////////////////////////////////////////////////////
 
       else if (!strncmp("STATS LOCAL",line,11)) continue;
+
+      else if (!strcmp("EFFN",str4))
+	{
+	  ptr=line+4;
+          float effn = strflt(ptr);
+	  // Calculate Neff_HMM by using f(x) = ax^0.1 + bx^0.5 + cx + d  (fitted with scop25 dataset)
+	  Neff_HMM = -1.403534 * pow(effn, 0.1) + 4.428118 * pow(effn, 0.5) - 0.2885410 * effn - 1.108568;
+	}
 
       /////////////////////////////////////////////////////////////////////////////////////
       // Read transition probabilities from start state
@@ -1457,22 +1464,22 @@ int HMM::ReadHMMer3(FILE* dbf, char* filestr)
 
   n_display=k;
 
-  ///////////////////////////////////////////////////////////////////
-  // TODO
-
-  // Calculate overall Neff_HMM
-  Neff_HMM=0;
-  for (i=1; i<=L; ++i)
-    {
-      float S=0.0;
-      for (a=0; a<20; ++a)
-        if (f[i][a]>1E-10) S-=f[i][a]*fast_log2(f[i][a]);
-      Neff_HMM+=(float) fpow2(S);
-    }
-  Neff_HMM/=L;
+  // If no effektive number of sequences is given, calculate Neff_HMM by given profile
+  if (Neff_HMM == 0) {
+    for (i=1; i<=L; ++i)
+      {
+	float S=0.0;
+	for (a=0; a<20; ++a)
+	  if (f[i][a]>1E-10) S-=f[i][a]*fast_log2(f[i][a]);
+	Neff_HMM+=(float) fpow2(S);
+      }
+    Neff_HMM/=L;
+  }
+  
   for (i=0; i<=L; ++i) Neff_M[i] = Neff_I[i] = Neff_D[i] = 10.0; // to add only little additional pseudocounts!
   Neff_M[L+1]=1.0f;
   Neff_I[L+1]=Neff_D[L+1]=0.0f;
+
   if (v>=2)
     cout<<"Read in HMM "<<name<<" with "<<L<<" match states and effective number of sequences = "<<Neff_HMM<<"\n";
 
