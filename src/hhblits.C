@@ -98,7 +98,7 @@ const char print_elapsed=0;
 char tmp_file[]="/tmp/hhblitsXXXXXX";
 
 // HHblits variables
-const char HHBLITS_VERSION[]="version 2.0.7 (June 2010)";
+const char HHBLITS_VERSION[]="version 2.0.8 (June 2010)";
 const char HHBLITS_REFERENCE[]="to be published.\n";
 const char HHBLITS_COPYRIGHT[]="(C) Michael Remmert and Johannes Soeding\n";
 
@@ -422,6 +422,9 @@ void help_all()
   printf(" -pcc  [0,3]    extinction exponent for tau(Neff)  (def=%-.1f)                           \n",par.pcc);
   printf(" -pcw  [0,3]    weight of pos-specificity for pcs  (def=%-.1f)                           \n",par.pcw);
   printf("\n");
+  printf(" -pre_pca [0,1]   PREFILTER pseudocount admixture (def=%-.1f)                            \n",par.pre_pca);
+  printf(" -pre_pcb [1,inf[ PREFILTER threshold for Neff (def=%-.1f)                               \n",par.pre_pcb);
+  printf("\n");
   printf("Gap cost options:                                                                        \n");
   printf(" -gapb [0,inf[  transition pseudocount admixture (def=%-.2f)                             \n",par.gapb);
   printf(" -gapd [0,inf[  Transition pseudocount admixture for opening gap (default=%-.2f)         \n",par.gapd);
@@ -652,6 +655,8 @@ void ProcessArguments(int argc, char** argv)
       else if (!strcmp(argv[i],"-pcb") && (i<argc-1)) par.pcb=atof(argv[++i]);
       else if (!strcmp(argv[i],"-pcc") && (i<argc-1)) par.pcc=atof(argv[++i]);
       else if (!strcmp(argv[i],"-pcw") && (i<argc-1)) par.pcw=atof(argv[++i]);
+      else if (!strcmp(argv[i],"-pre_pca") && (i<argc-1)) par.pre_pca=atof(argv[++i]);
+      else if (!strcmp(argv[i],"-pre_pcb") && (i<argc-1)) par.pre_pcb=atof(argv[++i]);
       else if (!strcmp(argv[i],"-gapb") && (i<argc-1)) { par.gapb=atof(argv[++i]); if (par.gapb<=0.01) par.gapb=0.01;}
       else if (!strcmp(argv[i],"-gapd") && (i<argc-1)) par.gapd=atof(argv[++i]);
       else if (!strcmp(argv[i],"-gape") && (i<argc-1)) par.gape=atof(argv[++i]);
@@ -662,12 +667,19 @@ void ProcessArguments(int argc, char** argv)
       else if (!strcmp(argv[i],"-egq") && (i<argc-1)) par.egq=atof(argv[++i]);
       else if (!strcmp(argv[i],"-egt") && (i<argc-1)) par.egt=atof(argv[++i]);
       else if (!strcmp(argv[i],"-as62")) {par.prefilt_alphabet=PRE_AS62;}
+      else if (!strcmp(argv[i],"-cs62")) {par.prefilt_alphabet=PRE_CS62;}
       else if (!strcmp(argv[i],"-as20")) {par.prefilt_alphabet=PRE_AS20;}
       else if (!strcmp(argv[i],"-as_matrix"))
         {
           if (++i>=argc || argv[i][0]=='-')
             {help() ; cerr<<endl<<"Error in "<<program_name<<": no matrix following -as_matrix\n"; exit(4);}
           else strcpy(par.as_matrix,argv[i]);
+        }
+      else if (!strcmp(argv[i],"-as_lib"))
+        {
+          if (++i>=argc || argv[i][0]=='-')
+            {help() ; cerr<<endl<<"Error in "<<program_name<<": no matrix following -as_lib\n"; exit(4);}
+          else strcpy(par.as_library,argv[i]);
         }
       else if (!strcmp(argv[i],"-filterlen") && (i<argc-1)) 
 	{
@@ -1915,6 +1927,7 @@ int main(int argc, char **argv)
   if (par.nseqdis>MAXSEQDIS-3-par.showcons) par.nseqdis=MAXSEQDIS-3-par.showcons; //3 reserved for secondary structure
   if (par.aliwidth<20) par.aliwidth=20;
   if (par.pca<0.001) par.pca=0.001; // to avoid log(0)
+  if (par.pre_pca<0.001) par.pre_pca=0.001; // to avoid log(0)
   if (par.b>par.B) par.B=par.b;
   if (par.z>par.Z) par.Z=par.z;
 
@@ -1943,6 +1956,14 @@ int main(int argc, char **argv)
     cs::TransformToLog(*context_lib);
     
     lib_pc = new cs::LibraryPseudocounts<cs::AA>(*context_lib, par.csw, par.csb);
+  }
+
+  if (par.prefilt_alphabet == PRE_CS62) {
+    FILE* fin = fopen(par.as_library, "r");
+    if (!fin) OpenFileError(par.as_library);
+    cs_lib = new cs::ContextLibrary<cs::AA>(fin);
+    fclose(fin);
+    cs::TransformToLin(*cs_lib);
   }
 
   if (print_elapsed) ElapsedTimeSinceLastCall("(prepare CS pseudocounts)"); 
@@ -2366,6 +2387,10 @@ int main(int argc, char **argv)
 
   if (par.prefilt_alphabet == PRE_AS62) {
     delete as_sm;
+  }
+
+  if (par.prefilt_alphabet == PRE_CS62) {
+    delete cs_lib;
   }
 
   if (par.prefilt_alphabet == PRE_AS20) {

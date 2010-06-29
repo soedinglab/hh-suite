@@ -56,7 +56,7 @@ const int MAXCF=11;     //number of different confidence values: 0-10 (0: no pre
 const int NSA=7;        //number of classes relative solvent accesiblity (0:no coord,  1:<2%, 2:<14%, 3:<33%, 4:<55%, 5:>55%, 6:S-S bridge)
 
 // HHblits prefilter alphabet
-enum pre_alphabets {PRE_AA=0,PRE_AS62=1,PRE_AS20=2};
+enum pre_alphabets {PRE_AA=0,PRE_AS62=1,PRE_AS20=2,PRE_CS62=3};
 
 /////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////
@@ -121,6 +121,9 @@ public:
   float pcb;              // tau(i) = pca/(1 + ((Neff-1)/pcb)^pcc
   float pcc;              //
   float pcw;              // Decrease pseudocounts for conserved columns
+
+  float pre_pca;          // Pseudocount matrix = (1-tau(i))*I + tau(i)*S   for prefiltering
+  float pre_pcb;          // tau(i) = pca/(1 + ((Neff-1)/pcb)^pcc           for prefiltering
 
   float gapb;             // Diversity threshold for adding pseudocounts to transitions from M state
   float gapd;             // Gap open penalty factor for deletions
@@ -264,4 +267,5 @@ cs::ContextLibrary<cs::AA> *context_lib;
 #ifdef HHBLITS
 cs::AbstractStateMatrix<cs::AS62> *as_sm;
 cs::AbstractStateMatrix<cs::AA> *as_sm20;
+cs::ContextLibrary<cs::AA> *cs_lib;
 #endif

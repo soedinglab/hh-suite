@@ -734,6 +734,7 @@ void init_prefilter()
       par.prefilter_states = 20;
       break;
     case PRE_AS62:
+    case PRE_CS62:
       par.prefilter_states = cs::AS62::kSize;
       break;
     }
@@ -791,6 +792,7 @@ void init_prefilter()
 		}
 	    }
 	  break;
+	case PRE_CS62:
 	case PRE_AS62: // abstract state database
 	  while(fgetline(line,LINELEN,dbf)) // read HMM files in pal file
 	    {
@@ -845,10 +847,10 @@ void stripe_query_profile()
 	// Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
 	q_tmp.PreparePseudocounts();
 	// Add amino acid pseudocounts to query: p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
-	q_tmp.AddAminoAcidPseudocounts(2,1.5,2,1);
+	q_tmp.AddAminoAcidPseudocounts(par.pcm,par.pre_pca,par.pre_pcb,1);
       } else {
 	// Add context specific pseudocounts
-	q_tmp.AddContextSpecificPseudocounts(2,1.5,2,1);
+	q_tmp.AddContextSpecificPseudocounts(par.pcm,par.pre_pca,par.pre_pcb,1);
       }
       
       ///////////////////////////////////////////////////
@@ -874,6 +876,37 @@ void stripe_query_profile()
       q_tmp.IncludeNullModelInHMM(q_tmp,q_tmp);
       
       query_profile = (float**) q_tmp.p;
+      
+    } else if (par.prefilt_alphabet==PRE_CS62) {
+      // Add Pseudocounts
+      if (!*par.clusterfile) { //compute context-specific pseudocounts?
+	// Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
+	q_tmp.PreparePseudocounts();
+	// Add amino acid pseudocounts to query: p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
+	q_tmp.AddAminoAcidPseudocounts(par.pcm,par.pre_pca,par.pre_pcb,1);
+      } else {
+	// Add context specific pseudocounts
+	q_tmp.AddContextSpecificPseudocounts(par.pcm,par.pre_pca,par.pre_pcb,1);
+      }
+      
+      q_tmp.CalculateAminoAcidBackground();
+      
+      // Build query profile with 62 column states
+      query_profile = new float*[LQ+1];
+      for (i=0; i<LQ+1; ++i) 
+	 query_profile[i]=(float*) memalign(16,cs::AS62::kSize*sizeof(float));
+      
+      const cs::ContextLibrary<cs::AA>& lib = *cs_lib;
+
+      // log (S(i,c)) = log ( SUM_a p(i,a) * p(c,a) / f(a) )   c: column state, i: pos in ali, a: amino acid
+      for (i=0; i<LQ; ++i)
+	for (k=0; k<(int)cs::AS62::kSize; ++k)
+	  {
+	    float sum = 0;
+	    for (a=0; a<20; ++a)
+	      sum += ((q_tmp.p[i][a] * lib[k].probs[0][a]) / q_tmp.pav[a]);
+	    query_profile[i+1][k] = sum;
+	  }
       
     } else if (par.prefilt_alphabet==PRE_AS62) {
 
@@ -975,19 +1008,19 @@ void stripe_query_profile()
       
     }
 
-//   printf("\n\nQuery profile:\n        ");
-//   for (int j=1; j <= LQ; j++)
-//     printf(" %4c|", q_tmp.seq[0][j]);
-//   printf("\n");
-//   for (int a=0; a < par.prefilter_states; a++)  
-//     {
-//       printf("a=%3i   ",a);
-//       for (int j=1; j <= LQ; j++)
-//   	{
-//   	  printf("%5.2f|",query_profile[j][a]);
-//   	}
-//       printf("\n");
-//     }
+  // printf("\n\nQuery profile:\n        ");
+  // for (int j=1; j <= LQ; j++)
+  //   printf(" %4c|", q_tmp.seq[0][j]);
+  // printf("\n");
+  // for (int a=0; a < par.prefilter_states; a++)  
+  //   {
+  //     printf("a=%3i   ",a);
+  //     for (int j=1; j <= LQ; j++)
+  // 	{
+  // 	  printf("%5.2f|",query_profile[j][a]);
+  // 	}
+  //     printf("\n");
+  //   }
 
 //   printf("\n\nQuery profile (log):\n        ");
 //   for (int j=1; j <= LQ; j++)
@@ -1003,23 +1036,23 @@ void stripe_query_profile()
 //       printf("\n");
 //     }
 
-//   printf("\n\nQuery profile (log * bit-factor):\n       ");
-//   for (int j=1; j <= LQ; j++)
-//     printf(" %c|", q_tmp.seq[0][j]);
-//   printf("\n");
-//   for (int a=0; a < par.prefilter_states; a++)  
-//     {
-//       printf("a=%2i   ",a);
-//       for (int j=1; j <= LQ; j++)
-//   	{
-//   	  float dummy = flog2(query_profile[j][a])*par.prefilter_bit_factor + par.prefilter_score_offset+0.5;
-//   	  if (dummy>255.99) dummy = 255.5;
-//   	  if (dummy<0) dummy = 0.0;
-//   	  unsigned char c = (unsigned char) dummy;  // 1/3 bits & make scores >=0 everywhere
-//   	  printf("%2i|",(int)c);
-//   	}
-//       printf("\n");
-//     }
+  // printf("\n\nQuery profile (log * bit-factor):\n       ");
+  // for (int j=1; j <= LQ; j++)
+  //   printf(" %c|", q_tmp.seq[0][j]);
+  // printf("\n");
+  // for (int a=0; a < par.prefilter_states; a++)  
+  //   {
+  //     printf("a=%2i   ",a);
+  //     for (int j=1; j <= LQ; j++)
+  // 	{
+  // 	  float dummy = flog2(query_profile[j][a])*par.prefilter_bit_factor + par.prefilter_score_offset+0.5;
+  // 	  if (dummy>255.99) dummy = 255.5;
+  // 	  if (dummy<0) dummy = 0.0;
+  // 	  unsigned char c = (unsigned char) dummy;  // 1/3 bits & make scores >=0 everywhere
+  // 	  printf("%2i|",(int)c);
+  // 	}
+  //     printf("\n");
+  //   }
 
   /////////////////////////////////////////
   // Stripe query profile with chars

@@ -100,6 +100,7 @@ public:
 
     // Needed for SSE2 prefiltering with HHblits with amino acid alphabet
     float** p;                // p[i][a] = prob of finding amino acid a in column i WITH OPTIMUM pseudocounts
+    float pav[NAA];           // pav[a] = average freq of amino acids in HMM (including subst matrix pseudocounts)
 
  private:
     float** f;                // f[i][a] = prob of finding amino acid a in column i WITHOUT pseudocounts
@@ -112,7 +113,6 @@ public:
     char* ss_pred;            // predicted secondary structure          0:-  1:H  2:E  3:C
     char* ss_conf;            // confidence value of prediction         0:-  1:0 ... 10:9
     char* Xcons;              // consensus sequence in internal representation (A=0 R=1 N=2 D=3 ...)
-    float pav[NAA];           // pav[a] = average freq of amino acids in HMM (including subst matrix pseudocounts)
     float pnul[NAA];          // null model probabilities used in comparison (only set in template/db HMMs)
     int* l;                   // l[i] = pos. of j'th match state in aligment
     char dont_delete_seqs;    // set to one if flat copy of seqs and sname was made to a hit object, to avoid deletion

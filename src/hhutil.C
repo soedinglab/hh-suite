@@ -494,6 +494,10 @@ void SetDefaults()
   par.pcc=1.0f;                // pcs are reduced prop. to 1/Neff^pcc
   par.pcw=0.0f;                // wc>0 weighs columns according to their intra-clomun similarity
 
+
+  par.pre_pca=1.5f;            // PREFILTER - default values for substitution matrix pseudocounts 
+  par.pre_pcb=2.0f;            // PREFILTER - significant reduction of pcs by Neff_M starts around Neff_M-1=pcb
+
   par.gapb=1.0;                // default values for transition pseudocounts
   par.gapd=0.15;               // gap open penalty pseudocount; 0.25 corresponds to 7.1*gapf bits
   par.gape=1.0;                // gap extension penalty pseudocount
@@ -607,6 +611,7 @@ void SetDefaults()
   strcpy(par.clusterfile,"");
 
   strcpy(par.as_matrix,"/cluster/user/andreas/data/abstract_states/matrices/nr20f_151208_neff2.5_K62_r0.mat");
+  strcpy(par.as_library,"/cluster/scripts/update_scripts/nr20/nr20_sampled_clusters_neff1.2_W1_N10M_n0_nopc_K62_wcenter1000_gauss_init.lib");
 
   return;
 }
