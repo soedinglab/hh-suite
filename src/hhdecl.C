@@ -55,9 +55,6 @@ const int NSSPRED=4;    //number of different ss states predicted by psipred: 0-
 const int MAXCF=11;     //number of different confidence values: 0-10 (0: no prediction availabe)
 const int NSA=7;        //number of classes relative solvent accesiblity (0:no coord,  1:<2%, 2:<14%, 3:<33%, 4:<55%, 5:>55%, 6:S-S bridge)
 
-// HHblits prefilter alphabet
-enum pre_alphabets {PRE_AA=0,PRE_AS62=1,PRE_AS20=2,PRE_CS62=3};
-
 /////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////
 
@@ -195,13 +192,10 @@ public:
   int coverage_db; 
   int Ndiff_db;    
 
-  // HHblits abstract state prefilter
-  char as_library[NAMELEN];
-  char as_matrix[NAMELEN];
+  // HHblits context state prefilter
+  char cs_library[NAMELEN];
 
   // HHblits prefilter
-  char prefilt_alphabet;      // actual alphabet used for prefiltering
-
   bool early_stopping_filter; // Break HMM search, when the sum of the last N HMM-hit-Evalues is below threshold
 
   double filter_thresh;    // Threshold for early stopping
@@ -224,13 +218,6 @@ public:
   double prefilter_evalue_thresh;
   int preprefilter_smax_thresh;
 
-  // OLD...
-  int prefilter_lmax;              // maximum block length of each DB-Sequence
-  int sse_shading_space;           // space added to the rands of prefilter HSP
-  int prefilter_db_overlap;           // Overlap if DB-Sequence > par.prefilter_lmax
-  int prefilter_smax_thresh;
-  int prefilter_rmax_thresh;
-  
   // SCRAP THE FOLLOWING VARIABLES?
 
   float wstruc;          // weight of structure scores
@@ -265,7 +252,5 @@ cs::LibraryPseudocounts<cs::AA> *lib_pc;
 cs::ContextLibrary<cs::AA> *context_lib;
 
 #ifdef HHBLITS
-cs::AbstractStateMatrix<cs::AS62> *as_sm;
-cs::AbstractStateMatrix<cs::AA> *as_sm20;
 cs::ContextLibrary<cs::AA> *cs_lib;
 #endif

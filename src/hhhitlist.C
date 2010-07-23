@@ -295,6 +295,39 @@ void HitList::PrintScoreFile(HMM& q)
   fclose(scoref);
 }
 
+void HitList::WriteToAlifile(bool scop_only)
+{
+  Hit hit;
+  int i=0;
+  Hash<int> twice(10000); // make sure only one hit per HMM is listed
+  twice.Null(-1);      
+  FILE* alitabf=NULL;
+  if (strcmp(par.alitabfile,"stdout")) alitabf = fopen(par.alitabfile, "w"); else alitabf = stdout;
+  if (!alitabf) OpenFileError(par.alitabfile);
+  Reset();
+  while (!End()) 
+    {
+      i++;
+      hit = ReadNext();
+      if (scop_only && !strncmp(hit.name,"cl|",3)) continue;
+      if (twice[hit.name]==1) continue; // better hit with same HMM has been listed already
+      twice.Add(hit.name,1);
+      if (hit.P_posterior != NULL) {
+	fprintf(alitabf,"\nHit %3i (Name: %10s  LOG-EVAL: %6.2f  Score: %6.2f):\n    i     j  score     SS  probab\n",i,hit.name,-1.443*hit.logEval,hit.score);
+	for (int step=hit.nsteps; step>=1; step--)
+	  if (hit.states[step]>=MM) 
+	    fprintf(alitabf,"%5i %5i %6.2f %6.2f %7.4f\n",hit.i[step],hit.j[step],hit.S[step],hit.S_ss[step],hit.P_posterior[step]);
+      } else { 
+	fprintf(alitabf,"\nHit %3i (Name: %10s  LOG-EVAL: %6.2f  Score: %6.2f):\n    i     j  score     SS\n",i,hit.name,-1.443*hit.logEval,hit.score);
+	for (int step=hit.nsteps; step>=1; step--)
+	  if (hit.states[step]>=MM) 
+	    fprintf(alitabf,"%5i %5i %6.2f %6.2f\n",hit.i[step],hit.j[step],hit.S[step],hit.S_ss[step]);
+      }
+    }
+  fclose(alitabf);
+}
+
+
 /////////////////////////////////////////////////////////////////////////////////////
 //// Evaluate the *negative* log likelihood of the data at the vertex v = (lamda,mu)
 ////    p(s) = lamda * exp{ -exp[-lamda*(s-mu)] - lamda*(s-mu) } = lamda * exp( -exp(-x) - x) 

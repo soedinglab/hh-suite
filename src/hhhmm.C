@@ -55,20 +55,20 @@ HMM::HMM(int maxseqdis, int maxres)
   g = new float*[maxres];         // f[i][a] = prob of finding amino acid a in column i WITH pseudocounts
   p = new float*[maxres];         // p[i][a] = prob of finding amino acid a in column i WITH OPTIMUM pseudocounts
   tr = new float*[maxres];        // log2 of transition probabilities M2M M2I M2D I2M I2I D2M D2D
-//   tr_lin = new float*[maxres];    // linear transition probabilities M2M M2I M2D I2M I2I D2M D2D
+  //   tr_lin = new float*[maxres];    // linear transition probabilities M2M M2I M2D I2M I2I D2M D2D
   for (int i=0; i<maxres; i++) f[i]=new(float[NAA+3]);
   for (int i=0; i<maxres; i++) g[i]=new(float[NAA]);
   // for (int i=0; i<maxres; i++) p[i]=new(float[NAA]);
   // for (int i=0; i<maxres; i++) tr[i]=new(float[NTRANS]);
   for (int i=0; i<maxres; i++) p[i]=(float*) memalign(16,NAA*sizeof(float));  // align memory on 16b boundaries for SSE2
   for (int i=0; i<maxres; i++) tr[i]=(float*) memalign(16,NTRANS*sizeof(float));
-//   for (int i=0; i<maxres; i++) tr_lin[i]=new(float[NTRANS]);
+  //   for (int i=0; i<maxres; i++) tr_lin[i]=new(float[NTRANS]);
   L=0;
   Neff_HMM=0;
-  n_display=N_in=N_filtered=0;
+  n_display=n_seqs=N_in=N_filtered=0;
   nss_dssp=nsa_dssp=nss_pred=nss_conf=nfirst=ncons=-1;
-//   lamda_hash.New(37,0.0); // Set size and NULL element for hash
-//   mu_hash.New(37,0.0);    // Set size and NULL element for hash
+  //   lamda_hash.New(37,0.0); // Set size and NULL element for hash
+  //   mu_hash.New(37,0.0);    // Set size and NULL element for hash
   lamda=0.0; mu=0.0;
   name[0]=longname[0]=fam[0]='\0';
   trans_lin=0; // transition probs in log space
@@ -85,8 +85,8 @@ HMM::~HMM()
   //Delete name and seq matrices
   if (!dont_delete_seqs) // don't delete sname and seq if flat copy to hit object has been made
     {
-      for (int k=0; k<n_display; k++) delete [] sname[k];
-      for (int k=0; k<n_display; k++) delete [] seq[k];
+      for (int k=0; k<n_seqs; k++) delete [] sname[k];
+      for (int k=0; k<n_seqs; k++) delete [] seq[k];
     }
   delete[] sname;
   delete[] seq;
@@ -137,12 +137,13 @@ HMM& HMM::operator=(HMM& q)
       Xcons[i]  =q.Xcons[i];
 
   n_display=q.n_display;
-  for (int k=0; k<n_display; k++) {
+  n_seqs=q.n_seqs;
+  for (int k=0; k<n_seqs; k++) {
     sname[k]=new(char[strlen(q.sname[k])+1]);
     if (!sname[k]) MemoryError("array of names for sequences to display");
     strcpy(sname[k],q.sname[k]);
   }
-  for (int k=0; k<n_display; k++) {
+  for (int k=0; k<n_seqs; k++) {
     seq[k]=new(char[strlen(q.seq[k])+1]);
     if (!seq[k]) MemoryError("array of names for sequences to display");
     strcpy(seq[k],q.seq[k]);
@@ -263,11 +264,11 @@ int HMM::Read(FILE* dbf, char* path)
 
       else if (!strcmp("EVD",str3))
         {
-//        char key[IDLEN];
+	  //        char key[IDLEN];
           sscanf(line+6,"%f %f",&lamda,&mu);
-//        sscanf(line+22,"%s",key);
-//        lamda_hash.Add(key,lamda);
-//        mu_hash.Add(key,mu);
+	  //        sscanf(line+22,"%s",key);
+	  //        lamda_hash.Add(key,lamda);
+	  //        mu_hash.Add(key,mu);
         }
 
       else if (!strcmp("PCT",str3)) { has_pseudocounts=true; }
@@ -303,8 +304,8 @@ int HMM::Read(FILE* dbf, char* path)
                   else
                     {
                       if (nfirst==-1) nfirst=k;
-                      if (n_seq>=par.nseqdis)
-                        {while (fgetline(line,LINELEN-1,dbf) && line[0]!='#'); k--; break;}
+		      //                      if (n_seq>=par.nseqdis)
+                      //  {while (fgetline(line,LINELEN-1,dbf) && line[0]!='#'); k--; break;}
                       n_seq++;
                     }
 
@@ -410,6 +411,9 @@ int HMM::Read(FILE* dbf, char* path)
                   cur_seq[l]='\0';  //Ensure that cur_seq ends with a '\0' character
 
                 } //end else
+
+	      if (n_seq<=par.nseqdis)
+		n_display=k+1;
             } //while(getline)
           //If this is not the first sequence some residues have already been read in
           if (k>=0) {
@@ -417,7 +421,7 @@ int HMM::Read(FILE* dbf, char* path)
             if (!seq[k]) MemoryError("array of sequences to display");
             strcpy(seq[k],cur_seq);
           }
-          n_display=k+1;
+	  n_seqs=k+1;
 
           // DEBUG
           if (v>=4)
@@ -473,9 +477,9 @@ int HMM::Read(FILE* dbf, char* path)
 
           for (a=0; a<=D2D && ptr; ++a)
             tr[0][a] = float(-strinta(ptr))/HMMSCALE; //store transition probabilites as log2 values
-            // strinta returns next integer in string and puts ptr to first char
-            // after the integer. Returns -99999 if '*' is found.
-            // ptr is set to 0 if no integer is found after ptr.
+	  // strinta returns next integer in string and puts ptr to first char
+	  // after the integer. Returns -99999 if '*' is found.
+	  // ptr is set to 0 if no integer is found after ptr.
           Neff_M[0] = float(strinta(ptr))/HMMSCALE;  // Read eff. number of sequences with M->? transition
           Neff_I[0] = float(strinta(ptr))/HMMSCALE;  // Read eff. number of sequences with I->? transition
           Neff_D[0] = float(strinta(ptr))/HMMSCALE;  // Read eff. number of sequences with D->? transition
@@ -510,7 +514,7 @@ int HMM::Read(FILE* dbf, char* path)
                 }
 
               for (a=0; a<20 && ptr; ++a)
-//              f[i][s2a[a]] = (float)pow(2.,float(-strinta(ptr))/HMMSCALE);
+		//              f[i][s2a[a]] = (float)pow(2.,float(-strinta(ptr))/HMMSCALE);
                 f[i][s2a[a]] = fpow2(float(-strinta(ptr))/HMMSCALE);       // speed-up ~5 s for 10000 SCOP domains
 
               //s2a[a]: transform amino acids Sorted by alphabet -> internal numbers for amino acids
@@ -532,6 +536,7 @@ int HMM::Read(FILE* dbf, char* path)
               for (a=0; a<=D2D && ptr; ++a)
                 tr[i][a] = float(-strinta(ptr))/HMMSCALE; //store transition prob's as log2-values
               Neff_M[i] = float(strinta(ptr))/HMMSCALE;  // Read eff. number of sequences with M->? transition
+	      if (Neff_M[i] == 0) { Neff_M[i] = 1; }
               Neff_I[i] = float(strinta(ptr))/HMMSCALE;  // Read eff. number of sequences with I->? transition
               Neff_D[i] = float(strinta(ptr))/HMMSCALE;  // Read eff. number of sequences with D->? transition
               if (!ptr) return Warning(dbf,line,name);
@@ -551,8 +556,8 @@ int HMM::Read(FILE* dbf, char* path)
   if (L==0) return 0; //End of db file -> stop reading in
 
   // Set coefficients of EVD (= 0.0 if not calibrated for these parameters)
-//   lamda = lamda_hash.Show(par.Key());
-//   mu    = mu_hash.Show(par.Key());
+  //   lamda = lamda_hash.Show(par.Key());
+  //   mu    = mu_hash.Show(par.Key());
   if (lamda && v>=3) printf("HMM %s is already calibrated: lamda=%-5.3f, mu=%-5.2f\n",name,lamda,mu);
 
   if (v && i!=L) cerr<<endl<<"Warning: in HMM "<<name<<" there are only "<<i<<" columns while the stated length is "<<L<<"\n";
@@ -592,7 +597,7 @@ int HMM::ReadHMMer(FILE* dbf, char* filestr)
   trans_lin=0;
   L=0;
   Neff_HMM=0;
-  n_display=N_in=N_filtered=0;
+  n_seqs=n_display=N_in=N_filtered=0;
   nss_dssp=nsa_dssp=nss_pred=nss_conf=nfirst=ncons=-1;
   lamda=mu=0.0;
   trans_lin=0; // transition probs in log space
@@ -764,9 +769,9 @@ int HMM::ReadHMMer(FILE* dbf, char* filestr)
           ptr=line;
           for (a=0; a<=M2D && ptr; ++a)
             tr[0][a] = float(strinta(ptr,-99999))/HMMSCALE; //store transition probabilites as log2 values
-            // strinta returns next integer in string and puts ptr to first char
-            // after the integer. Returns -99999 if '*' is found.
-            // ptr is set to 0 if no integer is found after ptr.
+	  // strinta returns next integer in string and puts ptr to first char
+	  // after the integer. Returns -99999 if '*' is found.
+	  // ptr is set to 0 if no integer is found after ptr.
           tr[0][I2M] = tr[0][D2M] = 0.0;
           tr[0][I2I] = tr[0][D2D] = -99999.0;
           if (!ptr) return Warning(dbf,line,name);
@@ -882,13 +887,13 @@ int HMM::ReadHMMer(FILE* dbf, char* filestr)
 		case '.': // no clear consensus SS structure
 		case 'X': // no clear consensus SS structure
 		  ss_dssp[i]=0;
-		  seq[nss_dssp][i]='-';
-		  break;
+		seq[nss_dssp][i]='-';
+		break;
 		default:
 		  ss_dssp[i]=0;
 		  seq[nss_dssp][i]=*ptr;
 		  break;
-               }
+		}
 
               ptr+=2;
               for (a=0; a<=D2D && ptr; ++a)
@@ -1000,10 +1005,11 @@ int HMM::ReadHMMer(FILE* dbf, char* filestr)
           seq[k][i]=i2aa(amax);
         }
     }
-//   printf("%i query name=%s  seq=%s\n",n,sname[n],seq[n]);
+  //   printf("%i query name=%s  seq=%s\n",n,sname[n],seq[n]);
   nfirst=k++;
 
   n_display=k;
+  n_seqs=k;
 
   // Calculate overall Neff_HMM
   Neff_HMM=0;
@@ -1024,6 +1030,8 @@ int HMM::ReadHMMer(FILE* dbf, char* filestr)
   // Set emission probabilities of zero'th (begin) state and L+1st (end) state to background probabilities
   for (a=0; a<20; ++a) f[0][a]=f[L+1][a]=pb[a];
   delete[] annotchr;
+
+  has_pseudocounts=true;
 
   return 1; //return status: ok
 }
@@ -1049,7 +1057,7 @@ int HMM::ReadHMMer3(FILE* dbf, char* filestr)
   trans_lin=0;
   L=0;
   Neff_HMM=0;
-  n_display=N_in=N_filtered=0;
+  n_seqs=n_display=N_in=N_filtered=0;
   nss_dssp=nsa_dssp=nss_pred=nss_conf=nfirst=ncons=-1;
   lamda=mu=0.0;
   trans_lin=0; // transition probs in log space
@@ -1340,13 +1348,13 @@ int HMM::ReadHMMer3(FILE* dbf, char* filestr)
 		case '.': // no clear consensus SS structure
 		case 'X': // no clear consensus SS structure
 		  ss_dssp[i]=0;
-		  seq[nss_dssp][i]='-';
-		  break;
+		seq[nss_dssp][i]='-';
+		break;
 		default:
 		  ss_dssp[i]=0;
 		  seq[nss_dssp][i]=*ptr;
 		  break;
-               }
+		}
 
               // Read insert emission line
               fgetline(line,LINELEN-1,dbf);
@@ -1459,10 +1467,11 @@ int HMM::ReadHMMer3(FILE* dbf, char* filestr)
           seq[k][i]=i2aa(amax);
         }
     }
-//   printf("%i query name=%s  seq=%s\n",n,sname[n],seq[n]);
+  //   printf("%i query name=%s  seq=%s\n",n,sname[n],seq[n]);
   nfirst=k++;
 
   n_display=k;
+  n_seqs=k;
 
   // If no effektive number of sequences is given, calculate Neff_HMM by given profile
   if (Neff_HMM == 0) {
@@ -1488,6 +1497,8 @@ int HMM::ReadHMMer3(FILE* dbf, char* filestr)
   // Set emission probabilities of zero'th (begin) state and L+1st (end) state to background probabilities
   for (a=0; a<20; ++a) f[0][a]=f[L+1][a]=pb[a];
   delete[] annotchr;
+
+  has_pseudocounts=true;
 
   return 1; //return status: ok
 }
@@ -1527,13 +1538,13 @@ void HMM::AddTransitionPseudocounts(float gapd, float gape, float gapf, float ga
       if (i==L) p1=p2=0;       //from M(L) no transition to D(L+1) and I(L+1) possible
       sum = p0+p1+p2+FLT_MIN;
 
-//       p0 = p0/sum ;
-//       p1 = pow(p1/sum,gapf);
-//       p2 = pow(p2/sum,gapg);
-//       sum = p0+p1+p2+FLT_MIN;
-//       tr[i][M2M] = fast_log2(p0/sum);
-//       tr[i][M2D] = fast_log2(p1/sum);
-//       tr[i][M2I] = fast_log2(p2/sum);
+      //       p0 = p0/sum ;
+      //       p1 = pow(p1/sum,gapf);
+      //       p2 = pow(p2/sum,gapg);
+      //       sum = p0+p1+p2+FLT_MIN;
+      //       tr[i][M2M] = fast_log2(p0/sum);
+      //       tr[i][M2D] = fast_log2(p1/sum);
+      //       tr[i][M2I] = fast_log2(p2/sum);
 
       tr[i][M2M] = fast_log2(p0/sum);
       tr[i][M2D] = fast_log2(p1/sum)*gapf;
@@ -1544,11 +1555,11 @@ void HMM::AddTransitionPseudocounts(float gapd, float gape, float gapf, float ga
       p1 = Neff_I[i]*fpow2(tr[i][I2I]) + gapb*pI2I;
       sum = p0+p1+FLT_MIN;
 
-//       p0 = pow(p0/sum,gapg);
-//       p1 = pow(p1/sum,gapi);
-//       sum = p0+p1+FLT_MIN;
-//       tr[i][I2M] = fast_log2(p0/sum);
-//       tr[i][I2I] = fast_log2(p1/sum);
+      //       p0 = pow(p0/sum,gapg);
+      //       p1 = pow(p1/sum,gapi);
+      //       sum = p0+p1+FLT_MIN;
+      //       tr[i][I2M] = fast_log2(p0/sum);
+      //       tr[i][I2I] = fast_log2(p1/sum);
 
       tr[i][I2M] = fast_log2(p0/sum);
       tr[i][I2I] = fast_log2(p1/sum)*gapi;
@@ -1559,11 +1570,11 @@ void HMM::AddTransitionPseudocounts(float gapd, float gape, float gapf, float ga
       if (i==L) p1=0;          //from D(L) no transition to D(L+1) possible
       sum = p0+p1+FLT_MIN;
 
-//       p0 = pow(p0/sum,gapf);
-//       p1 = pow(p1/sum,gaph);
-//       sum = p0+p1+FLT_MIN;
-//       tr[i][D2M] = fast_log2(p0/sum);
-//       tr[i][D2D] = fast_log2(p1/sum);
+      //       p0 = pow(p0/sum,gapf);
+      //       p1 = pow(p1/sum,gaph);
+      //       sum = p0+p1+FLT_MIN;
+      //       tr[i][D2M] = fast_log2(p0/sum);
+      //       tr[i][D2D] = fast_log2(p1/sum);
 
       tr[i][D2M] = fast_log2(p0/sum);
       tr[i][D2D] = fast_log2(p1/sum)*gaph;
@@ -1601,10 +1612,10 @@ void HMM::PreparePseudocounts()
   for (int i=0; i<=L+1; ++i)
     for (int a=0; a<20; ++a)
       g[i][a] = // produces fast code
-       R[a][0]*f[i][0]  +R[a][1]*f[i][1]  +R[a][2]*f[i][2]  +R[a][3]*f[i][3]  +R[a][4]*f[i][4]
-      +R[a][5]*f[i][5]  +R[a][6]*f[i][6]  +R[a][7]*f[i][7]  +R[a][8]*f[i][8]  +R[a][9]*f[i][9]
-      +R[a][10]*f[i][10]+R[a][11]*f[i][11]+R[a][12]*f[i][12]+R[a][13]*f[i][13]+R[a][14]*f[i][14]
-      +R[a][15]*f[i][15]+R[a][16]*f[i][16]+R[a][17]*f[i][17]+R[a][18]*f[i][18]+R[a][19]*f[i][19];
+	R[a][0]*f[i][0]  +R[a][1]*f[i][1]  +R[a][2]*f[i][2]  +R[a][3]*f[i][3]  +R[a][4]*f[i][4]
+	+R[a][5]*f[i][5]  +R[a][6]*f[i][6]  +R[a][7]*f[i][7]  +R[a][8]*f[i][8]  +R[a][9]*f[i][9]
+	+R[a][10]*f[i][10]+R[a][11]*f[i][11]+R[a][12]*f[i][12]+R[a][13]*f[i][13]+R[a][14]*f[i][14]
+	+R[a][15]*f[i][15]+R[a][16]*f[i][16]+R[a][17]*f[i][17]+R[a][18]*f[i][18]+R[a][19]*f[i][19];
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -1686,7 +1697,7 @@ void HMM::AddContextSpecificPseudocounts(char pcm, float pca, float pcb, float p
                   sum+=f[i][a];
                   printf("%4.1f ",100*f[i][a]);
                 }
-              printf("  sum=%5.3f\n",sum);
+              printf("  sum=%5.3f   Neff_M=%4.2f\n",sum,Neff_M[i]);
             }
           cout<<"\nAmino acid frequencies WITH pseudocounts:\n       A    R    N    D    C    Q    E    G    H    I    L    K    M    F    P    S    T    W    Y    V\n";
           for (i=1; i<=L; ++i)
@@ -1701,9 +1712,12 @@ void HMM::AddContextSpecificPseudocounts(char pcm, float pca, float pcb, float p
               printf("  sum=%5.3f\n",sum);
             }
         }
-   }
+    }
 }
 
+/////////////////////////////////////////////////////////////////////////////////////
+// Fill CountProfile with actual aa-frequencies
+/////////////////////////////////////////////////////////////////////////////////////
 void HMM::fillCountProfile(cs::CountProfile<cs::AA> *csProfile)
 {
   for (int i=0; i<L; ++i)
@@ -1719,13 +1733,13 @@ void HMM::fillCountProfile(cs::CountProfile<cs::AA> *csProfile)
 /////////////////////////////////////////////////////////////////////////////////////
 void HMM::CalculateAminoAcidBackground()
 {
-    int a, i;
+  int a, i;
   // initialize vector of average aa freqs with pseudocounts
   for (a=0; a<20; ++a) pav[a]=pb[a]*100.0f/Neff_HMM;
   // calculate averages
   for (i=1; i<=L; ++i)
-      for (a=0; a<20; ++a)
-          pav[a] += p[i][a];
+    for (a=0; a<20; ++a)
+      pav[a] += p[i][a];
   // Normalize vector of average aa frequencies pav[a]
   NormalizeTo1(pav,NAA);
   for (a=0; a<20; ++a) p[0][a] = p[L+1][a] = pav[a];
@@ -1784,7 +1798,7 @@ void HMM::AddAminoAcidPseudocounts(char pcm, float pca, float pcb, float pcc)
             p[i][a] = (1.-tau)*f[i][a] + tau * g[i][a];
         }
       if (v>=2) { printf("Divergence before / after addition of amino acid pseudocounts: %5.2f / %5.2f\n",Neff_HMM, CalcNeff()); }
-     break;
+      break;
     } //end switch (pcm)
 
 
@@ -1834,7 +1848,7 @@ void HMM::AddAminoAcidPseudocounts(char pcm, float pca, float pcb, float pcc)
               printf("  sum=%5.3f\n",sum);
             }
         }
-   }
+    }
   return;
 }
 
@@ -1871,7 +1885,7 @@ void HMM::IncludeNullModelInHMM(HMM& q, HMM& t, int columnscore )
       for (a=0; a<20; ++a) pnul[a]=sqrt(q.pav[a]*t.pav[a]);
       break;
 
-   case 10: // Separated column scoring for Stochastic Backtracing (STILL USED??)
+    case 10: // Separated column scoring for Stochastic Backtracing (STILL USED??)
       for (i=0; i<=q.L+1; ++i)
         {
           float sum = 0.0;
@@ -1892,7 +1906,7 @@ void HMM::IncludeNullModelInHMM(HMM& q, HMM& t, int columnscore )
       for (a=0; a<20; ++a) pnul[a]=0.05;
       break;
 
-   }
+    }
 
   // !!!!! ATTENTION!!!!!!!  after this t.p is not the same as after adding pseudocounts !!!
   //Introduce amino acid weights into template (for all but SOP scores)
@@ -1952,7 +1966,7 @@ void HMM::WriteToFile(char* outfile)
     outf = stdout;
   if (v>=2) cout<<"Writing HMM to "<<outfile<<"\n";
 
-//   fprintf(outf,"HHsearch HHM format 1.5\n");
+  //   fprintf(outf,"HHsearch HHM format 1.5\n");
   fprintf(outf,"HHsearch 1.6\n");         // format specification
   fprintf(outf,"NAME  %s\n",longname);    // name of first sequence
   fprintf(outf,"FAM   %s\n",fam);         // family name
@@ -2129,9 +2143,9 @@ void HMM::NeutralizeTags()
       for (; (*pt)!='H'; ++i,++pt)      // neutralize His columns
         for (a=0; a<NAA; ++a) p[i][a]=pb[a];
       i0=i;
-       for (; i<imin(i0+5,L+1); ++i)    // neutralize trailing 5 columns
+      for (; i<imin(i0+5,L+1); ++i)    // neutralize trailing 5 columns
         for (a=0; a<NAA; ++a) p[i][a]=pb[a];
-       if (v>=3) printf("start:%i  end:%i\n",imax(i0-5,1),i-1);
+      if (v>=3) printf("start:%i  end:%i\n",imax(i0-5,1),i-1);
     }
 
   // Neutralize C-myc tag

@@ -403,7 +403,7 @@ void ReadDefaultsFile(int& argc_conf, char** argv_conf)
   if (!strncmp(line,program_name,6))
     {
       // Read in options until end-of-file or empty line
-        while (fgets(line,LINELEN,configf) && strcmp(line,"\n"))
+      while (fgets(line,LINELEN,configf) && strcmp(line,"\n"))
         {
           // Analyze line
           c=line;
@@ -428,20 +428,20 @@ void ReadDefaultsFile(int& argc_conf, char** argv_conf)
               c++;
             } while (1);
         } //end read line
-     if (v>=3)
+      if (v>=3)
         {
           cout<<"Arguments read in from .hhdefaults:";
           for (int argc=1; argc<argc_conf; argc++) cout<<(argv_conf[argc][0]=='-'? " ":"")<<argv_conf[argc]<<" ";
           cout<<"\n";
         }
-     else if (v>=3) cout<<"Read in "<<argc_conf<<" default arguments for "<<program_name<<" from "<<filename<<"\n";
-     }
+      else if (v>=3) cout<<"Read in "<<argc_conf<<" default arguments for "<<program_name<<" from "<<filename<<"\n";
+    }
   else //found no line 'program_name   anything"
     {
       if (v>=3) cerr<<endl<<"Warning: no default options for \'"<<program_name<<"\' found in "<<filename<<"\n";
       return; //no line 'program_name   anything' found
     }
-//   configf.close();
+  //   configf.close();
   fclose(configf);
 }
 
@@ -543,16 +543,12 @@ void SetDefaults()
 
   par.notags=1;                // neutralize His-tags, FLAG-tags, C-myc-tags
 
-   // Directories for SS-prediction
+  // Directories for SS-prediction
   par.addss=0;
-  strcpy(par.blast,"/cluster/bioprogs/blast/bin");
   strcpy(par.psipred,"/cluster/bioprogs/psipred/bin");
   strcpy(par.psipred_data,"/cluster/bioprogs/psipred/data");
-  strcpy(par.dummydb,"/cluster/databases/do_not_delete/do_not_delete");
 
   // HHblits parameters
-  par.prefilt_alphabet = PRE_AA;
-
   par.hhblits_prefilter_logpval=0;
 
   par.early_stopping_filter = true;
@@ -571,18 +567,11 @@ void SetDefaults()
   // For HHblits prefiltering with SSE2
   par.prefilter_gap_open = 20;
   par.prefilter_gap_extend = 4;
-  par.prefilter_states=20;        
+  par.prefilter_states = cs::AS62::kSize;
   par.prefilter_score_offset = 50;
   par.prefilter_bit_factor = 4;
   par.prefilter_evalue_thresh = 1000;
   par.preprefilter_smax_thresh = 10;
-
-  // OLD
-  par.prefilter_lmax = 500;
-  par.prefilter_db_overlap=100;   
-  par.sse_shading_space = 50;         
-  par.prefilter_smax_thresh = 55;
-  par.prefilter_rmax_thresh = 50;
 
   // for filtering database alignments in HHsearch and HHblits
   par.max_seqid_db=par.max_seqid;
@@ -608,13 +597,9 @@ void SetDefaults()
   // parameters for context-specific pseudocounts
   par.csb = 0.85;
   par.csw = 1.6;
-  strcpy(par.clusterfile,"");
+  strcpy(par.clusterfile,"/cluster/user/michael/hh/cs/data/K4000.lib");
 
-  strcpy(par.as_matrix,"/cluster/user/andreas/data/abstract_states/matrices/nr20f_151208_neff2.5_K62_r0.mat");
-  strcpy(par.as_library,"/cluster/scripts/update_scripts/nr20/nr20_sampled_clusters_neff1.2_W1_N10M_n0_nopc_K62_wcenter1000_gauss_init.lib");
+  strcpy(par.cs_library,"/cluster/scripts/update_scripts/nr20/nr20_sampled_clusters_neff1.2_W1_N10M_n0_nopc_K62_wcenter1000_gauss_init.lib");
 
   return;
 }
-
-
-

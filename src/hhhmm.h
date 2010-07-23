@@ -10,6 +10,7 @@ public:
     HMM& operator=(HMM&);
 
     int n_display;            // number of sequences stored for display of alignment (INCLUDING >ss_ and >cf_ sequences)
+    int n_seqs;               // number of sequences read in (INCLUDING >ss_ and >cf_ sequences)
     char** sname;             // names of stored sequences
     char** seq;               // residues of stored sequences (first at pos 1!)
     int ncons;                // index of consensus sequence

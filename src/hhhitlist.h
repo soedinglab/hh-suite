@@ -31,6 +31,9 @@ public:
   // Print score distribution into file score_dist
   void PrintScoreFile(HMM& q);
   
+  // Write alignments in tabular output
+  void WriteToAlifile(bool scop_only=false);
+
   // Log likelihood for fitting the EVD to the score distribution
   double LogLikelihoodEVD(double* v);
   // Static wrapper-function for calling the nonstatic member function LogLikelihoodEVD()
