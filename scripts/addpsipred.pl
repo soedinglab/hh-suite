@@ -207,7 +207,7 @@ else
     my @lines;
     my $length;
     my $query;
-    my $scale=0.13; # empirically determined scale factor between HMMER bit score and PSI-BLAST score
+    my $scale=0.13; # empirically determined scale factor between HMMER bit score and PSI-BLAST score, 0.3 for HMMER3
     my $acc;
     my $name;
     my $desc;
@@ -222,28 +222,72 @@ else
 	while ($line && $line!~/^HMMER/ && $line!~/^NAME /) {
 	    $line=<INFILE>; 
 	}
-	if ($line!~/^HMMER/ && $line!~/^NAME /) {last;}  # first line in each model must begin with 'HMMER...'
-	@logoddsmat=();
-	@lines=($line); 
+	if ($line=~/^HMMER3/) {
 
-	while ($line=<INFILE>) {push(@lines,$line); if ($line=~/^LENG/) {last;}}
-	$line=~/^LENG\s+(\d+)/;
-	$length=$1;  # number of match states in HMM
-	$query="";   # query residues from NULL emission lines
-	while ($line=<INFILE>) {push(@lines,$line); if ($line=~/^\s*m->m/) {last;}}
-	push(@lines,$line=<INFILE>);
-	while ($line=<INFILE>) {
-	    push(@lines,$line); 
-	    if ($line=~/^\/\//) {last;}
-	    $line=~s/^\s*\d+\s+(\S.*\S)\s*$/$1/;
-	    my @logodds = split(/\s+/,$line);
-	    push(@logoddsmat,\@logodds);
+	    $scale = 0.3;
+	    @logoddsmat=();
+	    @lines=($line); 
+	    
+	    while ($line=<INFILE>) {push(@lines,$line); if ($line=~/^LENG/) {last;}}
+	    $line=~/^LENG\s+(\d+)/;
+	    $length=$1;  # number of match states in HMM
+	    $query="";   # query residues from NULL emission lines
+	    while ($line=<INFILE>) {push(@lines,$line); if ($line=~/^\s*m->m/) {last;}}
 	    push(@lines,$line=<INFILE>);
-	    $line=~/^\s*(\S)/;
-	    $query .= $1;
+	    if ($line !~ /^\s*COMPO/) {
+		die("Error: need null-model probablities (Parameter COMPO)!\n");
+	    }
+	    $line=~s/^\s*COMPO\s+(\S.*\S)\s*$/$1/;
+	    my @nullmodel = split(/\s+/,$line);
+	    @nullmodel = map {$_ = exp(-1 * $_)} @nullmodel;  # Transform to probabilities
+	    push(@lines,$line=<INFILE>); # state 0 insert emission
+	    push(@lines,$line=<INFILE>); # transisitions from begin state
+	    
+	    while ($line=<INFILE>) {
+		push(@lines,$line); 
+		if ($line=~/^\/\//) {last;}
+		$line=~s/^\s*\d+\s+(\S.*\S)\s+\d+\s+(\S)\s+\S\s*$/$1/;
+		$query .= $2;
+		my @probs = split(/\s+/,$line);
+		@probs = map {$_ = exp(-1 * $_)} @probs;  # Transform to probabilities
+		# calculate log-odds
+		my @logodds = ();
+		for (my $a = 0; $a < scalar(@probs); $a++) {
+		    my $logodd = (log($probs[$a] / $nullmodel[$a]) / $log2) * 1000;
+		    push(@logodds, $logodd);
+		}
+		
+		push(@logoddsmat,\@logodds);
+		push(@lines,$line=<INFILE>);
+		push(@lines,$line=<INFILE>);
+	    }
+
+	} else {
+
+	    $scale=0.13;
+	    if ($line!~/^HMMER/ && $line!~/^NAME /) {last;}  # first line in each model must begin with 'HMMER...'
+	    @logoddsmat=();
+	    @lines=($line); 
+	    
+	    while ($line=<INFILE>) {push(@lines,$line); if ($line=~/^LENG/) {last;}}
+	    $line=~/^LENG\s+(\d+)/;
+	    $length=$1;  # number of match states in HMM
+	    $query="";   # query residues from NULL emission lines
+	    while ($line=<INFILE>) {push(@lines,$line); if ($line=~/^\s*m->m/) {last;}}
 	    push(@lines,$line=<INFILE>);
+	    while ($line=<INFILE>) {
+		push(@lines,$line); 
+		if ($line=~/^\/\//) {last;}
+		$line=~s/^\s*\d+\s+(\S.*\S)\s*$/$1/;
+		my @logodds = split(/\s+/,$line);
+		push(@logoddsmat,\@logodds);
+		push(@lines,$line=<INFILE>);
+		$line=~/^\s*(\S)/;
+		$query .= $1;
+		push(@lines,$line=<INFILE>);
+	    }
 	}
-	
+	    
 	# Write mtx matrix
 	open (MTXFILE, ">$inbase.mtx") || die("ERROR: cannot open $inbase.mtx: $!\n");
 	printf(MTXFILE "%i\n",$length);
@@ -276,11 +320,11 @@ else
 	    }
 	    close(PSIPREDFILE);
 	}
-    
+	
 	# Add secondary structure to HMMER output file and print
 	foreach $line (@lines) {
 	    if ($line=~/^SSPRD/ || $line=~/^SSCON/|| $line=~/^SSCIT/) {next;}
-	    if ($line=~/^XT /) {
+	    if ($line=~/^HMM /) {
 		$ss_pred=~s/(\S{$numres})/$1\nSSPRD /g;
 		$ss_conf=~s/(\S{$numres})/$1\nSSCON /g;
 		printf(OUTFILE "SSCIT HHsearch-readable PSIPRED secondary structure prediction (http://protevo.eb.tuebingen.mpg.de/hhpred/)\n");
@@ -292,7 +336,7 @@ else
 	}
 	$nmodels++;
     }
-
+	
     close(OUTFILE);
     close(INFILE);
     System("rm $inbase.pn $inbase.sq $inbase.sn $inbase.mn $inbase.chk $inbase.blalog $inbase.mtx $inbase.aux $inbase.ss $inbase.ss2");
