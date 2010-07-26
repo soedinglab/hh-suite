@@ -1037,7 +1037,8 @@ void prefilter_with_SW_evalue_preprefilter_backtrace()
 	{
 	  strcpy(db_name,tmp_name);
 	  strtr(db_name,"|", "_");
-	  strcat(db_name,".hhm");
+	  strcat(db_name,".");
+	  strcat(db_name,db_ext);
 	}
       
       if (! doubled->Contains(db_name))
