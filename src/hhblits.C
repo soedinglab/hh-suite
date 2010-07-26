@@ -98,7 +98,7 @@ const char print_elapsed=0;
 char tmp_file[]="/tmp/hhblitsXXXXXX";
 
 // HHblits variables
-const char HHBLITS_VERSION[]="version 2.1.0 (July 2010)";
+const char HHBLITS_VERSION[]="version 2.1.1 (July 2010)";
 const char HHBLITS_REFERENCE[]="to be published.\n";
 const char HHBLITS_COPYRIGHT[]="(C) Michael Remmert and Johannes Soeding\n";
 
@@ -124,6 +124,8 @@ char infile[NAMELEN];
 char alis_basename[NAMELEN];
 char base_filename[NAMELEN];
 char query_hhmfile[NAMELEN];
+
+char db_ext[NAMELEN];                        // database with context-state sequences
 
 bool alitab_scop = false;                // Write only SCOP alignments in alitabfile
 
@@ -539,6 +541,12 @@ void ProcessArguments(int argc, char** argv)
             {help() ; cerr<<endl<<"Error in "<<program_name<<": no file following -scores\n"; exit(4);}
           else {strcpy(par.scorefile,argv[i]);}
         }
+      else if (!strcmp(argv[i],"-db_ext"))
+        {
+          if (++i>=argc || argv[i][0]=='-')
+            {help() ; cerr<<endl<<"Error in "<<program_name<<": no file following -db_ext\n"; exit(4);}
+          else {strcpy(db_ext,argv[i]);}
+        }
       else if (!strcmp(argv[i],"-atab"))
         {
           if (++i>=argc || argv[i][0]=='-')
@@ -782,8 +790,8 @@ void ReadInputFile()
     } 
   else 
     {
-      // if (num_seqs != 1) 
-      // 	par.jdummy=0;
+      if (num_seqs != 1) 
+      	par.jdummy=0;
       
       Qali.Read(qa3mf,qa3mfile);
       Qali.Compress("compress Qali");
@@ -1707,6 +1715,7 @@ int main(int argc, char **argv)
   par.Ndiff = 1000;
   par.filter_thresh=0.01;
   strcpy(par.outfile,"");
+  strcpy(db_ext,"hhm");
   N_searched=0;
   previous_hits = new Hash<Hit>(1631,hit_cur);
   
@@ -2110,7 +2119,7 @@ int main(int argc, char **argv)
   
   // Warn, if HMMER files were used
   if (hmmer_used)
-    printf("WARNING! Using HMMER files results in a drastically reduced sensitivity (>10%).\nWe strongly recommend to use HHMs build by hhmake!\n");
+    printf("WARNING! Using HMMER files results in a drastically reduced sensitivity (>10%%).\nWe strongly recommend to use HHMs build by hhmake!\n");
 
   // Print for each HMM: n  score  -log2(Pval)  L  name  (n=5:same name 4:same fam 3:same sf...)
   if (*par.scorefile) {

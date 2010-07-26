@@ -702,7 +702,8 @@ void init_no_prefiltering()
 	    {
 	      strcpy(db_name,word);
 	      strtr(db_name,"|", "_");
-	      strcat(db_name,".hhm");
+	      strcat(db_name,".");
+	      strcat(db_name,db_ext);
 	    }
 	  
 	  dbfiles_new[ndb_new]=new(char[strlen(dbhhm)+strlen(db_name)+2]);
