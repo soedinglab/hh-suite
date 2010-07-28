@@ -98,7 +98,7 @@ const char print_elapsed=0;
 char tmp_file[]="/tmp/hhblitsXXXXXX";
 
 // HHblits variables
-const char HHBLITS_VERSION[]="version 2.1.1 (July 2010)";
+const char HHBLITS_VERSION[]="version 2.1.2 (July 2010)";
 const char HHBLITS_REFERENCE[]="to be published.\n";
 const char HHBLITS_COPYRIGHT[]="(C) Michael Remmert and Johannes Soeding\n";
 
@@ -287,7 +287,6 @@ void help()
   printf(" -i <file>      input query (single FASTA-sequence, A3M- or FASTA-alignment, HMM-file)   \n");
   printf("\n");
   printf("Options:                                                                                 \n");
-  printf(" -conf  <file>  config file for databases and bioprogs path (default=%s)                 \n",config_file); 
   printf(" -db    <file>  BLAST formatted database with consensus sequences (default=%s)           \n",db);
   printf(" -dbhhm <dir>   directory with database HMMs (default=%s)                                \n",dbhhm);
   printf(" -n     [1,8]   number of rounds (default=%i)                                            \n",num_rounds); 
@@ -339,7 +338,6 @@ void help_all()
   printf(" -i <file>       input query (single FASTA-sequence, A3M- or FASTA-alignment, hhm-file)   \n");
   printf("\n");
   printf("Options:                                                                                 \n");
-  printf(" -conf    <file> config file for databases and bioprogs path (default=%s)                 \n",config_file); 
   printf(" -db      <file> BLAST formatted database with consensus sequences (default=%s)           \n",db);
   printf(" -dbhhm   <dir>  directory with database HMMs (default=%s)                                \n",dbhhm);
   printf(" -n       [1,8]  number of rounds (default=%i)                                            \n",num_rounds); 
@@ -492,12 +490,6 @@ void ProcessArguments(int argc, char** argv)
             {help() ; cerr<<endl<<"Error in "<<program_name<<": no database directory following -psipred_data\n"; exit(4);}
           else
 	    strcpy(par.psipred_data,argv[i]);
-        }
-      else if (!strcmp(argv[i],"-conf"))
-        {
-          if (++i>=argc || argv[i][0]=='-')
-            {help() ; cerr<<endl<<"Error in "<<program_name<<": no config file following -conf\n"; exit(4);}
-          else strcpy(config_file,argv[i]);
         }
       else if (!strcmp(argv[i],"-o"))
         {
@@ -670,54 +662,6 @@ void ProcessArguments(int argc, char** argv)
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
-// Read config file
-/////////////////////////////////////////////////////////////////////////////////////
-void ReadConfigFile(char filename[])
-{
-  char* c;         //pointer to scan line read in for end of argument
-  FILE* configf=NULL;
-
-  // Open config file
-  configf = fopen(filename,"r");
-  if (!configf) return;
-
-  // Read in options until end-of-file
-  while (fgets(line,LINELEN,configf))
-    {
-      if (!strcmp(line,"\n") || line[0] == '#')
-	continue;
-
-      // Analyze line
-      c=line;
-      
-      // find parameter name
-      char param[NAMELEN];
-      c = strwrd(param, c);
-      // ignore '='
-      c++; 
-      // find parameter value
-      char value[NAMELEN];
-      c = strwrd(value, c);
-
-      if (!*param || !*value) {
-	cerr<<endl<<"WARNING: Ignoring line '"<<line<<"' in config-file (WRONG FORMAT)!\n";
-	continue;
-      }
-
-      if (!strcmp(param, "db")) strcpy(db,value);
-      else if (!strcmp(param, "dbhhm")) strcpy(dbhhm,value);
-      else if (!strcmp(param, "cs_db")) strcpy(par.clusterfile,value);
-      else if (!strcmp(param, "cs_lib")) strcpy(par.cs_library,value);
-      else if (!strcmp(param, "psipred")) strcpy(par.psipred,value);
-      else if (!strcmp(param, "psipred_data")) strcpy(par.psipred_data,value);
-      else cerr<<endl<<"WARNING: Ignoring unknown option "<<param<<" in config file...\n";
-
-    }
-
-  fclose(configf);
-}
-
-/////////////////////////////////////////////////////////////////////////////////////
 // Read input file
 /////////////////////////////////////////////////////////////////////////////////////
 void ReadInputFile()
@@ -767,7 +711,7 @@ void ReadInputFile()
   fclose(qf);
 
   int v1=v;
-  if (v<=3) v=1; else v-=2;
+  if (v>0 && v<=3) v=1; else v-=2;
 
   // Read input file (HMM or alignment format) without adding pseudocounts
   ReadInput(par.infile, q);
@@ -1033,7 +977,7 @@ void perform_viterbi_search(int db_size)
 
   // Initialize
   int v1=v;
-  if (v<=3) v=1; else v-=2;
+  if (v>0 && v<=3) v=1; else v-=2;
 
   char *dbfiles[MAXNUMDB+1];
   int ndb = 0;
@@ -1126,7 +1070,7 @@ void search_database(char *dbfiles[], int ndb, int db_size)
 
   // Initialize
   int v1=v;
-  if (v<=3) v=1; else v-=2;
+  if (v>0 && v<=3) v=1; else v-=2;
   if (print_elapsed) ElapsedTimeSinceLastCall("(preparing for search)");
 
   hitlist.N_searched=db_size; //hand over number of HMMs scanned to hitlist (for E-value calculation)
@@ -1278,7 +1222,7 @@ void perform_realign(char *dbfiles[], int ndb)
     }
 
   int v1=v;
-  if (v<=3) v=1; else v-=1;  // Supress verbose output during iterative realignment and realignment
+  if (v>0 && v<=3) v=1; else v-=2;  // Supress verbose output during iterative realignment and realignment
   
   // Align the first par.jdummy templates?
   if (par.jdummy>0)
@@ -1703,6 +1647,8 @@ int main(int argc, char **argv)
 
   int cluster_found = 0;
   int seqs_found = 0;
+  char* argv_conf[MAXOPT];       // Input arguments from .hhdefaults file (first=1: argv_conf[0] is not used)
+  int argc_conf;                 // Number of arguments in argv_conf
 
 #ifdef PTHREAD
   pthread_attr_init(&joinable);  // initialize attribute set with default values
@@ -1723,41 +1669,33 @@ int main(int argc, char **argv)
   par.argv=argv;
   par.argc=argc;
   RemovePathAndExtension(program_name,argv[0]);
-
-  // Set default for config-file
-  Pathname(config_file,argv[0]);
-  strcat(config_file,"hhblits.config");
+  Pathname(program_path, argv[0]);
 
   // Enable changing verbose mode before command line are processed
   for (int i=1; i<argc; i++)
     {
-      if (!strcmp(argv[i],"-conf"))
-	{
-	  if (++i>=argc || argv[i][0]=='-')
-	    {help() ; cerr<<endl<<"Error in "<<program_name<<": no config file following -conf\n"; exit(4);}
-	  else strcpy(config_file,argv[i]);
-	}
-      else if (argc>1 && !strcmp(argv[i],"-v0")) v=0;
+      if (argc>1 && !strcmp(argv[i],"-v0")) v=0;
       else if (argc>1 && !strcmp(argv[i],"-v1")) v=1;
       else if (argc>2 && !strcmp(argv[i],"-v")) v=atoi(argv[i+1]);
     }
 
-  // Read config file?
-  if (is_regular_file(config_file))
-    {
-      // Process default otpions from .hhconfig file
-      ReadConfigFile(config_file);
-    }
-
+  // Process default otpions from .hhdefaults file
+  ReadDefaultsFile(argc_conf,argv_conf,program_path);
+  ProcessArguments(argc_conf,argv_conf);
+  
   // Process command line options (they override defaults from .hhdefaults file)
   ProcessArguments(argc,argv);
 
   // Check needed files
   if (!*db || !*dbhhm)
-    {help(); cerr<<endl<<"Error in "<<program_name<<": database missing (see config-file or -db and -dbhhm)\n"; exit(4);}
+    {help(); cerr<<endl<<"Error in "<<program_name<<": database missing (see -db and -dbhhm)\n"; exit(4);}
   if (par.showpred==1 && (!*par.psipred || !*par.psipred_data))
-    {help(); cerr<<endl<<"Error in "<<program_name<<": missing PsiPred directory (see config-file or -psipred and -psipred_data).\nIf you don't need the predicted secondary structure, restart HHblits with -noss\n"; exit(4);}
- 
+    {help(); cerr<<endl<<"Error in "<<program_name<<": missing PsiPred directory (see -psipred and -psipred_data).\nIf you don't need the predicted secondary structure, restart HHblits with -noss\n"; exit(4);}
+  if (!strcmp(par.clusterfile,""))
+    {help(); cerr<<endl<<"Error in "<<program_name<<": context-specific library missing (see -cs_db)\n"; exit(4);}
+  if (!strcmp(par.cs_library,""))
+    {help(); cerr<<endl<<"Error in "<<program_name<<": context-state library (see -cs_lib)\n"; exit(4);}
+
   par.block_shading = new Hash<int*>;
   par.block_shading_counter = new Hash<int>;
   par.block_shading->New(16381,NULL);
@@ -1885,7 +1823,7 @@ int main(int argc, char **argv)
     if (*query_hhmfile) 
       {
 	int v1=v;
-	if (v<=3) v=1; else v-=2;
+	if (v>0 && v<=3) v=1; else v-=2;
 	
 	// Add *no* amino acid pseudocounts to query. This is necessary to copy f[i][a] to p[i][a]
 	q.AddAminoAcidPseudocounts(0, 0.0, 0.0, 1.0);
@@ -1974,7 +1912,7 @@ int main(int argc, char **argv)
     if (round < num_rounds || *par.alnfile || *par.psifile || *par.hhmfile || *alis_basename)
       {
 	int v1=v;
-	if (v<=3) v=1; else v-=2;
+	if (v>0 && v<=3) v=1; else v-=2;
 	
 	// If new hits found, merge hits to query alignment
 	if (new_hits != 0)
@@ -2129,7 +2067,7 @@ int main(int argc, char **argv)
 
   // Write alignments in tabular layout to alitabfile
   if (*par.alitabfile) 
-    hitlist.WriteToAlifile(alitab_scop);
+    hitlist.WriteToAlifile(q,alitab_scop);
 
   // Print summary listing of hits
   if (v>=3) printf("Printing hit list ...\n");

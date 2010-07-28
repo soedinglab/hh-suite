@@ -77,4 +77,4 @@ hhconsensus_valgrind: hhconsensus.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
 clean: 	
 	-rm -f *.o ../cs/src/*.o
 	-rm -f ../bin/*
-	-cp hhblits.config ../bin/
+	-cp .hhdefaults ../bin/

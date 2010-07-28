@@ -661,6 +661,19 @@ void RealignByWorker(Hit& hit)
       nhits++;
     }
 
+  // Delete all hitlist entries with too short alignments
+  hitlist.Reset();
+  while (!hitlist.End())
+    {
+      hit_cur = hitlist.ReadNext();
+      if (hit_cur.matched_cols < MINCOLS_REALIGN)
+	{
+	  if (v>=3) printf("Deleting alignment of %s with length %i\n",hit_cur.name,hit_cur.matched_cols);
+	  hitlist.Delete().Delete();               // delete the list record and hit object
+	  nhits--;
+	}
+    }
+
   if (hit.irep==1)
     {
       fprintf(stderr,"*************************************************\n");

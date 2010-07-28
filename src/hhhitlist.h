@@ -32,7 +32,7 @@ public:
   void PrintScoreFile(HMM& q);
   
   // Write alignments in tabular output
-  void WriteToAlifile(bool scop_only=false);
+  void WriteToAlifile(HMM& q, bool scop_only=false);
 
   // Log likelihood for fitting the EVD to the score distribution
   double LogLikelihoodEVD(double* v);

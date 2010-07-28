@@ -869,7 +869,7 @@ int main(int argc, char **argv)
   // Initialize
   N_searched=0;
   int v1=v;
-  if (v<=3) v=1; else v-=2;
+  if (v>0 && v<=3) v=1; else v-=2;
   if (print_elapsed) ElapsedTimeSinceLastCall("(preparing for search)");
 
   // For all the databases given in -d '...' option ...
@@ -1196,7 +1196,7 @@ int main(int argc, char **argv)
 
 
       if (v>=1) printf("Realigning %i query-template alignments with maximum accuracy (MAC) algorithm ...\n",nhits);
-      if (v<=3) v=1; else v-=1;  // Supress verbose output during iterative realignment and realignment
+      if (v>0 && v<=3) v=1; else v-=2;  // Supress verbose output during iterative realignment and realignment
 
       // Align the first par.jdummy templates?
       if (par.jdummy>0)

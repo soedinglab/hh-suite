@@ -234,6 +234,7 @@ public:
 char v=2;             // 1: show only warnings 2:verbose mode
 Parameters par;
 char program_name[NAMELEN]; //name of program executed (e.g. hhmake of hhsearch)
+char program_path[NAMELEN]; //path of program executed
 
 // substitution matrix flavours
 float P[21][21];      // P[a][b] = combined probability for a aligned to b

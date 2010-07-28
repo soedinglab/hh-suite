@@ -370,7 +370,7 @@ inline void WriteToScreen(char* outfile) {WriteToScreen(outfile,INT_MAX);}
 /////////////////////////////////////////////////////////////////////////////////////
 // Read .hhdefaults file into array argv_conf (beginning at argv_conf[1])
 /////////////////////////////////////////////////////////////////////////////////////
-void ReadDefaultsFile(int& argc_conf, char** argv_conf)
+void ReadDefaultsFile(int& argc_conf, char** argv_conf, char* path=NULL)
 {
   char line[LINELEN]="";
   char filename[NAMELEN];
@@ -383,6 +383,12 @@ void ReadDefaultsFile(int& argc_conf, char** argv_conf)
   // Open config file
   strcpy(filename,"./.hhdefaults");
   configf = fopen(filename,"r");
+  if (!configf && path) 
+    {
+      strcpy(filename,path);
+      strcat(filename,".hhdefaults");
+      configf = fopen(filename,"r");
+    }
   if (!configf && getenv("HOME"))
     {
       strcpy(filename,getenv("HOME"));
@@ -403,7 +409,8 @@ void ReadDefaultsFile(int& argc_conf, char** argv_conf)
   if (!strncmp(line,program_name,6))
     {
       // Read in options until end-of-file or empty line
-      while (fgets(line,LINELEN,configf) && strcmp(line,"\n"))
+      //while (fgets(line,LINELEN,configf) && strcmp(line,"\n"))
+      while (fgets(line,LINELEN,configf))
         {
           // Analyze line
           c=line;
@@ -411,7 +418,7 @@ void ReadDefaultsFile(int& argc_conf, char** argv_conf)
             {
               // Find next word
               while (*c==' ' || *c=='\t') c++; //Advance until next non-white space
-              if (*c=='\0' || *c=='\n' || *c=='#') break;  //Is next word empty string?
+              if ((*c=='h' && *(c+1)=='h') || *c=='\0' || *c=='\n' || *c=='#') break;  //Is next word empty string?
               c_first=c;
               while (*c!=' ' && *c!='\t'  && *c!='#' && *c!='\0' && *c!='\n' ) c++; //Advance until next white space or '#'
               if (*c=='\0' || *c=='\n' || *c=='#')         //Is end of line reached?
@@ -424,13 +431,14 @@ void ReadDefaultsFile(int& argc_conf, char** argv_conf)
               *c='\0';
               argv_conf[argc_conf]=new(char[strlen(c_first)+1]);
               strcpy(argv_conf[argc_conf++],c_first);
-              printf("Argument: %s\n",c_first);
+              if (v>2) printf("Default argument: %s\n",c_first);
               c++;
             } while (1);
+	  if (*c=='h' && *(c+1)=='h') break; // Next program found
         } //end read line
       if (v>=3)
         {
-          cout<<"Arguments read in from .hhdefaults:";
+          cout<<"Arguments read in from .hhdefaults ("<<filename<<"):";
           for (int argc=1; argc<argc_conf; argc++) cout<<(argv_conf[argc][0]=='-'? " ":"")<<argv_conf[argc]<<" ";
           cout<<"\n";
         }
@@ -597,9 +605,8 @@ void SetDefaults()
   // parameters for context-specific pseudocounts
   par.csb = 0.85;
   par.csw = 1.6;
-  strcpy(par.clusterfile,"/cluster/user/michael/hh/cs/data/K4000.lib");
-
-  strcpy(par.cs_library,"/cluster/scripts/update_scripts/nr20/nr20_sampled_clusters_neff1.2_W1_N10M_n0_nopc_K62_wcenter1000_gauss_init.lib");
+  strcpy(par.clusterfile,""); // default in config-file: /cluster/user/michael/hh/cs/data/K4000.lib
+  strcpy(par.cs_library,""); // default in config-file: /cluster/scripts/update_scripts/nr20/nr20_sampled_clusters_neff1.2_W1_N10M_n0_nopc_K62_wcenter1000_gauss_init.lib
 
   return;
 }
