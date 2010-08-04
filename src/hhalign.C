@@ -666,7 +666,7 @@ void RealignByWorker(Hit& hit)
   while (!hitlist.End())
     {
       hit_cur = hitlist.ReadNext();
-      if (hit_cur.matched_cols < MINCOLS_REALIGN)
+      if (hit_cur.matched_cols < MINCOLS_REALIGN && nhits > 1)
 	{
 	  if (v>=3) printf("Deleting alignment of %s with length %i\n",hit_cur.name,hit_cur.matched_cols);
 	  hitlist.Delete().Delete();               // delete the list record and hit object
@@ -1155,7 +1155,7 @@ int main(int argc, char **argv)
       for(i=1; i<=q.L; i++)
 	for (j=1; j<=t.L; j++) // Loop through template positions j
 	  {
- //	    printf("%-3i %-3i %7.3f %7.3f\n",i,j,hit.ScoreTot(q,t,i,j),hit.ScoreAA(q,t,i,j));
+ 	    //printf("%-3i %-3i %7.3f %7.3f\n",i,j,hit.ScoreTot(q,t,i,j),hit.ScoreAA(q,t,i,j));
 	    s[i][j]=hit.ScoreTot(q,t,i,j); 
 	  }
       
