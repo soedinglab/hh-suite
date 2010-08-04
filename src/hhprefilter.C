@@ -756,7 +756,7 @@ void init_prefilter()
 	    
   par.hhblits_prefilter_logpval=-log(par.prefilter_evalue_thresh / (float)dbsize);
 
-  if (v>1) printf("Prefilter DB with %6i sequences ...\n",dbsize);
+  if (v>1) printf("\nPrefilter DB contains %6i sequences ...\n",dbsize);
 
   X = (unsigned char*)memalign(16,LDB*sizeof(unsigned char));                 // database string (concatenate all DB-seqs)
   first = (unsigned char**)memalign(16,(2*dbsize)*sizeof(unsigned char*));    // first characters of db sequences

@@ -98,7 +98,7 @@ const char print_elapsed=0;
 char tmp_file[]="/tmp/hhblitsXXXXXX";
 
 // HHblits variables
-const char HHBLITS_VERSION[]="version 2.1.2 (July 2010)";
+const char HHBLITS_VERSION[]="version 2.1.3 (July 2010)";
 const char HHBLITS_REFERENCE[]="to be published.\n";
 const char HHBLITS_COPYRIGHT[]="(C) Michael Remmert and Johannes Soeding\n";
 
@@ -666,9 +666,6 @@ void ProcessArguments(int argc, char** argv)
 /////////////////////////////////////////////////////////////////////////////////////
 void ReadInputFile()
 {
-  if (!*par.infile || !strcmp(par.infile,"") || !strcmp(par.infile,"stdin")) // infile not given
-    {help(); cerr<<endl<<"Error in "<<program_name<<": input file missing!\n"; exit(4);}
-
   int num_seqs = 0;
 
   FILE* qf=fopen(par.infile,"rb");
@@ -1687,6 +1684,8 @@ int main(int argc, char **argv)
   ProcessArguments(argc,argv);
 
   // Check needed files
+  if (!*par.infile || !strcmp(par.infile,"") || !strcmp(par.infile,"stdin")) // infile not given
+    {help(); cerr<<endl<<"Error in "<<program_name<<": input file missing!\n"; exit(4);}
   if (!*db || !*dbhhm)
     {help(); cerr<<endl<<"Error in "<<program_name<<": database missing (see -db and -dbhhm)\n"; exit(4);}
   if (par.showpred==1 && (!*par.psipred || !*par.psipred_data))
