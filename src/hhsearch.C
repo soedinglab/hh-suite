@@ -1725,6 +1725,8 @@ int main(int argc, char **argv)
           if (nhits>=imax(par.B,par.Z)) break;
           if (nhits>=imax(par.b,par.z) && hit_cur.Probab < par.p) break;
           if (nhits>=imax(par.b,par.z) && hit_cur.Eval > par.E) continue;
+
+	  fprintf(alitabf, ">%s\n", hit_cur.longname);
 	  WriteToAlifile(alitabf,&hit_cur);
      	  nhits++;
 	}
