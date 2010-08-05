@@ -457,6 +457,26 @@ inline char* fgetline(char str[], const int maxlen, FILE* file)
   return(str);
 }
 
+// Emulates a getline method for chars; similar to fgetc(str,maxlen,FILE*),
+// but removes the newline at the end and returns NULL if at end of file or read error
+inline int* fgetcline(int str[], const int maxlen, FILE* file)
+{
+  int c;
+  int num = 0;
+  if ((c = getc(file)) == EOF) { return NULL; }
+  ungetc(c, file);
+  while ((c = fgetc(file)) != EOF) {
+    if (c == EOF || c == '\n') { str[num] = 0; return str; }
+    if (num == maxlen) {         // if line is cut after maxlen characters...
+      while (fgetc(file)!='\n'); // ... read in rest of line
+      return str;
+    }
+    str[num++] = c;
+  }
+  return str;
+}
+
+
 // copies substring str[a,b] into substr and returns substr
 char *substr(char* substr, char* str, int a, int b)
 {

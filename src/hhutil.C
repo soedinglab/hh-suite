@@ -575,7 +575,7 @@ void SetDefaults()
   // For HHblits prefiltering with SSE2
   par.prefilter_gap_open = 20;
   par.prefilter_gap_extend = 4;
-  par.prefilter_states = cs::AS62::kSize;
+  par.prefilter_states = cs::AS219::kSize;
   par.prefilter_score_offset = 50;
   par.prefilter_bit_factor = 4;
   par.prefilter_evalue_thresh = 1000;

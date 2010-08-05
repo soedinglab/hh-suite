@@ -731,13 +731,13 @@ void init_prefilter()
     {
       FILE *stream;
       // Get DB-size
-      command = "more " + (string)db + " |grep \">\" |wc -l";
+      command = "more " + (string)db + " |grep \"^>\" |wc -l";
       stream = popen(command.c_str(), "r");
       ptr=fgets(line, LINELEN, stream);
       dbsize = strint(ptr);
       pclose(stream);
       // Get DB-length
-      command = "more " + (string)db + " |grep \"^[^>]\" |wc -c";
+      command = "more " + (string)db + " |grep -v \"^>\" |wc -c";
       stream = popen(command.c_str(), "r");
       ptr=fgets(line, LINELEN, stream);
       LDB = strint(ptr);
@@ -768,15 +768,20 @@ void init_prefilter()
   num_dbs = 0;
   int len = 0;
   int pos = 0;
+  int line_int[LINELEN];
+  int c;
   char word[NAMELEN];
   FILE* dbf = NULL;
   dbf = fopen(db,"rb");
   if (!dbf) OpenFileError(db);
 
-  while(fgetline(line,LINELEN,dbf)) // read HMM files in pal file
+  while((c = getc(dbf)) != EOF) // read prefilter database
     {
-      if (line[0]=='>')
+      ungetc(c, dbf);
+      if (static_cast<char>(c) == '>')  // Header
 	{
+	  fgetline(line,LINELEN,dbf);
+
 	  if (len > 0)           // if it is not the first sequence
 	    length[num_dbs++] = len;
 	  len = 0;
@@ -792,21 +797,23 @@ void init_prefilter()
 	}
       else
 	{
+	  fgetcline(line_int,LINELEN,dbf);
 	  int h = 0;
-	  while (h<LINELEN && line[h]>'\0')
+	  while (h<LINELEN && line_int[h]>0)
 	    {
-	      if (cs::AS62::kValidChar[line[h]]) // ignore white-space characters ' ', \t and \n (aa2i()==-1)
-		{
-		  X[pos++]=(unsigned char)((cs::AS62::kCharToInt[line[h]])); //  AS62::kCharToInt[line[h]]
-		  len++;
-		}
+	      if (cs::AS219::kValidChar[line_int[h]])
+	      	{
+	      	  X[pos++]=(unsigned char)((cs::AS219::kCharToInt[line_int[h]])); //  AS219::kCharToInt[line[h]]
+	      	  len++;
+	      	}
 	      else 
-		cerr<<endl<<"WARNING: invalid symbol \'"<<line[h]<<"\' at pos. "<<h<<" of "<<db<<"\n";
+	      	cerr<<endl<<"WARNING: invalid symbol \'"<<line_int[h]<<"\' at pos. "<<h<<" of "<<db<<"\n";
+
 	      h++;
 	    }
 	}
     }
-      
+
   if (len > 0)
     length[num_dbs++] = len;
       
@@ -835,13 +842,13 @@ void stripe_query_profile()
   // Build query profile with 62 column states
   query_profile = new float*[LQ+1];
   for (i=0; i<LQ+1; ++i) 
-    query_profile[i]=(float*) memalign(16,cs::AS62::kSize*sizeof(float));
+    query_profile[i]=(float*) memalign(16,cs::AS219::kSize*sizeof(float));
       
   const cs::ContextLibrary<cs::AA>& lib = *cs_lib;
 
   // log (S(i,c)) = log ( SUM_a p(i,a) * p(c,a) / f(a) )   c: column state, i: pos in ali, a: amino acid
   for (i=0; i<LQ; ++i)
-    for (k=0; k<(int)cs::AS62::kSize; ++k)
+    for (k=0; k<(int)cs::AS219::kSize; ++k)
       {
 	float sum = 0;
 	for (a=0; a<20; ++a)
