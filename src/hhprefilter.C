@@ -768,20 +768,16 @@ void init_prefilter()
   num_dbs = 0;
   int len = 0;
   int pos = 0;
-  int line_int[LINELEN];
   int c;
   char word[NAMELEN];
   FILE* dbf = NULL;
   dbf = fopen(db,"rb");
   if (!dbf) OpenFileError(db);
 
-  while((c = getc(dbf)) != EOF) // read prefilter database
+  while(fgetline(line,LINELEN,dbf)) // read prefilter database
     {
-      ungetc(c, dbf);
-      if (static_cast<char>(c) == '>')  // Header
+      if (line[0] == '>')  // Header
 	{
-	  fgetline(line,LINELEN,dbf);
-
 	  if (len > 0)           // if it is not the first sequence
 	    length[num_dbs++] = len;
 	  len = 0;
@@ -797,20 +793,24 @@ void init_prefilter()
 	}
       else
 	{
-	  fgetcline(line_int,LINELEN,dbf);
-	  int h = 0;
-	  while (h<LINELEN && line_int[h]>0)
+	  char* lineh = line;
+	  while (*lineh!=0)
 	    {
-	      if (cs::AS219::kValidChar[line_int[h]])
+	      c = cs::AS219::kCharToInt[*lineh < 0 ? *lineh + 256 : *lineh];
+	      if (c < 255)
+		// c = *lineh < 0 ? *lineh + 256 : *lineh;
+		// if (cs::AS219::kValidChar[c])
 	      	{
-	      	  X[pos++]=(unsigned char)((cs::AS219::kCharToInt[line_int[h]])); //  AS219::kCharToInt[line[h]]
+	      	  //X[pos++]=(unsigned char)(cs::AS219::kCharToInt[c]);
+		  X[pos++]=(unsigned char) c;
 	      	  len++;
 	      	}
-	      else 
-	      	cerr<<endl<<"WARNING: invalid symbol \'"<<line_int[h]<<"\' at pos. "<<h<<" of "<<db<<"\n";
+	      else
+	      	cerr<<endl<<"WARNING: invalid symbol \'"<<*lineh<<"\' of "<<db<<"\n";
 
-	      h++;
+	      lineh++;
 	    }
+	  
 	}
     }
 
