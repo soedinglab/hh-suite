@@ -793,22 +793,19 @@ void init_prefilter()
 	}
       else
 	{
-	  char* lineh = line;
-	  while (*lineh!=0)
+	  char* linep = line;
+	  while (*linep!=0)
 	    {
-	      c = cs::AS219::kCharToInt[*lineh < 0 ? *lineh + 256 : *lineh];
-	      if (c < 255)
-		// c = *lineh < 0 ? *lineh + 256 : *lineh;
-		// if (cs::AS219::kValidChar[c])
+	      c = *linep < 0 ? *linep + 256 : *linep;
+	      if (cs::AS219::kValidChar[c])
 	      	{
-	      	  //X[pos++]=(unsigned char)(cs::AS219::kCharToInt[c]);
-		  X[pos++]=(unsigned char) c;
+	      	  X[pos++]=(unsigned char)(cs::AS219::kCharToInt[c]);
 	      	  len++;
 	      	}
 	      else
-	      	cerr<<endl<<"WARNING: invalid symbol \'"<<*lineh<<"\' of "<<db<<"\n";
+	      	cerr<<endl<<"WARNING: invalid symbol \'"<<*linep<<"\' of "<<db<<"\n";
 
-	      lineh++;
+	      linep++;
 	    }
 	  
 	}

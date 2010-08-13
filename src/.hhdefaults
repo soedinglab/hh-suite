@@ -8,16 +8,16 @@
 hhblits
 
 # database with context state sequences
--db /databases/nr20/nr20as62_nopc
+-db /databases/nr20/nr20as219_x0.3_c4
 
 # directory with database HMMs
 -dbhhm /databases/nr20
 
 # context-state library
--cs_lib /cluster/scripts/update_scripts/nr20/nr20_sampled_clusters_neff1.2_W1_N10M_n0_nopc_K62_wcenter1000_gauss_init.lib
+-cs_lib /cluster/bioprogs/hhblits/cs219.lib
 
 # context-specific library (K4000)
--cs_db /cluster/user/michael/hh/cs/data/K4000.lib
+-cs_db /cluster/bioprogs/hhblits/context_data.lib
 
 # PsiPred directory (binaries and database) (not needed when no SS prediction is needed (-nopred))
 -psipred /cluster/bioprogs/psipred/bin
@@ -29,4 +29,4 @@ hhblits
 hhsearch
 
 # context-specific library (K4000)
--cs /cluster/user/michael/hh/cs/data/K4000.lib
+-cs /cluster/bioprogs/hhblits/context_data.lib

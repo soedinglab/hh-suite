@@ -79,8 +79,9 @@ Hit::Hit()
   bMM = bGD = bDG = bIM = bMI = NULL;
   self = 0;
   i = j = NULL;
-  alt_i = new List<int>();
-  alt_j = new List<int>();
+  // alt_i = new List<int>();
+  // alt_j = new List<int>();
+  alt_i = alt_j = NULL;
   states = NULL;
   S = S_ss = P_posterior = NULL;
   Xcons = NULL;
@@ -102,9 +103,8 @@ void Hit::Delete()
   if (i) delete[] i; 
   if (j) delete[] j; 
 
-  // Memory leak, but gives segfault, if activated
-  // if (alt_i && alt_i->Size()>0) delete alt_i;
-  // if (alt_j && alt_j->Size()>0) delete alt_j;
+  // if (alt_i) delete alt_i;
+  // if (alt_j) delete alt_j;
 
   if (states) delete[] states; 
   if (S) delete[] S; 
@@ -116,8 +116,6 @@ void Hit::Delete()
   states = NULL;
   S = S_ss = P_posterior = NULL;
   Xcons = NULL;
-  //  printf("Delete name = %s\n",name);////////////////////////////////////////////////////////////
-
 
   delete[] longname; delete[] name; delete[] file; delete[] dbfile;
   if (sname) {
@@ -564,17 +562,20 @@ void Hit::Forward(HMM& q, HMM& t, float** Pstruc)
 	}
 
       // Mask previous found alternative alignments
-      alt_i->Reset();
-      alt_j->Reset();
-      while (!alt_i->End())
+      if (alt_i && alt_j) 
 	{
-	  i=alt_i->ReadNext();
-	  j=alt_j->ReadNext();
-
-	  for (int ii=imax(i-2,1); ii<=imin(i+2,q.L); ++ii)
-	    cell_off[ii][j]=1;     
-	  for (int jj=imax(j-2,1); jj<=imin(j+2,t.L); ++jj)
-	    cell_off[i][jj]=1;
+	  alt_i->Reset();
+	  alt_j->Reset();
+	  while (!alt_i->End())
+	    {
+	      i=alt_i->ReadNext();
+	      j=alt_j->ReadNext();
+	      
+	      for (int ii=imax(i-2,1); ii<=imin(i+2,q.L); ++ii)
+		cell_off[ii][j]=1;     
+	      for (int jj=imax(j-2,1); jj<=imin(j+2,t.L); ++jj)
+		cell_off[i][jj]=1;
+	    }
 	}
 
       // DEBUG!!!
@@ -1515,9 +1516,9 @@ void Hit::InitializeForAlignment(HMM& q, HMM& t)
   int i,j;
 
   if (irep == 1) {
-    if (alt_i->Size()>0) delete alt_i;
+    if (alt_i && alt_i->Size()>0) delete alt_i;
     alt_i = new List<int>();
-    if (alt_j->Size()>0) delete alt_j;
+    if (alt_j && alt_j->Size()>0) delete alt_j;
     alt_j = new List<int>();
   }
   // SS scoring during (ssm2>0) or after (ssm1>0) alignment? Query SS known or Template SS known?

@@ -1,14 +1,13 @@
 // hhalign.C: 
 // Align a multiple alignment to an alignment or HMM 
 // Print out aligned input sequences in a3m format
-// Compile:              g++ hhalign.C -o hhalign -I/usr/include/ -L/usr/lib -lpng -lz -O3 -fno-strict-aliasing 
-// Compile with efence:  g++ hhalign.C -o hhalign -I/usr/include/ -lefence -L/usr/lib -lpng -lz -O -g  
+// Compile:              g++ hhalign.C -o hhalign -DHH_SSE3 -DHH_PNG -I/usr/include/ -L/usr/lib -lpng -lz -O3 -fno-strict-aliasing 
+// Compile with efence:  g++ hhalign.C -o hhalign -DHH_SSE3 -DHH_PNG -I/usr/include/ -lefence -L/usr/lib -lpng -lz -O -g  
 //
 // Error codes: 0: ok  1: file format error  2: file access error  3: memory error  4: internal numeric error  5: command line error
 
 ////#define WINDOWS
 #define MAIN
-#define PNG           // include options for making png files? (will need the png library)
 
 #include <iostream>   // cin, cout, cerr
 #include <fstream>    // ofstream, ifstream
@@ -86,7 +85,7 @@ using std::ofstream;
 #endif
 #endif
 
-#ifdef PNG
+#ifdef HH_PNG
 #include "pngwriter.h"   //PNGWriter (http://pngwriter.sourceforge.net/)
 #include "pngwriter.cc"  //PNGWriter (http://pngwriter.sourceforge.net/)
 #endif	    
@@ -133,7 +132,7 @@ void help()
   printf("Usage: %s -i query [-t template] [options]  \n",program_name);
   printf(" -i <file>     input query alignment  (fasta/a2m/a3m) or HMM file (.hhm)\n");
   printf(" -t <file>     input template alignment (fasta/a2m/a3m) or HMM file (.hhm)\n");
-#ifdef PNG
+#ifdef HH_PNG
   printf(" -png <file>   write dotplot into PNG-file (default=none)           \n");
 #endif
   printf("\n");         
@@ -160,7 +159,7 @@ void help()
   printf(" -b <int>      minimum number of alignments in alignment list (def=%i)    \n",par.b);
   printf(" -rank int     specify rank of alignment to write with -Oa3m or -Aa3m option (default=1)\n");
   printf("\n");         
-#ifdef PNG
+#ifdef HH_PNG
   printf("Dotplot options:\n");
   printf(" -dthr <float> probability/score threshold for dotplot (default=%.2f)        \n",dotthr);
   printf(" -dsca <int>   if value <= 20: size of dot plot unit box in pixels           \n");
@@ -241,7 +240,7 @@ void help_out()
   printf(" -tc <file>    write a TCoffee library file for the pairwise comparison   \n");         
   printf(" -tct [0,100]  min. probobability of residue pairs for TCoffee (def=%i%%)\n",iround(100*probmin_tc));         
   printf("\n");         
-#ifdef PNG
+#ifdef HH_PNG
   printf("Dotplot options:\n");
   printf(" -dwin int     average score in dotplot over window [i-W..i+W] (def=%i)   \n",dotW);
   printf(" -dthr float   score threshold for dotplot (default=%.2f)                 \n",dotthr);
@@ -695,8 +694,10 @@ int main(int argc, char **argv)
   int argc_conf;               // Number of arguments in argv_conf 
   char inext[IDLEN]="";        // Extension of query input file (hhm or a3m) 
   char text[IDLEN]="";         // Extension of template input file (hhm or a3m) 
+#ifdef HH_PNG
   int** ali=NULL;              // ali[i][j]=1 if (i,j) is part of an alignment
   int** alisto=NULL;           // ali[i][j]=1 if (i,j) is part of an alignment
+#endif
   int Nali;                    // number of normally backtraced alignments in dot plot
 
   SetDefaults();
@@ -1141,7 +1142,7 @@ int main(int argc, char **argv)
   //////////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef PNG
+#ifdef HH_PNG
   // Write dot plot into a png file
   if (pngfile)
     {

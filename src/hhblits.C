@@ -98,7 +98,7 @@ const char print_elapsed=0;
 char tmp_file[]="/tmp/hhblitsXXXXXX";
 
 // HHblits variables
-const char HHBLITS_VERSION[]="version 2.1.5 (August 2010)";
+const char HHBLITS_VERSION[]="version 2.1.6 (August 2010)";
 const char HHBLITS_REFERENCE[]="to be published.\n";
 const char HHBLITS_COPYRIGHT[]="(C) Michael Remmert and Johannes Soeding\n";
 
@@ -2110,6 +2110,12 @@ int main(int argc, char **argv)
 	hit[bin]->DeleteForwardMatrix(q.L+2);
       if (hit[bin]->backward_allocated)
 	hit[bin]->DeleteBackwardMatrix(q.L+2);
+
+      if (hit[bin]->alt_i && hit[bin]->alt_i->Size()>0)
+	delete hit[bin]->alt_i;
+      if (hit[bin]->alt_j && hit[bin]->alt_j->Size()>0)
+	delete hit[bin]->alt_j;
+
       delete hit[bin];
       delete t[bin];
     }

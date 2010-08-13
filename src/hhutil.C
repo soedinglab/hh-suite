@@ -503,7 +503,7 @@ void SetDefaults()
   par.pcw=0.0f;                // wc>0 weighs columns according to their intra-clomun similarity
 
 
-  par.pre_pca=1.5f;            // PREFILTER - default values for substitution matrix pseudocounts 
+  par.pre_pca=1.2f;            // PREFILTER - default values for substitution matrix pseudocounts 
   par.pre_pcb=2.0f;            // PREFILTER - significant reduction of pcs by Neff_M starts around Neff_M-1=pcb
 
   par.gapb=1.0;                // default values for transition pseudocounts
@@ -553,8 +553,8 @@ void SetDefaults()
 
   // Directories for SS-prediction
   par.addss=0;
-  strcpy(par.psipred,"/cluster/bioprogs/psipred/bin");
-  strcpy(par.psipred_data,"/cluster/bioprogs/psipred/data");
+  strcpy(par.psipred,"");
+  strcpy(par.psipred_data,"");
 
   // HHblits parameters
   par.hhblits_prefilter_logpval=0;
