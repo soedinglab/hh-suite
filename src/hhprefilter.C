@@ -824,14 +824,15 @@ void stripe_query_profile()
   int a,h,i,j,k;
 
   // Add Pseudocounts
-  if (!*par.clusterfile) { //compute context-specific pseudocounts?
+  if (!*par.clusterfile) {
     // Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
     q_tmp.PreparePseudocounts();
     // Add amino acid pseudocounts to query: p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
-    q_tmp.AddAminoAcidPseudocounts(par.pcm,par.pre_pca,par.pre_pcb,1);
+    q_tmp.AddAminoAcidPseudocounts(par.pcm,par.pca,par.pcb,1);
   } else {
-    // Add context specific pseudocounts
-    q_tmp.AddContextSpecificPseudocounts(par.pcm,par.pre_pca,par.pre_pcb,1);
+    // Add context specific pseudocounts (now always used, because clusterfile is necessary)
+    q_tmp.AddContextSpecificPseudocounts(5,par.pre_pca,par.pre_pcb,1);
+    //q_tmp.AddContextSpecificPseudocounts(par.pcm,par.pre_pca,par.pre_pcb,1);
   }
       
   q_tmp.CalculateAminoAcidBackground();
@@ -950,7 +951,7 @@ void prefilter_with_SW_evalue_preprefilter_backtrace()
 {
   stripe_query_profile();
   
-  int* prefiltered_hits = new int[2000000];
+  int* prefiltered_hits = new int[dbsize+1];
   int* backtrace_hits = new int[MAXNUMDB+1];
 
   __m128i** workspace = new(__m128i*[cpu]);
@@ -1150,7 +1151,8 @@ void prefilter_db()
   for (int idb=0; idb<ndb_old; idb++) delete[](dbfiles_old[idb]);
   ndb_new = ndb_old = 0;
   block_count=0;
-  block = new(int[400]);
+  //block = new(int[400]);
+  block = NULL;
   strcpy(actual_hit,"");
 
   par.block_shading->Reset();

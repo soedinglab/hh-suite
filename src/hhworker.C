@@ -127,7 +127,7 @@ void RealignByWorker(int bin)
           pthread_mutex_unlock(&hitlist_mutex); // unlock access to hitlist
 #endif
 
-         // Align q to template in *hit[bin]
+	  // Align q to template in *hit[bin]
           hit[bin]->Forward(q,*(t[bin]));
           hit[bin]->Backward(q,*(t[bin]));
           hit[bin]->MACAlignment(q,*(t[bin]));
@@ -151,9 +151,6 @@ void RealignByWorker(int bin)
           hit[bin]->E1val      = hit_cur.E1val;
           hit[bin]->Probab     = hit_cur.Probab;
 
-	  //fprintf(stderr,"Realign hit at position %4i (%s  index: %4i)\n",pos, hit[bin]->name, hit[bin]->index);
-	  //fprintf(stderr,"Irep: %2i  score: %6.2f   e-value: %6.2f   sum_probs: %6.2f\n", hit[bin]->irep, hit[bin]->score, hit[bin]->Eval, hit[bin]->sum_of_probs);
-
           // Replace original hit in hitlist with realigned hit
           //hitlist.ReadCurrent().Delete();
           hitlist.Delete().Delete();                // delete list record and hit object
@@ -173,8 +170,8 @@ void RealignByWorker(int bin)
       fprintf(stderr,"\nError: could not find template %s in hit list (index:%i dbfile:%s ftell:%i\n\n",hit[bin]->name, hit[bin]->index,hit[bin]->dbfile,(unsigned int)hit[bin]->ftellpos);
       fprintf(stderr,"*************************************************\n");
     }
-
-    return;
+  
+  return;
 }
 
 

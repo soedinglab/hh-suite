@@ -45,7 +45,7 @@ The output file is in A3M, default <BASENAME>.a3m.
 ((   'reformat.pl file.a3m file.fas'.                                      ))
 (( For an explanation of the A3M format, see the HHsearch README file.     ))
 
-Usage: perl addpsipred.pl <ali file> [<outfile>] [-fas|-a3m|-clu|sto]  
+Usage: perl addss.pl <ali file> [<outfile>] [-fas|-a3m|-clu|sto]  
 \n";
 
 # Variable declarations

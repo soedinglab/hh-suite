@@ -526,7 +526,8 @@ void Alignment::Compress(const char infile[])
             }
           else continue;
           i--;
-          if (L!=i && L!=MAXRES-2 && !unequal_lengths) unequal_lengths=k;   //sequences have different lengths
+          if (L!=i && L!=MAXRES-2 && !unequal_lengths) 
+	      unequal_lengths=k;   //sequences have different lengths
           L=imin(L,i);
         }
       if (unequal_lengths) break;
@@ -909,6 +910,7 @@ int Alignment::Filter2(char keep[], int coverage, int qid, float qsc, int seqid1
   // Determine number of residues nres[k]?
   if (nres==NULL || sizeof(nres)<N_in*sizeof(int))
     {
+      if (nres) delete[] nres;
       nres=new(int[N_in]);
       for (k=0; k<N_in; ++k)  // do this for ALL sequences, not only those with in[k]==1 (since in[k] may be display[k])
         {
@@ -1295,6 +1297,20 @@ void Alignment::FrequenciesAndTransitions(HMM& q, char* in, bool time)
 
   //if (time) { ElapsedTimeSinceLastCall("begin freq and trans"); }
 
+  //Delete name and seq matrices of old HMM q
+  if (!q.dont_delete_seqs) // don't delete sname and seq if flat copy to hit object has been made
+    {
+      for (k=0; k<q.n_seqs; k++) delete [] q.sname[k];
+      for (k=0; k<q.n_seqs; k++) delete [] q.seq[k];
+    }
+  else // Delete all not shown sequences (lost otherwise)
+    {
+      if (q.n_seqs > q.n_display) {
+	for (k=q.n_display; k<q.n_seqs; k++) delete [] q.sname[k];
+	for (k=q.n_display; k<q.n_seqs; k++) delete [] q.seq[k];
+      }
+    }
+
   if (v>=3)
      cout<<"Calculating position-dependent weights on subalignments\n";
 
@@ -1482,6 +1498,7 @@ void Alignment::FrequenciesAndTransitions(HMM& q, char* in, bool time)
         }
     }
   q.n_display=n; // how many sequences to be displayed in alignments?
+  q.n_seqs=n;
 
   // Copy secondary structure information into HMM
   if (kss_dssp>=0)

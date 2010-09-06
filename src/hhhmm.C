@@ -88,6 +88,13 @@ HMM::~HMM()
       for (int k=0; k<n_seqs; k++) delete [] sname[k];
       for (int k=0; k<n_seqs; k++) delete [] seq[k];
     }
+  else // Delete all not shown sequences (lost otherwise)
+    {
+      if (n_seqs > n_display) {
+	for (int k=n_display; k<n_seqs; k++) delete [] sname[k];
+	for (int k=n_display; k<n_seqs; k++) delete [] seq[k];
+      }
+    }
   delete[] sname;
   delete[] seq;
   delete[] Neff_M;
@@ -115,6 +122,19 @@ HMM::~HMM()
 /////////////////////////////////////////////////////////////////////////////////////
 HMM& HMM::operator=(HMM& q)
 {
+  if (!dont_delete_seqs) // don't delete sname and seq if flat copy to hit object has been made
+    {
+      for (int k=0; k<n_seqs; k++) delete [] sname[k];
+      for (int k=0; k<n_seqs; k++) delete [] seq[k];
+    }
+  else // Delete all not shown sequences (lost otherwise)
+    {
+      if (n_seqs > n_display) {
+	for (int k=n_display; k<n_seqs; k++) delete [] sname[k];
+	for (int k=n_display; k<n_seqs; k++) delete [] seq[k];
+      }
+    }
+
   L=q.L;
   for (int i=0; i<=L+1; ++i)
     {
@@ -192,6 +212,20 @@ int HMM::Read(FILE* dbf, char* path)
   int a;                    // amino acid index
   static int warn=0;
 
+  //Delete name and seq matrices
+  if (!dont_delete_seqs) // don't delete sname and seq if flat copy to hit object has been made
+    {
+      for (int k=0; k<n_seqs; k++) delete [] sname[k];
+      for (int k=0; k<n_seqs; k++) delete [] seq[k];
+    }
+  else // Delete all not shown sequences (lost otherwise)
+    {
+      if (n_seqs > n_display) {
+	for (int k=n_display; k<n_seqs; k++) delete [] sname[k];
+	for (int k=n_display; k<n_seqs; k++) delete [] seq[k];
+      }
+    }
+
   trans_lin=0;
   L=0;
   Neff_HMM=0;
@@ -201,9 +235,8 @@ int HMM::Read(FILE* dbf, char* path)
   trans_lin=0; // transition probs in log space
   name[0]=longname[0]=fam[0]='\0';
   has_pseudocounts=false;
+  dont_delete_seqs=0;
   //If at the end of while-loop L is still 0 then we have reached end of db file
-
-  //Do not delete name and seq vectors because their adresses are transferred to hitlist as part of a hit!!
 
   while (fgetline(line,LINELEN-1,dbf) && !(line[0]=='/' && line[1]=='/'))
     {
@@ -1609,6 +1642,34 @@ void HMM::AddTransitionPseudocounts(float gapd, float gape, float gapf, float ga
 /////////////////////////////////////////////////////////////////////////////////////
 void HMM::PreparePseudocounts()
 {
+  // Mit SSE3 gibt es seg-faults (nicht in Valgrind) - Problem, dass R und f nicht mit new angelegt wurden???
+// #ifdef HH_SSE3
+//   float __attribute__((aligned(16))) res;
+//   __m128 P; // product
+//   __m128 Res; // result  
+//   __m128* Ra;
+//   __m128* fi;
+
+//   for (int i=0; i<=L+1; ++i)
+//     for (int a=0; a<20; ++a)
+//       {
+// 	Ra = (__m128*) R[a];
+// 	fi = (__m128*) f[i];
+// 	Res = _mm_mul_ps(*(Ra++),*(fi++));
+// 	P = _mm_mul_ps(*(Ra++),*(fi++));
+// 	Res = _mm_add_ps(Res,P);
+// 	P = _mm_mul_ps(*(Ra++),*(fi++));
+// 	Res = _mm_add_ps(Res,P);
+// 	P = _mm_mul_ps(*(Ra++),*(fi++));
+// 	Res = _mm_add_ps(Res,P);
+// 	P = _mm_mul_ps(*Ra,*fi);
+// 	Res = _mm_add_ps(Res,P);
+// 	Res = _mm_hadd_ps(Res,Res);
+// 	Res = _mm_hadd_ps(Res,Res);
+// 	_mm_store_ss(&res, Res);
+// 	g[i][a] = res;
+//       }
+// #else  
   for (int i=0; i<=L+1; ++i)
     for (int a=0; a<20; ++a)
       g[i][a] = // produces fast code
@@ -1616,6 +1677,7 @@ void HMM::PreparePseudocounts()
 	+R[a][5]*f[i][5]  +R[a][6]*f[i][6]  +R[a][7]*f[i][7]  +R[a][8]*f[i][8]  +R[a][9]*f[i][9]
 	+R[a][10]*f[i][10]+R[a][11]*f[i][11]+R[a][12]*f[i][12]+R[a][13]*f[i][13]+R[a][14]*f[i][14]
 	+R[a][15]*f[i][15]+R[a][16]*f[i][16]+R[a][17]*f[i][17]+R[a][18]*f[i][18]+R[a][19]*f[i][19];
+  //#endif
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -1643,6 +1705,9 @@ void HMM::AddContextSpecificPseudocounts(char pcm, float pca, float pcb, float p
       break;
     case 3:
       // TODO
+      break;
+    case 5:   // use CS-BLAST Admix for prefiltering
+      admix = new cs::CSBlastAdmix(pca, pcb);
       break;
     }      
 

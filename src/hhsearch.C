@@ -640,7 +640,7 @@ int main(int argc, char **argv)
 {
   char line[LINELEN]="";         // input line
   char* argv_conf[MAXOPT];       // Input arguments from .hhdefaults file (first=1: argv_conf[0] is not used)
-  int argc_conf;                 // Number of arguments in argv_conf
+  int argc_conf=0;               // Number of arguments in argv_conf
   char inext[IDLEN]="";          // Extension of input file (hhm or a3m)
   int bin;                       // bin index
 
@@ -664,6 +664,7 @@ int main(int argc, char **argv)
   par.argv=argv;
   par.argc=argc;
   RemovePathAndExtension(program_name,argv[0]);
+  Pathname(program_path, argv[0]);
 
   // Enable changing verbose mode before defaults file and command line are processed
   for (int i=1; i<argc; i++)
@@ -678,7 +679,7 @@ int main(int argc, char **argv)
   if (par.readdefaultsfile)
     {
       // Process default otpions from .hhconfig file
-      ReadDefaultsFile(argc_conf,argv_conf);
+      ReadDefaultsFile(argc_conf,argv_conf,program_path);
       ProcessArguments(argc_conf,argv_conf);
     }
 
@@ -1212,6 +1213,7 @@ int main(int argc, char **argv)
           if (!qa3mf) OpenFileError(qa3mfile);
           Qali.Read(qa3mf,qa3mfile);
           fclose(qa3mf);
+	  delete[] Qali.longname;
           Qali.longname = new(char[strlen(q.longname)+1]);
           strcpy(Qali.longname,q.longname);
           strcpy(Qali.name,q.name);
@@ -1583,7 +1585,7 @@ int main(int argc, char **argv)
       while (!hitlist.End())
         {
           hit_cur = hitlist.ReadNext();
-//        printf("Deleting alignment of %s with length %i? nhits=%-2i  par.B=%-3i  par.Z=%-3i par.e=%.2g par.b=%-3i  par.z=%-3i par.p=%.2g\n",hit_cur.name,hit_cur.matched_cols,nhits,par.B,par.Z,par.e,par.b,par.z,par.p);
+	  //        printf("Deleting alignment of %s with length %i? nhits=%-2i  par.B=%-3i  par.Z=%-3i par.e=%.2g par.b=%-3i  par.z=%-3i par.p=%.2g\n",hit_cur.name,hit_cur.matched_cols,nhits,par.B,par.Z,par.e,par.b,par.z,par.p);
           if (nhits>=imax(par.B,par.Z)) break;
           if (nhits>=imax(par.b,par.z) && hit_cur.Probab < par.p) break;
           if (nhits>=imax(par.b,par.z) && hit_cur.Eval > par.E) continue;
@@ -1762,6 +1764,8 @@ int main(int argc, char **argv)
   if (format) delete[](format);
   if (par.blafile) delete[] par.blafile;
   if (par.exclstr) delete[] par.exclstr;
+  for (int n = 1; n < argc_conf; n++)
+    delete[] argv_conf[n];
   delete doubled;
 
   if (*par.clusterfile) {

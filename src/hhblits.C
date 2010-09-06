@@ -98,7 +98,7 @@ const char print_elapsed=0;
 char tmp_file[]="/tmp/hhblitsXXXXXX";
 
 // HHblits variables
-const char HHBLITS_VERSION[]="version 2.1.6 (August 2010)";
+const char HHBLITS_VERSION[]="version 2.1.7 (August 2010)";
 const char HHBLITS_REFERENCE[]="to be published.\n";
 const char HHBLITS_COPYRIGHT[]="(C) Michael Remmert and Johannes Soeding\n";
 
@@ -162,6 +162,7 @@ HMM q;                    // Create query HMM with maximum of MAXRES match state
 HMM q_tmp;                // Create query HMM with maximum of MAXRES match states (needed for prefiltering)
 HMM* t[MAXBINS];          // Each bin has a template HMM allocated that was read from the database file
 Hit* hit[MAXBINS];        // Each bin has an object of type Hit allocated with a separate dynamic programming matrix (memory!!)
+Hit hit_cur;              // Current hit when going through hitlist
 HitList hitlist;          // list of hits with one Hit object for each pairwise comparison done
 int* format;              // format[bin] = 0 if in HHsearch format => add pcs; format[bin] = 1 if in HMMER format => no pcs
 int read_from_db;         // The value of this flag is returned from HMM::Read(); 0:end of file  1:ok  2:skip HMM
@@ -212,8 +213,6 @@ inline int PickBin(char status)
 //////////////////////////////////////////////////////////////////////////////////////
 void PerformViterbiByWorker(int bin)
 {
-  Hit hit_cur;
-
   // Prepare q ant t and compare
   PrepareTemplate(q,*(t[bin]),format[bin]);
 
@@ -237,7 +236,7 @@ void PerformViterbiByWorker(int bin)
 
       if (previous_hits->Contains((char*)ss_tmp.str().c_str()))
 	{
-	  hit_cur = previous_hits->Remove((char*)ss_tmp.str().c_str());   // Remove hit from hash -> add to hitlist
+	  hit_cur = previous_hits->Remove((char*)ss_tmp.str().c_str());
 	  previous_hits->Add((char*)ss_tmp.str().c_str(), *(hit[bin]));
 	  
 	  // Overwrite *hit[bin] with alignment, etc. of hit_cur
@@ -695,7 +694,7 @@ void ReadInputFile()
       while (fgetline(line,LINELEN,inf))
       	  if (line[0] == '>')
       	      num_seqs++;
-      if (num_seqs == 1) 
+      if (num_seqs == 1 && par.M == 1) 
 	par.M=3;
       fclose(inf);
     }
@@ -738,11 +737,20 @@ void ReadInputFile()
       Qali.Compress("compress Qali");
       fclose(qa3mf);
 
+      delete[] Qali.longname;
       Qali.longname = new(char[strlen(q.longname)+1]);
       strcpy(Qali.longname,q.longname);
       strcpy(Qali.name,q.name);
       strcpy(Qali.fam,q.fam);
     }
+
+  // Warn, if there are gaps in a single sequence
+  if (num_seqs == 1 && par.M != 2) {
+    int num_gaps = strtr(Qali.seq[0], "-", "-");
+    if (num_gaps > 0) {
+      fprintf(stderr, "WARNING! Your input sequence contains gaps. For an optimal performance, you should delete these gaps or use the '-M 50' option to ignore these gaps in the search run!\n");
+    }
+  }
 
   // Get basename
   RemoveExtension(base_filename,par.infile);
@@ -988,7 +996,7 @@ void perform_viterbi_search(int db_size)
   previous_hits->Reset();
   while (!previous_hits->End())
     {
-      Hit hit_cur = previous_hits->ReadNext();
+      hit_cur = previous_hits->ReadNext();
       if (hit_cur.irep==1)  
 	{
 	  dbfiles[ndb]=new(char[strlen(hit_cur.dbfile)+1]);
@@ -1031,6 +1039,8 @@ void perform_viterbi_search(int db_size)
 
   if (v1>=1) cout<<"\n";
   v=v1;
+
+  for (int n=0;n<ndb;++n) delete[](dbfiles[n]);
 
   if (print_elapsed) ElapsedTimeSinceLastCall("(search through database)");
 
@@ -1104,7 +1114,6 @@ void perform_realign(char *dbfiles[], int ndb)
     delete[] (par.block_shading->ReadNext()); 
   par.block_shading->New(16381,NULL);
   par.block_shading_counter->New(16381,NULL);
-  Hit hit_cur;
   const float MEMSPACE_DYNPROG = 2.0*1024.0*1024.0*1024.0;
   int nhits=0;
   int Lmax=0;      // length of longest HMM to be realigned
@@ -1603,7 +1612,7 @@ void perform_realign(char *dbfiles[], int ndb)
   while (!hitlist.End())
     {
       hit_cur = hitlist.ReadNext();
-      //        printf("Deleting alignment of %s with length %i? nhits=%-2i  par.B=%-3i  par.Z=%-3i par.e=%.2g par.b=%-3i  par.z=%-3i par.p=%.2g\n",hit_cur.name,hit_cur.matched_cols,nhits,par.B,par.Z,par.e,par.b,par.z,par.p);
+      //printf("Deleting alignment of %s with length %i? irep=%i nhits=%-2i  par.B=%-3i  par.Z=%-3i par.e=%.2g par.b=%-3i  par.z=%-3i par.p=%.2g\n",hit_cur.name,hit_cur.matched_cols,hit_cur.irep,nhits,par.B,par.Z,par.e,par.b,par.z,par.p);
 
       if (nhits > par.realign_max && nhits>=imax(par.B,par.Z)) break;
       if (hit_cur.Eval > par.e)
@@ -1640,12 +1649,10 @@ void perform_realign(char *dbfiles[], int ndb)
 /////////////////////////////////////////////////////////////////////////////////////
 int main(int argc, char **argv)
 {
-  Hit hit_cur;
-
   int cluster_found = 0;
   int seqs_found = 0;
   char* argv_conf[MAXOPT];       // Input arguments from .hhdefaults file (first=1: argv_conf[0] is not used)
-  int argc_conf;                 // Number of arguments in argv_conf
+  int argc_conf=0;               // Number of arguments in argv_conf
 
 #ifdef PTHREAD
   pthread_attr_init(&joinable);  // initialize attribute set with default values
@@ -1656,7 +1663,9 @@ int main(int argc, char **argv)
   SetDefaults();
   par.jdummy = 3;
   par.Ndiff = 1000;
+  par.early_stopping_filter=true;
   par.filter_thresh=0.01;
+  par.filter_evals=new double[par.filter_length];
   strcpy(par.outfile,"");
   strcpy(db_ext,"hhm");
   N_searched=0;
@@ -1838,7 +1847,7 @@ int main(int argc, char **argv)
       {
 	// Transform transition freqs to lin space if not already done
 	q.AddTransitionPseudocounts();
-
+	
 	if (!*par.clusterfile) { //compute context-specific pseudocounts?
 	  // Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
 	  q.PreparePseudocounts();
@@ -1848,10 +1857,12 @@ int main(int argc, char **argv)
 	  // Add full context specific pseudocounts to query
 	  q.AddContextSpecificPseudocounts();
 	}
-      } else {
-      q.AddAminoAcidPseudocounts(0);
-    }
-
+      } 
+    else 
+      {
+	q.AddAminoAcidPseudocounts(0);
+      }
+    
     q.CalculateAminoAcidBackground();
     
     if (print_elapsed) ElapsedTimeSinceLastCall("(before prefiltering)");
@@ -1927,6 +1938,7 @@ int main(int argc, char **argv)
 		hit_cur = hitlist.ReadNext();
 		if (hit_cur.Eval > 100.0*par.e) break; // E-value much too large
 		if (hit_cur.Eval > par.e) continue; // E-value too large
+		if (hit_cur.matched_cols < MINCOLS_REALIGN) continue; // leave out to short alignments
 		stringstream ss_tmp;
 		ss_tmp << hit_cur.name << "__" << hit_cur.irep;
 		if (previous_hits->Contains((char*)ss_tmp.str().c_str())) continue;  // Already in alignment
@@ -1946,6 +1958,7 @@ int main(int argc, char **argv)
 		strcpy(ta3mfile,hit_cur.file); // copy filename including path but without extension
 		strcat(ta3mfile,".a3m");
 		Qali.MergeMasterSlave(hit_cur,ta3mfile);
+		if (Qali.N_in>=MAXSEQ) break; // Maximum number of sequences reached 
 	      }
 
 	    // Convert ASCII to int (0-20),throw out all insert states, record their number in I[k][i]
@@ -2020,14 +2033,13 @@ int main(int argc, char **argv)
     if (v>=2) printf("%i sequences in %i clusters found\n",seqs_found,cluster_found);
 
     if (q.Neff_HMM > neffmax && round < num_rounds)
-      {
-	printf("Diversity of created alignment (%4.2f) is above threshold (%4.2f). Stop searching!\n", q.Neff_HMM, neffmax);
-      }
+      printf("Diversity of created alignment (%4.2f) is above threshold (%4.2f). Stop searching!\n", q.Neff_HMM, neffmax);
 
-    if (new_hits == 0 || round == num_rounds || q.Neff_HMM > neffmax) 
-      {
-	break;
-      }
+    if (Qali.N_in>=MAXSEQ)
+      printf("Maximun number of sequences in query alignment reached (%i). Stop searching!\n", MAXSEQ);
+
+    if (new_hits == 0 || round == num_rounds || q.Neff_HMM > neffmax || Qali.N_in>=MAXSEQ) 
+      break;
 
     // Write good hits to previous_hits hash and clear hitlist
     hitlist.Reset();
@@ -2053,7 +2065,7 @@ int main(int argc, char **argv)
   //////////////////////////////////////////////////////////
   // Result section
   //////////////////////////////////////////////////////////
-  
+
   // Warn, if HMMER files were used
   if (hmmer_used)
     printf("\n!!!WARNING!!! Using HMMER files results in a drastically reduced sensitivity (>10%%).\nWe strongly recommend to use HHMs build by hhmake!\n");
@@ -2111,29 +2123,22 @@ int main(int argc, char **argv)
       if (hit[bin]->backward_allocated)
 	hit[bin]->DeleteBackwardMatrix(q.L+2);
 
-      if (hit[bin]->alt_i && hit[bin]->alt_i->Size()>0)
-	delete hit[bin]->alt_i;
-      if (hit[bin]->alt_j && hit[bin]->alt_j->Size()>0)
-	delete hit[bin]->alt_j;
-
       delete hit[bin];
       delete t[bin];
     }
+  if (format) delete[](format);
+  if (par.exclstr) delete[] par.exclstr;
+  delete[] par.filter_evals;
+  for (int n = 1; n < argc_conf; n++)
+    delete[] argv_conf[n];
   if (par.dbfiles) delete[] par.dbfiles;
   for (int idb=0; idb<ndb_new; idb++) delete[](dbfiles_new[idb]);
   for (int idb=0; idb<ndb_old; idb++) delete[](dbfiles_old[idb]);
-  if (format) delete[](format);
-  if (par.exclstr) delete[] par.exclstr;
   par.block_shading->Reset();
   while (!par.block_shading->End())
     delete[] (par.block_shading->ReadNext()); 
   delete par.block_shading;
-  previous_hits->Reset();
-  while (!previous_hits->End())
-    {
-      previous_hits->ReadNext().Delete(); // Delete hit object
-    }
-  delete previous_hits;
+  delete par.block_shading_counter;
   
   if (prefilter)
     {
@@ -2155,9 +2160,13 @@ int main(int argc, char **argv)
   // Delete content of hits in hitlist
   hitlist.Reset();
   while (!hitlist.End())
-    {
-      hitlist.Delete().Delete(); // Delete list record and hit object
-    }
+    hitlist.Delete().Delete(); // Delete list record and hit object
+
+  previous_hits->Reset();
+  while (!previous_hits->End())
+    previous_hits->ReadNext().Delete(); // Delete hit object
+  delete previous_hits;
+
 
 #ifdef PTHREAD
   pthread_attr_destroy(&joinable);

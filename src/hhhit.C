@@ -103,9 +103,11 @@ void Hit::Delete()
   if (i) delete[] i; 
   if (j) delete[] j; 
 
-  // if (alt_i) delete alt_i;
-  // if (alt_j) delete alt_j;
-
+  if (irep == 1) {
+    if (alt_i) delete alt_i;
+    if (alt_j) delete alt_j;
+  }
+  
   if (states) delete[] states; 
   if (S) delete[] S; 
   if (S_ss) delete[] S_ss; 
@@ -531,13 +533,13 @@ void Hit::Forward(HMM& q, HMM& t, float** Pstruc)
       t.tr[t.L][I2M] = t.tr[t.L][I2I] = 0.0;
       t.tr[t.L][D2M] = 1.0;
       t.tr[t.L][D2D] = 0.0;
-      InitializeForAlignment(q,t);
+      InitializeForAlignment(q,t,false);
     }	
 
   if (realign_around_viterbi)
     {
       if (irep>1)
-	InitializeForAlignment(q,t);
+	InitializeForAlignment(q,t,false);
 
       int step;
       // fprintf(stderr,"\nViterbi-hit (Index: %i  Irep: %i) Query: %4i-%4i   Template %4i-%4i\n",index,irep,i1,i2,j1,j2);
@@ -1511,16 +1513,21 @@ void Hit::BacktraceMAC(HMM& q, HMM& t)
 /////////////////////////////////////////////////////////////////////////////////////
 //// Functions that calculate probabilities
 /////////////////////////////////////////////////////////////////////////////////////
-void Hit::InitializeForAlignment(HMM& q, HMM& t)
+void Hit::InitializeForAlignment(HMM& q, HMM& t, bool vit)
 {
   int i,j;
 
-  if (irep == 1) {
-    if (alt_i && alt_i->Size()>0) delete alt_i;
-    alt_i = new List<int>();
-    if (alt_j && alt_j->Size()>0) delete alt_j;
-    alt_j = new List<int>();
+  if (vit) {
+    alt_i = alt_j = NULL;
+  } else {
+    if (irep == 1) {
+      //    if (alt_i && alt_i->Size()>0) delete alt_i;
+      alt_i = new List<int>();
+      //    if (alt_j && alt_j->Size()>0) delete alt_j;
+      alt_j = new List<int>();
+    }
   }
+
   // SS scoring during (ssm2>0) or after (ssm1>0) alignment? Query SS known or Template SS known?
   switch (par.ssm) 
     {

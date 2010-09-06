@@ -9,13 +9,23 @@ ifeq (64,$(BITS))
 BITS_FLAG = -m64
 endif
 
+ifdef ICC
+CXX = env LANG=C icc
+CXXFLAGS = -fast -Wall -fno-strict-aliasing -finline-functions -funroll-loops -fp-model fast=2 -fast-transcendentals -wd981 -wd383 -wd2259 -wd1572 -D HH_SSE3 -I$(CS_DIR)
+HHSEARCH_LIBS = -lpthread -lrt
+HHBLITS_LIBS = -lpthread -lrt -openmp
+OBJECT_LIBS = -openmp
+else
 CXX = g++
 CXXFLAGS = -O3 -Wall -Wno-deprecated -Wno-char-subscripts -fno-strict-aliasing -DHH_SSE3 -march=core2 -I$(CS_DIR) $(BITS_FLAG)
+HHSEARCH_LIBS = -lpthread -lrt
+HHBLITS_LIBS = -lpthread -lrt -fopenmp
+OBJECT_LIBS = -fopenmp
+endif
+
 CPP = $(CXX) $(CXXFLAGS)
 CPP_VALGRIND = $(CXX) -g $(CXXFLAGS)
 
-HHSEARCH_LIBS = -lpthread -lrt
-HHBLITS_LIBS = -lpthread -lrt -fopenmp
 ifeq (32,$(BITS))
 HHALIGN_LIBS = 
 else
@@ -41,7 +51,7 @@ all_static: $(TARGETS_STATIC)
 all_valgrind: $(TARGETS_VALGRIND)
 
 $(CS_OBJECTS): $(CS_DIR)/%.o: $(CS_DIR)/%.cc
-	$(CPP) -fopenmp -c $< -o $@
+	$(CPP) $(OBJECT_LIBS) -c $< -o $@
 
 hhsearch: hhsearch.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
 	 $(CPP) hhsearch.C -o ../bin/hhsearch $(CS_OBJECTS) $(HHSEARCH_LIBS)
