@@ -748,7 +748,7 @@ void ReadInputFile()
   if (num_seqs == 1 && par.M != 2) {
     int num_gaps = strtr(Qali.seq[0], "-", "-");
     if (num_gaps > 0) {
-      fprintf(stderr, "WARNING! Your input sequence contains gaps. For an optimal performance, you should delete these gaps or use the '-M 50' option to ignore these gaps in the search run!\n");
+      fprintf(stderr, "WARNING! Your input sequence contains gaps. These gaps will be ignored in this search!\nIf you wan't to keep these gap as background states, you could start HHblits with the '-M 100' option.\n");
     }
   }
 

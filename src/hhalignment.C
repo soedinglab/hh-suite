@@ -527,7 +527,8 @@ void Alignment::Compress(const char infile[])
           else continue;
           i--;
           if (L!=i && L!=MAXRES-2 && !unequal_lengths) 
-	      unequal_lengths=k;   //sequences have different lengths
+	    unequal_lengths=k;   //sequences have different lengths
+
           L=imin(L,i);
         }
       if (unequal_lengths) break;
@@ -741,6 +742,9 @@ void Alignment::Compress(const char infile[])
         }
       for (k=0; k<N_in; ++k) seq[k][h[k]]='\0';
 
+      if (v>=2) cout<<"Alignment in "<<infile<<" contains "<<L<<" columns and "<<i<<" match states\n";
+      L = i;        //Number of match states
+
       //Replace GAP with ENDGAP for all end gaps
       for (k=0; k<N_in; ++k)
 	{
@@ -749,8 +753,6 @@ void Alignment::Compress(const char infile[])
 	  for (i=L; i>=1 && X[k][i]==GAP; i--) X[k][i]=ENDGAP;
 	}
 
-      if (v>=2) cout<<"Alignment in "<<infile<<" contains "<<L<<" columns and "<<i<<" match states\n";
-      L = i;        //Number of match states
       break;
 
     } //end switch()
