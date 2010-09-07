@@ -503,8 +503,8 @@ void SetDefaults()
   par.pcw=0.0f;                // wc>0 weighs columns according to their intra-clomun similarity
 
 
-  par.pre_pca=1.2f;            // PREFILTER - default values for substitution matrix pseudocounts 
-  par.pre_pcb=2.0f;            // PREFILTER - significant reduction of pcs by Neff_M starts around Neff_M-1=pcb
+  par.pre_pca=0.75f;            // PREFILTER - default values for substitution matrix pseudocounts 
+  par.pre_pcb=1.75f;            // PREFILTER - significant reduction of pcs by Neff_M starts around Neff_M-1=pcb
 
   par.gapb=1.0;                // default values for transition pseudocounts
   par.gapd=0.15;               // gap open penalty pseudocount; 0.25 corresponds to 7.1*gapf bits

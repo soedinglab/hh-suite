@@ -98,7 +98,7 @@ const char print_elapsed=0;
 char tmp_file[]="/tmp/hhblitsXXXXXX";
 
 // HHblits variables
-const char HHBLITS_VERSION[]="version 2.1.7 (August 2010)";
+const char HHBLITS_VERSION[]="version 2.1.8 (September 2010)";
 const char HHBLITS_REFERENCE[]="to be published.\n";
 const char HHBLITS_COPYRIGHT[]="(C) Michael Remmert and Johannes Soeding\n";
 
@@ -734,6 +734,15 @@ void ReadInputFile()
       	par.jdummy=0;
       
       Qali.Read(qa3mf,qa3mfile);
+
+      // Warn, if there are gaps in a single sequence
+      if (num_seqs == 1 && par.M != 2) {
+	int num_gaps = strtr(Qali.seq[0], "-", "-");
+	if (num_gaps > 1) {  // 1 gap is always given at array pos 0
+	  fprintf(stderr, "WARNING! Your input sequence contains gaps. These gaps will be ignored in this search!\nIf you wan't to keep these gap as background states, you could start HHblits with the '-M 100' option.\n");
+	}
+      }
+
       Qali.Compress("compress Qali");
       fclose(qa3mf);
 
@@ -743,14 +752,6 @@ void ReadInputFile()
       strcpy(Qali.name,q.name);
       strcpy(Qali.fam,q.fam);
     }
-
-  // Warn, if there are gaps in a single sequence
-  if (num_seqs == 1 && par.M != 2) {
-    int num_gaps = strtr(Qali.seq[0], "-", "-");
-    if (num_gaps > 0) {
-      fprintf(stderr, "WARNING! Your input sequence contains gaps. These gaps will be ignored in this search!\nIf you wan't to keep these gap as background states, you could start HHblits with the '-M 100' option.\n");
-    }
-  }
 
   // Get basename
   RemoveExtension(base_filename,par.infile);
