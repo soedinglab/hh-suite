@@ -53,6 +53,9 @@ all_valgrind: $(TARGETS_VALGRIND)
 $(CS_OBJECTS): $(CS_DIR)/%.o: $(CS_DIR)/%.cc
 	$(CPP) $(OBJECT_LIBS) -c $< -o $@
 
+ffindex.o:
+	$(CPP) -c -O3 -openmp -g -fPIC -o ffindex.o ffindex.c
+
 hhsearch: hhsearch.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
 	 $(CPP) hhsearch.C -o ../bin/hhsearch $(CS_OBJECTS) $(HHSEARCH_LIBS)
 
@@ -62,14 +65,14 @@ hhsearch_static: hhsearch.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
 hhsearch_valgrind: hhsearch.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
 	  $(CPP_VALGRIND) hhsearch.C -o ../bin/hhsearch_valgrind $(CS_OBJECTS) $(HHSEARCH_LIBS)
 
-hhblits: hhblits.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
-	 $(CPP) hhblits.C -o ../bin/hhblits $(CS_OBJECTS) $(HHBLITS_LIBS)
+hhblits: hhblits.C $(SOURCES) $(HEADERS) $(CS_OBJECTS) ffindex.o
+	 $(CPP) hhblits.C -o ../bin/hhblits $(CS_OBJECTS) ffindex.o $(HHBLITS_LIBS)
 
-hhblits_static: hhblits.C $(SOURCES) $(HEADERS)$(CS_OBJECTS) 
-	 $(CPP) -static hhblits.C -o ../bin/hhblits $(CS_OBJECTS) $(HHBLITS_LIBS)
+hhblits_static: hhblits.C $(SOURCES) $(HEADERS)$(CS_OBJECTS) ffindex.o
+	 $(CPP) -static hhblits.C -o ../bin/hhblits $(CS_OBJECTS) ffindex.o $(HHBLITS_LIBS)
 
-hhblits_valgrind: hhblits.C $(SOURCES) $(HEADERS)$(CS_OBJECTS) 
-	  $(CPP_VALGRIND) hhblits.C -o ../bin/hhblits_valgrind $(CS_OBJECTS) $(HHBLITS_LIBS)
+hhblits_valgrind: hhblits.C $(SOURCES) $(HEADERS)$(CS_OBJECTS) ffindex.o
+	  $(CPP_VALGRIND) hhblits.C -o ../bin/hhblits_valgrind $(CS_OBJECTS) ffindex.o $(HHBLITS_LIBS)
 
 hhmake: hhmake.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
 	$(CPP) hhmake.C -o ../bin/hhmake $(CS_OBJECTS)

@@ -2245,7 +2245,7 @@ void Alignment::WriteToFile(const char* alnfile, const char format[])
 /////////////////////////////////////////////////////////////////////////////////////
 // Read a3m slave alignment of hit from file and merge into (query) master alignment
 /////////////////////////////////////////////////////////////////////////////////////
-void Alignment::MergeMasterSlave(Hit& hit, char ta3mfile[])
+void Alignment::MergeMasterSlave(Hit& hit, char ta3mfile[], FILE* ta3mf)
 {
   Alignment Tali;
   char* cur_seq = new(char[MAXCOL]);   // Sequence currently read in
@@ -2263,10 +2263,7 @@ void Alignment::MergeMasterSlave(Hit& hit, char ta3mfile[])
   if (par.append) for (k=0; k<N_in; ++k) keep[k]=display[k]=0;
 
   // Read template alignment into Tali
-  FILE* ta3mf=fopen(ta3mfile,"r");
-  if (!ta3mf) OpenFileError(ta3mfile);
   Tali.Read(ta3mf,ta3mfile);
-  fclose(ta3mf);
 
   // Filter Tali alignment
   Tali.Compress(ta3mfile);

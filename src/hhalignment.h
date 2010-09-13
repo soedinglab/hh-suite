@@ -66,7 +66,7 @@ public:
   void WriteToFile(const char* alnfile, const char format[]=NULL);
 
   // Read a3m slave alignment of hit from ta3mfile and merge into (query) master alignment
-  void MergeMasterSlave(Hit& hit, char ta3mfile[]);
+  void MergeMasterSlave(Hit& hit, char ta3mfile[], FILE* ta3mf);
 
   // Read a3m alignment of hit from ta3mfile and merge-combine with query alignment
   void Merge(Hit& hit, char ta3mfile[]);

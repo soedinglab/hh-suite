@@ -43,7 +43,7 @@
 #else
 #include <emmintrin.h>   // SSE2
 #include <pmmintrin.h>   // SSE3
-#include <tmmintrin.h>   // SSE?
+#include <tmmintrin.h>   // SSSE3
 ///#include <smmintrin.h>   // SSE4.1
 #endif
 #endif
@@ -58,6 +58,8 @@ using std::string;
 using std::stringstream;
 using std::vector;
 using std::pair;
+
+#include "ffindex.h"     // fast index-based database reading
 
 #include "cs.h"          // context-specific pseudocounts
 #include "context_library.h"
@@ -98,7 +100,7 @@ const char print_elapsed=0;
 char tmp_file[]="/tmp/hhblitsXXXXXX";
 
 // HHblits variables
-const char HHBLITS_VERSION[]="version 2.1.8 (September 2010)";
+const char HHBLITS_VERSION[]="version 2.2.0 (September 2010)";
 const char HHBLITS_REFERENCE[]="to be published.\n";
 const char HHBLITS_COPYRIGHT[]="(C) Michael Remmert and Johannes Soeding\n";
 
@@ -125,13 +127,24 @@ char alis_basename[NAMELEN];
 char base_filename[NAMELEN];
 char query_hhmfile[NAMELEN];
 
-char db_ext[NAMELEN];                        // database with context-state sequences
-
 bool alitab_scop = false;                // Write only SCOP alignments in alitabfile
+
+char db_ext[NAMELEN];
+
+size_t ffindex_offset, ffindex_length;                   // Needed for fast index reading
 
 // Read from config-file:
 char db[NAMELEN];                        // database with context-state sequences
-char dbhhm[NAMELEN];                     // directory with database HMMs
+char dba3m[NAMELEN];                     // database with A3M-files
+char dbhhm[NAMELEN];                     // database with HHM-files
+
+FILE *dba3m_data_file;
+FILE *dba3m_index_file;
+FILE *dbhhm_data_file;
+FILE *dbhhm_index_file;
+
+char* dba3m_data;
+char* dbhhm_data;
 
 int ndb_new=0;
 char* dbfiles_new[MAXNUMDB_NO_PREFILTER+1];
@@ -287,7 +300,8 @@ void help()
   printf("\n");
   printf("Options:                                                                                 \n");
   printf(" -db    <file>  BLAST formatted database with consensus sequences (default=%s)           \n",db);
-  printf(" -dbhhm <dir>   directory with database HMMs (default=%s)                                \n",dbhhm);
+  printf(" -dba3m <dir>   database file with HHM-files (default=%s)                                \n",dba3m);
+  printf(" -dbhhm <dir>   database file with HHM-files (default=%s)                                \n",dbhhm);
   printf(" -n     [1,8]   number of rounds (default=%i)                                            \n",num_rounds); 
   printf(" -e     [0,1]   E-value cutoff for inclusion in result alignment (def=%G)                \n",par.e);
   printf("\n");
@@ -338,7 +352,8 @@ void help_all()
   printf("\n");
   printf("Options:                                                                                 \n");
   printf(" -db      <file> BLAST formatted database with consensus sequences (default=%s)           \n",db);
-  printf(" -dbhhm   <dir>  directory with database HMMs (default=%s)                                \n",dbhhm);
+  printf(" -dba3m <dir>   database file with HHM-files (default=%s)                                \n",dba3m);
+  printf(" -dbhhm <dir>   database file with HHM-files (default=%s)                                \n",dbhhm);
   printf(" -n       [1,8]  number of rounds (default=%i)                                            \n",num_rounds); 
   printf(" -neffmax [0,15] break if neff > neffmax (default=%f)                                   \n",neffmax); 
   printf(" -e       [0,1]  E-value cutoff for inclusion in result alignment (def=%G)                \n",par.e);
@@ -462,10 +477,17 @@ void ProcessArguments(int argc, char** argv)
           else
 	    strcpy(db,argv[i]);
         }
+      else if (!strcmp(argv[i],"-dba3m"))
+        {
+          if (++i>=argc || argv[i][0]=='-')
+            {help() ; cerr<<endl<<"Error in "<<program_name<<": no database file following -dba3m\n"; exit(4);}
+          else
+	    strcpy(dba3m,argv[i]);
+        }
       else if (!strcmp(argv[i],"-dbhhm"))
         {
           if (++i>=argc || argv[i][0]=='-')
-            {help() ; cerr<<endl<<"Error in "<<program_name<<": no database directory following -dbhhm\n"; exit(4);}
+            {help() ; cerr<<endl<<"Error in "<<program_name<<": no database file following -dbhhm\n"; exit(4);}
           else
 	    strcpy(dbhhm,argv[i]);
         }
@@ -535,7 +557,7 @@ void ProcessArguments(int argc, char** argv)
       else if (!strcmp(argv[i],"-db_ext"))
         {
           if (++i>=argc || argv[i][0]=='-')
-            {help() ; cerr<<endl<<"Error in "<<program_name<<": no file following -db_ext\n"; exit(4);}
+            {help() ; cerr<<endl<<"Error in "<<program_name<<": no extension following -db_ext\n"; exit(4);}
           else {strcpy(db_ext,argv[i]);}
         }
       else if (!strcmp(argv[i],"-atab"))
@@ -791,9 +813,27 @@ void search_loop(char *dbfiles[], int ndb, bool alignByWorker=true)
       
       // Open HMM database
       //cerr<<"\nReading db file "<<idb<<" dbfiles[idb]="<<dbfiles[idb]<<"\n";
-      FILE* dbf=fopen(dbfiles[idb],"rb");
+      //FILE* dbf=fopen(dbfiles[idb],"rb");
+      FILE* dbf;
+      if(ffindex_get_entry(dbhhm_index_file, dbfiles[idb], &ffindex_offset, &ffindex_length) == 0)
+	dbf = fmemopen(ffindex_get_filedata(dbhhm_data, ffindex_offset), ffindex_length, "r");
+        //dbf = ffindex_fopen(dbhhm_data, dbhhm_index_file, dbfiles[idb]);
+      else
+	{
+	  char filename[NAMELEN];
+	  RemoveExtension(filename, dbfiles[idb]);
+	  strcat(filename,".a3m");
+	  if(dba3m_index_file!=NULL && ffindex_get_entry(dba3m_index_file, filename, &ffindex_offset, &ffindex_length) == 0)
+	    dbf = fmemopen(ffindex_get_filedata(dba3m_data, ffindex_offset), ffindex_length, "r");
+	    //dbf = ffindex_fopen(dba3m_data, dba3m_index_file, filename);
+	  else
+	    {
+	      fprintf(stderr,"ERROR! Could not read %s!\n", dbfiles[idb]);
+	      exit(4);
+	    }
+	}
       if (!dbf) OpenFileError(dbfiles[idb]);
-
+      
       // Submit jobs if bin is free
       if (jobs_submitted+jobs_running<bins)
 	{
@@ -837,7 +877,7 @@ void search_loop(char *dbfiles[], int ndb, bool alignByWorker=true)
 	      format[bin] = 0;
 	      t[bin]->Read(dbf,path);
 	    }
-	  else if (line[0]=='#')             // read a3m alignment
+	  else if (line[0]=='#' || line[0]=='>')             // read a3m alignment
 	    {
 	      Alignment tali;
 	      tali.Read(dbf,dbfiles[idb],line);
@@ -1253,7 +1293,24 @@ void perform_realign(char *dbfiles[], int ndb)
 	  if (hit_cur.Eval > par.e) continue; // Don't align hits with an E-value below the inclusion threshold
 
 	  // Open HMM database file dbfiles[idb]
-	  FILE* dbf=fopen(hit_cur.dbfile,"rb");
+	  FILE* dbf;
+	  if(ffindex_get_entry(dbhhm_index_file, hit_cur.dbfile, &ffindex_offset, &ffindex_length) == 0)
+	    dbf = fmemopen(ffindex_get_filedata(dbhhm_data, ffindex_offset), ffindex_length, "r");
+	    //dbf = ffindex_fopen(dbhhm_data, dbhhm_index_file, hit_cur.dbfile);
+	  else
+	    {
+	      char filename[NAMELEN];
+	      strcpy(filename,hit_cur.file); // copy filename including path but without extension
+	      strcat(filename,".a3m");
+	      if(dba3m_index_file!=NULL && ffindex_get_entry(dba3m_index_file, filename, &ffindex_offset, &ffindex_length) == 0)
+		dbf = fmemopen(ffindex_get_filedata(dba3m_data, ffindex_offset), ffindex_length, "r");
+	        //dbf = ffindex_fopen(dba3m_data, dba3m_index_file, filename);
+	      else
+		{
+		  fprintf(stderr,"ERROR! Could not read %s!\n", hit_cur.dbfile);
+		  exit(4);
+		}
+	    }
 	  if (!dbf) OpenFileError(hit_cur.dbfile);
 	  read_from_db=1;
 	  
@@ -1294,7 +1351,7 @@ void perform_realign(char *dbfiles[], int ndb)
 	      fseek(dbf,hit_cur.ftellpos,SEEK_SET); // rewind to beginning of line
 	      read_from_db = t[bin]->Read(dbf,path);
 	    }
-	  else if (line[0]=='#')             // read a3m alignment
+	  else if (line[0]=='#' || line[0]=='>')             // read a3m alignment
 	    {
 	      Alignment tali;
 	      tali.Read(dbf,hit_cur.dbfile,line);
@@ -1374,7 +1431,17 @@ void perform_realign(char *dbfiles[], int ndb)
 	  char ta3mfile[NAMELEN];
 	  strcpy(ta3mfile,hit[bin]->file); // copy filename including path but without extension
 	  strcat(ta3mfile,".a3m");
-	  Qali.MergeMasterSlave(*hit[bin],ta3mfile);
+	  FILE* ta3mf;
+	  if(dba3m_index_file!=NULL && ffindex_get_entry(dba3m_index_file, ta3mfile, &ffindex_offset, &ffindex_length) == 0)
+	    ta3mf = fmemopen(ffindex_get_filedata(dba3m_data, ffindex_offset), ffindex_length, "r");
+	    //ta3mf = ffindex_fopen(dba3m_data, dba3m_index_file, ta3mfile);
+	  else
+	    {
+	      fprintf(stderr,"ERROR! Could not read %s!\n", ta3mfile);
+	      exit(4);
+	    }
+	  Qali.MergeMasterSlave(*hit[bin],ta3mfile, ta3mf);
+	  fclose(ta3mf);
 	  
 	  // Convert ASCII to int (0-20),throw out all insert states, record their number in I[k][i]
 	  Qali.Compress("merged A3M file");
@@ -1430,8 +1497,25 @@ void perform_realign(char *dbfiles[], int ndb)
       realign->Show(dbfiles[idb])->SortList();
       
       // Open HMM database file dbfiles[idb]
-      FILE* dbf=fopen(dbfiles[idb],"rb");
-      if (!dbf) OpenFileError(dbfiles[ndb]);
+      FILE* dbf;
+      if(ffindex_get_entry(dbhhm_index_file, dbfiles[idb], &ffindex_offset, &ffindex_length) == 0)
+	dbf = fmemopen(ffindex_get_filedata(dbhhm_data, ffindex_offset), ffindex_length, "r");
+        //dbf = ffindex_fopen(dbhhm_data, dbhhm_index_file, dbfiles[idb]);
+      else
+	{
+	  char filename[NAMELEN];
+	  RemoveExtension(filename,dbfiles[idb]); // copy filename including path but without extension
+	  strcat(filename,".a3m");
+	  if(dba3m_index_file!=NULL && ffindex_get_entry(dba3m_index_file, filename, &ffindex_offset, &ffindex_length) == 0)
+	    dbf = fmemopen(ffindex_get_filedata(dba3m_data, ffindex_offset), ffindex_length, "r");
+	    //dbf = ffindex_fopen(dba3m_data, dba3m_index_file, filename);
+	  else
+	    {
+	      fprintf(stderr,"ERROR! Could not read %s!\n", dbfiles[idb]);
+	      exit(4);
+	    }
+	}
+      if (!dbf) OpenFileError(dbfiles[idb]);
       read_from_db=1;
       int index_prev=-1;
       
@@ -1489,7 +1573,7 @@ void perform_realign(char *dbfiles[], int ndb)
 		  fseek(dbf,realign->Show(dbfiles[idb])->ReadCurrent().ftellpos,SEEK_SET); // rewind to beginning of line
 		  read_from_db = t[bin]->Read(dbf,path);
 		}
-	      else if (line[0]=='#')                 // read a3m alignment
+	      else if (line[0]=='#' || line[0]=='>')                 // read a3m alignment
 		{
 		  Alignment tali;
 		  tali.Read(dbf,dbfiles[idb],line);
@@ -1709,6 +1793,24 @@ int main(int argc, char **argv)
   par.block_shading_counter = new Hash<int>;
   par.block_shading->New(16381,NULL);
   par.block_shading_counter->New(16381,NULL);
+
+  // Prepare index-based databases
+  char filename[NAMELEN];
+  dbhhm_data_file = fopen(dbhhm, "r");
+  strcpy(filename, dbhhm);
+  strcat(filename, ".index");
+  dbhhm_index_file = fopen(filename, "r");
+  dbhhm_data = ffindex_mmap_data(dbhhm_data_file);
+
+  if (!*dba3m) {
+    dba3m_data_file = dba3m_index_file = NULL;
+  } else {
+    dba3m_data_file = fopen(dba3m, "r");
+    strcpy(filename, dba3m);
+    strcat(filename, ".index");
+    dba3m_index_file = fopen(filename, "r");
+    dba3m_data = ffindex_mmap_data(dba3m_data_file);
+  }
 
   // Check for threads
   if (threads<=1) threads=0;
@@ -1958,7 +2060,17 @@ int main(int argc, char **argv)
 		// Read a3m alignment of hit from <file>.a3m file and merge into Qali alignment
 		strcpy(ta3mfile,hit_cur.file); // copy filename including path but without extension
 		strcat(ta3mfile,".a3m");
-		Qali.MergeMasterSlave(hit_cur,ta3mfile);
+		FILE* ta3mf;
+		if(dba3m_index_file!=NULL && ffindex_get_entry(dba3m_index_file, ta3mfile, &ffindex_offset, &ffindex_length) == 0)
+		  ta3mf = fmemopen(ffindex_get_filedata(dba3m_data, ffindex_offset), ffindex_length, "r");
+		  //ta3mf = ffindex_fopen(dba3m_data, dba3m_index_file, ta3mfile);
+		else
+		  {
+		    fprintf(stderr,"ERROR! Could not read %s!\n", ta3mfile);
+		    exit(4);
+		  }
+		Qali.MergeMasterSlave(hit_cur,ta3mfile, ta3mf);
+		fclose(ta3mf);
 		if (Qali.N_in>=MAXSEQ) break; // Maximum number of sequences reached 
 	      }
 
@@ -2114,6 +2226,13 @@ int main(int argc, char **argv)
       if (*par.alnfile) Qali.WriteToFile(par.alnfile,"a3m");
       
     }
+
+  fclose(dbhhm_data_file);
+  fclose(dbhhm_index_file);
+  if (dba3m_index_file!=NULL) {
+    fclose(dba3m_data_file);
+    fclose(dba3m_index_file);
+  }
   
   // Delete memory for dynamic programming matrix
   for (bin=0; bin<bins; bin++)

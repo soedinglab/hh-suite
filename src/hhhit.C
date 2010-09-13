@@ -1853,13 +1853,10 @@ inline float ProbFwd(float* qi, float* tj)
 #ifdef HH_SSE3
   float __attribute__((aligned(16))) res;
   __m128 Q; // query 128bit SSE2 register holding 4 floats
-  __m128 T; // template
   __m128 R; // result  
   __m128* Qi = (__m128*) qi;
   __m128* Tj = (__m128*) tj;
 
-  Q = _mm_load_ps(qi);
-  T = _mm_load_ps(tj);
   R = _mm_mul_ps(*(Qi++),*(Tj++));
   Q = _mm_mul_ps(*(Qi++),*(Tj++));
   R = _mm_add_ps(R,Q);

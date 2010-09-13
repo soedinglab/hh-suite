@@ -1124,7 +1124,10 @@ int main(int argc, char **argv)
       fclose(qa3mf);
       
       // Align query with template in master-slave mode 
-      Qali.MergeMasterSlave(hit,par.tfile);
+      FILE* ta3mf=fopen(par.tfile,"r");
+      if (!ta3mf) OpenFileError(par.tfile);
+      Qali.MergeMasterSlave(hit,par.tfile, ta3mf);
+      fclose(ta3mf);
       
       // Write output A3M alignment?
       if (*par.alnfile) Qali.WriteToFile(par.alnfile,"a3m");

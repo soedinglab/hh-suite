@@ -688,15 +688,11 @@ void init_no_prefiltering()
 
 	  // Add hit to dbfiles
 	  char db_name[NAMELEN];
-	  char tmp[NAMELEN];
 	  
 	  if (!strncmp(word,"cl|",3))   // kClust formatted database (NR20, NR30, UNIPROT20)
 	    {
-	      substr(tmp,word,3,11);
-	      substr(db_name,tmp,0,1);
-	      strcat(db_name,"/");
-	      strcat(db_name,tmp);
-	      strcat(db_name,".db");
+	      substr(db_name,word,3,11);
+	      strcat(db_name,".hhm");
 	    }
 	  else                              // other database
 	    {
@@ -706,10 +702,8 @@ void init_no_prefiltering()
 	      strcat(db_name,db_ext);
 	    }
 	  
-	  dbfiles_new[ndb_new]=new(char[strlen(dbhhm)+strlen(db_name)+2]);
-	  strcpy(dbfiles_new[ndb_new],dbhhm);
-	  strcat(dbfiles_new[ndb_new],"/");
-	  strcat(dbfiles_new[ndb_new],db_name);
+	  dbfiles_new[ndb_new]=new(char[strlen(db_name)+1]);
+	  strcpy(dbfiles_new[ndb_new],db_name);
 	  ndb_new++;
 	}
     }
@@ -832,7 +826,6 @@ void stripe_query_profile()
   } else {
     // Add context specific pseudocounts (now always used, because clusterfile is necessary)
     q_tmp.AddContextSpecificPseudocounts(5,par.pre_pca,par.pre_pcb,1);
-    //q_tmp.AddContextSpecificPseudocounts(par.pcm,par.pre_pca,par.pre_pcb,1);
   }
       
   q_tmp.CalculateAminoAcidBackground();
@@ -1027,16 +1020,12 @@ void prefilter_with_SW_evalue_preprefilter_backtrace()
       // Add hit to dbfiles
       char tmp_name[NAMELEN];
       char db_name[NAMELEN];
-      char tmp[NAMELEN];
       ptr=strwrd(tmp_name,dbnames[(*it).second]);
       
       if (!strncmp(tmp_name,"cl|",3))   // kClust formatted database (NR20, NR30, UNIPROT20)
 	{
-	  substr(tmp,tmp_name,3,11);
-	  substr(db_name,tmp,0,1);
-	  strcat(db_name,"/");
-	  strcat(db_name,tmp);
-	  strcat(db_name,".db");
+	  substr(db_name,tmp_name,3,11);
+	  strcat(db_name,".hhm");
 	}
       else                              // other database
 	{
@@ -1053,20 +1042,14 @@ void prefilter_with_SW_evalue_preprefilter_backtrace()
 	  strcat(tmp_name,"__1");  // irep=1
 	  if (previous_hits->Contains(tmp_name))
 	    {
-	      dbfiles_old[ndb_old]=new(char[strlen(dbhhm)+strlen(db_name)+2]);
-	      strcpy(dbfiles_old[ndb_old],dbhhm);
-	      strcat(dbfiles_old[ndb_old],"/");
-	      strcat(dbfiles_old[ndb_old],db_name);
-	      if (ndb_old<5 && ndb_old>0 && access(dbfiles_old[ndb_old],R_OK)) OpenFileError(dbfiles_old[ndb_old]); // file not readable?
+	      dbfiles_old[ndb_old]=new(char[strlen(db_name)+1]);
+	      strcpy(dbfiles_old[ndb_old],db_name);
 	      ndb_old++;
 	    }
 	  else 
 	    {
-	      dbfiles_new[ndb_new]=new(char[strlen(dbhhm)+strlen(db_name)+2]);
-	      strcpy(dbfiles_new[ndb_new],dbhhm);
-	      strcat(dbfiles_new[ndb_new],"/");
-	      strcat(dbfiles_new[ndb_new],db_name);
-	      if (ndb_new<5 && ndb_new>0 && access(dbfiles_new[ndb_new],R_OK)) OpenFileError(dbfiles_new[ndb_new]); // file not readable?
+	      dbfiles_new[ndb_new]=new(char[strlen(db_name)+1]);
+	      strcpy(dbfiles_new[ndb_new],db_name);
 	      ndb_new++;
 	    }
 	}

@@ -42,7 +42,6 @@
 #else
 #include <emmintrin.h>   // SSE2
 #include <pmmintrin.h>   // SSE3
-///#include <smmintrin.h>   // SSE4.1
 #endif
 #endif
 
@@ -1343,7 +1342,10 @@ int main(int argc, char **argv)
               // Read a3m alignment of hit and merge with Qali according to Q-T-alignment in hit[bin]
               strcpy(ta3mfile,hit[bin]->file); // copy filename including path but without extension
               strcat(ta3mfile,".a3m");
-              Qali.MergeMasterSlave(*hit[bin],ta3mfile);
+	      FILE* ta3mf=fopen(ta3mfile,"r");
+	      if (!ta3mf) OpenFileError(ta3mfile);
+              Qali.MergeMasterSlave(*hit[bin],ta3mfile, ta3mf);
+	      fclose(ta3mf);
 
               // Convert ASCII to int (0-20),throw out all insert states, record their number in I[k][i]
               Qali.Compress("merged A3M file");
@@ -1681,7 +1683,10 @@ int main(int argc, char **argv)
           // Read a3m alignment of hit from <file>.a3m file and merge into Qali alignment
           strcpy(ta3mfile,hit.file); // copy filename including path but without extension
           strcat(ta3mfile,".a3m");
-          Qali.MergeMasterSlave(hit,ta3mfile);
+          FILE* ta3mf=fopen(ta3mfile,"r");
+	  if (!ta3mf) OpenFileError(ta3mfile);
+	  Qali.MergeMasterSlave(hit,ta3mfile, ta3mf);
+	  fclose(ta3mf);
           nhits++;
         }
 
