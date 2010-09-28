@@ -131,7 +131,10 @@ bool alitab_scop = false;                // Write only SCOP alignments in alitab
 
 char db_ext[NAMELEN];
 
-size_t ffindex_offset, ffindex_length;                   // Needed for fast index reading
+size_t data_size;                        // Needed for fast index reading
+ffindex_index_t* dbhhm_index = NULL;
+ffindex_index_t* dba3m_index = NULL;
+ffindex_entry_t* entry = NULL;
 
 // Read from config-file:
 char db[NAMELEN];                        // database with context-state sequences
@@ -815,17 +818,16 @@ void search_loop(char *dbfiles[], int ndb, bool alignByWorker=true)
       //cerr<<"\nReading db file "<<idb<<" dbfiles[idb]="<<dbfiles[idb]<<"\n";
       //FILE* dbf=fopen(dbfiles[idb],"rb");
       FILE* dbf;
-      if(ffindex_get_entry(dbhhm_index_file, dbfiles[idb], &ffindex_offset, &ffindex_length) == 0)
-	dbf = fmemopen(ffindex_get_filedata(dbhhm_data, ffindex_offset), ffindex_length, "r");
-        //dbf = ffindex_fopen(dbhhm_data, dbhhm_index_file, dbfiles[idb]);
+      entry = ffindex_bsearch_get_entry(dbhhm_index, dbfiles[idb]);
+      if (entry != NULL)
+	dbf = fmemopen(ffindex_get_filedata(dbhhm_data, entry->offset), entry->length, "r");
       else
 	{
 	  char filename[NAMELEN];
 	  RemoveExtension(filename, dbfiles[idb]);
 	  strcat(filename,".a3m");
-	  if(dba3m_index_file!=NULL && ffindex_get_entry(dba3m_index_file, filename, &ffindex_offset, &ffindex_length) == 0)
-	    dbf = fmemopen(ffindex_get_filedata(dba3m_data, ffindex_offset), ffindex_length, "r");
-	    //dbf = ffindex_fopen(dba3m_data, dba3m_index_file, filename);
+	  if(dba3m_index_file!=NULL && (entry = ffindex_bsearch_get_entry(dba3m_index, filename)) != NULL)
+	    dbf = fmemopen(ffindex_get_filedata(dba3m_data, entry->offset), entry->length, "r");
 	  else
 	    {
 	      fprintf(stderr,"ERROR! Could not read %s!\n", dbfiles[idb]);
@@ -1294,17 +1296,16 @@ void perform_realign(char *dbfiles[], int ndb)
 
 	  // Open HMM database file dbfiles[idb]
 	  FILE* dbf;
-	  if(ffindex_get_entry(dbhhm_index_file, hit_cur.dbfile, &ffindex_offset, &ffindex_length) == 0)
-	    dbf = fmemopen(ffindex_get_filedata(dbhhm_data, ffindex_offset), ffindex_length, "r");
-	    //dbf = ffindex_fopen(dbhhm_data, dbhhm_index_file, hit_cur.dbfile);
+	  entry = ffindex_bsearch_get_entry(dbhhm_index, hit_cur.dbfile);
+	  if (entry != NULL)
+	    dbf = fmemopen(ffindex_get_filedata(dbhhm_data, entry->offset), entry->length, "r");
 	  else
 	    {
 	      char filename[NAMELEN];
 	      strcpy(filename,hit_cur.file); // copy filename including path but without extension
 	      strcat(filename,".a3m");
-	      if(dba3m_index_file!=NULL && ffindex_get_entry(dba3m_index_file, filename, &ffindex_offset, &ffindex_length) == 0)
-		dbf = fmemopen(ffindex_get_filedata(dba3m_data, ffindex_offset), ffindex_length, "r");
-	        //dbf = ffindex_fopen(dba3m_data, dba3m_index_file, filename);
+	      if(dba3m_index_file!=NULL && (entry = ffindex_bsearch_get_entry(dba3m_index, filename)) != NULL)
+		dbf = fmemopen(ffindex_get_filedata(dba3m_data, entry->offset), entry->length, "r");
 	      else
 		{
 		  fprintf(stderr,"ERROR! Could not read %s!\n", hit_cur.dbfile);
@@ -1432,9 +1433,8 @@ void perform_realign(char *dbfiles[], int ndb)
 	  strcpy(ta3mfile,hit[bin]->file); // copy filename including path but without extension
 	  strcat(ta3mfile,".a3m");
 	  FILE* ta3mf;
-	  if(dba3m_index_file!=NULL && ffindex_get_entry(dba3m_index_file, ta3mfile, &ffindex_offset, &ffindex_length) == 0)
-	    ta3mf = fmemopen(ffindex_get_filedata(dba3m_data, ffindex_offset), ffindex_length, "r");
-	    //ta3mf = ffindex_fopen(dba3m_data, dba3m_index_file, ta3mfile);
+	  if(dba3m_index_file!=NULL && (entry = ffindex_bsearch_get_entry(dba3m_index, ta3mfile)) != NULL)
+	    ta3mf = fmemopen(ffindex_get_filedata(dba3m_data, entry->offset), entry->length, "r");
 	  else
 	    {
 	      fprintf(stderr,"ERROR! Could not read %s!\n", ta3mfile);
@@ -1498,17 +1498,16 @@ void perform_realign(char *dbfiles[], int ndb)
       
       // Open HMM database file dbfiles[idb]
       FILE* dbf;
-      if(ffindex_get_entry(dbhhm_index_file, dbfiles[idb], &ffindex_offset, &ffindex_length) == 0)
-	dbf = fmemopen(ffindex_get_filedata(dbhhm_data, ffindex_offset), ffindex_length, "r");
-        //dbf = ffindex_fopen(dbhhm_data, dbhhm_index_file, dbfiles[idb]);
+      entry = ffindex_bsearch_get_entry(dbhhm_index, dbfiles[idb]);
+      if (entry != NULL)
+	dbf = fmemopen(ffindex_get_filedata(dbhhm_data, entry->offset), entry->length, "r");
       else
 	{
 	  char filename[NAMELEN];
-	  RemoveExtension(filename,dbfiles[idb]); // copy filename including path but without extension
+	  RemoveExtension(filename, dbfiles[idb]);
 	  strcat(filename,".a3m");
-	  if(dba3m_index_file!=NULL && ffindex_get_entry(dba3m_index_file, filename, &ffindex_offset, &ffindex_length) == 0)
-	    dbf = fmemopen(ffindex_get_filedata(dba3m_data, ffindex_offset), ffindex_length, "r");
-	    //dbf = ffindex_fopen(dba3m_data, dba3m_index_file, filename);
+	  if(dba3m_index_file!=NULL && (entry = ffindex_bsearch_get_entry(dba3m_index, filename)) != NULL)
+	    dbf = fmemopen(ffindex_get_filedata(dba3m_data, entry->offset), entry->length, "r");
 	  else
 	    {
 	      fprintf(stderr,"ERROR! Could not read %s!\n", dbfiles[idb]);
@@ -1800,16 +1799,19 @@ int main(int argc, char **argv)
   strcpy(filename, dbhhm);
   strcat(filename, ".index");
   dbhhm_index_file = fopen(filename, "r");
-  dbhhm_data = ffindex_mmap_data(dbhhm_data_file);
+  dbhhm_index = ffindex_index_parse(dbhhm_index_file);
+  dbhhm_data = ffindex_mmap_data(dbhhm_data_file, &data_size);
 
   if (!*dba3m) {
     dba3m_data_file = dba3m_index_file = NULL;
+    dba3m_index = NULL;
   } else {
     dba3m_data_file = fopen(dba3m, "r");
     strcpy(filename, dba3m);
     strcat(filename, ".index");
     dba3m_index_file = fopen(filename, "r");
-    dba3m_data = ffindex_mmap_data(dba3m_data_file);
+    dba3m_index = ffindex_index_parse(dba3m_index_file);
+    dba3m_data = ffindex_mmap_data(dba3m_data_file, &data_size);
   }
 
   // Check for threads
@@ -2061,9 +2063,8 @@ int main(int argc, char **argv)
 		strcpy(ta3mfile,hit_cur.file); // copy filename including path but without extension
 		strcat(ta3mfile,".a3m");
 		FILE* ta3mf;
-		if(dba3m_index_file!=NULL && ffindex_get_entry(dba3m_index_file, ta3mfile, &ffindex_offset, &ffindex_length) == 0)
-		  ta3mf = fmemopen(ffindex_get_filedata(dba3m_data, ffindex_offset), ffindex_length, "r");
-		  //ta3mf = ffindex_fopen(dba3m_data, dba3m_index_file, ta3mfile);
+		if(dba3m_index_file!=NULL && (entry = ffindex_bsearch_get_entry(dba3m_index, ta3mfile)) != NULL)
+		  ta3mf = fmemopen(ffindex_get_filedata(dba3m_data, entry->offset), entry->length, "r");
 		else
 		  {
 		    fprintf(stderr,"ERROR! Could not read %s!\n", ta3mfile);
@@ -2233,6 +2234,8 @@ int main(int argc, char **argv)
     fclose(dba3m_data_file);
     fclose(dba3m_index_file);
   }
+  free(dbhhm_index);
+  free(dba3m_index);
   
   // Delete memory for dynamic programming matrix
   for (bin=0; bin<bins; bin++)

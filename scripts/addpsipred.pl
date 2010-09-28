@@ -61,6 +61,8 @@ my $outfile;
 my $ss_pred="";        # psipred ss states
 my $ss_conf="";        # psipred confidence values
 
+my $log2 = log(2);
+
 ###############################################################################################
 # Processing command line input
 ###############################################################################################
@@ -119,8 +121,12 @@ if ($informat ne "hmm")
 {
     if (!$outfile) {$outfile="$inbase.a3m";}
 
-    # Use first sequence to define match states and reformat input file to a3m and psi
-    &System("perl $perl/reformat.pl -v $v2 -M first $informat a3m $infile $inbase.in.a3m");
+    if ($informat ne "a3m") {
+	# Use first sequence to define match states and reformat input file to a3m and psi
+	&System("perl $perl/reformat.pl -v $v2 -M first $informat a3m $infile $inbase.in.a3m");
+    } else {
+	&System("cp $infile $inbase.in.a3m");
+    }
         
     # Read query sequence
     open (INFILE, "<$inbase.in.a3m") or die ("ERROR: cannot open $inbase.in.a3m: $!\n");
@@ -135,7 +141,8 @@ if ($informat ne "hmm")
 	if(!$qseq && $line!~/^ss_dssp/) {
 	    $line=~s/^(\S*)[^\n]*//;
 	    $name=$1;
-	    $qseq=uc($line);
+	    #$qseq=uc($line);  ???????????? WHY ????
+	    $qseq = $line;
 	    $qseq=~s/\n//g;
 	}
     }
@@ -145,9 +152,8 @@ if ($informat ne "hmm")
     $qseq=~tr/a-zA-Z//cd;
     
     # If less than 26 match states => add sufficient number of Xs to the end of each sequence in $inbase.in.a3m
-    my $q_match = ($qseq=~tr/A-Z/A-Z/); # count number of capital letters
-    if ($q_match<=25) {                 # Psiblast needs at least 26 residues in query
-	my $addedXs=('X' x (26-$q_match))."\n";
+    if ($query_length<=25) {                 # Psiblast needs at least 26 residues in query
+	my $addedXs=('X' x (26-$query_length))."\n";
 	$qseq.=$addedXs;     # add 'X' to query to make it at least 26 resiudes long
 	for ($i=0; $i<@seqs; $i++) {	    
 	    $seqs[$i]=~s/\n$//g;
@@ -162,6 +168,7 @@ if ($informat ne "hmm")
     $/="\n"; # set input field separator
 
     # Write query sequence file in FASTA format
+    $qseq=~tr/a-z//d; # remove inserts
     open (QFILE, ">$inbase.sq") or die("ERROR: can't open $inbase.sq: $!\n");
     printf(QFILE ">%s\n%s\n",$name,$qseq);
     close (QFILE);
