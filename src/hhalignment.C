@@ -559,201 +559,207 @@ void Alignment::Compress(const char infile[])
     /////////////////////////////////////////////////////////////////////////////////////
     // gap-rule assignment of match states
     case 2:
-      int nl[NAA+2];              //nl[a] = number of seq's with amino acid a at position l
-      float percent_gaps[MAXCOL]; //percentage of gaps in column k (with weighted sequences)
-
-      //determine number of columns L in alignment
-      L=strlen(seq[kfirst])-1;
-
-      // Conversion to integer representation, checking for unequal lengths and initialization
-      if (nres==NULL) nres=new(int[N_in]);
-      for (k=0; k<N_in; ++k)
-        {
-          if (!keep[k]) continue;
-          int nr=0;
-          wg[k]=0; nres[k]=0;
-          for (l=1; l<=L; l++)
-            {
-              X[k][l]=aa2i(seq[k][l]);
-              if (X[k][l]<NAA) nr++;
-            }
-          nres[k]=nr;
-          if (seq[k][L+1]!='\0' && !unequal_lengths) unequal_lengths=k;
-        }
-      if (unequal_lengths) break;
-
-      // Quick and dirty calculation of the weight per sequence wg[k]
-      for (l=1; l<=L; l++) // for all positions l in alignment
-        {
-          int naa=0;            //number of different amino acids
-          for (a=0; a<20; ++a) nl[a]=0;
-          for (k=0; k<N_in; ++k) if (keep[k]) nl[ (int)X[k][l]]++;
-          for (a=0; a<20; ++a) if(nl[a]) ++naa;
-          if (!naa) naa=1;      //naa=0 when column consists of only gaps and Xs (=ANY)
-          for (k=0; k<N_in; ++k)
-            if (keep[k] && X[k][l]<20)
- 	      wg[k] += 1.0/float(nl[ (int)X[k][l]]*naa*(nres[k]+30.0));
-	      // wg[k] += 1.0/float(nl[ (int)X[k][l]]*(nres[k]+30.0));
- 	      // wg[k] += (naa-1.0)/float(nl[ (int)X[k][l]]*(nres[k]+30.0));
-        }
-
-      //Replace GAP with ENDGAP for all end gaps
-      for (k=0; k<N_in; ++k)
-	{
-	  if (!keep[k]) continue;
-	  for (i=1; i<=L && X[k][i]==GAP; ++i) X[k][i]=ENDGAP;
-	  for (i=L; i>=1 && X[k][i]==GAP; i--) X[k][i]=ENDGAP;
-	}
-
-      // Add up percentage of gaps
-      for (l=1; l<=L; l++)
-        {
-          float res=0;
-          float gap=0;
-          for (k=0; k<  N_in; ++k)
-            if (keep[k]) 
+      {
+	int nl[NAA+2];              //nl[a] = number of seq's with amino acid a at position l
+	float* percent_gaps = new float[MAXCOL]; //percentage of gaps in column k (with weighted sequences)
+	
+	//determine number of columns L in alignment
+	L=strlen(seq[kfirst])-1;
+	
+	// Conversion to integer representation, checking for unequal lengths and initialization
+	if (nres==NULL) nres=new(int[N_in]);
+	for (k=0; k<N_in; ++k)
+	  {
+	    if (!keep[k]) continue;
+	    int nr=0;
+	    wg[k]=0; nres[k]=0;
+	    for (l=1; l<=L; l++)
 	      {
-		if (X[k][l]<GAP) res+=wg[k];   // AA or ANY; Changed from <ANY
-		else if (X[k][l]!=ENDGAP) gap+=wg[k]; // else: GAP. ENDGAPs are ignored for counting percentage
+		X[k][l]=aa2i(seq[k][l]);
+		if (X[k][l]<NAA) nr++;
 	      }
-          percent_gaps[l]=100.*gap/(res+gap);
-          if (v>=4) cout<<"percent gaps["<<l<<"]="<<percent_gaps[l]<<" first seq:"<<seq[0][l]<<"\n";
-        }
-      // Throw out insert states and keep only match states
-      i=0;
-      for (k=0; k<N_in; ++k) {h[k]=1; seq[k][0]='-';}
-      for (l=1; l<=L; l++)
-        {
-          if (percent_gaps[l]<=float(par.Mgaps))
-            {
-              if (i>=MAXRES-2) {
-                if (v>=1)
-                  printf("WARNING: Number of match columns too large. Only first %i match columns will be kept!\n",i);
-                break;
-              }
-              ++i;
-              this->l[i]=l;
-              for (k=0; k<N_in; ++k)
-                {
-                  if (keep[k])
-                    {
-                      seq[k][h[k]++]=MatchChr(seq[k][l]);
-                      X[k][i]=X[k][l];
-                      I[k][i]=0;
-                    }
-                  else if (k==kss_dssp || k==kss_pred)
-                    {
-                      seq[k][h[k]++]=MatchChr(seq[k][l]);
-                      X[k][i]=ss2i(seq[k][l]);
-                    }
-                  else if (k==ksa_dssp)
-                    {
-                      seq[k][h[k]++]=MatchChr(seq[k][l]);
-                      X[k][i]=sa2i(seq[k][l]);
-                    }
-                  else if (k==kss_conf)
-                    {
-                      seq[k][h[k]++]=seq[k][l];
-                      X[k][i]=cf2i(seq[k][l]);
-                    }
-                }
-            }
-          else
-            {
-              for (k=0; k<N_in; ++k)
-                if (keep[k] && X[k][l]<GAP)
-                  {
-                    I[k][i]++;
-                    seq[k][h[k]++]=InsertChr(seq[k][l]);
-                  }
-            }
-        }
-      for (k=0; k<N_in; ++k) seq[k][h[k]]='\0';
-
-      if (v>=2) cout<<"Alignment in "<<infile<<" contains "<<L<<" columns and "<<i<<" match states\n";
-      L = i;        //Number of match states
-      break;
-
-
+	    nres[k]=nr;
+	    if (seq[k][L+1]!='\0' && !unequal_lengths) unequal_lengths=k;
+	  }
+	if (unequal_lengths) break;
+	
+	// Quick and dirty calculation of the weight per sequence wg[k]
+	for (l=1; l<=L; l++) // for all positions l in alignment
+	  {
+	    int naa=0;            //number of different amino acids
+	    for (a=0; a<20; ++a) nl[a]=0;
+	    for (k=0; k<N_in; ++k) if (keep[k]) nl[ (int)X[k][l]]++;
+	    for (a=0; a<20; ++a) if(nl[a]) ++naa;
+	    if (!naa) naa=1;      //naa=0 when column consists of only gaps and Xs (=ANY)
+	    for (k=0; k<N_in; ++k)
+	      if (keep[k] && X[k][l]<20)
+		wg[k] += 1.0/float(nl[ (int)X[k][l]]*naa*(nres[k]+30.0));
+	    // wg[k] += 1.0/float(nl[ (int)X[k][l]]*(nres[k]+30.0));
+	    // wg[k] += (naa-1.0)/float(nl[ (int)X[k][l]]*(nres[k]+30.0));
+	  }
+	
+	//Replace GAP with ENDGAP for all end gaps
+	for (k=0; k<N_in; ++k)
+	  {
+	    if (!keep[k]) continue;
+	    for (i=1; i<=L && X[k][i]==GAP; ++i) X[k][i]=ENDGAP;
+	    for (i=L; i>=1 && X[k][i]==GAP; i--) X[k][i]=ENDGAP;
+	  }
+	
+	// Add up percentage of gaps
+	for (l=1; l<=L; l++)
+	  {
+	    float res=0;
+	    float gap=0;
+	    for (k=0; k<  N_in; ++k)
+	      if (keep[k]) 
+		{
+		  if (X[k][l]<GAP) res+=wg[k];   // AA or ANY; Changed from <ANY
+		  else if (X[k][l]!=ENDGAP) gap+=wg[k]; // else: GAP. ENDGAPs are ignored for counting percentage
+		}
+	    percent_gaps[l]=100.*gap/(res+gap);
+	    if (v>=4) cout<<"percent gaps["<<l<<"]="<<percent_gaps[l]<<" first seq:"<<seq[0][l]<<"\n";
+	  }
+	// Throw out insert states and keep only match states
+	i=0;
+	for (k=0; k<N_in; ++k) {h[k]=1; seq[k][0]='-';}
+	for (l=1; l<=L; l++)
+	  {
+	    if (percent_gaps[l]<=float(par.Mgaps))
+	      {
+		if (i>=MAXRES-2) {
+		  if (v>=1)
+		    printf("WARNING: Number of match columns too large. Only first %i match columns will be kept!\n",i);
+		  break;
+		}
+		++i;
+		this->l[i]=l;
+		for (k=0; k<N_in; ++k)
+		  {
+		    if (keep[k])
+		      {
+			seq[k][h[k]++]=MatchChr(seq[k][l]);
+			X[k][i]=X[k][l];
+			I[k][i]=0;
+		      }
+		    else if (k==kss_dssp || k==kss_pred)
+		      {
+			seq[k][h[k]++]=MatchChr(seq[k][l]);
+			X[k][i]=ss2i(seq[k][l]);
+		      }
+		    else if (k==ksa_dssp)
+		      {
+			seq[k][h[k]++]=MatchChr(seq[k][l]);
+			X[k][i]=sa2i(seq[k][l]);
+		      }
+		    else if (k==kss_conf)
+		      {
+			seq[k][h[k]++]=seq[k][l];
+			X[k][i]=cf2i(seq[k][l]);
+		      }
+		  }
+	      }
+	    else
+	      {
+		for (k=0; k<N_in; ++k)
+		  if (keep[k] && X[k][l]<GAP)
+		    {
+		      I[k][i]++;
+		      seq[k][h[k]++]=InsertChr(seq[k][l]);
+		    }
+	      }
+	  }
+	for (k=0; k<N_in; ++k) seq[k][h[k]]='\0';
+	
+	if (v>=2) cout<<"Alignment in "<<infile<<" contains "<<L<<" columns and "<<i<<" match states\n";
+	L = i;        //Number of match states
+	delete[] percent_gaps;
+	break;
+      }
+      
     /////////////////////////////////////////////////////////////////////////////////////
     // Using residues of first sequence as match states
     case 3:
-      char match_state[MAXCOL]; //1: column assigned to match state 0: insert state
-
-      // Determine number of columns L in alignment
-      L=strlen(seq[0]+1); 
-      if (v>=3) printf("Length of first seq = %i\n",L);
-      // Check for sequences with unequal lengths
-      for (k=1; k<N_in; ++k)
-        if (int(strlen(seq[k]+1))!=L) {unequal_lengths=k; break;}
-      if (unequal_lengths) break;
-
-      // Determine match states: seq kfirst has residue at pos l -> match state
-      for (l=1; l<=L; l++)
-        if (isalpha(seq[kfirst][l])) match_state[l]=1; else match_state[l]=0;
-      // Throw out insert states and keep only match states
-      for (k=0; k<N_in; ++k) {h[k]=1; seq[k][0]='-';}
-      i=0;
-      for (l=1; l<=L; l++)
-        {
-          if (match_state[l]) // does sequence 0 have residue at position l?
-            {
-              if (i>=MAXRES-2) {
-                if (v>=1)
-                  printf("WARNING: Number of match columns too large. Only first %i match columns will be kept!\n",i);
-                break;
-              }
-              ++i;
-              this->l[i]=l;
-              for (k=0; k<N_in; ++k)
-                {
-                  if (keep[k])
-                    {
-                      seq[k][h[k]++]=MatchChr(seq[k][l]);
-                      X[k][i]=aa2i(seq[k][l]);
-                      I[k][i]=0;
-                    }
-                  else if (k==kss_dssp || k==kss_pred)
-                    {
-                      seq[k][h[k]++]=MatchChr(seq[k][l]);
-                      X[k][i]=ss2i(seq[k][l]);
-                    }
-                  else if (k==ksa_dssp)
-                    {
-                      seq[k][h[k]++]=MatchChr(seq[k][l]);
-                      X[k][i]=sa2i(seq[k][l]);
-                    }
-                  else if (k==kss_conf)
-                    {
-                      seq[k][h[k]++]=seq[k][l];
-                      X[k][i]=cf2i(seq[k][l]);
-                    }
-                }
-            }
-          else
-            {
-              for (k=0; k<N_in; ++k)
-                if (keep[k] && aa2i(seq[k][l])<GAP)
-                  {
-                    I[k][i]++;
-                    seq[k][h[k]++]=InsertChr(seq[k][l]);
-                  }
-            }
-        }
-      for (k=0; k<N_in; ++k) seq[k][h[k]]='\0';
-
-      if (v>=2) cout<<"Alignment in "<<infile<<" contains "<<L<<" columns and "<<i<<" match states\n";
-      L = i;        //Number of match states
-
-      //Replace GAP with ENDGAP for all end gaps
-      for (k=0; k<N_in; ++k)
-	{
-	  if (!keep[k]) continue;
-	  for (i=1; i<=L && X[k][i]==GAP; ++i) X[k][i]=ENDGAP;
-	  for (i=L; i>=1 && X[k][i]==GAP; i--) X[k][i]=ENDGAP;
-	}
-
-      break;
+      {
+	char* match_state = new char[MAXCOL]; //1: column assigned to match state 0: insert state
+	
+	// Determine number of columns L in alignment
+	L=strlen(seq[0]+1); 
+	if (v>=3) printf("Length of first seq = %i\n",L);
+	// Check for sequences with unequal lengths
+	for (k=1; k<N_in; ++k)
+	  if (int(strlen(seq[k]+1))!=L) {unequal_lengths=k; break;}
+	if (unequal_lengths) break;
+	
+	// Determine match states: seq kfirst has residue at pos l -> match state
+	for (l=1; l<=L; l++)
+	  if (isalpha(seq[kfirst][l])) match_state[l]=1; else match_state[l]=0;
+	// Throw out insert states and keep only match states
+	for (k=0; k<N_in; ++k) {h[k]=1; seq[k][0]='-';}
+	i=0;
+	for (l=1; l<=L; l++)
+	  {
+	    if (match_state[l]) // does sequence 0 have residue at position l?
+	      {
+		if (i>=MAXRES-2) {
+		  if (v>=1)
+		    printf("WARNING: Number of match columns too large. Only first %i match columns will be kept!\n",i);
+		  break;
+		}
+		++i;
+		this->l[i]=l;
+		for (k=0; k<N_in; ++k)
+		  {
+		    if (keep[k])
+		      {
+			seq[k][h[k]++]=MatchChr(seq[k][l]);
+			X[k][i]=aa2i(seq[k][l]);
+			I[k][i]=0;
+		      }
+		    else if (k==kss_dssp || k==kss_pred)
+		      {
+			seq[k][h[k]++]=MatchChr(seq[k][l]);
+			X[k][i]=ss2i(seq[k][l]);
+		      }
+		    else if (k==ksa_dssp)
+		      {
+			seq[k][h[k]++]=MatchChr(seq[k][l]);
+			X[k][i]=sa2i(seq[k][l]);
+		      }
+		    else if (k==kss_conf)
+		      {
+			seq[k][h[k]++]=seq[k][l];
+			X[k][i]=cf2i(seq[k][l]);
+		      }
+		  }
+	      }
+	    else
+	      {
+		for (k=0; k<N_in; ++k)
+		  if (keep[k] && aa2i(seq[k][l])<GAP)
+		    {
+		      I[k][i]++;
+		      seq[k][h[k]++]=InsertChr(seq[k][l]);
+		    }
+	      }
+	  }
+	for (k=0; k<N_in; ++k) seq[k][h[k]]='\0';
+	
+	if (v>=2) cout<<"Alignment in "<<infile<<" contains "<<L<<" columns and "<<i<<" match states\n";
+	L = i;        //Number of match states
+	
+	//Replace GAP with ENDGAP for all end gaps
+	for (k=0; k<N_in; ++k)
+	  {
+	    if (!keep[k]) continue;
+	    for (i=1; i<=L && X[k][i]==GAP; ++i) X[k][i]=ENDGAP;
+	    for (i=L; i>=1 && X[k][i]==GAP; i--) X[k][i]=ENDGAP;
+	  }
+	
+	delete[] match_state;
+	
+	break;
+      }
 
     } //end switch()
   /////////////////////////////////////////////////////////////////////////////////////

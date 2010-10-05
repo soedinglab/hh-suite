@@ -8,8 +8,8 @@ void CalculateSS(char *ss_pred, char *ss_conf, char *tmpfile)
   std::string command;
   char line[LINELEN]=""; 
 
-  strcpy(ss_pred," ");
-  strcpy(ss_conf," ");
+  strcpy(ss_pred,"-");
+  strcpy(ss_conf,"-");
   
   // Run PSIpred
   command = (std::string)par.psipred + "/psipred " + (std::string)tmpfile + ".mtx " + (std::string)par.psipred_data + "/weights.dat " + (std::string)par.psipred_data + "/weights.dat2 " + (std::string)par.psipred_data + "/weights.dat3 " + (std::string)par.psipred_data + "/weights.dat4 > " + (std::string)tmpfile + ".ss";

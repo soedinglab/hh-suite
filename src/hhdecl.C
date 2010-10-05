@@ -6,8 +6,8 @@ const char VERSION_AND_DATE[]="version 1.6.0.0 (April 2009)";
 const char REFERENCE[]="Soding, J. Protein homology detection by HMM-HMM comparison. Bioinformatics 2005, 21, 951-960.\n";
 const char COPYRIGHT[]="(C) Johannes Soeding (see LICENSE file)\n";
 const int MAXSEQ=65535; //max number of sequences in input alignment (must be <~30000 on cluster nodes)
-const int MAXCOL=32765; //max number of residues in input files; must be <= LINELEN and >= MAXRES
-const int MAXRES=15002; //max number of columns in HMM; must be <= LINELEN
+int MAXCOL=32765;            //max number of residues in input files; must be <= LINELEN and >= MAXRES
+int MAXRES=15002;            //max number of columns in HMM; must be <= LINELEN
 const int LINELEN=262144; //max length of line read in from input files; must be >= MAXCOL
 const int MAXSEQDIS=10238;//max number of sequences stored in 'hit' objects and displayed in output alignment
 const int IDLEN=255;     //max length of scop hierarchy id and pdb-id
@@ -169,6 +169,9 @@ public:
   char trans;             // 0: normal pairwise scoring; 1:transitive scoring
   float Emax_trans;       // max E-value for intermediate HMMs in transitive scoring (i.e. l is intermediate HMM if E_lq, E_lk <Emax_trans)
   float wtrans;           // Ztot[k] = Zq[k] + wtrans * (Zforward[k]+Zreverse[k])
+
+  int maxcol;             //max number of residues in input files; must be <= LINELEN and >= maxres
+  int maxres;             //max number of columns in HMM; must be <= LINELEN
 
   // Directories for SS-prediction
   int addss;                           // 1: calculate secondary structure 0: don't (default: 0)

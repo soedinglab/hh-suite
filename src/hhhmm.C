@@ -313,7 +313,8 @@ int HMM::Read(FILE* dbf, char* path)
       // Read template sequences that should get displayed in output alignments
       else if (!strcmp("SEQ",str3))
         {
-          char cur_seq[MAXCOL]=""; //Sequence currently read in
+          //char cur_seq[MAXCOL]=""; //Sequence currently read in
+	  char* cur_seq = new char[MAXCOL]; //Sequence currently read in
           int k;                // sequence index; start with -1; after reading name of n'th sequence-> k=n
           int h;                // index for character in input line
           int l=1;              // index of character in sequence seq[k]
@@ -472,6 +473,8 @@ int HMM::Read(FILE* dbf, char* path)
                   cout<<"\n";
                 }
             }
+
+	  delete[] cur_seq;
 
         } //end if("SEQ")
 
@@ -2250,46 +2253,50 @@ void HMM::AddSSPrediction(char seq_pred[], char seq_conf[])
 {
   unsigned int i;
 
+  int m;
+
   if ((int)strlen(seq_pred)!=L+1)
     {
       cerr<<"WARNING! Could not add secondary struture prediction - unequal length!\n";
       return;
     }
 
-  if (nss_pred < 0)  // No ss prediction exists
+if (nss_pred >= 0 && nss_conf >= 0)
     {
-      nss_pred=n_display;
+      strcpy(seq[nss_pred],seq_pred);
+      for (i=0; i<strlen(seq_pred); i++) ss_pred[i]=ss2i(seq_pred[i]);
+      strcpy(seq[nss_conf],seq_conf);
+      for (i=0; i<strlen(seq_conf); i++) ss_conf[i]=cf2i(seq_conf[i]);
+    }
+  else
+    {
+      // shift existing sequences
+      for (m = n_display-1; m >= 0; --m) 
+	{
+	  seq[m+2] = seq[m];
+	  sname[m+2] = sname[m];
+	}
+      if (nss_dssp >= 0) { nss_dssp += 2; }
+      if (nsa_dssp >= 0) { nsa_dssp += 2; }
+      if (ncons >= 0) { ncons += 2; }
+      if (nfirst >= 0) { nfirst += 2; }
+
+      nss_pred=0;
       seq[nss_pred]=new(char[L+2]);
       strcpy(seq[nss_pred],seq_pred);
-      ss_pred=new(char[L+2]);
       for (i=0; i<strlen(seq_pred); i++) ss_pred[i]=ss2i(seq_pred[i]);
       sname[nss_pred]=new(char[50]);
       strcpy(sname[nss_pred],"ss_pred PSIPRED predicted secondary structure");
-      n_display++;
-    }
-  else  // overwrite existing ss prediction
-    {
-      strcpy(seq[nss_pred],seq_pred);
-      for (i=0; i<strlen(seq_pred); i++) ss_pred[i]=ss2i(seq_pred[i]);
-    }
 
-  if (nss_conf < 0)  // No ss prediction exists
-    {
-      nss_conf=n_display;
+      nss_conf=1;
       seq[nss_conf]=new(char[L+2]);
       strcpy(seq[nss_conf],seq_conf);
-      ss_conf=new(char[L+2]);
       for (i=0; i<strlen(seq_conf); i++) ss_conf[i]=cf2i(seq_conf[i]);
       sname[nss_conf]=new(char[50]);
       strcpy(sname[nss_conf],"ss_conf PSIPRED confidence values");
-      n_display++;
+      n_display += 2;
+      n_seqs += 2;
     }
-  else  // overwrite existing ss prediction
-    {
-      strcpy(seq[nss_conf],seq_conf);
-      for (i=0; i<strlen(seq_conf); i++) ss_conf[i]=cf2i(seq_conf[i]);
-    }
-
 }
 
 

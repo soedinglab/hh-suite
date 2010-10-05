@@ -100,7 +100,7 @@ const char print_elapsed=0;
 char tmp_file[]="/tmp/hhblitsXXXXXX";
 
 // HHblits variables
-const char HHBLITS_VERSION[]="version 2.2.0 (September 2010)";
+const char HHBLITS_VERSION[]="version 2.2.1 (September 2010)";
 const char HHBLITS_REFERENCE[]="to be published.\n";
 const char HHBLITS_COPYRIGHT[]="(C) Michael Remmert and Johannes Soeding\n";
 
@@ -174,8 +174,8 @@ public:
   int operator<(const Posindex& posindex) {return ftellpos<posindex.ftellpos;}
 };
 
-HMM q;                    // Create query HMM with maximum of MAXRES match states
-HMM q_tmp;                // Create query HMM with maximum of MAXRES match states (needed for prefiltering)
+HMM* q;                    // Create query HMM with maximum of MAXRES match states
+HMM* q_tmp;                // Create query HMM with maximum of MAXRES match states (needed for prefiltering)
 HMM* t[MAXBINS];          // Each bin has a template HMM allocated that was read from the database file
 Hit* hit[MAXBINS];        // Each bin has an object of type Hit allocated with a separate dynamic programming matrix (memory!!)
 Hit hit_cur;              // Current hit when going through hitlist
@@ -230,15 +230,15 @@ inline int PickBin(char status)
 void PerformViterbiByWorker(int bin)
 {
   // Prepare q ant t and compare
-  PrepareTemplate(q,*(t[bin]),format[bin]);
+  PrepareTemplate(*q,*(t[bin]),format[bin]);
 
   // Do HMM-HMM comparison
   for (hit[bin]->irep=1; hit[bin]->irep<=par.altali; hit[bin]->irep++)
     {
       // Break, if no previous_hit with irep is found
-      hit[bin]->Viterbi(q,*(t[bin]));
+      hit[bin]->Viterbi(*q,*(t[bin]));
       if (hit[bin]->irep>1 && hit[bin]->score <= SMIN) break;
-      hit[bin]->Backtrace(q,*(t[bin]));
+      hit[bin]->Backtrace(*q,*(t[bin]));
       
       hit[bin]->score_sort = hit[bin]->score_aass;
       //printf ("%-12.12s  %-12.12s   irep=%-2i  score=%6.2f\n",hit[bin]->name,hit[bin]->fam,hit[bin]->irep,hit[bin]->score);
@@ -450,6 +450,8 @@ void help_all()
   printf(" -cpu <int>     number of CPUs to use (for shared memory SMPs) (default=1)               \n");
   printf(" -scores <file> write scores for all pairwise comparisions to file                       \n");
   printf(" -atab   <file> write all alignments in tabular layout to file                           \n");
+  printf(" -maxres <int> max number of columns in HMM (def=%5i)                     \n",MAXRES);
+  printf("               (Warning! Increasing this number needs more memory)         \n");
 #ifndef PTHREAD
   printf("(The -cpu option is inactive since POSIX threads ae not supported on your platform)      \n");
 #endif
@@ -672,6 +674,10 @@ void ProcessArguments(int argc, char** argv)
       else if (!strcmp(argv[i],"-realignoldhits")) realign_old_hits=true;
       else if (!strcmp(argv[i],"-realign")) par.realign=1;
       else if (!strcmp(argv[i],"-norealign")) par.realign=0;
+      else if (!strcmp(argv[i],"-maxres") && (i<argc-1)) {
+	MAXRES=atoi(argv[++i]);
+	MAXCOL=2*MAXRES;
+      }
       else if (!strncmp(argv[i],"-glo",3)) {par.loc=0; if (par.mact>0.3 && par.mact<0.301) {par.mact=0;} }
       else if (!strncmp(argv[i],"-loc",4)) par.loc=1;
       else if (!strncmp(argv[i],"-alt",4) && (i<argc-1)) par.altali=atoi(argv[++i]);
@@ -735,14 +741,14 @@ void ReadInputFile()
   if (v>0 && v<=3) v=1; else v-=2;
 
   // Read input file (HMM or alignment format) without adding pseudocounts
-  ReadInput(par.infile, q);
+  ReadInput(par.infile, *q);
 
   // Read in query alignment
   FILE* qa3mf=fopen(qa3mfile,"r");
   if (!qa3mf) 
     {
       // Read query alignment from HHM	
-      Qali.GetSeqsFromHMM(q,par.infile);
+      Qali.GetSeqsFromHMM(*q,par.infile);
       Qali.Compress("compress Qali");
 
       if (num_rounds > 1 || *par.alnfile || *par.psifile || *par.hhmfile || *alis_basename)
@@ -772,10 +778,10 @@ void ReadInputFile()
       fclose(qa3mf);
 
       delete[] Qali.longname;
-      Qali.longname = new(char[strlen(q.longname)+1]);
-      strcpy(Qali.longname,q.longname);
-      strcpy(Qali.name,q.name);
-      strcpy(Qali.fam,q.fam);
+      Qali.longname = new(char[strlen(q->longname)+1]);
+      strcpy(Qali.longname,q->longname);
+      strcpy(Qali.name,q->name);
+      strcpy(Qali.fam,q->fam);
     }
 
   // Get basename
@@ -1091,9 +1097,9 @@ void perform_viterbi_search(int db_size)
   if (v>=3) printf("Sorting hit list ...\n");
   hitlist.SortList();
 
-  hitlist.CalculatePvalues(q);  // Use NN prediction of lamda and mu
+  hitlist.CalculatePvalues(*q);  // Use NN prediction of lamda and mu
   
-  hitlist.CalculateHHblitsEvalues(q);
+  hitlist.CalculateHHblitsEvalues(*q);
   
 }
 
@@ -1136,9 +1142,9 @@ void search_database(char *dbfiles[], int ndb, int db_size)
   if (v>=3) printf("Sorting hit list ...\n");
   hitlist.SortList();
 
-  hitlist.CalculatePvalues(q);  // Use NN prediction of lamda and mu
+  hitlist.CalculatePvalues(*q);  // Use NN prediction of lamda and mu
 
-  hitlist.CalculateHHblitsEvalues(q);
+  hitlist.CalculateHHblitsEvalues(*q);
 
 }
 
@@ -1147,7 +1153,7 @@ void search_database(char *dbfiles[], int ndb, int db_size)
 
 void perform_realign(char *dbfiles[], int ndb)
 {
-  q.Log2LinTransitionProbs(1.0); // transform transition freqs to lin space if not already done
+  q->Log2LinTransitionProbs(1.0); // transform transition freqs to lin space if not already done
       
   Hash< List<Posindex>* >* realign; // realign->Show(dbfile) is list with ftell positions for templates in dbfile to be realigned
   realign = new(Hash< List<Posindex>* >);
@@ -1160,7 +1166,7 @@ void perform_realign(char *dbfiles[], int ndb)
   const float MEMSPACE_DYNPROG = 2.0*1024.0*1024.0*1024.0;
   int nhits=0;
   int Lmax=0;      // length of longest HMM to be realigned
-  int Lmaxmem=(int)((float)MEMSPACE_DYNPROG/q.L/6.0/8.0/bins); // longest allowable length of database HMM
+  int Lmaxmem=(int)((float)MEMSPACE_DYNPROG/q->L/6.0/8.0/bins); // longest allowable length of database HMM
   int N_aligned=0;
   
   // Store all dbfiles and ftell positions of templates to be displayed and realigned
@@ -1247,12 +1253,12 @@ void perform_realign(char *dbfiles[], int ndb)
     {
       // Free previously allocated memory
       if (hit[bin]->forward_allocated)
-	hit[bin]->DeleteForwardMatrix(q.L+2);
+	hit[bin]->DeleteForwardMatrix(q->L+2);
       if (hit[bin]->backward_allocated)
-	hit[bin]->DeleteBackwardMatrix(q.L+2);
+	hit[bin]->DeleteBackwardMatrix(q->L+2);
       
-      hit[bin]->AllocateForwardMatrix(q.L+2,Lmax+1);
-      hit[bin]->AllocateBackwardMatrix(q.L+2,Lmax+1);
+      hit[bin]->AllocateForwardMatrix(q->L+2,Lmax+1);
+      hit[bin]->AllocateBackwardMatrix(q->L+2,Lmax+1);
 
       bin_status[bin] = FREE;
     }
@@ -1389,7 +1395,7 @@ void perform_realign(char *dbfiles[], int ndb)
 	    }
 	  
 	  // Prepare MAC comparison(s)
-	  PrepareTemplate(q,*(t[bin]),format[bin]);
+	  PrepareTemplate(*q,*(t[bin]),format[bin]);
 	  t[bin]->Log2LinTransitionProbs(1.0);
 
 	  // Realign only around previous Viterbi hit
@@ -1403,10 +1409,10 @@ void perform_realign(char *dbfiles[], int ndb)
 	  hit[bin]->realign_around_viterbi=true;
 
 	  // Align q to template in *hit[bin]
-	  hit[bin]->Forward(q,*(t[bin]));
-	  hit[bin]->Backward(q,*(t[bin]));
-	  hit[bin]->MACAlignment(q,*(t[bin]));
-	  hit[bin]->BacktraceMAC(q,*(t[bin]));
+	  hit[bin]->Forward(*q,*(t[bin]));
+	  hit[bin]->Backward(*q,*(t[bin]));
+	  hit[bin]->MACAlignment(*q,*(t[bin]));
+	  hit[bin]->BacktraceMAC(*q,*(t[bin]));
 	  
 	  // Overwrite *hit[bin] with Viterbi scores, Probabilities etc. of hit_cur
 	  hit[bin]->score      = hit_cur.score;
@@ -1450,23 +1456,23 @@ void perform_realign(char *dbfiles[], int ndb)
 	  Qali.N_filtered = Qali.Filter(par.max_seqid,par.coverage,par.qid,par.qsc,par.Ndiff);
 	  
 	  // Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
-	  Qali.FrequenciesAndTransitions(q);
+	  Qali.FrequenciesAndTransitions(*q);
 	  
 	  if (!*par.clusterfile) { //compute context-specific pseudocounts?
 	    // Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
-	    q.PreparePseudocounts();
+	    q->PreparePseudocounts();
 	    // Add amino acid pseudocounts to query: p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
-	    q.AddAminoAcidPseudocounts();
+	    q->AddAminoAcidPseudocounts();
 	  } else {
 	    // Add full context specific pseudocounts to query
-	    q.AddContextSpecificPseudocounts();
+	    q->AddContextSpecificPseudocounts();
 	  }
 
-	  q.CalculateAminoAcidBackground();
+	  q->CalculateAminoAcidBackground();
 	  
 	  // Transform transition freqs to lin space if not already done
-	  q.AddTransitionPseudocounts();
-	  q.Log2LinTransitionProbs(1.0); // transform transition freqs to lin space if not already done
+	  q->AddTransitionPseudocounts();
+	  q->Log2LinTransitionProbs(1.0); // transform transition freqs to lin space if not already done
 
 	}
     }
@@ -1788,6 +1794,9 @@ int main(int argc, char **argv)
   if (!strcmp(par.cs_library,""))
     {help(); cerr<<endl<<"Error in "<<program_name<<": context-state library (see -cs_lib)\n"; exit(4);}
 
+  q = new HMM;
+  q_tmp = new HMM;
+
   par.block_shading = new Hash<int*>;
   par.block_shading_counter = new Hash<int>;
   par.block_shading->New(16381,NULL);
@@ -1888,7 +1897,7 @@ int main(int argc, char **argv)
     }
 
   // Set query columns in His-tags etc to Null model distribution
-  if (par.notags) q.NeutralizeTags();
+  if (par.notags) q->NeutralizeTags();
 
   // Prepare multi-threading - reserve memory for threads, intialize, etc.
   if (threads==0) bins=1; else bins=iround(threads*1.2+0.5);
@@ -1896,7 +1905,7 @@ int main(int argc, char **argv)
     {
       t[bin]=new HMM;   // Each bin has a template HMM allocated that was read from the database file
       hit[bin]=new Hit; // Each bin has an object of type Hit allocated ...
-      hit[bin]->AllocateBacktraceMatrix(q.L+2,MAXRES); // ...with a separate dynamic programming matrix (memory!!)
+      hit[bin]->AllocateBacktraceMatrix(q->L+2,MAXRES); // ...with a separate dynamic programming matrix (memory!!)
     }
   format = new(int[bins]);
 
@@ -1930,7 +1939,7 @@ int main(int argc, char **argv)
       }
 
     // Save HMM without pseudocounts for prefilter query-profile
-    q_tmp = q;
+    *q_tmp = *q;
 
     // Write query HHM file?
     if (*query_hhmfile) 
@@ -1939,10 +1948,10 @@ int main(int argc, char **argv)
 	if (v>0 && v<=3) v=1; else v-=2;
 	
 	// Add *no* amino acid pseudocounts to query. This is necessary to copy f[i][a] to p[i][a]
-	q.AddAminoAcidPseudocounts(0, 0.0, 0.0, 1.0);
-	q.CalculateAminoAcidBackground();
+	q->AddAminoAcidPseudocounts(0, 0.0, 0.0, 1.0);
+	q->CalculateAminoAcidBackground();
 
-	q.WriteToFile(query_hhmfile);
+	q->WriteToFile(query_hhmfile);
 
 	v=v1;
       }
@@ -1951,24 +1960,24 @@ int main(int argc, char **argv)
     if (input_format == 0)
       {
 	// Transform transition freqs to lin space if not already done
-	q.AddTransitionPseudocounts();
+	q->AddTransitionPseudocounts();
 	
 	if (!*par.clusterfile) { //compute context-specific pseudocounts?
 	  // Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
-	  q.PreparePseudocounts();
+	  q->PreparePseudocounts();
 	  // Add amino acid pseudocounts to query: p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
-	  q.AddAminoAcidPseudocounts();
+	  q->AddAminoAcidPseudocounts();
 	} else {
 	  // Add full context specific pseudocounts to query
-	  q.AddContextSpecificPseudocounts();
+	  q->AddContextSpecificPseudocounts();
 	}
       } 
     else 
       {
-	q.AddAminoAcidPseudocounts(0);
+	q->AddAminoAcidPseudocounts(0);
       }
     
-    q.CalculateAminoAcidBackground();
+    q->CalculateAminoAcidBackground();
     
     if (print_elapsed) ElapsedTimeSinceLastCall("(before prefiltering)");
 
@@ -2091,7 +2100,7 @@ int main(int argc, char **argv)
 	  }
 	  
 	// Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
-	Qali.FrequenciesAndTransitions(q,NULL,true);
+	Qali.FrequenciesAndTransitions(*q,NULL,true);
 
 	// if needed, calculate SSpred
 	if (par.addss && Qali.L>25 && (*alis_basename || round == num_rounds || new_hits == 0))
@@ -2099,7 +2108,7 @@ int main(int argc, char **argv)
 	    char ss_pred[MAXRES];
 	    char ss_conf[MAXRES];
 	    
-	    CalculateSS(q, ss_pred, ss_conf);
+	    CalculateSS(*q, ss_pred, ss_conf);
 	    
 	    Qali.AddSSPrediction(ss_pred, ss_conf);
 	    
@@ -2146,13 +2155,13 @@ int main(int argc, char **argv)
     
     if (v>=2) printf("%i sequences in %i clusters found\n",seqs_found,cluster_found);
 
-    if (q.Neff_HMM > neffmax && round < num_rounds)
-      printf("Diversity of created alignment (%4.2f) is above threshold (%4.2f). Stop searching!\n", q.Neff_HMM, neffmax);
+    if (q->Neff_HMM > neffmax && round < num_rounds)
+      printf("Diversity of created alignment (%4.2f) is above threshold (%4.2f). Stop searching!\n", q->Neff_HMM, neffmax);
 
     if (Qali.N_in>=MAXSEQ)
       printf("Maximun number of sequences in query alignment reached (%i). Stop searching!\n", MAXSEQ);
 
-    if (new_hits == 0 || round == num_rounds || q.Neff_HMM > neffmax || Qali.N_in>=MAXSEQ) 
+    if (new_hits == 0 || round == num_rounds || q->Neff_HMM > neffmax || Qali.N_in>=MAXSEQ) 
       break;
 
     // Write good hits to previous_hits hash and clear hitlist
@@ -2187,22 +2196,22 @@ int main(int argc, char **argv)
   // Print for each HMM: n  score  -log2(Pval)  L  name  (n=5:same name 4:same fam 3:same sf...)
   if (*par.scorefile) {
     if (v>=3) printf("Printing scores file ...\n");
-    hitlist.PrintScoreFile(q);
+    hitlist.PrintScoreFile(*q);
   }
 
   // Write alignments in tabular layout to alitabfile
   if (*par.alitabfile) 
-    hitlist.WriteToAlifile(q,alitab_scop);
+    hitlist.WriteToAlifile(*q,alitab_scop);
 
   // Print summary listing of hits
   if (v>=3) printf("Printing hit list ...\n");
-  hitlist.PrintHitList(q,par.outfile);
+  hitlist.PrintHitList(*q,par.outfile);
 
   // Write only hit list to screen?
   if (v==2 && strcmp(par.outfile,"stdout")) WriteToScreen(par.outfile,109); // write only hit list to screen
 
   // Print alignments of query sequences against hit sequences
-  hitlist.PrintAlignments(q,par.outfile);
+  hitlist.PrintAlignments(*q,par.outfile);
 
   // Write whole output file to screen? (max 10000 lines)
   if (v>=3 && strcmp(par.outfile,"stdout")) WriteToScreen(par.outfile,10009);
@@ -2217,10 +2226,10 @@ int main(int argc, char **argv)
       if (*par.hhmfile) 
 	{
 	  // Add *no* amino acid pseudocounts to query. This is necessary to copy f[i][a] to p[i][a]
-	  q.AddAminoAcidPseudocounts(0, 0.0, 0.0, 1.0);
-	  q.CalculateAminoAcidBackground();
+	  q->AddAminoAcidPseudocounts(0, 0.0, 0.0, 1.0);
+	  q->CalculateAminoAcidBackground();
 
-	  q.WriteToFile(par.hhmfile);
+	  q->WriteToFile(par.hhmfile);
 	}
 
       // Write output A3M alignment?
@@ -2240,15 +2249,17 @@ int main(int argc, char **argv)
   // Delete memory for dynamic programming matrix
   for (bin=0; bin<bins; bin++)
     {
-      hit[bin]->DeleteBacktraceMatrix(q.L+2);
+      hit[bin]->DeleteBacktraceMatrix(q->L+2);
       if (hit[bin]->forward_allocated)
-	hit[bin]->DeleteForwardMatrix(q.L+2);
+	hit[bin]->DeleteForwardMatrix(q->L+2);
       if (hit[bin]->backward_allocated)
-	hit[bin]->DeleteBackwardMatrix(q.L+2);
+	hit[bin]->DeleteBackwardMatrix(q->L+2);
 
       delete hit[bin];
       delete t[bin];
     }
+  delete q;
+  delete q_tmp;
   if (format) delete[](format);
   if (par.exclstr) delete[] par.exclstr;
   delete[] par.filter_evals;

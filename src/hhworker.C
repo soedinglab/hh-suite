@@ -6,28 +6,28 @@
 void AlignByWorker(int bin)
 {
   // Prepare q ant t and compare
-  PrepareTemplate(q,*(t[bin]),format[bin]);
+  PrepareTemplate(*q,*(t[bin]),format[bin]);
 
   // Do HMM-HMM comparison, store results if score>SMIN, and try next best alignment
   for (hit[bin]->irep=1; hit[bin]->irep<=par.altali; hit[bin]->irep++)
     {
       if (par.forward==0)
         {
-	  hit[bin]->Viterbi(q,*(t[bin]));
+	  hit[bin]->Viterbi(*q,*(t[bin]));
           if (hit[bin]->irep>1 && hit[bin]->score <= SMIN) break;
-          hit[bin]->Backtrace(q,*(t[bin]));
+          hit[bin]->Backtrace(*q,*(t[bin]));
         }
       else if (par.forward==1)
         {
-          hit[bin]->Forward(q,*(t[bin]));
-          hit[bin]->StochasticBacktrace(q,*(t[bin]),1); // the 1 selects maximization instead of stochastic backtracing
+          hit[bin]->Forward(*q,*(t[bin]));
+          hit[bin]->StochasticBacktrace(*q,*(t[bin]),1); // the 1 selects maximization instead of stochastic backtracing
         }
       else if (par.forward==2)
         {
-          hit[bin]->Forward(q,*(t[bin]));
-          hit[bin]->Backward(q,*(t[bin]));
-          hit[bin]->MACAlignment(q,*(t[bin]));
-          hit[bin]->BacktraceMAC(q,*(t[bin]));
+          hit[bin]->Forward(*q,*(t[bin]));
+          hit[bin]->Backward(*q,*(t[bin]));
+          hit[bin]->MACAlignment(*q,*(t[bin]));
+          hit[bin]->BacktraceMAC(*q,*(t[bin]));
         }
       hit[bin]->score_sort = hit[bin]->score_aass;
       //printf ("%-12.12s  %-12.12s   irep=%-2i  score=%6.2f\n",hit[bin]->name,hit[bin]->fam,hit[bin]->irep,hit[bin]->score);
@@ -40,9 +40,9 @@ void AlignByWorker(int bin)
       if (par.early_stopping_filter)
 	{
 	  // Calculate Evalue
-	  float q_len = log(q.L)/LOG1000;
+	  float q_len = log(q->L)/LOG1000;
 	  float hit_len = log(hit[bin]->L)/LOG1000;
-	  float q_neff = q.Neff_HMM/10.0;
+	  float q_neff = q->Neff_HMM/10.0;
 	  float hit_neff = hit[bin]->Neff_HMM/10.0;
 	  float lamda = lamda_NN( q_len, hit_len, q_neff, hit_neff ); 
 	  float mu    =    mu_NN( q_len, hit_len, q_neff, hit_neff ); 
@@ -88,7 +88,7 @@ void RealignByWorker(int bin)
   hit[bin]->irep=1;
 
   // Prepare MAC comparison(s)
-  PrepareTemplate(q,*(t[bin]),format[bin]);
+  PrepareTemplate(*q,*(t[bin]),format[bin]);
   t[bin]->Log2LinTransitionProbs(1.0);
 
 #ifdef PTHREAD
@@ -128,10 +128,10 @@ void RealignByWorker(int bin)
 #endif
 
 	  // Align q to template in *hit[bin]
-          hit[bin]->Forward(q,*(t[bin]));
-          hit[bin]->Backward(q,*(t[bin]));
-          hit[bin]->MACAlignment(q,*(t[bin]));
-          hit[bin]->BacktraceMAC(q,*(t[bin]));
+          hit[bin]->Forward(*q,*(t[bin]));
+          hit[bin]->Backward(*q,*(t[bin]));
+          hit[bin]->MACAlignment(*q,*(t[bin]));
+          hit[bin]->BacktraceMAC(*q,*(t[bin]));
 #ifdef PTHREAD
           pthread_mutex_lock(&hitlist_mutex);   // lock access to hitlist
 #endif
