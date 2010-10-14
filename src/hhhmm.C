@@ -2205,15 +2205,14 @@ void HMM::NeutralizeTags()
   if ( (pt=strstr(qseq,"HHHHH")) )
     {
       int i0 = pt-qseq+1;
-      if (v>=2) printf("Neutralized His-tag at position %i\n",i0);
-      for (i=imax(i0-5,1); i<i0; ++i)   // neutralize leading 5 columns
-        for (a=0; a<NAA; ++a) p[i][a]=pb[a];
-      for (; (*pt)!='H'; ++i,++pt)      // neutralize His columns
-        for (a=0; a<NAA; ++a) p[i][a]=pb[a];
-      i0=i;
-      for (; i<imin(i0+5,L+1); ++i)    // neutralize trailing 5 columns
-        for (a=0; a<NAA; ++a) p[i][a]=pb[a];
-      if (v>=3) printf("start:%i  end:%i\n",imax(i0-5,1),i-1);
+      for (i=imax(i0-8,1); i<i0; ++i)   // neutralize leading 5 columns
+        for (a=0; a<NAA; ++a) p[i][a]=f[i][a]=pb[a];
+      for (; (*pt)=='H'; ++i,++pt)      // neutralize His columns
+        for (a=0; a<NAA; ++a) p[i][a]=f[i][a]=pb[a];
+      int i1=i;
+      for (; i<imin(i1+8,L+1); ++i)    // neutralize trailing 5 columns
+        for (a=0; a<NAA; ++a) p[i][a]=f[i][a]=pb[a];
+      if (v>=2) printf("Neutralized His-tag between positions %i and %i\n",imax(i0-8,1),i-1);
     }
 
   // Neutralize C-myc tag
@@ -2221,14 +2220,14 @@ void HMM::NeutralizeTags()
     {
       if (v>=2) printf("Neutralized C-myc-tag at position %i\n",int(pt-qseq)+1);
       for (i=pt-qseq+1; i<=pt-qseq+10; ++i)
-        for (a=0; a<NAA; ++a) p[i][a]=pb[a];
+        for (a=0; a<NAA; ++a) p[i][a]=f[i][a]=pb[a];
     }
   // Neutralize FLAG tag
   if ( (pt=strstr(qseq,"DYKDDDDK")) )
     {
       if (v>=2) printf("Neutralized FLAG-tag at position %i\n",int(pt-qseq)+1);
       for (i=pt-qseq+1; i<=pt-qseq+8; ++i)
-        for (a=0; a<NAA; ++a) p[i][a]=pb[a];
+        for (a=0; a<NAA; ++a) p[i][a]=f[i][a]=pb[a];
     }
 }
 

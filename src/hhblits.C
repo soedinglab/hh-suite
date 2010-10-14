@@ -1457,6 +1457,8 @@ void perform_realign(char *dbfiles[], int ndb)
 	  
 	  // Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
 	  Qali.FrequenciesAndTransitions(*q);
+
+	  if (par.notags) q->NeutralizeTags();
 	  
 	  if (!*par.clusterfile) { //compute context-specific pseudocounts?
 	    // Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
@@ -2101,6 +2103,8 @@ int main(int argc, char **argv)
 	  
 	// Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
 	Qali.FrequenciesAndTransitions(*q,NULL,true);
+
+	if (par.notags) q->NeutralizeTags();
 
 	// if needed, calculate SSpred
 	if (par.addss && Qali.L>25 && (*alis_basename || round == num_rounds || new_hits == 0))

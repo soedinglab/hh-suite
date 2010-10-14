@@ -8,10 +8,13 @@
 hhblits
 
 # database with context state sequences
--db /databases/nr20/nr20as219_x0.3_c4
+-db /databases/nr20_11Jan10.as219_x0.3_c4
 
-# directory with database HMMs
--dbhhm /databases/nr20
+# HHM database
+-dbhhm /databases/nr20_11Jan10_hhm_db
+
+# A3M database
+-dba3m /databases/nr20_11Jan10_a3m_db
 
 # context-state library
 -cs_lib /cluster/bioprogs/hhblits/cs219.lib
