@@ -100,7 +100,7 @@ const char print_elapsed=0;
 char tmp_file[]="/tmp/hhblitsXXXXXX";
 
 // HHblits variables
-const char HHBLITS_VERSION[]="version 2.2.1 (September 2010)";
+const char HHBLITS_VERSION[]="version 2.2.2 (October 2010)";
 const char HHBLITS_REFERENCE[]="to be published.\n";
 const char HHBLITS_COPYRIGHT[]="(C) Michael Remmert and Johannes Soeding\n";
 
@@ -1795,6 +1795,13 @@ int main(int argc, char **argv)
     {help(); cerr<<endl<<"Error in "<<program_name<<": context-specific library missing (see -cs_db)\n"; exit(4);}
   if (!strcmp(par.cs_library,""))
     {help(); cerr<<endl<<"Error in "<<program_name<<": context-state library (see -cs_lib)\n"; exit(4);}
+  if (!*dba3m)
+    {
+      if (num_rounds > 1)
+	{help(); cerr<<endl<<"Error in "<<program_name<<": A3M database missing (needed for more than 1 search round)\n"; exit(4);}
+      if (*par.alnfile || *par.psifile || *par.hhmfile || *alis_basename)
+	{help(); cerr<<endl<<"Error in "<<program_name<<": A3M database missing (needed for output alignment)\n"; exit(4);}
+    }
 
   q = new HMM;
   q_tmp = new HMM;
@@ -1816,6 +1823,8 @@ int main(int argc, char **argv)
   if (!*dba3m) {
     dba3m_data_file = dba3m_index_file = NULL;
     dba3m_index = NULL;
+    // set jdummy = 0 (no a3m database)
+    par.jdummy = 0;
   } else {
     dba3m_data_file = fopen(dba3m, "r");
     strcpy(filename, dba3m);
