@@ -1,10 +1,18 @@
 /*
- * Written by Andy Hauser.
- */
+ * Ffindex
+ * written by Andy Hauser <hauser@genzentrum.lmu.de>.
+ * Please add your name here if you distribute modified versions.
+ * 
+ * Ffindex is provided under the Create Commons license "Attribution-ShareAlike
+ * 3.0", which basically captures the spirit of the Gnu Public License (GPL).
+ * 
+ * See:
+ * http://creativecommons.org/licenses/by-sa/3.0/
+*/
 
 #define _GNU_SOURCE 1
 #define _LARGEFILE64_SOURCE 1
-
+#define _FILE_OFFSET_BITS 64
 
 #include <sys/types.h>
 #include <dirent.h>
@@ -18,9 +26,9 @@
 #include "ffindex.h"
 
 /* XXX Use page size? */
-#define N 4096
+#define FFINDEX_BUFFER_SIZE 4096
 
-int ffindex_build(FILE *data_file, FILE *index_file, size_t *base_offset, char *input_dir_name)
+int ffindex_insert(FILE *data_file, FILE *index_file, size_t *base_offset, char *input_dir_name)
 {
   DIR *dir = opendir(input_dir_name);
   if(dir == NULL)
@@ -35,7 +43,7 @@ int ffindex_build(FILE *data_file, FILE *index_file, size_t *base_offset, char *
   }
   size_t offset = *base_offset;
   struct dirent *entry;
-  char buffer[N];
+  char buffer[FFINDEX_BUFFER_SIZE];
   while((entry = readdir(dir)) != NULL)
   {
     if(entry->d_name[0] == '.')
@@ -64,9 +72,9 @@ int ffindex_build(FILE *data_file, FILE *index_file, size_t *base_offset, char *
         perror(path); /* XXX handle better */
     }
 
-    /* Seperate by '\0' and make sure at least one byte is written */
-    buffer[0] = 0;
-    size_t write_size = fwrite(buffer, sizeof(char), 1, data_file);
+    /* Seperate by '\0' and thus also make sure at least one byte is written */
+    buffer[0] = '\0';
+    fwrite(buffer, sizeof(char), 1, data_file);
     offset += 1;
 
     fprintf(index_file, "%s\t%ld\t%ld\n", entry->d_name, offset_start, offset - offset_start);
@@ -86,18 +94,14 @@ int ffindex_build(FILE *data_file, FILE *index_file, size_t *base_offset, char *
 
 int ffindex_restore(FILE *data_file, FILE *index_file, char *input_dir_name)
 {
-  return 0;
+  return -1;
 }
 
 
 char* ffindex_mmap_data(FILE *file, size_t* size)
 {
   struct stat sb;
-  if (fstat(fileno(file), &sb) < 0)
-    {
-      fprintf(stderr, "ERROR! Could not open file...\n");
-      exit(2);
-    }
+  fstat(fileno(file), &sb);
   *size = sb.st_size;
   int fd =  fileno(file);
   if(fd < 0)
@@ -118,13 +122,13 @@ ffindex_entry_t* ffindex_bsearch_get_entry(ffindex_index_t *index, char *name)
 {
   ffindex_entry_t search;
   strncpy(search.name, name, FFINDEX_MAX_ENTRY_NAME_LENTH);
-  return (ffindex_entry_t*) bsearch(&search, index->entries, index->n_entries, sizeof(ffindex_entry_t), ffindex_compare_entries_by_name);
+  return (ffindex_entry_t*)bsearch(&search, index->entries, index->n_entries, sizeof(ffindex_entry_t), ffindex_compare_entries_by_name);
 }
 
 
 ffindex_index_t* ffindex_index_parse(FILE *index_file)
 {
-  ffindex_index_t *index = (ffindex_index_t*) calloc(1, sizeof(ffindex_index_t));
+  ffindex_index_t *index = (ffindex_index_t *)calloc(1, sizeof(ffindex_index_t));
   if(index == NULL)
   {
     perror("ffindex_index_parse: calloc failed: ");
@@ -147,23 +151,6 @@ ffindex_index_t* ffindex_index_parse(FILE *index_file)
     i++;
   }
 
-
-    /*
-  while((n = fscanf(index->file, "%s\t%ld\t%ld\n", index->entries[i].name, &(index->entries[i].offset), &(index->entries[i].length))) == 3)
-    i++;
-
-  if(n < 0 && ferror(index->file))
-  {
-    perror("ffindex_index_parse: ");
-    exit(EXIT_FAILURE);
-  }
-  else if(n > 0)
-  {
-    fprintf(stderr, "broken index file: wrong numbers of elements in line");
-    exit(EXIT_FAILURE);
-  }
-  */
-
   index->n_entries = i;
 
   if(index->n_entries == 0)
@@ -171,13 +158,6 @@ ffindex_index_t* ffindex_index_parse(FILE *index_file)
 
   return index;
 }
-
-/*
-ffindex_entry_t*  ffindex_linear_get_entry(ffindex_index_t *index, char *name)
-{
-  return ffindex_get_next_entry_by_name(index, name);
-}
-*/
 
 
 char* ffindex_get_filedata(char* data, size_t offset)
@@ -197,6 +177,22 @@ FILE* ffindex_fopen(char *data, ffindex_index_t *index, char *filename)
   return fmemopen(filedata, entry->length, "r");
 }
 
+
+void ffindex_sort_index_file(ffindex_index_t *index)
+{
+  qsort(index->entries, index->n_entries, sizeof(ffindex_entry_t), ffindex_compare_entries_by_name);
+}
+
+
+int ffindex_write(ffindex_index_t* index, FILE* index_file)
+{
+  for(int i = 0; i < index->n_entries; i++)
+  {
+    ffindex_entry_t ffindex_entry = index->entries[i];
+    fprintf(index_file, "%s\t%ld\t%ld\n", ffindex_entry.name, ffindex_entry.offset, ffindex_entry.length);
+  }
+  return EXIT_SUCCESS;
+}
 
 /* vim: ts=2 sw=2 et
 */

@@ -1,13 +1,11 @@
 #!/usr/bin/perl
 # 
-# Create a HHblits database from HMMER-files, HMM-files or A3M-files
+# Creates HHblits databases from HMMER-files, HMM-files or A3M-files
 
 ################################################################################################################################
 # Update the following variables
 
-$script_dir = "/cluster/bioprogs/hhblits/scripts";  # path to directory with scripts (create_profile_from_hmmer.pl, create_profile_from_hhm.pl)
-$lib_dir = "/cluster/bioprogs/hhblits";             # path to needed libraries (context_data.lib, cs219.lib)
-$hh_dir = "/cluster/bioprogs/hh";                   # path to needed HH-tools (cstranslate, hhmake)
+$hh_dir = "/cluster/bioprogs/hhblits";         # path to needed tools (cstranslate, hhmake)
 
 ################################################################################################################################
 
@@ -15,36 +13,69 @@ $|= 1; # Activate autoflushing on STDOUT
 
 # Default values:
 our $v=2;              # verbose mode
-my $ext = "a3m";       # default file extension
+my $a3mext = "a3m";       # default A3M-file extension
+my $hhmext = "hhm";       # default HHM-file extension
 my $x = 0.3;
 my $c = 4;
 my $cs_lib = "$lib_dir/cs219.lib";
 my $context_lib = "$lib_dir/context_data.lib";
 
+my $append = 0;
+
 my $help="
-Create a HHblits database from HMMER-files, HMM-files or A3M-files
+Creates HHblits databases from HMMER-files, HHM-files or A3M-files.
+
+The recommended way to use this script is to start with a directory
+of A3M-files (-a3mdir <DIR>) and let this script generates an A3M-
+database (-oa3m <FILE>) and an HHM-database (-ohhm <FILE>).
+If you already have HHM-models for your A3M-files, you can use them 
+as additional input (-hhmdir <DIR>).
+If you don't need the A3M-database, you can also start this script
+with an directory of HHM-files (-hhmdir <DIR>) and as output only
+the HHM-database (-ohhm <FILE>).
 
 Usage: perl create_db.pl -i <dir> [options]
 
 Options:
-  -i <dir>    Input directory with HMMER-, HMM- or A3M-files
-  -o <file>   Output file for the CS-database (default: <indir>.cs_db)
+  -a3mdir <dir>  Input directory (directories) with A3M-files
+  -hhmdir <dir>  Input directory (directories) with HHM- or HMMER-files 
+                 (WARNING! Using HMMER databases could result in a decreased sensitivity!)
 
-  -ext <ext>  File extension, which identifies file-typ (default: $ext)
-              - A3M-type  : a3m
-              - HHM-type  : hhm
-              - HMMER-type: hmmer or hmm
+  -oa3m  <FILE>  Output filename for the A3M database 
+                 (if not given, no A3M database will be build)
+  -ohhm  <FILE>  Output filename for the HHM database 
+                 (if not given, no HHM database will be build)
 
-  -v [0-5]    verbose mode (default: $v)
+  -a3mext        Extension of A3M-files (default: $a3mext)
+  -hhmext        Extension of HHM- or HMMER-files (default: $hhmext)
+
+  -append        If the output file exists, append new files (default: overwrite)
+
+  -v [0-5]       verbose mode (default: $v)
+
+Examples:
+
+   perl create_db.pl -a3mdir '/databases/scop_a3ms/*' -oa3m /databases/scop_a3m.db -ohhm /databases/scop_hhm.db
+
+   perl create_db.pl -a3mdir /databases/scop_a3ms -hhmdir /databases/scop_hhms -oa3m /databases/scop_a3m.db -ohhm /databases/scop_hhm.db
+
+   perl create_db.pl -hhmdir /databases/scop_hhms -ohhm /databases/scop_hhm.db
 \n";
 
 # Variable declarations
 my $line;
 my $command;
-my $indir;
-my $outfile;
+my $a3mdir  = "";
+my $hhmdir  = "";
+my $a3mfile = "";
+my $hhmfile = "";
+my @a3mfiles;
+my @hhmfiles;
+
 my $file;
 my @files;
+my $dir;
+my @dirs;
 
 ###############################################################################################
 # Processing command line input
@@ -55,23 +86,33 @@ if (@ARGV<1) {die ($help);}
 my $options="";
 for (my $i=0; $i<@ARGV; $i++) {$options.=" $ARGV[$i] ";}
 
-if ($options=~s/ -i\s+(\S+) //) {$indir=$1;}
-if ($options=~s/ -o\s+(\S+) //) {$outfile=$1;}
+if ($options=~s/ -a3mdir\s+(\S+) //) {$a3mdir=$1;}
+if ($options=~s/ -hhmdir\s+(\S+) //) {$hhmdir=$1;}
 
-if ($options=~s/ -ext\s+(\S+) //) {$ext=$1;}
+if ($options=~s/ -oa3m\s+(\S+) //) {$a3mfile=$1;}
+if ($options=~s/ -ohhm\s+(\S+) //) {$hhmfile=$1;}
+
+if ($options=~s/ -a3mext\s+(\S+) //) {$a3mext=$1;}
+if ($options=~s/ -hhmext\s+(\S+) //) {$hhmext=$1;}
+
+if ($options=~s/ -append //) {$append=1;}
 
 if ($options=~s/ -v\s+(\S+) //) {$v=$1;}
 
-@files = glob("$indir/*.$ext");
-if (scalar(@files) == 0) {print($help); print "ERROR! No files in $indir with extension $ext!\n"; exit(1);}
 
-if (!$outfile) {
-    if ($indir =~ /^\S+\/(\S+?)$/) {
-	$outfile = "$indir/$1.cs_db";
-    } else {
-	$outfile = "$indir/$indir.cs_db";
+# Check input
+if ($a3mdir eq "" && $hhmdir eq "") {
+    print($help); print "ERROR! At least one input directory must be given!\n"; exit(1);
+}
+
+if ($a3mfile eq "" && $hhmfile eq "") {
+    print($help); print "ERROR! At least one database (-ao3m or -ohhm) must be created!\n"; exit(1);
+}
+
+if ($a3mfile ne "") {
+    if ($a3mdir eq "") {
+	print($help); print "ERROR! Input directory with A3M-files needed for A3M database!\n"; exit(1);
     }
-    print("Create HHblits database with CS-database in file $outfile!\n");
 }
 
 # Create tmp directory (plus path, if necessary)
@@ -86,75 +127,93 @@ while ($suffix=~s/^\/[^\/]+//) {
 # Main part
 ##############################################################################################
 
-print "Computing " . scalar(@files) . " files ...\n";
-my $count = 0;
+if ($a3mfile ne "") {
+    print "Creating A3M database $a3mfile ...\n";
 
-if ($ext eq "a3m") {
-
-    foreach $file (@files) {
-
-	$count++;
-	if (($count % 1000) == 0) { print "$count\n"; }
-	elsif (($count % 50) == 0) { print ". "; }
-
-	# Create HHM files
-	$command = "$hh_dir/hhmake -i $file &> /dev/null";
-	if (&System($command) != 0) {
-	    print "WARNING! Error with command $command!\n";
-	}
-
-	# Create CS-sequence for CS-database
-	$command = "$script_dir/cstranslate -i $file -a $outfile -D $context_lib -A $cs_lib -x $x -c $c &> /dev/null";
-	if (&System($command) != 0) {
-	    print "WARNING! Error with command $command!\n";
+    # check, if directory contains only a3m-files
+    my $check = 1;
+    @dirs = glob($a3mdir);
+    foreach $dir (@dirs) {
+	my @a3mfiles = glob("$dir/*.$a3mext");
+	@files = glob("$dir/*");
+	if (scalar(@files) != scalar(@a3mfiles)) {
+	    $check = 0;
+	    last;
 	}
     }
 
-} elsif ($ext eq "hhm") {
-
-    foreach $file (@files) {
-
-	$count++;
-	if (($count % 1000) == 0) { print "$count\n"; }
-	elsif (($count % 50) == 0) { print ". "; }
-
-	# Extract profile from HHM-file
-	$command = "$script_dir/create_profile_from_hhm.pl -i $file -o $tmpdir/file.prf &> /dev/null";
-	if (&System($command) != 0) {
-	    print "WARNING! Error with command $command!\n";
+    if ($check == 0) {   # write only a3mfiles in tmp-dir
+	&System("mkdir $tmpdir/a3ms");
+	@dirs = glob($a3mdir);
+	foreach $dir (@dirs) {
+	    &System("cp $dir/*.$a3mext $tmpdir/a3ms/");
 	}
+	$a3mdir = "$tmpdir/a3ms";
+    }
 
-	# Create CS-sequence for CS-database
-	$command = "$script_dir/cstranslate -i $tmpdir/file.prf -a $outfile -D $context_lib -A $cs_lib -x $x -c $c &> /dev/null";
-	if (&System($command) != 0) {
-	    print "WARNING! Error with command $command!\n";
+    if ($append) {
+	$command = "$hh_dir/ffindex_build -as $a3mfile $a3mfile.index $a3mdir";
+    } else {
+	$command = "$hh_dir/ffindex_build -s $a3mfile $a3mfile.index $a3mdir";
+    }
+    if (&System($command) != 0) {
+	print "WARNING! Error with command $command!\n";
+    }
+} 
+if ($hhmfile ne "") {
+
+    if ($hhmdir eq "") {
+	# Build HHMs from A3Ms
+	print "Generate HHMs from A3Ms ...\n";
+	$hhmdir = "$tmpdir/hhms";
+	$hhmext = "hhm";
+	&System("mkdir $hhmdir");
+	
+	@dirs = glob($a3mdir);
+	foreach $dir (@dirs) {
+	    @files = glob("$dir/*.$a3mext");
+	    foreach $file (@files) {
+		$file =~ /^\S+\/(\S+?)\.$a3mext$/;
+		$command = "$hh_dir/hhmake -i $file -o $hhmdir/$1.hhm";
+		if (&System($command) != 0) {
+		    print "WARNING! Error with command $command!\n";
+		}
+	    }
+	}
+    } else {
+	# check, if directory contains only hhm-files
+	my $check = 1;
+	@dirs = glob($hhmdir);
+	foreach $dir (@dirs) {
+	    my @hhmfiles = glob("$dir/*.$hhmext");
+	    @files = glob("$dir/*");
+	    if (scalar(@files) != scalar(@hhmfiles)) {
+		$check = 0;
+		last;
+	    }
+	}
+	
+	if ($check == 0) {   # write only a3mfiles in tmp-dir
+	    &System("mkdir $tmpdir/hhms");
+	    @dirs = glob($hhmdir);
+	    foreach $dir (@dirs) {
+		&System("cp $dir/*.$hhmext $tmpdir/hhms/");
+	    }
+	    $hhmdir = "$tmpdir/hhms";
 	}
     }
 
-} elsif ($ext eq "hmmer" || $ext eq "hmm") {
+    print "Creating HHM database $hhmfile ...\n";
 
-    foreach $file (@files) {
-
-	$count++;
-	if (($count % 1000) == 0) { print "$count\n"; }
-	elsif (($count % 50) == 0) { print ". "; }
-
-	# Extract profile from HMMER-file
-	$command = "$script_dir/create_profile_from_hmmer.pl -i $file -o $tmpdir/file.prf &> /dev/null";
-	if (&System($command) != 0) {
-	    print "WARNING! Error with command $command!\n";
-	}
-
-	# Create CS-sequence for CS-database
-	$command = "$script_dir/cstranslate -i $tmpdir/file.prf -a $outfile -A $cs_lib &> /dev/null";
-	if (&System($command) != 0) {
-	    print "WARNING! Error with command $command!\n";
-	}
+    if ($append) {
+	$command = "$hh_dir/ffindex_build -as $hhmfile $hhmfile.index $hhmdir";
+    } else {
+	$command = "$hh_dir/ffindex_build -s $hhmfile $hhmfile.index $hhmdir";
+    }
+    if (&System($command) != 0) {
+	print "WARNING! Error with command $command!\n";
     }
 
-} else {
-    print($help);
-    print "ERROR! Unknown extension $ext!\n";
 }
 
 if ($v < 4) {

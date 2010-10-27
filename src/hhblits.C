@@ -114,10 +114,9 @@ bool block_filter = true;               // Perform viterbi and forward algorithm
 bool realign_old_hits = false;          // Realign old hits in last round or use previous alignments
 
 bool hmmer_used = false;
+char input_format = 0;                  // Set to 1, if input in HMMER format (has already pseudocounts)
 
 float neffmax = 10;                     // Break if Neff > Neffmax
-
-char input_format = 0;                  // Set to 1, if input in HMMER format (has already pseudocounts)
 
 int cpu = 1;
 
@@ -136,7 +135,6 @@ ffindex_index_t* dbhhm_index = NULL;
 ffindex_index_t* dba3m_index = NULL;
 ffindex_entry_t* entry = NULL;
 
-// Read from config-file:
 char db[NAMELEN];                        // database with context-state sequences
 char dba3m[NAMELEN];                     // database with A3M-files
 char dbhhm[NAMELEN];                     // database with HHM-files
