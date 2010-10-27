@@ -42,7 +42,6 @@
 #else
 #include <emmintrin.h>   // SSE2
 #include <pmmintrin.h>   // SSE3
-///#include <smmintrin.h>   // SSE4.1
 #endif
 #endif
 
@@ -102,8 +101,7 @@ public:
   int operator<(const Posindex& posindex) {return ftellpos<posindex.ftellpos;}
 };
 
-HMM q;                    // Create query  HMM with maximum of MAXRES match states
-HMM qrev;                 // Create query  HMM with maximum of MAXRES match states
+HMM* q;                    // Create query  HMM with maximum of MAXRES match states
 HMM* t[MAXBINS];          // Each bin has a template HMM allocated that was read from the database file
 Hit* hit[MAXBINS];        // Each bin has an object of type Hit allocated with a separate dynamic programming matrix (memory!!)
 HitList hitlist;          // list of hits with one Hit object for each pairwise comparison done
@@ -222,6 +220,8 @@ void help()
   printf("(The -cpu option is inactive since POSIX threads ae not supported on your platform)\n");
 #endif
   printf("\n");
+  printf("An extended list of options can be obtained by using '--help all' as parameter           \n");
+  printf("\n\n");
   printf("Example: %s -i a.1.1.1.a3m -d scop70_1.71.hhm             \n",program_name);
   cout<<endl;
 
@@ -362,6 +362,8 @@ void help_other()
   printf(" -opt  <file>  parameter optimization mode (def=off): return sum of ranks \n");
   printf("               of true positives (same superfamily) for minimization      \n");
   printf("               and write result into file                                 \n");
+  printf(" -maxres <int> max number of columns in HMM (def=%5i)                     \n",MAXRES);
+  printf("               (Warning! Increasing this number needs more memory)         \n");
   printf(" -scores <file> write scores for all pairwise comparisions to file         \n");
 }
 
@@ -606,6 +608,10 @@ void ProcessArguments(int argc, char** argv)
       else if (!strcmp(argv[i],"-mapt") && (i<argc-1)) par.mact=atof(argv[++i]);
       else if (!strcmp(argv[i],"-sc") && (i<argc-1)) par.columnscore=atoi(argv[++i]);
       else if (!strcmp(argv[i],"-def")) ;
+      else if (!strcmp(argv[i],"-maxres") && (i<argc-1)) {
+	MAXRES=atoi(argv[++i]);
+	MAXCOL=2*MAXRES;
+      }
       else if (!strncmp(argv[i],"-cpu",4) && (i<argc-1)) threads=atoi(argv[++i]);
       else if (!strcmp(argv[i],"-corr") && (i<argc-1)) par.corr=atof(argv[++i]);
       else if (!strcmp(argv[i],"-ovlp") && (i<argc-1)) par.min_overlap=atoi(argv[++i]);
@@ -640,7 +646,7 @@ int main(int argc, char **argv)
 {
   char line[LINELEN]="";         // input line
   char* argv_conf[MAXOPT];       // Input arguments from .hhdefaults file (first=1: argv_conf[0] is not used)
-  int argc_conf;                 // Number of arguments in argv_conf
+  int argc_conf=0;               // Number of arguments in argv_conf
   char inext[IDLEN]="";          // Extension of input file (hhm or a3m)
   int bin;                       // bin index
 
@@ -664,6 +670,7 @@ int main(int argc, char **argv)
   par.argv=argv;
   par.argc=argc;
   RemovePathAndExtension(program_name,argv[0]);
+  Pathname(program_path, argv[0]);
 
   // Enable changing verbose mode before defaults file and command line are processed
   for (int i=1; i<argc; i++)
@@ -678,12 +685,14 @@ int main(int argc, char **argv)
   if (par.readdefaultsfile)
     {
       // Process default otpions from .hhconfig file
-      ReadDefaultsFile(argc_conf,argv_conf);
+      ReadDefaultsFile(argc_conf,argv_conf,program_path);
       ProcessArguments(argc_conf,argv_conf);
     }
 
   // Process command line options (they override defaults from .hhdefaults file)
   ProcessArguments(argc,argv);
+
+  q = new HMM;
 
   // Check command line input and default values
   if (!*par.infile) // string empty?
@@ -696,7 +705,7 @@ int main(int argc, char **argv)
       threads=MAXTHREADS;
       if (v>=1) fprintf(stderr,"WARNING: number of CPUs set to maximum value of %i\n",MAXTHREADS);
     }
-  RemoveExtension(q.file,par.infile); // get rootname of infile (no directory path, no extension)
+  RemoveExtension(q->file,par.infile); // get rootname of infile (no directory path, no extension)
   Extension(inext,par.infile);        // get extension of infile
   if (!*par.outfile)      // outfile not given? Name it basename.hhm
     {
@@ -738,25 +747,25 @@ int main(int argc, char **argv)
   SetSubstitutionMatrix();
 
   // Read input file (HMM, HHM, or alignment format), and add pseudocounts etc.
-  ReadAndPrepare(par.infile, q);
+  ReadAndPrepare(par.infile, *q);
 
 //  // Rescale matrix according to query aa composition? (Two iterations are sufficient)
 //   if (par.pcm==4)
 //     {
-//       q.RescaleMatrix();
-//       q.PreparePseudocounts();
-//       q.AddAminoAcidPseudocounts();
+//       q->RescaleMatrix();
+//       q->PreparePseudocounts();
+//       q->AddAminoAcidPseudocounts();
 //       SetSubstitutionMatrix();
-//       q.RescaleMatrix();
-//       q.PreparePseudocounts();
-//       q.AddAminoAcidPseudocounts();
+//       q->RescaleMatrix();
+//       q->PreparePseudocounts();
+//       q->AddAminoAcidPseudocounts();
 //     }
 
   // Reset lamda?
-  if (par.calibrate>0 || par.trans>0) {q.lamda=LAMDA; q.mu=0.0;}
+  if (par.calibrate>0 || par.trans>0) {q->lamda=LAMDA; q->mu=0.0;}
 
   // Set query columns in His-tags etc to Null model distribution
-  if (par.notags) q.NeutralizeTags();
+  if (par.notags) q->NeutralizeTags();
 
   if (par.forward>=1)
     {
@@ -774,11 +783,11 @@ int main(int argc, char **argv)
     {
       t[bin]=new HMM;   // Each bin has a template HMM allocated that was read from the database file
       hit[bin]=new Hit; // Each bin has an object of type Hit allocated ...
-      hit[bin]->AllocateBacktraceMatrix(q.L+2,MAXRES); // ...with a separate dynamic programming matrix (memory!!)
+      hit[bin]->AllocateBacktraceMatrix(q->L+2,MAXRES); // ...with a separate dynamic programming matrix (memory!!)
       if (par.forward>=1)
-        hit[bin]->AllocateForwardMatrix(q.L+2,MAXRES);
+        hit[bin]->AllocateForwardMatrix(q->L+2,MAXRES);
       if (par.forward==2)
-        hit[bin]->AllocateBackwardMatrix(q.L+2,MAXRES);
+        hit[bin]->AllocateBackwardMatrix(q->L+2,MAXRES);
 
       bin_status[bin] = FREE;
     }
@@ -869,7 +878,7 @@ int main(int argc, char **argv)
   // Initialize
   N_searched=0;
   int v1=v;
-  if (v<=3) v=1; else v-=2;
+  if (v>0 && v<=3) v=1; else v-=2;
   if (print_elapsed) ElapsedTimeSinceLastCall("(preparing for search)");
 
   // For all the databases given in -d '...' option ...
@@ -906,7 +915,12 @@ int main(int argc, char **argv)
               ///////////////////////////////////////////////////
               // Read next HMM from database file
               if (!fgetline(line,LINELEN,dbf)) {read_from_db=0; break;}
-              if (!strncmp(line,"HMMER",5))      // read HMMER format
+              if (!strncmp(line,"HMMER3",6))      // read HMMER3 format
+                {
+                  format[bin] = 1;
+                  read_from_db = t[bin]->ReadHMMer3(dbf,dbfiles[idb]);
+                }
+              else if (!strncmp(line,"HMMER",5))      // read HMMER format
                 {
                   format[bin] = 1;
                   read_from_db = t[bin]->ReadHMMer(dbf,dbfiles[idb]);
@@ -1057,12 +1071,12 @@ int main(int argc, char **argv)
   // Fit EVD (with lamda, mu) to score distribution?
   if (par.calm==3)
     {
-      hitlist.CalculatePvalues(q);  // Use NN prediction of lamda and mu
+      hitlist.CalculatePvalues(*q);  // Use NN prediction of lamda and mu
     }
-  else if ((par.calm!=1 && q.lamda==0) || par.calibrate>0 || par.trans>0)
+  else if ((par.calm!=1 && q->lamda==0) || par.calibrate>0 || par.trans>0)
     {
       if (v>=2 && par.loc) printf("Fitting scores with EVD (first round) ...\n");
-      hitlist.MaxLikelihoodEVD(q,3); // first ML fit: exclude 3 best superfamilies from fit
+      hitlist.MaxLikelihoodEVD(*q,3); // first ML fit: exclude 3 best superfamilies from fit
 
       if (v>=3) printf("Number of families present in database: %i\n",hitlist.fams); // DEBUG
       if (hitlist.fams>=100)
@@ -1070,7 +1084,7 @@ int main(int argc, char **argv)
           if (par.loc)
             {
               if (v>=2) printf("Fitting scores with EVD (second round) ...\n");
-              hitlist.MaxLikelihoodEVD(q,0); // second ML fit: exclude superfamilies with E-value<MINEVALEXCL
+              hitlist.MaxLikelihoodEVD(*q,0); // second ML fit: exclude superfamilies with E-value<MINEVALEXCL
               hitlist.ResortList();
             }
           else
@@ -1097,10 +1111,10 @@ int main(int argc, char **argv)
               fprintf(stderr,"   But note that HMMs contained in cal.hmm will pop up among your hits.\n");
             }
         }
-      if (par.calm==2) hitlist.GetPvalsFromCalibration(q);
+      if (par.calm==2) hitlist.GetPvalsFromCalibration(*q);
     }
   else
-    hitlist.GetPvalsFromCalibration(q);
+    hitlist.GetPvalsFromCalibration(*q);
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // HHblits: read BLAST file with P-values?
@@ -1115,11 +1129,11 @@ int main(int argc, char **argv)
   // Calculate corrected E-values for HHblits by NN prediction of correlation of PSI-BLAST and HHsearch P-values
   if (par.hhblits_prefilter_logpval)
     {
-      hitlist.CalculateHHblitsEvalues(q);
+      hitlist.CalculateHHblitsEvalues(*q);
     }
 
   // Optimization mode?
-  if (par.opt) {hitlist.Optimize(q,par.buffer);}
+  if (par.opt) {hitlist.Optimize(*q,par.buffer);}
 
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1127,7 +1141,7 @@ int main(int argc, char **argv)
   if (par.realign && par.forward!=2)
     {
 
-      q.Log2LinTransitionProbs(1.0); // transform transition freqs to lin space if not already done
+      q->Log2LinTransitionProbs(1.0); // transform transition freqs to lin space if not already done
 
       Hash< List<Posindex>* >* realign; // realign->Show(dbfile) is list with ftell positions for templates in dbfile to be realigned
       realign = new(Hash< List<Posindex>* >);
@@ -1135,7 +1149,7 @@ int main(int argc, char **argv)
       const float MEMSPACE_DYNPROG = 2.0*1024.0*1024.0*1024.0;
       int nhits=0;
       int Lmax=0;      // length of longest HMM to be realigned
-      int Lmaxmem=(int)((float)MEMSPACE_DYNPROG/q.L/6.0/8.0/bins); // longest allowable length of database HMM
+      int Lmaxmem=(int)((float)MEMSPACE_DYNPROG/q->L/6.0/8.0/bins); // longest allowable length of database HMM
       int N_aligned=0;
 
       // Store all dbfiles and ftell positions of templates to be displayed and realigned
@@ -1183,15 +1197,15 @@ int main(int argc, char **argv)
       for (bin=0; bin<bins; bin++)
         {
           if (par.forward==0)
-            hit[bin]->AllocateForwardMatrix(q.L+2,Lmax+1);
+            hit[bin]->AllocateForwardMatrix(q->L+2,Lmax+1);
           if (par.forward<=1)
-            hit[bin]->AllocateBackwardMatrix(q.L+2,Lmax+1);
+            hit[bin]->AllocateBackwardMatrix(q->L+2,Lmax+1);
           bin_status[bin] = FREE;
         }
 
 
       if (v>=1) printf("Realigning %i query-template alignments with maximum accuracy (MAC) algorithm ...\n",nhits);
-      if (v<=3) v=1; else v-=1;  // Supress verbose output during iterative realignment and realignment
+      if (v>0 && v<=3) v=1; else v-=2;  // Supress verbose output during iterative realignment and realignment
 
       // Align the first par.jdummy templates?
       if (par.jdummy>0)
@@ -1207,10 +1221,11 @@ int main(int argc, char **argv)
           if (!qa3mf) OpenFileError(qa3mfile);
           Qali.Read(qa3mf,qa3mfile);
           fclose(qa3mf);
-          Qali.longname = new(char[strlen(q.longname)+1]);
-          strcpy(Qali.longname,q.longname);
-          strcpy(Qali.name,q.name);
-          strcpy(Qali.fam,q.fam);
+	  delete[] Qali.longname;
+          Qali.longname = new(char[strlen(q->longname)+1]);
+          strcpy(Qali.longname,q->longname);
+          strcpy(Qali.name,q->name);
+          strcpy(Qali.fam,q->fam);
           RemovePathAndExtension(Qali.file,par.hhmfile);
 
           if (v>=2) printf("Merging best hits to query alignment %s ...\n",qa3mfile);
@@ -1248,7 +1263,12 @@ int main(int argc, char **argv)
               ///////////////////////////////////////////////////
               // Read next HMM from database file
               if (!fgetline(line,LINELEN,dbf)) {fprintf(stderr,"Error: end of file %s reached prematurely!\n",hit_cur.dbfile); exit(1);}
-              if (!strncmp(line,"HMMER",5))      // read HMMER format
+              if (!strncmp(line,"HMMER3",6))      // read HMMER3 format
+                {
+                  format[bin] = 1;
+                  read_from_db = t[bin]->ReadHMMer3(dbf,hit_cur.dbfile);
+                }
+              else if (!strncmp(line,"HMMER",5))      // read HMMER format
                 {
                   format[bin] = 1;
                   read_from_db = t[bin]->ReadHMMer(dbf,hit_cur.dbfile);
@@ -1299,14 +1319,14 @@ int main(int argc, char **argv)
                 }
 
               // Prepare MAC comparison(s)
-              PrepareTemplate(q,*(t[bin]),format[bin]);
+              PrepareTemplate(*q,*(t[bin]),format[bin]);
               t[bin]->Log2LinTransitionProbs(1.0);
 
               // Align q to template in *hit[bin]
-              hit[bin]->Forward(q,*(t[bin]));
-              hit[bin]->Backward(q,*(t[bin]));
-              hit[bin]->MACAlignment(q,*(t[bin]));
-              hit[bin]->BacktraceMAC(q,*(t[bin]));
+              hit[bin]->Forward(*q,*(t[bin]));
+              hit[bin]->Backward(*q,*(t[bin]));
+              hit[bin]->MACAlignment(*q,*(t[bin]));
+              hit[bin]->BacktraceMAC(*q,*(t[bin]));
 
               // Overwrite *hit[bin] with Viterbi scores, Probabilities etc. of hit_cur
               hit[bin]->score      = hit_cur.score;
@@ -1331,7 +1351,10 @@ int main(int argc, char **argv)
               // Read a3m alignment of hit and merge with Qali according to Q-T-alignment in hit[bin]
               strcpy(ta3mfile,hit[bin]->file); // copy filename including path but without extension
               strcat(ta3mfile,".a3m");
-              Qali.MergeMasterSlave(*hit[bin],ta3mfile);
+	      FILE* ta3mf=fopen(ta3mfile,"r");
+	      if (!ta3mf) OpenFileError(ta3mfile);
+              Qali.MergeMasterSlave(*hit[bin],ta3mfile, ta3mf);
+	      fclose(ta3mf);
 
               // Convert ASCII to int (0-20),throw out all insert states, record their number in I[k][i]
               Qali.Compress("merged A3M file");
@@ -1340,24 +1363,24 @@ int main(int argc, char **argv)
               Qali.N_filtered = Qali.Filter(par.max_seqid,par.coverage,par.qid,par.qsc,par.Ndiff);
 
               // Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
-              Qali.FrequenciesAndTransitions(q);
+              Qali.FrequenciesAndTransitions(*q);
 
               if (!*par.clusterfile) { //compute context-specific pseudocounts?
                 // Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
-                q.PreparePseudocounts();
+                q->PreparePseudocounts();
 		// Add amino acid pseudocounts to query: p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
-		q.AddAminoAcidPseudocounts();
+		q->AddAminoAcidPseudocounts();
               } else {
                 // Generate an amino acid frequency matrix from f[i][a] with full context specific pseudocount admixture (tau=1) -> g[i][a]
-                // q.PrepareContextSpecificPseudocounts(); //OLD
-		q.AddContextSpecificPseudocounts();
+                // q->PrepareContextSpecificPseudocounts(); //OLD
+		q->AddContextSpecificPseudocounts();
               }
 
-              q.CalculateAminoAcidBackground();
+              q->CalculateAminoAcidBackground();
 
               // Transform transition freqs to lin space if not already done
-	      q.AddTransitionPseudocounts();
-              q.Log2LinTransitionProbs(1.0); // transform transition freqs to lin space if not already done
+	      q->AddTransitionPseudocounts();
+              q->Log2LinTransitionProbs(1.0); // transform transition freqs to lin space if not already done
             }
         }
 
@@ -1422,7 +1445,12 @@ int main(int argc, char **argv)
                   ///////////////////////////////////////////////////
                   // Read next HMM from database file
                   if (!fgetline(line,LINELEN,dbf)) {fprintf(stderr,"Error: end of file %s reached prematurely!\n",dbfiles[idb]); exit(1);}
-                  if (!strncmp(line,"HMMER",5))      // read HMMER format
+                  if (!strncmp(line,"HMMER3",6))      // read HMMER3 format
+                    {
+                      format[bin] = 1;
+                      read_from_db = t[bin]->ReadHMMer3(dbf,dbfiles[idb]);
+                    }
+                  else if (!strncmp(line,"HMMER",5))      // read HMMER format
                     {
                       format[bin] = 1;
                       read_from_db = t[bin]->ReadHMMer(dbf,dbfiles[idb]);
@@ -1559,7 +1587,7 @@ int main(int argc, char **argv)
       // Print for each HMM: n  score  -log2(Pval)  L  name  (n=5:same name 4:same fam 3:same sf...)
       if (*par.scorefile) {
         if (v>=3) printf("Printing scores file ...\n");
-        hitlist.PrintScoreFile(q);
+        hitlist.PrintScoreFile(*q);
       }
 
       // Delete all hitlist entries with too short alignments
@@ -1568,7 +1596,7 @@ int main(int argc, char **argv)
       while (!hitlist.End())
         {
           hit_cur = hitlist.ReadNext();
-//        printf("Deleting alignment of %s with length %i? nhits=%-2i  par.B=%-3i  par.Z=%-3i par.e=%.2g par.b=%-3i  par.z=%-3i par.p=%.2g\n",hit_cur.name,hit_cur.matched_cols,nhits,par.B,par.Z,par.e,par.b,par.z,par.p);
+	  //        printf("Deleting alignment of %s with length %i? nhits=%-2i  par.B=%-3i  par.Z=%-3i par.e=%.2g par.b=%-3i  par.z=%-3i par.p=%.2g\n",hit_cur.name,hit_cur.matched_cols,nhits,par.B,par.Z,par.e,par.b,par.z,par.p);
           if (nhits>=imax(par.B,par.Z)) break;
           if (nhits>=imax(par.b,par.z) && hit_cur.Probab < par.p) break;
           if (nhits>=imax(par.b,par.z) && hit_cur.Eval > par.E) continue;
@@ -1597,7 +1625,7 @@ int main(int argc, char **argv)
       // Print for each HMM: n  score  -log2(Pval)  L  name  (n=5:same name 4:same fam 3:same sf...)
       if (*par.scorefile) {
 	if (v>=3) printf("Printing scores file ...\n");
-	hitlist.PrintScoreFile(q);
+	hitlist.PrintScoreFile(*q);
       }
     }
   
@@ -1610,25 +1638,25 @@ int main(int argc, char **argv)
   // Print FASTA or A2M alignments?
   if (*par.pairwisealisfile) {
     if (v>=2) cout<<"Printing alignments in "<<(par.outformat==1? "FASTA" : par.outformat==2?"A2M" :"A3M")<<" format to "<<par.pairwisealisfile<<"\n";
-    hitlist.PrintAlignments(q,par.pairwisealisfile,par.outformat);
+    hitlist.PrintAlignments(*q,par.pairwisealisfile,par.outformat);
   }
 
   // Print summary listing of hits
   if (v>=3) printf("Printing hit list ...\n");
-  hitlist.PrintHitList(q,par.outfile);
+  hitlist.PrintHitList(*q,par.outfile);
 
   // Write only hit list to screen?
   if (v==2 && strcmp(par.outfile,"stdout")) WriteToScreen(par.outfile,1009); // write only hit list to screen
 
   // Print alignments of query sequences against hit sequences
-  hitlist.PrintAlignments(q,par.outfile);
+  hitlist.PrintAlignments(*q,par.outfile);
 
   // Write whole output file to screen? (max 10000 lines)
   if (v>=3 && strcmp(par.outfile,"stdout")) WriteToScreen(par.outfile,10009);
 
   // Write HMM to output file without pseudocounts
   if (par.calibrate)
-    q.InsertCalibration(par.infile);
+    q->InsertCalibration(par.infile);
 
 
   // Generate output alignment or HMM file?
@@ -1664,7 +1692,10 @@ int main(int argc, char **argv)
           // Read a3m alignment of hit from <file>.a3m file and merge into Qali alignment
           strcpy(ta3mfile,hit.file); // copy filename including path but without extension
           strcat(ta3mfile,".a3m");
-          Qali.MergeMasterSlave(hit,ta3mfile);
+          FILE* ta3mf=fopen(ta3mfile,"r");
+	  if (!ta3mf) OpenFileError(ta3mfile);
+	  Qali.MergeMasterSlave(hit,ta3mfile, ta3mf);
+	  fclose(ta3mf);
           nhits++;
         }
 
@@ -1685,9 +1716,9 @@ int main(int argc, char **argv)
       // Calculate (and write) output HMM?
       if (*par.hhmfile)
         {
-          strcpy(Qali.longname,q.longname);
-          strcpy(Qali.name,q.name);
-          strcpy(Qali.fam,q.fam);
+          strcpy(Qali.longname,q->longname);
+          strcpy(Qali.name,q->name);
+          strcpy(Qali.fam,q->fam);
           RemovePathAndExtension(Qali.file,par.hhmfile);
 
           // Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
@@ -1736,11 +1767,11 @@ int main(int argc, char **argv)
   // Delete memory for dynamic programming matrix
   for (bin=0; bin<bins; bin++)
     {
-      hit[bin]->DeleteBacktraceMatrix(q.L+2);
+      hit[bin]->DeleteBacktraceMatrix(q->L+2);
       if (par.forward>=1 || par.realign)
-        hit[bin]->DeleteForwardMatrix(q.L+2);
+        hit[bin]->DeleteForwardMatrix(q->L+2);
       if (par.forward==2 || par.realign)
-        hit[bin]->DeleteBackwardMatrix(q.L+2);
+        hit[bin]->DeleteBackwardMatrix(q->L+2);
       delete hit[bin];
       delete t[bin];
      }
@@ -1749,6 +1780,8 @@ int main(int argc, char **argv)
   if (format) delete[](format);
   if (par.blafile) delete[] par.blafile;
   if (par.exclstr) delete[] par.exclstr;
+  for (int n = 1; n < argc_conf; n++)
+    delete[] argv_conf[n];
   delete doubled;
 
   if (*par.clusterfile) {
@@ -1763,6 +1796,8 @@ int main(int argc, char **argv)
       //hitlist.ReadCurrent().Delete();
       hitlist.Delete().Delete(); // Delete list record and hit object
     }
+
+  delete q;
 
 #ifdef PTHREAD
   pthread_attr_destroy(&joinable);

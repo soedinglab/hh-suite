@@ -1,0 +1,35 @@
+#
+# Defaults file for all HH-tools
+#
+
+##########
+# HHblits
+##########
+hhblits
+
+# database with context state sequences
+-db /databases/nr20_11Jan10.as219_x0.3_c4
+
+# HHM database
+-dbhhm /databases/nr20_11Jan10_hhm_db
+
+# A3M database
+-dba3m /databases/nr20_11Jan10_a3m_db
+
+# context-state library
+-cs_lib /cluster/bioprogs/hhblits/cs219.lib
+
+# context-specific library (K4000)
+-cs_db /cluster/bioprogs/hhblits/context_data.lib
+
+# PsiPred directory (binaries and database) (not needed when no SS prediction is needed (-nopred))
+-psipred /cluster/bioprogs/psipred/bin
+-psipred_data /cluster/bioprogs/psipred/data
+
+##########
+# HHsearch
+##########
+hhsearch
+
+# context-specific library (K4000)
+-cs /cluster/bioprogs/hhblits/context_data.lib

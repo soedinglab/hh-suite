@@ -295,6 +295,54 @@ void HitList::PrintScoreFile(HMM& q)
   fclose(scoref);
 }
 
+void HitList::WriteToAlifile(HMM& q, bool scop_only)
+{
+  Hit hit;
+  int i=0, n;
+  Hash<int> twice(10000); // make sure only one hit per HMM is listed
+  twice.Null(-1);      
+  FILE* alitabf=NULL;
+  if (strcmp(par.alitabfile,"stdout")) alitabf = fopen(par.alitabfile, "w"); else alitabf = stdout;
+  if (!alitabf) OpenFileError(par.alitabfile);
+
+  fprintf(alitabf,"NAME  %s\n",q.longname);
+  fprintf(alitabf,"FAM   %s\n",q.fam);
+  fprintf(alitabf,"FILE  %s\n",q.file);
+  fprintf(alitabf,"LENG  %i\n",q.L);
+  fprintf(alitabf,"\n");
+
+  Reset();
+  while (!End()) 
+    {
+      i++;
+      hit = ReadNext();
+      if (scop_only && !strncmp(hit.name,"cl|",3)) continue;
+      if (twice[hit.name]==1) continue; // better hit with same HMM has been listed already
+      twice.Add(hit.name,1);
+      //if template and query are from the same superfamily
+      if (!strcmp(hit.name,q.name)) n=5;
+      else if (!strcmp(hit.fam,q.fam)) n=4;
+      else if (!strcmp(hit.sfam,q.sfam)) n=3;
+      else if (!strcmp(hit.fold,q.fold)) n=2;
+      else if (!strcmp(hit.cl,q.cl)) n=1;
+      else n=0;
+
+      if (hit.P_posterior != NULL) {
+	fprintf(alitabf,"\nHit %3i (%-20s %-10s Rel: %i  LOG-PVA: %6.2f  LOG-EVAL: %6.2f  Score: %6.2f  Probab: %6.2f):\n    i     j  score     SS  probab\n",i,hit.name,hit.fam,n,-1.443*hit.logPval,-1.443*hit.logEval,hit.score,hit.Probab);
+	for (int step=hit.nsteps; step>=1; step--)
+	  if (hit.states[step]>=MM) 
+	    fprintf(alitabf,"%5i %5i %6.2f %6.2f %7.4f\n",hit.i[step],hit.j[step],hit.S[step],hit.S_ss[step],hit.P_posterior[step]);
+      } else { 
+	fprintf(alitabf,"\nHit %3i (%-20s %-10s Rel: %i  LOG-PVA: %6.2f  LOG-EVAL: %6.2f  Score: %6.2f  Probab: %6.2f):\n    i     j  score     SS\n",i,hit.name,hit.fam,n,-1.443*hit.logPval,-1.443*hit.logEval,hit.score,hit.Probab);
+	for (int step=hit.nsteps; step>=1; step--)
+	  if (hit.states[step]>=MM) 
+	    fprintf(alitabf,"%5i %5i %6.2f %6.2f\n",hit.i[step],hit.j[step],hit.S[step],hit.S_ss[step]);
+      }
+    }
+  fclose(alitabf);
+}
+
+
 /////////////////////////////////////////////////////////////////////////////////////
 //// Evaluate the *negative* log likelihood of the data at the vertex v = (lamda,mu)
 ////    p(s) = lamda * exp{ -exp[-lamda*(s-mu)] - lamda*(s-mu) } = lamda * exp( -exp(-x) - x) 

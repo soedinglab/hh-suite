@@ -31,6 +31,9 @@ public:
 
   // Read alignment into X (uncompressed) in ASCII characters
   void Read(FILE* inf, char infile[NAMELEN], char* line=NULL);
+
+  // Read sequences from HHM-file into X (uncompressed) in ASCII characters
+  void GetSeqsFromHMM(HMM& q, char infile[NAMELEN]);
   
   // Convert ASCII to numbers between 0 and 20, throw out all insert states, 
   // record their number in I[k][i] and store sequences to be displayed in sname[k] and seq[k]
@@ -63,7 +66,7 @@ public:
   void WriteToFile(const char* alnfile, const char format[]=NULL);
 
   // Read a3m slave alignment of hit from ta3mfile and merge into (query) master alignment
-  void MergeMasterSlave(Hit& hit, char ta3mfile[]);
+  void MergeMasterSlave(Hit& hit, char ta3mfile[], FILE* ta3mf);
 
   // Read a3m alignment of hit from ta3mfile and merge-combine with query alignment
   void Merge(Hit& hit, char ta3mfile[]);

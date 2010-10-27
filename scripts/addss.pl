@@ -34,7 +34,7 @@ our $v=2;              # verbose mode
 
 my $numres=100;        # number of residues per line for secondary  structure
 my $informat="a3m";    # input format
-my $neff = 6;          # use alignment with this diversity for PSIPRED prediction
+my $neff = 7;          # use alignment with this diversity for PSIPRED prediction
 
 my $help="
 Add DSSP states (if available) and PSIPRED secondary structure prediction to a multiple sequence alignment.
@@ -45,7 +45,7 @@ The output file is in A3M, default <BASENAME>.a3m.
 ((   'reformat.pl file.a3m file.fas'.                                      ))
 (( For an explanation of the A3M format, see the HHsearch README file.     ))
 
-Usage: perl addpsipred.pl <ali file> [<outfile>] [-fas|-a3m|-clu|sto]  
+Usage: perl addss.pl <ali file> [<outfile>] [-fas|-a3m|-clu|sto]  
 \n";
 
 # Variable declarations

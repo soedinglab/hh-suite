@@ -175,7 +175,7 @@ private:
   double** B_MI;        // 
 
   void InitializeBacktrace(HMM& q, HMM& t);
-  void InitializeForAlignment(HMM& q, HMM& t);
+  void InitializeForAlignment(HMM& q, HMM& t, bool vit=true);
 };
 
 

@@ -6,8 +6,8 @@ const char VERSION_AND_DATE[]="version 1.6.0.0 (April 2009)";
 const char REFERENCE[]="Soding, J. Protein homology detection by HMM-HMM comparison. Bioinformatics 2005, 21, 951-960.\n";
 const char COPYRIGHT[]="(C) Johannes Soeding (see LICENSE file)\n";
 const int MAXSEQ=65535; //max number of sequences in input alignment (must be <~30000 on cluster nodes)
-const int MAXCOL=32765; //max number of residues in input files; must be <= LINELEN and >= MAXRES
-const int MAXRES=15002; //max number of columns in HMM; must be <= LINELEN
+int MAXCOL=32765;            //max number of residues in input files; must be <= LINELEN and >= MAXRES
+int MAXRES=15002;            //max number of columns in HMM; must be <= LINELEN
 const int LINELEN=262144; //max length of line read in from input files; must be >= MAXCOL
 const int MAXSEQDIS=10238;//max number of sequences stored in 'hit' objects and displayed in output alignment
 const int IDLEN=255;     //max length of scop hierarchy id and pdb-id
@@ -54,9 +54,6 @@ const int NDSSP=8;      //number of different ss states determined by dssp: 0-7 
 const int NSSPRED=4;    //number of different ss states predicted by psipred: 0-3 (0: no prediction availabe)
 const int MAXCF=11;     //number of different confidence values: 0-10 (0: no prediction availabe)
 const int NSA=7;        //number of classes relative solvent accesiblity (0:no coord,  1:<2%, 2:<14%, 3:<33%, 4:<55%, 5:>55%, 6:S-S bridge)
-
-// HHblits prefilter alphabet
-enum pre_alphabets {PRE_AA=0,PRE_AS62=1};
 
 /////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////
@@ -122,6 +119,9 @@ public:
   float pcc;              //
   float pcw;              // Decrease pseudocounts for conserved columns
 
+  float pre_pca;          // Pseudocount matrix = (1-tau(i))*I + tau(i)*S   for prefiltering
+  float pre_pcb;          // tau(i) = pca/(1 + ((Neff-1)/pcb)^pcc           for prefiltering
+
   float gapb;             // Diversity threshold for adding pseudocounts to transitions from M state
   float gapd;             // Gap open penalty factor for deletions
   float gape;             // Gap extend penalty: factor to multiply hmmer values (def=1)
@@ -170,6 +170,9 @@ public:
   float Emax_trans;       // max E-value for intermediate HMMs in transitive scoring (i.e. l is intermediate HMM if E_lq, E_lk <Emax_trans)
   float wtrans;           // Ztot[k] = Zq[k] + wtrans * (Zforward[k]+Zreverse[k])
 
+  int maxcol;             //max number of residues in input files; must be <= LINELEN and >= maxres
+  int maxres;             //max number of columns in HMM; must be <= LINELEN
+
   // Directories for SS-prediction
   int addss;                           // 1: calculate secondary structure 0: don't (default: 0)
   char blast[NAMELEN];                 // BLAST binaries (not needed with csBLAST)
@@ -192,13 +195,10 @@ public:
   int coverage_db; 
   int Ndiff_db;    
 
-  // HHblits abstract state prefilter
-  char as_library[NAMELEN];
-  char as_matrix[NAMELEN];
+  // HHblits context state prefilter
+  char cs_library[NAMELEN];
 
   // HHblits prefilter
-  char prefilt_alphabet;      // actual alphabet used for prefiltering
-
   bool early_stopping_filter; // Break HMM search, when the sum of the last N HMM-hit-Evalues is below threshold
 
   double filter_thresh;    // Threshold for early stopping
@@ -221,13 +221,6 @@ public:
   double prefilter_evalue_thresh;
   int preprefilter_smax_thresh;
 
-  // OLD...
-  int prefilter_lmax;              // maximum block length of each DB-Sequence
-  int sse_shading_space;           // space added to the rands of prefilter HSP
-  int prefilter_db_overlap;           // Overlap if DB-Sequence > par.prefilter_lmax
-  int prefilter_smax_thresh;
-  int prefilter_rmax_thresh;
-  
   // SCRAP THE FOLLOWING VARIABLES?
 
   float wstruc;          // weight of structure scores
@@ -244,6 +237,7 @@ public:
 char v=2;             // 1: show only warnings 2:verbose mode
 Parameters par;
 char program_name[NAMELEN]; //name of program executed (e.g. hhmake of hhsearch)
+char program_path[NAMELEN]; //path of program executed
 
 // substitution matrix flavours
 float P[21][21];      // P[a][b] = combined probability for a aligned to b
@@ -262,5 +256,5 @@ cs::LibraryPseudocounts<cs::AA> *lib_pc;
 cs::ContextLibrary<cs::AA> *context_lib;
 
 #ifdef HHBLITS
-cs::AbstractStateMatrix<cs::AS62> *as_sm;
+cs::ContextLibrary<cs::AA> *cs_lib;
 #endif

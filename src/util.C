@@ -395,6 +395,46 @@ int strinta(char*& ptr, int deflt=99999)
   return i;
 }
 
+// Returns leftmost float in ptr and sets the pointer to first char after
+// the float. If no float is found, returns FLT_MIN and sets pt to NULL
+float strflt(char*& ptr)
+{
+  float i;
+  char* ptr0=ptr;
+  if (!ptr) return FLT_MIN;
+  while (*ptr!='\0' && !(*ptr>='0' && *ptr<='9')) ptr++;
+  if (*ptr=='\0')
+    {
+      ptr=0;
+      return FLT_MIN;
+    }
+  if (ptr>ptr0 && *(ptr-1)=='-') i=-atof(ptr); else i=atof(ptr);
+  while ((*ptr>='0' && *ptr<='9') || *ptr=='.') ptr++;
+  return i;
+}
+
+// Same as strint, but interpretes '*' as default
+float strflta(char*& ptr, float deflt=99999)
+{
+  float i;
+  if (!ptr) return FLT_MIN;
+  while (*ptr!='\0' && !(*ptr>='0' && *ptr<='9') && *ptr!='*') ptr++;
+  if (*ptr=='\0')
+    {
+      ptr=0;
+      return FLT_MIN;
+    }
+  if (*ptr=='*')
+    {
+      ptr++;
+      return deflt;
+    }
+  if (*(ptr-1)=='-') i=-atof(ptr);
+  else i=atof(ptr);
+  while ((*ptr>='0' && *ptr<='9') || *ptr=='.') ptr++;
+  return i;
+}
+
 
 // Removes the newline and other control characters at the end of a string (if present)
 // and returns the new length of the string (-1 if str is NULL)
@@ -438,6 +478,15 @@ inline char* strscn(char* str)
   if (!str) return NULL;
   char* ptr=str;
   while (*ptr!='\0' && *ptr<=32) ptr++;
+  return (*ptr=='\0')? NULL: ptr;
+}
+
+// Returns pointer to first white-space character in str OR to NULL if none found
+inline char* strscn_ws(char* str)
+{
+  if (!str) return NULL;
+  char* ptr=str;
+  while (*ptr!='\0' && *ptr>32) ptr++;
   return (*ptr=='\0')? NULL: ptr;
 }
 

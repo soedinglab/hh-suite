@@ -10,6 +10,7 @@ public:
     HMM& operator=(HMM&);
 
     int n_display;            // number of sequences stored for display of alignment (INCLUDING >ss_ and >cf_ sequences)
+    int n_seqs;               // number of sequences read in (INCLUDING >ss_ and >cf_ sequences)
     char** sname;             // names of stored sequences
     char** seq;               // residues of stored sequences (first at pos 1!)
     int ncons;                // index of consensus sequence
@@ -46,6 +47,9 @@ public:
 
     // Read an HMM from a HMMer .hmm file; return 0 at end of file
     int ReadHMMer(FILE* dbf, char* filestr=NULL);
+
+    // Read an HMM from a HMMer3 .hmm file; return 0 at end of file
+    int ReadHMMer3(FILE* dbf, char* filestr=NULL);
 
     // Add transition pseudocounts to HMM
     void AddTransitionPseudocounts(float gapd=par.gapd, float gape=par.gape, float gapf=par.gapf, float gapg=par.gapg, float gaph=par.gaph, float gapi=par.gapi, float gapb=par.gapb);
@@ -97,8 +101,9 @@ public:
 
     // Needed for SSE2 prefiltering with HHblits with amino acid alphabet
     float** p;                // p[i][a] = prob of finding amino acid a in column i WITH OPTIMUM pseudocounts
+    float pav[NAA];           // pav[a] = average freq of amino acids in HMM (including subst matrix pseudocounts)
 
-private:
+ private:
     float** f;                // f[i][a] = prob of finding amino acid a in column i WITHOUT pseudocounts
     float** g;                // g[i][a] = prob of finding amino acid a in column i WITH pseudocounts
     //float** p;                // p[i][a] = prob of finding amino acid a in column i WITH OPTIMUM pseudocounts
@@ -109,7 +114,6 @@ private:
     char* ss_pred;            // predicted secondary structure          0:-  1:H  2:E  3:C
     char* ss_conf;            // confidence value of prediction         0:-  1:0 ... 10:9
     char* Xcons;              // consensus sequence in internal representation (A=0 R=1 N=2 D=3 ...)
-    float pav[NAA];           // pav[a] = average freq of amino acids in HMM (including subst matrix pseudocounts)
     float pnul[NAA];          // null model probabilities used in comparison (only set in template/db HMMs)
     int* l;                   // l[i] = pos. of j'th match state in aligment
     char dont_delete_seqs;    // set to one if flat copy of seqs and sname was made to a hit object, to avoid deletion

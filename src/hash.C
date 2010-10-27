@@ -219,6 +219,8 @@ Typ Hash<Typ>::Remove(char* key)
 	  Pair<Typ> pair = pslot->ReadCurrent();
 	  num_keys--; 
 	  pslot->Delete();
+	  // Delete key-Array
+	  delete[] pair.key;
 	  // if key was the only element in pslot then delete whole list
 	  if (pslot->Size()==0) {delete pslot; slot[i]=0;} 
 	  //	  return pslot->ReadCurrent().data;

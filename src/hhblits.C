@@ -43,7 +43,7 @@
 #else
 #include <emmintrin.h>   // SSE2
 #include <pmmintrin.h>   // SSE3
-#include <tmmintrin.h>   // SSE?
+#include <tmmintrin.h>   // SSSE3
 ///#include <smmintrin.h>   // SSE4.1
 #endif
 #endif
@@ -58,6 +58,8 @@ using std::string;
 using std::stringstream;
 using std::vector;
 using std::pair;
+
+#include "ffindex.h"     // fast index-based database reading
 
 #include "cs.h"          // context-specific pseudocounts
 #include "context_library.h"
@@ -98,46 +100,55 @@ const char print_elapsed=0;
 char tmp_file[]="/tmp/hhblitsXXXXXX";
 
 // HHblits variables
-const char HHBLITS_VERSION[]="version 2.0.5 (May 2010)";
+const char HHBLITS_VERSION[]="version 2.2.2 (October 2010)";
 const char HHBLITS_REFERENCE[]="to be published.\n";
 const char HHBLITS_COPYRIGHT[]="(C) Michael Remmert and Johannes Soeding\n";
 
-int num_rounds   = 2;                  // number of iterations
-float e_psi      = 100;                // E-value cutoff for prefiltering
-const int N_PSI  = 10000;              // number of max. PSI-BLAST hits to take as HMM-DB
-bool nodiff = false;                   // if true, do not filter in last round
-bool filter = true;                    // Perform filtering of already seen HHMs
-bool block_filter = true;              // Perform viterbi and forward algorithm only on block given by prefiltering
-bool realign_old_hits = false;         // Realign old hits in last round or use previous alignments
+const int MAXNUMDB=20000;               // maximal number of hits through prefiltering
+const int MAXNUMDB_NO_PREFILTER=100000; // maximal number of hits without prefiltering
+int num_rounds   = 2;                   // number of iterations
+bool nodiff = false;                    // if true, do not filter in last round
+bool prefilter = true;                  // Perform no pre-filtering
+bool already_seen_filter = true;        // Perform filtering of already seen HHMs
+bool block_filter = true;               // Perform viterbi and forward algorithm only on block given by prefiltering
+bool realign_old_hits = false;          // Realign old hits in last round or use previous alignments
 
-float neffmax = 10;                    // Break if Neff > Neffmax
+bool hmmer_used = false;
+char input_format = 0;                  // Set to 1, if input in HMMER format (has already pseudocounts)
 
-bool input_single_sequence = false;
+float neffmax = 10;                     // Break if Neff > Neffmax
 
 int cpu = 1;
 
 char config_file[NAMELEN];
-char a3m_infile[NAMELEN];
-char hhm_infile[NAMELEN];
-char psi_infile[NAMELEN];
+char infile[NAMELEN];
 char alis_basename[NAMELEN];
 char base_filename[NAMELEN];
 char query_hhmfile[NAMELEN];
 
-string tmp_psifile="";
-string tmp_infile="";
-// Read from config-file:
-char db[NAMELEN];                    // BLAST formatted database with consensus sequences
-char dbhhm[NAMELEN];                 // directory with database HMMs
-char hh[NAMELEN];                    // directory with hhblits
-char pre_mode[NAMELEN];              // prefilter mode (csblast or blast)
-char csblast[NAMELEN];               // csBLAST binaries (not needed with BLAST)
-char csblast_db[NAMELEN];            // csBLAST database (not needed with BLAST)
+bool alitab_scop = false;                // Write only SCOP alignments in alitabfile
 
-const int MAXNUMDB=2*N_PSI;
-//Hash<char>* doubled;
+char db_ext[NAMELEN];
+
+size_t data_size;                        // Needed for fast index reading
+ffindex_index_t* dbhhm_index = NULL;
+ffindex_index_t* dba3m_index = NULL;
+ffindex_entry_t* entry = NULL;
+
+char db[NAMELEN];                        // database with context-state sequences
+char dba3m[NAMELEN];                     // database with A3M-files
+char dbhhm[NAMELEN];                     // database with HHM-files
+
+FILE *dba3m_data_file;
+FILE *dba3m_index_file;
+FILE *dbhhm_data_file;
+FILE *dbhhm_index_file;
+
+char* dba3m_data;
+char* dbhhm_data;
+
 int ndb_new=0;
-char* dbfiles_new[MAXNUMDB+1];
+char* dbfiles_new[MAXNUMDB_NO_PREFILTER+1];
 int ndb_old=0;
 char* dbfiles_old[MAXNUMDB+1];
 Hash<Hit>* previous_hits;
@@ -161,10 +172,11 @@ public:
   int operator<(const Posindex& posindex) {return ftellpos<posindex.ftellpos;}
 };
 
-HMM q;                    // Create query  HMM with maximum of MAXRES match states
-HMM q_tmp;                // Create query  HMM with maximum of MAXRES match states
+HMM* q;                    // Create query HMM with maximum of MAXRES match states
+HMM* q_tmp;                // Create query HMM with maximum of MAXRES match states (needed for prefiltering)
 HMM* t[MAXBINS];          // Each bin has a template HMM allocated that was read from the database file
 Hit* hit[MAXBINS];        // Each bin has an object of type Hit allocated with a separate dynamic programming matrix (memory!!)
+Hit hit_cur;              // Current hit when going through hitlist
 HitList hitlist;          // list of hits with one Hit object for each pairwise comparison done
 int* format;              // format[bin] = 0 if in HHsearch format => add pcs; format[bin] = 1 if in HMMER format => no pcs
 int read_from_db;         // The value of this flag is returned from HMM::Read(); 0:end of file  1:ok  2:skip HMM
@@ -203,30 +215,28 @@ int rc;                        // return code for threading commands
 inline int PickBin(char status)
 {
   for (int b=0; b<bins; b++) {if (bin_status[b]==status) return b;}
- return -1;
+  return -1;
 }
 
 // Include hhworker.C and hhprefilter.C here, because it needs some of the above variables
 #include "hhworker.C"      // functions: AlignByWorker, RealignByWorker, WorkerLoop
-#include "hhprefilter.C"      // some prefilter functions
+#include "hhprefilter.C"   // some prefilter functions
 
 ///////////////////////////////////////////////////////////////////////////////////////
 //// Do the pairwise comparison of q and *(t[bin]) for the database search
 //////////////////////////////////////////////////////////////////////////////////////
 void PerformViterbiByWorker(int bin)
 {
-  Hit hit_cur;
-
   // Prepare q ant t and compare
-  PrepareTemplate(q,*(t[bin]),format[bin]);
+  PrepareTemplate(*q,*(t[bin]),format[bin]);
 
   // Do HMM-HMM comparison
   for (hit[bin]->irep=1; hit[bin]->irep<=par.altali; hit[bin]->irep++)
     {
       // Break, if no previous_hit with irep is found
-      hit[bin]->Viterbi(q,*(t[bin]));
+      hit[bin]->Viterbi(*q,*(t[bin]));
       if (hit[bin]->irep>1 && hit[bin]->score <= SMIN) break;
-      hit[bin]->Backtrace(q,*(t[bin]));
+      hit[bin]->Backtrace(*q,*(t[bin]));
       
       hit[bin]->score_sort = hit[bin]->score_aass;
       //printf ("%-12.12s  %-12.12s   irep=%-2i  score=%6.2f\n",hit[bin]->name,hit[bin]->fam,hit[bin]->irep,hit[bin]->score);
@@ -240,8 +250,7 @@ void PerformViterbiByWorker(int bin)
 
       if (previous_hits->Contains((char*)ss_tmp.str().c_str()))
 	{
-	  hit_cur = previous_hits->Remove((char*)ss_tmp.str().c_str());   // Remove hit from hash -> add to hitlist
-	  //previous_hits->Add((char*)ss_tmp.str().c_str(), *(new Hit));
+	  hit_cur = previous_hits->Remove((char*)ss_tmp.str().c_str());
 	  previous_hits->Add((char*)ss_tmp.str().c_str(), *(hit[bin]));
 	  
 	  // Overwrite *hit[bin] with alignment, etc. of hit_cur
@@ -282,26 +291,26 @@ void help()
 {
   printf("\n");
   printf("HHblits %s\n",HHBLITS_VERSION);
-  printf("Fast homology detection method HHblits to iteratively search a filtered NR HMM database.\n");
+  printf("Fast homology detection method HHblits to iteratively search a HMM database by HMM-HMM comparison.\n");
   printf("%s",HHBLITS_REFERENCE);
   printf("%s",HHBLITS_COPYRIGHT);
   printf("\n");
   printf("Usage: %s -i query [options]                                                             \n",program_name);
   printf("\n");
-  printf(" -i <file>      input query sequence (FASTA format, not needed with -psi or -a3m)        \n");
+  printf(" -i <file>      input query (single FASTA-sequence, A3M- or FASTA-alignment, HMM-file)   \n");
   printf("\n");
   printf("Options:                                                                                 \n");
-  printf(" -conf  <file>  config file for databases and bioprogs path (default=%s)                 \n",config_file); 
   printf(" -db    <file>  BLAST formatted database with consensus sequences (default=%s)           \n",db);
-  printf(" -dbhhm <dir>   directory with database HMMs (default=%s)                                \n",dbhhm);
+  printf(" -dba3m <dir>   database file with HHM-files (default=%s)                                \n",dba3m);
+  printf(" -dbhhm <dir>   database file with HHM-files (default=%s)                                \n",dbhhm);
   printf(" -n     [1,8]   number of rounds (default=%i)                                            \n",num_rounds); 
-  printf(" -e_hh  [0,1]   E-value cutoff for inclusion in result alignment (def=%G)                \n",par.e); 
-  printf(" -e_psi [1,inf[ E-value cutoff for prefiltering (default=%-.2f)                          \n",e_psi); 
+  printf(" -e     [0,1]   E-value cutoff for inclusion in result alignment (def=%G)                \n",par.e);
   printf("\n");
-  printf("Input options:                                                                           \n");
-  printf(" -a3m <file>    A3M alignment to restart HHblits ('A3M' format)                         \n");
-  printf(" -psi <file>    PSI-BLAST alignment file to restart HHblits ('PSI' format)              \n");
-  printf(" -hhm <file>    HMM File to restart HHblits (in combination with -psi or -a3m)          \n");
+  printf("Input alignment format:                                                       \n");
+  printf(" -M a2m        use A2M/A3M (default): upper case = Match; lower case = Insert;\n");
+  printf("               '-' = Delete; '.' = gaps aligned to inserts (may be omitted)   \n");
+  printf(" -M first      use FASTA: columns with residue in 1st sequence are match states\n");
+  printf(" -M [0,100]    use FASTA: columns with fewer than X%% gaps are match states   \n");
   printf("\n");
   printf("Output options:                                                                          \n");
   printf(" -o <file>      write results in standard format to file (default=<infile.hhr>)          \n");
@@ -309,7 +318,6 @@ void help()
   printf(" -opsi <file>   write pairwise alignments in PSI format (default=none)                   \n");
   printf(" -ohhm <file>   write HHM file of the pairwise alignments (default=none)                 \n");
   printf(" -oalis <base>  write pairwise alignments in A3M format after each round (default=none)  \n");
-  printf(" -v <int>       verbose mode: 0:no screen output  1:only warings  2: verbose (def=%i)    \n",v);
   printf("\n");
   printf("HMM-HMM alignment options:                                                               \n");
   printf(" -realign       realign displayed hits with max. accuracy (MAC) algorithm                \n");
@@ -319,6 +327,7 @@ void help()
   printf(" -glob/-loc     use global/local alignment mode for searching/ranking (def=local)        \n");
   printf("\n");
   printf("Other options:                                                                           \n");
+  printf(" -v <int>       verbose mode: 0:no screen output  1:only warings  2: verbose (def=%i)    \n",v);
   printf(" -cpu <int>     number of CPUs to use (for shared memory SMPs) (default=1)               \n");
 #ifndef PTHREAD
   printf("(The -cpu option is inactive since POSIX threads ae not supported on your platform)      \n");
@@ -339,51 +348,49 @@ void help_all()
   printf("%s",COPYRIGHT);
   printf("\n\n");
   printf("Usage: %s -i query [options]                                                             \n",program_name);
-  printf(" -i <file>      input query sequence (FASTA format, not needed with -psi or -a3m)        \n");
+  printf("\n");
+  printf(" -i <file>       input query (single FASTA-sequence, A3M- or FASTA-alignment, hhm-file)   \n");
   printf("\n");
   printf("Options:                                                                                 \n");
-  printf(" -conf <file>   config file for databases and bioprogs path (default=%s)                 \n",config_file); 
-  printf(" -db <file>     BLAST formatted database with consensus sequences (default=%s)           \n",db);
-  printf(" -dbhhm <dir>   directory with database HMMs (default=%s)                                \n",dbhhm);
-  printf(" -n     [1,5]   number of rounds (default=%i)                                            \n",num_rounds); 
-  printf(" -neffmax [0,15]  break if neff > neffmax (default=%f)                                   \n",neffmax); 
-  printf(" -e_hh  [0,1]   E-value cutoff for inclusion in result alignment (default=%G)            \n",par.e); 
-  printf(" -e_psi [1,inf[ E-value cutoff for prefiltering (default=%-.0f)                          \n",e_psi); 
+  printf(" -db      <file> BLAST formatted database with consensus sequences (default=%s)           \n",db);
+  printf(" -dba3m <dir>   database file with HHM-files (default=%s)                                \n",dba3m);
+  printf(" -dbhhm <dir>   database file with HHM-files (default=%s)                                \n",dbhhm);
+  printf(" -n       [1,8]  number of rounds (default=%i)                                            \n",num_rounds); 
+  printf(" -neffmax [0,15] break if neff > neffmax (default=%f)                                   \n",neffmax); 
+  printf(" -e       [0,1]  E-value cutoff for inclusion in result alignment (def=%G)                \n",par.e);
   printf("\n");
-  printf("Input options:                                                                           \n");
-  printf(" -a3m <file>    A3M alignment to restart HHblits ('A3M' format)                         \n");
-  printf(" -psi <file>    PSI-BLAST alignment file to restart HHblits ('PSI' format)              \n");
-  printf(" -hhm <file>    HMM File to restart HHblits (in combination with -psi or -a3m)          \n");
+  printf("Input alignment format:                                                       \n");
+  printf(" -M a2m          use A2M/A3M (default): upper case = Match; lower case = Insert;\n");
+  printf("                 '-' = Delete; '.' = gaps aligned to inserts (may be omitted)   \n");
+  printf(" -M first        use FASTA: columns with residue in 1st sequence are match states\n");
+  printf(" -M [0,100]      use FASTA: columns with fewer than X%% gaps are match states   \n");
   printf("\n");
   printf("Output options:                                                                          \n");
-  printf(" -o <file>      write results in standard format to file (default=<infile.hhr>)          \n");
-  printf(" -oa3m <file>   write pairwise alignments in A3M format (default=none)                   \n");
-  printf(" -opsi <file>   write pairwise alignments in PSI format (default=none)                   \n");
-  printf(" -ohhm <file>   write HHM file of the pairwise alignments (default=none)                 \n");
-  printf(" -oalis <base>  write pairwise alignments in A3M format after each round (default=none)  \n");
-  printf(" -qhhm <file>   write query input HHM file of last round (default=none)                  \n");
-  printf(" -v <int>       verbose mode: 0:no screen output  1:only warings  2: verbose (def=%i)    \n",v);
-  printf(" -seq <int>     max. number of query/template sequences displayed (def=%i)               \n",par.nseqdis);
-  printf(" -nopred        don't add predicted 2ndary structure in output alignments                \n");
-  printf(" -aliw <int>    number of columns per line in alignment list (def=%i)                    \n",par.aliwidth);
-  printf(" -p <float>     minimum probability in summary and alignment list (def=%G)               \n",par.p);
-  printf(" -E <float>     maximum E-value in summary and alignment list (def=%G)                   \n",par.E);
-  printf(" -Z <int>       maximum number of lines in summary hit list (def=%i)                     \n",par.Z);
-  printf(" -z <int>       minimum number of lines in summary hit list (def=%i)                     \n",par.z);
-  printf(" -B <int>       maximum number of alignments in alignment list (def=%i)                  \n",par.B);
-  printf(" -b <int>       minimum number of alignments in alignment list (def=%i)                  \n",par.b);
+  printf(" -o <file>       write results in standard format to file (default=<infile.hhr>)          \n");
+  printf(" -oa3m <file>    write pairwise alignments in A3M format (default=none)                   \n");
+  printf(" -opsi <file>    write pairwise alignments in PSI format (default=none)                   \n");
+  printf(" -ohhm <file>    write HHM file of the pairwise alignments (default=none)                 \n");
+  printf(" -oalis <base>   write pairwise alignments in A3M format after each round (default=none)  \n");
+  printf(" -qhhm <file>    write query input HHM file of last round (default=none)                  \n");
+  printf(" -seq <int>      max. number of query/template sequences displayed (def=%i)               \n",par.nseqdis);
+  printf(" -addss          add predicted 2ndary structure in output alignments                      \n");
+  printf(" -aliw <int>     number of columns per line in alignment list (def=%i)                    \n",par.aliwidth);
+  printf(" -p <float>      minimum probability in summary and alignment list (def=%G)               \n",par.p);
+  printf(" -E <float>      maximum E-value in summary and alignment list (def=%G)                   \n",par.E);
+  printf(" -Z <int>        maximum number of lines in summary hit list (def=%i)                     \n",par.Z);
+  printf(" -z <int>        minimum number of lines in summary hit list (def=%i)                     \n",par.z);
+  printf(" -B <int>        maximum number of alignments in alignment list (def=%i)                  \n",par.B);
+  printf(" -b <int>        minimum number of alignments in alignment list (def=%i)                  \n",par.b);
   printf("\n");
   printf("Directories for needed programs                                                          \n");
-  printf(" -pre_mode    <mode>  prefilter mode (blast or csblast) (default=%s)                     \n",pre_mode);
-  printf(" -hh           <dir>  directory with HHBLITS executables and reformat.pl (default=%s)    \n",hh);
-  printf(" -blast        <dir>  directory with BLAST executables (default=%s)                      \n",par.blast);
-  printf(" -csblast      <dir>  directory with csBLAST executables (default=%s)                    \n",csblast);
-  printf(" -csblast_db   <dir>  directory with csBLAST database (default=%s)                       \n",csblast_db);
-  printf(" -psipred      <dir>  directory with PsiPred executables (default=%s)                    \n",par.psipred);
-  printf(" -psipred_data <dir>  directory with PsiPred data (default=%s)                           \n",par.psipred_data);
+  printf(" -cs_db         <file> cs-database (default=%s)                                           \n",par.clusterfile);
+  printf(" -cs_lib        <file> cs-library (default=%s)                                            \n",par.cs_library); 
+  printf(" -psipred       <dir>  directory with PsiPred executables (default=%s)                    \n",par.psipred);
+  printf(" -psipred_data  <dir>  directory with PsiPred data (default=%s)                           \n",par.psipred_data);
   printf("\n");
   printf("Filter options                                                                           \n");
-  printf(" -nofilter      disable all filter steps (except for PSI-BLAST prefiltering)             \n");
+  printf(" -nofilter      disable all filter steps                                                 \n");
+  printf(" -noaddfilter   disable all filter steps (except for PSI-BLAST prefiltering)             \n");
   printf(" -nodbfilter    disable additional filtering of prefiltered HMMs                         \n");
   printf(" -noblockfilter search complete matrix in Viterbi                                        \n");
   printf("\n");
@@ -394,7 +401,7 @@ void help_all()
   printf(" -nodiff        do not filter sequences in last iteration (def=off)                      \n");
   printf(" -cov  [0,100]  minimum coverage with query (%%) (def=%i)                                \n",par.coverage);
   printf(" -qid  [0,100]  minimum sequence identity with query (%%) (def=%i)                       \n",par.qid);
-  printf(" -neff [1,inf] target diversity of alignment (default=off)\n");
+  printf(" -neff [1,inf]  target diversity of alignment (default=off)\n");
   printf(" -qsc  [0,100]  minimum score per column with query  (def=%.1f)                          \n",par.qsc);
   printf("\n");
   printf("HMM-HMM alignment options:                                                               \n");
@@ -402,10 +409,10 @@ void help_all()
   printf(" -norealign     do NOT realign displayed hits with MAC algorithm (def=realign)           \n");
   printf(" -mact [0,1[    posterior probability threshold for MAC re-alignment (def=%.3f)          \n",par.mact);
   printf("                Parameter controls alignment greediness: 0:global >0.1:local             \n");
+  printf(" -realign_max   <int>  realign max. <int> hits (default=%i)                                \n",par.realign_max);  
   printf(" -glob/-loc     use global/local alignment mode for searching/ranking (def=local)        \n");
   printf(" -alt <int>     show up to this many significant alternative alignments(def=%i)          \n",par.altali);
-  printf(" -jdummy [0,20] ... (default=%i)                                                         \n",par.jdummy);       printf(" -realign_max <int>  realign max. <int> hits (default=%i)                                \n",par.realign_max);  
-
+  printf(" -jdummy [0,20] ... (default=%i)                                                         \n",par.jdummy);       
   printf("\n");
   printf("Pseudocount options:                                                                     \n");
   printf(" -pcm  0-2      Pseudocount mode (default=%-i)                                           \n",par.pcm);
@@ -418,12 +425,15 @@ void help_all()
   printf("                3: constant divergence pseudocounts                                      \n");
   printf("                4: divergence-dependent, with composition-adjusted matrix                \n");
   printf(" -pca  [0,1]    overall pseudocount admixture (def=%-.1f)                                \n",par.pca);
-  printf(" -pcb  [1,inf[  threshold for Neff) (def=%-.1f)                                          \n",par.pcb);
+  printf(" -pcb  [1,inf[  threshold for Neff (def=%-.1f)                                           \n",par.pcb);
   printf(" -pcc  [0,3]    extinction exponent for tau(Neff)  (def=%-.1f)                           \n",par.pcc);
   printf(" -pcw  [0,3]    weight of pos-specificity for pcs  (def=%-.1f)                           \n",par.pcw);
   printf("\n");
+  printf(" -pre_pca [0,1]   PREFILTER pseudocount admixture (def=%-.1f)                            \n",par.pre_pca);
+  printf(" -pre_pcb [1,inf[ PREFILTER threshold for Neff (def=%-.1f)                               \n",par.pre_pcb);
+  printf("\n");
   printf("Gap cost options:                                                                        \n");
-  printf(" -gapb [0,inf[  transition pseudocount admixture (def=%-.2f)                             \n",par.gapb);
+  printf(" -gapb [0,inf[  Transition pseudocount admixture (def=%-.2f)                             \n",par.gapb);
   printf(" -gapd [0,inf[  Transition pseudocount admixture for opening gap (default=%-.2f)         \n",par.gapd);
   printf(" -gape [0,1.5]  Transition pseudocount admixture for extending gap (def=%-.2f)           \n",par.gape);
   printf(" -gapf ]0,inf]  factor for inc./reducing the gap open penalty for deletes (def=%-.2f)    \n",par.gapf);
@@ -434,18 +444,19 @@ void help_all()
   printf(" -egt  [0,inf[  penalty (bits) for end gaps aligned to template residues (def=%-.2f)     \n",par.egt);
   printf("\n");
   printf("Other options:                                                                           \n");
+  printf(" -v <int>       verbose mode: 0:no screen output  1:only warings  2: verbose (def=%i)    \n",v);
   printf(" -cpu <int>     number of CPUs to use (for shared memory SMPs) (default=1)               \n");
+  printf(" -scores <file> write scores for all pairwise comparisions to file                       \n");
+  printf(" -atab   <file> write all alignments in tabular layout to file                           \n");
+  printf(" -maxres <int> max number of columns in HMM (def=%5i)                     \n",MAXRES);
+  printf("               (Warning! Increasing this number needs more memory)         \n");
 #ifndef PTHREAD
   printf("(The -cpu option is inactive since POSIX threads ae not supported on your platform)      \n");
 #endif
-  printf("\n");
-  printf("An extended list of options can be obtained by using '--help all' as parameter           \n");
   printf("\n\n");
   printf("Example: %s -i query.fas -oa3m query.a3m -n 2                                            \n",program_name);
   cout<<endl;
-
 }
-
 
 /////////////////////////////////////////////////////////////////////////////////////
 //// Processing input options from command line and .hhdefaults file
@@ -462,94 +473,47 @@ void ProcessArguments(int argc, char** argv)
             {help() ; cerr<<endl<<"Error in "<<program_name<<": no query file following -i\n"; exit(4);}
           else strcpy(par.infile,argv[i]);
         }
-      else if (!strcmp(argv[i],"-a3m"))
-        {
-          if (++i>=argc || argv[i][0]=='-')
-            {help() ; cerr<<endl<<"Error in "<<program_name<<": no query file following -a3m\n"; exit(4);}
-          else strcpy(a3m_infile,argv[i]);
-	  strcpy(par.infile,"");
-        }
-      else if (!strcmp(argv[i],"-hhm"))
-        {
-          if (++i>=argc || argv[i][0]=='-')
-            {help() ; cerr<<endl<<"Error in "<<program_name<<": no query file following -hhm\n"; exit(4);}
-          else strcpy(hhm_infile,argv[i]);
-        }
-      else if (!strcmp(argv[i],"-psi"))
-        {
-          if (++i>=argc || argv[i][0]=='-')
-            {help() ; cerr<<endl<<"Error in "<<program_name<<": no query file following -psi\n"; exit(4);}
-          else strcpy(psi_infile,argv[i]);
-	  strcpy(par.infile,"");
-        }
       else if (!strcmp(argv[i],"-db"))
         {
           if (++i>=argc || argv[i][0]=='-')
             {help() ; cerr<<endl<<"Error in "<<program_name<<": no database file following -db\n"; exit(4);}
           else
-              strcpy(db,argv[i]);
+	    strcpy(db,argv[i]);
+        }
+      else if (!strcmp(argv[i],"-dba3m"))
+        {
+          if (++i>=argc || argv[i][0]=='-')
+            {help() ; cerr<<endl<<"Error in "<<program_name<<": no database file following -dba3m\n"; exit(4);}
+          else
+	    strcpy(dba3m,argv[i]);
         }
       else if (!strcmp(argv[i],"-dbhhm"))
         {
           if (++i>=argc || argv[i][0]=='-')
-            {help() ; cerr<<endl<<"Error in "<<program_name<<": no database directory following -dbhhm\n"; exit(4);}
+            {help() ; cerr<<endl<<"Error in "<<program_name<<": no database file following -dbhhm\n"; exit(4);}
           else
-              strcpy(dbhhm,argv[i]);
+	    strcpy(dbhhm,argv[i]);
         }
-      else if (!strcmp(argv[i],"-hh"))
-        {
-          if (++i>=argc || argv[i][0]=='-')
-            {help() ; cerr<<endl<<"Error in "<<program_name<<": no directory following -hh\n"; exit(4);}
-          else
-              strcpy(hh,argv[i]);
-        }
-      else if (!strcmp(argv[i],"-pre_mode"))
-        {
-          if (++i>=argc || argv[i][0]=='-')
-            {help() ; cerr<<endl<<"Error in "<<program_name<<": no mode following -pre_mode\n"; exit(4);}
-          else
-              strcpy(pre_mode,argv[i]);
-        }
-      else if (!strcmp(argv[i],"-blast"))
-        {
-          if (++i>=argc || argv[i][0]=='-')
-            {help() ; cerr<<endl<<"Error in "<<program_name<<": no directory following -blast\n"; exit(4);}
-          else
-              strcpy(par.blast,argv[i]);
-        }
-      else if (!strcmp(argv[i],"-csblast"))
-        {
-          if (++i>=argc || argv[i][0]=='-')
-            {help() ; cerr<<endl<<"Error in "<<program_name<<": no directory following -csblast\n"; exit(4);}
-          else
-              strcpy(csblast,argv[i]);
-        }
-      else if (!strcmp(argv[i],"-csblast_db"))
+      else if (!strcmp(argv[i],"-cs_db"))
         {
           if (++i>=argc || argv[i][0]=='-')
             {help() ; cerr<<endl<<"Error in "<<program_name<<": no directory following -csblast_db\n"; exit(4);}
           else
-              strcpy(csblast_db,argv[i]);
+	    strcpy(par.clusterfile,argv[i]);
         }
       else if (!strcmp(argv[i],"-psipred"))
         {
           if (++i>=argc || argv[i][0]=='-')
             {help() ; cerr<<endl<<"Error in "<<program_name<<": no directory following -psipred\n"; exit(4);}
           else
-              strcpy(par.psipred,argv[i]);
+	    strcpy(par.psipred,argv[i]);
         }
       else if (!strcmp(argv[i],"-psipred_data"))
         {
           if (++i>=argc || argv[i][0]=='-')
             {help() ; cerr<<endl<<"Error in "<<program_name<<": no database directory following -psipred_data\n"; exit(4);}
           else
-              strcpy(par.psipred_data,argv[i]);
-        }
-      else if (!strcmp(argv[i],"-conf"))
-        {
-          if (++i>=argc || argv[i][0]=='-')
-            {help() ; cerr<<endl<<"Error in "<<program_name<<": no config file following -conf\n"; exit(4);}
-          else strcpy(config_file,argv[i]);
+	    strcpy(par.psipred_data,argv[i]);
         }
       else if (!strcmp(argv[i],"-o"))
         {
@@ -593,6 +557,19 @@ void ProcessArguments(int argc, char** argv)
             {help() ; cerr<<endl<<"Error in "<<program_name<<": no file following -scores\n"; exit(4);}
           else {strcpy(par.scorefile,argv[i]);}
         }
+      else if (!strcmp(argv[i],"-db_ext"))
+        {
+          if (++i>=argc || argv[i][0]=='-')
+            {help() ; cerr<<endl<<"Error in "<<program_name<<": no extension following -db_ext\n"; exit(4);}
+          else {strcpy(db_ext,argv[i]);}
+        }
+      else if (!strcmp(argv[i],"-atab"))
+        {
+          if (++i>=argc || argv[i][0]=='-')
+            {help() ; cerr<<endl<<"Error in "<<program_name<<": no file following -atab\n"; exit(4);}
+          else {strcpy(par.alitabfile,argv[i]);}
+        }
+      else if (!strcmp(argv[i],"-atab_scop")) alitab_scop=true;
       else if (!strcmp(argv[i],"-h")|| !strcmp(argv[i],"--help"))
         {
           if (++i>=argc || argv[i][0]=='-') {help(); exit(0);}
@@ -624,6 +601,11 @@ void ProcessArguments(int argc, char** argv)
           else if (!strcmp(argv[i]+7,"80")) par.matrix=80;
           else cerr<<endl<<"WARNING: Ignoring unknown option "<<argv[i]<<" ...\n";
         }
+      else if (!strcmp(argv[i],"-M") && (i<argc-1))
+        if (!strcmp(argv[++i],"a2m") || !strcmp(argv[i],"a3m"))  par.M=1;
+        else if(!strcmp(argv[i],"first"))  par.M=3;
+        else if (argv[i][0]>='0' && argv[i][0]<='9') {par.Mgaps=atoi(argv[i]); par.M=2;}
+        else cerr<<endl<<"WARNING: Ignoring unknown argument: -M "<<argv[i]<<"\n";
       else if (!strcmp(argv[i],"-p") && (i<argc-1)) par.p = atof(argv[++i]);
       else if (!strcmp(argv[i],"-P") && (i<argc-1)) par.p = atof(argv[++i]);
       else if (!strcmp(argv[i],"-E") && (i<argc-1)) par.E = atof(argv[++i]);
@@ -632,10 +614,9 @@ void ProcessArguments(int argc, char** argv)
       else if (!strcmp(argv[i],"-z") && (i<argc-1)) par.z = atoi(argv[++i]);
       else if (!strcmp(argv[i],"-Z") && (i<argc-1)) par.Z = atoi(argv[++i]);
       else if (!strcmp(argv[i],"-realign_max") && (i<argc-1)) par.realign_max = atoi(argv[++i]);
-      else if (!strcmp(argv[i],"-e_hh") && (i<argc-1)) par.e = atof(argv[++i]);
-      else if (!strcmp(argv[i],"-e_psi") && (i<argc-1)) e_psi = atof(argv[++i]);
-      else if (!strncmp(argv[i],"-nopred",7)) par.showpre=0;
-      else if (!strncmp(argv[i],"-noss",5)) par.showpred=0;
+      else if (!strcmp(argv[i],"-e") && (i<argc-1)) par.e = atof(argv[++i]);
+      else if (!strncmp(argv[i],"-nopred",7) || !strncmp(argv[i],"-noss",5)) par.showpred=0;
+      else if (!strncmp(argv[i],"-addss",6)) par.addss=1;
       else if (!strcmp(argv[i],"-seq") && (i<argc-1))  par.nseqdis=atoi(argv[++i]);
       else if (!strcmp(argv[i],"-aliw") && (i<argc-1)) par.aliwidth=atoi(argv[++i]);
       else if (!strcmp(argv[i],"-id") && (i<argc-1))   par.max_seqid=atoi(argv[++i]);
@@ -645,13 +626,14 @@ void ProcessArguments(int argc, char** argv)
       else if (!strcmp(argv[i],"-diff") && (i<argc-1)) par.Ndiff=atoi(argv[++i]);
       else if (!strcmp(argv[i],"-nodiff")) nodiff=true;
       else if (!strcmp(argv[i],"-neffmax") && (i<argc-1)) neffmax=atof(argv[++i]); 
-      else if (!strcmp(argv[i],"-neff") && (i<argc-1)) par.Neff=atof(argv[++i]); 
-      else if (!strcmp(argv[i],"-Neff") && (i<argc-1)) par.Neff=atof(argv[++i]); 
+      else if ((!strcmp(argv[i],"-neff") || !strcmp(argv[i],"-Neff")) && (i<argc-1)) par.Neff=atof(argv[++i]); 
       else if (!strcmp(argv[i],"-pcm") && (i<argc-1)) par.pcm=atoi(argv[++i]);
       else if (!strcmp(argv[i],"-pca") && (i<argc-1)) par.pca=atof(argv[++i]);
       else if (!strcmp(argv[i],"-pcb") && (i<argc-1)) par.pcb=atof(argv[++i]);
       else if (!strcmp(argv[i],"-pcc") && (i<argc-1)) par.pcc=atof(argv[++i]);
       else if (!strcmp(argv[i],"-pcw") && (i<argc-1)) par.pcw=atof(argv[++i]);
+      else if (!strcmp(argv[i],"-pre_pca") && (i<argc-1)) par.pre_pca=atof(argv[++i]);
+      else if (!strcmp(argv[i],"-pre_pcb") && (i<argc-1)) par.pre_pcb=atof(argv[++i]);
       else if (!strcmp(argv[i],"-gapb") && (i<argc-1)) { par.gapb=atof(argv[++i]); if (par.gapb<=0.01) par.gapb=0.01;}
       else if (!strcmp(argv[i],"-gapd") && (i<argc-1)) par.gapd=atof(argv[++i]);
       else if (!strcmp(argv[i],"-gape") && (i<argc-1)) par.gape=atof(argv[++i]);
@@ -661,12 +643,11 @@ void ProcessArguments(int argc, char** argv)
       else if (!strcmp(argv[i],"-gapi") && (i<argc-1)) par.gapi=atof(argv[++i]);
       else if (!strcmp(argv[i],"-egq") && (i<argc-1)) par.egq=atof(argv[++i]);
       else if (!strcmp(argv[i],"-egt") && (i<argc-1)) par.egt=atof(argv[++i]);
-      else if (!strcmp(argv[i],"-as62")) {par.prefilt_alphabet=PRE_AS62;}
-      else if (!strcmp(argv[i],"-as_matrix"))
+      else if (!strcmp(argv[i],"-cs_lib"))
         {
           if (++i>=argc || argv[i][0]=='-')
-            {help() ; cerr<<endl<<"Error in "<<program_name<<": no matrix following -as_matrix\n"; exit(4);}
-          else strcpy(par.as_matrix,argv[i]);
+            {help() ; cerr<<endl<<"Error in "<<program_name<<": no lib following -cs_lib\n"; exit(4);}
+          else strcpy(par.cs_library,argv[i]);
         }
       else if (!strcmp(argv[i],"-filterlen") && (i<argc-1)) 
 	{
@@ -675,7 +656,8 @@ void ProcessArguments(int argc, char** argv)
 	  par.filter_evals=new double[par.filter_length];
 	}
       else if (!strcmp(argv[i],"-filtercut") && (i<argc-1)) par.filter_thresh=(double)atof(argv[++i]);
-      else if (!strcmp(argv[i],"-nofilter")) {filter=false; block_filter=false; par.early_stopping_filter=false; par.filter_thresh=0;}
+      else if (!strcmp(argv[i],"-nofilter")) {prefilter=false; already_seen_filter=false; block_filter=false; par.early_stopping_filter=false; par.filter_thresh=0;}
+      else if (!strcmp(argv[i],"-noaddfilter")) {already_seen_filter=false; block_filter=false; par.early_stopping_filter=false; par.filter_thresh=0;}
       else if (!strcmp(argv[i],"-nodbfilter")) {par.filter_thresh=0;}
       else if (!strcmp(argv[i],"-noblockfilter")) {block_filter=false;}
       else if (!strcmp(argv[i],"-noearlystoppingfilter")) {par.early_stopping_filter=false;}
@@ -683,9 +665,6 @@ void ProcessArguments(int argc, char** argv)
       else if (!strcmp(argv[i],"-shading_mode") && (i<argc-1)) strcpy(par.block_shading_mode,argv[++i]);
       else if (!strcmp(argv[i],"-prepre_smax_thresh") && (i<argc-1)) par.preprefilter_smax_thresh = atoi(argv[++i]);
       else if (!strcmp(argv[i],"-pre_evalue_thresh") && (i<argc-1)) par.prefilter_evalue_thresh = atof(argv[++i]);
-      else if (!strcmp(argv[i],"-smax_thresh") && (i<argc-1)) par.prefilter_smax_thresh = atoi(argv[++i]);
-      else if (!strcmp(argv[i],"-rmax_thresh") && (i<argc-1)) par.prefilter_rmax_thresh = atoi(argv[++i]);
-      else if (!strcmp(argv[i],"-sse_shading_space") && (i<argc-1)) par.sse_shading_space = atoi(argv[++i]);
       else if (!strcmp(argv[i],"-pre_bitfactor") && (i<argc-1)) par.prefilter_bit_factor = atoi(argv[++i]);
       else if (!strcmp(argv[i],"-pre_gap_open") && (i<argc-1)) par.prefilter_gap_open = atoi(argv[++i]);
       else if (!strcmp(argv[i],"-pre_gap_extend") && (i<argc-1)) par.prefilter_gap_extend = atoi(argv[++i]);
@@ -693,11 +672,14 @@ void ProcessArguments(int argc, char** argv)
       else if (!strcmp(argv[i],"-realignoldhits")) realign_old_hits=true;
       else if (!strcmp(argv[i],"-realign")) par.realign=1;
       else if (!strcmp(argv[i],"-norealign")) par.realign=0;
+      else if (!strcmp(argv[i],"-maxres") && (i<argc-1)) {
+	MAXRES=atoi(argv[++i]);
+	MAXCOL=2*MAXRES;
+      }
       else if (!strncmp(argv[i],"-glo",3)) {par.loc=0; if (par.mact>0.3 && par.mact<0.301) {par.mact=0;} }
       else if (!strncmp(argv[i],"-loc",4)) par.loc=1;
       else if (!strncmp(argv[i],"-alt",4) && (i<argc-1)) par.altali=atoi(argv[++i]);
-      else if (!strcmp(argv[i],"-mact") && (i<argc-1)) par.mact=atof(argv[++i]);
-      else if (!strcmp(argv[i],"-mapt") && (i<argc-1)) par.mact=atof(argv[++i]);
+      else if ((!strcmp(argv[i],"-mact") || !strcmp(argv[i],"-mapt")) && (i<argc-1)) par.mact=atof(argv[++i]);
       else if (!strncmp(argv[i],"-cpu",4) && (i<argc-1)) { threads=atoi(argv[++i]); cpu = threads; }
       else if (!strncmp(argv[i],"-jdummy",7) && (i<argc-1)) par.jdummy=atoi(argv[++i]);
       else if (!strcmp(argv[i],"-csb") && (i<argc-1)) par.csb=atof(argv[++i]);
@@ -705,237 +687,103 @@ void ProcessArguments(int argc, char** argv)
       else cerr<<endl<<"WARNING: Ignoring unknown option "<<argv[i]<<" ...\n";
       if (v>=4) cout<<i<<"  "<<argv[i]<<endl; //PRINT
     } // end of for-loop for command line input
-
-  if (*csblast_db) {
-    //cerr<<"CSBLAST DB given!\n";
-    strcpy(par.clusterfile,csblast_db);
-  } else {
-    cerr<<"CSBLAST DB not given!\n";
-  }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
-// Read config file
+// Read input file
 /////////////////////////////////////////////////////////////////////////////////////
-void ReadConfigFile(char filename[])
+void ReadInputFile()
 {
-  char* c;         //pointer to scan line read in for end of argument
-  FILE* configf=NULL;
+  int num_seqs = 0;
 
-  // Open config file
-  configf = fopen(filename,"r");
-  if (!configf) return;
+  FILE* qf=fopen(par.infile,"rb");
+  if (!qf) OpenFileError(par.infile);
 
-  // Read in options until end-of-file
-  while (fgets(line,LINELEN,configf))
+  char qa3mfile[NAMELEN];
+  RemoveExtension(qa3mfile,par.infile);
+  strcat(qa3mfile,".a3m");
+
+  if (!fgetline(line,LINELEN,qf)) {help(); cerr<<endl<<"Error in "<<program_name<<": cannot read input file!\n"; exit(4);}
+  if (!strncmp(line,"HMMER3",6) || !strncmp(line,"HMMER",5))  // HMMER/HMMER3 format
     {
-      if (!strcmp(line,"\n") || line[0] == '#')
-	continue;
-
-      // Analyze line
-      c=line;
-      
-      // find parameter name
-      char param[NAMELEN];
-      c = strwrd(param, c);
-      // ignore '='
-      c++; 
-      // find parameter value
-      char value[NAMELEN];
-      c = strwrd(value, c);
-
-      if (!*param || !*value) {
-	 cerr<<endl<<"WARNING: Ignoring line '"<<line<<"' in config-file (WRONG FORMAT)!\n";
-	 continue;
-      }
-
-      if (!strcmp(param, "db")) strcpy(db,value);
-      else if (!strcmp(param, "dbhhm")) strcpy(dbhhm,value);
-      else if (!strcmp(param, "hh")) strcpy(hh,value);
-      else if (!strcmp(param, "pre_mode")) strcpy(pre_mode,value);
-      else if (!strcmp(param, "blast")) strcpy(par.blast,value);
-      else if (!strcmp(param, "csblast")) strcpy(csblast,value);
-      else if (!strcmp(param, "csblast_db")) strcpy(csblast_db,value);
-      else if (!strcmp(param, "psipred")) strcpy(par.psipred,value);
-      else if (!strcmp(param, "psipred_data")) strcpy(par.psipred_data,value);
-      else cerr<<endl<<"WARNING: Ignoring unknown option "<<param<<" in config file...\n";
-
+      input_format = 1;
+      hmmer_used = true;
+      cerr<<endl<<"Error in "<<program_name<<": HMMER format as input not supported!\n";
+      exit(1);
     }
-
-  fclose(configf);
-}
-
-/////////////////////////////////////////////////////////////////////////////////////
-// Check given input files
-/////////////////////////////////////////////////////////////////////////////////////
-void CheckInputFiles()
-{
-  if (!*par.infile || !strcmp(par.infile,"") || !strcmp(par.infile,"stdin")) // infile not given
+  else if (!strncmp(line,"HH",2))     // HHM format
     {
-      if (!*a3m_infile && !*psi_infile)
-	{help(); cerr<<endl<<"Error in "<<program_name<<": input file missing!\n"; exit(4);}
-      
-      if (*a3m_infile && strcmp(a3m_infile,"")) 
-	{
-	  strcpy(par.infile,a3m_infile);
-
-	  //Check if first sequence (query) has gaps or insert - in this case create a consensus sequence
-	  bool consensus_needed = false;
-	  FILE* inf = NULL;
-	  inf = fopen(a3m_infile,"rb");
-	  if (!inf) OpenFileError(a3m_infile);
-	  while(fgetline(line,LINELEN,inf))
-	    {
-	      if (line[0] == '>' && strncmp(line,">ss",3) && strncmp(line,">sa",3))
-		break;
-	    }
-	  while(fgetline(line,LINELEN,inf))
-	    {
-	      if (line[0] == '>')
-		break;
-	      if (strtrd(line, "abcdefghijklmnopqrstuvwxyz-") > 0)
-		consensus_needed = true;
-	    }
-	  fclose(inf);
-	  if (consensus_needed)
-	    {
-	      int v1=v;
-	      if (v<=3) v=1; else v-=2;
-	      char cons_tmp = par.cons;
-	      par.cons = 1;
-	      strcpy(par.infile,tmp_file);
-	      strcat(par.infile,".a3m");
-	      HMM q_tmp;
-	      Alignment* qali_tmp=new(Alignment);
-	      // Calculate consensus sequence in Alignment::FrequenciesAndTransitions()
-	      ReadAndPrepare(a3m_infile, q_tmp, qali_tmp);
-	      
-	      // Write new alignment with consensus sequence
-	      FILE* inf = NULL;
-	      FILE* outf = NULL;
-	      inf = fopen(a3m_infile,"rb");
-	      outf = fopen(par.infile,"w");
-	      if (!inf) OpenFileError(a3m_infile);
-	      if (!outf) OpenFileError(par.infile);
-	      while(fgetline(line,LINELEN,inf))
-		{
-		  if (line[0] == '>' && strncmp(line,">ss",3) && strncmp(line,">sa",3))
-		    break;
-		  fprintf(outf,"%s\n",line);
-		}
-	      fprintf(outf,">%s\n%s\n",q_tmp.sname[q_tmp.nfirst],q_tmp.seq[q_tmp.nfirst]+1);
-	      fprintf(outf,"%s\n",line);
-	      while(fgetline(line,LINELEN,inf))
-		  fprintf(outf,"%s\n",line);
-	      fclose(inf);
-	      fclose(outf);
-
-	      par.cons = cons_tmp;
-	      v=v1;
-	      delete qali_tmp;
-	    }
-
-	  // Create PSI-file
-	  if (*psi_infile && strcmp(psi_infile,"")) 
-	    {
-	      //command = (string)hh + "/reformat.pl psi psi " + (string)psi_infile + " " + tmp_psifile + " -r -M first > /dev/null";
-	      {help(); cerr<<endl<<"Error in "<<program_name<<": don't use -a3m and -psi together!\n"; exit(4);}
-	    }
-	  else
-	    {
-	      command = (string)hh + "/reformat.pl a3m psi " + (string)par.infile + " " + tmp_psifile + " -r > /dev/null";
-	    }
-	  runSystem(command,v);
-	  RemoveExtension(base_filename,a3m_infile);
-	}
-      else
-	{
-	  if (*psi_infile && strcmp(psi_infile,"")) 
-	    {
-	      command = (string)hh + "/reformat.pl psi psi " + (string)psi_infile + " " + tmp_psifile + " -r -M first > /dev/null";
-	      runSystem(command,v);
-	      command = (string)hh + "/reformat.pl psi a3m " + (string)psi_infile + " " + (string)tmp_file + ".a3m -M first > /dev/null";
-	      runSystem(command,v);
-	      strcpy(par.infile,tmp_file);
-	      strcat(par.infile,".a3m");
-	      RemoveExtension(base_filename,psi_infile);
-	    }
-	  else
-	    {
-	      help(); 
-	      cerr<<endl<<"Error in "<<program_name<<": input file missing!\n"; 
-	      exit(4);
-	    }
-	}
-
-      // Extract query sequence
-      FILE* inf = NULL;
-      FILE* outf = NULL;
-      inf = fopen(par.infile,"rb");
-      outf = fopen((tmp_infile).c_str(),"w");
-      if (!inf) OpenFileError(par.infile);
-      if (!outf) OpenFileError((tmp_infile).c_str());
-      while(fgetline(line,LINELEN,inf))
-	{
-	  if (line[0] == '>' && strncmp(line,">ss",3) && strncmp(line,">sa",3))
-	    break;
-	}
-      fprintf(outf,"%s\n",line);
-      while(fgetline(line,LINELEN,inf))
-	{
-	  if (line[0] == '>')
-	    break;
-	  fprintf(outf,"%s\n",line);
-	}
+      input_format = 0;
+    }
+  else if (line[0]=='#' || line[0]=='>')             // read sequence/alignment 
+    {
+      input_format = 0;
+      strcpy(qa3mfile, par.infile);
+      FILE* inf=fopen(par.infile,"r");
+      while (fgetline(line,LINELEN,inf))
+      	  if (line[0] == '>')
+      	      num_seqs++;
+      if (num_seqs == 1 && par.M == 1) 
+	par.M=3;
       fclose(inf);
-      fclose(outf);
-      
     }
-  else 
+  else
     {
-      // Check for single sequence in FASTA!!!
-      int sequence_count = 0;
-      FILE* inf = NULL;
-      inf = fopen(par.infile,"rb");
-      if (!inf) OpenFileError(par.infile);
-      while(fgetline(line,LINELEN,inf))
-	{
-	  if (line[0] == '>')
-	    sequence_count++;
-	}
-      if (sequence_count == 0)
-	{help(); cerr<<endl<<"Error in "<<program_name<<": Input sequence must be in FASTA format!\n"; exit(4);}
-      else if (sequence_count > 1)
-	{help(); cerr<<endl<<"Error in "<<program_name<<": Use -a3m or -psi when starting HHblits with an alignment!\n"; exit(4);}
-
-      // Copy infile to tmp_file.fas as input for the BLAST prefilter searches
-      command = (string)hh + "/reformat.pl fas fas " + (string)par.infile + " " + tmp_infile + " -g '' > /dev/null";
-      runSystem(command,v);
-      RemoveExtension(base_filename,par.infile);
-      strcpy(par.infile,tmp_infile.c_str());
-      // Create simple PSI-file
-      command = (string)hh + "/reformat.pl fas psi " + (string)par.infile + " " + tmp_psifile + " -r -M first > /dev/null";
-      runSystem(command,v);
-      input_single_sequence=true;
+      cerr<<endl<<"Error in "<<program_name<<": unrecognized input file format in \'"<<par.infile<<"\'\n";
+      cerr<<"line = "<<line<<"\n";
+      exit(1);
     }
+  fclose(qf);
 
   int v1=v;
-  if (v<=3) v=1; else v-=2;
+  if (v>0 && v<=3) v=1; else v-=2;
 
-  // Read Query alignment
-  FILE* qa3mf=fopen(par.infile,"r");
-  if (!qa3mf) OpenFileError(par.infile);
-  Qali.Read(qa3mf,par.infile);
-  Qali.Compress("compress Qali");
-  //Qali.N_filtered = Qali.Filter(par.max_seqid,par.coverage,par.qid,par.qsc,par.Ndiff);
-  fclose(qa3mf);
+  // Read input file (HMM or alignment format) without adding pseudocounts
+  ReadInput(par.infile, *q);
 
-  v=v1;
+  // Read in query alignment
+  FILE* qa3mf=fopen(qa3mfile,"r");
+  if (!qa3mf) 
+    {
+      // Read query alignment from HHM	
+      Qali.GetSeqsFromHMM(*q,par.infile);
+      Qali.Compress("compress Qali");
 
-  // Check if hhm file is given
-  if (*hhm_infile && strcmp(hhm_infile,"")) 
-    strcpy(par.infile,hhm_infile);
+      if (num_rounds > 1 || *par.alnfile || *par.psifile || *par.hhmfile || *alis_basename)
+	{
+	  if (input_format == 0)   // HHM format
+	    cout<<"WARNING! No alignment-file found, use only representative seqs from HHM-file as base alignment for evolving alignment!\n";
+	  else if (input_format == 1)
+	    cout<<"WARNING! No alignment-file found, use only consensus sequence from HMMER-file as base alignment for evolving alignment!\n";
+	}
+    } 
+  else 
+    {
+      if (num_seqs != 1) 
+      	par.jdummy=0;
+      
+      Qali.Read(qa3mf,qa3mfile);
 
+      // Warn, if there are gaps in a single sequence
+      if (num_seqs == 1 && par.M != 2) {
+	int num_gaps = strtr(Qali.seq[0], "-", "-");
+	if (num_gaps > 1) {  // 1 gap is always given at array pos 0
+	  fprintf(stderr, "WARNING! Your input sequence contains gaps. These gaps will be ignored in this search!\nIf you wan't to keep these gap as background states, you could start HHblits with the '-M 100' option.\n");
+	}
+      }
+
+      Qali.Compress("compress Qali");
+      fclose(qa3mf);
+
+      delete[] Qali.longname;
+      Qali.longname = new(char[strlen(q->longname)+1]);
+      strcpy(Qali.longname,q->longname);
+      strcpy(Qali.name,q->name);
+      strcpy(Qali.fam,q->fam);
+    }
+
+  // Get basename
+  RemoveExtension(base_filename,par.infile);
   if (!*par.outfile)      // outfile not given? Name it basename.hhm
     {
       strcpy(par.outfile,base_filename);
@@ -943,6 +791,8 @@ void CheckInputFiles()
       if (v>=2) cout<<"Search results will be written to "<<par.outfile<<"\n";
     }
 
+  par.M=1;
+  v=v1;
 }
 
 void search_loop(char *dbfiles[], int ndb, bool alignByWorker=true)
@@ -956,7 +806,7 @@ void search_loop(char *dbfiles[], int ndb, bool alignByWorker=true)
   par.filter_counter=0;
   for (int a=0; a<par.filter_length; a++) {par.filter_evals[a]=1;}
 
-  // For all the databases given in -d '...' option ...
+  // For all the databases comming through prefilter
   for (int idb=0; idb<ndb; idb++)
     {
       // Check early stopping filter
@@ -970,9 +820,26 @@ void search_loop(char *dbfiles[], int ndb, bool alignByWorker=true)
       
       // Open HMM database
       //cerr<<"\nReading db file "<<idb<<" dbfiles[idb]="<<dbfiles[idb]<<"\n";
-      FILE* dbf=fopen(dbfiles[idb],"rb");
+      //FILE* dbf=fopen(dbfiles[idb],"rb");
+      FILE* dbf;
+      entry = ffindex_bsearch_get_entry(dbhhm_index, dbfiles[idb]);
+      if (entry != NULL)
+	dbf = fmemopen(ffindex_get_filedata(dbhhm_data, entry->offset), entry->length, "r");
+      else
+	{
+	  char filename[NAMELEN];
+	  RemoveExtension(filename, dbfiles[idb]);
+	  strcat(filename,".a3m");
+	  if(dba3m_index_file!=NULL && (entry = ffindex_bsearch_get_entry(dba3m_index, filename)) != NULL)
+	    dbf = fmemopen(ffindex_get_filedata(dba3m_data, entry->offset), entry->length, "r");
+	  else
+	    {
+	      fprintf(stderr,"ERROR! Could not read %s!\n", dbfiles[idb]);
+	      exit(4);
+	    }
+	}
       if (!dbf) OpenFileError(dbfiles[idb]);
-
+      
       // Submit jobs if bin is free
       if (jobs_submitted+jobs_running<bins)
 	{
@@ -993,10 +860,17 @@ void search_loop(char *dbfiles[], int ndb, bool alignByWorker=true)
 	  ///////////////////////////////////////////////////
 	  // Read next HMM from database file
 	  if (!fgetline(line,LINELEN,dbf)) {continue;}
-	  if (!strncmp(line,"HMMER",5))      // read HMMER format
+	  if (!strncmp(line,"HMMER3",6))      // read HMMER3 format
+	    {
+	      format[bin] = 1;
+	      t[bin]->ReadHMMer3(dbf,dbfiles[idb]);
+	      hmmer_used = true;
+	    }
+	  else if (!strncmp(line,"HMMER",5))      // read HMMER format
 	    {
 	      format[bin] = 1;
 	      t[bin]->ReadHMMer(dbf,dbfiles[idb]);
+	      hmmer_used = true;
 	    }
 	  else if (!strncmp(line,"HH",2))    // read HHM format
 	    {
@@ -1009,7 +883,7 @@ void search_loop(char *dbfiles[], int ndb, bool alignByWorker=true)
 	      format[bin] = 0;
 	      t[bin]->Read(dbf,path);
 	    }
-	  else if (line[0]=='#')             // read a3m alignment
+	  else if (line[0]=='#' || line[0]=='>')             // read a3m alignment
 	    {
 	      Alignment tali;
 	      tali.Read(dbf,dbfiles[idb],line);
@@ -1108,7 +982,7 @@ void search_loop(char *dbfiles[], int ndb, bool alignByWorker=true)
     {
       // No more HMMs in database => wait until all threads have finished
       if (DEBUG_THREADS)
-        fprintf(stderr,"No more jobs read from database         Jobs running:%i  jobs_submitted:%i \n",jobs_running,jobs_submitted);
+	fprintf(stderr,"No more jobs read from database         Jobs running:%i  jobs_submitted:%i \n",jobs_running,jobs_submitted);
 
       // Free all threads still waiting for jobs
       rc = pthread_mutex_lock(&bin_status_mutex);
@@ -1117,11 +991,11 @@ void search_loop(char *dbfiles[], int ndb, bool alignByWorker=true)
 
       // Wait for all jobs to finish => join all jobs to main
       for (int j=0; j<threads; j++)
-        {
-          int status;
-          pthread_join(pthread[j], (void **)&status);
-          if (DEBUG_THREADS) fprintf(stderr,"Thread %i finished its work\n",j+1);
-        }
+	{
+	  int status;
+	  pthread_join(pthread[j], (void **)&status);
+	  if (DEBUG_THREADS) fprintf(stderr,"Thread %i finished its work\n",j+1);
+	}
     }
 #endif
   // End search databases
@@ -1155,21 +1029,21 @@ void perform_viterbi_search(int db_size)
 
   // Initialize
   int v1=v;
-  if (v<=3) v=1; else v-=2;
+  if (v>0 && v<=3) v=1; else v-=2;
 
   char *dbfiles[MAXNUMDB+1];
   int ndb = 0;
 
   par.block_shading->Reset();
   while (!par.block_shading->End())
-      delete[] (par.block_shading->ReadNext()); 
+    delete[] (par.block_shading->ReadNext()); 
   par.block_shading->New(16381,NULL);
 
   // Get dbfiles of previous hits
   previous_hits->Reset();
   while (!previous_hits->End())
     {
-      Hit hit_cur = previous_hits->ReadNext();
+      hit_cur = previous_hits->ReadNext();
       if (hit_cur.irep==1)  
 	{
 	  dbfiles[ndb]=new(char[strlen(hit_cur.dbfile)+1]);
@@ -1213,15 +1087,17 @@ void perform_viterbi_search(int db_size)
   if (v1>=1) cout<<"\n";
   v=v1;
 
+  for (int n=0;n<ndb;++n) delete[](dbfiles[n]);
+
   if (print_elapsed) ElapsedTimeSinceLastCall("(search through database)");
 
   // Sort list according to sortscore
   if (v>=3) printf("Sorting hit list ...\n");
   hitlist.SortList();
 
-  hitlist.CalculatePvalues(q);  // Use NN prediction of lamda and mu
+  hitlist.CalculatePvalues(*q);  // Use NN prediction of lamda and mu
   
-  hitlist.CalculateHHblitsEvalues(q);
+  hitlist.CalculateHHblitsEvalues(*q);
   
 }
 
@@ -1248,7 +1124,7 @@ void search_database(char *dbfiles[], int ndb, int db_size)
 
   // Initialize
   int v1=v;
-  if (v<=3) v=1; else v-=2;
+  if (v>0 && v<=3) v=1; else v-=2;
   if (print_elapsed) ElapsedTimeSinceLastCall("(preparing for search)");
 
   hitlist.N_searched=db_size; //hand over number of HMMs scanned to hitlist (for E-value calculation)
@@ -1264,9 +1140,9 @@ void search_database(char *dbfiles[], int ndb, int db_size)
   if (v>=3) printf("Sorting hit list ...\n");
   hitlist.SortList();
 
-  hitlist.CalculatePvalues(q);  // Use NN prediction of lamda and mu
+  hitlist.CalculatePvalues(*q);  // Use NN prediction of lamda and mu
 
-  hitlist.CalculateHHblitsEvalues(q);
+  hitlist.CalculateHHblitsEvalues(*q);
 
 }
 
@@ -1275,7 +1151,7 @@ void search_database(char *dbfiles[], int ndb, int db_size)
 
 void perform_realign(char *dbfiles[], int ndb)
 {
-  q.Log2LinTransitionProbs(1.0); // transform transition freqs to lin space if not already done
+  q->Log2LinTransitionProbs(1.0); // transform transition freqs to lin space if not already done
       
   Hash< List<Posindex>* >* realign; // realign->Show(dbfile) is list with ftell positions for templates in dbfile to be realigned
   realign = new(Hash< List<Posindex>* >);
@@ -1285,11 +1161,10 @@ void perform_realign(char *dbfiles[], int ndb)
     delete[] (par.block_shading->ReadNext()); 
   par.block_shading->New(16381,NULL);
   par.block_shading_counter->New(16381,NULL);
-  Hit hit_cur;
   const float MEMSPACE_DYNPROG = 2.0*1024.0*1024.0*1024.0;
   int nhits=0;
   int Lmax=0;      // length of longest HMM to be realigned
-  int Lmaxmem=(int)((float)MEMSPACE_DYNPROG/q.L/6.0/8.0/bins); // longest allowable length of database HMM
+  int Lmaxmem=(int)((float)MEMSPACE_DYNPROG/q->L/6.0/8.0/bins); // longest allowable length of database HMM
   int N_aligned=0;
   
   // Store all dbfiles and ftell positions of templates to be displayed and realigned
@@ -1345,7 +1220,7 @@ void perform_realign(char *dbfiles[], int ndb)
 	      posindex.ftellpos = hit_cur.ftellpos;
 	      posindex.index = hit_cur.index;
 	      if (realign->Contains(hit_cur.dbfile))
-		  realign->Show(hit_cur.dbfile)->Push(posindex);
+		realign->Show(hit_cur.dbfile)->Push(posindex);
 	      else
 		{
 		  List<Posindex>* newlist = new(List<Posindex>);
@@ -1376,12 +1251,12 @@ void perform_realign(char *dbfiles[], int ndb)
     {
       // Free previously allocated memory
       if (hit[bin]->forward_allocated)
-	hit[bin]->DeleteForwardMatrix(q.L+2);
+	hit[bin]->DeleteForwardMatrix(q->L+2);
       if (hit[bin]->backward_allocated)
-	hit[bin]->DeleteBackwardMatrix(q.L+2);
+	hit[bin]->DeleteBackwardMatrix(q->L+2);
       
-      hit[bin]->AllocateForwardMatrix(q.L+2,Lmax+1);
-      hit[bin]->AllocateBackwardMatrix(q.L+2,Lmax+1);
+      hit[bin]->AllocateForwardMatrix(q->L+2,Lmax+1);
+      hit[bin]->AllocateBackwardMatrix(q->L+2,Lmax+1);
 
       bin_status[bin] = FREE;
     }
@@ -1400,7 +1275,7 @@ void perform_realign(char *dbfiles[], int ndb)
     }
 
   int v1=v;
-  if (v<=3) v=1; else v-=1;  // Supress verbose output during iterative realignment and realignment
+  if (v>0 && v<=3) v=1; else v-=2;  // Supress verbose output during iterative realignment and realignment
   
   // Align the first par.jdummy templates?
   if (par.jdummy>0)
@@ -1424,7 +1299,23 @@ void perform_realign(char *dbfiles[], int ndb)
 	  if (hit_cur.Eval > par.e) continue; // Don't align hits with an E-value below the inclusion threshold
 
 	  // Open HMM database file dbfiles[idb]
-	  FILE* dbf=fopen(hit_cur.dbfile,"rb");
+	  FILE* dbf;
+	  entry = ffindex_bsearch_get_entry(dbhhm_index, hit_cur.dbfile);
+	  if (entry != NULL)
+	    dbf = fmemopen(ffindex_get_filedata(dbhhm_data, entry->offset), entry->length, "r");
+	  else
+	    {
+	      char filename[NAMELEN];
+	      strcpy(filename,hit_cur.file); // copy filename including path but without extension
+	      strcat(filename,".a3m");
+	      if(dba3m_index_file!=NULL && (entry = ffindex_bsearch_get_entry(dba3m_index, filename)) != NULL)
+		dbf = fmemopen(ffindex_get_filedata(dba3m_data, entry->offset), entry->length, "r");
+	      else
+		{
+		  fprintf(stderr,"ERROR! Could not read %s!\n", hit_cur.dbfile);
+		  exit(4);
+		}
+	    }
 	  if (!dbf) OpenFileError(hit_cur.dbfile);
 	  read_from_db=1;
 	  
@@ -1442,10 +1333,17 @@ void perform_realign(char *dbfiles[], int ndb)
 	  ///////////////////////////////////////////////////
 	  // Read next HMM from database file
 	  if (!fgetline(line,LINELEN,dbf)) {fprintf(stderr,"Error: end of file %s reached prematurely!\n",hit_cur.dbfile); exit(1);}
-	  if (!strncmp(line,"HMMER",5))      // read HMMER format
+	  if (!strncmp(line,"HMMER3",5))      // read HMMER3 format
+	    {
+	      format[bin] = 1;
+	      read_from_db = t[bin]->ReadHMMer3(dbf,hit_cur.dbfile);
+	      hmmer_used = true;
+	    }
+	  else if (!strncmp(line,"HMMER",5))      // read HMMER format
 	    {
 	      format[bin] = 1;
 	      read_from_db = t[bin]->ReadHMMer(dbf,hit_cur.dbfile);
+	      hmmer_used = true;
 	    }
 	  else if (!strncmp(line,"HH",2))     // read HHM format
 	    {
@@ -1458,7 +1356,7 @@ void perform_realign(char *dbfiles[], int ndb)
 	      fseek(dbf,hit_cur.ftellpos,SEEK_SET); // rewind to beginning of line
 	      read_from_db = t[bin]->Read(dbf,path);
 	    }
-	  else if (line[0]=='#')             // read a3m alignment
+	  else if (line[0]=='#' || line[0]=='>')             // read a3m alignment
 	    {
 	      Alignment tali;
 	      tali.Read(dbf,hit_cur.dbfile,line);
@@ -1495,7 +1393,7 @@ void perform_realign(char *dbfiles[], int ndb)
 	    }
 	  
 	  // Prepare MAC comparison(s)
-	  PrepareTemplate(q,*(t[bin]),format[bin]);
+	  PrepareTemplate(*q,*(t[bin]),format[bin]);
 	  t[bin]->Log2LinTransitionProbs(1.0);
 
 	  // Realign only around previous Viterbi hit
@@ -1509,10 +1407,10 @@ void perform_realign(char *dbfiles[], int ndb)
 	  hit[bin]->realign_around_viterbi=true;
 
 	  // Align q to template in *hit[bin]
-	  hit[bin]->Forward(q,*(t[bin]));
-	  hit[bin]->Backward(q,*(t[bin]));
-	  hit[bin]->MACAlignment(q,*(t[bin]));
-	  hit[bin]->BacktraceMAC(q,*(t[bin]));
+	  hit[bin]->Forward(*q,*(t[bin]));
+	  hit[bin]->Backward(*q,*(t[bin]));
+	  hit[bin]->MACAlignment(*q,*(t[bin]));
+	  hit[bin]->BacktraceMAC(*q,*(t[bin]));
 	  
 	  // Overwrite *hit[bin] with Viterbi scores, Probabilities etc. of hit_cur
 	  hit[bin]->score      = hit_cur.score;
@@ -1538,7 +1436,16 @@ void perform_realign(char *dbfiles[], int ndb)
 	  char ta3mfile[NAMELEN];
 	  strcpy(ta3mfile,hit[bin]->file); // copy filename including path but without extension
 	  strcat(ta3mfile,".a3m");
-	  Qali.MergeMasterSlave(*hit[bin],ta3mfile);
+	  FILE* ta3mf;
+	  if(dba3m_index_file!=NULL && (entry = ffindex_bsearch_get_entry(dba3m_index, ta3mfile)) != NULL)
+	    ta3mf = fmemopen(ffindex_get_filedata(dba3m_data, entry->offset), entry->length, "r");
+	  else
+	    {
+	      fprintf(stderr,"ERROR! Could not read %s!\n", ta3mfile);
+	      exit(4);
+	    }
+	  Qali.MergeMasterSlave(*hit[bin],ta3mfile, ta3mf);
+	  fclose(ta3mf);
 	  
 	  // Convert ASCII to int (0-20),throw out all insert states, record their number in I[k][i]
 	  Qali.Compress("merged A3M file");
@@ -1547,23 +1454,25 @@ void perform_realign(char *dbfiles[], int ndb)
 	  Qali.N_filtered = Qali.Filter(par.max_seqid,par.coverage,par.qid,par.qsc,par.Ndiff);
 	  
 	  // Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
-	  Qali.FrequenciesAndTransitions(q);
+	  Qali.FrequenciesAndTransitions(*q);
+
+	  if (par.notags) q->NeutralizeTags();
 	  
 	  if (!*par.clusterfile) { //compute context-specific pseudocounts?
 	    // Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
-	    q.PreparePseudocounts();
+	    q->PreparePseudocounts();
 	    // Add amino acid pseudocounts to query: p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
-	    q.AddAminoAcidPseudocounts();
+	    q->AddAminoAcidPseudocounts();
 	  } else {
 	    // Add full context specific pseudocounts to query
-	    q.AddContextSpecificPseudocounts();
+	    q->AddContextSpecificPseudocounts();
 	  }
 
-	  q.CalculateAminoAcidBackground();
+	  q->CalculateAminoAcidBackground();
 	  
 	  // Transform transition freqs to lin space if not already done
-	  q.AddTransitionPseudocounts();
-	  q.Log2LinTransitionProbs(1.0); // transform transition freqs to lin space if not already done
+	  q->AddTransitionPseudocounts();
+	  q->Log2LinTransitionProbs(1.0); // transform transition freqs to lin space if not already done
 
 	}
     }
@@ -1594,8 +1503,24 @@ void perform_realign(char *dbfiles[], int ndb)
       realign->Show(dbfiles[idb])->SortList();
       
       // Open HMM database file dbfiles[idb]
-      FILE* dbf=fopen(dbfiles[idb],"rb");
-      if (!dbf) OpenFileError(dbfiles[ndb]);
+      FILE* dbf;
+      entry = ffindex_bsearch_get_entry(dbhhm_index, dbfiles[idb]);
+      if (entry != NULL)
+	dbf = fmemopen(ffindex_get_filedata(dbhhm_data, entry->offset), entry->length, "r");
+      else
+	{
+	  char filename[NAMELEN];
+	  RemoveExtension(filename, dbfiles[idb]);
+	  strcat(filename,".a3m");
+	  if(dba3m_index_file!=NULL && (entry = ffindex_bsearch_get_entry(dba3m_index, filename)) != NULL)
+	    dbf = fmemopen(ffindex_get_filedata(dba3m_data, entry->offset), entry->length, "r");
+	  else
+	    {
+	      fprintf(stderr,"ERROR! Could not read %s!\n", dbfiles[idb]);
+	      exit(4);
+	    }
+	}
+      if (!dbf) OpenFileError(dbfiles[idb]);
       read_from_db=1;
       int index_prev=-1;
       
@@ -1630,10 +1555,17 @@ void perform_realign(char *dbfiles[], int ndb)
 	      ///////////////////////////////////////////////////
 	      // Read next HMM from database file
 	      if (!fgetline(line,LINELEN,dbf)) {fprintf(stderr,"Error: end of file %s reached prematurely!\n",dbfiles[idb]); exit(1);}
-	      if (!strncmp(line,"HMMER",5))      // read HMMER format
+	      if (!strncmp(line,"HMMER3",5))      // read HMMER3 format
+		{
+		  format[bin] = 1;
+		  read_from_db = t[bin]->ReadHMMer3(dbf,dbfiles[idb]);
+		  hmmer_used = true;
+		}
+	      else if (!strncmp(line,"HMMER",5))      // read HMMER format
 		{
 		  format[bin] = 1;
 		  read_from_db = t[bin]->ReadHMMer(dbf,dbfiles[idb]);
+		  hmmer_used = true;
 		}
 	      else if (!strncmp(line,"HH",2))     // read HHM format
 		{
@@ -1646,7 +1578,7 @@ void perform_realign(char *dbfiles[], int ndb)
 		  fseek(dbf,realign->Show(dbfiles[idb])->ReadCurrent().ftellpos,SEEK_SET); // rewind to beginning of line
 		  read_from_db = t[bin]->Read(dbf,path);
 		}
-	      else if (line[0]=='#')                 // read a3m alignment
+	      else if (line[0]=='#' || line[0]=='>')                 // read a3m alignment
 		{
 		  Alignment tali;
 		  tali.Read(dbf,dbfiles[idb],line);
@@ -1770,7 +1702,7 @@ void perform_realign(char *dbfiles[], int ndb)
   while (!hitlist.End())
     {
       hit_cur = hitlist.ReadNext();
-      //        printf("Deleting alignment of %s with length %i? nhits=%-2i  par.B=%-3i  par.Z=%-3i par.e=%.2g par.b=%-3i  par.z=%-3i par.p=%.2g\n",hit_cur.name,hit_cur.matched_cols,nhits,par.B,par.Z,par.e,par.b,par.z,par.p);
+      //printf("Deleting alignment of %s with length %i? irep=%i nhits=%-2i  par.B=%-3i  par.Z=%-3i par.e=%.2g par.b=%-3i  par.z=%-3i par.p=%.2g\n",hit_cur.name,hit_cur.matched_cols,hit_cur.irep,nhits,par.B,par.Z,par.e,par.b,par.z,par.p);
 
       if (nhits > par.realign_max && nhits>=imax(par.B,par.Z)) break;
       if (hit_cur.Eval > par.e)
@@ -1807,10 +1739,10 @@ void perform_realign(char *dbfiles[], int ndb)
 /////////////////////////////////////////////////////////////////////////////////////
 int main(int argc, char **argv)
 {
-  Hit hit_cur;
-
   int cluster_found = 0;
   int seqs_found = 0;
+  char* argv_conf[MAXOPT];       // Input arguments from .hhdefaults file (first=1: argv_conf[0] is not used)
+  int argc_conf=0;               // Number of arguments in argv_conf
 
 #ifdef PTHREAD
   pthread_attr_init(&joinable);  // initialize attribute set with default values
@@ -1821,9 +1753,11 @@ int main(int argc, char **argv)
   SetDefaults();
   par.jdummy = 3;
   par.Ndiff = 1000;
-  par.filter_thresh=0.05;
-  strcpy(pre_mode,"csblast");
+  par.early_stopping_filter=true;
+  par.filter_thresh=0.01;
+  par.filter_evals=new double[par.filter_length];
   strcpy(par.outfile,"");
+  strcpy(db_ext,"hhm");
   N_searched=0;
   previous_hits = new Hash<Hit>(1631,hit_cur);
   
@@ -1831,56 +1765,73 @@ int main(int argc, char **argv)
   par.argv=argv;
   par.argc=argc;
   RemovePathAndExtension(program_name,argv[0]);
-
-  // Set default for config-file
-  Pathname(config_file,argv[0]);
-  strcat(config_file,"hhblits.config");
+  Pathname(program_path, argv[0]);
 
   // Enable changing verbose mode before command line are processed
   for (int i=1; i<argc; i++)
     {
-      if (!strcmp(argv[i],"-conf"))
-        {
-          if (++i>=argc || argv[i][0]=='-')
-            {help() ; cerr<<endl<<"Error in "<<program_name<<": no config file following -conf\n"; exit(4);}
-          else strcpy(config_file,argv[i]);
-        }
-      else if (argc>1 && !strcmp(argv[i],"-v0")) v=0;
+      if (argc>1 && !strcmp(argv[i],"-v0")) v=0;
       else if (argc>1 && !strcmp(argv[i],"-v1")) v=1;
       else if (argc>2 && !strcmp(argv[i],"-v")) v=atoi(argv[i+1]);
     }
 
-  // Read config file?
-  if (is_regular_file(config_file))
-    {
-      // Process default otpions from .hhconfig file
-      ReadConfigFile(config_file);
-    }
-
+  // Process default otpions from .hhdefaults file
+  ReadDefaultsFile(argc_conf,argv_conf,program_path);
+  ProcessArguments(argc_conf,argv_conf);
+  
   // Process command line options (they override defaults from .hhdefaults file)
   ProcessArguments(argc,argv);
 
   // Check needed files
+  if (!*par.infile || !strcmp(par.infile,"") || !strcmp(par.infile,"stdin")) // infile not given
+    {help(); cerr<<endl<<"Error in "<<program_name<<": input file missing!\n"; exit(4);}
   if (!*db || !*dbhhm)
-    {help(); cerr<<endl<<"Error in "<<program_name<<": database missing (see config-file or -db and -dbhhm)\n"; exit(4);}
-  if (!strcmp(pre_mode,"csblast") && (!*csblast || !*csblast_db))
-    {help(); cerr<<endl<<"Error in "<<program_name<<": missing csBLAST directory (see config-file or -csblast and -csblast_db)\n"; exit(4);}
-  if (!*par.blast)
-    {help(); cerr<<endl<<"Error in "<<program_name<<": missing BLAST directory (see config-file or -blast)\n"; exit(4);}
+    {help(); cerr<<endl<<"Error in "<<program_name<<": database missing (see -db and -dbhhm)\n"; exit(4);}
   if (par.showpred==1 && (!*par.psipred || !*par.psipred_data))
-    {help(); cerr<<endl<<"Error in "<<program_name<<": missing PsiPred directory (see config-file or -psipred and -psipred_data)\n"; exit(4);}
- 
+    {help(); cerr<<endl<<"Error in "<<program_name<<": missing PsiPred directory (see -psipred and -psipred_data).\nIf you don't need the predicted secondary structure, restart HHblits with -noss\n"; exit(4);}
+  if (!strcmp(par.clusterfile,""))
+    {help(); cerr<<endl<<"Error in "<<program_name<<": context-specific library missing (see -cs_db)\n"; exit(4);}
+  if (!strcmp(par.cs_library,""))
+    {help(); cerr<<endl<<"Error in "<<program_name<<": context-state library (see -cs_lib)\n"; exit(4);}
+  if (!*dba3m)
+    {
+      if (num_rounds > 1)
+	{help(); cerr<<endl<<"Error in "<<program_name<<": A3M database missing (needed for more than 1 search round)\n"; exit(4);}
+      if (*par.alnfile || *par.psifile || *par.hhmfile || *alis_basename)
+	{help(); cerr<<endl<<"Error in "<<program_name<<": A3M database missing (needed for output alignment)\n"; exit(4);}
+    }
+
+  q = new HMM;
+  q_tmp = new HMM;
+
   par.block_shading = new Hash<int*>;
   par.block_shading_counter = new Hash<int>;
-  
-  // Create tmp-directory
-  if (mkstemp(tmp_file) == -1) {
-    cerr << "ERROR! Could not create tmp-file!\n"; 
-    exit(4);
+  par.block_shading->New(16381,NULL);
+  par.block_shading_counter->New(16381,NULL);
+
+  // Prepare index-based databases
+  char filename[NAMELEN];
+  dbhhm_data_file = fopen(dbhhm, "r");
+  strcpy(filename, dbhhm);
+  strcat(filename, ".index");
+  dbhhm_index_file = fopen(filename, "r");
+  dbhhm_index = ffindex_index_parse(dbhhm_index_file);
+  dbhhm_data = ffindex_mmap_data(dbhhm_data_file, &data_size);
+
+  if (!*dba3m) {
+    dba3m_data_file = dba3m_index_file = NULL;
+    dba3m_index = NULL;
+    // set jdummy = 0 (no a3m database)
+    par.jdummy = 0;
+  } else {
+    dba3m_data_file = fopen(dba3m, "r");
+    strcpy(filename, dba3m);
+    strcat(filename, ".index");
+    dba3m_index_file = fopen(filename, "r");
+    dba3m_index = ffindex_index_parse(dba3m_index_file);
+    dba3m_data = ffindex_mmap_data(dba3m_data_file, &data_size);
   }
-  tmp_infile = (string)tmp_file + ".fas";
-  tmp_psifile = (string)tmp_file + ".psi";
-  
+
   // Check for threads
   if (threads<=1) threads=0;
   else if (threads>MAXTHREADS)
@@ -1899,19 +1850,27 @@ int main(int argc, char **argv)
   if (par.nseqdis>MAXSEQDIS-3-par.showcons) par.nseqdis=MAXSEQDIS-3-par.showcons; //3 reserved for secondary structure
   if (par.aliwidth<20) par.aliwidth=20;
   if (par.pca<0.001) par.pca=0.001; // to avoid log(0)
+  if (par.pre_pca<0.001) par.pre_pca=0.001; // to avoid log(0)
   if (par.b>par.B) par.B=par.b;
   if (par.z>par.Z) par.Z=par.z;
 
-  // E-value shift of csBLAST
-  if (*par.clusterfile && !strcmp(csblast,"/cluster/bioprogs/csblast-2.0.3-linux64/bin")) {
-    cout << "CS-BLAST 2.0.3\n";
-    e_psi = e_psi / 2;
-  }
+  // Set (global variable) substitution matrix and derived matrices
+  SetSubstitutionMatrix();
+
+  // Read input file
+  ReadInputFile();
 
   if (print_elapsed) ElapsedTimeSinceLastCall("(initialize)");
 
-  // Initialize Prefiltering (Get DBsize)
-  init_prefilter();
+  if (prefilter)
+    {
+      // Initialize Prefiltering (Get DBsize)
+      init_prefilter();
+    }
+  else // Set all HMMs in database as new_dbs
+    {
+      init_no_prefiltering();
+    }
 
   if (print_elapsed) ElapsedTimeSinceLastCall("(init prefilter)"); 
 
@@ -1929,51 +1888,25 @@ int main(int argc, char **argv)
     lib_pc = new cs::LibraryPseudocounts<cs::AA>(*context_lib, par.csw, par.csb);
   }
 
+  FILE* fin = fopen(par.cs_library, "r");
+  if (!fin) OpenFileError(par.cs_library);
+  cs_lib = new cs::ContextLibrary<cs::AA>(fin);
+  fclose(fin);
+  cs::TransformToLin(*cs_lib);
+  
   if (print_elapsed) ElapsedTimeSinceLastCall("(prepare CS pseudocounts)"); 
-
-  if (par.prefilt_alphabet == PRE_AS62) {
-    as_sm = new cs::AbstractStateMatrix<cs::AS62>(par.as_matrix);
-    // double s = 0.0;
-    // for (size_t k = 0; k < as_sm->num_contexts(); ++k)
-    //   for (size_t a = 0; a < cs::AS62::kSize; ++a)
-    // 	s += as_sm->px(k) * as_sm->py(a) * as_sm->s(k,a);
-    // cout << "exptected score = " << s << std::endl;
-  }
-
-  if (print_elapsed) ElapsedTimeSinceLastCall("(prepare AS)"); 
-
-  // Set (global variable) substitution matrix and derived matrices
-  SetSubstitutionMatrix();
-
-  // Check input files
-  CheckInputFiles();
 
   // Input parameters
   if (v>=3)
     {
       cout<<"Input file       :   "<<par.infile<<"\n";
       cout<<"Output file      :   "<<par.outfile<<"\n";
-      cout<<"Prefilter mode   :   "<<pre_mode<<"\n";
       cout<<"Prefilter DB     :   "<<db<<"\n";
       cout<<"HHM DB           :   "<<dbhhm<<"\n";
     }
 
-  int v1=v;
-  if (v<=3) v=1; else v-=2;
-
-  // Read input file (HMM or alignment format) without adding pseudocounts
-  ReadInput(par.infile, q);
-  
-  v=v1;
-
-  // set Qali names
-  Qali.longname = new(char[strlen(q.longname)+1]);
-  strcpy(Qali.longname,q.longname);
-  strcpy(Qali.name,q.name);
-  strcpy(Qali.fam,q.fam);
-
   // Set query columns in His-tags etc to Null model distribution
-  if (par.notags) q.NeutralizeTags();
+  if (par.notags) q->NeutralizeTags();
 
   // Prepare multi-threading - reserve memory for threads, intialize, etc.
   if (threads==0) bins=1; else bins=iround(threads*1.2+0.5);
@@ -1981,7 +1914,7 @@ int main(int argc, char **argv)
     {
       t[bin]=new HMM;   // Each bin has a template HMM allocated that was read from the database file
       hit[bin]=new Hit; // Each bin has an object of type Hit allocated ...
-      hit[bin]->AllocateBacktraceMatrix(q.L+2,MAXRES); // ...with a separate dynamic programming matrix (memory!!)
+      hit[bin]->AllocateBacktraceMatrix(q->L+2,MAXRES); // ...with a separate dynamic programming matrix (memory!!)
     }
   format = new(int[bins]);
 
@@ -2014,42 +1947,46 @@ int main(int argc, char **argv)
 	par.Ndiff = 0;
       }
 
-    if (round > 1)
-      input_single_sequence = false;
-
     // Save HMM without pseudocounts for prefilter query-profile
-    q_tmp = q;
+    *q_tmp = *q;
 
     // Write query HHM file?
     if (*query_hhmfile) 
       {
 	int v1=v;
-	if (v<=3) v=1; else v-=2;
+	if (v>0 && v<=3) v=1; else v-=2;
 	
 	// Add *no* amino acid pseudocounts to query. This is necessary to copy f[i][a] to p[i][a]
-	q.AddAminoAcidPseudocounts(0, 0.0, 0.0, 1.0);
-	q.CalculateAminoAcidBackground();
+	q->AddAminoAcidPseudocounts(0, 0.0, 0.0, 1.0);
+	q->CalculateAminoAcidBackground();
 
-	q.WriteToFile(query_hhmfile);
+	q->WriteToFile(query_hhmfile);
 
 	v=v1;
       }
     
-    // Add Pseudocounts
-    if (!*par.clusterfile) { //compute context-specific pseudocounts?
-      // Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
-      q.PreparePseudocounts();
-      // Add amino acid pseudocounts to query: p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
-      q.AddAminoAcidPseudocounts();
-    } else {
-      // Add full context specific pseudocounts to query
-      q.AddContextSpecificPseudocounts();
-    }
-
-    q.CalculateAminoAcidBackground();
+    // Add Pseudocounts, if no HMMER input
+    if (input_format == 0)
+      {
+	// Transform transition freqs to lin space if not already done
+	q->AddTransitionPseudocounts();
+	
+	if (!*par.clusterfile) { //compute context-specific pseudocounts?
+	  // Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
+	  q->PreparePseudocounts();
+	  // Add amino acid pseudocounts to query: p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
+	  q->AddAminoAcidPseudocounts();
+	} else {
+	  // Add full context specific pseudocounts to query
+	  q->AddContextSpecificPseudocounts();
+	}
+      } 
+    else 
+      {
+	q->AddAminoAcidPseudocounts(0);
+      }
     
-    // Transform transition freqs to lin space if not already done
-    q.AddTransitionPseudocounts();
+    q->CalculateAminoAcidBackground();
     
     if (print_elapsed) ElapsedTimeSinceLastCall("(before prefiltering)");
 
@@ -2057,14 +1994,9 @@ int main(int argc, char **argv)
     // Prefiltering
     ///////////////////////////////////////////////////////////////////////////////
 
-    prefilter_db();  // in hhprefilter.C
+    if (prefilter)
+      prefilter_db();  // in hhprefilter.C
     
-    if (!strncmp(pre_mode,"only",4))
-      exit(0);
-
-    //if (v>=2) printf("Number of new extracted HMMs: %i\n",ndb_new);
-    //if (v>=2) printf("Number of extracted HMMs (previous searched): %i\n",ndb_old);
-
     if (print_elapsed) ElapsedTimeSinceLastCall("(prefiltering)"); 
 
     // Search datbases
@@ -2113,7 +2045,7 @@ int main(int argc, char **argv)
     if (round < num_rounds || *par.alnfile || *par.psifile || *par.hhmfile || *alis_basename)
       {
 	int v1=v;
-	if (v<=3) v=1; else v-=2;
+	if (v>0 && v<=3) v=1; else v-=2;
 	
 	// If new hits found, merge hits to query alignment
 	if (new_hits != 0)
@@ -2129,6 +2061,7 @@ int main(int argc, char **argv)
 		hit_cur = hitlist.ReadNext();
 		if (hit_cur.Eval > 100.0*par.e) break; // E-value much too large
 		if (hit_cur.Eval > par.e) continue; // E-value too large
+		if (hit_cur.matched_cols < MINCOLS_REALIGN) continue; // leave out to short alignments
 		stringstream ss_tmp;
 		ss_tmp << hit_cur.name << "__" << hit_cur.irep;
 		if (previous_hits->Contains((char*)ss_tmp.str().c_str())) continue;  // Already in alignment
@@ -2147,7 +2080,17 @@ int main(int argc, char **argv)
 		// Read a3m alignment of hit from <file>.a3m file and merge into Qali alignment
 		strcpy(ta3mfile,hit_cur.file); // copy filename including path but without extension
 		strcat(ta3mfile,".a3m");
-		Qali.MergeMasterSlave(hit_cur,ta3mfile);
+		FILE* ta3mf;
+		if(dba3m_index_file!=NULL && (entry = ffindex_bsearch_get_entry(dba3m_index, ta3mfile)) != NULL)
+		  ta3mf = fmemopen(ffindex_get_filedata(dba3m_data, entry->offset), entry->length, "r");
+		else
+		  {
+		    fprintf(stderr,"ERROR! Could not read %s!\n", ta3mfile);
+		    exit(4);
+		  }
+		Qali.MergeMasterSlave(hit_cur,ta3mfile, ta3mf);
+		fclose(ta3mf);
+		if (Qali.N_in>=MAXSEQ) break; // Maximum number of sequences reached 
 	      }
 
 	    // Convert ASCII to int (0-20),throw out all insert states, record their number in I[k][i]
@@ -2163,29 +2106,26 @@ int main(int argc, char **argv)
 	    Qali.N_filtered = Qali.Filter(par.max_seqid,cov_tot,par.qid,par.qsc,par.Ndiff);
 
 	    if (print_elapsed) ElapsedTimeSinceLastCall("(merge hits to Qali)");
-	    
-	    // Write PSI-alignment for next round prefiltering
-	    Qali.WriteToFile(tmp_psifile.c_str(),"psi");
-	    
-	    if (print_elapsed) ElapsedTimeSinceLastCall("(write PSI-alignment)");
 	  }
 	  
+	// Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
+	Qali.FrequenciesAndTransitions(*q,NULL,true);
+
+	if (par.notags) q->NeutralizeTags();
+
 	// if needed, calculate SSpred
-	if (par.showpred && Qali.L>25 && (*alis_basename || round == num_rounds || new_hits == 0))
+	if (par.addss && Qali.L>25 && (*alis_basename || round == num_rounds || new_hits == 0))
 	  {
 	    char ss_pred[MAXRES];
 	    char ss_conf[MAXRES];
 	    
-	    CalculateSS(ss_pred, ss_conf, tmp_file);
+	    CalculateSS(*q, ss_pred, ss_conf);
 	    
 	    Qali.AddSSPrediction(ss_pred, ss_conf);
 	    
 	    if (print_elapsed) ElapsedTimeSinceLastCall("(calculate SS_Pred)");
 	  }
 	
-	// Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
-    	Qali.FrequenciesAndTransitions(q,NULL,true);
-
 	if (print_elapsed) ElapsedTimeSinceLastCall("(Calculate AA frequencies and transitions)");
 
 	if (*alis_basename)
@@ -2226,15 +2166,14 @@ int main(int argc, char **argv)
     
     if (v>=2) printf("%i sequences in %i clusters found\n",seqs_found,cluster_found);
 
-    if (q.Neff_HMM > neffmax && round < num_rounds)
-      {
-	printf("Diversity of created alignment (%4.2f) is above threshold (%4.2f). Stop searching!\n", q.Neff_HMM, neffmax);
-      }
+    if (q->Neff_HMM > neffmax && round < num_rounds)
+      printf("Diversity of created alignment (%4.2f) is above threshold (%4.2f). Stop searching!\n", q->Neff_HMM, neffmax);
 
-    if (new_hits == 0 || round == num_rounds || q.Neff_HMM > neffmax) 
-      {
-	break;
-      }
+    if (Qali.N_in>=MAXSEQ)
+      printf("Maximun number of sequences in query alignment reached (%i). Stop searching!\n", MAXSEQ);
+
+    if (new_hits == 0 || round == num_rounds || q->Neff_HMM > neffmax || Qali.N_in>=MAXSEQ) 
+      break;
 
     // Write good hits to previous_hits hash and clear hitlist
     hitlist.Reset();
@@ -2243,7 +2182,7 @@ int main(int argc, char **argv)
 	hit_cur = hitlist.ReadNext();
 	stringstream ss_tmp;
 	ss_tmp << hit_cur.name << "__" << hit_cur.irep;
-	if (!filter || hit_cur.Eval > par.e || previous_hits->Contains((char*)ss_tmp.str().c_str()))
+	if (!already_seen_filter || hit_cur.Eval > par.e || previous_hits->Contains((char*)ss_tmp.str().c_str()))
 	  hit_cur.Delete(); // Delete hit object
 	else
 	  previous_hits->Add((char*)ss_tmp.str().c_str(), hit_cur);
@@ -2261,21 +2200,29 @@ int main(int argc, char **argv)
   // Result section
   //////////////////////////////////////////////////////////
 
+  // Warn, if HMMER files were used
+  if (hmmer_used)
+    printf("\n!!!WARNING!!! Using HMMER files results in a drastically reduced sensitivity (>10%%).\nWe strongly recommend to use HHMs build by hhmake!\n");
+
   // Print for each HMM: n  score  -log2(Pval)  L  name  (n=5:same name 4:same fam 3:same sf...)
   if (*par.scorefile) {
     if (v>=3) printf("Printing scores file ...\n");
-    hitlist.PrintScoreFile(q);
+    hitlist.PrintScoreFile(*q);
   }
+
+  // Write alignments in tabular layout to alitabfile
+  if (*par.alitabfile) 
+    hitlist.WriteToAlifile(*q,alitab_scop);
 
   // Print summary listing of hits
   if (v>=3) printf("Printing hit list ...\n");
-  hitlist.PrintHitList(q,par.outfile);
+  hitlist.PrintHitList(*q,par.outfile);
 
   // Write only hit list to screen?
   if (v==2 && strcmp(par.outfile,"stdout")) WriteToScreen(par.outfile,109); // write only hit list to screen
 
   // Print alignments of query sequences against hit sequences
-  hitlist.PrintAlignments(q,par.outfile);
+  hitlist.PrintAlignments(*q,par.outfile);
 
   // Write whole output file to screen? (max 10000 lines)
   if (v>=3 && strcmp(par.outfile,"stdout")) WriteToScreen(par.outfile,10009);
@@ -2288,49 +2235,57 @@ int main(int argc, char **argv)
 
       // Write output HHM file?
       if (*par.hhmfile) 
-      {
-	// Add *no* amino acid pseudocounts to query. This is necessary to copy f[i][a] to p[i][a]
-	q.AddAminoAcidPseudocounts(0, 0.0, 0.0, 1.0);
-	q.CalculateAminoAcidBackground();
+	{
+	  // Add *no* amino acid pseudocounts to query. This is necessary to copy f[i][a] to p[i][a]
+	  q->AddAminoAcidPseudocounts(0, 0.0, 0.0, 1.0);
+	  q->CalculateAminoAcidBackground();
 
-	q.WriteToFile(par.hhmfile);
-      }
+	  q->WriteToFile(par.hhmfile);
+	}
 
       // Write output A3M alignment?
       if (*par.alnfile) Qali.WriteToFile(par.alnfile,"a3m");
       
     }
+
+  fclose(dbhhm_data_file);
+  fclose(dbhhm_index_file);
+  if (dba3m_index_file!=NULL) {
+    fclose(dba3m_data_file);
+    fclose(dba3m_index_file);
+  }
+  free(dbhhm_index);
+  free(dba3m_index);
   
   // Delete memory for dynamic programming matrix
   for (bin=0; bin<bins; bin++)
     {
-      hit[bin]->DeleteBacktraceMatrix(q.L+2);
+      hit[bin]->DeleteBacktraceMatrix(q->L+2);
       if (hit[bin]->forward_allocated)
-	hit[bin]->DeleteForwardMatrix(q.L+2);
+	hit[bin]->DeleteForwardMatrix(q->L+2);
       if (hit[bin]->backward_allocated)
-	hit[bin]->DeleteBackwardMatrix(q.L+2);
+	hit[bin]->DeleteBackwardMatrix(q->L+2);
+
       delete hit[bin];
       delete t[bin];
     }
+  delete q;
+  delete q_tmp;
+  if (format) delete[](format);
+  if (par.exclstr) delete[] par.exclstr;
+  delete[] par.filter_evals;
+  for (int n = 1; n < argc_conf; n++)
+    delete[] argv_conf[n];
   if (par.dbfiles) delete[] par.dbfiles;
   for (int idb=0; idb<ndb_new; idb++) delete[](dbfiles_new[idb]);
   for (int idb=0; idb<ndb_old; idb++) delete[](dbfiles_old[idb]);
-  if (format) delete[](format);
-  if (par.blafile) delete[] par.blafile;
-  if (par.exclstr) delete[] par.exclstr;
   par.block_shading->Reset();
   while (!par.block_shading->End())
     delete[] (par.block_shading->ReadNext()); 
   delete par.block_shading;
-  previous_hits->Reset();
-  while (!previous_hits->End())
-    {
-      previous_hits->ReadNext().Delete(); // Delete hit object
-    }
-  delete previous_hits;
+  delete par.block_shading_counter;
   
-  // Delete prefilter database
-  if (strcmp(pre_mode,"csblast") && strcmp(pre_mode,"blast"))
+  if (prefilter)
     {
       free(X);
       free(length);
@@ -2345,16 +2300,18 @@ int main(int argc, char **argv)
     delete lib_pc;
   }
 
-  if (par.prefilt_alphabet == PRE_AS62) {
-    delete as_sm;
-  }
+  delete cs_lib;
 
   // Delete content of hits in hitlist
   hitlist.Reset();
   while (!hitlist.End())
-    {
-      hitlist.Delete().Delete(); // Delete list record and hit object
-    }
+    hitlist.Delete().Delete(); // Delete list record and hit object
+
+  previous_hits->Reset();
+  while (!previous_hits->End())
+    previous_hits->ReadNext().Delete(); // Delete hit object
+  delete previous_hits;
+
 
 #ifdef PTHREAD
   pthread_attr_destroy(&joinable);
@@ -2371,25 +2328,17 @@ int main(int argc, char **argv)
   else
     {
       if (*par.outfile)
-        {
-          outf=fopen(par.outfile,"a"); //open for append
-          fprintf(outf,"Done!\n");
-          fclose(outf);
-        }
+	{
+	  outf=fopen(par.outfile,"a"); //open for append
+	  fprintf(outf,"Done!\n");
+	  fclose(outf);
+	}
       if (v>=2) printf("Done\n");
     }
-
-  // Remove temp-files
-  command = "rm " + (string)tmp_file + "*";
-  runSystem(command,v);
-  // cerr << "Command: " << command << "!\n";
 
   exit(0);
 } //end main
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////
-// END OF MAIN
-//////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
+  //////////////////////////////////////////////////////////////////////////////////////////////////////
+  // END OF MAIN
+  //////////////////////////////////////////////////////////////////////////////////////////////////////

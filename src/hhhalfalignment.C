@@ -47,6 +47,7 @@ HalfAlignment::HalfAlignment(int maxseqdis)
   s = new(char*[maxseqdis]);  //s[k][h] = character in column h, sequence k of output alignment
   l = new(int*[maxseqdis]);   //counts non-gap residues: l[k][i] = index of last residue AT OR BEFORE match state i in seq k
   m = new(int*[maxseqdis]);   //counts positions:        m[k][i] = position of match state i in string seq[k]  
+  if (!h || !s || !l || !m) MemoryError("space for formatting HMM-HMM alignment");
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
