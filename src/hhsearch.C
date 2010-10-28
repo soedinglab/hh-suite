@@ -25,7 +25,6 @@
 #include <errno.h>    // perror()
 #include <cassert>
 #include <stdexcept>
-#include <malloc.h>   // memalign()
 
 #ifdef PTHREAD
 #include <pthread.h>  // POSIX pthread functions and data structures
@@ -1014,8 +1013,9 @@ int main(int argc, char **argv)
 #else
                   // If no submitted jobs are in the queue we have to wait for a new job ...
                   struct timespec ts;
-                  clock_gettime(CLOCK_REALTIME,&ts);
-                  ts.tv_sec += 1;
+		  struct timeval tv;
+		  gettimeofday(&tv, NULL);
+		  ts.tv_sec = tv.tv_sec + 1;
                   rc = pthread_cond_timedwait(&finished_job, &bin_status_mutex,&ts);
 #endif
                 }
@@ -1542,8 +1542,9 @@ int main(int argc, char **argv)
 #else
                       // If no submitted jobs are in the queue we have to wait for a new job, but max. 1 second ...
                       struct timespec ts;
-                      clock_gettime(CLOCK_REALTIME,&ts);
-                      ts.tv_sec += 1;
+		      struct timeval tv;
+		      gettimeofday(&tv, NULL);
+		      ts.tv_sec = tv.tv_sec + 1;
                       rc = pthread_cond_timedwait(&finished_job, &bin_status_mutex,&ts);
 #endif
                     }

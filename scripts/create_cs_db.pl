@@ -7,7 +7,7 @@
 
 $script_dir = "/cluster/bioprogs/hhblits/scripts";  # path to directory with scripts (create_profile_from_hmmer.pl, create_profile_from_hhm.pl)
 $lib_dir = "/cluster/bioprogs/hhblits";             # path to needed libraries (context_data.lib, cs219.lib)
-$hh_dir = "/cluster/bioprogs/hh";                   # path to needed HH-tools (cstranslate, hhmake)
+$hh_dir = "/cluster/bioprogs/hhblits";              # path to needed HH-tools (cstranslate)
 
 ################################################################################################################################
 
@@ -76,9 +76,9 @@ if ($append == 0 && -e $outfile) {
 
 if (!$outfile) {
     if ($indir =~ /^\S+\/(\S+?)$/) {
-	$outfile = "$indir/$1.cs_db";
+	$outfile = "$1.cs_db";
     } else {
-	$outfile = "$indir/$indir.cs_db";
+	$outfile = "$indir.cs_db";
     }
     print("Create HHblits database with CS-database in file $outfile!\n");
 }
@@ -107,7 +107,7 @@ if ($ext eq "a3m") {
 	elsif (($count % 50) == 0) { print ". "; }
 
 	# Create CS-sequence for CS-database
-	$command = "$script_dir/cstranslate -i $file -a $outfile -D $context_lib -A $cs_lib -x $x -c $c > /dev/null 2>&1";
+	$command = "$hh_dir/cstranslate -i $file -a $outfile -D $context_lib -A $cs_lib -x $x -c $c > /dev/null 2>&1";
 	if (&System($command) != 0) {
 	    print "WARNING! Error with command $command!\n";
 	}
@@ -128,7 +128,7 @@ if ($ext eq "a3m") {
 	}
 
 	# Create CS-sequence for CS-database
-	$command = "$script_dir/cstranslate -i $tmpdir/file.prf -a $outfile -D $context_lib -A $cs_lib -x $x -c $c > /dev/null 2>&1";
+	$command = "$hh_dir/cstranslate -i $tmpdir/file.prf -a $outfile -D $context_lib -A $cs_lib -x $x -c $c > /dev/null 2>&1";
 	if (&System($command) != 0) {
 	    print "WARNING! Error with command $command!\n";
 	}
@@ -149,7 +149,7 @@ if ($ext eq "a3m") {
 	}
 
 	# Create CS-sequence for CS-database
-	$command = "$script_dir/cstranslate -i $tmpdir/file.prf -a $outfile -A $cs_lib > /dev/null 2>&1";
+	$command = "$hh_dir/cstranslate -i $tmpdir/file.prf -a $outfile -A $cs_lib > /dev/null 2>&1";
 	if (&System($command) != 0) {
 	    print "WARNING! Error with command $command!\n";
 	}
@@ -159,6 +159,26 @@ if ($ext eq "a3m") {
     print($help);
     print "ERROR! Unknown extension $ext!\n";
 }
+
+# Get number of sequences and characters from CS-database
+$num_seqs = 0;
+$num_chars = 0;
+
+open (IN, "cat $outfile |grep \"^>\" |wc -l |");
+$line = <IN>;
+close IN;
+$line =~ /^\s*(\d+)/;
+$num_seqs = $1;
+
+open (IN, "cat $outfile |grep -v \"^>\" |wc -c |");
+$line = <IN>;
+close IN;
+$line =~ /^\s*(\d+)/;
+$num_chars = $1;
+
+open (OUT, ">$outfile.sizes");
+print OUT "$num_seqs   $num_chars\n";
+close OUT;
 
 if ($v < 4) {
     $command = "rm -rf $tmpdir";

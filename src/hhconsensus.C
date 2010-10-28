@@ -18,8 +18,6 @@
 #include <cassert>
 #include <stdexcept>
 
-#include <malloc.h>   // memalign()
-
 #ifdef HH_SSE3
 #ifdef __SUNPRO_C
 #include <sunmedia_intrin.h>
