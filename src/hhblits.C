@@ -1,7 +1,5 @@
 // hhblits.C:
 // Iterative search for a multiple alignment in a profile HMM database
-// Compile:              g++ -O3 -lpthread -lrt -fno-strict-aliasing -DHH_SSE3 -fopenmp -march=core2 hhblits_prefilter.C -o ../bin/hhblits_prefilter_omp
-// Compile for Valgrind: g++ -O3 -lpthread -lrt -fno-strict-aliasing -DHH_SSE3 -g -fopenmp -march=core2 hhblits_prefilter.C -o ../bin/hhblits_prefilter_omp_valgrind
 //
 // Error codes: 0: ok  1: file format error  2: file access error  3: memory error  4: command line error  6: internal logic error  7: internal numeric error
 
@@ -99,7 +97,7 @@ const char print_elapsed=0;
 char tmp_file[]="/tmp/hhblitsXXXXXX";
 
 // HHblits variables
-const char HHBLITS_VERSION[]="version 2.2.3 (October 2010)";
+const char HHBLITS_VERSION[]="version 2.2.4 (November 2010)";
 const char HHBLITS_REFERENCE[]="to be published.\n";
 const char HHBLITS_COPYRIGHT[]="(C) Michael Remmert and Johannes Soeding\n";
 
@@ -299,11 +297,15 @@ void help()
   printf(" -i <file>      input query (single FASTA-sequence, A3M- or FASTA-alignment, HMM-file)   \n");
   printf("\n");
   printf("Options:                                                                                 \n");
-  printf(" -db    <file>  BLAST formatted database with consensus sequences (default=%s)           \n",db);
-  printf(" -dba3m <dir>   database file with HHM-files (default=%s)                                \n",dba3m);
+  printf(" -db    <file>  CS-database for prefiltering (default=%s)                                \n",db);
+  printf(" -dba3m <dir>   database file with A3M-files (default=%s)                                \n",dba3m);
   printf(" -dbhhm <dir>   database file with HHM-files (default=%s)                                \n",dbhhm);
   printf(" -n     [1,8]   number of rounds (default=%i)                                            \n",num_rounds); 
   printf(" -e     [0,1]   E-value cutoff for inclusion in result alignment (def=%G)                \n",par.e);
+  printf("\n");
+  printf("Needed libraries                                                                         \n");
+  printf(" -context_data  <file> context_data library (default=%s)                                 \n",par.clusterfile);
+  printf(" -cs_lib        <file> cs-library (default=%s)                                           \n",par.cs_library); 
   printf("\n");
   printf("Input alignment format:                                                       \n");
   printf(" -M a2m        use A2M/A3M (default): upper case = Match; lower case = Insert;\n");
@@ -351,9 +353,9 @@ void help_all()
   printf(" -i <file>       input query (single FASTA-sequence, A3M- or FASTA-alignment, hhm-file)   \n");
   printf("\n");
   printf("Options:                                                                                 \n");
-  printf(" -db      <file> BLAST formatted database with consensus sequences (default=%s)           \n",db);
-  printf(" -dba3m <dir>   database file with HHM-files (default=%s)                                \n",dba3m);
-  printf(" -dbhhm <dir>   database file with HHM-files (default=%s)                                \n",dbhhm);
+  printf(" -db     <file>  CS-database for prefiltering (default=%s)                                \n",db);
+  printf(" -dba3m  <dir>   database file with A3M-files (default=%s)                                \n",dba3m);
+  printf(" -dbhhm  <dir>   database file with HHM-files (default=%s)                                \n",dbhhm);
   printf(" -n       [1,8]  number of rounds (default=%i)                                            \n",num_rounds); 
   printf(" -neffmax [0,15] break if neff > neffmax (default=%f)                                   \n",neffmax); 
   printf(" -e       [0,1]  E-value cutoff for inclusion in result alignment (def=%G)                \n",par.e);
@@ -382,7 +384,7 @@ void help_all()
   printf(" -b <int>        minimum number of alignments in alignment list (def=%i)                  \n",par.b);
   printf("\n");
   printf("Directories for needed programs                                                          \n");
-  printf(" -cs_db         <file> cs-database (default=%s)                                           \n",par.clusterfile);
+  printf(" -context_data  <file> context_data library (default=%s)                                 \n",par.clusterfile);
   printf(" -cs_lib        <file> cs-library (default=%s)                                            \n",par.cs_library); 
   printf(" -psipred       <dir>  directory with PsiPred executables (default=%s)                    \n",par.psipred);
   printf(" -psipred_data  <dir>  directory with PsiPred data (default=%s)                           \n",par.psipred_data);
@@ -493,12 +495,18 @@ void ProcessArguments(int argc, char** argv)
           else
 	    strcpy(dbhhm,argv[i]);
         }
-      else if (!strcmp(argv[i],"-cs_db"))
+      else if (!strcmp(argv[i],"-context_data"))
         {
           if (++i>=argc || argv[i][0]=='-')
-            {help() ; cerr<<endl<<"Error in "<<program_name<<": no directory following -csblast_db\n"; exit(4);}
+            {help() ; cerr<<endl<<"Error in "<<program_name<<": no lib following -context_data\n"; exit(4);}
           else
 	    strcpy(par.clusterfile,argv[i]);
+        }
+      else if (!strcmp(argv[i],"-cs_lib"))
+        {
+          if (++i>=argc || argv[i][0]=='-')
+            {help() ; cerr<<endl<<"Error in "<<program_name<<": no lib following -cs_lib\n"; exit(4);}
+          else strcpy(par.cs_library,argv[i]);
         }
       else if (!strcmp(argv[i],"-psipred"))
         {
@@ -642,12 +650,6 @@ void ProcessArguments(int argc, char** argv)
       else if (!strcmp(argv[i],"-gapi") && (i<argc-1)) par.gapi=atof(argv[++i]);
       else if (!strcmp(argv[i],"-egq") && (i<argc-1)) par.egq=atof(argv[++i]);
       else if (!strcmp(argv[i],"-egt") && (i<argc-1)) par.egt=atof(argv[++i]);
-      else if (!strcmp(argv[i],"-cs_lib"))
-        {
-          if (++i>=argc || argv[i][0]=='-')
-            {help() ; cerr<<endl<<"Error in "<<program_name<<": no lib following -cs_lib\n"; exit(4);}
-          else strcpy(par.cs_library,argv[i]);
-        }
       else if (!strcmp(argv[i],"-filterlen") && (i<argc-1)) 
 	{
 	  par.filter_length=atoi(argv[++i]);

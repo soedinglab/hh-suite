@@ -7,7 +7,7 @@
 ##########
 hhblits
 
-# database with context state sequences
+# CS-database with context state sequences
 -db /databases/nr20_11Jan10.as219_x0.3_c4
 
 # HHM database
@@ -20,7 +20,7 @@ hhblits
 -cs_lib /cluster/bioprogs/hhblits/cs219.lib
 
 # context-specific library (K4000)
--cs_db /cluster/bioprogs/hhblits/context_data.lib
+-context_data /cluster/bioprogs/hhblits/context_data.lib
 
 # PsiPred directory (binaries and database) (not needed when no SS prediction is needed (-nopred))
 -psipred /cluster/bioprogs/psipred/bin
