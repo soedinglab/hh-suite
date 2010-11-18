@@ -22,7 +22,9 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <sys/mman.h>
+#include <limits.h>
 
+#include "fmemopen.h"
 #include "ffindex.h"
 
 /* XXX Use page size? */

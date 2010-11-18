@@ -13,6 +13,8 @@ use lib "/cluster/lib";              # for chimaera webserver: ConfigServer.pm
 
 use strict;
 use MyPaths;                         # config file with path variables for nr, blast, psipred, pdb, dssp etc.
+
+# Module needed for aligning DSSP-sequence
 use Align;
 
 #my $bioprogs_dir="/home/soeding/programs";   # see next two lines
@@ -22,6 +24,7 @@ use Align;
 #my $dummydb="/home/soeding/nr/do_no_delete"; # Put the name given to the dummy blast directory (or leave this name)
 #my $dsspdir="";                              # Put the directory with dssp files 
 #my $dssp="";                                 # Put the directory with dssp executable
+#my $pdbdir="";                               # Put the directory with PDB files
 
 my $psipreddir="$bioprogs_dir/psipred/";     # Put the directory path with the PSIPRED executables 
 my $execdir=$psipreddir."/bin";

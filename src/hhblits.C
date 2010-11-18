@@ -1,7 +1,5 @@
 // hhblits.C:
 // Iterative search for a multiple alignment in a profile HMM database
-// Compile:              g++ -O3 -lpthread -lrt -fno-strict-aliasing -DHH_SSE3 -fopenmp -march=core2 hhblits_prefilter.C -o ../bin/hhblits_prefilter_omp
-// Compile for Valgrind: g++ -O3 -lpthread -lrt -fno-strict-aliasing -DHH_SSE3 -g -fopenmp -march=core2 hhblits_prefilter.C -o ../bin/hhblits_prefilter_omp_valgrind
 //
 // Error codes: 0: ok  1: file format error  2: file access error  3: memory error  4: command line error  6: internal logic error  7: internal numeric error
 
@@ -35,7 +33,6 @@
 #endif
 
 #include <sys/time.h>
-#include <malloc.h>   // memalign()
 
 #ifdef HH_SSE3
 #ifdef __SUNPRO_C
@@ -100,7 +97,7 @@ const char print_elapsed=0;
 char tmp_file[]="/tmp/hhblitsXXXXXX";
 
 // HHblits variables
-const char HHBLITS_VERSION[]="version 2.2.2 (October 2010)";
+const char HHBLITS_VERSION[]="version 2.2.4 (November 2010)";
 const char HHBLITS_REFERENCE[]="to be published.\n";
 const char HHBLITS_COPYRIGHT[]="(C) Michael Remmert and Johannes Soeding\n";
 
@@ -130,15 +127,8 @@ bool alitab_scop = false;                // Write only SCOP alignments in alitab
 
 char db_ext[NAMELEN];
 
-size_t data_size;                        // Needed for fast index reading
-ffindex_index_t* dbhhm_index = NULL;
-ffindex_index_t* dba3m_index = NULL;
-ffindex_entry_t* entry = NULL;
-
-char db[NAMELEN];                        // database with context-state sequences
-char dba3m[NAMELEN];                     // database with A3M-files
-char dbhhm[NAMELEN];                     // database with HHM-files
-
+// Needed for fast index reading
+size_t data_size;                        
 FILE *dba3m_data_file;
 FILE *dba3m_index_file;
 FILE *dbhhm_data_file;
@@ -146,6 +136,13 @@ FILE *dbhhm_index_file;
 
 char* dba3m_data;
 char* dbhhm_data;
+ffindex_index_t* dbhhm_index = NULL;
+ffindex_index_t* dba3m_index = NULL;
+
+
+char db[NAMELEN];                        // database with context-state sequences
+char dba3m[NAMELEN];                     // database with A3M-files
+char dbhhm[NAMELEN];                     // database with HHM-files
 
 int ndb_new=0;
 char* dbfiles_new[MAXNUMDB_NO_PREFILTER+1];
@@ -300,11 +297,15 @@ void help()
   printf(" -i <file>      input query (single FASTA-sequence, A3M- or FASTA-alignment, HMM-file)   \n");
   printf("\n");
   printf("Options:                                                                                 \n");
-  printf(" -db    <file>  BLAST formatted database with consensus sequences (default=%s)           \n",db);
-  printf(" -dba3m <dir>   database file with HHM-files (default=%s)                                \n",dba3m);
+  printf(" -db    <file>  CS-database for prefiltering (default=%s)                                \n",db);
+  printf(" -dba3m <dir>   database file with A3M-files (default=%s)                                \n",dba3m);
   printf(" -dbhhm <dir>   database file with HHM-files (default=%s)                                \n",dbhhm);
   printf(" -n     [1,8]   number of rounds (default=%i)                                            \n",num_rounds); 
   printf(" -e     [0,1]   E-value cutoff for inclusion in result alignment (def=%G)                \n",par.e);
+  printf("\n");
+  printf("Needed libraries                                                                         \n");
+  printf(" -context_data  <file> context_data library (default=%s)                                 \n",par.clusterfile);
+  printf(" -cs_lib        <file> cs-library (default=%s)                                           \n",par.cs_library); 
   printf("\n");
   printf("Input alignment format:                                                       \n");
   printf(" -M a2m        use A2M/A3M (default): upper case = Match; lower case = Insert;\n");
@@ -352,9 +353,9 @@ void help_all()
   printf(" -i <file>       input query (single FASTA-sequence, A3M- or FASTA-alignment, hhm-file)   \n");
   printf("\n");
   printf("Options:                                                                                 \n");
-  printf(" -db      <file> BLAST formatted database with consensus sequences (default=%s)           \n",db);
-  printf(" -dba3m <dir>   database file with HHM-files (default=%s)                                \n",dba3m);
-  printf(" -dbhhm <dir>   database file with HHM-files (default=%s)                                \n",dbhhm);
+  printf(" -db     <file>  CS-database for prefiltering (default=%s)                                \n",db);
+  printf(" -dba3m  <dir>   database file with A3M-files (default=%s)                                \n",dba3m);
+  printf(" -dbhhm  <dir>   database file with HHM-files (default=%s)                                \n",dbhhm);
   printf(" -n       [1,8]  number of rounds (default=%i)                                            \n",num_rounds); 
   printf(" -neffmax [0,15] break if neff > neffmax (default=%f)                                   \n",neffmax); 
   printf(" -e       [0,1]  E-value cutoff for inclusion in result alignment (def=%G)                \n",par.e);
@@ -383,7 +384,7 @@ void help_all()
   printf(" -b <int>        minimum number of alignments in alignment list (def=%i)                  \n",par.b);
   printf("\n");
   printf("Directories for needed programs                                                          \n");
-  printf(" -cs_db         <file> cs-database (default=%s)                                           \n",par.clusterfile);
+  printf(" -context_data  <file> context_data library (default=%s)                                 \n",par.clusterfile);
   printf(" -cs_lib        <file> cs-library (default=%s)                                            \n",par.cs_library); 
   printf(" -psipred       <dir>  directory with PsiPred executables (default=%s)                    \n",par.psipred);
   printf(" -psipred_data  <dir>  directory with PsiPred data (default=%s)                           \n",par.psipred_data);
@@ -494,12 +495,18 @@ void ProcessArguments(int argc, char** argv)
           else
 	    strcpy(dbhhm,argv[i]);
         }
-      else if (!strcmp(argv[i],"-cs_db"))
+      else if (!strcmp(argv[i],"-context_data"))
         {
           if (++i>=argc || argv[i][0]=='-')
-            {help() ; cerr<<endl<<"Error in "<<program_name<<": no directory following -csblast_db\n"; exit(4);}
+            {help() ; cerr<<endl<<"Error in "<<program_name<<": no lib following -context_data\n"; exit(4);}
           else
 	    strcpy(par.clusterfile,argv[i]);
+        }
+      else if (!strcmp(argv[i],"-cs_lib"))
+        {
+          if (++i>=argc || argv[i][0]=='-')
+            {help() ; cerr<<endl<<"Error in "<<program_name<<": no lib following -cs_lib\n"; exit(4);}
+          else strcpy(par.cs_library,argv[i]);
         }
       else if (!strcmp(argv[i],"-psipred"))
         {
@@ -643,12 +650,6 @@ void ProcessArguments(int argc, char** argv)
       else if (!strcmp(argv[i],"-gapi") && (i<argc-1)) par.gapi=atof(argv[++i]);
       else if (!strcmp(argv[i],"-egq") && (i<argc-1)) par.egq=atof(argv[++i]);
       else if (!strcmp(argv[i],"-egt") && (i<argc-1)) par.egt=atof(argv[++i]);
-      else if (!strcmp(argv[i],"-cs_lib"))
-        {
-          if (++i>=argc || argv[i][0]=='-')
-            {help() ; cerr<<endl<<"Error in "<<program_name<<": no lib following -cs_lib\n"; exit(4);}
-          else strcpy(par.cs_library,argv[i]);
-        }
       else if (!strcmp(argv[i],"-filterlen") && (i<argc-1)) 
 	{
 	  par.filter_length=atoi(argv[++i]);
@@ -822,23 +823,16 @@ void search_loop(char *dbfiles[], int ndb, bool alignByWorker=true)
       //cerr<<"\nReading db file "<<idb<<" dbfiles[idb]="<<dbfiles[idb]<<"\n";
       //FILE* dbf=fopen(dbfiles[idb],"rb");
       FILE* dbf;
-      entry = ffindex_bsearch_get_entry(dbhhm_index, dbfiles[idb]);
-      if (entry != NULL)
-	dbf = fmemopen(ffindex_get_filedata(dbhhm_data, entry->offset), entry->length, "r");
-      else
-	{
-	  char filename[NAMELEN];
-	  RemoveExtension(filename, dbfiles[idb]);
-	  strcat(filename,".a3m");
-	  if(dba3m_index_file!=NULL && (entry = ffindex_bsearch_get_entry(dba3m_index, filename)) != NULL)
-	    dbf = fmemopen(ffindex_get_filedata(dba3m_data, entry->offset), entry->length, "r");
-	  else
-	    {
-	      fprintf(stderr,"ERROR! Could not read %s!\n", dbfiles[idb]);
-	      exit(4);
-	    }
+      dbf = ffindex_fopen(dbhhm_data, dbhhm_index, dbfiles[idb]);
+      if (dbf == NULL) {
+	char filename[NAMELEN];
+	RemoveExtension(filename, dbfiles[idb]);
+	strcat(filename,".a3m");
+	if(dba3m_index_file!=NULL) {
+	  dbf = ffindex_fopen(dba3m_data, dba3m_index, filename);
 	}
-      if (!dbf) OpenFileError(dbfiles[idb]);
+      }
+      if (dbf == NULL) OpenFileError(dbfiles[idb]);
       
       // Submit jobs if bin is free
       if (jobs_submitted+jobs_running<bins)
@@ -961,8 +955,10 @@ void search_loop(char *dbfiles[], int ndb, bool alignByWorker=true)
 #else
 	      // If no submitted jobs are in the queue we have to wait for a new job ...
 	      struct timespec ts;
-	      clock_gettime(CLOCK_REALTIME,&ts);
-	      ts.tv_sec += 1;
+	      struct timeval tv;
+	      gettimeofday(&tv, NULL);
+	      ts.tv_sec = tv.tv_sec + 1;
+
 	      rc = pthread_cond_timedwait(&finished_job, &bin_status_mutex,&ts);
 #endif
 	    }
@@ -1300,23 +1296,17 @@ void perform_realign(char *dbfiles[], int ndb)
 
 	  // Open HMM database file dbfiles[idb]
 	  FILE* dbf;
-	  entry = ffindex_bsearch_get_entry(dbhhm_index, hit_cur.dbfile);
-	  if (entry != NULL)
-	    dbf = fmemopen(ffindex_get_filedata(dbhhm_data, entry->offset), entry->length, "r");
-	  else
-	    {
-	      char filename[NAMELEN];
-	      strcpy(filename,hit_cur.file); // copy filename including path but without extension
-	      strcat(filename,".a3m");
-	      if(dba3m_index_file!=NULL && (entry = ffindex_bsearch_get_entry(dba3m_index, filename)) != NULL)
-		dbf = fmemopen(ffindex_get_filedata(dba3m_data, entry->offset), entry->length, "r");
-	      else
-		{
-		  fprintf(stderr,"ERROR! Could not read %s!\n", hit_cur.dbfile);
-		  exit(4);
-		}
+	  dbf = ffindex_fopen(dbhhm_data, dbhhm_index, hit_cur.dbfile);
+	  if (dbf == NULL) {
+	    char filename[NAMELEN];
+	    RemoveExtension(filename, hit_cur.file);
+	    strcat(filename,".a3m");
+	    if(dba3m_index_file!=NULL) {
+	      dbf = ffindex_fopen(dba3m_data, dba3m_index, filename);
 	    }
-	  if (!dbf) OpenFileError(hit_cur.dbfile);
+	  }
+	  if (dbf == NULL) OpenFileError(hit_cur.dbfile);
+
 	  read_from_db=1;
 	  
 	  // Forward stream position to start of next database HMM to be realigned
@@ -1437,13 +1427,9 @@ void perform_realign(char *dbfiles[], int ndb)
 	  strcpy(ta3mfile,hit[bin]->file); // copy filename including path but without extension
 	  strcat(ta3mfile,".a3m");
 	  FILE* ta3mf;
-	  if(dba3m_index_file!=NULL && (entry = ffindex_bsearch_get_entry(dba3m_index, ta3mfile)) != NULL)
-	    ta3mf = fmemopen(ffindex_get_filedata(dba3m_data, entry->offset), entry->length, "r");
-	  else
-	    {
-	      fprintf(stderr,"ERROR! Could not read %s!\n", ta3mfile);
-	      exit(4);
-	    }
+	  ta3mf = ffindex_fopen(dba3m_data, dba3m_index, ta3mfile);
+	  if (ta3mf == NULL) OpenFileError(ta3mfile);
+
 	  Qali.MergeMasterSlave(*hit[bin],ta3mfile, ta3mf);
 	  fclose(ta3mf);
 	  
@@ -1504,23 +1490,17 @@ void perform_realign(char *dbfiles[], int ndb)
       
       // Open HMM database file dbfiles[idb]
       FILE* dbf;
-      entry = ffindex_bsearch_get_entry(dbhhm_index, dbfiles[idb]);
-      if (entry != NULL)
-	dbf = fmemopen(ffindex_get_filedata(dbhhm_data, entry->offset), entry->length, "r");
-      else
-	{
-	  char filename[NAMELEN];
-	  RemoveExtension(filename, dbfiles[idb]);
-	  strcat(filename,".a3m");
-	  if(dba3m_index_file!=NULL && (entry = ffindex_bsearch_get_entry(dba3m_index, filename)) != NULL)
-	    dbf = fmemopen(ffindex_get_filedata(dba3m_data, entry->offset), entry->length, "r");
-	  else
-	    {
-	      fprintf(stderr,"ERROR! Could not read %s!\n", dbfiles[idb]);
-	      exit(4);
-	    }
+      dbf = ffindex_fopen(dbhhm_data, dbhhm_index, dbfiles[idb]);
+      if (dbf == NULL) {
+	char filename[NAMELEN];
+	RemoveExtension(filename, dbfiles[idb]);
+	strcat(filename,".a3m");
+	if(dba3m_index_file!=NULL) {
+	  dbf = ffindex_fopen(dba3m_data, dba3m_index, filename);
 	}
-      if (!dbf) OpenFileError(dbfiles[idb]);
+      }
+      if (dbf == NULL) OpenFileError(dbfiles[idb]);
+
       read_from_db=1;
       int index_prev=-1;
       
@@ -1654,8 +1634,9 @@ void perform_realign(char *dbfiles[], int ndb)
 #else
 		  // If no submitted jobs are in the queue we have to wait for a new job, but max. 1 second ...
 		  struct timespec ts;
-		  clock_gettime(CLOCK_REALTIME,&ts);
-		  ts.tv_sec += 1;
+		  struct timeval tv;
+		  gettimeofday(&tv, NULL);
+		  ts.tv_sec = tv.tv_sec + 1;
 		  rc = pthread_cond_timedwait(&finished_job, &bin_status_mutex,&ts);
 #endif
 		}
@@ -2081,13 +2062,9 @@ int main(int argc, char **argv)
 		strcpy(ta3mfile,hit_cur.file); // copy filename including path but without extension
 		strcat(ta3mfile,".a3m");
 		FILE* ta3mf;
-		if(dba3m_index_file!=NULL && (entry = ffindex_bsearch_get_entry(dba3m_index, ta3mfile)) != NULL)
-		  ta3mf = fmemopen(ffindex_get_filedata(dba3m_data, entry->offset), entry->length, "r");
-		else
-		  {
-		    fprintf(stderr,"ERROR! Could not read %s!\n", ta3mfile);
-		    exit(4);
-		  }
+		ta3mf = ffindex_fopen(dba3m_data, dba3m_index, ta3mfile);
+		if (ta3mf == NULL) OpenFileError(ta3mfile);
+
 		Qali.MergeMasterSlave(hit_cur,ta3mfile, ta3mf);
 		fclose(ta3mf);
 		if (Qali.N_in>=MAXSEQ) break; // Maximum number of sequences reached 

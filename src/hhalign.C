@@ -23,14 +23,11 @@
 #include <errno.h>    // perror()
 #include <cassert>
 #include <stdexcept>
-#include <malloc.h>   // memalign()
 
 #include <sys/time.h>
 //#include <new>
 //#include "efence.h"
 //#include "efence.c"
-
-#include <malloc.h>   // memalign()
 
 #ifdef HH_SSE3
 #ifdef __SUNPRO_C

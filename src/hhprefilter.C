@@ -468,13 +468,52 @@ int swStripedWord_backtrace(int              queryLength,
     int max_pos_q = _mm_extract_epi16(Dqmax,0);
     int max_pos_t = _mm_extract_epi16(Dtmax,0);
 
-    for (b = 1; b<8; ++b) {
-      if ((_mm_extract_epi16(vMax,b) + SHORT_BIAS) > max_score) {
-	max_score = _mm_extract_epi16(vMax,b) + SHORT_BIAS;
-	max_pos_q = _mm_extract_epi16(Dqmax,b);
-	max_pos_t = _mm_extract_epi16(Dtmax,b);
-      }
+//     for (b = 1; b<8; ++b) {
+//       if ((_mm_extract_epi16(vMax,b) + SHORT_BIAS) > max_score) {
+// 	max_score = _mm_extract_epi16(vMax,b) + SHORT_BIAS;
+// 	max_pos_q = _mm_extract_epi16(Dqmax,b);
+// 	max_pos_t = _mm_extract_epi16(Dtmax,b);
+//       }
+//     }
+
+    // MUST use this way because of Mac!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    if ((_mm_extract_epi16(vMax,1) + SHORT_BIAS) > max_score) {
+      max_score = _mm_extract_epi16(vMax,1) + SHORT_BIAS;
+      max_pos_q = _mm_extract_epi16(Dqmax,1);
+      max_pos_t = _mm_extract_epi16(Dtmax,1);
     }
+    if ((_mm_extract_epi16(vMax,2) + SHORT_BIAS) > max_score) {
+      max_score = _mm_extract_epi16(vMax,2) + SHORT_BIAS;
+      max_pos_q = _mm_extract_epi16(Dqmax,2);
+      max_pos_t = _mm_extract_epi16(Dtmax,2);
+    }
+    if ((_mm_extract_epi16(vMax,3) + SHORT_BIAS) > max_score) {
+      max_score = _mm_extract_epi16(vMax,3) + SHORT_BIAS;
+      max_pos_q = _mm_extract_epi16(Dqmax,3);
+      max_pos_t = _mm_extract_epi16(Dtmax,3);
+    }
+    if ((_mm_extract_epi16(vMax,4) + SHORT_BIAS) > max_score) {
+      max_score = _mm_extract_epi16(vMax,4) + SHORT_BIAS;
+      max_pos_q = _mm_extract_epi16(Dqmax,4);
+      max_pos_t = _mm_extract_epi16(Dtmax,4);
+    }
+    if ((_mm_extract_epi16(vMax,5) + SHORT_BIAS) > max_score) {
+      max_score = _mm_extract_epi16(vMax,5) + SHORT_BIAS;
+      max_pos_q = _mm_extract_epi16(Dqmax,5);
+      max_pos_t = _mm_extract_epi16(Dtmax,5);
+    }
+    if ((_mm_extract_epi16(vMax,6) + SHORT_BIAS) > max_score) {
+      max_score = _mm_extract_epi16(vMax,6) + SHORT_BIAS;
+      max_pos_q = _mm_extract_epi16(Dqmax,6);
+      max_pos_t = _mm_extract_epi16(Dtmax,6);
+    }
+    if ((_mm_extract_epi16(vMax,7) + SHORT_BIAS) > max_score) {
+      max_score = _mm_extract_epi16(vMax,7) + SHORT_BIAS;
+      max_pos_q = _mm_extract_epi16(Dqmax,7);
+      max_pos_t = _mm_extract_epi16(Dtmax,7);
+    }
+
 
     double evalue = factor * fpow2(-max_score/par.prefilter_bit_factor);
       
@@ -659,7 +698,7 @@ void init_no_prefiltering()
     {
       FILE *stream;
       // Get DB-size
-      command = "more " + (string)db + " |grep \">\" |wc -l";
+      command = "cat " + (string)db + " |grep \">\" |wc -l";
       stream = popen(command.c_str(), "r");
       ptr=fgets(line, LINELEN, stream);
       dbsize = strint(ptr);
@@ -725,13 +764,13 @@ void init_prefilter()
     {
       FILE *stream;
       // Get DB-size
-      command = "more " + (string)db + " |grep \"^>\" |wc -l";
+      command = "cat " + (string)db + " |grep \"^>\" |wc -l";
       stream = popen(command.c_str(), "r");
       ptr=fgets(line, LINELEN, stream);
       dbsize = strint(ptr);
       pclose(stream);
       // Get DB-length
-      command = "more " + (string)db + " |grep -v \"^>\" |wc -c";
+      command = "cat " + (string)db + " |grep -v \"^>\" |wc -c";
       stream = popen(command.c_str(), "r");
       ptr=fgets(line, LINELEN, stream);
       LDB = strint(ptr);

@@ -210,7 +210,8 @@ while($line=<RESFILE>){
 	if ($program==1) { 
 	    # hhalign: look in job dir for HMM
 	    $db = $basedir;
-	    $template = $id;
+	    #$template = $id;
+	    $template =~ s/\|/_/g;
 
 	    # HMM could not be found?
 	    if (!$db || ! -e "$db/$template.hhm") {
@@ -457,7 +458,7 @@ while (defined $line) {
 	}
 
 	# Move up to next non-empty line
-	while ($line && $line=~/^\s*$/) {$line=<RESFILE>;}
+	while ($line && ($line=~/^\s*$/ || $line =~ /^Confidence/)) {$line=<RESFILE>;}
 
 	if (!$line || $line=~/^No (\d+)/ || $line=~/^Done/) {last;}
     }
@@ -973,8 +974,11 @@ sub allocateColors
 		   );
 
     %ss_colors = ( 'H' => $lightred,
+		   'h' => $lightred,
 		   'E' => $blue,
+		   'e' => $blue,
 		   'C' => $black, 
+		   'c' => $black, 
 		   'G' => $black,
 		   'I' => $black,
 		   'S' => $black,
