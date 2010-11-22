@@ -97,7 +97,7 @@ const char print_elapsed=0;
 char tmp_file[]="/tmp/hhblitsXXXXXX";
 
 // HHblits variables
-const char HHBLITS_VERSION[]="version 2.2.4 (November 2010)";
+const char HHBLITS_VERSION[]="version 2.2.5 (November 2010)";
 const char HHBLITS_REFERENCE[]="to be published.\n";
 const char HHBLITS_COPYRIGHT[]="(C) Michael Remmert and Johannes Soeding\n";
 
@@ -113,7 +113,7 @@ bool realign_old_hits = false;          // Realign old hits in last round or use
 bool hmmer_used = false;
 char input_format = 0;                  // Set to 1, if input in HMMER format (has already pseudocounts)
 
-float neffmax = 10;                     // Break if Neff > Neffmax
+float neffmax = 15;                     // Break if Neff > Neffmax
 
 int cpu = 1;
 
@@ -814,7 +814,7 @@ void search_loop(char *dbfiles[], int ndb, bool alignByWorker=true)
       if (par.early_stopping_filter && par.filter_sum < filter_cutoff)
 	{
 	  if (v>=4)
-	    printf("Stop after DB-HHM %i from %i\n",idb,ndb);
+	    printf("Stop after DB-HHM %i from %i (filter_sum: %8.4f   cutoff: %8.4f)\n",idb,ndb,par.filter_sum,filter_cutoff);
 	  printf("\n");
 	  break;
 	}
@@ -953,13 +953,22 @@ void search_loop(char *dbfiles[], int ndb, bool alignByWorker=true)
 #ifdef WINDOWS
 	      rc = pthread_cond_wait(&finished_job, &bin_status_mutex);
 #else
+#ifdef HH_MAC
+
 	      // If no submitted jobs are in the queue we have to wait for a new job ...
 	      struct timespec ts;
 	      struct timeval tv;
 	      gettimeofday(&tv, NULL);
 	      ts.tv_sec = tv.tv_sec + 1;
-
 	      rc = pthread_cond_timedwait(&finished_job, &bin_status_mutex,&ts);
+#else
+
+	      // If no submitted jobs are in the queue we have to wait for a new job ...
+	      struct timespec ts;
+	      clock_gettime(CLOCK_REALTIME,&ts);
+	      ts.tv_sec += 1;
+	      rc = pthread_cond_timedwait(&finished_job, &bin_status_mutex,&ts);
+#endif
 #endif
 	    }
 	  // Unlock mutex
@@ -1632,12 +1641,22 @@ void perform_realign(char *dbfiles[], int ndb)
 #ifdef WINDOWS
 		  rc = pthread_cond_wait(&finished_job, &bin_status_mutex);
 #else
-		  // If no submitted jobs are in the queue we have to wait for a new job, but max. 1 second ...
+#ifdef HH_MAC
+
+		  // If no submitted jobs are in the queue we have to wait for a new job ...
 		  struct timespec ts;
 		  struct timeval tv;
 		  gettimeofday(&tv, NULL);
 		  ts.tv_sec = tv.tv_sec + 1;
 		  rc = pthread_cond_timedwait(&finished_job, &bin_status_mutex,&ts);
+#else
+		  
+		  // If no submitted jobs are in the queue we have to wait for a new job ...
+		  struct timespec ts;
+		  clock_gettime(CLOCK_REALTIME,&ts);
+		  ts.tv_sec += 1;
+		  rc = pthread_cond_timedwait(&finished_job, &bin_status_mutex,&ts);
+#endif
 #endif
 		}
 	      // Unlock mutex
@@ -2207,6 +2226,14 @@ int main(int argc, char **argv)
   // Generate output alignment or HMM file?
   if (*par.alnfile || *par.psifile || *par.hhmfile)
     {
+      // Filter to NeffMax
+      if (q->Neff_HMM > neffmax) {
+	par.Neff = neffmax;
+	Qali.FilterNeff();
+	if (*par.hhmfile) 
+	  Qali.FrequenciesAndTransitions(*q,NULL,true);
+      }
+
       // Write output PSI-BLAST-formatted alignment?
       if (*par.psifile) Qali.WriteToFile(par.psifile,"psi");
 

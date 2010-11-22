@@ -1011,12 +1011,22 @@ int main(int argc, char **argv)
 #ifdef WINDOWS
                   rc = pthread_cond_wait(&finished_job, &bin_status_mutex);
 #else
-                  // If no submitted jobs are in the queue we have to wait for a new job ...
-                  struct timespec ts;
+#ifdef HH_MAC
+
+		  // If no submitted jobs are in the queue we have to wait for a new job ...
+		  struct timespec ts;
 		  struct timeval tv;
 		  gettimeofday(&tv, NULL);
 		  ts.tv_sec = tv.tv_sec + 1;
-                  rc = pthread_cond_timedwait(&finished_job, &bin_status_mutex,&ts);
+		  rc = pthread_cond_timedwait(&finished_job, &bin_status_mutex,&ts);
+#else
+		  
+		  // If no submitted jobs are in the queue we have to wait for a new job ...
+		  struct timespec ts;
+		  clock_gettime(CLOCK_REALTIME,&ts);
+		  ts.tv_sec += 1;
+		  rc = pthread_cond_timedwait(&finished_job, &bin_status_mutex,&ts);
+#endif
 #endif
                 }
               // Unlock mutex
@@ -1540,12 +1550,22 @@ int main(int argc, char **argv)
 #ifdef WINDOWS
                       rc = pthread_cond_wait(&finished_job, &bin_status_mutex);
 #else
-                      // If no submitted jobs are in the queue we have to wait for a new job, but max. 1 second ...
-                      struct timespec ts;
-		      struct timeval tv;
-		      gettimeofday(&tv, NULL);
-		      ts.tv_sec = tv.tv_sec + 1;
-                      rc = pthread_cond_timedwait(&finished_job, &bin_status_mutex,&ts);
+#ifdef HH_MAC
+
+		  // If no submitted jobs are in the queue we have to wait for a new job ...
+		  struct timespec ts;
+		  struct timeval tv;
+		  gettimeofday(&tv, NULL);
+		  ts.tv_sec = tv.tv_sec + 1;
+		  rc = pthread_cond_timedwait(&finished_job, &bin_status_mutex,&ts);
+#else
+		  
+		  // If no submitted jobs are in the queue we have to wait for a new job ...
+		  struct timespec ts;
+		  clock_gettime(CLOCK_REALTIME,&ts);
+		  ts.tv_sec += 1;
+		  rc = pthread_cond_timedwait(&finished_job, &bin_status_mutex,&ts);
+#endif
 #endif
                     }
                   // Unlock mutex

@@ -16,13 +16,13 @@ endif
 
 ifdef ICC
 CXX = env LANG=C icc
-CXXFLAGS = -fast -Wall -fno-strict-aliasing -finline-functions -funroll-loops -fp-model fast=2 -fast-transcendentals -wd981 -wd383 -wd2259 -wd1572 -D HH_SSE3 -I$(CS_DIR) -I$(BOOST_DIR) $(SPARSEHASH)
+CXXFLAGS = -fast -Wall -fno-strict-aliasing -finline-functions -funroll-loops -fp-model fast=2 -fast-transcendentals -wd981 -wd383 -wd2259 -wd1572 -D HH_SSE3 -DHH_MAC -I$(CS_DIR) -I$(BOOST_DIR) $(SPARSEHASH)
 HHSEARCH_LIBS = -lpthread
 HHBLITS_LIBS = -lpthread -openmp
 OBJECT_LIBS = -openmp
 else
 CXX = g++
-CXXFLAGS = -O3 -Wall -Wno-deprecated -Wno-char-subscripts -fno-strict-aliasing -DHH_SSE3 -march=core2 -I$(CS_DIR) -I$(BOOST_DIR) $(BITS_FLAG) $(SPARSEHASH)
+CXXFLAGS = -O3 -Wall -Wno-deprecated -Wno-char-subscripts -fno-strict-aliasing -DHH_SSE3 -DHH_MAC -march=core2 -I$(CS_DIR) -I$(BOOST_DIR) $(BITS_FLAG) $(SPARSEHASH)
 HHSEARCH_LIBS = -lpthread 
 HHBLITS_LIBS = -lpthread -fopenmp
 OBJECT_LIBS = -fopenmp
