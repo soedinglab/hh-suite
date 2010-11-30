@@ -662,7 +662,7 @@ void RealignByWorker(Hit& hit)
   while (!hitlist.End())
     {
       hit_cur = hitlist.ReadNext();
-      if (hit_cur.matched_cols < MINCOLS_REALIGN && nhits > 1)
+      if (hit_cur.matched_cols < MINCOLS_REALIGN && nhits > 1 && nhits > par.hitrank)
 	{
 	  if (v>=3) printf("Deleting alignment of %s with length %i\n",hit_cur.name,hit_cur.matched_cols);
 	  hitlist.Delete().Delete();               // delete the list record and hit object

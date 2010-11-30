@@ -113,7 +113,7 @@ bool realign_old_hits = false;          // Realign old hits in last round or use
 bool hmmer_used = false;
 char input_format = 0;                  // Set to 1, if input in HMMER format (has already pseudocounts)
 
-float neffmax = 15;                     // Break if Neff > Neffmax
+float neffmax = 10;                     // Break if Neff > Neffmax
 
 int cpu = 1;
 
@@ -1787,8 +1787,8 @@ int main(int argc, char **argv)
     {help(); cerr<<endl<<"Error in "<<program_name<<": input file missing!\n"; exit(4);}
   if (!*db || !*dbhhm)
     {help(); cerr<<endl<<"Error in "<<program_name<<": database missing (see -db and -dbhhm)\n"; exit(4);}
-  if (par.showpred==1 && (!*par.psipred || !*par.psipred_data))
-    {help(); cerr<<endl<<"Error in "<<program_name<<": missing PsiPred directory (see -psipred and -psipred_data).\nIf you don't need the predicted secondary structure, restart HHblits with -noss\n"; exit(4);}
+  if (par.addss==1 && (!*par.psipred || !*par.psipred_data))
+    {help(); cerr<<endl<<"Error in "<<program_name<<": missing PsiPred directory (see -psipred and -psipred_data).\nIf you don't need the predicted secondary structure, don't use the -addss option!\n"; exit(4);}
   if (!strcmp(par.clusterfile,""))
     {help(); cerr<<endl<<"Error in "<<program_name<<": context-specific library missing (see -cs_db)\n"; exit(4);}
   if (!strcmp(par.cs_library,""))
@@ -2226,13 +2226,13 @@ int main(int argc, char **argv)
   // Generate output alignment or HMM file?
   if (*par.alnfile || *par.psifile || *par.hhmfile)
     {
-      // Filter to NeffMax
-      if (q->Neff_HMM > neffmax) {
-	par.Neff = neffmax;
-	Qali.FilterNeff();
-	if (*par.hhmfile) 
-	  Qali.FrequenciesAndTransitions(*q,NULL,true);
-      }
+      // // Filter to NeffMax
+      // if (q->Neff_HMM > neffmax) {
+      // 	par.Neff = neffmax;
+      // 	Qali.FilterNeff();
+      // 	if (*par.hhmfile) 
+      // 	  Qali.FrequenciesAndTransitions(*q,NULL,true);
+      // }
 
       // Write output PSI-BLAST-formatted alignment?
       if (*par.psifile) Qali.WriteToFile(par.psifile,"psi");

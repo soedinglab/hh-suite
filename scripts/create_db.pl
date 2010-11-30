@@ -5,7 +5,8 @@
 ################################################################################################################################
 # Update the following variables
 
-$hh_dir = "/cluster/bioprogs/hhblits";         # path to needed tools (cstranslate, hhmake)
+$hh_dir  = "/cluster/bioprogs/hhblits";         # path to needed tools (cstranslate, hhmake)
+$lib_dir = "/cluster/bioprogs/hhblits";         # path to needed libraries (context_data.lib, cs219.lib)
 
 ################################################################################################################################
 
