@@ -8,7 +8,7 @@
 hhblits
 
 # CS-database with context state sequences
--db /cluster/databases/hhblits/uniprot20.as219
+-db /cluster/databases/hhblits/uniprot20.cs219
 
 # HHM database
 -dbhhm /cluster/databases/hhblits/uniprot20_hhm_db
@@ -22,7 +22,7 @@ hhblits
 # context-specific library (K4000)
 -context_data /cluster/bioprogs/hhblits/context_data.lib
 
-# PsiPred directory (binaries and database) (not needed when no SS prediction is needed (-nopred))
+# PsiPred directory (binaries and database) (only needed for secondary structure prediction (-addss))
 -psipred /cluster/bioprogs/psipred/bin
 -psipred_data /cluster/bioprogs/psipred/data
 

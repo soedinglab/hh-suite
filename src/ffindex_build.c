@@ -25,23 +25,35 @@
 
 #include "ffindex.h"
 
+#define MAX_FILENAME_LIST_FILES 4096
+
 void usage(char *program_name)
 {
-    fprintf(stderr, "USAGE: %s [-as] data_filename index_filename [dirs_to_index ...]\n"
-                    "\t-a append\n"
-                    "\t-s sort index file\n", program_name);
+    fprintf(stderr, "USAGE: %s [-asv] [-f file]* data_filename index_filename [dirs_to_index ...]\n"
+                    "\t-a\tappend\n"
+                    "\t-f file\tfile each line containing a filename to index\n"
+                    "\t\t\t-f can be specified up to MAX_FILENAME_LIST_FILES times\n"
+                    "\t-s\tsort index file\n"
+                    "\t-v\tprint version and other info then exit", program_name);
 }
 
 int main(int argn, char **argv)
 {
   int append = 0, sort = 0, opt, err = EXIT_SUCCESS;
-  while ((opt = getopt(argn, argv, "as")) != -1)
+  char* list_filenames[MAX_FILENAME_LIST_FILES];
+  int list_filenames_index = 0, version = 0;
+  while ((opt = getopt(argn, argv, "asvf:")) != -1)
   {
     switch (opt)
     {
       case 'a':
         append = 1;
         break;
+      case 'f':
+        list_filenames[list_filenames_index++] = optarg;
+        break;
+      case 'v':
+        version = 1;
       case 's':
         sort = 1;
         break;
@@ -50,6 +62,13 @@ int main(int argn, char **argv)
         return EXIT_FAILURE;
     }
   }
+
+  if(version == 1)
+  {
+    printf("%s version %.2f, off_t = %ld bits\n", argv[0], FFINDEX_VERSION, sizeof(off_t) * 8);
+    return EXIT_SUCCESS;
+  }
+
   if(argn - optind < 2)
   {
     usage(argv[0]);
@@ -62,6 +81,7 @@ int main(int argn, char **argv)
 
   size_t offset = 0;
 
+  /* open index and data file, seek to end if needed */
   if(append)
   {
     data_file  = fopen(data_filename, "a");
@@ -85,8 +105,22 @@ int main(int argn, char **argv)
     if(index_file == NULL) { perror(index_filename); return EXIT_FAILURE; }
   }
 
+  /* For each list_file insert */
+  if(list_filenames_index > 0)
+    for(int i = 0; i < list_filenames_index; i++)
+    {
+      FILE *list_file = fopen(list_filenames[i], "r");
+      if( list_file == NULL) { perror(list_filenames[i]); return EXIT_FAILURE; }
+      if(ffindex_insert_list_file(data_file, index_file, &offset, list_file) < 0)
+      {
+        perror(list_filenames[i]);
+        err = -1;
+      }
+    }
+
+  /* For each dir, insert all files into the index */
   for(int i = optind; i < argn; i++)
-    if(ffindex_insert(data_file, index_file, &offset, argv[i]) < 0)
+    if(ffindex_insert_dir(data_file, index_file, &offset, argv[i]) < 0)
     {
       perror(argv[i]);
       err = -1;

@@ -84,22 +84,76 @@ my @dirs;
 
 if (@ARGV<1) {die ($help);}
 
-my $options="";
-for (my $i=0; $i<@ARGV; $i++) {$options.=" $ARGV[$i] ";}
+###########################
+# OLD
+#
+#my $options="";
+#for (my $i=0; $i<@ARGV; $i++) {$options.=" $ARGV[$i] ";}
+#
+#if ($options=~s/ -a3mdir\s+(\S+) //) {$a3mdir=$1;}
+#if ($options=~s/ -hhmdir\s+(\S+) //) {$hhmdir=$1;}
+#
+#if ($options=~s/ -oa3m\s+(\S+) //) {$a3mfile=$1;}
+#if ($options=~s/ -ohhm\s+(\S+) //) {$hhmfile=$1;}
+#
+#if ($options=~s/ -a3mext\s+(\S+) //) {$a3mext=$1;}
+#if ($options=~s/ -hhmext\s+(\S+) //) {$hhmext=$1;}
+#
+#if ($options=~s/ -append //) {$append=1;}
+#
+#if ($options=~s/ -v\s+(\S+) //) {$v=$1;}
+###########################
 
-if ($options=~s/ -a3mdir\s+(\S+) //) {$a3mdir=$1;}
-if ($options=~s/ -hhmdir\s+(\S+) //) {$hhmdir=$1;}
+for (my $i=0; $i<@ARGV; $i++) {
 
-if ($options=~s/ -oa3m\s+(\S+) //) {$a3mfile=$1;}
-if ($options=~s/ -ohhm\s+(\S+) //) {$hhmfile=$1;}
-
-if ($options=~s/ -a3mext\s+(\S+) //) {$a3mext=$1;}
-if ($options=~s/ -hhmext\s+(\S+) //) {$hhmext=$1;}
-
-if ($options=~s/ -append //) {$append=1;}
-
-if ($options=~s/ -v\s+(\S+) //) {$v=$1;}
-
+    if ($ARGV[$i] eq "-a3mdir") {
+	if (++$i<@ARGV) {
+	    $a3mdir=$ARGV[$i];
+	} else {
+	    die ("$help\n\nERROR! Missing directory after -a3mdir option!\n");
+	}
+    } elsif ($ARGV[$i] eq "-hhmdir") {
+	if (++$i<@ARGV) {
+	    $hhmdir=$ARGV[$i];
+	} else {
+	    die ("$help\n\nERROR! Missing directory after -hhmdir option!\n");
+	}
+    } elsif ($ARGV[$i] eq "-oa3m") {
+	if (++$i<@ARGV) {
+	    $a3mfile=$ARGV[$i];
+	} else {
+	    die ("$help\n\nERROR! Missing filename after -oa3m option!\n");
+	}
+    } elsif ($ARGV[$i] eq "-ohhm") {
+	if (++$i<@ARGV) {
+	    $hhmfile=$ARGV[$i];
+	} else {
+	    die ("$help\n\nERROR! Missing filename after -ohhm option!\n");
+	}
+    } elsif ($ARGV[$i] eq "-a3mext") {
+	if (++$i<@ARGV) {
+	    $a3mext=$ARGV[$i];
+	} else {
+	    die ("$help\n\nERROR! Missing extension after -a3mext option!\n");
+	}
+    } elsif ($ARGV[$i] eq "-hhmext") {
+	if (++$i<@ARGV) {
+	    $hhmext=$ARGV[$i];
+	} else {
+	    die ("$help\n\nERROR! Missing extension after -hhmext option!\n");
+	}
+    } elsif ($ARGV[$i] eq "-v") {
+	if (++$i<@ARGV) {
+	    $v=$ARGV[$i];
+	} else {
+	    $v = 2;
+	}
+    } elsif ($ARGV[$i] eq "-append") {
+	$append=1;
+    } else {
+	print "WARNING! Unknown option $ARGV[$i]!\n";
+    }
+}
 
 # Check input
 if ($a3mdir eq "" && $hhmdir eq "") {
@@ -131,37 +185,30 @@ while ($suffix=~s/^\/[^\/]+//) {
 if ($a3mfile ne "") {
     print "Creating A3M database $a3mfile ...\n";
 
-    # check, if directory contains only a3m-files
-    my $check = 1;
+    open (OUT, ">$tmpdir/a3m.filelist");
+
     @dirs = glob($a3mdir);
     foreach $dir (@dirs) {
 	my @a3mfiles = glob("$dir/*.$a3mext");
-	@files = glob("$dir/*");
-	if (scalar(@files) != scalar(@a3mfiles)) {
-	    $check = 0;
-	    last;
+	foreach my $file (@a3mfiles) {
+	    print OUT "$file\n";
 	}
     }
 
-    if ($check == 0) {   # write only a3mfiles in tmp-dir
-	&System("mkdir $tmpdir/a3ms");
-	@dirs = glob($a3mdir);
-	foreach $dir (@dirs) {
-	    &System("cp $dir/*.$a3mext $tmpdir/a3ms/");
-	}
-	$a3mdir = "$tmpdir/a3ms";
-    }
+    close OUT;
 
     if ($append) {
-	$command = "$hh_dir/ffindex_build -as $a3mfile $a3mfile.index $a3mdir";
+	$command = "$hh_dir/ffindex_build -as -f $tmpdir/a3m.filelist $a3mfile $a3mfile.index";
     } else {
-	$command = "$hh_dir/ffindex_build -s $a3mfile $a3mfile.index $a3mdir";
+	$command = "$hh_dir/ffindex_build -s -f $tmpdir/a3m.filelist $a3mfile $a3mfile.index";
     }
     if (&System($command) != 0) {
 	print "WARNING! Error with command $command!\n";
     }
 } 
 if ($hhmfile ne "") {
+
+    open (OUT, ">$tmpdir/hhm.filelist");
 
     if ($hhmdir eq "") {
 	# Build HHMs from A3Ms
@@ -179,37 +226,27 @@ if ($hhmfile ne "") {
 		if (&System($command) != 0) {
 		    print "WARNING! Error with command $command!\n";
 		}
+		print OUT "$hhmdir/$1.hhm\n";
 	    }
 	}
     } else {
-	# check, if directory contains only hhm-files
-	my $check = 1;
 	@dirs = glob($hhmdir);
 	foreach $dir (@dirs) {
 	    my @hhmfiles = glob("$dir/*.$hhmext");
-	    @files = glob("$dir/*");
-	    if (scalar(@files) != scalar(@hhmfiles)) {
-		$check = 0;
-		last;
+	    foreach my $file (@hhmfiles) {
+		print OUT "$file\n";
 	    }
-	}
-	
-	if ($check == 0) {   # write only a3mfiles in tmp-dir
-	    &System("mkdir $tmpdir/hhms");
-	    @dirs = glob($hhmdir);
-	    foreach $dir (@dirs) {
-		&System("cp $dir/*.$hhmext $tmpdir/hhms/");
-	    }
-	    $hhmdir = "$tmpdir/hhms";
 	}
     }
+    
+    close OUT;
 
     print "Creating HHM database $hhmfile ...\n";
 
     if ($append) {
-	$command = "$hh_dir/ffindex_build -as $hhmfile $hhmfile.index $hhmdir";
+	$command = "$hh_dir/ffindex_build -as -f $tmpdir/hhm.filelist $hhmfile $hhmfile.index";
     } else {
-	$command = "$hh_dir/ffindex_build -s $hhmfile $hhmfile.index $hhmdir";
+	$command = "$hh_dir/ffindex_build -s -f $tmpdir/hhm.filelist $hhmfile $hhmfile.index";
     }
     if (&System($command) != 0) {
 	print "WARNING! Error with command $command!\n";

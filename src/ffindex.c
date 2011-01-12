@@ -24,28 +24,60 @@
 #include <sys/mman.h>
 #include <limits.h>
 
-#include "fmemopen.h"
+#include "fmemopen.h" /* For OS not yet implementing this new standard function */
 #include "ffindex.h"
 
 /* XXX Use page size? */
 #define FFINDEX_BUFFER_SIZE 4096
 
-int ffindex_insert(FILE *data_file, FILE *index_file, size_t *base_offset, char *input_dir_name)
+#ifdef HH_MAC
+size_t strnlen(const char *s, size_t n)
+{
+  const char *p = (const char *)memchr(s, 0, n);
+  return(p ? p-s : n);
+}
+
+char* basename(char* path)
+{
+  char *ptr = strrchr (path, '/');
+  return ptr ? ptr + 1 : (char*)path;
+}
+#endif
+
+/* Insert all file from directory into ffindex */
+int ffindex_insert_list_file(FILE *data_file, FILE *index_file, size_t *start_offset, FILE *list_file)
+{
+  size_t offset = *start_offset;
+  char path[PATH_MAX];
+  while(fgets(path, PATH_MAX, list_file) != NULL)
+  {
+    size_t len = strnlen(path, PATH_MAX);
+    len -= 1;
+    path[len] = '\0'; /* remove \n*/
+    ffindex_insert_file(data_file, index_file, &offset, path, basename(path));
+  }
+  /* update return value */
+  *start_offset = offset;
+  return 0;
+}
+
+
+/* Insert all file from directory into ffindex */
+int ffindex_insert_dir(FILE *data_file, FILE *index_file, size_t *start_offset, char *input_dir_name)
 {
   DIR *dir = opendir(input_dir_name);
   if(dir == NULL)
     return -1;
-  size_t input_dir_name_len = strlen(input_dir_name);
-  char path[input_dir_name_len + NAME_MAX + 2];
+  size_t input_dir_name_len = strnlen(input_dir_name, PATH_MAX);
+  char path[PATH_MAX];
   strncpy(path, input_dir_name, NAME_MAX);
   if(input_dir_name[input_dir_name_len - 1] != '/')
   {
     path[input_dir_name_len] = '/';
     input_dir_name_len += 1;
   }
-  size_t offset = *base_offset;
+  size_t offset = *start_offset;
   struct dirent *entry;
-  char buffer[FFINDEX_BUFFER_SIZE];
   while((entry = readdir(dir)) != NULL)
   {
     if(entry->d_name[0] == '.')
@@ -59,27 +91,43 @@ int ffindex_insert(FILE *data_file, FILE *index_file, size_t *base_offset, char 
     }
     if(!S_ISREG(sb.st_mode))
       continue;
+    ffindex_insert_file(data_file, index_file, &offset, path, entry->d_name);
+  }
+  closedir(dir);
+
+  /* update return value */
+  *start_offset = offset;
+
+  return 0;
+}
+
+
+/* Insert one file into ffindex */
+int ffindex_insert_file(FILE *data_file, FILE *index_file, size_t *offset, char *path, char *name)
+{
     FILE *file = fopen(path, "r");
     if(file == NULL)
       perror(path);
 
-    /* Paste file to data file */
-    size_t offset_start = offset;
+    /* copy and paste file to data file */
+    char buffer[FFINDEX_BUFFER_SIZE];
+    size_t offset_before = *offset;
     size_t read_size;
     while((read_size = fread(buffer, sizeof(char), sizeof(buffer), file)) > 0)
     {
       size_t write_size = fwrite(buffer, sizeof(char), read_size, data_file);
-      offset += write_size;
+      *offset += write_size;
       if(read_size != write_size)
         perror(path); /* XXX handle better */
     }
 
     /* Seperate by '\0' and thus also make sure at least one byte is written */
     buffer[0] = '\0';
-    fwrite(buffer, sizeof(char), 1, data_file);
-    offset += 1;
+    fwrite(buffer, sizeof(char), 1, data_file); /* XXX check for error */
+    *offset += 1;
 
-    fprintf(index_file, "%s\t%ld\t%ld\n", entry->d_name, offset_start, offset - offset_start);
+    /* write index entry */
+    fprintf(index_file, "%s\t%ld\t%ld\n", name, offset_before, *offset - offset_before);
 
     if(ferror(file) != 0 || ferror(data_file) != 0)
     {
@@ -87,13 +135,10 @@ int ffindex_insert(FILE *data_file, FILE *index_file, size_t *base_offset, char 
       exit(1);
     }
     fclose(file);
-  }
-  closedir(dir);
-  *base_offset = offset;
-  return 0;
+    return 0;
 }
 
-
+/* XXX not implemented yet */
 int ffindex_restore(FILE *data_file, FILE *index_file, char *input_dir_name)
 {
   return -1;
@@ -142,15 +187,16 @@ ffindex_index_t* ffindex_index_parse(FILE *index_file)
   int i = 0;
   char* d = index->index_data;
   char* end;
-  while(d < (index->index_data + index->index_data_size))
+  /* Faster than scanf per line */
+  for(i = 0; d < (index->index_data + index->index_data_size); i++)
   {
+    //strncpy(index->entries[i].name, *d, FFINDEX_MAX_ENTRY_NAME_LENTH);
     for(int p = 0; *d != '\t'; d++)
       index->entries[i].name[p++] = *d;
     index->entries[i].offset = strtol(d, &end, 10);
     d = end;
     index->entries[i].length  = strtol(d, &end, 10);
     d = end + 1;
-    i++;
   }
 
   index->n_entries = i;

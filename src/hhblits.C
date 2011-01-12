@@ -97,7 +97,7 @@ const char print_elapsed=0;
 char tmp_file[]="/tmp/hhblitsXXXXXX";
 
 // HHblits variables
-const char HHBLITS_VERSION[]="version 2.2.5 (November 2010)";
+const char HHBLITS_VERSION[]="version 2.2.6 (December 2010)";
 const char HHBLITS_REFERENCE[]="to be published.\n";
 const char HHBLITS_COPYRIGHT[]="(C) Michael Remmert and Johannes Soeding\n";
 
@@ -1812,9 +1812,11 @@ int main(int argc, char **argv)
   // Prepare index-based databases
   char filename[NAMELEN];
   dbhhm_data_file = fopen(dbhhm, "r");
+  if (!dbhhm_data_file) OpenFileError(dbhhm);
   strcpy(filename, dbhhm);
   strcat(filename, ".index");
   dbhhm_index_file = fopen(filename, "r");
+  if (!dbhhm_index_file) OpenFileError(filename);
   dbhhm_index = ffindex_index_parse(dbhhm_index_file);
   dbhhm_data = ffindex_mmap_data(dbhhm_data_file, &data_size);
 
@@ -1825,9 +1827,11 @@ int main(int argc, char **argv)
     par.jdummy = 0;
   } else {
     dba3m_data_file = fopen(dba3m, "r");
+    if (!dba3m_data_file) OpenFileError(dba3m);
     strcpy(filename, dba3m);
     strcat(filename, ".index");
     dba3m_index_file = fopen(filename, "r");
+    if (!dba3m_index_file) OpenFileError(filename);
     dba3m_index = ffindex_index_parse(dba3m_index_file);
     dba3m_data = ffindex_mmap_data(dba3m_data_file, &data_size);
   }
@@ -1857,24 +1861,7 @@ int main(int argc, char **argv)
   // Set (global variable) substitution matrix and derived matrices
   SetSubstitutionMatrix();
 
-  // Read input file
-  ReadInputFile();
-
-  if (print_elapsed) ElapsedTimeSinceLastCall("(initialize)");
-
-  if (prefilter)
-    {
-      // Initialize Prefiltering (Get DBsize)
-      init_prefilter();
-    }
-  else // Set all HMMs in database as new_dbs
-    {
-      init_no_prefiltering();
-    }
-
-  if (print_elapsed) ElapsedTimeSinceLastCall("(init prefilter)"); 
-
-  // Set secondary structure substitution matrix
+// Set secondary structure substitution matrix
   if (par.ssm) SetSecStrucSubstitutionMatrix();
 
   // Prepare CS pseudocounts lib
@@ -1895,6 +1882,23 @@ int main(int argc, char **argv)
   cs::TransformToLin(*cs_lib);
   
   if (print_elapsed) ElapsedTimeSinceLastCall("(prepare CS pseudocounts)"); 
+
+  // Read input file
+  ReadInputFile();
+
+  if (print_elapsed) ElapsedTimeSinceLastCall("(initialize)");
+
+  if (prefilter)
+    {
+      // Initialize Prefiltering (Get DBsize)
+      init_prefilter();
+    }
+  else // Set all HMMs in database as new_dbs
+    {
+      init_no_prefiltering();
+    }
+
+  if (print_elapsed) ElapsedTimeSinceLastCall("(init prefilter)"); 
 
   // Input parameters
   if (v>=3)
@@ -2226,14 +2230,6 @@ int main(int argc, char **argv)
   // Generate output alignment or HMM file?
   if (*par.alnfile || *par.psifile || *par.hhmfile)
     {
-      // // Filter to NeffMax
-      // if (q->Neff_HMM > neffmax) {
-      // 	par.Neff = neffmax;
-      // 	Qali.FilterNeff();
-      // 	if (*par.hhmfile) 
-      // 	  Qali.FrequenciesAndTransitions(*q,NULL,true);
-      // }
-
       // Write output PSI-BLAST-formatted alignment?
       if (*par.psifile) Qali.WriteToFile(par.psifile,"psi");
 
