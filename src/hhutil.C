@@ -559,6 +559,14 @@ void SetDefaults()
   // HHblits parameters
   par.hhblits_prefilter_logpval=0;
 
+  par.dbsize = 0;
+
+  // HHblits Evalue calculation  (alpha = a + b(Neff(T) - 1)(1 - c(Neff(Q) - 1)) )
+  par.alphaa = 0.1;
+  par.alphab = 0.02;
+  par.alphac = 0.1;
+
+  par.prefilter = false;
   par.early_stopping_filter = false;
 
   par.filter_thresh=0;

@@ -305,6 +305,12 @@ Suggestions later releases
 
 * Open source ??
 
+* Add -M center option, which will choose the sequence most similar to all others
+  as the first and master sequence.  This requires N^2L comparisons, in principle,
+  but for N>100 we could simply choose 100 random sequences and for each
+  sequence in the alignment calculate the sum of amino acid similarity scores with
+  those 100 sequences. For N=10000 sequences with L=1000 columns, this would
+  take ~ N*100*L*3E-8 = 30s, which is fine for such a big alignment.
 
 
 Bugs? Ideas? Need for improvement? 

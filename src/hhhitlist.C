@@ -810,29 +810,50 @@ inline float beta_NN(float Lqnorm, float Ltnorm, float Nqnorm, float Ntnorm)
 void HitList::CalculateHHblitsEvalues(HMM& q)
 {
   Hit hit; 
-  float alpha=0.75, beta=0;  // correlation factors for HHblits Evalue (correlation factor = exp(alpha * S' - beta) )
-  const float log1000=log(1000.0);
-  int nhits = 0;
+  // OLD!!!
+  //float alpha=0.75, beta=0;  // correlation factors for HHblits Evalue (correlation factor = exp(alpha * S' - beta) )
+  //const float log1000=log(1000.0);
+  //int nhits = 0;
 
+  float alpha = 0;
+  float log_Pcut = log(par.prefilter_evalue_thresh / par.dbsize);
+  float log_dbsize = log(par.dbsize);
+  //printf("log_Pcut: %7.4f  Pcut: %7.4f DBsize: %10i   a: %4.2f  b: %4.2f  c: %4.2f\n",log_Pcut, exp(log_Pcut), par.dbsize, par.alphaa, par.alphab, par.alphac);
+      
   Reset();
   while (!End()) 
     {
       hit = ReadNext();
-      if (par.loc)
-	{
-	  alpha = alpha_NN( log(q.L)/log1000, log(hit.L)/log1000, q.Neff_HMM/10.0, hit.Neff_HMM/10.0 ); 
-	  beta = beta_NN( log(q.L)/log1000, log(hit.L)/log1000, q.Neff_HMM/10.0, hit.Neff_HMM/10.0 ); 
- 	  if (v>=3 && nhits++<20) 
-	    printf("hit=%-10.10s Lq=%-4i  Lt=%-4i  Nq=%5.2f  Nt=%5.2f  =>  alpha=%-6.3f  beta=%-6.3f  S'=%-6.3f\n",hit.name,q.L,hit.L,q.Neff_HMM,hit.Neff_HMM,alpha,beta,par.hhblits_prefilter_logpval);
-	}
-      else 
-	{
-	  //printf("WARNING: global calibration not yet implemented!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
-	}
 
-      hit.Eval = exp(hit.logPval+log(N_searched)+(alpha*par.hhblits_prefilter_logpval - beta));     // overwrite E-value from HHsearch with composite E-value from HHblits
-      hit.logEval = hit.logPval+log(N_searched)+(alpha*par.hhblits_prefilter_logpval - beta);
-      //printf("      Eval: %7.4f    logEval: %7.4f   logPval: %7.4f\n",hit.Eval, hit.logEval, hit.logPval);
+      // OLD!!!!
+      // if (par.loc)
+      // 	{
+      // 	  alpha = alpha_NN( log(q.L)/log1000, log(hit.L)/log1000, q.Neff_HMM/10.0, hit.Neff_HMM/10.0 ); 
+      // 	  beta = beta_NN( log(q.L)/log1000, log(hit.L)/log1000, q.Neff_HMM/10.0, hit.Neff_HMM/10.0 ); 
+      // 	  if (v>=3 && nhits++<20) 
+      // 	    printf("hit=%-10.10s Lq=%-4i  Lt=%-4i  Nq=%5.2f  Nt=%5.2f  =>  alpha=%-6.3f  beta=%-6.3f  S'=%-6.3f\n",hit.name,q.L,hit.L,q.Neff_HMM,hit.Neff_HMM,alpha,beta,par.hhblits_prefilter_logpval);
+      // 	}
+      // else 
+      // 	{
+      // 	  //printf("WARNING: global calibration not yet implemented!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+      // 	}
+
+      // // overwrite E-value from HHsearch with composite E-value from HHblits
+      // hit.Eval = exp(hit.logPval+log(N_searched)+(alpha*par.hhblits_prefilter_logpval - beta));     
+      // hit.logEval = hit.logPval+log(N_searched)+(alpha*par.hhblits_prefilter_logpval - beta);
+      // //printf("      Eval: %7.4f    logEval: %7.4f   logPval: %7.4f\n",hit.Eval, hit.logEval, hit.logPval);
+
+      // if (nhits++<50) 
+      // 	printf("before correction  Eval: %7.4g    logEval: %7.4f\n",hit.Eval, hit.logEval);
+
+      alpha = par.alphaa + par.alphab * (hit.Neff_HMM - 1) * (1 - par.alphac * (q.Neff_HMM - 1));
+      
+      hit.Eval = exp(hit.logPval + log_dbsize + (alpha * log_Pcut)); 
+      hit.logEval = hit.logPval + log_dbsize + (alpha * log_Pcut); 
+
+      // if (nhits++<50) 
+      // 	printf("                   Eval: %7.4g    logEval: %7.4f   alpha: %7.4f   Neff_T: %5.2f  Neff_Q: %5.2f\n",hit.Eval, hit.logEval, alpha, hit.Neff_HMM, q.Neff_HMM);
+
       Overwrite(hit);   // copy hit object into current position of hitlist
     }
   ResortList(); // use InsertSort to resort list according to sum of minus-log-Pvalues

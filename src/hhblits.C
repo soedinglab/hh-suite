@@ -97,7 +97,7 @@ const char print_elapsed=0;
 char tmp_file[]="/tmp/hhblitsXXXXXX";
 
 // HHblits variables
-const char HHBLITS_VERSION[]="version 2.2.6 (December 2010)";
+const char HHBLITS_VERSION[]="version 2.2.7 (Januar 2011)";
 const char HHBLITS_REFERENCE[]="to be published.\n";
 const char HHBLITS_COPYRIGHT[]="(C) Michael Remmert and Johannes Soeding\n";
 
@@ -105,7 +105,6 @@ const int MAXNUMDB=20000;               // maximal number of hits through prefil
 const int MAXNUMDB_NO_PREFILTER=100000; // maximal number of hits without prefiltering
 int num_rounds   = 2;                   // number of iterations
 bool nodiff = false;                    // if true, do not filter in last round
-bool prefilter = true;                  // Perform no pre-filtering
 bool already_seen_filter = true;        // Perform filtering of already seen HHMs
 bool block_filter = true;               // Perform viterbi and forward algorithm only on block given by prefiltering
 bool realign_old_hits = false;          // Realign old hits in last round or use previous alignments
@@ -138,7 +137,6 @@ char* dba3m_data;
 char* dbhhm_data;
 ffindex_index_t* dbhhm_index = NULL;
 ffindex_index_t* dba3m_index = NULL;
-
 
 char db[NAMELEN];                        // database with context-state sequences
 char dba3m[NAMELEN];                     // database with A3M-files
@@ -650,6 +648,9 @@ void ProcessArguments(int argc, char** argv)
       else if (!strcmp(argv[i],"-gapi") && (i<argc-1)) par.gapi=atof(argv[++i]);
       else if (!strcmp(argv[i],"-egq") && (i<argc-1)) par.egq=atof(argv[++i]);
       else if (!strcmp(argv[i],"-egt") && (i<argc-1)) par.egt=atof(argv[++i]);
+      else if (!strcmp(argv[i],"-alphaa") && (i<argc-1)) par.alphaa=atof(argv[++i]);
+      else if (!strcmp(argv[i],"-alphab") && (i<argc-1)) par.alphab=atof(argv[++i]);
+      else if (!strcmp(argv[i],"-alphac") && (i<argc-1)) par.alphac=atof(argv[++i]);
       else if (!strcmp(argv[i],"-filterlen") && (i<argc-1)) 
 	{
 	  par.filter_length=atoi(argv[++i]);
@@ -657,7 +658,7 @@ void ProcessArguments(int argc, char** argv)
 	  par.filter_evals=new double[par.filter_length];
 	}
       else if (!strcmp(argv[i],"-filtercut") && (i<argc-1)) par.filter_thresh=(double)atof(argv[++i]);
-      else if (!strcmp(argv[i],"-nofilter")) {prefilter=false; already_seen_filter=false; block_filter=false; par.early_stopping_filter=false; par.filter_thresh=0;}
+      else if (!strcmp(argv[i],"-nofilter")) {par.prefilter=false; already_seen_filter=false; block_filter=false; par.early_stopping_filter=false; par.filter_thresh=0;}
       else if (!strcmp(argv[i],"-noaddfilter")) {already_seen_filter=false; block_filter=false; par.early_stopping_filter=false; par.filter_thresh=0;}
       else if (!strcmp(argv[i],"-nodbfilter")) {par.filter_thresh=0;}
       else if (!strcmp(argv[i],"-noblockfilter")) {block_filter=false;}
@@ -1102,7 +1103,8 @@ void perform_viterbi_search(int db_size)
 
   hitlist.CalculatePvalues(*q);  // Use NN prediction of lamda and mu
   
-  hitlist.CalculateHHblitsEvalues(*q);
+  if (par.prefilter)
+    hitlist.CalculateHHblitsEvalues(*q);
   
 }
 
@@ -1147,7 +1149,8 @@ void search_database(char *dbfiles[], int ndb, int db_size)
 
   hitlist.CalculatePvalues(*q);  // Use NN prediction of lamda and mu
 
-  hitlist.CalculateHHblitsEvalues(*q);
+  if (par.prefilter)
+    hitlist.CalculateHHblitsEvalues(*q);
 
 }
 
@@ -1753,6 +1756,7 @@ int main(int argc, char **argv)
   SetDefaults();
   par.jdummy = 3;
   par.Ndiff = 1000;
+  par.prefilter=true;
   par.early_stopping_filter=true;
   par.filter_thresh=0.01;
   par.filter_evals=new double[par.filter_length];
@@ -1888,7 +1892,7 @@ int main(int argc, char **argv)
 
   if (print_elapsed) ElapsedTimeSinceLastCall("(initialize)");
 
-  if (prefilter)
+  if (par.prefilter)
     {
       // Initialize Prefiltering (Get DBsize)
       init_prefilter();
@@ -1998,7 +2002,7 @@ int main(int argc, char **argv)
     // Prefiltering
     ///////////////////////////////////////////////////////////////////////////////
 
-    if (prefilter)
+    if (par.prefilter)
       prefilter_db();  // in hhprefilter.C
     
     if (print_elapsed) ElapsedTimeSinceLastCall("(prefiltering)"); 
@@ -2285,7 +2289,7 @@ int main(int argc, char **argv)
   delete par.block_shading;
   delete par.block_shading_counter;
   
-  if (prefilter)
+  if (par.prefilter)
     {
       free(X);
       free(length);
