@@ -418,10 +418,10 @@ void ReadDefaultsFile(int& argc_conf, char** argv_conf, char* path=NULL)
             {
               // Find next word
               while (*c==' ' || *c=='\t') c++; //Advance until next non-white space
-              if ((*c=='h' && *(c+1)=='h') || *c=='\0' || *c=='\n' || *c=='#') break;  //Is next word empty string?
+              if ((*c=='h' && *(c+1)=='h') || *c=='\0' || *c=='\n' || *c=='#' || *c==13) break;  //Is next word empty string? (char 13 needed for Windows!)
               c_first=c;
-              while (*c!=' ' && *c!='\t'  && *c!='#' && *c!='\0' && *c!='\n' ) c++; //Advance until next white space or '#'
-              if (*c=='\0' || *c=='\n' || *c=='#')         //Is end of line reached?
+              while (*c!=' ' && *c!='\t'  && *c!='#' && *c!='\0' && *c!='\n' && *c!=13) c++; //Advance until next white space or '#' (char 13 needed for Windows!)
+              if (*c=='\0' || *c=='\n' || *c=='#' || *c==13)         //Is end of line reached? (char 13 needed for Windows!)
                 {
                   *c='\0';
                   argv_conf[argc_conf]=new(char[strlen(c_first)+1]);

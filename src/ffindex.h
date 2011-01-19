@@ -17,7 +17,7 @@
 
 #define FFINDEX_VERSION 0.9
 #define FFINDEX_MAX_INDEX_ENTRIES 6000000
-#define FFINDEX_MAX_ENTRY_NAME_LENTH 40
+#define FFINDEX_MAX_ENTRY_NAME_LENTH 56
 
 enum ffindex_type {PLAIN_FILE, SORTED_FILE, SORTED_ARRAY};
 
@@ -38,7 +38,11 @@ typedef struct ffindex_index {
 } ffindex_index_t;
 
 
-int ffindex_insert(FILE *data_file, FILE *index_file, size_t *offset, char *input_dir_name);
+int ffindex_insert_file(FILE *data_file, FILE *index_file, size_t *offset, char *path, char *name);
+
+int ffindex_insert_list_file(FILE *data_file, FILE *index_file, size_t *start_offset, FILE *list_file);
+
+int ffindex_insert_dir(FILE *data_file, FILE *index_file, size_t *offset, char *input_dir_name);
 
 FILE* ffindex_fopen(char *data, ffindex_index_t *index, char *filename);
 
