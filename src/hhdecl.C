@@ -192,7 +192,7 @@ public:
   // HHblits Evalue calculation  (alpha = a + b(Neff(T) - 1)(1 - c(Neff(Q) - 1)) )
   float alphaa;
   float alphab;
-  float alphac;t
+  float alphac;
 
   // For filtering database alignments in HHsearch and HHblits
   int max_seqid_db;
