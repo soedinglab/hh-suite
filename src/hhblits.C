@@ -97,7 +97,7 @@ const char print_elapsed=0;
 char tmp_file[]="/tmp/hhblitsXXXXXX";
 
 // HHblits variables
-const char HHBLITS_VERSION[]="version 2.2.7 (Januar 2011)";
+const char HHBLITS_VERSION[]="version 2.2.8 (Januar 2011)";
 const char HHBLITS_REFERENCE[]="to be published.\n";
 const char HHBLITS_COPYRIGHT[]="(C) Michael Remmert and Johannes Soeding\n";
 
@@ -389,7 +389,7 @@ void help_all()
   printf("\n");
   printf("Filter options                                                                           \n");
   printf(" -nofilter      disable all filter steps                                                 \n");
-  printf(" -noaddfilter   disable all filter steps (except for PSI-BLAST prefiltering)             \n");
+  printf(" -noaddfilter   disable all filter steps (except for fast prefiltering)                  \n");
   printf(" -nodbfilter    disable additional filtering of prefiltered HMMs                         \n");
   printf(" -noblockfilter search complete matrix in Viterbi                                        \n");
   printf("\n");
@@ -408,10 +408,11 @@ void help_all()
   printf(" -norealign     do NOT realign displayed hits with MAC algorithm (def=realign)           \n");
   printf(" -mact [0,1[    posterior probability threshold for MAC re-alignment (def=%.3f)          \n",par.mact);
   printf("                Parameter controls alignment greediness: 0:global >0.1:local             \n");
-  printf(" -realign_max   <int>  realign max. <int> hits (default=%i)                                \n",par.realign_max);  
+  printf(" -realign_max <int>  realign max. <int> hits (default=%i)                                \n",par.realign_max);  
   printf(" -glob/-loc     use global/local alignment mode for searching/ranking (def=local)        \n");
   printf(" -alt <int>     show up to this many significant alternative alignments(def=%i)          \n",par.altali);
-  printf(" -jdummy [0,20] ... (default=%i)                                                         \n",par.jdummy);       
+  printf(" -jdummy [0,20] align <int> hits to query before realigning the remaining hits           \n");
+  printf("                to the new query profile (default=%i)                                    \n",par.jdummy);       
   printf("\n");
   printf("Pseudocount options:                                                                     \n");
   printf(" -pcm  0-2      Pseudocount mode (default=%-i)                                           \n",par.pcm);
@@ -447,8 +448,8 @@ void help_all()
   printf(" -cpu <int>     number of CPUs to use (for shared memory SMPs) (default=1)               \n");
   printf(" -scores <file> write scores for all pairwise comparisions to file                       \n");
   printf(" -atab   <file> write all alignments in tabular layout to file                           \n");
-  printf(" -maxres <int> max number of columns in HMM (def=%5i)                     \n",MAXRES);
-  printf("               (Warning! Increasing this number needs more memory)         \n");
+  printf(" -maxres <int>  max number of columns in HMM (def=%5i)                                   \n",MAXRES);
+  printf("                (Warning! Increasing this number needs more memory)                      \n");
 #ifndef PTHREAD
   printf("(The -cpu option is inactive since POSIX threads ae not supported on your platform)      \n");
 #endif
@@ -1997,7 +1998,7 @@ int main(int argc, char **argv)
     
     q->CalculateAminoAcidBackground();
     
-    if (print_elapsed) ElapsedTimeSinceLastCall("(before prefiltering)");
+    if (print_elapsed) ElapsedTimeSinceLastCall("(before prefiltering (pseudocounts))");
 
     ///////////////////////////////////////////////////////////////////////////////
     // Prefiltering
@@ -2046,7 +2047,7 @@ int main(int argc, char **argv)
 	  }
       }
 
-    // Realign all hits with MAC algorithm?
+    // Realign hits with MAC algorithm
     if (par.realign)
       perform_realign(dbfiles_new,ndb_new);
 

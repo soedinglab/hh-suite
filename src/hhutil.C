@@ -562,7 +562,7 @@ void SetDefaults()
   par.dbsize = 0;
 
   // HHblits Evalue calculation  (alpha = a + b(Neff(T) - 1)(1 - c(Neff(Q) - 1)) )
-  par.alphaa = 0.1;
+  par.alphaa = 0.4;
   par.alphab = 0.02;
   par.alphac = 0.1;
 
