@@ -1754,6 +1754,7 @@ int main(int argc, char **argv)
 #endif
 
   SetDefaults();
+  par.mact = 0.5;
   par.jdummy = 3;
   par.Ndiff = 1000;
   par.prefilter=true;
@@ -2220,13 +2221,13 @@ int main(int argc, char **argv)
 
   // Print summary listing of hits
   if (v>=3) printf("Printing hit list ...\n");
-  hitlist.PrintHitList(*q,par.outfile);
+  hitlist.PrintHitList(*q_tmp,par.outfile);
 
   // Write only hit list to screen?
   if (v==2 && strcmp(par.outfile,"stdout")) WriteToScreen(par.outfile,109); // write only hit list to screen
 
   // Print alignments of query sequences against hit sequences
-  hitlist.PrintAlignments(*q,par.outfile);
+  hitlist.PrintAlignments(*q_tmp,par.outfile);
 
   // Write whole output file to screen? (max 10000 lines)
   if (v>=3 && strcmp(par.outfile,"stdout")) WriteToScreen(par.outfile,10009);
