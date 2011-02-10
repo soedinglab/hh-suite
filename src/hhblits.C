@@ -97,7 +97,7 @@ const char print_elapsed=0;
 char tmp_file[]="/tmp/hhblitsXXXXXX";
 
 // HHblits variables
-const char HHBLITS_VERSION[]="version 2.2.6 (December 2010)";
+const char HHBLITS_VERSION[]="version 2.2.8 (Januar 2011)";
 const char HHBLITS_REFERENCE[]="to be published.\n";
 const char HHBLITS_COPYRIGHT[]="(C) Michael Remmert and Johannes Soeding\n";
 
@@ -105,7 +105,6 @@ const int MAXNUMDB=20000;               // maximal number of hits through prefil
 const int MAXNUMDB_NO_PREFILTER=100000; // maximal number of hits without prefiltering
 int num_rounds   = 2;                   // number of iterations
 bool nodiff = false;                    // if true, do not filter in last round
-bool prefilter = true;                  // Perform no pre-filtering
 bool already_seen_filter = true;        // Perform filtering of already seen HHMs
 bool block_filter = true;               // Perform viterbi and forward algorithm only on block given by prefiltering
 bool realign_old_hits = false;          // Realign old hits in last round or use previous alignments
@@ -138,7 +137,6 @@ char* dba3m_data;
 char* dbhhm_data;
 ffindex_index_t* dbhhm_index = NULL;
 ffindex_index_t* dba3m_index = NULL;
-
 
 char db[NAMELEN];                        // database with context-state sequences
 char dba3m[NAMELEN];                     // database with A3M-files
@@ -391,7 +389,7 @@ void help_all()
   printf("\n");
   printf("Filter options                                                                           \n");
   printf(" -nofilter      disable all filter steps                                                 \n");
-  printf(" -noaddfilter   disable all filter steps (except for PSI-BLAST prefiltering)             \n");
+  printf(" -noaddfilter   disable all filter steps (except for fast prefiltering)                  \n");
   printf(" -nodbfilter    disable additional filtering of prefiltered HMMs                         \n");
   printf(" -noblockfilter search complete matrix in Viterbi                                        \n");
   printf("\n");
@@ -410,10 +408,11 @@ void help_all()
   printf(" -norealign     do NOT realign displayed hits with MAC algorithm (def=realign)           \n");
   printf(" -mact [0,1[    posterior probability threshold for MAC re-alignment (def=%.3f)          \n",par.mact);
   printf("                Parameter controls alignment greediness: 0:global >0.1:local             \n");
-  printf(" -realign_max   <int>  realign max. <int> hits (default=%i)                                \n",par.realign_max);  
+  printf(" -realign_max <int>  realign max. <int> hits (default=%i)                                \n",par.realign_max);  
   printf(" -glob/-loc     use global/local alignment mode for searching/ranking (def=local)        \n");
   printf(" -alt <int>     show up to this many significant alternative alignments(def=%i)          \n",par.altali);
-  printf(" -jdummy [0,20] ... (default=%i)                                                         \n",par.jdummy);       
+  printf(" -jdummy [0,20] align <int> hits to query before realigning the remaining hits           \n");
+  printf("                to the new query profile (default=%i)                                    \n",par.jdummy);       
   printf("\n");
   printf("Pseudocount options:                                                                     \n");
   printf(" -pcm  0-2      Pseudocount mode (default=%-i)                                           \n",par.pcm);
@@ -449,8 +448,8 @@ void help_all()
   printf(" -cpu <int>     number of CPUs to use (for shared memory SMPs) (default=1)               \n");
   printf(" -scores <file> write scores for all pairwise comparisions to file                       \n");
   printf(" -atab   <file> write all alignments in tabular layout to file                           \n");
-  printf(" -maxres <int> max number of columns in HMM (def=%5i)                     \n",MAXRES);
-  printf("               (Warning! Increasing this number needs more memory)         \n");
+  printf(" -maxres <int>  max number of columns in HMM (def=%5i)                                   \n",MAXRES);
+  printf("                (Warning! Increasing this number needs more memory)                      \n");
 #ifndef PTHREAD
   printf("(The -cpu option is inactive since POSIX threads ae not supported on your platform)      \n");
 #endif
@@ -650,6 +649,9 @@ void ProcessArguments(int argc, char** argv)
       else if (!strcmp(argv[i],"-gapi") && (i<argc-1)) par.gapi=atof(argv[++i]);
       else if (!strcmp(argv[i],"-egq") && (i<argc-1)) par.egq=atof(argv[++i]);
       else if (!strcmp(argv[i],"-egt") && (i<argc-1)) par.egt=atof(argv[++i]);
+      else if (!strcmp(argv[i],"-alphaa") && (i<argc-1)) par.alphaa=atof(argv[++i]);
+      else if (!strcmp(argv[i],"-alphab") && (i<argc-1)) par.alphab=atof(argv[++i]);
+      else if (!strcmp(argv[i],"-alphac") && (i<argc-1)) par.alphac=atof(argv[++i]);
       else if (!strcmp(argv[i],"-filterlen") && (i<argc-1)) 
 	{
 	  par.filter_length=atoi(argv[++i]);
@@ -657,7 +659,7 @@ void ProcessArguments(int argc, char** argv)
 	  par.filter_evals=new double[par.filter_length];
 	}
       else if (!strcmp(argv[i],"-filtercut") && (i<argc-1)) par.filter_thresh=(double)atof(argv[++i]);
-      else if (!strcmp(argv[i],"-nofilter")) {prefilter=false; already_seen_filter=false; block_filter=false; par.early_stopping_filter=false; par.filter_thresh=0;}
+      else if (!strcmp(argv[i],"-nofilter")) {par.prefilter=false; already_seen_filter=false; block_filter=false; par.early_stopping_filter=false; par.filter_thresh=0;}
       else if (!strcmp(argv[i],"-noaddfilter")) {already_seen_filter=false; block_filter=false; par.early_stopping_filter=false; par.filter_thresh=0;}
       else if (!strcmp(argv[i],"-nodbfilter")) {par.filter_thresh=0;}
       else if (!strcmp(argv[i],"-noblockfilter")) {block_filter=false;}
@@ -1102,7 +1104,8 @@ void perform_viterbi_search(int db_size)
 
   hitlist.CalculatePvalues(*q);  // Use NN prediction of lamda and mu
   
-  hitlist.CalculateHHblitsEvalues(*q);
+  if (par.prefilter)
+    hitlist.CalculateHHblitsEvalues(*q);
   
 }
 
@@ -1147,7 +1150,8 @@ void search_database(char *dbfiles[], int ndb, int db_size)
 
   hitlist.CalculatePvalues(*q);  // Use NN prediction of lamda and mu
 
-  hitlist.CalculateHHblitsEvalues(*q);
+  if (par.prefilter)
+    hitlist.CalculateHHblitsEvalues(*q);
 
 }
 
@@ -1751,8 +1755,10 @@ int main(int argc, char **argv)
 #endif
 
   SetDefaults();
+  par.mact = 0.5;
   par.jdummy = 3;
   par.Ndiff = 1000;
+  par.prefilter=true;
   par.early_stopping_filter=true;
   par.filter_thresh=0.01;
   par.filter_evals=new double[par.filter_length];
@@ -1888,7 +1894,7 @@ int main(int argc, char **argv)
 
   if (print_elapsed) ElapsedTimeSinceLastCall("(initialize)");
 
-  if (prefilter)
+  if (par.prefilter)
     {
       // Initialize Prefiltering (Get DBsize)
       init_prefilter();
@@ -1992,13 +1998,13 @@ int main(int argc, char **argv)
     
     q->CalculateAminoAcidBackground();
     
-    if (print_elapsed) ElapsedTimeSinceLastCall("(before prefiltering)");
+    if (print_elapsed) ElapsedTimeSinceLastCall("(before prefiltering (pseudocounts))");
 
     ///////////////////////////////////////////////////////////////////////////////
     // Prefiltering
     ///////////////////////////////////////////////////////////////////////////////
 
-    if (prefilter)
+    if (par.prefilter)
       prefilter_db();  // in hhprefilter.C
     
     if (print_elapsed) ElapsedTimeSinceLastCall("(prefiltering)"); 
@@ -2041,7 +2047,7 @@ int main(int argc, char **argv)
 	  }
       }
 
-    // Realign all hits with MAC algorithm?
+    // Realign hits with MAC algorithm
     if (par.realign)
       perform_realign(dbfiles_new,ndb_new);
 
@@ -2216,13 +2222,13 @@ int main(int argc, char **argv)
 
   // Print summary listing of hits
   if (v>=3) printf("Printing hit list ...\n");
-  hitlist.PrintHitList(*q,par.outfile);
+  hitlist.PrintHitList(*q_tmp,par.outfile);
 
   // Write only hit list to screen?
   if (v==2 && strcmp(par.outfile,"stdout")) WriteToScreen(par.outfile,109); // write only hit list to screen
 
   // Print alignments of query sequences against hit sequences
-  hitlist.PrintAlignments(*q,par.outfile);
+  hitlist.PrintAlignments(*q_tmp,par.outfile);
 
   // Write whole output file to screen? (max 10000 lines)
   if (v>=3 && strcmp(par.outfile,"stdout")) WriteToScreen(par.outfile,10009);
@@ -2285,7 +2291,7 @@ int main(int argc, char **argv)
   delete par.block_shading;
   delete par.block_shading_counter;
   
-  if (prefilter)
+  if (par.prefilter)
     {
       free(X);
       free(length);

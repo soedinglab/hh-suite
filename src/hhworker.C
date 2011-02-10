@@ -47,10 +47,27 @@ void AlignByWorker(int bin)
 	  float lamda = lamda_NN( q_len, hit_len, q_neff, hit_neff ); 
 	  float mu    =    mu_NN( q_len, hit_len, q_neff, hit_neff ); 
 	  hit[bin]->logPval = logPvalue(hit[bin]->score,lamda,mu);
-	  float alpha = alpha_NN( q_len, hit_len, q_neff, hit_neff ); 
-	  float beta = beta_NN( q_len, hit_len, q_neff, hit_neff );
-	  hit[bin]->Eval = exp(hit[bin]->logPval+log(hitlist.N_searched)+(alpha*par.hhblits_prefilter_logpval - beta));
-	  hit[bin]->logEval = hit[bin]->logPval+log(hitlist.N_searched)+(alpha*par.hhblits_prefilter_logpval - beta);
+	  
+	  // OLD!!!
+	  // float alpha = 0;
+	  // float beta = 0;
+	  // if (par.prefilter) 
+	  //   {
+	  //     alpha = alpha_NN( q_len, hit_len, q_neff, hit_neff ); 
+	  //     beta = beta_NN( q_len, hit_len, q_neff, hit_neff );
+	  //   }
+	  // hit[bin]->Eval = exp(hit[bin]->logPval+log(hitlist.N_searched)+(alpha*par.hhblits_prefilter_logpval - beta));
+	  // hit[bin]->logEval = hit[bin]->logPval+log(hitlist.N_searched)+(alpha*par.hhblits_prefilter_logpval - beta);
+
+	  float alpha = 0;
+	  float log_Pcut = log(par.prefilter_evalue_thresh / par.dbsize);
+	  float log_dbsize = log(par.dbsize);
+
+	  if (par.prefilter) 
+	    alpha = par.alphaa + par.alphab * (hit_neff - 1) * (1 - par.alphac * (q_neff - 1));
+      
+	  hit[bin]->Eval = exp(hit[bin]->logPval + log_dbsize + (alpha * log_Pcut)); 
+	  hit[bin]->logEval = hit[bin]->logPval + log_dbsize + (alpha * log_Pcut); 
 
 	  par.filter_sum -= par.filter_evals[par.filter_counter];
 	  par.filter_evals[par.filter_counter] = 1.0/(1.0+hit[bin]->Eval);

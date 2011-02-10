@@ -16,8 +16,7 @@ struct ali_pos {
 
 #define SHORT_BIAS 32768
 
-int dbsize = 0;
-int LDB = 0;
+int LDB = 0;              // number of characters of input cs-database
 int num_dbs = 0;
 Hash<char>* doubled;
 
@@ -423,7 +422,7 @@ int swStripedWord_backtrace(int              queryLength,
   
   int num = 0;
   int crossout_thresh = (int)(par.block_shading_space/1.3);
-  double factor = (double)dbsize * (double)queryLength * (double)dbLength;
+  double factor = (double)par.dbsize * (double)queryLength * (double)dbLength;
 
   int b,c,d,k,l;
   int q_pos, t_pos, pos;
@@ -701,18 +700,18 @@ void init_no_prefiltering()
       command = "cat " + (string)db + " |grep \">\" |wc -l";
       stream = popen(command.c_str(), "r");
       ptr=fgets(line, LINELEN, stream);
-      dbsize = strint(ptr);
+      par.dbsize = strint(ptr);
       pclose(stream);
     } 
   else 
     {
       ptr=fgets(line, LINELEN, fin);
-      dbsize = strint(ptr);
+      par.dbsize = strint(ptr);
       fclose(fin);
     }
   
-  if (dbsize > MAXNUMDB_NO_PREFILTER)
-    {cerr<<endl<<"Error in "<<program_name<<": Without prefiltering, the max. number of database HHMs is "<<MAXNUMDB_NO_PREFILTER<<" (actual: "<<dbsize<<")\n"; exit(4);}
+  if (par.dbsize > MAXNUMDB_NO_PREFILTER)
+    {cerr<<endl<<"Error in "<<program_name<<": Without prefiltering, the max. number of database HHMs is "<<MAXNUMDB_NO_PREFILTER<<" (actual: "<<par.dbsize<<")\n"; exit(4);}
 
   char word[NAMELEN];
   FILE* dbf = NULL;
@@ -755,7 +754,7 @@ void init_no_prefiltering()
 
 void init_prefilter()
 {
-  // Get Prefilter Pvalue (Evalue / DBsize)
+  // Get Prefilter Pvalue (Evalue / Par.Dbsize)
   char tmp_file[NAMELEN];
   strcpy(tmp_file, db);
   strcat(tmp_file, ".sizes");
@@ -767,7 +766,7 @@ void init_prefilter()
       command = "cat " + (string)db + " |grep \"^>\" |wc -l";
       stream = popen(command.c_str(), "r");
       ptr=fgets(line, LINELEN, stream);
-      dbsize = strint(ptr);
+      par.dbsize = strint(ptr);
       pclose(stream);
       // Get DB-length
       command = "cat " + (string)db + " |grep -v \"^>\" |wc -c";
@@ -779,22 +778,22 @@ void init_prefilter()
   else 
     {
       ptr=fgets(line, LINELEN, fin);
-      dbsize = strint(ptr);
+      par.dbsize = strint(ptr);
       LDB = strint(ptr);
       fclose(fin);
     }
 
-  if (dbsize == 0 || LDB == 0)
+  if (par.dbsize == 0 || LDB == 0)
     {cerr<<endl<<"Error! Could not determine DB-size of prefilter db ("<<db<<")\n"; exit(4);}
 	    
-  par.hhblits_prefilter_logpval=-log(par.prefilter_evalue_thresh / (float)dbsize);
+  par.hhblits_prefilter_logpval=-log(par.prefilter_evalue_thresh / (float)par.dbsize);
 
-  if (v>1) printf("\nPrefilter DB contains %6i sequences ...\n",dbsize);
+  if (v>1) printf("\nPrefilter DB contains %6i sequences ...\n",par.dbsize);
 
   X = (unsigned char*)memalign(16,LDB*sizeof(unsigned char));                 // database string (concatenate all DB-seqs)
-  first = (unsigned char**)memalign(16,(2*dbsize)*sizeof(unsigned char*));    // first characters of db sequences
-  length = (int*)memalign(16,(2*dbsize)*sizeof(int));                         // lengths of db sequences
-  dbnames = new char*[dbsize*2];                                              // names of db sequences
+  first = (unsigned char**)memalign(16,(2*par.dbsize)*sizeof(unsigned char*));    // first characters of db sequences
+  length = (int*)memalign(16,(2*par.dbsize)*sizeof(int));                         // lengths of db sequences
+  dbnames = new char*[par.dbsize*2];                                              // names of db sequences
 
   /////////////////////////////////////////
   // Read in database
@@ -983,7 +982,7 @@ void prefilter_with_SW_evalue_preprefilter_backtrace()
 {
   stripe_query_profile();
   
-  int* prefiltered_hits = new int[dbsize+1];
+  int* prefiltered_hits = new int[par.dbsize+1];
   int* backtrace_hits = new int[MAXNUMDB+1];
 
   __m128i** workspace = new(__m128i*[cpu]);
@@ -997,7 +996,7 @@ void prefilter_with_SW_evalue_preprefilter_backtrace()
   int gap_init = par.prefilter_gap_open + par.prefilter_gap_extend;
   int gap_extend = par.prefilter_gap_extend;
   const float log_qlen = flog2(LQ);
-  const double factor = (double)dbsize * LQ;
+  const double factor = (double)par.dbsize * LQ;
 
   if (print_elapsed) ElapsedTimeSinceLastCall("(init prefiltering)");
 

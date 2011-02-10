@@ -187,6 +187,12 @@ public:
 
   // HHblits
   int jdummy;
+  int dbsize;           // number of clusters of input database
+
+  // HHblits Evalue calculation  (alpha = a + b(Neff(T) - 1)(1 - c(Neff(Q) - 1)) )
+  float alphaa;
+  float alphab;
+  float alphac;
 
   // For filtering database alignments in HHsearch and HHblits
   int max_seqid_db;
@@ -199,6 +205,7 @@ public:
   char cs_library[NAMELEN];
 
   // HHblits prefilter
+  bool prefilter;             // perform prefiltering in HHblits?
   bool early_stopping_filter; // Break HMM search, when the sum of the last N HMM-hit-Evalues is below threshold
 
   double filter_thresh;    // Threshold for early stopping
