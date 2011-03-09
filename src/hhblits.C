@@ -97,7 +97,7 @@ const char print_elapsed=0;
 char tmp_file[]="/tmp/hhblitsXXXXXX";
 
 // HHblits variables
-const char HHBLITS_VERSION[]="version 2.2.8 (Januar 2011)";
+const char HHBLITS_VERSION[]="version 2.2.9 (February 2011)";
 const char HHBLITS_REFERENCE[]="to be published.\n";
 const char HHBLITS_COPYRIGHT[]="(C) Michael Remmert and Johannes Soeding\n";
 
@@ -1437,7 +1437,8 @@ void perform_realign(char *dbfiles[], int ndb)
 	  
 	  // Read a3m alignment of hit and merge with Qali according to Q-T-alignment in hit[bin]
 	  char ta3mfile[NAMELEN];
-	  strcpy(ta3mfile,hit[bin]->file); // copy filename including path but without extension
+	  //strcpy(ta3mfile,hit[bin]->file); // copy filename including path but without extension
+	  RemoveExtension(ta3mfile,hit[bin]->dbfile);
 	  strcat(ta3mfile,".a3m");
 	  FILE* ta3mf;
 	  ta3mf = ffindex_fopen(dba3m_data, dba3m_index, ta3mfile);
@@ -2088,7 +2089,8 @@ int main(int argc, char **argv)
 		  seqs_found++;
 
 		// Read a3m alignment of hit from <file>.a3m file and merge into Qali alignment
-		strcpy(ta3mfile,hit_cur.file); // copy filename including path but without extension
+		//strcpy(ta3mfile,hit_cur.file); // copy filename including path but without extension
+		RemoveExtension(ta3mfile,hit_cur.dbfile);
 		strcat(ta3mfile,".a3m");
 		FILE* ta3mf;
 		ta3mf = ffindex_fopen(dba3m_data, dba3m_index, ta3mfile);

@@ -2040,6 +2040,7 @@ void HMM::WriteToFile(char* outfile)
   fprintf(outf,"NAME  %s\n",longname);    // name of first sequence
   fprintf(outf,"FAM   %s\n",fam);         // family name
   char file_nopath[NAMELEN];
+  RemoveExtension(file, outfile);
   RemovePath(file_nopath,file);
   fprintf(outf,"FILE  %s\n",file_nopath); // base name of alignment file
 
