@@ -1,3 +1,0 @@
-[submodule "cs"]
-	path = cs
-	url = ssh://andreas@hn01/cluster/user/andreas/src/cs
