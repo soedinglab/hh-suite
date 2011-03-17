@@ -815,8 +815,6 @@ void init_prefilter()
 	  len = 0;
 	      
 	  strwrd(word,line+1);
-	  /////// TEMP - temporär, bis Andreas cstranslate angepasst hat!
-	  strcut(word,"_cons");
 
 	  dbnames[num_dbs]=new(char[strlen(word)+1]);
 	  strcpy(dbnames[num_dbs],word);
