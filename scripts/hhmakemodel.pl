@@ -792,7 +792,7 @@ sub FormatSequences()
 	    my $score;  
 	    # The aligned characters are returend in $j2[$col2] and $l2[$col2]
 	    $score=&AlignNW(\$xseq,\$yseq,\@j2,\@l2,\$jmin,\$jmax,\$lmin,\$lmax,\$Sstr);  
-	    
+
 	    # DEBUG
 	    if ($v>=3) {
 		printf("Template (hh)  $xseq\n");
@@ -806,6 +806,18 @@ sub FormatSequences()
 		}
 	    }	
 	    
+            # check for reasonable alignment
+	    my $num_match = 0;
+	    for ($i=0; $i<@j2; $i++) {
+		if ($j2[$i] > 0 && $l2[$i] > 0) {
+		    $num_match++;
+		}
+	    }
+	    if (($score/$num_match) < 1) {
+		print "WARNING! Match score with PDBfile (".($score/$num_match).") to low => $pdbfile not included!\n";
+		next;
+	    }
+   
 	    # Assign a3m-formatted amino acid sequence from pdb file to $aapdb
 	    $aapdb="";
 	    my @xseq=unpack("C*",$xseq);
@@ -1161,12 +1173,16 @@ sub ExtractPdbcodeAndChain()
     }
     
     else {
-	if ($v>=2) {print("Warning: no pdb code found in sequence name '$name'\n");} 
-	return 1; # no SCOP/DALI/pdb sequence 
+	$pdbcode=$name;
+	$chain="A";
+#	return 1; # no SCOP/DALI/pdb sequence 
     }
+
     my $div=substr($pdbcode,1,2);
-    
+    $pdbfile = "";
+
     foreach $pdbdir (@pdbdirs) {
+	#print "PDB-dir: $pdbdir\n";
 #	if (-e "$pdbdivdir/$div/pdb$pdbcode.ent")   {$pdbfile="$pdbdivdir/$div/pdb$pdbcode.ent"; last;}
 #	if (-e "$pdbdivdir/$div/pdb$pdbcode.ent.Z") {$pdbfile="gunzip -c $pdbdivdir/$div/pdb$pdbcode.ent.Z |"; last;}
 	if (-e "$pdbdir/pdb$pdbcode.ent") {$pdbfile="$pdbdir/pdb$pdbcode.ent"; last;}
@@ -1174,7 +1190,13 @@ sub ExtractPdbcodeAndChain()
 	if (-e "$pdbdir/$name.pdb")       {$pdbfile="$pdbdir/$name.pdb"; last;}
 	if (-e "$pdbdir/$pdbcode"."_$chain.pdb")    {$pdbfile="$pdbdir/$pdbcode"."_$chain.pdb"; last;}
     }
-   return 0;
+
+    if ($pdbfile eq "") {
+	if ($v>=2) {print("Warning: no pdb file found for sequence name '$name'\n");} 
+	return 1;
+    }
+
+    return 0;
 }
 
 
