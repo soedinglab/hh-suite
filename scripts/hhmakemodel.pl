@@ -21,10 +21,10 @@ use Align;
 $|=1;  # force flush after each print
 
 # Default parameters
-our $d=1;    # gap opening penalty for Align.pm
-our $e=0.1;  # gap extension penatlty for Align.pm
-our $g=0.09; # endgap penatlty for Align.pm
-my $v=2;     # 3: DEBUG
+our $d=7;     # gap opening penalty for Align.pm; more than 2 mismatches - 2 matches    ## previously: 1
+our $e=0.01;  # gap extension penatlty for Align.pm; allow to leave large gaps bridging uncrystallized regions  ## previously: 0.1
+our $g=0.1;   # endgap penatlty for Align.pm; allow to shift SEQRES residues for uncrystallized aas to ends of alignment  ## previously: 0.9
+my $v=2;      # 3: DEBUG
 
 my $formatting="CASP";     # CASP or LIVEBENCH
 my $servername="HHpred2";  # HHpred2 or HHpred3
@@ -800,7 +800,7 @@ sub FormatSequences()
 		printf("Template (pdb) $yseq\n");
 		printf("\n");
 		if ($v>=4) {
-		    for ($col2=0; $col2<@l2 && $col2<200; $col2++) {
+		    for ($col2=0; $col2<@l2 && $col2<1000; $col2++) {
 			printf("%3i  %3i:%s  %3i:%s -> %i\n",$col2,$j2[$col2],substr($aat,$j2[$col2]-1,1),$l2[$col2],substr($aapdb,$l2[$col2]-1,1),$nres[$l2[$col2]-1]);
 		    }
 		}
@@ -808,13 +808,13 @@ sub FormatSequences()
 	    
             # check for reasonable alignment
 	    my $num_match = 0;
-	    for ($i=0; $i<@j2; $i++) {
+	    for ($i=0; $i<@l2; $i++) {
 		if ($j2[$i] > 0 && $l2[$i] > 0) {
 		    $num_match++;
 		}
 	    }
 	    if (($score/$num_match) < 1) {
-		print "WARNING! Match score with PDBfile (".($score/$num_match).") to low => $pdbfile not included!\n";
+		print "WARNING! Match score with PDBfile (score: $score   num: $num_match   score/num:".($score/$num_match).") to low => $pdbfile not included!\n";
 		next;
 	    }
    
