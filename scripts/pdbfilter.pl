@@ -158,19 +158,19 @@ foreach $seq (@seqs) {
     close(TMPFILE);
 
     # Find hits that are too similar
-    if ($v>=3) {print("\n$blastpgp -i $root.tmp -d $root.db -v 1 -b 1000 -s T");}
-    open(BLAST,"$blastpgp -i $root.tmp -d $root.db -v 1 -b 1000 -s T|");
+    if ($v>=3) {print("\n$blastpgp -i $root.tmp -d $root.db -v 1 -b 1000 -s T -z $ntot");}
+    open(BLAST,"$blastpgp -i $root.tmp -d $root.db -v 1 -b 1000 -s T -z $ntot|");
     while ($line=<BLAST>){
 	
 	if ($line=~/^>(\S+)/o && $1 ne $qpdbid && !$excluded{$1} && !$accepted{$1}) {
 	    $pdbid=$1;
 	    while ($line=<BLAST>){if ($line=~/^ Score = /o) {last;}}
-	    $line=~/ Expect =\s*(\S+)/ or die("Error: format error in '$blastpgp -i $root.tmp -d $root.db -v 1 -b 1000 -s T |', line $.\n");
+	    $line=~/ Expect =\s*(\S+)/ or die("Error: format error in '$blastpgp -i $root.tmp -d $root.db -v 1 -b 1000 -s T -z $ntot|', line $.\n");
 	    $Evalue=$1;
 	    $Evalue=~s/^e/1e/;
 	    $Evalue=~s/,$//;
 	    $line=<BLAST>;
-	    $line=~/^ Identities =\s*\d+\/(\d+)\s+\((\d+)\%\)/o or die("Error: format error in '$blastpgp -i $root.tmp -d $root.db -v 1 -b 1000 -s T |', line $.\n");
+	    $line=~/^ Identities =\s*\d+\/(\d+)\s+\((\d+)\%\)/o or die("Error: format error in '$blastpgp -i $root.tmp -d $root.db -v 1 -b 1000 -s T -z $ntot|', line $.\n");
 	    $len=$1;
 	    $id=$2;
 	    # Coverage = (length of whole alignment (including gaps) - gaps in query or HSP) / length of HSP
