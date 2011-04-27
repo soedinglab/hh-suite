@@ -145,6 +145,7 @@ public:
 
   char ssm;               // SS comparison mode: 0:no ss scoring  1:ss scoring AFTER alignment  2:ss score in column score
   float ssw;              // SS weight as compared to column score
+  float ssw_realign;      // SS weight as compared to column score for realign
   float ssa;              // SS state evolution matrix M1 = (1-ssa)*I + ssa*M0
 
   char loc;               // 0: local alignment (wrt. query), 1: global alignement

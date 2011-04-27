@@ -97,7 +97,7 @@ const char print_elapsed=0;
 char tmp_file[]="/tmp/hhblitsXXXXXX";
 
 // HHblits variables
-const char HHBLITS_VERSION[]="version 2.2.10 (March 2011)";
+const char HHBLITS_VERSION[]="version 2.2.11 (April 2011)";
 const char HHBLITS_REFERENCE[]="to be published.\n";
 const char HHBLITS_COPYRIGHT[]="(C) Michael Remmert and Johannes Soeding\n";
 
@@ -413,6 +413,11 @@ void help_all()
   printf(" -alt <int>     show up to this many significant alternative alignments(def=%i)          \n",par.altali);
   printf(" -jdummy [0,20] align <int> hits to query before realigning the remaining hits           \n");
   printf("                to the new query profile (default=%i)                                    \n",par.jdummy);       
+  printf(" -ssm  0-4     0:   no ss scoring                                             \n");
+  printf("               1,2: ss scoring after or during alignment  [default=%1i]       \n",par.ssm);
+  printf("               3,4: ss scoring after or during alignment, predicted vs. predicted \n");
+  printf(" -ssw [0,1]    weight of ss score  (def=%-.2f)                                \n",par.ssw);
+  printf(" -ssw_mac [0,1]  weight of ss score for MAC algorithm while realigning (def=%-.2f)       \n",par.ssw_realign);
   printf("\n");
   printf("Pseudocount options:                                                                     \n");
   printf(" -pcm  0-2      Pseudocount mode (default=%-i)                                           \n",par.pcm);
@@ -675,6 +680,9 @@ void ProcessArguments(int argc, char** argv)
       else if (!strcmp(argv[i],"-realignoldhits")) realign_old_hits=true;
       else if (!strcmp(argv[i],"-realign")) par.realign=1;
       else if (!strcmp(argv[i],"-norealign")) par.realign=0;
+      else if (!strcmp(argv[i],"-ssm") && (i<argc-1)) par.ssm=atoi(argv[++i]);
+      else if (!strcmp(argv[i],"-ssw") && (i<argc-1)) par.ssw=atof(argv[++i]);
+      else if (!strcmp(argv[i],"-ssw_mac") && (i<argc-1)) par.ssw_realign=atof(argv[++i]);
       else if (!strcmp(argv[i],"-maxres") && (i<argc-1)) {
 	MAXRES=atoi(argv[++i]);
 	MAXCOL=2*MAXRES;
@@ -2048,9 +2056,14 @@ int main(int argc, char **argv)
 	  }
       }
 
+    int ssw_orig = par.ssw;
+    par.ssw = par.ssw_realign;
+
     // Realign hits with MAC algorithm
     if (par.realign)
       perform_realign(dbfiles_new,ndb_new);
+
+    par.ssw = ssw_orig;
 
     // Generate alignment for next iteration
     if (round < num_rounds || *par.alnfile || *par.psifile || *par.hhmfile || *alis_basename)

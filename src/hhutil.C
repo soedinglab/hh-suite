@@ -516,6 +516,7 @@ void SetDefaults()
 
   par.ssm=2;                   // ss scoring mode: 0:no ss score  1:score after alignment  2:score during alignment
   par.ssw=0.11f;               // weight of ss scoring
+  par.ssw_realign=0.11f;       // weight of ss scoring for realign
   par.ssa=1.0f;                // weight of ss evolution matrix
   par.shift=-0.01f;            // Shift match score up
   par.mact=0.3001f;            // Score threshold for MAC alignment in local mode (set to 0.5001 to track user modification)

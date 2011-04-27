@@ -584,6 +584,7 @@ void ProcessArguments(int argc, char** argv)
       else if (!strcmp(argv[i],"-ssgapi") && (i<argc-1)) par.ssgapi=atoi(argv[++i]);
       else if (!strcmp(argv[i],"-ssm") && (i<argc-1)) par.ssm=atoi(argv[++i]);
       else if (!strcmp(argv[i],"-ssw") && (i<argc-1)) par.ssw=atof(argv[++i]);
+      else if (!strcmp(argv[i],"-ssw_mac") && (i<argc-1)) par.ssw_realign=atof(argv[++i]);
       else if (!strcmp(argv[i],"-ssa") && (i<argc-1)) par.ssa=atof(argv[++i]);
       else if (!strcmp(argv[i],"-realign")) par.realign=1;
       else if (!strcmp(argv[i],"-norealign")) par.realign=0;
@@ -1145,6 +1146,8 @@ int main(int argc, char **argv)
   // Optimization mode?
   if (par.opt) {hitlist.Optimize(*q,par.buffer);}
 
+  // Set new ss weight for realign
+  par.ssw = par.ssw_realign;
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Realign all hits with MAC algorithm?
@@ -1156,7 +1159,7 @@ int main(int argc, char **argv)
       Hash< List<Posindex>* >* realign; // realign->Show(dbfile) is list with ftell positions for templates in dbfile to be realigned
       realign = new(Hash< List<Posindex>* >);
       realign->New(3601,NULL);
-      const float MEMSPACE_DYNPROG = 2.0*1024.0*1024.0*1024.0;
+      const float MEMSPACE_DYNPROG = 3.0*1024.0*1024.0*1024.0;
       int nhits=0;
       int Lmax=0;      // length of longest HMM to be realigned
       int Lmaxmem=(int)((float)MEMSPACE_DYNPROG/q->L/6.0/8.0/bins); // longest allowable length of database HMM
