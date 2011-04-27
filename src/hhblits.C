@@ -109,7 +109,6 @@ bool already_seen_filter = true;        // Perform filtering of already seen HHM
 bool block_filter = true;               // Perform viterbi and forward algorithm only on block given by prefiltering
 bool realign_old_hits = false;          // Realign old hits in last round or use previous alignments
 
-bool hmmer_used = false;
 char input_format = 0;                  // Set to 1, if input in HMMER format (has already pseudocounts)
 
 float neffmax = 10;                     // Break if Neff > Neffmax
@@ -718,7 +717,7 @@ void ReadInputFile()
   if (!strncmp(line,"HMMER3",6) || !strncmp(line,"HMMER",5))  // HMMER/HMMER3 format
     {
       input_format = 1;
-      hmmer_used = true;
+      par.hmmer_used = true;
       cerr<<endl<<"Error in "<<program_name<<": HMMER format as input not supported!\n";
       exit(1);
     }
@@ -868,13 +867,13 @@ void search_loop(char *dbfiles[], int ndb, bool alignByWorker=true)
 	    {
 	      format[bin] = 1;
 	      t[bin]->ReadHMMer3(dbf,dbfiles[idb]);
-	      hmmer_used = true;
+	      par.hmmer_used = true;
 	    }
 	  else if (!strncmp(line,"HMMER",5))      // read HMMER format
 	    {
 	      format[bin] = 1;
 	      t[bin]->ReadHMMer(dbf,dbfiles[idb]);
-	      hmmer_used = true;
+	      par.hmmer_used = true;
 	    }
 	  else if (!strncmp(line,"HH",2))    // read HHM format
 	    {
@@ -1348,13 +1347,13 @@ void perform_realign(char *dbfiles[], int ndb)
 	    {
 	      format[bin] = 1;
 	      read_from_db = t[bin]->ReadHMMer3(dbf,hit_cur.dbfile);
-	      hmmer_used = true;
+	      par.hmmer_used = true;
 	    }
 	  else if (!strncmp(line,"HMMER",5))      // read HMMER format
 	    {
 	      format[bin] = 1;
 	      read_from_db = t[bin]->ReadHMMer(dbf,hit_cur.dbfile);
-	      hmmer_used = true;
+	      par.hmmer_used = true;
 	    }
 	  else if (!strncmp(line,"HH",2))     // read HHM format
 	    {
@@ -1561,13 +1560,13 @@ void perform_realign(char *dbfiles[], int ndb)
 		{
 		  format[bin] = 1;
 		  read_from_db = t[bin]->ReadHMMer3(dbf,dbfiles[idb]);
-		  hmmer_used = true;
+		  par.hmmer_used = true;
 		}
 	      else if (!strncmp(line,"HMMER",5))      // read HMMER format
 		{
 		  format[bin] = 1;
 		  read_from_db = t[bin]->ReadHMMer(dbf,dbfiles[idb]);
-		  hmmer_used = true;
+		  par.hmmer_used = true;
 		}
 	      else if (!strncmp(line,"HH",2))     // read HHM format
 		{
@@ -2222,7 +2221,7 @@ int main(int argc, char **argv)
   //////////////////////////////////////////////////////////
 
   // Warn, if HMMER files were used
-  if (hmmer_used)
+  if (par.hmmer_used)
     printf("\n!!!WARNING!!! Using HMMER files results in a drastically reduced sensitivity (>10%%).\nWe strongly recommend to use HHMs build by hhmake!\n");
 
   // Print for each HMM: n  score  -log2(Pval)  L  name  (n=5:same name 4:same fam 3:same sf...)

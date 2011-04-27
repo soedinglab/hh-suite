@@ -919,11 +919,13 @@ int main(int argc, char **argv)
                 {
                   format[bin] = 1;
                   read_from_db = t[bin]->ReadHMMer3(dbf,dbfiles[idb]);
+		  par.hmmer_used = true;
                 }
               else if (!strncmp(line,"HMMER",5))      // read HMMER format
                 {
                   format[bin] = 1;
                   read_from_db = t[bin]->ReadHMMer(dbf,dbfiles[idb]);
+		  par.hmmer_used = true;
                 }
               else if (!strncmp(line,"HH",2))    // read HHM format
                 {
@@ -1280,11 +1282,13 @@ int main(int argc, char **argv)
                 {
                   format[bin] = 1;
                   read_from_db = t[bin]->ReadHMMer3(dbf,hit_cur.dbfile);
+		  par.hmmer_used = true;
                 }
               else if (!strncmp(line,"HMMER",5))      // read HMMER format
                 {
                   format[bin] = 1;
                   read_from_db = t[bin]->ReadHMMer(dbf,hit_cur.dbfile);
+		  par.hmmer_used = true;
                 }
               else if (!strncmp(line,"HH",2))     // read HHM format
                 {
@@ -1462,11 +1466,13 @@ int main(int argc, char **argv)
                     {
                       format[bin] = 1;
                       read_from_db = t[bin]->ReadHMMer3(dbf,dbfiles[idb]);
+		      par.hmmer_used = true;
                     }
                   else if (!strncmp(line,"HMMER",5))      // read HMMER format
                     {
                       format[bin] = 1;
                       read_from_db = t[bin]->ReadHMMer(dbf,dbfiles[idb]);
+		      par.hmmer_used = true;
                     }
                   else if (!strncmp(line,"HH",2))     // read HHM format
                     {
@@ -1664,6 +1670,10 @@ int main(int argc, char **argv)
     if (v>=2) cout<<"Printing alignments in "<<(par.outformat==1? "FASTA" : par.outformat==2?"A2M" :"A3M")<<" format to "<<par.pairwisealisfile<<"\n";
     hitlist.PrintAlignments(*q,par.pairwisealisfile,par.outformat);
   }
+  
+  // Warn, if HMMER files were used
+  if (par.hmmer_used)
+    printf("\n!!!WARNING!!! Using HMMER files results in a drastically reduced sensitivity (>10%%).\nWe strongly recommend to use HHMs build by hhmake!\n");
 
   // Print summary listing of hits
   if (v>=3) printf("Printing hit list ...\n");

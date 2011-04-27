@@ -2,7 +2,7 @@
 //// Constants
 /////////////////////////////////////////////////////////////////////////////////////
 
-const char VERSION_AND_DATE[]="version 1.6.0.0 (April 2009)";
+const char VERSION_AND_DATE[]="version 1.6.1.0 (April 2011)";
 const char REFERENCE[]="Soding, J. Protein homology detection by HMM-HMM comparison. Bioinformatics 2005, 21, 951-960.\n";
 const char COPYRIGHT[]="(C) Johannes Soeding (see LICENSE file)\n";
 const int MAXSEQ=65535; //max number of sequences in input alignment (must be <~30000 on cluster nodes)
@@ -173,6 +173,8 @@ public:
 
   int maxcol;             //max number of residues in input files; must be <= LINELEN and >= maxres
   int maxres;             //max number of columns in HMM; must be <= LINELEN
+
+  bool hmmer_used;        // True, if a HMMER database is used
 
   // Directories for SS-prediction
   int addss;                           // 1: calculate secondary structure 0: don't (default: 0)

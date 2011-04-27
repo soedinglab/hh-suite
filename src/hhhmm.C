@@ -1328,16 +1328,16 @@ int HMM::ReadHMMer3(FILE* dbf, char* filestr)
                 }
 
 	      // Ignore MAP annotation
-	      ptr = strscn(line); //find next word
-	      ptr = strscn_ws(line); // ignore word
+	      ptr = strscn(ptr); //find next word
+	      ptr = strscn_ws(ptr); // ignore word
 
 	      // Read RF and CS annotation
-	      ptr = strscn(line);
+	      ptr = strscn(ptr);
               if (!ptr) return Warning(dbf,line,name);
               annotchr[i]=uprchr(*ptr);
               if (*ptr!='-' && *ptr!=' ') annot=1;
 
-              ptr = strscn(line);
+              ptr = strscn(ptr);
               switch (*ptr)
                 {
                 case 'H':
@@ -1399,7 +1399,7 @@ int HMM::ReadHMMer3(FILE* dbf, char* filestr)
               // Read seven transition probabilities
               fgetline(line,LINELEN-1,dbf);
              
-              ptr+=2;
+              ptr=line;
               for (a=0; a<=D2D && ptr; ++a)
                 tr[i][a] = log2((float) exp(-1.0*strflta(ptr,99999))); //store transition prob's as log2-values
               if (!ptr) return Warning(dbf,line,name);

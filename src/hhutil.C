@@ -552,6 +552,8 @@ void SetDefaults()
 
   par.notags=1;                // neutralize His-tags, FLAG-tags, C-myc-tags
 
+  par.hmmer_used=false;
+
   // Directories for SS-prediction
   par.addss=0;
   strcpy(par.psipred,"");

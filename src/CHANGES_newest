@@ -281,7 +281,20 @@ HHsearch 1.6.0 sometime in 2009
 
 * Perform realign with MAC-alignment only around Viterbi-hit
 
--->
+_______________________________________________________________________________
+
+HHsearch 1.6.1 April 2011
+
+* Increase speed by using SSE3 instructions in some functions
+
+* Adding new option "-atab" for writing alignment as a table (with posteriors) to file
+
+* HHsearch is now able to read HMMER3 profiles (but should not be used due to a loss of sensitivity)
+
+* Remove a bug related with "neutralize HIS-tag" option
+
+* Remove a bug related with empty alignments (no match states)
+
 
 _______________________________________________________________________________
 

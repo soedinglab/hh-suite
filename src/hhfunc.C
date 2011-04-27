@@ -232,51 +232,7 @@ void ReadAndPrepare(char* infile, HMM& q, Alignment* qali=NULL)
 
     fgetline(line,LINELEN-1,inf);
 
-    ///////////////////////////////////////////////////////////////////////////////////////
-    // Don't allow HMMER format as input due to the dramatically loss of sensitivity!!!!
-
-    // // Is infile a HMMER3 file?
-    // if (!strncmp(line,"HMMER3",6))
-    // {
-    //     if (v>=2) cout<<"Query file is in HMMER3 format\n";
-
-    //     // Read 'query HMMER file
-    //     rewind(inf);
-    //     q.ReadHMMer3(inf,path);
-
-    //     // Don't add transition pseudocounts to query!!
-    //     // DON'T ADD amino acid pseudocounts to query: pcm=0!  q.p[i][a] = f[i][a]
-    //     q.AddAminoAcidPseudocounts(0, par.pca, par.pcb, par.pcc);
-    //     q.CalculateAminoAcidBackground();
-    // }
-
-    // // ... or is infile an old HMMER file?
-    // else if (!strncmp(line,"HMMER",5))
-    // {
-    //     if (v>=2) cout<<"Query file is in HMMER format\n";
-
-    //     // Read 'query HMMER file
-    //     rewind(inf);
-    //     q.ReadHMMer(inf,path);
-
-    //     // Don't add transition pseudocounts to query!!
-
-    // 	// NEEDED?????
-
-    //     // if (!*par.clusterfile) { //compute context-specific pseudocounts?
-    //     //     // Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
-    //     //     q.PreparePseudocounts();
-    //     // } else {
-    //     //     // Generate an amino acid frequency matrix from f[i][a] with full context specific pseudocount admixture (tau=1) -> g[i][a]
-    //     //     q.PrepareContextSpecificPseudocounts();
-    //     // }
-
-    //     // DON'T ADD amino acid pseudocounts to query: pcm=0!  q.p[i][a] = f[i][a]
-    //     q.AddAminoAcidPseudocounts(0, par.pca, par.pcb, par.pcc);
-    //     q.CalculateAminoAcidBackground();
-    // }
-
-    // // ... or is it an hhm file?
+  // ... or is it an hhm file?
     // else 
     ///////////////////////////////////////////////////////////////////////////////////////
 
@@ -355,6 +311,57 @@ void ReadAndPrepare(char* infile, HMM& q, Alignment* qali=NULL)
         q.CalculateAminoAcidBackground();
 
         if (qali==NULL) delete(pali);
+    
+    } else if (!strncmp(line,"HMMER",5)) {
+
+        ///////////////////////////////////////////////////////////////////////////////////////
+        // Don't allow HMMER format as input due to the dramatically loss of sensitivity!!!! (only allowed in HHmake)
+        if (strncmp(program_name,"hhmake",6)) {
+	  cerr<<endl<<"Error in "<<program_name<<": HMMER format not allowed as input due to the dramatically loss of sensitivity!\n";
+	  exit(1);
+        }
+      
+        // Is infile a HMMER3 file?
+	if (!strncmp(line,"HMMER3",6))
+	  {
+	    if (v>=2) cout<<"Query file is in HMMER3 format\n";
+	    
+	    // Read 'query HMMER file
+	    rewind(inf);
+	    q.ReadHMMer3(inf,path);
+	    
+	    // Don't add transition pseudocounts to query!!
+	    // DON'T ADD amino acid pseudocounts to query: pcm=0!  q.p[i][a] = f[i][a]
+	    q.AddAminoAcidPseudocounts(0, par.pca, par.pcb, par.pcc);
+	    q.CalculateAminoAcidBackground();
+	  }
+	
+	// ... or is infile an old HMMER file?
+	else if (!strncmp(line,"HMMER",5))
+	  {
+	    if (v>=2) cout<<"Query file is in HMMER format\n";
+	    
+	    // Read 'query HMMER file
+	    rewind(inf);
+	    q.ReadHMMer(inf,path);
+	    
+	    // Don't add transition pseudocounts to query!!
+	    
+	    // NEEDED?????
+	    
+	    // if (!*par.clusterfile) { //compute context-specific pseudocounts?
+	    //     // Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
+	    //     q.PreparePseudocounts();
+	    // } else {
+	    //     // Generate an amino acid frequency matrix from f[i][a] with full context specific pseudocount admixture (tau=1) -> g[i][a]
+	    //     q.PrepareContextSpecificPseudocounts();
+	    // }
+	    
+	    // DON'T ADD amino acid pseudocounts to query: pcm=0!  q.p[i][a] = f[i][a]
+	    q.AddAminoAcidPseudocounts(0, par.pca, par.pcb, par.pcc);
+	    q.CalculateAminoAcidBackground();
+	  }
+	
     } else {
       cerr<<endl<<"Error in "<<program_name<<": unrecognized input file format in \'"<<infile<<"\'\n";
       cerr<<"line = "<<line<<"\n";
