@@ -141,30 +141,41 @@ while ($line=<INFILE>) {
     }
 }
 close(INFILE);
-$query_length = ($qseq=~tr/A-Z/A-Z/);
-$qseq=~tr/a-zA-Z//cd;
-    
-# If less than 26 match states => add sufficient number of Xs to the end of each sequence in $inbase.in.a3m
-my $q_match = ($qseq=~tr/A-Z/A-Z/); # count number of capital letters
-if ($q_match<=25) {                 # Psiblast needs at least 26 residues in query
-    my $addedXs=('X' x (26-$q_match))."\n";
-    $qseq.=$addedXs;     # add 'X' to query to make it at least 26 resiudes long
-    for ($i=0; $i<@seqs; $i++) {	    
-	$seqs[$i]=~s/\n$//g;
-	$seqs[$i].=$addedXs;
-    }
-    open (INFILE,">$inbase.in.a3m");
-    for ($i=0; $i<@seqs; $i++) {
-	printf(INFILE "%s",$seqs[$i]);
-    }
-    close INFILE;
-}
-$/="\n"; # set input field separator
 
-# Write query sequence file in FASTA format
-open (QFILE, ">$inbase.sq") or die("ERROR: can't open $inbase.sq: $!\n");
-printf(QFILE ">%s\n%s\n",$name,$qseq);
-close (QFILE);
+if ($qseq =~ /\-/) {
+
+    $/="\n"; # set input field separator
+    
+    # First sequence contains gaps => calculate consensus sequence
+    &System("$hh/hhconsensus -i $inbase.in.a3m -s $inbase.sq -o $inbase.in.a3m > /dev/null");
+
+} else {
+
+    $query_length = ($qseq=~tr/A-Z/A-Z/);
+    $qseq=~tr/a-zA-Z//cd;
+    
+    # If less than 26 match states => add sufficient number of Xs to the end of each sequence in $inbase.in.a3m
+    my $q_match = ($qseq=~tr/A-Z/A-Z/); # count number of capital letters
+    if ($q_match<=25) {                 # Psiblast needs at least 26 residues in query
+	my $addedXs=('X' x (26-$q_match))."\n";
+	$qseq.=$addedXs;     # add 'X' to query to make it at least 26 resiudes long
+	for ($i=0; $i<@seqs; $i++) {	    
+	    $seqs[$i]=~s/\n$//g;
+	    $seqs[$i].=$addedXs;
+	}
+	open (INFILE,">$inbase.in.a3m");
+	for ($i=0; $i<@seqs; $i++) {
+	    printf(INFILE "%s",$seqs[$i]);
+	}
+	close INFILE;
+    }
+    $/="\n"; # set input field separator
+    
+    # Write query sequence file in FASTA format
+    open (QFILE, ">$inbase.sq") or die("ERROR: can't open $inbase.sq: $!\n");
+    printf(QFILE ">%s\n%s\n",$name,$qseq);
+    close (QFILE);
+}
 
 # Filter alignment to diversity $neff 
 if ($v>=1) {printf ("\nFiltering alignment to diversity $neff ...\n");}
@@ -291,7 +302,7 @@ sub AppendDsspSequences() {
     while ($line=<QFILE>) {
 	if ($line=~/>(\S+)/) {
 	    $name=$1;
-	    
+
 	    # SCOP ID? (d3lkfa_,d3grs_3,d3pmga1,g1m26.1)
 	    if ($line=~/^>[defgh](\d[a-z0-9]{3})[a-z0-9_.][a-z0-9_]\s+[a-z]\.\d+\.\d+\.\d+\s+\((\S+)\)/) {
 		$pdbcode=$1;
