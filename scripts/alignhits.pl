@@ -4,7 +4,18 @@
 
 # Remark: because blast with -B option stumbles over u and U, all selenocysteines are changed into cysteines 
 
+my $rootdir;
+BEGIN {
+   if (defined $ENV{TK_ROOT}) {$rootdir=$ENV{TK_ROOT};}
+   elsif (defined $ENV{USER}) {$rootdir="/cluster/user/".$ENV{USER};}
+   else {$rootdir="/cluster";}
+};
+
 use strict;
+use lib "/home/soeding/perl";        # for soeding's computer
+use lib "/cluster/soeding/perl";     # for cluster
+use lib $rootdir."/bioprogs/hhpred"; # for toolkit
+use lib $rootdir."/perl";            # for soeding
 use lib "/cluster/lib";              # for chimaera webserver: ConfigServer.pm
 use MyPaths;                         # config file with path variables for nr, blast, psipred, pdb, dssp etc.
 
@@ -38,25 +49,20 @@ sub fexit()
 {
     print("\nExtract a multiple alignment of hits from Blast or PsiBlast output (as text file, not html)\n");
     print("Usage:   alignhits.pl blast-file alignment-file [options]\n");
-    print("\n");
     print("Options for thresholds\n");
     print("  -e   e-value  : maximum e-value (default=$E_max)\n");
     print("  -qid percent  : minimum sequence identity to query in % (default=$qid_thrshd) \n");
-    print("                  (seq-id = # identities in match columns / # hit residues in match\n");
-    print("                  columns)\n");
+    print("                  (seq-id = # identities in match columns / # hit residues in match columns)\n");
     print("  -cov coverage : minimum coverage in % (default=$cov_thrshd) \n");
     print("  -emin e-value : minimum e-value (default=$E_min)\n");
-    print("\n");
     print("Options for output format:\n");
-    print("  -psi          : PsiBlast-readable format; inserts relative to query (=first) \n");
-    print("                  sequence omitted, \n");
+    print("  -psi          : PsiBlast-readable format; inserts relative to query (=first) sequence omitted, \n");
     print("                  capitalization of residues same as query sequence (default)\n");
     print("  -a2m          : like FASTA, but capitalization of residues same as query sequence,\n");
     print("                  deletes '-', gaps aligned to lower case columns '.'\n");
     print("  -a3m          : like -a2m, but gaps aligned to inserts omitted\n");
     print("  -ufas         : unaligned fasta format (without gaps)\n");
     print("  -fas          : aligned fasta; all residues upper case, all gaps '-'\n");
-    print("\n");
     print("Other options:\n");
     print("  -v            : verbose mode (default=off)\n");
     print("  -append       : append output to file (default=overwrite)\n");
@@ -64,18 +70,12 @@ sub fexit()
     print("  -q   file     : insert a2m-formatted  query sequence into output alignment;\n");
     print("                  upper/lower case determines match/insert columns\n");
     print("  -Q   file     : like -q, but all query residues will be match states (upper case)\n");
-    print("  -p   p-value  : maximum p-value of HSP IN MATCH COLUMNS (with query or -P alignment) \n");
-    print("                  (default=$P_max)\n");
-    print("  -qsc value    : minimum score per column in bits (with query or -P alignment) \n");
-    print("                  (default=$sc_thrshd) \n");
-    print("  -b   float    : HSP pruning: min per-residue score in bits (with query or -B alignment) \n");
-    print("                  at ends of HSPs\n");
-    print("  -bl  float    : lenient HSP pruning: min per-residue score in bits \n");
-    print("                  (with query or -B alignment)\n");
-    print("                  at ends of HSPs. Used when number of endgaps at the one end < bg \n");
-    print("                  (see -bg) (default=$bl)\n");
-    print("  -bs  float    : strict HSP pruning: like -b, but used when number of endgaps >= bg \n");
-    print("                  (default=$bs)\n");
+    print("  -p   p-value  : maximum p-value of HSP IN MATCH COLUMNS (with query or -P alignment) (default=$P_max)\n");
+    print("  -qsc value    : minimum score per column in bits (with query or -P alignment) (default=$sc_thrshd) \n");
+    print("  -b   float    : HSP pruning: min per-residue score in bits (with query or -B alignment) at ends of HSPs\n");
+    print("  -bl  float    : lenient HSP pruning: min per-residue score in bits (with query or -B alignment)\n");
+    print("                  at ends of HSPs. Used when number of endgaps at the one end < bg (see -bg) (default=$bl)\n");
+    print("  -bs  float    : strict HSP pruning: like -b, but used when number of endgaps >= bg (default=$bs)\n");
     print("  -bg  int      : below this number of end gaps the lenient HSP pruning score is used,\n");
     print("               :  above the strict score is employed (default=$bg)\n");
     print("  -P   file     : read alignment file (in psiblast-readable format) and calculate PSSM\n");
@@ -896,9 +896,9 @@ sub MakePSSM()
     if ($alifile =~/(.*)\..*/) {$basename=$1;} else {$basename=$alifile;}
     if ($basename=~/.*\/(.*)/) {$rootname=$1;} else {$rootname=$basename;}
     # Make ASCII PSSM matrix from binary checkpoint file
-    &System("$ncbidir/blastpgp -b 1 -j 1 -h 0.001 -d $dummydb -i $query_file -B $alifile -C $basename.chk &> $basename.blalog");
+    &System("$ncbidir/blastpgp -b 1 -j 1 -h 0.001 -d $dummydb -i $query_file -B $alifile -C $basename.chk > $basename.blalog 2>&1");
     if (!-e "$basename.chk") {
-	print("Error: Could not generate checkpoint file in '$ncbidir/blastpgp -b 1 -j 1 -h 0.001 -d $dummydb -i $query_file -B $alifile -C $basename.chk &> $basename.blalog'\n");
+	print("Error: Could not generate checkpoint file in '$ncbidir/blastpgp -b 1 -j 1 -h 0.001 -d $dummydb -i $query_file -B $alifile -C $basename.chk > $basename.blalog 2>&1'\n");
 	print("Blast log file:\n");
 	open(LOG,"<$basename.blalog");
 	while (<LOG>) {print($_);}

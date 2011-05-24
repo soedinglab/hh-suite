@@ -295,6 +295,54 @@ void HitList::PrintScoreFile(HMM& q)
   fclose(scoref);
 }
 
+void HitList::WriteToAlifile(HMM& q, bool scop_only)
+{
+  Hit hit;
+  int i=0, n;
+  Hash<int> twice(10000); // make sure only one hit per HMM is listed
+  twice.Null(-1);      
+  FILE* alitabf=NULL;
+  if (strcmp(par.alitabfile,"stdout")) alitabf = fopen(par.alitabfile, "w"); else alitabf = stdout;
+  if (!alitabf) OpenFileError(par.alitabfile);
+
+  fprintf(alitabf,"NAME  %s\n",q.longname);
+  fprintf(alitabf,"FAM   %s\n",q.fam);
+  fprintf(alitabf,"FILE  %s\n",q.file);
+  fprintf(alitabf,"LENG  %i\n",q.L);
+  fprintf(alitabf,"\n");
+
+  Reset();
+  while (!End()) 
+    {
+      i++;
+      hit = ReadNext();
+      if (scop_only && !strncmp(hit.name,"cl|",3)) continue;
+      if (twice[hit.name]==1) continue; // better hit with same HMM has been listed already
+      twice.Add(hit.name,1);
+      //if template and query are from the same superfamily
+      if (!strcmp(hit.name,q.name)) n=5;
+      else if (!strcmp(hit.fam,q.fam)) n=4;
+      else if (!strcmp(hit.sfam,q.sfam)) n=3;
+      else if (!strcmp(hit.fold,q.fold)) n=2;
+      else if (!strcmp(hit.cl,q.cl)) n=1;
+      else n=0;
+
+      if (hit.P_posterior != NULL) {
+	fprintf(alitabf,"\nHit %3i (%-20s %-10s Rel: %i  LOG-PVA: %6.2f  LOG-EVAL: %6.2f  Score: %6.2f  Probab: %6.2f):\n    i     j  score     SS  probab\n",i,hit.name,hit.fam,n,-1.443*hit.logPval,-1.443*hit.logEval,hit.score,hit.Probab);
+	for (int step=hit.nsteps; step>=1; step--)
+	  if (hit.states[step]>=MM) 
+	    fprintf(alitabf,"%5i %5i %6.2f %6.2f %7.4f\n",hit.i[step],hit.j[step],hit.S[step],hit.S_ss[step],hit.P_posterior[step]);
+      } else { 
+	fprintf(alitabf,"\nHit %3i (%-20s %-10s Rel: %i  LOG-PVA: %6.2f  LOG-EVAL: %6.2f  Score: %6.2f  Probab: %6.2f):\n    i     j  score     SS\n",i,hit.name,hit.fam,n,-1.443*hit.logPval,-1.443*hit.logEval,hit.score,hit.Probab);
+	for (int step=hit.nsteps; step>=1; step--)
+	  if (hit.states[step]>=MM) 
+	    fprintf(alitabf,"%5i %5i %6.2f %6.2f\n",hit.i[step],hit.j[step],hit.S[step],hit.S_ss[step]);
+      }
+    }
+  fclose(alitabf);
+}
+
+
 /////////////////////////////////////////////////////////////////////////////////////
 //// Evaluate the *negative* log likelihood of the data at the vertex v = (lamda,mu)
 ////    p(s) = lamda * exp{ -exp[-lamda*(s-mu)] - lamda*(s-mu) } = lamda * exp( -exp(-x) - x) 
@@ -757,34 +805,55 @@ inline float beta_NN(float Lqnorm, float Ltnorm, float Nqnorm, float Ntnorm)
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
-//// Calculate HHblast composite E-values 
+//// Calculate HHblits composite E-values 
 /////////////////////////////////////////////////////////////////////////////////////
-void HitList::CalculateHHblastEvalues(HMM& q)
+void HitList::CalculateHHblitsEvalues(HMM& q)
 {
   Hit hit; 
-  float alpha=0.75, beta=0;  // correlation factors for HHblast Evalue (correlation factor = exp(alpha * S' - beta) )
-  const float log1000=log(1000.0);
-  int nhits = 0;
+  // OLD!!!
+  //float alpha=0.75, beta=0;  // correlation factors for HHblits Evalue (correlation factor = exp(alpha * S' - beta) )
+  //const float log1000=log(1000.0);
+  //int nhits = 0;
 
+  float alpha = 0;
+  float log_Pcut = log(par.prefilter_evalue_thresh / par.dbsize);
+  float log_dbsize = log(par.dbsize);
+  //printf("log_Pcut: %7.4f  Pcut: %7.4f DBsize: %10i   a: %4.2f  b: %4.2f  c: %4.2f\n",log_Pcut, exp(log_Pcut), par.dbsize, par.alphaa, par.alphab, par.alphac);
+      
   Reset();
   while (!End()) 
     {
       hit = ReadNext();
-      if (par.loc)
-	{
-	  alpha = alpha_NN( log(q.L)/log1000, log(hit.L)/log1000, q.Neff_HMM/10.0, hit.Neff_HMM/10.0 ); 
-	  beta = beta_NN( log(q.L)/log1000, log(hit.L)/log1000, q.Neff_HMM/10.0, hit.Neff_HMM/10.0 ); 
- 	  if (v>=3 && nhits++<20) 
-	    printf("hit=%-10.10s Lq=%-4i  Lt=%-4i  Nq=%5.2f  Nt=%5.2f  =>  alpha=%-6.3f  beta=%-6.3f  S'=%-6.3f\n",hit.name,q.L,hit.L,q.Neff_HMM,hit.Neff_HMM,alpha,beta,par.hhblast_prefilter_logpval);
-	}
-      else 
-	{
-	  //printf("WARNING: global calibration not yet implemented!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
-	}
 
-      hit.Eval = exp(hit.logPval+log(N_searched)+(alpha*par.hhblast_prefilter_logpval - beta));     // overwrite E-value from HHsearch with composite E-value from HHblast
-      hit.logEval = hit.logPval+log(N_searched)+(alpha*par.hhblast_prefilter_logpval - beta);
-      //printf("      Eval: %7.4f    logEval: %7.4f   logPval: %7.4f\n",hit.Eval, hit.logEval, hit.logPval);
+      // OLD!!!!
+      // if (par.loc)
+      // 	{
+      // 	  alpha = alpha_NN( log(q.L)/log1000, log(hit.L)/log1000, q.Neff_HMM/10.0, hit.Neff_HMM/10.0 ); 
+      // 	  beta = beta_NN( log(q.L)/log1000, log(hit.L)/log1000, q.Neff_HMM/10.0, hit.Neff_HMM/10.0 ); 
+      // 	  if (v>=3 && nhits++<20) 
+      // 	    printf("hit=%-10.10s Lq=%-4i  Lt=%-4i  Nq=%5.2f  Nt=%5.2f  =>  alpha=%-6.3f  beta=%-6.3f  S'=%-6.3f\n",hit.name,q.L,hit.L,q.Neff_HMM,hit.Neff_HMM,alpha,beta,par.hhblits_prefilter_logpval);
+      // 	}
+      // else 
+      // 	{
+      // 	  //printf("WARNING: global calibration not yet implemented!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+      // 	}
+
+      // // overwrite E-value from HHsearch with composite E-value from HHblits
+      // hit.Eval = exp(hit.logPval+log(N_searched)+(alpha*par.hhblits_prefilter_logpval - beta));     
+      // hit.logEval = hit.logPval+log(N_searched)+(alpha*par.hhblits_prefilter_logpval - beta);
+      // //printf("      Eval: %7.4f    logEval: %7.4f   logPval: %7.4f\n",hit.Eval, hit.logEval, hit.logPval);
+
+      // if (nhits++<50) 
+      // 	printf("before correction  Eval: %7.4g    logEval: %7.4f\n",hit.Eval, hit.logEval);
+
+      alpha = par.alphaa + par.alphab * (hit.Neff_HMM - 1) * (1 - par.alphac * (q.Neff_HMM - 1));
+      
+      hit.Eval = exp(hit.logPval + log_dbsize + (alpha * log_Pcut)); 
+      hit.logEval = hit.logPval + log_dbsize + (alpha * log_Pcut); 
+
+      // if (nhits++<50) 
+      // 	printf("                   Eval: %7.4g    logEval: %7.4f   alpha: %7.4f   Neff_T: %5.2f  Neff_Q: %5.2f\n",hit.Eval, hit.logEval, alpha, hit.Neff_HMM, q.Neff_HMM);
+
       Overwrite(hit);   // copy hit object into current position of hitlist
     }
   ResortList(); // use InsertSort to resort list according to sum of minus-log-Pvalues

@@ -15,12 +15,26 @@
 #include <ctype.h>    // islower, isdigit etc
 #include <cassert>
 
+#ifdef HH_SSE3
+#ifdef __SUNPRO_C
+#include <sunmedia_intrin.h>
+#else
+#include <emmintrin.h>   // SSE2
+#include <pmmintrin.h>   // SSE3
+///#include <smmintrin.h>   // SSE4.1
+#endif
+#endif
+
 using std::cout;
 using std::cerr;
 using std::endl;
 using std::ios;
 using std::ifstream;
 using std::ofstream;
+
+#include "cs.h"          // context-specific pseudocounts
+#include "context_library.h"
+#include "library_pseudocounts-inl.h"
 
 #include "util.C"        // imax, fmax, iround, iceil, ifloor, strint, strscn, strcut, substr, uprstr, uprchr, Basename etc.
 #include "list.C"        // list data structure
@@ -29,15 +43,7 @@ using std::ofstream;
 #include "hhutil.C"      // MatchChr, InsertChr, aa2i, i2aa, log2, fast_log2, ScopID, WriteToScreen,
 #include "hhmatrices.C"  // BLOSUM50, GONNET, HSDM
 
-// includes needed for context specific pseudocounts
-#include "amino_acid.cpp"
-#include "sequence.cpp"
-#include "profile.cpp"
-#include "cluster.cpp"
-#include "simple_cluster.cpp"
-#include "matrix.cpp"
-#include "cs_counts.cpp"
-
+#include "hhhmm.h"       // class HMM
 #include "hhhit.h"       // class Hit
 #include "hhalignment.h" // class Alignment
 #include "hhhalfalignment.h" // class HalfAlignment
@@ -90,6 +96,7 @@ void help()
   printf("               many sequences in each block of >50 columns (def=%i)\n",par.Ndiff);
   printf(" -cov  [0,100] minimum coverage with query (%%) (def=%i) \n",par.coverage);
   printf(" -qid  [0,100] minimum sequence identity with query (%%) (def=%i) \n",par.qid);
+  printf(" -neff [1,inf] target diversity of alignment (default=off)\n");
   printf(" -qsc  [0,100] minimum score per column with query  (def=%.1f)\n",par.qsc);
   printf("\n");
   printf("Input alignment format:                                                    \n");
@@ -175,6 +182,8 @@ void ProcessArguments(int argc,char** argv)
       else if (!strcmp(argv[i],"-qsc") && (i<argc-1))  par.qsc=atof(argv[++i]);
       else if (!strcmp(argv[i],"-cov") && (i<argc-1))  par.coverage=atoi(argv[++i]);
       else if (!strcmp(argv[i],"-diff") && (i<argc-1)) par.Ndiff=atoi(argv[++i]);
+      else if (!strcmp(argv[i],"-neff") && (i<argc-1)) par.Neff=atof(argv[++i]); 
+      else if (!strcmp(argv[i],"-Neff") && (i<argc-1)) par.Neff=atof(argv[++i]); 
       else if (!strcmp(argv[i],"-M") && (i<argc-1))
         if(!strcmp(argv[++i],"a2m") || !strcmp(argv[i],"a3m"))  par.M=1;
         else if(!strcmp(argv[i],"first"))  par.M=3;
@@ -287,6 +296,17 @@ int main(int argc, char **argv)
       strcat(par.outfile,".hhm");
     }
 
+  // Prepare CS pseudocounts lib
+  if (*par.clusterfile) {
+    FILE* fin = fopen(par.clusterfile, "r");
+    if (!fin) OpenFileError(par.clusterfile);
+    context_lib = new cs::ContextLibrary<cs::AA>(fin);
+    fclose(fin);
+    cs::TransformToLog(*context_lib);
+    
+    lib_pc = new cs::LibraryPseudocounts<cs::AA>(*context_lib, par.csw, par.csb);
+  }
+
   // Set substitution matrix; adjust to query aa distribution if par.pcm==3
   SetSubstitutionMatrix();
 
@@ -312,6 +332,11 @@ int main(int argc, char **argv)
         }
       if (v>=2) printf("Done\n");
     }
+
+  if (*par.clusterfile) {
+    delete context_lib;
+    delete lib_pc;
+  }
 
   exit(0);
 } //end main

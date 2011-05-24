@@ -15,6 +15,7 @@
 #include <locale>
 #include <stdexcept>
 #include <stdint.h>
+#include <string.h>     // strcmp, strstr
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Arithmetics
@@ -394,6 +395,46 @@ int strinta(char*& ptr, int deflt=99999)
   return i;
 }
 
+// Returns leftmost float in ptr and sets the pointer to first char after
+// the float. If no float is found, returns FLT_MIN and sets pt to NULL
+float strflt(char*& ptr)
+{
+  float i;
+  char* ptr0=ptr;
+  if (!ptr) return FLT_MIN;
+  while (*ptr!='\0' && !(*ptr>='0' && *ptr<='9')) ptr++;
+  if (*ptr=='\0')
+    {
+      ptr=0;
+      return FLT_MIN;
+    }
+  if (ptr>ptr0 && *(ptr-1)=='-') i=-atof(ptr); else i=atof(ptr);
+  while ((*ptr>='0' && *ptr<='9') || *ptr=='.') ptr++;
+  return i;
+}
+
+// Same as strint, but interpretes '*' as default
+float strflta(char*& ptr, float deflt=99999)
+{
+  float i;
+  if (!ptr) return FLT_MIN;
+  while (*ptr!='\0' && !(*ptr>='0' && *ptr<='9') && *ptr!='*') ptr++;
+  if (*ptr=='\0')
+    {
+      ptr=0;
+      return FLT_MIN;
+    }
+  if (*ptr=='*')
+    {
+      ptr++;
+      return deflt;
+    }
+  if (*(ptr-1)=='-') i=-atof(ptr);
+  else i=atof(ptr);
+  while ((*ptr>='0' && *ptr<='9') || *ptr=='.') ptr++;
+  return i;
+}
+
 
 // Removes the newline and other control characters at the end of a string (if present)
 // and returns the new length of the string (-1 if str is NULL)
@@ -411,7 +452,7 @@ inline int chomp(char str[])
 inline char* fgetline(char str[], const int maxlen, FILE* file)
 {
   if (!fgets(str,maxlen,file)) return NULL;
-  if (chomp(str)+1>=maxlen)    // if line is cut after maxlen characters...
+  if (chomp(str)+2>=maxlen)    // if line is cut after maxlen characters...
     while (fgetc(file)!='\n'); // ... read in rest of line
   return(str);
 }
@@ -437,6 +478,15 @@ inline char* strscn(char* str)
   if (!str) return NULL;
   char* ptr=str;
   while (*ptr!='\0' && *ptr<=32) ptr++;
+  return (*ptr=='\0')? NULL: ptr;
+}
+
+// Returns pointer to first white-space character in str OR to NULL if none found
+inline char* strscn_ws(char* str)
+{
+  if (!str) return NULL;
+  char* ptr=str;
+  while (*ptr!='\0' && *ptr>32) ptr++;
   return (*ptr=='\0')? NULL: ptr;
 }
 
@@ -847,3 +897,32 @@ void QSortFloat(float v[], int k[], int left, int right, int up=+1)
 inline float frand() { return rand()/(RAND_MAX+1.0); }
 
 
+/////////////////////////////////////////////////////////////////////////////////////
+//// Replace memalign by posix_memalign
+/////////////////////////////////////////////////////////////////////////////////////
+void *memalign(size_t boundary, size_t size)
+{
+  void *pointer;
+  if (posix_memalign(&pointer,boundary,size) != 0)
+    {
+      cerr<<"Error: Could not allocate memory by memalign. Please report this bug to developers\n";
+      exit(3);
+    }
+  return pointer;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////
+//// Execute system command
+/////////////////////////////////////////////////////////////////////////////////////
+void runSystem(std::string cmd, int v = 2)
+{
+  if (v>2)
+    cout << "Command: " << cmd << "!\n";
+  int res = system(cmd.c_str());
+  if (res!=0) 
+    {
+      cerr << endl << "ERROR when executing: " << cmd << "!\n";
+      exit(1);
+    }
+    
+}

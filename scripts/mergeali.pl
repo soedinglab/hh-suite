@@ -292,7 +292,7 @@ for ($nseed=0; $nseed<scalar(@seed_in); $nseed++) {
     }
 
     # Does alignment look reasonable?
-    my $sc=$score/&max($imax-$imin,$jmax-$jmin);
+    my $sc=$score/&max(1,&max($imax-$imin,$jmax-$jmin));
     if ($sc<0.5) {
 	printf("\nWARNING: alignment for %s has score per column of only %6.2f   Skipping alignment\n",$names[$nseed],$sc,);
 	if ($v>=2) {

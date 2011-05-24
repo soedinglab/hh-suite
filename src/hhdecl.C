@@ -2,12 +2,12 @@
 //// Constants
 /////////////////////////////////////////////////////////////////////////////////////
 
-const char VERSION_AND_DATE[]="version 1.6.0.0 (April 2009)";
+const char VERSION_AND_DATE[]="version 1.6.1.0 (April 2011)";
 const char REFERENCE[]="Soding, J. Protein homology detection by HMM-HMM comparison. Bioinformatics 2005, 21, 951-960.\n";
 const char COPYRIGHT[]="(C) Johannes Soeding (see LICENSE file)\n";
 const int MAXSEQ=65535; //max number of sequences in input alignment (must be <~30000 on cluster nodes)
-const int MAXCOL=32765; //max number of residues in input files; must be <= LINELEN and >= MAXRES
-const int MAXRES=15002; //max number of columns in HMM; must be <= LINELEN
+int MAXCOL=32765;            //max number of residues in input files; must be <= LINELEN and >= MAXRES
+int MAXRES=15002;            //max number of columns in HMM; must be <= LINELEN
 const int LINELEN=262144; //max length of line read in from input files; must be >= MAXCOL
 const int MAXSEQDIS=10238;//max number of sequences stored in 'hit' objects and displayed in output alignment
 const int IDLEN=255;     //max length of scop hierarchy id and pdb-id
@@ -72,12 +72,13 @@ public:
   char hhmfile[NAMELEN];  // name of output HHM file for (iterative search)
   char psifile[NAMELEN];  // name of output alignmen file in PSI-BLAST format (iterative search)
   char scorefile[NAMELEN];// table of scores etc for all HMMs in searched database
+  char indexfile[NAMELEN];// optional file containing indeices of aligned residues in given alignment
   char tfile[NAMELEN];    // template filename (in hhalign)
   char buffer[NAMELEN];   // buffer to write results for other programs into
   char wfile[NAMELEN];    // weights file generated with hhformat
   char alitabfile[NAMELEN]; // where to write pairs of aligned residues (-atab option)
-  char* blafile;          // output of 'blastpgp -m 8' with PSI-BLAST E-values for HHblast
-  float hhblast_prefilter_logpval;  // PSI-BLAST prefilter log P-value threshold of HHblast
+  char* blafile;          // output of 'blastpgp -m 8' with PSI-BLAST E-values for HHblits
+  float hhblits_prefilter_logpval;  // PSI-BLAST prefilter log P-value threshold of HHblits
   char* dbfiles;          // database filenames, separated by colons
   char* exclstr;          // optional string containing list of excluded residues, e.g. '1-33,97-168'
   int aliwidth;           // number of characters per line in output alignments for HMM search
@@ -118,6 +119,9 @@ public:
   float pcc;              //
   float pcw;              // Decrease pseudocounts for conserved columns
 
+  float pre_pca;          // Pseudocount matrix = (1-tau(i))*I + tau(i)*S   for prefiltering
+  float pre_pcb;          // tau(i) = pca/(1 + ((Neff-1)/pcb)^pcc           for prefiltering
+
   float gapb;             // Diversity threshold for adding pseudocounts to transitions from M state
   float gapd;             // Gap open penalty factor for deletions
   float gape;             // Gap extend penalty: factor to multiply hmmer values (def=1)
@@ -132,6 +136,8 @@ public:
   float neffa;            // Coefficients to estimate Neff-dependent weights for HMM merging procedure
   float neffb;            // Coefficients to estimate Neff-dependent weights for HMM merging procedure
 
+  float Neff;
+
   char ssgap;             // 1: add secondary structure-dependent gap penalties  0:off
   float ssgapd;           // secondary structure-dependent gap-opening penalty (per residue)
   float ssgape;           // secondary structure-dependent gap-extension penalty (per residue)
@@ -139,6 +145,7 @@ public:
 
   char ssm;               // SS comparison mode: 0:no ss scoring  1:ss scoring AFTER alignment  2:ss score in column score
   float ssw;              // SS weight as compared to column score
+  float ssw_realign;      // SS weight as compared to column score for realign
   float ssa;              // SS state evolution matrix M1 = (1-ssa)*I + ssa*M0
 
   char loc;               // 0: local alignment (wrt. query), 1: global alignement
@@ -149,6 +156,7 @@ public:
   float corr;             // Weight of correlations between scores with |i-j|<=4
   float shift;            // Score offset for match-match states
   float mact;             // Score threshold (negative offset) in MAC alignment
+  int realign_max;        // Realign max ... hits
 
   char calibrate;         // calibration of query HMM?  0:no, 1:yes (write lamda,mu into query profile)
   char calm;              // derive P-values from: 0:query calibration  1:template calibration  2:both  3:Neural Network prediction
@@ -163,17 +171,45 @@ public:
   float Emax_trans;       // max E-value for intermediate HMMs in transitive scoring (i.e. l is intermediate HMM if E_lq, E_lk <Emax_trans)
   float wtrans;           // Ztot[k] = Zq[k] + wtrans * (Zforward[k]+Zreverse[k])
 
+  int maxcol;             //max number of residues in input files; must be <= LINELEN and >= maxres
+  int maxres;             //max number of columns in HMM; must be <= LINELEN
+
+  bool hmmer_used;        // True, if a HMMER database is used
+
+  // Directories for SS-prediction
+  int addss;                           // 1: calculate secondary structure 0: don't (default: 0)
+  char blast[NAMELEN];                 // BLAST binaries (not needed with csBLAST)
+  char psipred[NAMELEN];               // PsiPred binaries
+  char psipred_data[NAMELEN];          // PsiPred data
+  char dummydb [NAMELEN];
+
   // parameters for context-specific pseudocounts
   float csb;
   float csw;
   char clusterfile[NAMELEN];
 
-  // For filtering database alignments in HHsearch and HHblast
+  // HHblits
+  int jdummy;
+  int dbsize;           // number of clusters of input database
+
+  // HHblits Evalue calculation  (alpha = a + b(Neff(T) - 1)(1 - c(Neff(Q) - 1)) )
+  float alphaa;
+  float alphab;
+  float alphac;
+
+  // For filtering database alignments in HHsearch and HHblits
   int max_seqid_db;
   int qid_db;      
   float qsc_db;    
   int coverage_db; 
   int Ndiff_db;    
+
+  // HHblits context state prefilter
+  char cs_library[NAMELEN];
+
+  // HHblits prefilter
+  bool prefilter;             // perform prefiltering in HHblits?
+  bool early_stopping_filter; // Break HMM search, when the sum of the last N HMM-hit-Evalues is below threshold
 
   double filter_thresh;    // Threshold for early stopping
   int filter_length;       // Length of array of 1/evalues
@@ -181,17 +217,25 @@ public:
   double filter_sum;       // sum of evalues in array
   int filter_counter;      // counter for evalue array
 
-  Hash<int*>* block_shading;         // Cross out cells not covered by prefiltering hit in HHblast
-  Hash<int>* block_shading_counter;  // Cross out cells not covered by prefiltering hit in HHblast
+  Hash<int*>* block_shading;         // Cross out cells not covered by prefiltering hit in HHblits
+  Hash<int>* block_shading_counter;  // Cross out cells not covered by prefiltering hit in HHblits
   int block_shading_space;           // space added to the rands of prefilter HSP
   char block_shading_mode[NAMELEN];
+
+  // For HHblits prefiltering with SSE2
+  short prefilter_gap_open;
+  short prefilter_gap_extend;
+  int prefilter_states;               // Anzahl der States im Alphabet
+  int prefilter_score_offset;
+  int prefilter_bit_factor;
+  double prefilter_evalue_thresh;
+  int preprefilter_smax_thresh;
 
   // SCRAP THE FOLLOWING VARIABLES?
 
   float wstruc;          // weight of structure scores
   char repmode;          // 1:repeat identification: multiple hits not treated as independent 0: repeat mode off
   int idummy;
-  int jdummy;
   float fdummy;
 
 };
@@ -203,6 +247,7 @@ public:
 char v=2;             // 1: show only warnings 2:verbose mode
 Parameters par;
 char program_name[NAMELEN]; //name of program executed (e.g. hhmake of hhsearch)
+char program_path[NAMELEN]; //path of program executed
 
 // substitution matrix flavours
 float P[21][21];      // P[a][b] = combined probability for a aligned to b
@@ -217,3 +262,9 @@ float S73[NDSSP][NSSPRED][MAXCF];           // P[A][B][cf]       =  log2 P(A,B,c
 float S33[NSSPRED][MAXCF][NSSPRED][MAXCF];  // P[B][cf][B'][cf'] =  log2 sum_B' P(A,B',cf)/P(A)/P(B,cf) * P_b(B'|B)
 // float S77[NDSSP][DSSP];                  // P[A][B]           =  log2 P(A,B)/P(A)/P(B)
 
+cs::LibraryPseudocounts<cs::AA> *lib_pc;
+cs::ContextLibrary<cs::AA> *context_lib;
+
+#ifdef HHBLITS
+cs::ContextLibrary<cs::AA> *cs_lib;
+#endif

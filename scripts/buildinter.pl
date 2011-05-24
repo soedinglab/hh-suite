@@ -163,7 +163,7 @@ Examples:
  buildinter.pl AbrB.a3m 
  buildinter.pl -quick AbrB.a3m 
  buildinter.pl -accmax 200 -rejmax 100 -nr -id 99 -v 3 AbrB.a3m
- nohup nice -19 buildinter.pl *.a3m &> ./buildinter.log &
+ nohup nice -19 buildinter.pl *.a3m > ./buildinter.log &
 \n";
 
 # Old options superseeded by -tmax:
@@ -1198,7 +1198,7 @@ sub RunPsipred() {
     if (!-e "$dummydb.phr") {print("WARNING: did not find $dummydb.phr... using $db70\n"); $dummydb=$db70; } 
 
     # Start Psiblast from checkpoint file tmp.chk that was generated to build the profile
-    if (&SupSystem("$blastpgp -b 0 -j 1 -h 0.001 -d $dummydb -i $infile -B $basename.psi -C $basename.chk &> $basename.bla")) 
+    if (&SupSystem("$blastpgp -b 0 -j 1 -h 0.001 -d $dummydb -i $infile -B $basename.psi -C $basename.chk > $basename.bla 2>&1"))
 	{return;};
     
 
@@ -1506,8 +1506,8 @@ sub max {
 ###########################################################################################
 #####
 sub blastpgp() {
-    if ($v>=2) {printf("\$ $blastpgp -a $cpu -b 20000 -v 1 %s &> $_[1]\n",$_[0]);} 
-    if (system("$blastpgp -a $cpu -b 20000 -v 1 $_[0] &> $_[1]")) {
+    if ($v>=2) {printf("\$ $blastpgp -a $cpu -b 20000 -v 1 %s > $_[1] 2>&1\n",$_[0]);}
+    if (system("$blastpgp -a $cpu -b 20000 -v 1 $_[0] > $_[1] 2>&1")) {
 	die("Error: PSI-BLAST returned with error. Consults blast output in $_[1]\n\n");
     }
     return;

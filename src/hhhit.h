@@ -87,6 +87,9 @@ class Hit
 
   bool realign_around_viterbi;
 
+  bool forward_allocated;
+  bool backward_allocated;
+
   // Constructor (only set pointers to NULL)
   Hit();
   ~Hit(){};
@@ -102,6 +105,9 @@ class Hit
   void AllocateBackwardMatrix(int Nq, int Nt);
   void DeleteBackwardMatrix(int Nq);
   
+  void AllocateIndices(int len);
+  void DeleteIndices();
+
   // Compare an HMM with overlapping subalignments
   void Viterbi(HMM& q, HMM& t, float** Sstruc=NULL);
 
@@ -135,6 +141,9 @@ class Hit
   // Calculate score (excluding secondary structure score and compositional bias correction
   inline float ScoreAA(HMM& q, HMM& t, int i, int j);
 
+  // Calculate score for a given alignment
+  void ScoreAlignment(HMM& q, HMM& t, int steps);
+
   // Comparison (used to sort list of hits)
   int operator<(const Hit& hit2)  {return score_sort<hit2.score_sort;}
 
@@ -166,7 +175,7 @@ private:
   double** B_MI;        // 
 
   void InitializeBacktrace(HMM& q, HMM& t);
-  void InitializeForAlignment(HMM& q, HMM& t);
+  void InitializeForAlignment(HMM& q, HMM& t, bool vit=true);
 };
 
 

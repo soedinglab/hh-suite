@@ -14,12 +14,26 @@
 #include <ctype.h>    // islower, isdigit etc
 #include <cassert>
 
+#ifdef HH_SSE3
+#ifdef __SUNPRO_C
+#include <sunmedia_intrin.h>
+#else
+#include <emmintrin.h>   // SSE2
+#include <pmmintrin.h>   // SSE3
+///#include <smmintrin.h>   // SSE4.1
+#endif
+#endif
+
 using std::cout;
 using std::cerr;
 using std::endl;
 using std::ios;
 using std::ifstream;
 using std::ofstream;
+
+#include "cs.h"          // context-specific pseudocounts
+#include "context_library.h"
+#include "library_pseudocounts-inl.h"
 
 #include "util.C"        // imax, fmax, iround, iceil, ifloor, strint, strscn, strcut, substr, uprstr, uprchr, Basename etc.
 #include "list.C"        // list data structure
@@ -28,15 +42,7 @@ using std::ofstream;
 #include "hhutil.C"      // MatchChr, InsertChr, aa2i, i2aa, log2, fast_log2, ScopID, WriteToScreen,
 #include "hhmatrices.C"  // BLOSUM50, GONNET, HSDM
 
-// includes needed for context specific pseudocounts
-#include "amino_acid.cpp"
-#include "sequence.cpp"
-#include "profile.cpp"
-#include "cluster.cpp"
-#include "simple_cluster.cpp"
-#include "matrix.cpp"
-#include "cs_counts.cpp"
-
+#include "hhhmm.h"       // class HMM
 #include "hhhit.h"       // class Hit
 #include "hhalignment.h" // class Alignment
 #include "hhhalfalignment.h" // class HalfAlignment
@@ -50,8 +56,6 @@ using std::ofstream;
 #include "hhfullalignment.C" // class FullAlignment
 #include "hhhitlist.C"   // class HitList
 #include "hhfunc.C"      // some functions common to hh programs
-
-float Neff=0.0;            // target diversity
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Exit function
@@ -132,8 +136,8 @@ void ProcessArguments(int argc, char** argv)
       else if (!strcmp(argv[i],"-qsc") && (i<argc-1))  par.qsc=atof(argv[++i]); 
       else if (!strcmp(argv[i],"-cov") && (i<argc-1))  par.coverage=atoi(argv[++i]); 
       else if (!strcmp(argv[i],"-diff") && (i<argc-1)) par.Ndiff=atoi(argv[++i]); 
-      else if (!strcmp(argv[i],"-neff") && (i<argc-1)) Neff=atof(argv[++i]); 
-      else if (!strcmp(argv[i],"-Neff") && (i<argc-1)) Neff=atof(argv[++i]); 
+      else if (!strcmp(argv[i],"-neff") && (i<argc-1)) par.Neff=atof(argv[++i]); 
+      else if (!strcmp(argv[i],"-Neff") && (i<argc-1)) par.Neff=atof(argv[++i]); 
       else if (!strcmp(argv[i],"-M") && (i<argc-1)) 
 	if (!strcmp(argv[++i],"a2m") || !strcmp(argv[i],"a3m"))  par.M=1; 
 	else if(!strcmp(argv[i],"first"))  par.M=3; 
@@ -147,15 +151,6 @@ void ProcessArguments(int argc, char** argv)
     } // end of for-loop for command line input
 }
 
-float filter_by_qsc(float qsc, Alignment& qali, char* dummy)
-{
-  HMM q;
-  for (int k=0; k<qali.N_in; k++) qali.keep[k]=dummy[k];
-  qali.Filter2(qali.keep,par.coverage,0,qsc,par.max_seqid+1,par.max_seqid,0); 
-  qali.FrequenciesAndTransitions(q);
-//   printf("qsc=%4.1f  N_filtered=%-3i  Neff=%6.3f\n",qsc,n,q.Neff_HMM);
-  return q.Neff_HMM;
-} 
 
 /////////////////////////////////////////////////////////////////////////////////////
 //// MAIN PROGRAM
@@ -226,37 +221,10 @@ int main(int argc, char **argv)
   qali.N_filtered = qali.Filter(par.max_seqid,par.coverage,par.qid,par.qsc,par.Ndiff);
 
   // Atune alignment diversity q.Neff with qsc to value Neff_goal
-  if (Neff>=0.999) 
+  if (par.Neff>=0.999) 
     {
-      int v1=v;
-      v=1;
-      const float TOLX=0.001; 
-      const float TOLY=0.02; 
-      char dummy[qali.N_in+1];   
-      for (int k=0; k<qali.N_in; k++) dummy[k]=qali.keep[k];
-      float x=0.0,y=0.0;
-      float x0=-1.0;
-      float x1=+2.0;
-      float y0=filter_by_qsc(x0,qali,dummy);
-      float y1=filter_by_qsc(x1,qali,dummy);
-      int i=2;
-      while (y0-Neff>0 && Neff-y1>0)
-	{
-	  x = x0 + (Neff-y0)*(x1-x0)/(y1-y0); // linear interpolation between (x0,y0) and (x1,y1)
-	  y = filter_by_qsc(x,qali,dummy);
-	  if (v>=2) printf(" %3i  x0=%6.3f -> %6.3f     x=%6.3f -> %6.3f     x1=%6.3f -> %6.3f \n",++i,x0,y0,x,y,x1,y1);
-	  if (y>Neff) {x0=x; y0=y;} else {x1=x; y1=y;}
-	  if (fabs(Neff-y)<TOLY || x1-x0<TOLX) break;
-	}
-      v=v1;
-      if (y0>=Neff && y1<=Neff) 
-	{
-	  // Write filtered alignment WITH insert states (lower case) to alignment file
-	  if (v>=2) printf("Found Neff=%6.3f at filter threshold qsc=%6.3f\n",y,x);
-	  qali.WriteToFile(par.outfile);
-	}
-      else if (v>=1) 
-	printf("Diversity of unfiltered alignment %.2f is below target diversity %.2f. No alignment written\n",y0,Neff);
+      if (qali.FilterNeff())
+	qali.WriteToFile(par.outfile);
     }
   else 
     // Write filtered alignment WITH insert states (lower case) to alignment file

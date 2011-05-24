@@ -1,14 +1,13 @@
 // hhalign.C: 
 // Align a multiple alignment to an alignment or HMM 
 // Print out aligned input sequences in a3m format
-// Compile:              g++ hhalign.C -o hhalign -I/usr/include/ -L/usr/lib -lpng -lz -O3 -fno-strict-aliasing 
-// Compile with efence:  g++ hhalign.C -o hhalign -I/usr/include/ -lefence -L/usr/lib -lpng -lz -O -g  
+// Compile:              g++ hhalign.C -o hhalign -DHH_SSE3 -DHH_PNG -I/usr/include/ -L/usr/lib -lpng -lz -O3 -fno-strict-aliasing 
+// Compile with efence:  g++ hhalign.C -o hhalign -DHH_SSE3 -DHH_PNG -I/usr/include/ -lefence -L/usr/lib -lpng -lz -O -g  
 //
 // Error codes: 0: ok  1: file format error  2: file access error  3: memory error  4: internal numeric error  5: command line error
 
 ////#define WINDOWS
 #define MAIN
-#define PNG           // include options for making png files? (will need the png library)
 
 #include <iostream>   // cin, cout, cerr
 #include <fstream>    // ofstream, ifstream
@@ -24,12 +23,21 @@
 #include <errno.h>    // perror()
 #include <cassert>
 #include <stdexcept>
-#include <malloc.h>   // memalign()
 
 #include <sys/time.h>
 //#include <new>
 //#include "efence.h"
 //#include "efence.c"
+
+#ifdef HH_SSE3
+#ifdef __SUNPRO_C
+#include <sunmedia_intrin.h>
+#else
+#include <emmintrin.h>   // SSE2
+#include <pmmintrin.h>   // SSE3
+///#include <smmintrin.h>   // SSE4.1
+#endif
+#endif
 
 using std::cout;
 using std::cerr;
@@ -38,6 +46,10 @@ using std::ios;
 using std::ifstream;
 using std::ofstream;
 
+#include "cs.h"          // context-specific pseudocounts
+#include "context_library.h"
+#include "library_pseudocounts-inl.h"
+
 #include "util.C"        // imax, fmax, iround, iceil, ifloor, strint, strscn, strcut, substr, uprstr, uprchr, Basename etc.
 #include "list.C"        // list data structure
 #include "hash.C"        // hash data structure
@@ -45,15 +57,7 @@ using std::ofstream;
 #include "hhutil.C"      // MatchChr, InsertChr, aa2i, i2aa, log2, fast_log2, ScopID, WriteToScreen,
 #include "hhmatrices.C"  // BLOSUM50, GONNET, HSDM
 
-// includes needed for context specific pseudocounts
-#include "amino_acid.cpp"
-#include "sequence.cpp"
-#include "profile.cpp"
-#include "cluster.cpp"
-#include "simple_cluster.cpp"
-#include "matrix.cpp"
-#include "cs_counts.cpp"
-
+#include "hhhmm.h"       // class HMM
 #include "hhhit.h"       // class Hit
 #include "hhalignment.h" // class Alignment
 #include "hhhalfalignment.h" // class HalfAlignment
@@ -78,7 +82,7 @@ using std::ofstream;
 #endif
 #endif
 
-#ifdef PNG
+#ifdef HH_PNG
 #include "pngwriter.h"   //PNGWriter (http://pngwriter.sourceforge.net/)
 #include "pngwriter.cc"  //PNGWriter (http://pngwriter.sourceforge.net/)
 #endif	    
@@ -125,7 +129,7 @@ void help()
   printf("Usage: %s -i query [-t template] [options]  \n",program_name);
   printf(" -i <file>     input query alignment  (fasta/a2m/a3m) or HMM file (.hhm)\n");
   printf(" -t <file>     input template alignment (fasta/a2m/a3m) or HMM file (.hhm)\n");
-#ifdef PNG
+#ifdef HH_PNG
   printf(" -png <file>   write dotplot into PNG-file (default=none)           \n");
 #endif
   printf("\n");         
@@ -135,6 +139,7 @@ void help()
   printf(" -Oa3m <file>  write query alignment in a3m format to file (default=none)\n");
   printf(" -Aa3m <file>  append query alignment in a3m format to file (default=none)\n");
   printf(" -atab <file>  write alignment as a table (with posteriors) to file (default=none)\n");
+  printf(" -index <file> use given alignment to calculate Viterbi score (default=none)\n");
   printf(" -v <int>      verbose mode: 0:no screen output  1:only warings  2: verbose\n");
   printf(" -seq  [1,inf[ max. number of query/template sequences displayed  (def=%i)  \n",par.nseqdis);
   printf(" -nocons       don't show consensus sequence in alignments (default=show) \n");
@@ -151,7 +156,7 @@ void help()
   printf(" -b <int>      minimum number of alignments in alignment list (def=%i)    \n",par.b);
   printf(" -rank int     specify rank of alignment to write with -Oa3m or -Aa3m option (default=1)\n");
   printf("\n");         
-#ifdef PNG
+#ifdef HH_PNG
   printf("Dotplot options:\n");
   printf(" -dthr <float> probability/score threshold for dotplot (default=%.2f)        \n",dotthr);
   printf(" -dsca <int>   if value <= 20: size of dot plot unit box in pixels           \n");
@@ -232,7 +237,7 @@ void help_out()
   printf(" -tc <file>    write a TCoffee library file for the pairwise comparison   \n");         
   printf(" -tct [0,100]  min. probobability of residue pairs for TCoffee (def=%i%%)\n",iround(100*probmin_tc));         
   printf("\n");         
-#ifdef PNG
+#ifdef HH_PNG
   printf("Dotplot options:\n");
   printf(" -dwin int     average score in dotplot over window [i-W..i+W] (def=%i)   \n",dotW);
   printf(" -dthr float   score threshold for dotplot (default=%.2f)                 \n",dotthr);
@@ -434,6 +439,12 @@ void ProcessArguments(int argc, char** argv)
 	    {help(); cerr<<endl<<"Error in "<<program_name<<": no query file following -atab\n"; exit(4);}
 	  else strncpy(par.alitabfile,argv[i],NAMELEN);
 	}
+      else if (!strcmp(argv[i],"-index"))
+	{
+	  if (++i>=argc || argv[i][0]=='-') 
+	    {help(); cerr<<endl<<"Error in "<<program_name<<": no index file following -index\n"; exit(4);}
+	  else strcpy(par.indexfile,argv[i]);
+	}
       else if (!strcmp(argv[i],"-tc"))
 	{
 	  if (++i>=argc || argv[i][0]=='-') 
@@ -570,6 +581,14 @@ void ProcessArguments(int argc, char** argv)
       else if (!strcmp(argv[i],"-ovlp") && (i<argc-1)) par.min_overlap=atoi(argv[++i]);
       else if (!strcmp(argv[i],"-tags")) par.notags=0;
       else if (!strcmp(argv[i],"-notags")) par.notags=1;
+      else if (!strcmp(argv[i],"-csb") && (i<argc-1)) par.csb=atof(argv[++i]);
+      else if (!strcmp(argv[i],"-csw") && (i<argc-1)) par.csw=atof(argv[++i]);
+      else if (!strcmp(argv[i],"-cs"))
+        {
+          if (++i>=argc || argv[i][0]=='-')
+            {help() ; cerr<<endl<<"Error in "<<program_name<<": no query file following -cs\n"; exit(4);}
+          else strcpy(par.clusterfile,argv[i]);
+        }
       else cerr<<endl<<"WARNING: Ignoring unknown option "<<argv[i]<<" ...\n";
       if (v>=4) cout<<i<<"  "<<argv[i]<<endl; //PRINT
     } // end of for-loop for command line input
@@ -638,6 +657,19 @@ void RealignByWorker(Hit& hit)
       nhits++;
     }
 
+  // Delete all hitlist entries with too short alignments
+  hitlist.Reset();
+  while (!hitlist.End())
+    {
+      hit_cur = hitlist.ReadNext();
+      if (hit_cur.matched_cols < MINCOLS_REALIGN && nhits > 1 && nhits > par.hitrank)
+	{
+	  if (v>=3) printf("Deleting alignment of %s with length %i\n",hit_cur.name,hit_cur.matched_cols);
+	  hitlist.Delete().Delete();               // delete the list record and hit object
+	  nhits--;
+	}
+    }
+
   if (hit.irep==1)
     {
       fprintf(stderr,"*************************************************\n");
@@ -659,8 +691,10 @@ int main(int argc, char **argv)
   int argc_conf;               // Number of arguments in argv_conf 
   char inext[IDLEN]="";        // Extension of query input file (hhm or a3m) 
   char text[IDLEN]="";         // Extension of template input file (hhm or a3m) 
+#ifdef HH_PNG
   int** ali=NULL;              // ali[i][j]=1 if (i,j) is part of an alignment
   int** alisto=NULL;           // ali[i][j]=1 if (i,j) is part of an alignment
+#endif
   int Nali;                    // number of normally backtraced alignments in dot plot
 
   SetDefaults();
@@ -739,6 +773,17 @@ int main(int argc, char **argv)
       cout<<"Alignment file:  "<<par.alnfile<<"\n";
    }
 
+  // Prepare CS pseudocounts lib
+  if (*par.clusterfile) {
+    FILE* fin = fopen(par.clusterfile, "r");
+    if (!fin) OpenFileError(par.clusterfile);
+    context_lib = new cs::ContextLibrary<cs::AA>(fin);
+    fclose(fin);
+    cs::TransformToLog(*context_lib);
+    
+    lib_pc = new cs::LibraryPseudocounts<cs::AA>(*context_lib, par.csw, par.csb);
+  }
+
   // Set (global variable) substitution matrix and derived matrices
   SetSubstitutionMatrix();
 
@@ -775,6 +820,84 @@ int main(int argc, char **argv)
   // Factor Null model into HMM t
   t.IncludeNullModelInHMM(q,t); 
   
+
+  //////////////////////////////////////////////////////////////
+  // Calculate Score for given alignment?
+  if (*par.indexfile) {
+
+    char line[LINELEN]="";    // input line
+    char* ptr;                // pointer for string manipulation
+    Hit hit;    
+    int step = 0;
+    int length = 0;
+
+    // read in indices from indexfile
+    FILE* indexf=NULL;
+    indexf = fopen(par.indexfile, "r");
+    fgetline(line,LINELEN-1,indexf);
+    if (!strncmp("#LEN",line,4)) 
+      {
+	ptr=strscn(line+4);              //advance to first non-white-space character
+	length = strint(ptr);
+      }
+    if (length == 0)
+      {
+	cerr<<endl<<"Error in "<<program_name<<": first line of index file must contain length of alignment (#LEN ...)\n"; 
+	exit(4);
+      }
+
+    hit.AllocateIndices(length);
+
+    while (fgetline(line,LINELEN-1,indexf)) 
+      {
+	if (strscn(line)==NULL) continue;
+	if (!strncmp("#QNAME",line,6)) {
+	  ptr=strscn(line+6);             // advance to first non-white-space character
+	  strncpy(q.name,ptr,NAMELEN-1);    // copy full name to name
+	  strcut(q.name);
+	  continue;
+	} 
+	else if (!strncmp("#TNAME",line,6)) {
+	  ptr=strscn(line+6);             // advance to first non-white-space character
+	  strncpy(t.name,ptr,NAMELEN-1);    // copy full name to name
+	  strcut(t.name); 
+	  continue;
+	} 
+	else if (line[0] == '#') continue;
+	ptr = line;
+	hit.i[step] = strint(ptr);
+	hit.j[step] = strint(ptr);
+	step++;
+      }
+    
+    fclose(indexf);
+
+    // calculate score for each pair of aligned residues
+    hit.ScoreAlignment(q,t,step);
+
+    printf("\nAligned %s with %s: Score = %-7.2f \n",q.name,t.name,hit.score);
+
+    // Print 'Done!'
+    FILE* outf=NULL;
+    if (!strcmp(par.outfile,"stdout")) printf("Done!\n");
+    else
+      {
+	if (*par.outfile)
+	  {
+	    outf=fopen(par.outfile,"a"); //open for append
+	    fprintf(outf,"Done!\n");
+	    fclose(outf);
+	  }
+	if (v>=2) printf("Done\n");
+      }
+
+    hit.DeleteIndices();
+
+    return(0);
+  } 
+  ////////////////////////////////////////////////////////////////
+
+
   // Allocate memory for dynamic programming matrix
   const float MEMSPACE_DYNPROG = 512*1024*1024;
   int Lmaxmem=(int)((float)MEMSPACE_DYNPROG/q.L/6/8); // longest allowable length of database HMM
@@ -998,7 +1121,10 @@ int main(int argc, char **argv)
       fclose(qa3mf);
       
       // Align query with template in master-slave mode 
-      Qali.MergeMasterSlave(hit,par.tfile);
+      FILE* ta3mf=fopen(par.tfile,"r");
+      if (!ta3mf) OpenFileError(par.tfile);
+      Qali.MergeMasterSlave(hit,par.tfile, ta3mf);
+      fclose(ta3mf);
       
       // Write output A3M alignment?
       if (*par.alnfile) Qali.WriteToFile(par.alnfile,"a3m");
@@ -1016,7 +1142,7 @@ int main(int argc, char **argv)
   //////////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef PNG
+#ifdef HH_PNG
   // Write dot plot into a png file
   if (pngfile)
     {
@@ -1030,7 +1156,7 @@ int main(int argc, char **argv)
       for(i=1; i<=q.L; i++)
 	for (j=1; j<=t.L; j++) // Loop through template positions j
 	  {
- //	    printf("%-3i %-3i %7.3f %7.3f\n",i,j,hit.ScoreTot(q,t,i,j),hit.ScoreAA(q,t,i,j));
+ 	    //printf("%-3i %-3i %7.3f %7.3f\n",i,j,hit.ScoreTot(q,t,i,j),hit.ScoreAA(q,t,i,j));
 	    s[i][j]=hit.ScoreTot(q,t,i,j); 
 	  }
       
@@ -1256,6 +1382,11 @@ int main(int argc, char **argv)
   if (par.forward==2 || par.realign) 
     hit.DeleteBackwardMatrix(q.L+2);
 //   if (Pstruc) { for (int i=0; i<q.L+2; i++) delete[](Pstruc[i]); delete[](Pstruc);}
+
+  if (*par.clusterfile) {
+    delete context_lib;
+    delete lib_pc;
+  }
 
   // Delete content of hits in hitlist
   hitlist.Reset();

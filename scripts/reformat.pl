@@ -179,7 +179,7 @@ if(!$found) {die("\nError: $outformat is not a valid output format option\n");}
 #if($outformat eq "psi") {
 #   $remove_inserts=1;
 #}
-if($outformat eq "ufas") {$gap=""; $outformat="fas";}
+if($outformat eq "ufas") {$gap="";}
 
 
 if ($infile=~/\*/ || $outfile=~/^\./) # if infile contains '*' or outfile is just an extension
@@ -672,7 +672,7 @@ sub reformat()
     ####################################################
     # Check that sequences have same length
     ####################################################
-    if ($outformat ne "a3m") {
+    if ($outformat ne "a3m" && $outformat ne "ufas") {
 	my $len=length($seqs[0]);
 	for($k=1; $k<$n; $k++) {
   	    if (length($seqs[$k])!=$len) {

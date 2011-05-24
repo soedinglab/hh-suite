@@ -62,7 +62,8 @@ FullAlignment::FullAlignment(int maxseqdis)
 {
   qa = new HalfAlignment(maxseqdis);
   ta = new HalfAlignment(maxseqdis);
-  }
+  if (!qa || !ta) MemoryError("space for formatting HMM-HMM alignment");
+}
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Destructor

@@ -15,7 +15,8 @@
 #include <time.h>     // clock
 #include <dirent.h>   // DIR, struct dirent, opendir, readdir, closedir, ...
 #include <errno.h>    // perror()
-
+#include <cassert>
+#include <string.h>
 
 using std::cout;
 using std::cerr;
@@ -428,15 +429,20 @@ int main(int argc, char **argv)
 	  double sumw=0.0; 
 	  double cov=0.0;
 	  for (m=0; m<M; m++)
-	    if (incl[k][m] && incl[l][m])
-	      {
-		sumw += w[m];
-		cov  += w[m]*Z[k][m]*Z[l][m];
-	      }
+	    {
+	      printf("k: %2i  l: %2i  m: %2i   incl[k][m]: %1i  incl[l][m]: %1i    Z[k][m]: %4.2f   Z[l][m]: %4.2f   w[m]: %4.2f\n",k,l,m,incl[k][m],incl[l][m],Z[k][m],Z[l][m],w[m]);
+	      if (incl[k][m] && incl[l][m])
+		{
+		  sumw += w[m];
+		  cov  += w[m]*Z[k][m]*Z[l][m];
+		}
+	      printf("cov: %4.2f, sumw: %4.2f\n",cov, sumw);
+	    }
 // 	  if (cov/psumw < par.rmin)  
 // 	    C[k][l] = C[l][k] = 0.0;
 // 	  else 
 	  C[k][l] = C[l][k] = cov/sumw;
+	  printf("Cov[%1i][%1i]:  %4.2f    (cov: %4.2f, sumw: %4.2f)\n",k,l,C[k][l], cov, sumw);
 	}
     }
   if (v>=2) printf("\n");

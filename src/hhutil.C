@@ -370,7 +370,7 @@ inline void WriteToScreen(char* outfile) {WriteToScreen(outfile,INT_MAX);}
 /////////////////////////////////////////////////////////////////////////////////////
 // Read .hhdefaults file into array argv_conf (beginning at argv_conf[1])
 /////////////////////////////////////////////////////////////////////////////////////
-void ReadDefaultsFile(int& argc_conf, char** argv_conf)
+void ReadDefaultsFile(int& argc_conf, char** argv_conf, char* path=NULL)
 {
   char line[LINELEN]="";
   char filename[NAMELEN];
@@ -383,6 +383,12 @@ void ReadDefaultsFile(int& argc_conf, char** argv_conf)
   // Open config file
   strcpy(filename,"./.hhdefaults");
   configf = fopen(filename,"r");
+  if (!configf && path) 
+    {
+      strcpy(filename,path);
+      strcat(filename,".hhdefaults");
+      configf = fopen(filename,"r");
+    }
   if (!configf && getenv("HOME"))
     {
       strcpy(filename,getenv("HOME"));
@@ -403,7 +409,8 @@ void ReadDefaultsFile(int& argc_conf, char** argv_conf)
   if (!strncmp(line,program_name,6))
     {
       // Read in options until end-of-file or empty line
-        while (fgets(line,LINELEN,configf) && strcmp(line,"\n"))
+      //while (fgets(line,LINELEN,configf) && strcmp(line,"\n"))
+      while (fgets(line,LINELEN,configf))
         {
           // Analyze line
           c=line;
@@ -411,10 +418,10 @@ void ReadDefaultsFile(int& argc_conf, char** argv_conf)
             {
               // Find next word
               while (*c==' ' || *c=='\t') c++; //Advance until next non-white space
-              if (*c=='\0' || *c=='\n' || *c=='#') break;  //Is next word empty string?
+              if ((*c=='h' && *(c+1)=='h') || *c=='\0' || *c=='\n' || *c=='#' || *c==13) break;  //Is next word empty string? (char 13 needed for Windows!)
               c_first=c;
-              while (*c!=' ' && *c!='\t'  && *c!='#' && *c!='\0' && *c!='\n' ) c++; //Advance until next white space or '#'
-              if (*c=='\0' || *c=='\n' || *c=='#')         //Is end of line reached?
+              while (*c!=' ' && *c!='\t'  && *c!='#' && *c!='\0' && *c!='\n' && *c!=13) c++; //Advance until next white space or '#' (char 13 needed for Windows!)
+              if (*c=='\0' || *c=='\n' || *c=='#' || *c==13)         //Is end of line reached? (char 13 needed for Windows!)
                 {
                   *c='\0';
                   argv_conf[argc_conf]=new(char[strlen(c_first)+1]);
@@ -424,24 +431,25 @@ void ReadDefaultsFile(int& argc_conf, char** argv_conf)
               *c='\0';
               argv_conf[argc_conf]=new(char[strlen(c_first)+1]);
               strcpy(argv_conf[argc_conf++],c_first);
-              printf("Argument: %s\n",c_first);
+              if (v>2) printf("Default argument: %s\n",c_first);
               c++;
             } while (1);
+	  if (*c=='h' && *(c+1)=='h') break; // Next program found
         } //end read line
-     if (v>=3)
+      if (v>=3)
         {
-          cout<<"Arguments read in from .hhdefaults:";
+          cout<<"Arguments read in from .hhdefaults ("<<filename<<"):";
           for (int argc=1; argc<argc_conf; argc++) cout<<(argv_conf[argc][0]=='-'? " ":"")<<argv_conf[argc]<<" ";
           cout<<"\n";
         }
-     else if (v>=3) cout<<"Read in "<<argc_conf<<" default arguments for "<<program_name<<" from "<<filename<<"\n";
-     }
+      else if (v>=3) cout<<"Read in "<<argc_conf<<" default arguments for "<<program_name<<" from "<<filename<<"\n";
+    }
   else //found no line 'program_name   anything"
     {
       if (v>=3) cerr<<endl<<"Warning: no default options for \'"<<program_name<<"\' found in "<<filename<<"\n";
       return; //no line 'program_name   anything' found
     }
-//   configf.close();
+  //   configf.close();
   fclose(configf);
 }
 
@@ -461,6 +469,7 @@ void SetDefaults()
   par.z=10;                    // min number of lines in hit list
   par.Z=500;                   // max number of lines in hit list
   par.e=1e-3f;                 // maximum E-value for inclusion in output alignment, output HMM, and PSI-BLAST checkpoint model
+  par.realign_max=1000;
   par.showcons=1;              // show consensus sequence
   par.showdssp=1;              // show predicted secondary structure ss_dssp
   par.showpred=1;              // show predicted secondary structure ss_pred
@@ -475,6 +484,8 @@ void SetDefaults()
   par.qsc=-20.0f;              // default for minimum score per column with query
   par.coverage=0;              // default for minimum coverage threshold
   par.Ndiff=100;               // pick Ndiff most different sequences from alignment
+
+  par.Neff=0;                 // Filter alignment to a diversity (Neff) with a maximum Neff of par.Neff
 
   par.M=1;                     // match state assignment is by A2M/A3M
   par.Mgaps=50;                // Above this percentage of gaps, columns are assigned to insert states (for par.M=2)
@@ -491,6 +502,10 @@ void SetDefaults()
   par.pcc=1.0f;                // pcs are reduced prop. to 1/Neff^pcc
   par.pcw=0.0f;                // wc>0 weighs columns according to their intra-clomun similarity
 
+
+  par.pre_pca=0.75f;            // PREFILTER - default values for substitution matrix pseudocounts 
+  par.pre_pcb=1.75f;            // PREFILTER - significant reduction of pcs by Neff_M starts around Neff_M-1=pcb
+
   par.gapb=1.0;                // default values for transition pseudocounts
   par.gapd=0.15;               // gap open penalty pseudocount; 0.25 corresponds to 7.1*gapf bits
   par.gape=1.0;                // gap extension penalty pseudocount
@@ -501,6 +516,7 @@ void SetDefaults()
 
   par.ssm=2;                   // ss scoring mode: 0:no ss score  1:score after alignment  2:score during alignment
   par.ssw=0.11f;               // weight of ss scoring
+  par.ssw_realign=0.11f;       // weight of ss scoring for realign
   par.ssa=1.0f;                // weight of ss evolution matrix
   par.shift=-0.01f;            // Shift match score up
   par.mact=0.3001f;            // Score threshold for MAC alignment in local mode (set to 0.5001 to track user modification)
@@ -536,21 +552,47 @@ void SetDefaults()
 
   par.notags=1;                // neutralize His-tags, FLAG-tags, C-myc-tags
 
-  // HHblast parameters
-  par.hhblast_prefilter_logpval=0;
+  par.hmmer_used=false;
+
+  // Directories for SS-prediction
+  par.addss=0;
+  strcpy(par.psipred,"");
+  strcpy(par.psipred_data,"");
+
+  // HHblits parameters
+  par.hhblits_prefilter_logpval=0;
+
+  par.dbsize = 0;
+
+  // HHblits Evalue calculation  (alpha = a + b(Neff(T) - 1)(1 - c(Neff(Q) - 1)) )
+  par.alphaa = 0.4;
+  par.alphab = 0.02;
+  par.alphac = 0.1;
+
+  par.prefilter = false;
+  par.early_stopping_filter = false;
 
   par.filter_thresh=0;
   par.filter_length=200;
-  par.filter_evals=new double[par.filter_length];
+  par.filter_evals=NULL;
   par.filter_sum=0.0;
   par.filter_counter=0;
 
   par.block_shading=NULL;
   par.block_shading_counter=NULL;
-  par.block_shading_space = 100;
+  par.block_shading_space = 200;
   strcpy(par.block_shading_mode,"tube");
 
-  // for filtering database alignments in HHsearch and HHblast
+  // For HHblits prefiltering with SSE2
+  par.prefilter_gap_open = 20;
+  par.prefilter_gap_extend = 4;
+  par.prefilter_states = cs::AS219::kSize;
+  par.prefilter_score_offset = 50;
+  par.prefilter_bit_factor = 4;
+  par.prefilter_evalue_thresh = 1000;
+  par.preprefilter_smax_thresh = 10;
+
+  // for filtering database alignments in HHsearch and HHblits
   par.max_seqid_db=par.max_seqid;
   par.qid_db=par.qid;            
   par.qsc_db=par.qsc;            
@@ -563,6 +605,7 @@ void SetDefaults()
   strcpy(par.pairwisealisfile,"");
   strcpy(par.buffer,"buffer.txt");
   strcpy(par.scorefile,"");
+  strcpy(par.indexfile,""); 
   strcpy(par.wfile,"");
   strcpy(par.alnfile,"");
   strcpy(par.hhmfile,"");
@@ -573,10 +616,8 @@ void SetDefaults()
   // parameters for context-specific pseudocounts
   par.csb = 0.85;
   par.csw = 1.6;
-  strcpy(par.clusterfile,"");
+  strcpy(par.clusterfile,""); // default in config-file: /cluster/user/michael/hh/cs/data/K4000.lib
+  strcpy(par.cs_library,""); // default in config-file: /cluster/scripts/update_scripts/nr20/nr20_sampled_clusters_neff1.2_W1_N10M_n0_nopc_K62_wcenter1000_gauss_init.lib
 
   return;
 }
-
-
-

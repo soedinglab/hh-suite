@@ -10,6 +10,7 @@ public:
     HMM& operator=(HMM&);
 
     int n_display;            // number of sequences stored for display of alignment (INCLUDING >ss_ and >cf_ sequences)
+    int n_seqs;               // number of sequences read in (INCLUDING >ss_ and >cf_ sequences)
     char** sname;             // names of stored sequences
     char** seq;               // residues of stored sequences (first at pos 1!)
     int ncons;                // index of consensus sequence
@@ -47,14 +48,20 @@ public:
     // Read an HMM from a HMMer .hmm file; return 0 at end of file
     int ReadHMMer(FILE* dbf, char* filestr=NULL);
 
+    // Read an HMM from a HMMer3 .hmm file; return 0 at end of file
+    int ReadHMMer3(FILE* dbf, char* filestr=NULL);
+
     // Add transition pseudocounts to HMM
     void AddTransitionPseudocounts(float gapd=par.gapd, float gape=par.gape, float gapf=par.gapf, float gapg=par.gapg, float gaph=par.gaph, float gapi=par.gapi, float gapb=par.gapb);
 
     // Generate an amino acid frequency matrix g[][] with full pseudocount admixture (tau=1)
     void PreparePseudocounts();
 
-    // Generate an amino acid frequency matrix g[][] with full context specific pseudocount admixture (tau=1)
-    void PrepareContextSpecificPseudocounts();
+    // Add context specific amino acid pseudocounts to HMM: t.p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
+    void AddContextSpecificPseudocounts(char pcm=par.pcm, float pca=par.pca, float pcb=par.pcb, float pcc=par.pcc);
+
+    // Fill CountProfile with HMM-counts for CS pseudocount calculation
+    void fillCountProfile(cs::CountProfile<cs::AA> *csProfile);
 
     // Add amino acid pseudocounts to HMM: t.p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
     void AddAminoAcidPseudocounts(char pcm=par.pcm, float pca=par.pca, float pcb=par.pcb, float pcc=par.pcc);
@@ -66,7 +73,7 @@ public:
     void NoAminoAcidPseudocounts() {for(int i=1; i<=L; i++) for(int a=0; a<20; a++) p[i][a]=f[i][a];};
 
     // Factor Null model into HMM t
-    void IncludeNullModelInHMM(HMM& q, HMM& t);
+    void IncludeNullModelInHMM(HMM& q, HMM& t, int columnscore=par.columnscore);
 
     // Write HMM to output file
     void WriteToFile(char* outfile);
@@ -83,17 +90,23 @@ public:
     // Calculate effective number of sequences using profiles INCLUDING pseudocounts
     float CalcNeff();
 
+    // Add secondary structure prediction to HMM
+    void AddSSPrediction(char seq_pred[], char seq_conf[]);
+
     // Initialize f[i][a] with query HMM
     void MergeQueryHMM(HMM& q, float wk[]);
 
     // Rescale rate matrices P[a][b], R[a][b] according to HMM av. aa composition in pav[a]
     void RescaleMatrix();
 
-
-private:
-    float** f;                // f[i][a] = prob of finding amino acid a in column i WITHOUT pseudocounts
-    float** g;                // f[i][a] = prob of finding amino acid a in column i WITH pseudocounts
+    // Needed for SSE2 prefiltering with HHblits with amino acid alphabet
     float** p;                // p[i][a] = prob of finding amino acid a in column i WITH OPTIMUM pseudocounts
+    float pav[NAA];           // pav[a] = average freq of amino acids in HMM (including subst matrix pseudocounts)
+
+ private:
+    float** f;                // f[i][a] = prob of finding amino acid a in column i WITHOUT pseudocounts
+    float** g;                // g[i][a] = prob of finding amino acid a in column i WITH pseudocounts
+    //float** p;                // p[i][a] = prob of finding amino acid a in column i WITH OPTIMUM pseudocounts
     float** tr;               // tr[i][X2Y] = log2 of transition probabilities M2M M2I M2D I2M I2I D2M D2D
 
     char* ss_dssp;            // secondary structure determined by dssp 0:-  1:H  2:E  3:C  4:S  5:T  6:G  7:B
@@ -101,7 +114,6 @@ private:
     char* ss_pred;            // predicted secondary structure          0:-  1:H  2:E  3:C
     char* ss_conf;            // confidence value of prediction         0:-  1:0 ... 10:9
     char* Xcons;              // consensus sequence in internal representation (A=0 R=1 N=2 D=3 ...)
-    float pav[NAA];           // pav[a] = average freq of amino acids in HMM (including subst matrix pseudocounts)
     float pnul[NAA];          // null model probabilities used in comparison (only set in template/db HMMs)
     int* l;                   // l[i] = pos. of j'th match state in aligment
     char dont_delete_seqs;    // set to one if flat copy of seqs and sname was made to a hit object, to avoid deletion

@@ -21,10 +21,10 @@ use Align;
 $|=1;  # force flush after each print
 
 # Default parameters
-our $d=1;    # gap opening penalty for Align.pm
-our $e=0.1;  # gap extension penatlty for Align.pm
-our $g=0.09; # endgap penatlty for Align.pm
-my $v=2;     # 3: DEBUG
+our $d=7;     # gap opening penalty for Align.pm; more than 2 mismatches - 2 matches    ## previously: 1
+our $e=0.01;  # gap extension penatlty for Align.pm; allow to leave large gaps bridging uncrystallized regions  ## previously: 0.1
+our $g=0.1;   # endgap penatlty for Align.pm; allow to shift SEQRES residues for uncrystallized aas to ends of alignment  ## previously: 0.9
+my $v=2;      # 3: DEBUG
 
 my $formatting="CASP";     # CASP or LIVEBENCH
 my $servername="HHpred2";  # HHpred2 or HHpred3
@@ -494,6 +494,7 @@ sub MakeMultipleAlignment()
 	while ($line=<QFILE>) {
 	    if ($line=~/^>/ || $line=~/^\#/) {last;}
 	    $line=~tr/\n\.-//d; 
+	    $line=~tr/a-z/A-Z/;
 	    $hitseqs[0].=$line;
 	}
 	close(QFILE);
@@ -791,7 +792,7 @@ sub FormatSequences()
 	    my $score;  
 	    # The aligned characters are returend in $j2[$col2] and $l2[$col2]
 	    $score=&AlignNW(\$xseq,\$yseq,\@j2,\@l2,\$jmin,\$jmax,\$lmin,\$lmax,\$Sstr);  
-	    
+
 	    # DEBUG
 	    if ($v>=3) {
 		printf("Template (hh)  $xseq\n");
@@ -799,12 +800,24 @@ sub FormatSequences()
 		printf("Template (pdb) $yseq\n");
 		printf("\n");
 		if ($v>=4) {
-		    for ($col2=0; $col2<@l2 && $col2<200; $col2++) {
+		    for ($col2=0; $col2<@l2 && $col2<1000; $col2++) {
 			printf("%3i  %3i:%s  %3i:%s -> %i\n",$col2,$j2[$col2],substr($aat,$j2[$col2]-1,1),$l2[$col2],substr($aapdb,$l2[$col2]-1,1),$nres[$l2[$col2]-1]);
 		    }
 		}
 	    }	
 	    
+            # check for reasonable alignment
+	    my $num_match = 0;
+	    for ($i=0; $i<@l2; $i++) {
+		if ($j2[$i] > 0 && $l2[$i] > 0) {
+		    $num_match++;
+		}
+	    }
+	    if (($score/$num_match) < 1) {
+		print "WARNING! Match score with PDBfile (score: $score   num: $num_match   score/num:".($score/$num_match).") to low => $pdbfile not included!\n";
+		next;
+	    }
+   
 	    # Assign a3m-formatted amino acid sequence from pdb file to $aapdb
 	    $aapdb="";
 	    my @xseq=unpack("C*",$xseq);
@@ -1160,12 +1173,16 @@ sub ExtractPdbcodeAndChain()
     }
     
     else {
-	if ($v>=2) {print("Warning: no pdb code found in sequence name '$name'\n");} 
-	return 1; # no SCOP/DALI/pdb sequence 
+	$pdbcode=$name;
+	$chain="A";
+#	return 1; # no SCOP/DALI/pdb sequence 
     }
+
     my $div=substr($pdbcode,1,2);
-    
+    $pdbfile = "";
+
     foreach $pdbdir (@pdbdirs) {
+	#print "PDB-dir: $pdbdir\n";
 #	if (-e "$pdbdivdir/$div/pdb$pdbcode.ent")   {$pdbfile="$pdbdivdir/$div/pdb$pdbcode.ent"; last;}
 #	if (-e "$pdbdivdir/$div/pdb$pdbcode.ent.Z") {$pdbfile="gunzip -c $pdbdivdir/$div/pdb$pdbcode.ent.Z |"; last;}
 	if (-e "$pdbdir/pdb$pdbcode.ent") {$pdbfile="$pdbdir/pdb$pdbcode.ent"; last;}
@@ -1173,7 +1190,13 @@ sub ExtractPdbcodeAndChain()
 	if (-e "$pdbdir/$name.pdb")       {$pdbfile="$pdbdir/$name.pdb"; last;}
 	if (-e "$pdbdir/$pdbcode"."_$chain.pdb")    {$pdbfile="$pdbdir/$pdbcode"."_$chain.pdb"; last;}
     }
-   return 0;
+
+    if ($pdbfile eq "") {
+	if ($v>=2) {print("Warning: no pdb file found for sequence name '$name'\n");} 
+	return 1;
+    }
+
+    return 0;
 }
 
 
