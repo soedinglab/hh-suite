@@ -391,7 +391,7 @@ void SetSubstitutionMatrix()
 	  for (a=0; a<20; a++)  printf("%5.0f ",1000000*P[b][a]);
 	  cout<<endl;
 	}
-      cout<<endl<<"Similarity matrix P(a,b)^2/P(a,a,)/P(b,b) (in %):\n";
+      cout<<endl<<"Similarity matrix P(a,b)^2/P(a,a)/P(b,b) (in %):\n";
       cout<<"      A    R    N    D    C    Q    E    G    H    I    L    K    M    F    P    S    T    W    Y    V\n";
       for (b=0; b<20; b++)
 	{
@@ -423,6 +423,7 @@ void SetSecStrucSubstitutionMatrix()
     for (A=0; A<NDSSP; A++)
       for (B=0; B<NSSPRED; B++)
 	{
+
 	  P73[A][B][cf] = 1.-par.ssa + par.ssa*Ppred[cf*NSSPRED*NDSSP + B*NDSSP + A];
 	  S73[A][B][cf] = log2(P73[A][B][cf]);
 	}

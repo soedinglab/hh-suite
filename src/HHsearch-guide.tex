@@ -379,7 +379,7 @@ Here is a list of things to check if a database match really is at least locally
 
 \item{Check relationship among top hits: If several of the top hits are homologous to each other, (e.g. when they are members of the same SCOP superfamily), then this will considerably reduce the chances of all of them being chance hits, especially if these related hits are themselves not very similar to each other. Searching the SCOP database is very usefull precisely for this reason, since the SCOP family identifier (e.g. a.118.8.2) allows to tell immediately if two templates are likely homologs.}
 
-\item{Check for possible conserved motifs: Most homologous pairs of alignments will have at least one (semi-)conserved motif in common. You can identify such putative (semi-)conserved motifs by the agglomeration of three or more well-matching columns (marked with a '|' sign between the aligned HMMs) occurring within a few residues, as well as by matching consensus sequences. Some false positive hits have decent scores due to a similar amino acid composition of the template. In these cases, the alignments tend to be long and to lack conserved motifs.}
+\item{Check for possible conserved motifs: Most homologous pairs of alignments will have at least one (semi-)conserved motif in common. You can identify such putative (semi-)conserved motifs by the agglomeration of three or more well-matching columns (marked with a '$\vert$' sign between the aligned HMMs) occurring within a few residues, as well as by matching consensus sequences. Some false positive hits have decent scores due to a similar amino acid composition of the template. In these cases, the alignments tend to be long and to lack conserved motifs.}
 
 \item{Check residues and role of conserved motifs: If you can identify possible conserved motifs: are the corresponding conserved template residues involved in binding or enzymatic function?}
 
@@ -494,7 +494,12 @@ True positives are defined to be either globally homologous or they are at least
 homologous in parts, and thereby locally similar in structure. More precisely, 
 the latter criterion demands that the MAXSUB score between query and hit is at 
 least 0.1. In almost all cases the structural similarity will we be due to a global
-OR LOCAL homology between query and target. \\
+OR LOCAL homology between query and target. Whereas E-values depend on the DB size 
+($E-value = N_DB \times P-value(raw-score)$) probabilities do not. Probabilities are 
+determined by fiting the TP and FP distributions in an all-against-all comparison 
+of a SCOP25 test set:  $Probability = TP(S) / ( TP(S) + FP(S) )$, where 
+$S = S_{HMM-HMM} + w_{SS} S_{SS}$. Here, $w_{SS}$ is the weight of secondary 
+structure scoring, which is $\sim 0.1$.\\
 
 Column 4 'E-value': & 
 E-value and P-value are calculated without taking the secondary structure into account!
@@ -1354,8 +1359,8 @@ homology modelling package.
   -a2m <file.a2m>        write an A2M-formatted multiple alignment to file.a2m
   -a3m <file.a3m>        write an A3M-formatted multiple alignment to file.a3m
   -m   <int> [<int> ...] pick hits with specified indices  (default='-m 1')
-  -p   <probability>     minimum probability threshold (default=$Pthr)        
-  -e   <E-value>         maximum E-value threshold (default=$Ethr)        
+  -p   <probability>     minimum probability threshold (default=0)        
+  -e   <E-value>         maximum E-value threshold (default=0)        
   -q   <query_ali>       use the full-length query sequence in the alignment 
                          (not only the aligned part);
                          the query alignment file must be in HHM, FASTA, A2M,  
@@ -1363,7 +1368,7 @@ homology modelling package.
   -N                     use query name from hhr filename (default: use same  
                          name as in hhr file)
   -first                 include only first Q or T sequence of each hit in MSA
-  -v                     verbose mode (default=$v)
+  -v                     verbose mode (default=2)
 
  Options when database matches in hhr file are PDB or SCOP sequences
   -pir <file.pir>        write a PIR-formatted multiple alignment to file.pir 
@@ -1371,8 +1376,8 @@ homology modelling package.
                          alignments into file.pdb
   -al  <file.al>         write the AL-formatted *pairwise* alignments into file.al
   -d   <pdbdirs>         directories containing the pdb files (for PDB, SCOP, or DALI  
-                         sequences) (default=$pdbdir)
-  -s   <int>             shift the residue indices up/down by an integer (default=$shift);           
+                         sequences) (default=.)
+  -s   <int>             shift the residue indices up/down by an integer (default=0);           
   -CASP                  formatting for CASP (for -ts, -al options) (default: LIVEBENCH  
                          formatting)
 
@@ -1445,7 +1450,7 @@ homology modelling package.
 \item{HHsearch and hhalign can generate query-template multiple alignments in 
   FASTA, A2M, or A3M format with the -ofas, -oa2m, -oa3m options 
 }
-\item{Returned error values were changed to comply with convention that 0 means no errors:
+\item{Returned error values were changed to comply with the convention that 0 means no errors:
 \begin{enumerate}
    \item{Finished successfully}
    \item{Format error in input files}

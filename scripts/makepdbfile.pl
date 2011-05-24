@@ -87,7 +87,7 @@ while ($line=<INFILE>) {
     chomp($line);
     $aaq.=$line;
 }
-$aaq=~tr/X.-//d;  # Remove symbol for inserted domain / missing residues
+
 if (&MakePdbFile($nameline,$aaq,$outfile) !=0) {exit(1);}
 close(INFILE);
 if ($v>=2) {print("Done\n");}
@@ -296,12 +296,14 @@ sub Three2OneLetter {
     elsif ($res eq "LYS") {return "K";}
     elsif ($res eq "HIS") {return "H";}
     elsif ($res eq "ARG") {return "R";}
-    elsif ($res eq "SEC") {return "U";}
-    elsif ($res eq "ASX") {return "B";}
-    elsif ($res eq "GLX") {return "Z";}
-    elsif ($res eq "KCX") {return "K";}
+    elsif ($res eq "ASX") {return "D";}
+    elsif ($res eq "GLX") {return "E";}
     elsif ($res eq "MSE") {return "M";} # SELENOMETHIONINE 
     elsif ($res eq "SEP") {return "S";} # PHOSPHOSERINE 
+    elsif ($res eq "SEC") {return "C";} # SELENOCYSTEINE
+    elsif ($res eq "TPO") {return "T";} # PHOSPHOTHREONINE 
+    elsif ($res eq "TYS") {return "Y";} # SULFONATED TYROSINE 
+    elsif ($res eq "KCX") {return "K";} # LYSINE NZ-CARBOXYLIC ACID
     else                  {return "X";}
 }
 

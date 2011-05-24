@@ -1064,14 +1064,6 @@ void HMM::AddTransitionPseudocounts(float gapd, float gape, float gapf, float ga
       if (i==L) p1=p2=0;       //from M(L) no transition to D(L+1) and I(L+1) possible
       sum = p0+p1+p2+FLT_MIN;
 
-//       p0 = p0/sum ;
-//       p1 = pow(p1/sum,gapf);
-//       p2 = pow(p2/sum,gapg);
-//       sum = p0+p1+p2+FLT_MIN;
-//       tr[i][M2M] = fast_log2(p0/sum);
-//       tr[i][M2D] = fast_log2(p1/sum);
-//       tr[i][M2I] = fast_log2(p2/sum);
-
       tr[i][M2M] = fast_log2(p0/sum);
       tr[i][M2D] = fast_log2(p1/sum)*gapf;
       tr[i][M2I] = fast_log2(p2/sum)*gapg;
@@ -1080,13 +1072,6 @@ void HMM::AddTransitionPseudocounts(float gapd, float gape, float gapf, float ga
       p0 = Neff_I[i]*fpow2(tr[i][I2M]) + gapb*pI2M;
       p1 = Neff_I[i]*fpow2(tr[i][I2I]) + gapb*pI2I;
       sum = p0+p1+FLT_MIN;
-
-//       p0 = pow(p0/sum,gapg);
-//       p1 = pow(p1/sum,gapi);
-//       sum = p0+p1+FLT_MIN;
-//       tr[i][I2M] = fast_log2(p0/sum);
-//       tr[i][I2I] = fast_log2(p1/sum);
-
       tr[i][I2M] = fast_log2(p0/sum);
       tr[i][I2I] = fast_log2(p1/sum)*gapi;
 
@@ -1095,16 +1080,8 @@ void HMM::AddTransitionPseudocounts(float gapd, float gape, float gapf, float ga
       p1 = Neff_D[i]*fpow2(tr[i][D2D]) + gapb*pD2D;
       if (i==L) p1=0;          //from D(L) no transition to D(L+1) possible
       sum = p0+p1+FLT_MIN;
-
-//       p0 = pow(p0/sum,gapf);
-//       p1 = pow(p1/sum,gaph);
-//       sum = p0+p1+FLT_MIN;
-//       tr[i][D2M] = fast_log2(p0/sum);
-//       tr[i][D2D] = fast_log2(p1/sum);
-
       tr[i][D2M] = fast_log2(p0/sum);
       tr[i][D2D] = fast_log2(p1/sum)*gaph;
-
     }
 
   if (v>=4)
@@ -1489,7 +1466,7 @@ void HMM::InsertCalibration(char* infile)
   while (inf.getline(line,LINELEN) && !(line[0]=='/' && line[1]=='/') && nline<2*MAXRES)
     {
 
-      // Found an EVD lamda mu line? -> remove
+      // Found an EVD lamda mu line? -> remove, i.e., read next line
       while (!done && !strncmp(line,"EVD ",3) && !(line[0]=='/' && line[1]=='/') && nline<2*MAXRES)
         inf.getline(line,LINELEN);
       if ((line[0]=='/' && line[1]=='/') || nline>=2*MAXRES)

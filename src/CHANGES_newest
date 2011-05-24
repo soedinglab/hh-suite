@@ -221,7 +221,7 @@ HHsearch 1.5.0 August 2007
 
 _______________________________________________________________________________
 
-HHsearch 1.6.0 sometime in 2009
+HHsearch 1.6.0 sometime in 2010
 
 * A new procedure for estimation of P- and E-values has been implemented that
   circumvents the need to calibrate HMMs. Calibration can still be done if 
@@ -279,7 +279,7 @@ HHsearch 1.6.0 sometime in 2009
 * Removed a bug in hhalign that could lead to unreasonably significant E-values 
   and probabilities due to calibration problems.
 
-* Perform realign with MAC-alignment only around Viterbi-hit
+* HHsearch now performs realign with MAC-alignment only around Viterbi-hit
 
 -->
 
@@ -302,6 +302,13 @@ Suggestions later releases
 
 * Add scoring + display of repeat proteins in a similar (better?) way as HMMER
    => it should get to be the preferred tool for sensitive repeat detection
+
+* Add -M center option, which will choose the sequence most similar to all others
+  as the first and master sequence.  This requires N^2L comparisons, in principle,
+  but for N>100 we could simply choose 100 random sequences and for each
+  sequence in the alignment calculate the sum of amino acid similarity scores with
+  those 100 sequences. For N=10000 sequences with L=1000 columns, this would
+  take ~ N*100*L*3E-8 = 30s, which is fine for such a big alignment.
 
 * Open source ??
 

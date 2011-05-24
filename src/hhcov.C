@@ -91,7 +91,7 @@ inline void  ScopID(char cl[], char fold[], char sfam[], const char fam[]); // a
 void PrintMatrix(float** V, int N, const char* str);
 void ReadMatrix(float** V, int N, const char* str);
 float Score2Z(float S);                      // sqrt(2)*dierfc(2*2^(-S)) transforms a -log2(P-value) bit score into a Z-score
-float dierfc(float y);        
+// float dierfc(float y);        
 
 
 

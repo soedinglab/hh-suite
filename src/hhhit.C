@@ -650,7 +650,7 @@ void Hit::Forward(HMM& q, HMM& t, float** Pstruc)
       pmin *= scale[i];
       if (pmin<DBL_MIN*100) pmin = 0.0;
       scale[i+1] = 1.0/(Pmax_i+1.0);
-//      scale[i+1] = 1.0;
+//      scale[i+1] = 1.0;   // to debug scaling
      
      } // end for i
   
@@ -1776,6 +1776,17 @@ inline float Score(float* qi, float* tj)
   __m128* Qi = (__m128*) qi;
   __m128* Tj = (__m128*) tj;
 
+#ifdef HH_SSE4
+  R = _mm_dp_ps(*(Qi++),*(Tj++),0xFF);
+  P = _mm_dp_ps(*(Qi++),*(Tj++),0xFF);
+  R = _mm_add_ps(R,P);
+  P = _mm_dp_ps(*(Qi++),*(Tj++),0xFF);
+  R = _mm_add_ps(R,P);
+  P = _mm_dp_ps(*(Qi++),*(Tj++),0xFF);
+  R = _mm_add_ps(R,P);
+  P = _mm_dp_ps(*Qi,*Tj,0xFF);
+  R = _mm_add_ps(R,P);
+#else
   R = _mm_mul_ps(*(Qi++),*(Tj++));
   P = _mm_mul_ps(*(Qi++),*(Tj++));
   R = _mm_add_ps(R,P);
@@ -1787,8 +1798,10 @@ inline float Score(float* qi, float* tj)
   R = _mm_add_ps(R,P);
   R = _mm_hadd_ps(R,R);
   R = _mm_hadd_ps(R,R);
+#endif
   _mm_store_ss(&res, R);
   return fast_log2(res);
+
 #else
   return fast_log2(
 		   tj[0] *qi[0] +tj[1] *qi[1] +tj[2] *qi[2] +tj[3] *qi[3] +tj[4] *qi[4]
@@ -1803,27 +1816,38 @@ inline float ProbFwd(float* qi, float* tj)
 {
 #ifdef HH_SSE3
   float __attribute__((aligned(16))) res;
-  __m128 Q; // query 128bit SSE2 register holding 4 floats
-  __m128 T; // template
+  __m128 P; // query 128bit SSE2 register holding 4 floats
   __m128 R; // result  
   __m128* Qi = (__m128*) qi;
   __m128* Tj = (__m128*) tj;
 
-  Q = _mm_load_ps(qi);
-  T = _mm_load_ps(tj);
+#ifdef HH_SSE4
+  R = _mm_dp_ps(*(Qi++),*(Tj++),0xFF); // dot product
+  P = _mm_dp_ps(*(Qi++),*(Tj++),0xFF); // dot product
+  R = _mm_add_ps(R,P);
+  P = _mm_dp_ps(*(Qi++),*(Tj++),0xFF);
+  R = _mm_add_ps(R,P);
+  P = _mm_dp_ps(*(Qi++),*(Tj++),0xFF);
+  R = _mm_add_ps(R,P);
+  P = _mm_dp_ps(*Qi,*Tj,0xFF);
+  R = _mm_add_ps(R,P);
+#else
   R = _mm_mul_ps(*(Qi++),*(Tj++));
-  Q = _mm_mul_ps(*(Qi++),*(Tj++));
-  R = _mm_add_ps(R,Q);
-  Q = _mm_mul_ps(*(Qi++),*(Tj++));
-  R = _mm_add_ps(R,Q);
-  Q = _mm_mul_ps(*(Qi++),*(Tj++));
-  R = _mm_add_ps(R,Q);
-  Q = _mm_mul_ps(*Qi,*Tj);
-  R = _mm_add_ps(R,Q);
+  P = _mm_mul_ps(*(Qi++),*(Tj++));
+  R = _mm_add_ps(R,P);
+  P = _mm_mul_ps(*(Qi++),*(Tj++));
+  R = _mm_add_ps(R,P);
+  P = _mm_mul_ps(*(Qi++),*(Tj++));
+  R = _mm_add_ps(R,P);
+  P = _mm_mul_ps(*Qi,*Tj);
+  R = _mm_add_ps(R,P);
   R = _mm_hadd_ps(R,R);
   R = _mm_hadd_ps(R,R);
+#endif
+
   _mm_store_ss(&res, R);
   return res;
+
 #else
   return   tj[0] *qi[0] +tj[1] *qi[1] +tj[2] *qi[2] +tj[3] *qi[3] +tj[4] *qi[4]
           +tj[5] *qi[5] +tj[6] *qi[6] +tj[7] *qi[7] +tj[8] *qi[8] +tj[9] *qi[9]
