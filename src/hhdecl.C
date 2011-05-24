@@ -133,9 +133,6 @@ public:
   float egq;              // penalty for end gaps when query not fully covered
   float egt;              // penalty for end gaps when template not fully covered
 
-  float neffa;            // Coefficients to estimate Neff-dependent weights for HMM merging procedure
-  float neffb;            // Coefficients to estimate Neff-dependent weights for HMM merging procedure
-
   float Neff;
 
   char ssgap;             // 1: add secondary structure-dependent gap penalties  0:off
@@ -166,10 +163,6 @@ public:
   int hitrank;            // rank of hit to be printed as a3m alignment
   char notags;            // neutralize His-tags, FLAG tags, C-myc tags?
   unsigned int maxdbstrlen; // maximum length of database string to be printed in 'Command' line of hhr file
-
-  char trans;             // 0: normal pairwise scoring; 1:transitive scoring
-  float Emax_trans;       // max E-value for intermediate HMMs in transitive scoring (i.e. l is intermediate HMM if E_lq, E_lk <Emax_trans)
-  float wtrans;           // Ztot[k] = Zq[k] + wtrans * (Zforward[k]+Zreverse[k])
 
   int maxcol;             //max number of residues in input files; must be <= LINELEN and >= maxres
   int maxres;             //max number of columns in HMM; must be <= LINELEN

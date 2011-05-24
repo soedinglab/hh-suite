@@ -634,10 +634,8 @@ void RealignByWorker(Hit& hit)
       hit.Pvalt      = hit_cur.Pvalt;
       hit.logPval    = hit_cur.logPval;
       hit.logPvalt   = hit_cur.logPvalt;
-      hit.logP1val   = hit_cur.logP1val;
       hit.Eval       = hit_cur.Eval;
       hit.logEval    = hit_cur.logEval;
-      hit.E1val      = hit_cur.E1val;
       hit.Probab     = hit_cur.Probab;
 
       // Replace original hit in hitlist with realigned hit

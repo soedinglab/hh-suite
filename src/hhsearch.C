@@ -216,7 +216,6 @@ void help()
   printf(" -ssw [0,1]    weight of ss score  (def=%-.2f)                                \n",par.ssw);
   printf("\n");
   printf("Other options:                                                                \n");
-//  printf(" -w  <file>    calculate scores transitively with this database weight file  \n");
   printf(" -def          read default options from ./.hhdefaults or <home>/.hhdefault.  \n");
   printf("               Write 'hhsearch', 'hhmake' and/or 'hhfilter' etc. in one line, \n");
   printf("               followed by its list of options, one per line.\n");
@@ -229,11 +228,6 @@ void help()
   printf("\n\n");
   printf("Example: %s -i a.1.1.1.a3m -d scop70_1.71.hhm             \n",program_name);
   cout<<endl;
-
-//  printf("Network scoring options:                                                 \n");
-//  printf(" -netn <int>   max number of intermediate HMMs on comparison paths (def=%i)\n",par.netn);
-//  printf(" -neta [0,1]   strength of transitive vs direct comparison (def=%f)        \n",par.neta);
-//  printf(" -netb [0,1]   strength of covariance weighting (0=no weighting) (def=%f)  \n",par.netb);
 
 //   printf("More help:                                                         \n");
 //   printf(" -h out        options for formatting ouput                        \n");
@@ -459,30 +453,6 @@ void ProcessArguments(int argc, char** argv)
             {help() ; cerr<<endl<<"Error in "<<program_name<<": no output file following -Opsi\n"; exit(4);}
           else strcpy(par.psifile,argv[i]);
         }
-      else if (!strcmp(argv[i],"-w"))
-        {
-          if (++i>=argc || argv[i][0]=='-')
-            {help() ; cerr<<endl<<"Error in "<<program_name<<": no weights file following -w\n"; exit(4);}
-          else {strcpy(par.wfile,argv[i]); par.trans=1;}
-        }
-      else if (!strcmp(argv[i],"-w2"))
-        {
-          if (++i>=argc || argv[i][0]=='-')
-            {help() ; cerr<<endl<<"Error in "<<program_name<<": no weights file following -w2\n"; exit(4);}
-          else {strcpy(par.wfile,argv[i]); par.trans=2;}
-        }
-      else if (!strcmp(argv[i],"-w3"))
-        {
-          if (++i>=argc || argv[i][0]=='-')
-            {help() ; cerr<<endl<<"Error in "<<program_name<<": no weights file following -w3\n"; exit(4);}
-          else {strcpy(par.wfile,argv[i]); par.trans=3;}
-        }
-      else if (!strcmp(argv[i],"-w4"))
-        {
-          if (++i>=argc || argv[i][0]=='-')
-            {help() ; cerr<<endl<<"Error in "<<program_name<<": no weights file following -w4\n"; exit(4);}
-          else {strcpy(par.wfile,argv[i]); par.trans=4;}
-        }
       else if (!strcmp(argv[i],"-opt"))
         {
           par.opt=1;
@@ -580,10 +550,6 @@ void ProcessArguments(int argc, char** argv)
       else if (!strcmp(argv[i],"-gapi") && (i<argc-1)) par.gapi=atof(argv[++i]);
       else if (!strcmp(argv[i],"-egq") && (i<argc-1)) par.egq=atof(argv[++i]);
       else if (!strcmp(argv[i],"-egt") && (i<argc-1)) par.egt=atof(argv[++i]);
-      else if (!strcmp(argv[i],"-neffa") && (i<argc-1)) par.neffa=atof(argv[++i]);
-      else if (!strcmp(argv[i],"-neffb") && (i<argc-1)) par.neffb=atof(argv[++i]);
-      else if (!strcmp(argv[i],"-Etrans") && (i<argc-1)) par.Emax_trans=atof(argv[++i]);
-      else if (!strcmp(argv[i],"-wtrans") && (i<argc-1)) par.wtrans=atof(argv[++i]);
       else if (!strcmp(argv[i],"-ssgap")) par.ssgap=1;
       else if (!strcmp(argv[i],"-ssgapd") && (i<argc-1)) par.ssgapd=atof(argv[++i]);
       else if (!strcmp(argv[i],"-ssgape") && (i<argc-1)) par.ssgape=atof(argv[++i]);
@@ -669,8 +635,6 @@ int main(int argc, char **argv)
   const char print_elapsed=0;
 
   SetDefaults();
-  par.neffa=1.0;
-  par.neffb=10.0;
 
   // Make command line input globally available
   par.argv=argv;
@@ -768,7 +732,7 @@ int main(int argc, char **argv)
 //     }
 
   // Reset lamda?
-  if (par.calibrate>0 || par.trans>0) {q->lamda=LAMDA; q->mu=0.0;}
+  if (par.calibrate>0) {q->lamda=LAMDA; q->mu=0.0;}
 
   // Set query columns in His-tags etc to Null model distribution
   if (par.notags) q->NeutralizeTags();
@@ -1092,7 +1056,7 @@ int main(int argc, char **argv)
     {
       hitlist.CalculatePvalues(*q);  // Use NN prediction of lamda and mu
     }
-  else if ((par.calm!=1 && q->lamda==0) || par.calibrate>0 || par.trans>0)
+  else if ((par.calm!=1 && q->lamda==0) || par.calibrate>0)
     {
       if (v>=2 && par.loc) printf("Fitting scores with EVD (first round) ...\n");
       hitlist.MaxLikelihoodEVD(*q,3); // first ML fit: exclude 3 best superfamilies from fit
@@ -1359,10 +1323,8 @@ int main(int argc, char **argv)
               hit[bin]->Pvalt      = hit_cur.Pvalt;
               hit[bin]->logPval    = hit_cur.logPval;
               hit[bin]->logPvalt   = hit_cur.logPvalt;
-              hit[bin]->logP1val   = hit_cur.logP1val;
               hit[bin]->Eval       = hit_cur.Eval;
               hit[bin]->logEval    = hit_cur.logEval;
-              hit[bin]->E1val      = hit_cur.E1val;
               hit[bin]->Probab     = hit_cur.Probab;
               hit[bin]->irep       = hit_cur.irep;
 

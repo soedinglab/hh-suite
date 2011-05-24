@@ -75,26 +75,15 @@ public:
 	}      
     }
 
-  // Calculate P-values and Probabilities from transitive scoring over whole database
-  void TransitiveScoring();
-  void TransitiveScoring2();
-  void TransitiveScoring3();
-  void TransitiveScoring4();
-
-  // Score2Z transforms the -log(P-value) score into a Z-score for 0 < S
-  double Score2Z(double S);
-
-  // Z2Score transforms the Z-score into a -log(P-value) value
-  double Z2Score(double Z);
-
-  // Matrix manipulation
-  void PrintMatrix(float** V, int N);
-  void PrintMatrix(double** V, int N);
-  float NormalizationFactor(double** Csub,float* w, int M);
-  void Normalize(float* Ztq, char** fold, Hash<int>& excluded);
-  void InvertMatrix(double** B, double** A, int N);
-  void TransposeMatrix(double** V, int N);
-  void SVD(double **A, int n, double w[], double **V);
+  // Used only for transitive scoring??
+  /* // Matrix manipulation */
+  /* void PrintMatrix(float** V, int N); */
+  /* void PrintMatrix(double** V, int N); */
+  /* float NormalizationFactor(double** Csub,float* w, int M); */
+  /* void Normalize(float* Ztq, char** fold, Hash<int>& excluded); */
+  /* void InvertMatrix(double** B, double** A, int N); */
+  /* void TransposeMatrix(double** V, int N); */
+  /* void SVD(double **A, int n, double w[], double **V); */
 
 };
 

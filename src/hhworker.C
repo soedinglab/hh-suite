@@ -162,10 +162,8 @@ void RealignByWorker(int bin)
           hit[bin]->Pvalt      = hit_cur.Pvalt;
           hit[bin]->logPval    = hit_cur.logPval;
           hit[bin]->logPvalt   = hit_cur.logPvalt;
-          hit[bin]->logP1val   = hit_cur.logP1val;
           hit[bin]->Eval       = hit_cur.Eval;
           hit[bin]->logEval    = hit_cur.logEval;
-          hit[bin]->E1val      = hit_cur.E1val;
           hit[bin]->Probab     = hit_cur.Probab;
 
           // Replace original hit in hitlist with realigned hit

@@ -526,10 +526,6 @@ void SetDefaults()
   par.egq=0.0f;                // no charge for end gaps as default
   par.egt=0.0f;                // no charge for end gaps as default
 
-  par.trans=0;                 // no transitive scoring as default
-  par.Emax_trans=100.0f;       // use intermediate HMMs with E-values up to 100 between query and database HMM
-  par.Emax_trans=100.0f;       // use intermediate HMMs with E-values up to 100 between query and database HMM
-  par.wtrans=1.0f;             // Ztot[k] = Zq[k] + wtrans * (Zforward[k]+Zreverse[k])
   par.ssgap=0;                 // 1: add secondary structure-dependent gap penalties  0:off
   par.ssgapd=1.0f;             // secondary structure-dependent gap-opening penalty (per residue)
   par.ssgape=0.0f;             // secondary structure-dependent gap-extension penalty (per residue)

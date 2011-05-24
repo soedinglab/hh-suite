@@ -256,10 +256,8 @@ void PerformViterbiByWorker(int bin)
 	  hit_cur.Pvalt      = hit[bin]->Pvalt;
 	  hit_cur.logPval    = hit[bin]->logPval;
 	  hit_cur.logPvalt   = hit[bin]->logPvalt;
-	  hit_cur.logP1val   = hit[bin]->logP1val;
 	  hit_cur.Eval       = hit[bin]->Eval;
 	  hit_cur.logEval    = hit[bin]->logEval;
-	  hit_cur.E1val      = hit[bin]->E1val;
 	  hit_cur.Probab     = hit[bin]->Probab;
 
 	  hitlist.Push(hit_cur);            // insert hit at beginning of list (last repeats first!)
@@ -1436,10 +1434,8 @@ void perform_realign(char *dbfiles[], int ndb)
 	  hit[bin]->Pvalt      = hit_cur.Pvalt;
 	  hit[bin]->logPval    = hit_cur.logPval;
 	  hit[bin]->logPvalt   = hit_cur.logPvalt;
-	  hit[bin]->logP1val   = hit_cur.logP1val;
 	  hit[bin]->Eval       = hit_cur.Eval;
 	  hit[bin]->logEval    = hit_cur.logEval;
-	  hit[bin]->E1val      = hit_cur.E1val;
 	  hit[bin]->Probab     = hit_cur.Probab;
 	  hit[bin]->irep       = hit_cur.irep;
 	  

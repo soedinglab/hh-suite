@@ -38,7 +38,6 @@ class Hit
   float Eval;           // E-value for whole protein
   float logEval;        // natural logarithm of Eval
   float Probab;         // probability in % for a positive (depends only on score)
-  float weight;         // weight of hit for P-value calculation (= 1/#HMMs-in-family/#families-in-superfamily)
   double Pforward;      // scaled total forward probability : Pforward * Product_{i=1}^{Lq+1}(scale[i])
   
 /*   float score_comp;     // compositional similarity score */
@@ -46,8 +45,6 @@ class Hit
 /*   float Prep;           // P-value for single-repeat hit */
 /*   float Erep;           // E-value for single-repeat hit */
 /*   float logPrep;        // natural logarithm of P-value for single-repeat hit */
-  float E1val;          // E-value for whole protein from transitive scoring
-  float logP1val;       // natural logarithm of P1val, the transitive P-value
 
   int L;                // Number of match states in template
   int irep;             // Index  of single-repeat hit (1: highest scoring repeat hit)

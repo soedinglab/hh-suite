@@ -1600,3 +1600,327 @@ void Hit::ForwardLog(float** sMM_fwd, float** sGD_fwd, float** sIM_fwd, float** 
 
 
 
+
+
+
+
+#define Weff(Neff) (1.0+par.neffa*(Neff-1.0)+(par.neffb-4.0*par.neffa)/16.0*(Neff-1.0)*(Neff-1.0))
+
+// /////////////////////////////////////////////////////////////////////////////////////
+// // Merge HMM with next aligned HMM  
+// /////////////////////////////////////////////////////////////////////////////////////
+void Hit::MergeHMM(HMM& Q, HMM& t, float wk[])
+{
+  int i,j;    // position in query and target
+  int a;      // amino acid
+  int step;   // alignment position (step=1 is end)
+  float Weff_M, Weff_D, Weff_I;
+  for (step=nsteps; step>=2; step--) // iterate only to one before last alignment column
+    {
+      i = this->i[step];
+      j = this->j[step];
+      switch(states[step])
+	{
+	case MM: 
+	  Weff_M = Weff(t.Neff_M[j]-1.0);
+	  Weff_D = Weff(t.Neff_D[j]-1.0);
+	  Weff_I = Weff(t.Neff_I[j]-1.0);
+	  for (a=0; a<20; a++) Q.f[i][a] += t.f[j][a]*wk[j]*Weff_M;
+	  switch(states[step-1])
+	    {
+	    case MM:  // MM->MM
+	      Q.tr_lin[i][M2M]+= t.tr_lin[j][M2M]*wk[j]*Weff_M;
+	      Q.tr_lin[i][M2D]+= t.tr_lin[j][M2D]*wk[j]*Weff_M;
+	      Q.tr_lin[i][M2I]+= t.tr_lin[j][M2I]*wk[j]*Weff_M;
+	      Q.tr_lin[i][D2M]+= t.tr_lin[j][D2M]*wk[j]*Weff_D;
+	      Q.tr_lin[i][D2D]+= t.tr_lin[j][D2D]*wk[j]*Weff_D;
+	      Q.tr_lin[i][I2M]+= t.tr_lin[j][I2M]*wk[j]*Weff_I;
+	      Q.tr_lin[i][I2I]+= t.tr_lin[j][I2I]*wk[j]*Weff_I;
+	      break; 
+	    case MI: // MM->MI
+	      Q.tr_lin[i][M2D]+= t.tr_lin[j][M2M]*wk[j]*Weff_M;
+	      Q.tr_lin[i][M2D]+= t.tr_lin[j][M2D]*wk[j]*Weff_M;
+	      Q.tr_lin[i][M2M]+= t.tr_lin[j][M2I]*wk[j]*Weff_M;
+	      Q.tr_lin[i][D2D]+= t.tr_lin[j][D2M]*wk[j]*Weff_D;
+	      Q.tr_lin[i][D2D]+= t.tr_lin[j][D2D]*wk[j]*Weff_D;
+	      Q.tr_lin[i][I2M]+= t.tr_lin[j][I2M]*wk[j]*Weff_I;
+	      Q.tr_lin[i][I2I]+= t.tr_lin[j][I2I]*wk[j]*Weff_I;
+	      break;
+	    case DG: // MM->DG
+	      Q.tr_lin[i][M2D]+= t.tr_lin[j][M2M]*wk[j]*Weff_M;
+	      Q.tr_lin[i][M2D]+= t.tr_lin[j][M2D]*wk[j]*Weff_M;
+	      Q.tr_lin[i][M2M]+= t.tr_lin[j][M2I]*wk[j]*Weff_M;
+	      Q.tr_lin[i][D2D]+= t.tr_lin[j][D2M]*wk[j]*Weff_D;
+	      Q.tr_lin[i][D2D]+= t.tr_lin[j][D2D]*wk[j]*Weff_D;
+	      Q.tr_lin[i][I2M]+= t.tr_lin[j][I2M]*wk[j]*Weff_I;
+	      Q.tr_lin[i][I2I]+= t.tr_lin[j][I2I]*wk[j]*Weff_I;
+	      break;
+	    case IM: // MM->IM
+	      Q.tr_lin[i][M2I]+= t.tr_lin[j][M2M]*wk[j]*Weff_M;
+	      Q.tr_lin[i][M2M]+= t.tr_lin[j][M2D]*wk[j]*Weff_M;
+	      Q.tr_lin[i][M2I]+= t.tr_lin[j][M2I]*wk[j]*Weff_M;
+	      Q.tr_lin[i][D2M]+= t.tr_lin[j][D2M]*wk[j]*Weff_D;
+	      Q.tr_lin[i][D2D]+= t.tr_lin[j][D2D]*wk[j]*Weff_D;
+	      Q.tr_lin[i][I2M]+= t.tr_lin[j][I2M]*wk[j]*Weff_I;
+	      Q.tr_lin[i][I2I]+= t.tr_lin[j][I2I]*wk[j]*Weff_I;
+	      break;
+	    case GD: // MM->GD
+	      Q.tr_lin[i][M2I]+= t.tr_lin[j][M2M]*wk[j]*Weff_M;
+	      Q.tr_lin[i][M2M]+= t.tr_lin[j][M2D]*wk[j]*Weff_M;
+	      Q.tr_lin[i][M2I]+= t.tr_lin[j][M2I]*wk[j]*Weff_M;
+	      Q.tr_lin[i][D2M]+= t.tr_lin[j][D2M]*wk[j]*Weff_D;
+	      Q.tr_lin[i][D2D]+= t.tr_lin[j][D2D]*wk[j]*Weff_D;
+	      Q.tr_lin[i][I2M]+= t.tr_lin[j][I2M]*wk[j]*Weff_I;
+	      Q.tr_lin[i][I2I]+= t.tr_lin[j][I2I]*wk[j]*Weff_I;
+	      break;
+	    }
+	  break;
+
+	case MI: // if gap in template  
+	  Weff_I = Weff(t.Neff_I[j]-1.0);
+	  switch(states[step-1])
+	    {
+	    case MI:  // MI->MI
+	      Q.tr_lin[i][M2M]+= t.tr_lin[j][I2I]*wk[j]*Weff_I;
+	      break;
+	    case MM:  // MI->MM
+	      Q.tr_lin[i][M2M]+= t.tr_lin[j][I2M]*wk[j]*Weff_I;
+	      break;
+	    }
+	  break;
+
+	case DG:   
+	  Weff_M = Weff(t.Neff_M[j]-1.0);
+	  Weff_D = Weff(t.Neff_D[j]-1.0);
+	  Weff_I = Weff(t.Neff_I[j]-1.0);
+	  switch(states[step-1])
+	    {
+	    case DG:  // DG->DG
+	      Q.tr_lin[i][D2D]+= t.tr_lin[j][M2M]*wk[j]*Weff_M;
+	      Q.tr_lin[i][D2D]+= t.tr_lin[j][D2M]*wk[j]*Weff_D;
+	      Q.tr_lin[i][D2D]+= t.tr_lin[j][D2D]*wk[j]*Weff_D;
+	      Q.tr_lin[i][M2M]+= t.tr_lin[j][I2I]*wk[j]*Weff_I;
+	      Q.tr_lin[i][M2D]+= t.tr_lin[j][I2M]*wk[j]*Weff_I;
+	      break;
+	    case MM:  // DG->MM
+	      Q.tr_lin[i][D2M]+= t.tr_lin[j][M2M]*wk[j]*Weff_M;
+	      Q.tr_lin[i][D2D]+= t.tr_lin[j][M2D]*wk[j]*Weff_M;
+	      Q.tr_lin[i][D2M]+= t.tr_lin[j][D2M]*wk[j]*Weff_D;
+	      Q.tr_lin[i][D2D]+= t.tr_lin[j][D2D]*wk[j]*Weff_D;
+	      Q.tr_lin[i][I2I]+= t.tr_lin[j][I2I]*wk[j]*Weff_I;
+	      Q.tr_lin[i][M2M]+= t.tr_lin[j][I2M]*wk[j]*Weff_I;
+	      break;
+	    }
+	  break;
+	  
+	case IM: // if gap in query  
+	  Weff_M = Weff(t.Neff_M[j]-1.0);
+	  switch(states[step-1])
+	    {
+	    case IM:  // IM->IM
+	      Q.tr_lin[i][I2I]+= t.tr_lin[j][M2M]*wk[j]*Weff_M;
+	      Q.tr_lin[i][I2M]+= t.tr_lin[j][M2D]*wk[j]*Weff_M;
+	      Q.tr_lin[i][I2I]+= t.tr_lin[j][M2I]*wk[j]*Weff_M;
+	      break;
+	    case MM:  // IM->MM
+	      Weff_D = Weff(t.Neff_D[j]-1.0);
+	      Weff_I = Weff(t.Neff_I[j]-1.0);
+	      Q.tr_lin[i][I2M]+= t.tr_lin[j][M2M]*wk[j]*Weff_M;
+	      Q.tr_lin[i][I2M]+= t.tr_lin[j][M2D]*wk[j]*Weff_M;
+	      Q.tr_lin[i][I2I]+= t.tr_lin[j][M2I]*wk[j]*Weff_M;
+	      Q.tr_lin[i][I2M]+= t.tr_lin[j][D2M]*wk[j]*Weff_D;
+	      Q.tr_lin[i][D2D]+= t.tr_lin[j][D2D]*wk[j]*Weff_D;
+	      Q.tr_lin[i][I2M]+= t.tr_lin[j][I2M]*wk[j]*Weff_I;
+	      Q.tr_lin[i][I2I]+= t.tr_lin[j][I2I]*wk[j]*Weff_I;
+	      break;
+	    }
+	  break;
+	  
+	case GD:   
+	  Weff_M = Weff(t.Neff_M[j]-1.0);
+	  switch(states[step-1])
+	    {
+	    case GD:  // GD->GD
+	      Weff_I = Weff(t.Neff_I[j]-1.0);
+	      Q.tr_lin[i][I2I]+= t.tr_lin[j][M2M]*wk[j]*Weff_M;
+	      Q.tr_lin[i][I2M]+= t.tr_lin[j][M2D]*wk[j]*Weff_M;
+	      Q.tr_lin[i][I2I]+= t.tr_lin[j][M2I]*wk[j]*Weff_M;
+	      Q.tr_lin[i][I2I]+= t.tr_lin[j][I2M]*wk[j]*Weff_I;
+	      Q.tr_lin[i][I2I]+= t.tr_lin[j][I2I]*wk[j]*Weff_I;
+	      break;
+	    case MM:  // GD->MM
+	      Weff_D = Weff(t.Neff_D[j]-1.0);
+	      Weff_I = Weff(t.Neff_I[j]-1.0);
+	      Q.tr_lin[i][I2M]+= t.tr_lin[j][M2M]*wk[j]*Weff_M;
+	      Q.tr_lin[i][I2M]+= t.tr_lin[j][M2D]*wk[j]*Weff_M;
+	      Q.tr_lin[i][I2I]+= t.tr_lin[j][M2I]*wk[j]*Weff_M;
+	      Q.tr_lin[i][D2D]+= t.tr_lin[j][D2D]*wk[j]*Weff_D;
+	      Q.tr_lin[i][I2M]+= t.tr_lin[j][I2M]*wk[j]*Weff_I;
+	      Q.tr_lin[i][I2I]+= t.tr_lin[j][I2I]*wk[j]*Weff_I;
+	      break;
+	    }
+	  break;
+
+	}
+    }
+  i = this->i[step];
+  j = this->j[step];
+  Weff_M = Weff(t.Neff_M[j]-1.0);
+  for (a=0; a<20; a++) Q.f[i][a] += t.f[j][a]*wk[j]*Weff_M;
+}
+
+
+
+// /////////////////////////////////////////////////////////////////////////////////////
+// // Normalize probabilities in total merged super-HMM
+// /////////////////////////////////////////////////////////////////////////////////////
+void HMM::NormalizeHMMandTransitionsLin2Log()
+{
+  int i;      // position in query
+  int a;      // amino acid
+  for (i=0; i<=L+1; i++)
+    {
+      float sum=0.0;
+      for (a=0; a<20; a++) sum += f[i][a];
+      for (a=0; a<20; a++) f[i][a]/=sum;
+      sum = tr_lin[i][M2M] + tr_lin[i][M2I] + tr_lin[i][M2D];
+      tr_lin[i][M2M] /= sum;
+      tr_lin[i][M2I] /= sum;
+      tr_lin[i][M2D] /= sum;
+      tr[i][M2M] = fast_log2(tr_lin[i][M2M]);
+      tr[i][M2I] = fast_log2(tr_lin[i][M2I]);
+      tr[i][M2D] = fast_log2(tr_lin[i][M2D]);
+      sum = tr_lin[i][D2M] + tr_lin[i][D2D];
+      tr_lin[i][D2M] /= sum;
+      tr_lin[i][D2D] /= sum;
+      tr[i][D2M] = fast_log2(tr_lin[i][D2M]);
+      tr[i][D2D] = fast_log2(tr_lin[i][D2D]);
+      sum = tr_lin[i][I2M] + tr_lin[i][I2I];
+      tr_lin[i][I2M] /= sum;
+      tr_lin[i][I2I] /= sum;
+      tr[i][I2M] = fast_log2(tr_lin[i][I2M]);
+      tr[i][I2I] = fast_log2(tr_lin[i][I2I]);
+   }
+}
+
+
+
+
+// UNCOMMENT TO ACTIVATE COMPOSITIONALLY BIASED PSEUDOCOUNTS BY RESCALING THE RATE MATRIX
+
+/////////////////////////////////////////////////////////////////////////////////////
+//// Function to minimize
+/////////////////////////////////////////////////////////////////////////////////////
+double RescaleMatrixFunc(double x[])
+{
+  double sum=0.0;
+  for (int a=0; a<20; ++a)
+    {
+      double za=0.0;
+      for (int b=0; b<20; ++b) za+=P[a][b]*x[b];
+      sum += (x[a]*za-qav[a])*(x[a]*za-qav[a]);
+    }
+  return sum;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////
+//// Gradient of function to minimize
+/////////////////////////////////////////////////////////////////////////////////////
+void RescaleMatrixFuncGrad(double grad[], double x[])
+{
+  double z[20] = {0.0};
+  double w[20];
+  double tmp;
+  for (int a=0; a<20; ++a)
+    for (int b=0; b<20; ++b) z[a] += P[a][b]*x[b];
+
+  for (int a=0; a<20; ++a) w[a] = x[a]*z[a]-qav[a];
+  for (int a=0; a<20; ++a)
+    {
+      tmp = w[a]*z[a];
+      for (int b=0; b<20; ++b) tmp += P[a][b]*x[b]*w[b];
+      grad[a] = 2.0*tmp;
+    }
+  return;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+//// Rescale a substitution matrix to biased aa frequencies in global vector qav[a]
+/////////////////////////////////////////////////////////////////////////////////////
+void HMM::RescaleMatrix()
+{
+  int a,b;
+  int code;
+  double x[21];     // scaling factor
+  double val_min;
+  const int len=20;
+  const int max_iterations=50;
+
+  if (v>=2) printf("Adjusting rate matrix to query amino acid composition ...\n");
+
+  // Put amino acid frequencies into global array (needed to call WNLIB's conjugate gradient method)
+  for (a=0; a<20; ++a) qav[a] = pav[a];
+
+  // Initialize scaling factors x[a]
+  for (a=0; a<20; ++a) x[a]=pow(qav[a]/pb[a],0.73);  // Initialize
+
+  // Call conjugate gradient minimization method from WNLIB
+  wn_conj_gradient_method(&code,&val_min,x,len,&RescaleMatrixFunc,&RescaleMatrixFuncGrad,max_iterations);
+
+
+  // Calculate z[a] = sum_b Pab*xb
+  float sum_err=0.0f;
+  float sum = 0.0f;
+  for (a=0; a<20; ++a)
+    {
+      float za=0.0f; // za = sum_b Pab*xb
+      for (b=0; b<20; ++b) za+=P[a][b]*x[b];
+      sum_err += (x[a]*za/qav[a]-1)*(x[a]*za/qav[a]-1);
+      sum += x[a]*za;
+   }
+  if (sum_err>1e-3 & v>=1) fprintf(stderr,"WARNING: adjusting rate matrix by CG resulted in residual error of %5.3f.\n",sum_err);
+
+  // Rescale rate matrix
+  for (a=0; a<20; ++a)
+    for (b=0; b<20; ++b)
+      {
+     P[a][b] *= x[a]*x[b]/sum;
+     R[a][b] = P[a][b]/qav[b];
+      }
+
+  // How well approximated?
+  if (v>=3)
+    {
+      // Calculate z[a] = sum_b Pab*xb
+      float z[21];
+      for (a=0; a<20; ++a)
+     for (z[a]=0.0, b=0; b<20; ++b) z[a]+=P[a][b];
+      printf("Adjust   A    R    N    D    C    Q    E    G    H    I    L    K    M    F    P    S    T    W    Y    V\nErr?  ");
+      for (a=0; a<20; ++a) printf("%4.0f ",1000*z[a]/qav[a]);
+      cout<<endl<<"xa    ";
+      for (a=0; a<20; ++a) fprintf(stdout,"%4.2f ",x[a]);
+      cout<<endl;
+    }
+
+  // Evaluate sequence identity underlying substitution matrix
+  if (v>=3)
+    {
+      float id=0.0f;
+      float entropy=0.0f;
+      float entropy_qav=0.0f;
+      float mut_info=0.0f;
+      for (a=0; a<20; ++a) id += P[a][a];
+      for (a=0; a<20; ++a)  entropy_qav-=qav[a]*fast_log2(qav[a]);
+      for (a=0; a<20; ++a)
+       for (b=0; b<20; ++b)
+         {
+           entropy-=P[a][b]*fast_log2(R[a][b]);
+           mut_info += P[a][b]*fast_log2(P[a][b]/qav[a]/qav[b]);
+         }
+
+      fprintf(stdout,"Rescaling rate matrix: sequence identity = %2.0f%%; entropy per column = %4.2f bits (out of %4.2f); mutual information = %4.2f bits\n",100*id,entropy,entropy_qav,mut_info);
+    }
+  return;
+}
+
