@@ -97,7 +97,7 @@ const char print_elapsed=0;
 char tmp_file[]="/tmp/hhblitsXXXXXX";
 
 // HHblits variables
-const char HHBLITS_VERSION[]="version 2.2.11 (April 2011)";
+const char HHBLITS_VERSION[]="version 2.2.12 (May 2011)";
 const char HHBLITS_REFERENCE[]="to be published.\n";
 const char HHBLITS_COPYRIGHT[]="(C) Michael Remmert and Johannes Soeding\n";
 
@@ -233,7 +233,7 @@ void PerformViterbiByWorker(int bin)
       hit[bin]->Backtrace(*q,*(t[bin]));
       
       hit[bin]->score_sort = hit[bin]->score_aass;
-      //printf ("%-12.12s  %-12.12s   irep=%-2i  score=%6.2f\n",hit[bin]->name,hit[bin]->fam,hit[bin]->irep,hit[bin]->score);
+      //printf("PerformViterbiByWorker:   %-12.12s  %-12.12s   irep=%-2i  score=%6.2f\n",hit[bin]->name,hit[bin]->fam,hit[bin]->irep,hit[bin]->score);
 
 #ifdef PTHREAD
       pthread_mutex_lock(&hitlist_mutex);   // lock access to hitlist
@@ -244,6 +244,7 @@ void PerformViterbiByWorker(int bin)
 
       if (previous_hits->Contains((char*)ss_tmp.str().c_str()))
 	{
+	  //printf("Previous hits contains %s!\n",(char*)ss_tmp.str().c_str());
 	  hit_cur = previous_hits->Remove((char*)ss_tmp.str().c_str());
 	  previous_hits->Add((char*)ss_tmp.str().c_str(), *(hit[bin]));
 	  
@@ -265,7 +266,12 @@ void PerformViterbiByWorker(int bin)
 	  
 	}
       else
-	hitlist.Push(*(hit[bin]));          // insert hit at beginning of list (last repeats first!)
+	{
+	  // don't save alignments which where not found in previous rounds
+
+	  //printf("Don't save %s!\n",(char*)ss_tmp.str().c_str());
+	  //hitlist.Push(*(hit[bin]));          // insert hit at beginning of list (last repeats first!)
+	}
 	  
 
 #ifdef PTHREAD
@@ -1045,7 +1051,7 @@ void perform_viterbi_search(int db_size)
   int v1=v;
   if (v>0 && v<=3) v=1; else v-=2;
 
-  char *dbfiles[MAXNUMDB+1];
+  char *dbfiles[db_size+1];
   int ndb = 0;
 
   par.block_shading->Reset();
@@ -2018,7 +2024,12 @@ int main(int argc, char **argv)
     if (print_elapsed) ElapsedTimeSinceLastCall("(prefiltering)"); 
 
     // Search datbases
-    if (v>=2) printf("Searching through pre-filtered matches (new/old: %i/%i) by HMM-HMM comparison\n", ndb_new, ndb_old);
+    if (v>=2) {
+      printf("Hits passed prefilter 2 (gapped profile-profile alignment) : %6i\n", (ndb_new+ndb_old));
+      printf("Not found in previous iterations                           : %6i\n", ndb_new);
+      printf("Searching with full HMM-HMM alignment\n");
+      //printf("Searching through pre-filtered matches (new/old: %i/%i) by HMM-HMM comparison\n", ndb_new, ndb_old);
+    }
 
     search_database(dbfiles_new,ndb_new,(ndb_new + ndb_old));
 
@@ -2075,7 +2086,7 @@ int main(int argc, char **argv)
 	  {
 	    char ta3mfile[NAMELEN];
 	    
-	    if (v>=2) printf("Merging hits to query alignment ...\n");
+	    if (v>=1) printf("Merging hits to query profile ...\n");
 	    
 	    // For each template below threshold
 	    hitlist.Reset();
@@ -2184,7 +2195,7 @@ int main(int argc, char **argv)
 	  }
       }
     
-    if (v>=2) printf("%i sequences in %i clusters found\n",seqs_found,cluster_found);
+    if (v>=2) printf("%i sequences in %i clusters found with an E-value < %-6.4g\n",seqs_found,cluster_found, par.e);
 
     if (q->Neff_HMM > neffmax && round < num_rounds)
       printf("Diversity of created alignment (%4.2f) is above threshold (%4.2f). Stop searching!\n", q->Neff_HMM, neffmax);

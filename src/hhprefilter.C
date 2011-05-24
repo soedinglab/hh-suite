@@ -788,7 +788,7 @@ void init_prefilter()
 	    
   par.hhblits_prefilter_logpval=-log(par.prefilter_evalue_thresh / (float)par.dbsize);
 
-  if (v>1) printf("\nPrefilter DB contains %6i sequences ...\n",par.dbsize);
+  if (v>1) printf("\nFull database size: %6i\n",par.dbsize);
 
   X = (unsigned char*)memalign(16,LDB*sizeof(unsigned char));                 // database string (concatenate all DB-seqs)
   first = (unsigned char**)memalign(16,(2*par.dbsize)*sizeof(unsigned char*));    // first characters of db sequences
@@ -1021,7 +1021,8 @@ void prefilter_with_SW_evalue_preprefilter_backtrace()
     }
   if (v>=2)
     {
-      printf("%6i hits through preprefilter!\n", count_dbs);
+      printf("Hits passed prefilter 1 (gapless profile-profile alignment): %6i\n", count_dbs);
+      //printf("%6i hits through preprefilter!\n", count_dbs);
     }
   if (print_elapsed) ElapsedTimeSinceLastCall("(ungapped preprefilter)");
   
