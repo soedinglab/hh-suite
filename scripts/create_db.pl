@@ -56,11 +56,11 @@ Options:
 
 Examples:
 
-   perl create_db.pl -a3mdir '/databases/scop_a3ms/*' -oa3m /databases/scop_a3m.db -ohhm /databases/scop_hhm.db
+   perl create_db.pl -a3mdir /databases/scop_a3ms -oa3m /databases/scop_a3m_db -ohhm /databases/scop_hhm_db
 
-   perl create_db.pl -a3mdir /databases/scop_a3ms -hhmdir /databases/scop_hhms -oa3m /databases/scop_a3m.db -ohhm /databases/scop_hhm.db
+   perl create_db.pl -a3mdir /databases/scop_a3ms -hhmdir /databases/scop_hhms -oa3m /databases/scop_a3m_db -ohhm /databases/scop_hhm_db
 
-   perl create_db.pl -hhmdir /databases/scop_hhms -ohhm /databases/scop_hhm.db
+   perl create_db.pl -hhmdir /databases/scop_hhms -ohhm /databases/scop_hhm_db
 \n";
 
 # Variable declarations
@@ -83,26 +83,6 @@ my @dirs;
 ###############################################################################################
 
 if (@ARGV<1) {die ($help);}
-
-###########################
-# OLD
-#
-#my $options="";
-#for (my $i=0; $i<@ARGV; $i++) {$options.=" $ARGV[$i] ";}
-#
-#if ($options=~s/ -a3mdir\s+(\S+) //) {$a3mdir=$1;}
-#if ($options=~s/ -hhmdir\s+(\S+) //) {$hhmdir=$1;}
-#
-#if ($options=~s/ -oa3m\s+(\S+) //) {$a3mfile=$1;}
-#if ($options=~s/ -ohhm\s+(\S+) //) {$hhmfile=$1;}
-#
-#if ($options=~s/ -a3mext\s+(\S+) //) {$a3mext=$1;}
-#if ($options=~s/ -hhmext\s+(\S+) //) {$hhmext=$1;}
-#
-#if ($options=~s/ -append //) {$append=1;}
-#
-#if ($options=~s/ -v\s+(\S+) //) {$v=$1;}
-###########################
 
 for (my $i=0; $i<@ARGV; $i++) {
 

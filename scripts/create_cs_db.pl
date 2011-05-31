@@ -29,7 +29,7 @@ Usage: perl create_cs_db.pl -i <dir> [options]
 
 Options:
   -i <dir>    Input directory with HMMER-, HMM- or A3M-files
-  -o <file>   Output file for the CS-database (default: <indir>.cs_db)
+  -o <file>   Output file for the CS-database (default: <indir>.cs219)
 
   -ext <ext>  File extension, which identifies file-typ (default: $ext)
               - A3M-type  : a3m
@@ -76,9 +76,9 @@ if ($append == 0 && -e $outfile) {
 
 if (!$outfile) {
     if ($indir =~ /^\S+\/(\S+?)$/) {
-	$outfile = "$1.cs_db";
+	$outfile = "$1.cs219";
     } else {
-	$outfile = "$indir.cs_db";
+	$outfile = "$indir.cs219";
     }
     print("Create HHblits database with CS-database in file $outfile!\n");
 }
