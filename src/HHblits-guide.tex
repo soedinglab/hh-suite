@@ -127,17 +127,19 @@ contrary is wellcome.)
 
 \small 
 \begin{verbatim}
-  hhmake         Build an HMM from an input MSA in A2M, A3M, or FASTA format 
-  hhblits        Iteratively search a database of HMMs with a query sequence or alignment
-  hhsearch       Search a database of HMMs with a query MSA or HMM
-  hhalign        Pairwise alignment of two HMMs/MSAs, dot plots etc.
-  hhfilter       Filter MSA by maximum sequence identity, coverage, etc.  
-  reformat.pl    Reformat one or many MSAs
-  buildali.pl    Build a PSI-BLAST MSA from a sequence or MSA, add sec. structure
-  addss.pl       Add secondary structure information to a given MSA
-  alignhits.pl   Extract an MSA from a BLAST/PSI-BLAST output
-  hhmakemodel.pl Generate MSAs or coarse 3D models from HHsearch results file	
-  Align.pm       Perl package for local and global sequence-sequence alignment
+  hhmake          Build an HMM from an input MSA in A2M, A3M, or FASTA format 
+  hhblits         Iteratively search a database of HMMs with a query sequence or alignment
+  hhsearch        Search a database of HMMs with a query MSA or HMM
+  hhalign         Pairwise alignment of two HMMs/MSAs, dot plots etc.
+  hhfilter        Filter MSA by maximum sequence identity, coverage, etc.  
+  reformat.pl     Reformat one or many MSAs
+  addss.pl        Add secondary structure information to a given MSA
+  create_db.pl    Build HHblits HMM- and/or A3M-databases
+  create_cs_db.pl Build a HHblits prefilter database
+  buildali.pl     Build a PSI-BLAST MSA from a sequence or MSA, add sec. structure
+  alignhits.pl    Extract an MSA from a BLAST/PSI-BLAST output
+  hhmakemodel.pl  Generate MSAs or coarse 3D models from HHsearch results file	
+  Align.pm        Perl package for local and global sequence-sequence alignment
 \end{verbatim} 
 \normalsize
 
@@ -153,8 +155,7 @@ to that of PSI-BLAST. This runtime is achived by a fast profile-profile prefilte
 instructions, which reduces the number of comparisons in the time-consuming HMM-HMM comparison 
 step.
 
-The default parameters for HHblits can be adapted in the configuration file 
-\verb`.hhdefaults`. This tool needs for running the path to the two needed libraries
+HHblits needs for running the path to the two needed libraries
 (\verb`context_data.lib` and \verb`cs219.lib` in the \verb`libs/`-directory of this package) 
 and the basename of the database (e.g. \verb`databases/uniprot20`). The following database files 
 must be present:
@@ -172,6 +173,10 @@ following databases:
   BASENAME_a3m_db               A3M databases
   BASENAME_a3m_db.index         index table for A3M databases
 \end{verbatim}
+
+These default parameters for HHblits can be adapted in the configuration file 
+\verb`.hhdefaults` in the binary directory or they have to be specified by each calling of
+HHblits. All default options can be overridden on the command line.
 
 The database scan with HHblits can be started by typing:
 
@@ -424,9 +429,7 @@ The posterior probability threshold is controlled with the -mact [0,1[ option.
 This parameter controls the alignment algorithm's greediness. More precisely, the 
 MAC algorithm finds the alignment that maximizes the sum of posterior probabilites 
 minus mact for each aligned pair. Global alignments are generated with -mact 0, 
-whereas -mact 0.5 will produce quite conservative local alignments. Default value is 
--mact 0.35, which produces alignments of roughly the same length as the Viterbi 
-algorithm. 
+whereas -mact 0.5 will produce quite conservative local alignments. 
 
 The -global and -local options now refer to both the Viterbi search stage as 
 well as the MAC realignment stage. With -global (-local), the posterior probability 
@@ -1428,6 +1431,67 @@ README file.
 Usage: perl addss.pl <ali file> [<outfile>] [-fas|-a3m|-clu|-sto|-hmm] 
 \end{verbatim} \normalsize
 
+\subsection{{\tt create\_db.pl} -- creates HHblits databases from HMMER-files, HHM-files or A3M-files}
+
+Creates HHblits databases from HMMER-files, HHM-files or A3M-files.
+The recommended way to use this script is to start with a directory
+of A3M-files (-a3mdir <DIR>) and let this script generates an A3M-
+database (-oa3m <FILE>) and an HHM-database (-ohhm <FILE>).
+If you already have HHM-models for your A3M-files, you can use them 
+as additional input (-hhmdir <DIR>).
+If you don't need the A3M-database, you can also start this script
+with an directory of HHM-files (-hhmdir <DIR>) and as output only
+the HHM-database (-ohhm <FILE>).
+
+\small \begin{verbatim}
+Usage: perl create_db.pl -i <dir> [options]
+
+Options:
+  -a3mdir <dir>  Input directory (directories) with A3M-files
+  -hhmdir <dir>  Input directory (directories) with HHM- or HMMER-files 
+                 (WARNING! Using HMMER databases could result in a decreased sensitivity!)
+
+  -oa3m  <FILE>  Output filename for the A3M database 
+                 (if not given, no A3M database will be build)
+  -ohhm  <FILE>  Output filename for the HHM database 
+                 (if not given, no HHM database will be build)
+
+  -a3mext        Extension of A3M-files (default: a3m)
+  -hhmext        Extension of HHM- or HMMER-files (default: hhm)
+
+  -append        If the output file exists, append new files (default: overwrite)
+
+  -v [0-5]       verbose mode (default: 2)
+
+Examples:
+
+   perl create_db.pl -a3mdir /databases/scop_a3ms -oa3m /databases/scop_a3m_db -ohhm /databases/scop_hhm_db
+
+   perl create_db.pl -a3mdir /databases/scop_a3ms -hhmdir /databases/scop_hhms -oa3m /databases/scop_a3m_db -ohhm /databases/scop_hhm_db
+
+   perl create_db.pl -hhmdir /databases/scop_hhms -ohhm /databases/scop_hhm_db
+\end{verbatim} \normalsize
+
+\subsection{{\tt create\_cs\_db.pl} -- creates HHblits prefilter database}
+
+Create a HHblits prefilter database from HMMER-files, HMM-files or A3M-files
+
+\small \begin{verbatim}
+Usage: perl create_cs_db.pl -i <dir> [options]
+
+Options:
+  -i <dir>    Input directory with HMMER-, HMM- or A3M-files
+  -o <file>   Output file for the CS-database (default: <indir>.cs219)
+
+  -ext <ext>  File extension, which identifies file-typ (default: a3m)
+              - A3M-type  : a3m
+              - HHM-type  : hhm
+              - HMMER-type: hmmer or hmm
+
+  -append     append to CS-database (default: overwrite file, if existing)
+
+  -v [0-5]    verbose mode (default: 2)
+\end{verbatim} \normalsize
 
 \subsection{{\tt alignhits.pl} -- extract an alignment from a BLAST/PSI-BLAST output}
 

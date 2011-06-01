@@ -13,6 +13,8 @@ my $mact=0.5;
 my $neff_thresh=5;
 my $neff = 0;
 
+my $addss = 1;      # default: add secondary structure
+
 my $hh = "/cluster/bioprogs/hhblits";
 
 my $infile = "";
@@ -35,6 +37,8 @@ General options:
  -mact <float>  mact-value for HHblits (default: $mact)
  -neff <float>  min. diversity of A3Ms (default: $neff_thresh)
 
+ -noss          don't add secondary structure
+
  -cpu  <int>    number of cores (default: $cpu)
  -v    <int>    verbose mode (default: $v)
   
@@ -54,6 +58,8 @@ if ($options=~s/ -i\s*(\S+)/ /g) {$infile=$1;}
 
 if ($options=~s/ -mact\s*(\S+)/ /g) {$mact=$1;}
 if ($options=~s/ -neff\s*(\S+)/ /g) {$neff_thresh=$1;}
+
+if ($options=~s/ -noss\s*/ /g) {$addss=0;}
 
 if ($options=~s/ -cpu\s*(\S+)/ /g) {$cpu=$1;}
 
@@ -104,6 +110,13 @@ if ($neff < $neff_thresh) {
     }
 } else {
     system("cp $tmpdir/HHblits.a3m $outfile");
+}
+
+if ($addss) {
+    $cmd = "$hh/addss.pl $outfile");
+    if (&System($cmd) != 0) {
+	die ("ERROR with command $cmd!\n");
+    }
 }
 
 if ($v < 4) {
