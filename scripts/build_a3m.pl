@@ -113,7 +113,7 @@ if ($neff < $neff_thresh) {
 }
 
 if ($addss) {
-    $cmd = "$hh/addss.pl $outfile");
+    $cmd = "$hh/addss.pl $outfile";
     if (&System($cmd) != 0) {
 	die ("ERROR with command $cmd!\n");
     }
