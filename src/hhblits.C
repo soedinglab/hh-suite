@@ -97,13 +97,14 @@ const char print_elapsed=0;
 char tmp_file[]="/tmp/hhblitsXXXXXX";
 
 // HHblits variables
-const char HHBLITS_VERSION[]="version 2.2.13 (May 2011)";
+const char HHBLITS_VERSION[]="version 2.2.14 (June 2011)";
 const char HHBLITS_REFERENCE[]="to be published.\n";
 const char HHBLITS_COPYRIGHT[]="(C) Michael Remmert and Johannes Soeding\n";
 
 const int MAXNUMDB=20000;               // maximal number of hits through prefiltering
 const int MAXNUMDB_NO_PREFILTER=100000; // maximal number of hits without prefiltering
 int num_rounds   = 2;                   // number of iterations
+bool last_round = false;                // set to true in last iteration
 bool nodiff = false;                    // if true, do not filter in last round
 bool already_seen_filter = true;        // Perform filtering of already seen HHMs
 bool block_filter = true;               // Perform viterbi and forward algorithm only on block given by prefiltering
@@ -1278,7 +1279,7 @@ void perform_realign(char *dbfiles[], int ndb)
 
   int v1=v;
   if (v>0 && v<=3) v=1; else v-=2;  // Supress verbose output during iterative realignment and realignment
-  
+
   // Align the first par.jdummy templates?
   if (par.jdummy>0)
     {
@@ -1426,6 +1427,9 @@ void perform_realign(char *dbfiles[], int ndb)
 	  hitlist.Delete().Delete();               // delete the list record and hit object
 	  hitlist.Insert(*hit[bin]);
 	  
+	  // merge only when hit length > MINCOLS_REALIGN (don't merge 1 column matches)
+	  if (hit[bin]->matched_cols < MINCOLS_REALIGN) continue;
+
 	  // Read a3m alignment of hit and merge with Qali according to Q-T-alignment in hit[bin]
 	  char ta3mfile[NAMELEN];
 	  //strcpy(ta3mfile,hit[bin]->file); // copy filename including path but without extension
@@ -1714,8 +1718,10 @@ void perform_realign(char *dbfiles[], int ndb)
 	  //hitlist.ReadCurrent().Delete();
 	  hitlist.Delete().Delete();               // delete the list record and hit object
 	  // Make sure only realigned alignments get displayed!
-	  if (par.B>par.Z) par.B--; else if (par.B==par.Z) {par.B--; par.Z--;} else par.Z--;
-	  if (par.b>par.z) par.b--; else if (par.b==par.z) {par.b--; par.z--;} else par.z--;
+	  if (last_round) {
+	    if (par.B>par.Z) par.B--; else if (par.B==par.Z) {par.B--; par.Z--;} else par.Z--;
+	    //if (par.b>par.z) par.b--; else if (par.b==par.z) {par.b--; par.z--;} else par.z--;
+	  }
 	}
       else nhits++;
     }
@@ -2020,7 +2026,6 @@ int main(int argc, char **argv)
       printf("HMMs passed prefilter 2 (gapped profile-profile alignment) : %6i\n", (ndb_new+ndb_old));
       printf("HMMs not found in previous iterations                      : %6i\n", ndb_new);
       printf("Searching with full HMM-HMM alignment\n");
-      //printf("Searching through pre-filtered matches (new/old: %i/%i) by HMM-HMM comparison\n", ndb_new, ndb_old);
     }
 
     search_database(dbfiles_new,ndb_new,(ndb_new + ndb_old));
@@ -2038,6 +2043,7 @@ int main(int argc, char **argv)
 
     if (new_hits == 0 || round == num_rounds) 
       {
+	last_round = true;
 	if (round < num_rounds && v>=2)
 	  printf("No new hits found in iteration %i => Stop searching\n",round);
 

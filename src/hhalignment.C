@@ -2291,7 +2291,7 @@ void Alignment::MergeMasterSlave(Hit& hit, char ta3mfile[], FILE* ta3mf)
       // Advance to position of next T match state j
       while (hit.j[step]<j) step--;
       imatch[j] = hit.i[step];
-      if (v>3) { printf("step=%-3i  i=%-3i j=%-3i\n",step,imatch[j],j); }
+      if (v>3) { printf("step=%-3i  i=%-3i j=%-3i    i1: %4i  i2: %4i  j1: %4i  j2: %4i\n",step,imatch[j],j,hit.i1,hit.i2,hit.j1,hit.j2); }
     }
 
   // Determine number of match states of Qali

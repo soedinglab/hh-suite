@@ -94,8 +94,8 @@ void HitList::PrintHitList(HMM& q, char* outfile)
       if (nhits>=par.z && hit.Probab < par.p) break;
       if (nhits>=par.z && hit.Eval > par.E) continue;
 //       if (hit.matched_cols <=1) continue; // adding this might get to intransparent... analogous statement in PrintAlignments
-       nhits++;
-       sprintf(str,"%3i %-30.30s    ",nhits,hit.longname);
+      nhits++;
+      sprintf(str,"%3i %-30.30s    ",nhits,hit.longname);
        
 	 
 #ifdef WINDOWS      
