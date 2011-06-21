@@ -811,7 +811,7 @@ void init_prefilter()
       if (line[0] == '>')  // Header
 	{
 	  if (len > 0)           // if it is not the first sequence
-	    length[num_dbs++] = len;
+	    length[num_dbs++] = imin(MAXRES,len);
 	  len = 0;
 	      
 	  strwrd(word,line+1);
@@ -842,7 +842,7 @@ void init_prefilter()
     }
 
   if (len > 0)
-    length[num_dbs++] = len;
+    length[num_dbs++] = imin(MAXRES,len);
       
   fclose(dbf);
 }
