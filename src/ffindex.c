@@ -173,9 +173,11 @@ ffindex_entry_t* ffindex_bsearch_get_entry(ffindex_index_t *index, char *name)
 }
 
 
-ffindex_index_t* ffindex_index_parse(FILE *index_file)
+ffindex_index_t* ffindex_index_parse(FILE *index_file, size_t num_max_entries)
 {
-  ffindex_index_t *index = (ffindex_index_t *)calloc(1, sizeof(ffindex_index_t));
+  if(num_max_entries == 0)
+    num_max_entries = FFINDEX_MAX_INDEX_ENTRIES_DEFAULT;
+  ffindex_index_t *index = (ffindex_index_t *)malloc(sizeof(ffindex_index_t) + (sizeof(ffindex_entry_t) * num_max_entries));
   if(index == NULL)
   {
     perror("ffindex_index_parse: calloc failed: ");
@@ -184,19 +186,21 @@ ffindex_index_t* ffindex_index_parse(FILE *index_file)
 
   index->file = index_file;
   index->index_data = ffindex_mmap_data(index_file, &(index->index_data_size));
+  index->type = SORTED_FILE; /* Assume a sorted file for now */
   int i = 0;
   char* d = index->index_data;
   char* end;
   /* Faster than scanf per line */
   for(i = 0; d < (index->index_data + index->index_data_size); i++)
   {
-    //strncpy(index->entries[i].name, *d, FFINDEX_MAX_ENTRY_NAME_LENTH);
-    for(int p = 0; *d != '\t'; d++)
+    int p;
+    for(p = 0; *d != '\t'; d++)
       index->entries[i].name[p++] = *d;
+    index->entries[i].name[p] = '\0';
     index->entries[i].offset = strtol(d, &end, 10);
     d = end;
     index->entries[i].length  = strtol(d, &end, 10);
-    d = end + 1;
+    d = end + 1; /* +1 for newline */
   }
 
   index->n_entries = i;

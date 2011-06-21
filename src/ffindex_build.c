@@ -130,7 +130,7 @@ int main(int argn, char **argv)
   if(sort)
   {
     rewind(index_file);
-    ffindex_index_t* index = ffindex_index_parse(index_file);
+    ffindex_index_t* index = ffindex_index_parse(index_file, 0);
     fclose(index_file);
     ffindex_sort_index_file(index);
     index_file = fopen(index_filename, "w");

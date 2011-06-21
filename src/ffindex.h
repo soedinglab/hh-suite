@@ -16,15 +16,15 @@
  */
 
 #define FFINDEX_VERSION 0.9
-#define FFINDEX_MAX_INDEX_ENTRIES 6000000
-#define FFINDEX_MAX_ENTRY_NAME_LENTH 56
+#define FFINDEX_MAX_INDEX_ENTRIES_DEFAULT 6000000
+#define FFINDEX_MAX_ENTRY_NAME_LENTH 30
 
 enum ffindex_type {PLAIN_FILE, SORTED_FILE, SORTED_ARRAY};
 
 typedef struct ffindex_entry {
-  char name[FFINDEX_MAX_ENTRY_NAME_LENTH];
   size_t offset;
   size_t length;
+  char name[FFINDEX_MAX_ENTRY_NAME_LENTH];
 } ffindex_entry_t;
 
 typedef struct ffindex_index {
@@ -34,7 +34,7 @@ typedef struct ffindex_index {
   char* index_data;
   size_t index_data_size;
   int n_entries;
-  ffindex_entry_t entries[FFINDEX_MAX_INDEX_ENTRIES];
+  ffindex_entry_t entries[]; /* This array is as big as the excess memory allocated for this struct. */
 } ffindex_index_t;
 
 
@@ -50,7 +50,7 @@ char* ffindex_mmap_data(FILE *file, size_t* size);
 
 char* ffindex_get_filedata(char* data, size_t offset);
 
-ffindex_index_t* ffindex_index_parse(FILE *index_file);
+ffindex_index_t* ffindex_index_parse(FILE *index_file, size_t num_max_entries);
 
 ffindex_entry_t* ffindex_bsearch_get_entry(ffindex_index_t *index, char *name);
 

@@ -97,7 +97,7 @@ const char print_elapsed=0;
 char tmp_file[]="/tmp/hhblitsXXXXXX";
 
 // HHblits variables
-const char HHBLITS_VERSION[]="version 2.2.14 (June 2011)";
+const char HHBLITS_VERSION[]="version 2.2.15 (June 2011)";
 const char HHBLITS_REFERENCE[]="to be published.\n";
 const char HHBLITS_COPYRIGHT[]="(C) Michael Remmert and Johannes Soeding\n";
 
@@ -1745,6 +1745,7 @@ int main(int argc, char **argv)
   int seqs_found = 0;
   char* argv_conf[MAXOPT];       // Input arguments from .hhdefaults file (first=1: argv_conf[0] is not used)
   int argc_conf=0;               // Number of arguments in argv_conf
+  FILE* fin;
 
 #ifdef PTHREAD
   pthread_attr_init(&joinable);  // initialize attribute set with default values
@@ -1808,9 +1809,9 @@ int main(int argc, char **argv)
   strcpy(dba3m,db_base);
   strcat(dba3m,"_a3m_db");
 
-  FILE* fp = fopen(dba3m, "r");
-  if (fp) {
-    fclose(fp);
+  fin = fopen(dba3m, "r");
+  if (fin) {
+    fclose(fin);
   } else {
     dba3m[0] = 0;
     if (num_rounds > 1)
@@ -1835,7 +1836,28 @@ int main(int argc, char **argv)
   strcat(filename, ".index");
   dbhhm_index_file = fopen(filename, "r");
   if (!dbhhm_index_file) OpenFileError(filename);
-  dbhhm_index = ffindex_index_parse(dbhhm_index_file);
+  // Get number of indices in index-file
+  int filesize = 0;
+  char tmp_file[NAMELEN];
+  strcpy(tmp_file, filename);
+  strcat(tmp_file, ".sizes");
+  fin = fopen(tmp_file, "r");
+  if (!fin)
+    {
+      // Get DB-size
+      command = "cat " + (string)filename + " |wc -l";
+      fin = popen(command.c_str(), "r");
+      ptr=fgets(line, LINELEN, fin);
+      filesize = strint(ptr);
+      pclose(fin);
+    } 
+  else 
+    {
+      ptr=fgets(line, LINELEN, fin);
+      filesize = strint(ptr);
+      fclose(fin);
+    }
+  dbhhm_index = ffindex_index_parse(dbhhm_index_file, filesize);
   dbhhm_data = ffindex_mmap_data(dbhhm_data_file, &data_size);
 
   if (!*dba3m) {
@@ -1850,7 +1872,27 @@ int main(int argc, char **argv)
     strcat(filename, ".index");
     dba3m_index_file = fopen(filename, "r");
     if (!dba3m_index_file) OpenFileError(filename);
-    dba3m_index = ffindex_index_parse(dba3m_index_file);
+    // Get number of indices in index-file
+    filesize = 0;
+    strcpy(tmp_file, filename);
+    strcat(tmp_file, ".sizes");
+    fin = fopen(tmp_file, "r");
+    if (!fin)
+      {
+	// Get DB-size
+	command = "cat " + (string)filename + " |wc -l";
+	fin = popen(command.c_str(), "r");
+	ptr=fgets(line, LINELEN, fin);
+	filesize = strint(ptr);
+	pclose(fin);
+      } 
+    else 
+      {
+	ptr=fgets(line, LINELEN, fin);
+	filesize = strint(ptr);
+	fclose(fin);
+      }
+    dba3m_index = ffindex_index_parse(dba3m_index_file,filesize);
     dba3m_data = ffindex_mmap_data(dba3m_data_file, &data_size);
   }
 
@@ -1884,7 +1926,7 @@ int main(int argc, char **argv)
 
   // Prepare CS pseudocounts lib
   if (*par.clusterfile) {
-    FILE* fin = fopen(par.clusterfile, "r");
+    fin = fopen(par.clusterfile, "r");
     if (!fin) OpenFileError(par.clusterfile);
     context_lib = new cs::ContextLibrary<cs::AA>(fin);
     fclose(fin);
@@ -1893,7 +1935,7 @@ int main(int argc, char **argv)
     lib_pc = new cs::LibraryPseudocounts<cs::AA>(*context_lib, par.csw, par.csb);
   }
 
-  FILE* fin = fopen(par.cs_library, "r");
+  fin = fopen(par.cs_library, "r");
   if (!fin) OpenFileError(par.cs_library);
   cs_lib = new cs::ContextLibrary<cs::AA>(fin);
   fclose(fin);
