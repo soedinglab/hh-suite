@@ -833,7 +833,7 @@ void init_prefilter()
 	      	  len++;
 	      	}
 	      else
-	      	cerr<<endl<<"WARNING: invalid symbol \'"<<*linep<<"\' of "<<db<<"\n";
+	      	cerr<<endl<<"WARNING: ignoring invalid symbol \'"<<*linep<<"\' of "<<db<<"\n";
 
 	      linep++;
 	    }

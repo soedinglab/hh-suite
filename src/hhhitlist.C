@@ -98,16 +98,24 @@ void HitList::PrintHitList(HMM& q, char* outfile)
       sprintf(str,"%3i %-30.30s    ",nhits,hit.longname);
        
 	 
+// #ifdef WINDOWS      
+// 	 fprintf(outf,"%-34.34s %5.1f %8.2G %8.2G %6.1f %5.1f %4i ",str,hit.Probab,hit.Eval,hit.Pval,hit.score,hit.score_ss,hit.matched_cols);
+// #else
+// 	 fprintf(outf,"%-34.34s %5.1f %7.2G %7.2G %6.1f %5.1f %4i ",str,hit.Probab,hit.Eval,hit.Pval,hit.score,hit.score_ss,hit.matched_cols);
+// #endif
 #ifdef WINDOWS      
-	 fprintf(outf,"%-34.34s %5.1f %8.2G %8.2G %6.1f %5.1f %4i ",str,hit.Probab,hit.Eval,hit.Pval,hit.score,hit.score_ss,hit.matched_cols);
+	 fprintf(outf,"%-34.34s %5.1f %8.2G %8.2G ",str,hit.Probab,hit.Eval,hit.Pval);
 #else
-	 fprintf(outf,"%-34.34s %5.1f %7.2G %7.2G %6.1f %5.1f %4i ",str,hit.Probab,hit.Eval,hit.Pval,hit.score,hit.score_ss,hit.matched_cols);
+	 fprintf(outf,"%-34.34s %5.1f %7.2G %7.2G ",str,hit.Probab,hit.Eval,hit.Pval);
 #endif
 
-      sprintf(str,"%4i-%-4i ",hit.i1,hit.i2);
-      fprintf(outf,"%-10.10s",str);
-      sprintf(str,"%4i-%-4i",hit.j1,hit.j2);
-      fprintf(outf,"%-9.9s(%i)\n",str,hit.L);
+	 // Needed for long sequences (more than 5 digits in length)
+	 sprintf(str,"%6.1f",hit.score);
+	 fprintf(outf,"%-6.6s %5.1f %4i %4i-%-4i %4i-%-4i(%i)\n",str,hit.score_ss,hit.matched_cols,hit.i1,hit.i2,hit.j1,hit.j2,hit.L);
+	 //      sprintf(str,"%4i-%-4i ",hit.i1,hit.i2);
+	 //      fprintf(outf,"%-10.10s",str);
+	 //      sprintf(str,"%4i-%-4i",hit.j1,hit.j2);
+	 //      fprintf(outf,"%-9.9s(%i)\n",str,hit.L);
    } //end print hit list 
   fprintf(outf,"\n");
   if (strcmp(outfile,"stdout")) fclose(outf);

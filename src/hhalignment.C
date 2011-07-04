@@ -238,7 +238,7 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline)
                   if (aa2i(line[h])>=0) // ignore white-space characters ' ', \t and \n (aa2i()==-1)
                     {cur_seq[l]=line[h]; l++;}
                   else if (aa2i(line[h])==-2 && v)
-                    cerr<<endl<<"WARNING: invalid symbol \'"<<line[h]<<"\' at pos. "<<h<<" in line "<<linenr<<" of "<<infile<<"\n";
+                    cerr<<endl<<"WARNING: ignoring invalid symbol \'"<<line[h]<<"\' at pos. "<<h<<" in line "<<linenr<<" of "<<infile<<"\n";
                   h++;
                 }
             }
@@ -249,7 +249,7 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline)
                   if (ss2i(line[h])>=0 && ss2i(line[h])<=7)
                     {cur_seq[l]=ss2ss(line[h]); l++;}
                   else if (v)
-                    cerr<<endl<<"WARNING: invalid symbol \'"<<line[h]<<"\' at pos. "<<h<<" in line "<<linenr<<" of "<<infile<<"\n";
+                    cerr<<endl<<"WARNING: ignoring invalid symbol \'"<<line[h]<<"\' at pos. "<<h<<" in line "<<linenr<<" of "<<infile<<"\n";
                   h++;
                 }
             }
@@ -260,7 +260,7 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline)
                   if (sa2i(line[h])>=0)
                     cur_seq[l++]=line[h];
                   else if (v)
-                    cerr<<endl<<"WARNING: invalid symbol \'"<<line[h]<<"\' at pos. "<<h<<" in line "<<linenr<<" of "<<infile<<"\n";
+                    cerr<<endl<<"WARNING: ignoring invalid symbol \'"<<line[h]<<"\' at pos. "<<h<<" in line "<<linenr<<" of "<<infile<<"\n";
                   h++;
                 }
             }
@@ -271,7 +271,7 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline)
                   if (ss2i(line[h])>=0 && ss2i(line[h])<=3)
                     {cur_seq[l]=ss2ss(line[h]); l++;}
                   else if (v)
-                    cerr<<endl<<"WARNING: invalid symbol \'"<<line[h]<<"\' at pos. "<<h<<" in line "<<linenr<<" of "<<infile<<"\n";
+                    cerr<<endl<<"WARNING: ignoring invalid symbol \'"<<line[h]<<"\' at pos. "<<h<<" in line "<<linenr<<" of "<<infile<<"\n";
                   h++;
                 }
             }
@@ -282,7 +282,7 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline)
                   if (line[h]=='-' || line[h]=='.' || (line[h]>='0' && line[h]<='9'))
                     {cur_seq[l]=line[h]; l++;}
                   else if (v)
-                    cerr<<endl<<"WARNING: invalid symbol \'"<<line[h]<<"\' at pos. "<<l<<" in line "<<linenr<<" of "<<infile<<"\n";
+                    cerr<<endl<<"WARNING: ignoring invalid symbol \'"<<line[h]<<"\' at pos. "<<l<<" in line "<<linenr<<" of "<<infile<<"\n";
                   h++;
                 }
             }
@@ -293,7 +293,7 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline)
                   if (line[h]=='-' || line[h]=='.' || (line[h]>='0' && line[h]<='9') || (line[h]>='A' && line[h]<='B'))
                     {cur_seq[l]=line[h]; l++;}
                   else if (v)
-                    cerr<<endl<<"WARNING: invalid symbol \'"<<line[h]<<"\' at pos. "<<l<<" in line "<<linenr<<" of "<<infile<<"\n";
+                    cerr<<endl<<"WARNING: ignoring invalid symbol \'"<<line[h]<<"\' at pos. "<<l<<" in line "<<linenr<<" of "<<infile<<"\n";
                   h++;
                 }
             }
