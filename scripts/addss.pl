@@ -4,7 +4,7 @@
 # Output format is A3M (for input alignments) or HMMER (see User Guide).
 
 #########################################################################################################
-# Delete the following 9 lines and set the variables in the next paragraph to your blast etc. directories
+# Delete the following 8 lines and set the variables in the next paragraph to your blast etc. directories
 my $rootdir;
 BEGIN {
     if (defined $ENV{TK_ROOT}) {$rootdir=$ENV{TK_ROOT};} else {$rootdir="/cluster";}
@@ -12,7 +12,6 @@ BEGIN {
 use lib "$rootdir/bioprogs/hhpred";
 use lib "/cluster/lib";              # for chimaera webserver: ConfigServer.pm
 
-use strict;
 use MyPaths;                         # config file with path variables for nr, blast, psipred, pdb, dssp etc.
 #########################################################################################################
 
@@ -21,14 +20,20 @@ use MyPaths;                         # config file with path variables for nr, b
 #my $hh="$bioprogs/hh";                         # Put the directory path with hhfilter and hhmake
 #my $perl="$bioprogs/perl";                     # Put the directory path where reformat.pl is lying
 #my $dummydb="/cluster/databases/do_no_delete"; # Put the name given to the dummy blast directory (or leave this name)
+
+# The following variables have to set for using DSSP states (not neccessary, you can leave them empty!)
 #my $dsspdir="";                                # Put the directory with dssp files 
 #my $dssp="";                                   # Put the directory with dssp executable
 #my $pdbdir="";                                 # Put the directory with PDB files
+
+#########################################################################################################
 
 my $psipreddir="$bioprogs_dir/psipred/";        # Put the directory path with the PSIPRED executables 
 my $execdir=$psipreddir."/bin";
 my $datadir=$psipreddir."/data";
 my $ss_cit="PSIPRED: Jones DT. (1999) Protein secondary structure prediction based on position-specific scoring matrices. JMB 292:195-202.";
+
+use strict;
 
 # Module needed for aligning DSSP-sequence
 use Align;
@@ -199,10 +204,12 @@ if ($informat ne "hmm") {
     open (ALIFILE, ">$outfile") || die("ERROR: cannot open $inbase.a3m: $!\n");
     
     # Add DSSP sequence (if available)
-    if ($v>=1) {printf ("\nRead DSSP state sequence (if available) ...\n");}
-    if (!&AppendDsspSequences("$inbase.sq")) {
-	$ss_dssp=~s/(\S{$numres})/$1\n/g;
-	print(ALIFILE ">ss_dssp\n$ss_dssp\n");
+    if ($dssp ne "") {
+        if ($v>=1) {printf ("\nRead DSSP state sequence (if available) ...\n");}
+        if (!&AppendDsspSequences("$inbase.sq")) {
+	    $ss_dssp=~s/(\S{$numres})/$1\n/g;
+	    print(ALIFILE ">ss_dssp\n$ss_dssp\n");
+        }
     }
 
     # Secondary structure prediction with psipred
