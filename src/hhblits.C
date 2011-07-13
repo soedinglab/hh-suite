@@ -1240,6 +1240,8 @@ void perform_realign(char *dbfiles[], int ndb)
       if (v>=1) 
 	{
 	  cerr<<"WARNING: Realigning sequences only up to length "<<Lmaxmem<<" due to limited memory."<<endl;
+	  cerr<<"This is genarally unproboblematic but may lead to slightly sub-optimal alignments."<<endl;
+//	  cerr<<"You can allow HHblits to use more than "<<par.maxmem<<"GB of memory with option -mem <GB>"<<endl;  // still to be implemented
 	  if (bins>1) cerr<<"Note: you can reduce memory requirement by lowering N in the -cpu N option."<<endl;
 	}
     }
@@ -1274,7 +1276,7 @@ void perform_realign(char *dbfiles[], int ndb)
 	  if (realign->Contains(dbfiles[idb]))
 	    num_realign++;
 	}
-      printf("Realigning %i HMM-HMM alignments with Maximum ACcuracy algorithm\n",num_realign);
+      printf("Realigning %i HMM-HMM alignments with Maximum Accuracy algorithm\n",num_realign);
     }
 
   int v1=v;
@@ -2237,7 +2239,7 @@ int main(int argc, char **argv)
 	  }
       }
     
-    if (v>=2) printf("%i sequences in %i clusters found with an E-value < %-6.4g\n",seqs_found,cluster_found, par.e);
+    if (v>=2) printf("%i sequences belonging to %i database HMMs found with an E-value < %-6.4g\n",seqs_found,cluster_found, par.e);
 
     if (q->Neff_HMM > neffmax && round < num_rounds)
       printf("Diversity of created alignment (%4.2f) is above threshold (%4.2f). Stop searching!\n", q->Neff_HMM, neffmax);

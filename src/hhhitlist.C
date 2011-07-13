@@ -46,7 +46,6 @@ void HitList::PrintHitList(HMM& q, char* outfile)
 {
   Hit hit;
   int nhits=0;
-  char str[NAMELEN]="";
 
   FILE* outf=NULL;
   if (strcmp(outfile,"stdout"))
@@ -95,28 +94,33 @@ void HitList::PrintHitList(HMM& q, char* outfile)
       if (nhits>=par.z && hit.Eval > par.E) continue;
 //       if (hit.matched_cols <=1) continue; // adding this might get to intransparent... analogous statement in PrintAlignments
       nhits++;
+
+      char Estr[10];
+      char Pstr[10];
+      char str[NAMELEN];
       sprintf(str,"%3i %-30.30s    ",nhits,hit.longname);
-       
-	 
+      
+
 // #ifdef WINDOWS      
 // 	 fprintf(outf,"%-34.34s %5.1f %8.2G %8.2G %6.1f %5.1f %4i ",str,hit.Probab,hit.Eval,hit.Pval,hit.score,hit.score_ss,hit.matched_cols);
 // #else
 // 	 fprintf(outf,"%-34.34s %5.1f %7.2G %7.2G %6.1f %5.1f %4i ",str,hit.Probab,hit.Eval,hit.Pval,hit.score,hit.score_ss,hit.matched_cols);
 // #endif
 #ifdef WINDOWS      
-	 fprintf(outf,"%-34.34s %5.1f %8.2G %8.2G ",str,hit.Probab,hit.Eval,hit.Pval);
+      if (hit.Eval>=1E-99) sprintf(Estr,"%8.2G",hit.Eval); else sprintf(Estr,"%8.1G",hit.Eval);
+      if (hit.Pval>=1E-99) sprintf(Pstr,"%8.2G",hit.Pval); else sprintf(Pstr,"%8.1G",hit.Pval);
+      fprintf(outf,"%-34.34s %5.1f %8s %8s ",str,hit.Probab,Estr,Pstr);
 #else
-	 fprintf(outf,"%-34.34s %5.1f %7.2G %7.2G ",str,hit.Probab,hit.Eval,hit.Pval);
+      if (hit.Eval>=1E-99) sprintf(Estr,"%7.2G",hit.Eval); else sprintf(Estr,"%7.1G",hit.Eval);
+      if (hit.Pval>=1E-99) sprintf(Pstr,"%7.2G",hit.Pval); else sprintf(Pstr,"%7.1G",hit.Pval);
+      fprintf(outf,"%-34.34s %5.1f %7s %7s ",str,hit.Probab,Estr,Pstr);
 #endif
 
-	 // Needed for long sequences (more than 5 digits in length)
-	 sprintf(str,"%6.1f",hit.score);
-	 fprintf(outf,"%-6.6s %5.1f %4i %4i-%-4i %4i-%-4i(%i)\n",str,hit.score_ss,hit.matched_cols,hit.i1,hit.i2,hit.j1,hit.j2,hit.L);
-	 //      sprintf(str,"%4i-%-4i ",hit.i1,hit.i2);
-	 //      fprintf(outf,"%-10.10s",str);
-	 //      sprintf(str,"%4i-%-4i",hit.j1,hit.j2);
-	 //      fprintf(outf,"%-9.9s(%i)\n",str,hit.L);
+      // Needed for long sequences (more than 5 digits in length)
+      sprintf(str,"%6.1f",hit.score);
+      fprintf(outf,"%-6.6s %5.1f %4i %4i-%-4i %4i-%-4i(%i)\n",str,hit.score_ss,hit.matched_cols,hit.i1,hit.i2,hit.j1,hit.j2,hit.L);
    } //end print hit list 
+
   fprintf(outf,"\n");
   if (strcmp(outfile,"stdout")) fclose(outf);
 }

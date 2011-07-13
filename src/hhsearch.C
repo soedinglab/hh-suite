@@ -1169,10 +1169,13 @@ int main(int argc, char **argv)
       if (Lmax>Lmaxmem)
         {
           Lmax=Lmaxmem;
-          if (v>=1) {
-            cerr<<"WARNING: Realigning sequences only up to length "<<Lmaxmem<<" due to limited memory."<<endl;
-            if (bins>1) cerr<<"Note: you can reduce memory requirement by lowering N in the -cpu N option."<<endl;
-          }
+          if (v>=1) 
+	    {
+	      cerr<<"WARNING: Realigning sequences only up to length "<<Lmaxmem<<" due to limited memory."<<endl;
+	      cerr<<"This is genarally unproboblematic but may lead to slightly sub-optimal alignments."<<endl; 
+//	      cerr<<"You can allow HHblits to use more than "<<par.maxmem<<"GB of memory with option -mem <GB>"<<endl;  // still to be implemented
+	      if (bins>1) cerr<<"Note: you can reduce memory requirement by lowering N in the -cpu N option."<<endl;
+	    }
         }
 
       // Initialize and allocate space for dynamic programming
