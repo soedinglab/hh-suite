@@ -308,6 +308,12 @@ int MemoryError(const char arrayname[])
   exit(3);
 }
 
+int NoMemoryError(const char arrayname[])
+{
+  cerr<<"Error in "<<par.argv[0]<<": Could not allocate memory in \'"<<arrayname<<"\'.\n";
+  exit(3);
+}
+
 int SyntaxError(const char details[]="")
 {
   cerr<<"Error in "<<par.argv[0]<<" on command line: "<<details<<"\n";

@@ -97,7 +97,7 @@ const char print_elapsed=0;
 char tmp_file[]="/tmp/hhblitsXXXXXX";
 
 // HHblits variables
-const char HHBLITS_VERSION[]="version 2.2.15 (June 2011)";
+const char HHBLITS_VERSION[]="version 2.2.16 (July 2011)";
 const char HHBLITS_REFERENCE[]="to be published.\n";
 const char HHBLITS_COPYRIGHT[]="(C) Michael Remmert and Johannes Soeding\n";
 
@@ -1860,6 +1860,9 @@ int main(int argc, char **argv)
       fclose(fin);
     }
   dbhhm_index = ffindex_index_parse(dbhhm_index_file, filesize);
+  if (dbhhm_index==NULL) {
+    NoMemoryError("index-file parsing by ffindex");
+  }
   dbhhm_data = ffindex_mmap_data(dbhhm_data_file, &data_size);
 
   if (!*dba3m) {
@@ -1895,6 +1898,9 @@ int main(int argc, char **argv)
 	fclose(fin);
       }
     dba3m_index = ffindex_index_parse(dba3m_index_file,filesize);
+    if (dba3m_index==NULL) {
+      NoMemoryError("index-file parsing by ffindex");
+    }
     dba3m_data = ffindex_mmap_data(dba3m_data_file, &data_size);
   }
 
