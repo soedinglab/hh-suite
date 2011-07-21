@@ -44,7 +44,7 @@ public:
   inline int Filter(int max_seqid, int coverage=0, int qid=0, float qsc=0, int N=0);
   int Filter2(char keep[], int coverage, int qid, float qsc, int seqid1, int seqid2, int Ndiff);
 
-  bool FilterNeff();
+  void FilterNeff();
   float filter_by_qsc(float qsc, char* dummy);
 
   // Calculate AA frequencies q.p[i][a] and transition probabilities q.tr[i][a] from alignment
