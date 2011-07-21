@@ -1996,7 +1996,7 @@ int main(int argc, char **argv)
   // Main loop
   //////////////////////////////////////////////////////////
 
-  if (v>=2) printf("\n******************************************************\n* Building alignment for query with %i rounds HHblits *\n******************************************************\n\n",num_rounds);
+  if (v>=2) printf("\n************************************************************\n* Building alignment for query with %i iteration(s) HHblits *\n************************************************************\n\n",num_rounds);
 
   for (int round = 1; round <= num_rounds; round++) {
 
@@ -2070,6 +2070,11 @@ int main(int argc, char **argv)
       prefilter_db();  // in hhprefilter.C
     
     if (print_elapsed) ElapsedTimeSinceLastCall("(prefiltering)"); 
+
+    if (ndb_new == 0) {
+      printf("No HMMs pass prefilter => Stop searching!\n");
+      break;
+    }
 
     // Search datbases
     if (v>=2) {
