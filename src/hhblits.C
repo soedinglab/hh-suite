@@ -97,7 +97,7 @@ const char print_elapsed=0;
 char tmp_file[]="/tmp/hhblitsXXXXXX";
 
 // HHblits variables
-const char HHBLITS_VERSION[]="version 2.2.16 (July 2011)";
+const char HHBLITS_VERSION[]="version 2.2.17 (July 2011)";
 const char HHBLITS_REFERENCE[]="to be published.\n";
 const char HHBLITS_COPYRIGHT[]="(C) Michael Remmert and Johannes Soeding\n";
 
@@ -2250,10 +2250,15 @@ int main(int argc, char **argv)
 	  }
       }
     
-    if (v>=2) printf("%i sequences belonging to %i database HMMs found with an E-value < %-6.4g\n",seqs_found,cluster_found, par.e);
+    if (v>=2)
+      printf("%i sequences belonging to %i database HMMs found with an E-value < %-6.4g\n",seqs_found,cluster_found, par.e);
 
-    if (q->Neff_HMM > neffmax && round < num_rounds)
+    if (q->Neff_HMM > neffmax && round < num_rounds) {
       printf("Diversity of created alignment (%4.2f) is above threshold (%4.2f). Stop searching!\n", q->Neff_HMM, neffmax);
+    } else {
+      if (v>=2 && (round < num_rounds || *par.alnfile || *par.psifile || *par.hhmfile || *alis_basename))
+	printf("Number of effective sequences of resulting HMM: Neff = %4.2f\n", q->Neff_HMM);
+    }
 
     if (Qali.N_in>=MAXSEQ)
       printf("Maximun number of sequences in query alignment reached (%i). Stop searching!\n", MAXSEQ);
