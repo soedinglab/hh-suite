@@ -42,9 +42,9 @@ Options:
   -hhmdir <dir>  Input directory (directories) with HHM- or HMMER-files 
                  (WARNING! Using HMMER databases could result in a decreased sensitivity!)
 
-  -oa3m  <FILE>  Output filename for the A3M database 
+  -oa3m  <FILE>  Output basename for the A3M database (output will be BASENAME_a3m_db)
                  (if not given, no A3M database will be build)
-  -ohhm  <FILE>  Output filename for the HHM database 
+  -ohhm  <FILE>  Output basename for the HHM database (output will be BASENAME_hhm_db)
                  (if not given, no HHM database will be build)
 
   -a3mext        Extension of A3M-files (default: $a3mext)
@@ -56,11 +56,11 @@ Options:
 
 Examples:
 
-   perl create_db.pl -a3mdir /databases/scop_a3ms -oa3m /databases/scop_a3m_db -ohhm /databases/scop_hhm_db
+   perl create_db.pl -a3mdir /databases/scop_a3ms -oa3m /databases/scop -ohhm /databases/scop
 
-   perl create_db.pl -a3mdir /databases/scop_a3ms -hhmdir /databases/scop_hhms -oa3m /databases/scop_a3m_db -ohhm /databases/scop_hhm_db
+   perl create_db.pl -a3mdir /databases/scop_a3ms -hhmdir /databases/scop_hhms -oa3m /databases/scop -ohhm /databases/scop
 
-   perl create_db.pl -hhmdir /databases/scop_hhms -ohhm /databases/scop_hhm_db
+   perl create_db.pl -hhmdir /databases/scop_hhms -ohhm /databases/scop
 \n";
 
 # Variable declarations
@@ -100,13 +100,13 @@ for (my $i=0; $i<@ARGV; $i++) {
 	}
     } elsif ($ARGV[$i] eq "-oa3m") {
 	if (++$i<@ARGV) {
-	    $a3mfile=$ARGV[$i];
+	    $a3mfile=$ARGV[$i] . "_a3m_db";
 	} else {
 	    die ("$help\n\nERROR! Missing filename after -oa3m option!\n");
 	}
     } elsif ($ARGV[$i] eq "-ohhm") {
 	if (++$i<@ARGV) {
-	    $hhmfile=$ARGV[$i];
+	    $hhmfile=$ARGV[$i] . "_hhm_db";
 	} else {
 	    die ("$help\n\nERROR! Missing filename after -ohhm option!\n");
 	}

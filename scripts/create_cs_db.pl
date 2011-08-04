@@ -29,7 +29,8 @@ Usage: perl create_cs_db.pl -i <dir> [options]
 
 Options:
   -i <dir>    Input directory with HMMER-, HMM- or A3M-files
-  -o <file>   Output file for the CS-database (default: <indir>.cs219)
+  -o <file>   Output basename for the CS-database (default: <indir>)
+              (will generate output in BASENAME.cs219)
 
   -ext <ext>  File extension, which identifies file-typ (default: $ext)
               - A3M-type  : a3m
@@ -59,7 +60,7 @@ my $options="";
 for (my $i=0; $i<@ARGV; $i++) {$options.=" $ARGV[$i] ";}
 
 if ($options=~s/ -i\s+(\S+) //) {$indir=$1;}
-if ($options=~s/ -o\s+(\S+) //) {$outfile=$1;}
+if ($options=~s/ -o\s+(\S+) //) {$outfile="$1.cs219";}
 
 if ($options=~s/ -ext\s+(\S+) //) {$ext=$1;}
 
@@ -80,7 +81,7 @@ if (!$outfile) {
     } else {
 	$outfile = "$indir.cs219";
     }
-    print("Create HHblits database with CS-database in file $outfile!\n");
+    print("Create HHblits CS-database in file $outfile!\n");
 }
 
 # Create tmp directory (plus path, if necessary)
