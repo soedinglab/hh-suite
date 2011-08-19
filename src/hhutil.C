@@ -571,10 +571,10 @@ void SetDefaults()
   par.alphab = 0.02;
   par.alphac = 0.1;
 
-  par.prefilter = false;
-  par.early_stopping_filter = false;
+  par.prefilter = false;              //true in hhblits
+  par.early_stopping_filter = false;  //true in hhblits
 
-  par.filter_thresh=0;
+  par.filter_thresh=0;                // 0.01 in hhblits
   par.filter_length=200;
   par.filter_evals=NULL;
   par.filter_sum=0.0;

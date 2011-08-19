@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # 
 # Create a HHblits CS-database from HMMER-files, HMM-files or A3M-files
 

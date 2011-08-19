@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # addss.pl version 1.0.0 (October 2009)
 # Add DSSP states (if available) and PSIPRED secondary structure prediction to a FASTA or A3M alignment or HMMER file.
 # Output format is A3M (for input alignments) or HMMER (see User Guide).
@@ -349,8 +349,12 @@ else
 	close(MTXFILE);
 	
 	# Call PSIPRED
-	&System("$execdir/psipred $inbase.mtx $datadir/weights.dat $datadir/weights.dat2 $datadir/weights.dat3 $datadir/weights.dat4 > $inbase.ss");
-	
+	if (-e "$datadir/weights.dat4") { # Psipred version < 3.0
+	    &System("$execdir/psipred $inbase.mtx $datadir/weights.dat $datadir/weights.dat2 $datadir/weights.dat3 $datadir/weights.dat4 > $inbase.ss");
+	} else {
+	    &System("$execdir/psipred $inbase.mtx $datadir/weights.dat $datadir/weights.dat2 $datadir/weights.dat3 > $inbase.ss");
+	}
+
 	# READ PSIPRED file
 	if (open (PSIPRED, "$execdir/psipass2 $datadir/weights_p2.dat 1 0.98 1.09 $inbase.ss2 $inbase.ss |")) {
 	    $ss_conf="";
@@ -426,8 +430,12 @@ sub RunPsipred() {
     system("echo $inroot.chk > $inbase.pn\n");
     system("echo $inroot.sq > $inbase.sn\n");
     system("$ncbidir/makemat -P $inbase");
-    
-    &System("$execdir/psipred $inbase.mtx $datadir/weights.dat $datadir/weights.dat2 $datadir/weights.dat3 $datadir/weights.dat4 > $inbase.ss");
+
+    if (-e "$datadir/weights.dat4") { # Psipred version < 3.0
+	&System("$execdir/psipred $inbase.mtx $datadir/weights.dat $datadir/weights.dat2 $datadir/weights.dat3 $datadir/weights.dat4 > $inbase.ss");
+    } else {
+	&System("$execdir/psipred $inbase.mtx $datadir/weights.dat $datadir/weights.dat2 $datadir/weights.dat3 > $inbase.ss");
+    }
 
     &System("$execdir/psipass2 $datadir/weights_p2.dat 1 0.98 1.09 $inbase.ss2 $inbase.ss > $inbase.horiz");
     

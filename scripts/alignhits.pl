@@ -1,4 +1,4 @@
-#! /usr/bin/perl -w
+#! /usr/bin/env perl
 # Extract a multiple alignment of hits from Blast or PsiBlast output
 # Usage:   alignhits.pl [options] blast.out alignment-file
 

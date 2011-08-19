@@ -1,4 +1,4 @@
-#! /usr/bin/perl -w
+#! /usr/bin/env perl
 # Read the Pfam database file, reformat it into seperate a3m files,
 # and generate hhm files.
 # Usage:   pfam.pl Pfam-file
@@ -487,7 +487,11 @@ sub RunPsipred() {
     system("echo $rootname.fasta > $basename.sn\n");
     system("$ncbidir/makemat -P $basename");
     
-    &System("$execdir/psipred $basename.mtx $datadir/weights.dat $datadir/weights.dat2 $datadir/weights.dat3 $datadir/weights.dat4 > $basename.ss");
+    if (-e "$datadir/weights.dat4") { # Psipred version < 3.0
+	&System("$execdir/psipred $basename.mtx $datadir/weights.dat $datadir/weights.dat2 $datadir/weights.dat3 $datadir/weights.dat4 > $basename.ss");
+    } else {
+	&System("$execdir/psipred $basename.mtx $datadir/weights.dat $datadir/weights.dat2 $datadir/weights.dat3 > $basename.ss");
+    }
 
     &System("$execdir/psipass2 $datadir/weights_p2.dat 1 0.98 1.09 $basename.ss2 $basename.ss > $basename.horiz");
     

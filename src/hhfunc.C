@@ -7,18 +7,27 @@ void CalculateSS(char *ss_pred, char *ss_conf, char *tmpfile)
   // Initialize
   std::string command;
   char line[LINELEN]=""; 
+  char filename[NAMELEN];
 
   strcpy(ss_pred,"-");
   strcpy(ss_conf,"-");
   
   // Run PSIpred
-  command = (std::string)par.psipred + "/psipred " + (std::string)tmpfile + ".mtx " + (std::string)par.psipred_data + "/weights.dat " + (std::string)par.psipred_data + "/weights.dat2 " + (std::string)par.psipred_data + "/weights.dat3 " + (std::string)par.psipred_data + "/weights.dat4 > " + (std::string)tmpfile + ".ss";
+  
+  // Check for Psipred ver >= 3.0 (weights.dat4 doesn't exists an more)
+  strcpy(filename,par.psipred_data);
+  strcat(filename,"/weights.dat4");
+  FILE* check_exists = fopen(filename,"r");
+  if (check_exists) {  // Psipred version < 3.0
+    command = (std::string)par.psipred + "/psipred " + (std::string)tmpfile + ".mtx " + (std::string)par.psipred_data + "/weights.dat " + (std::string)par.psipred_data + "/weights.dat2 " + (std::string)par.psipred_data + "/weights.dat3 " + (std::string)par.psipred_data + "/weights.dat4 > " + (std::string)tmpfile + ".ss";
+  } else {
+    command = (std::string)par.psipred + "/psipred " + (std::string)tmpfile + ".mtx " + (std::string)par.psipred_data + "/weights.dat " + (std::string)par.psipred_data + "/weights.dat2 " + (std::string)par.psipred_data + "/weights.dat3 > " + (std::string)tmpfile + ".ss";
+  }
   runSystem(command,v);
   command = (std::string)par.psipred + "/psipass2 " + (std::string)par.psipred_data + "/weights_p2.dat 1 0.98 1.09 " + (std::string)tmpfile + ".ss2 " + (std::string)tmpfile + ".ss > " + (std::string)tmpfile + ".horiz";
   runSystem(command,v);
 
   // Read results
-  char filename[NAMELEN];
   strcpy(filename,tmpfile);
   strcat(filename,".horiz");
   FILE* horizf = fopen(filename,"r");

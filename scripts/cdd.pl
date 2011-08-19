@@ -1,4 +1,4 @@
-#! /usr/bin/perl -w
+#! /usr/bin/env perl
 # COG0488 and before -> delete
 
 my $rootdir;

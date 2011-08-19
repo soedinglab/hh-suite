@@ -1,4 +1,4 @@
-#! /usr/bin/perl -w
+#! /usr/bin/env perl
 #
 # For each sequence found in infile, read dssp file and write secondary structure
 # assignments for each residue into a separate file in fasta format.

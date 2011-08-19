@@ -1,4 +1,4 @@
-#! /usr/bin/perl -w
+#! /usr/bin/env perl
 #
 # build_a3m.pl
 # Build an A3M-file with HHblits

@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # 
 # Creates HHblits databases from HMMER-files, HMM-files or A3M-files
 

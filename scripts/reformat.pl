@@ -1,4 +1,4 @@
-#! /usr/bin/perl -w
+#! /usr/bin/env perl
 #
 # reformat.pl version 1.1.4 (June 2005)
 # Reformat a multiple alignment file

@@ -413,6 +413,7 @@ void help_all()
   printf(" -alt <int>     show up to this many significant alternative alignments(def=%i)          \n",par.altali);
   printf(" -jdummy [0,20] align <int> hits to query before realigning the remaining hits           \n");
   printf("                to the new query profile (default=%i)                                    \n",par.jdummy);       
+  printf(" -shift [-1,1] score offset (def=%-.2f)                                       \n",par.shift);
   printf(" -ssm  0-4     0:   no ss scoring                                             \n");
   printf("               1,2: ss scoring after or during alignment  [default=%1i]       \n",par.ssm);
   printf("               3,4: ss scoring after or during alignment, predicted vs. predicted \n");
@@ -676,6 +677,7 @@ void ProcessArguments(int argc, char** argv)
       else if (!strncmp(argv[i],"-glo",3)) {par.loc=0; if (par.mact>0.3 && par.mact<0.301) {par.mact=0;} }
       else if (!strncmp(argv[i],"-loc",4)) par.loc=1;
       else if (!strncmp(argv[i],"-alt",4) && (i<argc-1)) par.altali=atoi(argv[++i]);
+      else if (!strcmp(argv[i],"-shift") && (i<argc-1)) par.shift=atof(argv[++i]);
       else if ((!strcmp(argv[i],"-mact") || !strcmp(argv[i],"-mapt")) && (i<argc-1)) par.mact=atof(argv[++i]);
       else if (!strncmp(argv[i],"-cpu",4) && (i<argc-1)) { threads=atoi(argv[++i]); cpu = threads; }
       else if (!strncmp(argv[i],"-jdummy",7) && (i<argc-1)) par.jdummy=atoi(argv[++i]);

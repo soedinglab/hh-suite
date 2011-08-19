@@ -1,4 +1,4 @@
-#! /usr/bin/perl -w
+#! /usr/bin/env perl
 # Read a SCOP or PDB sequence file (with SCOP or PDB sequence identifier in the 
 # query sequence) and generate a pdb file for the query sequence. The pdb file 
 # will contain only the residues present in the query sequence. The residue numbers
@@ -87,7 +87,7 @@ while ($line=<INFILE>) {
     chomp($line);
     $aaq.=$line;
 }
-
+# $aaq=~tr/X.-//d;  # Remove symbol for inserted domain or missing residues
 if (&MakePdbFile($nameline,$aaq,$outfile) !=0) {exit(1);}
 close(INFILE);
 if ($v>=2) {print("Done\n");}
@@ -179,7 +179,7 @@ sub MakePdbFile()
 	if ($line=~/^ENDMDL/) {last;} # if file contains NMR models read only first
 
 	if ($line=~/^ATOM  \s*\d+ (....)[ $altloc](\w{3}) $chain\s*(-?\d+\w?).*/ ||
-	    $line=~/^HETATM\s*\d+ (....)[ $altloc](MSE) $chain\s*(-?\d+).*/) {
+	    $line=~/^HETATM\s*\d+ (....)[ $altloc](MSE) $chain\s*(-?\d+\w?).*/) {
 	    $atom=$1;
 	    $res=$2;
 	    # New residue?
@@ -296,14 +296,12 @@ sub Three2OneLetter {
     elsif ($res eq "LYS") {return "K";}
     elsif ($res eq "HIS") {return "H";}
     elsif ($res eq "ARG") {return "R";}
-    elsif ($res eq "ASX") {return "D";}
-    elsif ($res eq "GLX") {return "E";}
+    elsif ($res eq "SEC") {return "U";}
+    elsif ($res eq "ASX") {return "B";}
+    elsif ($res eq "GLX") {return "Z";}
+    elsif ($res eq "KCX") {return "K";}
     elsif ($res eq "MSE") {return "M";} # SELENOMETHIONINE 
     elsif ($res eq "SEP") {return "S";} # PHOSPHOSERINE 
-    elsif ($res eq "SEC") {return "C";} # SELENOCYSTEINE
-    elsif ($res eq "TPO") {return "T";} # PHOSPHOTHREONINE 
-    elsif ($res eq "TYS") {return "Y";} # SULFONATED TYROSINE 
-    elsif ($res eq "KCX") {return "K";} # LYSINE NZ-CARBOXYLIC ACID
     else                  {return "X";}
 }
 
