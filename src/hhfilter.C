@@ -219,16 +219,12 @@ int main(int argc, char **argv)
 
   // Remove sequences with seq. identity larger than seqid percent (remove the shorter of two)
   qali.N_filtered = qali.Filter(par.max_seqid,par.coverage,par.qid,par.qsc,par.Ndiff);
-
+  
   // Atune alignment diversity q.Neff with qsc to value Neff_goal
-  if (par.Neff>=0.999) 
-    {
-      if (qali.FilterNeff())
-	qali.WriteToFile(par.outfile);
-    }
-  else 
-    // Write filtered alignment WITH insert states (lower case) to alignment file
-    qali.WriteToFile(par.outfile);
+  if (par.Neff>=1.0) qali.FilterNeff();
+  
+  // Write filtered alignment WITH insert states (lower case) to alignment file
+  qali.WriteToFile(par.outfile);
 
   // Print 'Done!'
   FILE* outf=NULL;

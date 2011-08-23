@@ -1252,48 +1252,49 @@ int Alignment::FilterWithCoreHMM(char in[], float coresc, HMM& qcore)
 /////////////////////////////////////////////////////////////////////////////////////
 // Filter alignment to given diversity/Neff
 /////////////////////////////////////////////////////////////////////////////////////
-bool Alignment::FilterNeff()
+void Alignment::FilterNeff()
 {
   int v1=v;
   v=v1-1;
-  const float TOLX=0.001; 
+  const float TOLX=0.01; 
   const float TOLY=0.02; 
-  char dummy[N_in+1];   
-  for (int k=0; k<N_in; ++k) dummy[k]=keep[k];
-  float x=0.0,y=0.0;
+  char keep_orig[N_in+1];   
+  for (int k=0; k<N_in; ++k) keep_orig[k]=keep[k];
   float x0=-1.0;
   float x1=+2.0;
-  float y0=filter_by_qsc(x0,dummy);
-  float y1=filter_by_qsc(x1,dummy);
+  float y0=filter_by_qsc(x0,keep_orig);
+  float y1=filter_by_qsc(x1,keep_orig);
+  float x=0.0;
+  float y=y0;
   int i=2;
-  while (y0-par.Neff>0 && par.Neff-y1>0)
+
+  if (y0<par.Neff) 
+    {
+      if (v>=1) 
+	printf("Diversity of unfiltered alignment %.2f is below target diversity %.2f.\n",y0,par.Neff);
+      return;
+    }
+  
+  while (fabs(par.Neff-y)>TOLY && x1-x0>TOLX)
     {
       x = x0 + (par.Neff-y0)*(x1-x0)/(y1-y0); // linear interpolation between (x0,y0) and (x1,y1)
-      y = filter_by_qsc(x,dummy);
+      y = filter_by_qsc(x,keep_orig);
       if (v>=2) printf(" %3i  x0=%6.3f -> %6.3f     x=%6.3f -> %6.3f     x1=%6.3f -> %6.3f \n",++i,x0,y0,x,y,x1,y1);
       if (y>par.Neff) {x0=x; y0=y;} else {x1=x; y1=y;}
-      if (fabs(par.Neff-y)<TOLY || x1-x0<TOLX) break;
     }
   v=v1;
-
-  if (y0>=par.Neff && y1<=par.Neff) 
-    {
-      // Write filtered alignment WITH insert states (lower case) to alignment file
-      if (v>=2) printf("Found Neff=%6.3f at filter threshold qsc=%6.3f\n",y,x);
-      return true;
-    }
-  else if (v>=1) 
-    printf("Diversity of unfiltered alignment %.2f is below target diversity %.2f. No alignment written\n",y0,par.Neff);
   
-  return false;
+  // Write filtered alignment WITH insert states (lower case) to alignment file
+  if (v>=2) printf("Found Neff=%6.3f at filter threshold qsc=%6.3f\n",y,x);
+  return;
 }
 
-float Alignment::filter_by_qsc(float qsc, char* dummy)
+float Alignment::filter_by_qsc(float qsc, char* keep_orig)
 {
   HMM q;
-  for (int k=0; k<N_in; ++k) keep[k]=dummy[k];
+  for (int k=0; k<N_in; ++k) keep[k]=keep_orig[k];
   Filter2(keep,par.coverage,0,qsc,par.max_seqid+1,par.max_seqid,0); 
-  FrequenciesAndTransitions(q);
+  FrequenciesAndTransitions(q); // Might be sped up by calculating wg and calling only Amino_acid_frequencies_and_transitions_from_M_state(q,in);
 //   printf("qsc=%4.1f  N_filtered=%-3i  Neff=%6.3f\n",qsc,n,q.Neff_HMM);
   return q.Neff_HMM;
 } 
@@ -1330,7 +1331,7 @@ void Alignment::FrequenciesAndTransitions(HMM& q, char* in, bool time)
   if (v>=3)
      cout<<"Calculating position-dependent weights on subalignments\n";
 
-  if (in==NULL) in=keep;  // what's this good for?
+  if (in==NULL) in=keep;  // why not in declaration?
 
   if (N_filtered>1)
     {
