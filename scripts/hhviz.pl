@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 #
 # @author Andreas Biegert
 # @time 2005-05-20

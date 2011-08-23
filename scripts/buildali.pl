@@ -1,4 +1,4 @@
-#!/usr/bin/perl 
+#!/usr/bin/env perl 
 # Build alignment from sequence or alignment input file
 # Usage: buildali.pl infile
 # (Call without arguments to get help list)
@@ -1277,7 +1277,11 @@ sub RunPsipred() {
     system("echo $rootname.seq > $basename.sn\n");
     system("$ncbidir/makemat -P $basename");
     
-    &System("$execdir/psipred $basename.mtx $datadir/weights.dat $datadir/weights.dat2 $datadir/weights.dat3 $datadir/weights.dat4 > $basename.ss");
+    if (-e "$datadir/weights.dat4") { # Psipred version < 3.0
+	&System("$execdir/psipred $basename.mtx $datadir/weights.dat $datadir/weights.dat2 $datadir/weights.dat3 $datadir/weights.dat4 > $basename.ss");
+    } else {
+	&System("$execdir/psipred $basename.mtx $datadir/weights.dat $datadir/weights.dat2 $datadir/weights.dat3 > $basename.ss");
+    }
 
     &System("$execdir/psipass2 $datadir/weights_p2.dat 1 0.98 1.09 $basename.ss2 $basename.ss > $basename.horiz");
     

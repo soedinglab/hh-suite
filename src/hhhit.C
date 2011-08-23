@@ -948,8 +948,8 @@ void Hit::MACAlignment(HMM& q, HMM& t)
 			     bMM[i][j]   // backtracing matrix
 			     );
 
-	      // 	      if (i>135 && i<140) 
-	      // 		printf("i=%i  j=%i  S[i][j]=%8.3f  MM:%7.3f  MI:%7.3f  IM:%7.3f  b:%i\n",i,j,S[i][j],S[i-1][j-1]+B_MM[i][j]-par.mact,S[i-1][j],S[i][j-1],bMM[i][j]);
+	      //if (i>36 && i<40 && j>2200 && j<2230) 
+	      //printf("i=%i  j=%i  S[i][j]=%8.3f  MM:%7.3f  MI:%7.3f  IM:%7.3f  b:%i\n",i,j,S[i][j],S[i-1][j-1]+B_MM[i][j]-par.mact,S[i-1][j],S[i][j-1],bMM[i][j]);
 	      
 	      // Find maximum score; global alignment: maximize only over last row and last column
 	      if(S[i][j]>score_MAC && (par.loc || i==q.L)) { i2=i; j2=j; score_MAC=S[i][j]; }	      
@@ -1377,35 +1377,44 @@ void Hit::BacktraceMAC(HMM& q, HMM& t)
   state=MM;       // lowest state with maximum score must be match-match state 
   step=0;         // steps through the matrix correspond to alignment columns (from 1 to nsteps)
   i=i2; j=j2;     // last aligned pair is (i2,j2)
-  while (state!=STOP) 
-    {
-      step++;
-      states[step] = state = b[i][j];
-      this->i[step] = i;
-      this->j[step] = j;
-      alt_i->Push(i);
-      alt_j->Push(j);
-      // Exclude cells in direct neighbourhood from all further alignments
-      for (int ii=imax(i-2,1); ii<=imin(i+2,q.L); ++ii)
-	cell_off[ii][j]=1;     
-      for (int jj=imax(j-2,1); jj<=imin(j+2,t.L); ++jj)
-	cell_off[i][jj]=1;     
-      if (state==MM) matched_cols++; 
-
-      switch (state)
-	{
-	case MM: i--; j--; break;
-	case IM: j--; break;
-	case MI: i--; break;
-	case STOP: break;
-	default:
-	  fprintf(stderr,"Error: unallowed state value %i occurred during backtracing at step %i, (i,j)=(%i,%i)\n",state,step,i,j);
-	  state=0;
-	  v=4;
-	  break;
-	} //end switch (state)
-    } //end while (state)
- 
+  if (b[i][j] != MM) {
+    if (v>3) fprintf(stderr,"Error: backtrace start not in match-match state, but in state %i, (i,j)=(%i,%i)\n",b[i][j],i,j);
+    step = 1;
+    this->i[step] = i;
+    this->j[step] = j;
+    alt_i->Push(i);
+    alt_j->Push(j);
+    state = STOP;
+  } else {
+    while (state!=STOP) 
+      {
+	step++;
+	states[step] = state = b[i][j];
+	this->i[step] = i;
+	this->j[step] = j;
+	alt_i->Push(i);
+	alt_j->Push(j);
+	// Exclude cells in direct neighbourhood from all further alignments
+	for (int ii=imax(i-2,1); ii<=imin(i+2,q.L); ++ii)
+	  cell_off[ii][j]=1;     
+	for (int jj=imax(j-2,1); jj<=imin(j+2,t.L); ++jj)
+	  cell_off[i][jj]=1;     
+	if (state==MM) matched_cols++; 
+	
+	switch (state)
+	  {
+	  case MM: i--; j--; break;
+	  case IM: j--; break;
+	  case MI: i--; break;
+	  case STOP: break;
+	  default:
+	    fprintf(stderr,"Error: unallowed state value %i occurred during backtracing at step %i, (i,j)=(%i,%i)\n",state,step,i,j);
+	    state=0;
+	    v=4;
+	    break;
+	  } //end switch (state)
+      } //end while (state)
+  }  
   i1 = this->i[step];
   j1 = this->j[step];
   states[step] = MM;  // first state (STOP state) is set to MM state

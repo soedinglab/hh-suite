@@ -381,7 +381,7 @@ int HMM::Read(FILE* dbf, char* path)
                               l++;
                             }
                           else if (v && ss2i(line[h])==-2)
-                            cerr<<endl<<"WARNING: invalid symbol \'"<<line[h]<<"\' at pos. "<<h<<" in line '"<<line<<"' of HMM "<<name<<"\n";
+                            cerr<<endl<<"WARNING: ignoring invalid symbol \'"<<line[h]<<"\' at pos. "<<h<<" in line '"<<line<<"' of HMM "<<name<<"\n";
                           h++;
                         }
                     }
@@ -397,7 +397,7 @@ int HMM::Read(FILE* dbf, char* path)
                               l++;
                             }
                           else if (v && sa2i(line[h])==-2)
-                            cerr<<endl<<"WARNING: invalid symbol \'"<<line[h]<<"\' at pos. "<<h<<" in line '"<<line<<"' of HMM "<<name<<"\n";
+                            cerr<<endl<<"WARNING: ignoring invalid symbol \'"<<line[h]<<"\' at pos. "<<h<<" in line '"<<line<<"' of HMM "<<name<<"\n";
                           h++;
                         }
                     }
@@ -413,7 +413,7 @@ int HMM::Read(FILE* dbf, char* path)
                               l++;
                             }
                           else if (v && ss2i(line[h])==-2)
-                            cerr<<endl<<"WARNING: invalid symbol \'"<<line[h]<<"\' at pos. "<<h<<" in line '"<<line<<"' of HMM "<<name<<"\n";
+                            cerr<<endl<<"WARNING: ignoring invalid symbol \'"<<line[h]<<"\' at pos. "<<h<<" in line '"<<line<<"' of HMM "<<name<<"\n";
                           h++;
                         }
                     }
@@ -428,7 +428,7 @@ int HMM::Read(FILE* dbf, char* path)
                               l++;
                             }
                           else if (v && cf2i(line[h])==-2)
-                            cerr<<endl<<"WARNING: invalid symbol \'"<<line[h]<<"\' at pos. "<<h<<" in line '"<<line<<"' of HMM "<<name<<"\n";
+                            cerr<<endl<<"WARNING: ignoring invalid symbol \'"<<line[h]<<"\' at pos. "<<h<<" in line '"<<line<<"' of HMM "<<name<<"\n";
                           h++;
                         }
                     }
@@ -439,7 +439,7 @@ int HMM::Read(FILE* dbf, char* path)
                           if (aa2i(line[h])>=0 && line[h]!='.') // ignore '.' and white-space characters ' ', \t and \n (aa2i()==-1)
                             {cur_seq[l]=line[h]; l++;}
                           else if (aa2i(line[h])==-2 && v)
-                            cerr<<endl<<"WARNING: invalid symbol \'"<<line[h]<<"\' at pos. "<<h<<" in line '"<<line<<"' of HMM "<<name<<"\n";
+                            cerr<<endl<<"WARNING: ignoring invalid symbol \'"<<line[h]<<"\' at pos. "<<h<<" in line '"<<line<<"' of HMM "<<name<<"\n";
                           h++;
                         }
                     }
@@ -872,7 +872,7 @@ int HMM::ReadHMMer(FILE* dbf, char* filestr)
               ptr = strscn(line);
               if (!ptr) return Warning(dbf,line,name);
               annotchr[i]=uprchr(*ptr);
-              if (*ptr!='-' && *ptr!=' ') annot=1;
+              if (*ptr!='-' && *ptr!=' ' && *ptr!='X' && *ptr!='x') annot=1;
 
               // Read annotation character and seven transition probabilities
               fgetline(line,LINELEN-1,dbf);
@@ -1335,7 +1335,7 @@ int HMM::ReadHMMer3(FILE* dbf, char* filestr)
 	      ptr = strscn(ptr);
               if (!ptr) return Warning(dbf,line,name);
               annotchr[i]=uprchr(*ptr);
-              if (*ptr!='-' && *ptr!=' ') annot=1;
+              if (*ptr!='-' && *ptr!=' ' && *ptr!='X' && *ptr!='x') annot=1;
 
               ptr = strscn(ptr);
               switch (*ptr)

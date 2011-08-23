@@ -2,7 +2,7 @@
 //// Constants
 /////////////////////////////////////////////////////////////////////////////////////
 
-const char VERSION_AND_DATE[]="version 1.6.1.0 (April 2011)";
+const char VERSION_AND_DATE[]="version 2.0.0.0 (June 2011)";
 const char REFERENCE[]="Soding, J. Protein homology detection by HMM-HMM comparison. Bioinformatics 2005, 21, 951-960.\n";
 const char COPYRIGHT[]="(C) Johannes Soeding (see LICENSE file)\n";
 const int MAXSEQ=65535; //max number of sequences in input alignment (must be <~30000 on cluster nodes)
@@ -32,7 +32,7 @@ const float MINEVALEXCL=0.5; //above this E-value from first ML fit hits are not
 const int SELFEXCL=3;   // exclude self-alignments with j-i<SELFEXCL
 const float PLTY_GAPOPEN=6.0f; // for -qsc option (filter for min similarity to query): 6 bits to open gap
 const float PLTY_GAPEXTD=1.0f; // for -qsc option (filter for min similarity to query): 1 bit to extend gap
-const int MINCOLS_REALIGN=6; // hits with MAC alignments with fewer matched columns will be deleted in hhsearch hitlist
+const int MINCOLS_REALIGN=6; // hits with MAC alignments with fewer matched columns will be deleted in hhsearch hitlist; must be at least 2 to avoid nonsense MAC alignments starting from the left/upper edge
 const float LOG1000=log(1000.0);
 
 

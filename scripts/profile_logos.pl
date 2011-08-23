@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 # Builds histograms for HHpred
 #
 # @author Andreas Biegert
@@ -52,7 +52,6 @@ my $zipfile;
 my $hhpred_dir="$database_dir/hhpred/new_dbs";   # geaendert (Johannes 15.7.05)
 my $hhpred_genomes_dir="$database_dir/hhpred/genomes";   # geaendert (Michael  23.10.07)
 my $hhcluster_dir="$database_dir/hhcluster/";    # geaendert (Johannes 31.8.05)
-my $nr30_dir = "/databases/nr30";	# geaendert (Michael  21.4.08)
 my $rgbval;
 my $comphash_ref;
 
@@ -121,7 +120,7 @@ my %aa_order = ( 'A' => 4,
 		 );
 
 # check arguments
-if((scalar @ARGV)!=3){
+if((scalar @ARGV)<3){
     print "Usage: profile_logos.pl IDENT BASEDIR IMGDIR\n";
     exit(1);
 }else{
@@ -134,7 +133,6 @@ if((scalar @ARGV)!=3){
     $tarfile=$id.".tar";
     $zipfile=$tarfile.".gz";
 }
-
 
 # Read hit list
 open (RESFILE,"<$basedir/$resfile") or die "unable to open hhrfile $basedir/$resfile for reading\n";
@@ -152,6 +150,10 @@ my $tseq='';      # template seed sequence
 my $match='';     # match quality symbols
 my $program=0;    # 1: hhalign, 0: hhsearch; important to know in which databases to search for HMM
 
+my $hhblits_db = "";
+my $hhblits_mode = 0; # 0: normal, 1: hhblits database, need FFindex
+my $hhblits_hmms = "";
+
 my $createmodel = 0; # 0: normal search, 1: create model
 
 # Move up to Match columns line
@@ -162,7 +164,14 @@ $matchcols=$1;
 # Read 'Command' line
 while ($line=<RESFILE>) { if ($line=~/^Command/ || $line=~/^\s*$/) {last;} }
 if ($line=~/-aliw\s+(\d+)/) {$alnwidth=$1;} else {$alnwidth=80;}
-if ($line=~/hhalign/) {$program=1;} else {$program=0;}
+if ($line=~/hhalign/) {$program=1;} 
+elsif ($line=~/hhblits/) {
+    $program=2;
+    if ($line =~ /-d (\S+) /) {
+	$hhblits_db = $1;
+    }
+}
+else {$program=0;}
 if ($line=~/$id\.db\.hhm/) {$createmodel=1;} else {$createmodel=0;}
 
 # Move up to first empty line before summary hit list
@@ -210,8 +219,7 @@ while($line=<RESFILE>){
 	if ($program==1) { 
 	    # hhalign: look in job dir for HMM
 	    $db = $basedir;
-	    #$template = $id;
-	    $template =~ s/\|/_/g;
+	    $template = $id;
 
 	    # HMM could not be found?
 	    if (!$db || ! -e "$db/$template.hhm") {
@@ -293,19 +301,29 @@ while($line=<RESFILE>){
 		$tmp{'tag'}=$template;
 		@dirs=glob "$hhpred_dir/pdb*";
 		$db=pop(@dirs);
-	    } elsif ($template =~ /cl\|(\S\S)(\S+?)\|/) {
-		# NR30 identifier
-		$db = "$nr30_dir/$1";
-		$template = "$1$2";
-		print "Make HHM\n";
-		my $command = "$hh/hhmake -i $db/$template.db -o $tmpdir/$template.hhm";
-		print "Command: $command\n";
-		system($command);
-		$db = "$tmpdir";
+	    } elsif ($template =~ /cl\|(\S+?)\|/) {
+		# HHblits identifier
+		$template = $1;
 		$tmp{'tag'}=$template;
+		
+		$hhblits_mode = 1;
+		$hhblits_hmms .= "$template.hhm "; 
+		$db = "";
+
+#		$db = "$tmpdir";
+#		if ($hhblits_db ne "") {
+#		    system("$rootdir/bioprogs/hhblits/ffindex_get $hhblits_db"."_hhm_db $hhblits_db"."_hhm_db.index $template.hhm > $tmpdir/$template.hhm");
+#		}
+#		open (IN, "$tmpdir/$template.hhm");
+#		my $tmp = <IN>;
+#		close IN;
+#		if ($tmp !~ /^HH/ && $hhblits_db ne "") {
+#		    system("$rootdir/bioprogs/hhblits/ffindex_get $hhblits_db"."_a3m_db $hhblits_db"."_a3m_db.index $template.a3m > $tmpdir/$template.a3m");
+#		    system("$hh/hhmake -i $tmpdir/$template.a3m -o $tmpdir/$template.hhm");
+#		}
 	    } 
 
-	    if (!$db || (! -e "$db/$template.hhm" && ! -e "$db/$template.db")) {
+	    if ($hhblits_mode == 0 && (!$db || (! -e "$db/$template.hhm" && ! -e "$db/$template.db"))) {
 		# Some other database?
 		$tmp{'tag'}=$template;
 		$template=~/(\w*)\d*/; # remove numbers
@@ -315,9 +333,14 @@ while($line=<RESFILE>){
 		    # Look through all genome-databases if they contain the HMM
 		    $template =~ s/\|/_/g;
 		    $template =~ s/\./_/g;
+		    my $template1="";
+		    if ($template =~ /(gi_\d+)/) {
+			$template1 = $1;
+		    }
 		    my @alldirs=((glob "$hhpred_genomes_dir/bacteria/*"),(glob "$hhpred_genomes_dir/archaea/*"),(glob "$hhpred_genomes_dir/eucarya/*"));
 		    foreach my $db1 (@alldirs) {
 			if (-e "$db1/$template".".hhm") {$db=$db1; last; print "DB: $db\n";}
+			if (-e "$db1/$template1".".hhm") {$template=$template1; $db=$db1; last; print "DB: $db\n";}
 		    }
 		
 		    # HMM could still not be found? Look through all databases if they contain the HMM
@@ -458,7 +481,7 @@ while (defined $line) {
 	}
 
 	# Move up to next non-empty line
-	while ($line && ($line=~/^\s*$/ || $line =~ /^Confidence/)) {$line=<RESFILE>;}
+	while ($line && ($line=~/^\s*$/ || $line=~/^Confidence/)) {$line=<RESFILE>;}
 
 	if (!$line || $line=~/^No (\d+)/ || $line=~/^Done/) {last;}
     }
@@ -471,9 +494,14 @@ close RESFILE;
 $q_hmm_ref=&extractModel($basedir.'/'.$id.'.hhm');
 
 # read template hmms
-foreach my $i (@hits) {
-    my %hit = %$i;
-    push(@t_hmms, &extractModel($hit{'hhmfile'}));
+if ($hhblits_mode == 1) {
+    my $t_hmms_ref = &extractHHblitsModels($hhblits_hmms);
+    @t_hmms = @$t_hmms_ref;
+} else {
+    foreach my $i (@hits) {
+	my %hit = %$i;
+	push(@t_hmms, &extractModel($hit{'hhmfile'}));
+    }
 }
 
 # calc img width
@@ -730,6 +758,7 @@ sub drawProfile {
 		    &drawBar($x1,$y1,$x2,$y2,$aa);
 		}
 	    }
+	    #print "\n";
 	}
 	# draw profile bars for template sequence
 	if (!$tgap) {
@@ -890,6 +919,99 @@ sub extractModel {
     }
     
     return \@hmm;
+}
+
+sub extractHHblitsModels {
+    my $hmmlist = $_[0];
+    my $a3mlist = "";
+    my %a3m_nums;
+    my @hmm_refs;
+    my @hmm;
+    my $line;
+    
+    my $i = 0;
+    
+    open (IN, "$rootdir/bioprogs/hhblits/ffindex_get $hhblits_db"."_hhm_db $hhblits_db"."_hhm_db.index $hmmlist |");
+    while ($line = <IN>) {
+	if ($line =~ /^HHsearch/ || $line =~ /^Filename \S+ not found/) {
+	    if ($line =~ /^Filename (\S+)\.hhm not found/) {
+		$a3mlist .= "$1.a3m ";
+		$a3m_nums{$1} = $i;
+	    }
+	    if (scalar(@hmm) > 0) {
+		my @tmp = @hmm;
+		$hmm_refs[$i-1] = \@tmp;
+	    }
+	    @hmm = ();
+	    $i++;
+	} elsif ($line=~/^\w\s+(\d+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+\d+\s*$/) {
+	    my %tmp;
+	    $tmp{'A'}=&calcProb($2);
+	    $tmp{'C'}=&calcProb($3);
+	    $tmp{'D'}=&calcProb($4);
+	    $tmp{'E'}=&calcProb($5);
+	    $tmp{'F'}=&calcProb($6);
+	    $tmp{'G'}=&calcProb($7);
+	    $tmp{'H'}=&calcProb($8);
+	    $tmp{'I'}=&calcProb($9);
+	    $tmp{'K'}=&calcProb($10);
+	    $tmp{'L'}=&calcProb($11);
+	    $tmp{'M'}=&calcProb($12);
+	    $tmp{'N'}=&calcProb($13);
+	    $tmp{'P'}=&calcProb($14);
+	    $tmp{'Q'}=&calcProb($15);
+	    $tmp{'R'}=&calcProb($16);
+	    $tmp{'S'}=&calcProb($17);
+	    $tmp{'T'}=&calcProb($18);
+	    $tmp{'V'}=&calcProb($19);
+	    $tmp{'W'}=&calcProb($20);
+	    $tmp{'Y'}=&calcProb($21);
+	    $hmm[$1-1]=\%tmp;
+	}
+    }
+    close IN;
+    if (scalar(@hmm) > 0) {
+	my @tmp = @hmm;
+	$hmm_refs[$i-1] = \@tmp;
+    }
+
+    # If no HHM-file exists, use the A3M-alugnment
+    my $ali = "";
+    open (IN, "$rootdir/bioprogs/hhblits/ffindex_get $hhblits_db"."_a3m_db $hhblits_db"."_a3m_db.index $a3mlist |");
+    while ($line = <IN>) {
+	if ($line =~ /^Filename (\S+) not found/) {
+	    print("Error: '$1.hhm' could not be found in any of the databases!\n");
+	    exit(1);
+	}
+	if ($line =~ /^#/) { # new alignment
+	    if ($ali ne "") {
+		$ali =~ /^#\S+?\|(\S+?)\|\d+/;
+		my $name = $1;
+		open(OUT, ">$tmpdir/tmp.a3m");
+		print OUT $ali;
+		close OUT;
+		system("$hh/hhmake -i $tmpdir/tmp.a3m -o $tmpdir/tmp.hhm");
+		$hmm_refs[$a3m_nums{$name}] = &extractModel("$tmpdir/tmp.hhm");
+		print "Alignment from A3M $name (i -> $a3m_nums{$name})!\n";
+	    }
+	    $ali = $line;
+	} else {
+	    $ali .= $line;
+	}
+    }
+    if ($ali ne "") {
+	$ali =~ /^#\S+?\|(\S+?)\|\d+/;
+	my $name = $1;
+	open(OUT, ">$tmpdir/tmp.a3m");
+	print OUT $ali;
+	close OUT;
+	system("$hh/hhmake -i $tmpdir/tmp.a3m -o $tmpdir/tmp.hhm");
+	$hmm_refs[$a3m_nums{$name}] = &extractModel("$tmpdir/tmp.hhm");
+	print "Alignment from A3M $name (i -> $a3m_nums{$name})!\n";
+    }
+    close IN;
+
+    return \@hmm_refs;
 }
 
 sub calcProb {

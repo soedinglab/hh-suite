@@ -811,7 +811,7 @@ void init_prefilter()
       if (line[0] == '>')  // Header
 	{
 	  if (len > 0)           // if it is not the first sequence
-	    length[num_dbs++] = len;
+	    length[num_dbs++] = imin(MAXRES,len);
 	  len = 0;
 	      
 	  strwrd(word,line+1);
@@ -833,7 +833,7 @@ void init_prefilter()
 	      	  len++;
 	      	}
 	      else
-	      	cerr<<endl<<"WARNING: invalid symbol \'"<<*linep<<"\' of "<<db<<"\n";
+	      	cerr<<endl<<"WARNING: ignoring invalid symbol \'"<<*linep<<"\' of "<<db<<"\n";
 
 	      linep++;
 	    }
@@ -842,7 +842,7 @@ void init_prefilter()
     }
 
   if (len > 0)
-    length[num_dbs++] = len;
+    length[num_dbs++] = imin(MAXRES,len);
       
   fclose(dbf);
 }
@@ -1021,7 +1021,7 @@ void prefilter_with_SW_evalue_preprefilter_backtrace()
     }
   if (v>=2)
     {
-      printf("Hits passed prefilter 1 (gapless profile-profile alignment): %6i\n", count_dbs);
+      printf("HMMs passed prefilter 1 (gapless profile-profile alignment): %6i\n", count_dbs);
       //printf("%6i hits through preprefilter!\n", count_dbs);
     }
   if (print_elapsed) ElapsedTimeSinceLastCall("(ungapped preprefilter)");

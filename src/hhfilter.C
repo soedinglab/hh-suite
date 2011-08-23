@@ -222,9 +222,9 @@ int main(int argc, char **argv)
   
   // Atune alignment diversity q.Neff with qsc to value Neff_goal
   if (par.Neff>=1.0) qali.FilterNeff();
-  
+
   // Write filtered alignment WITH insert states (lower case) to alignment file
-  qali.WriteToFile(par.outfile);
+  qali.WriteToFile(par.outfile); 
 
   // Print 'Done!'
   FILE* outf=NULL;

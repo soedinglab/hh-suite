@@ -107,6 +107,9 @@ hhfilter: hhfilter.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
 hhfilter_static: hhfilter.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
 	  $(CPP) -static hhfilter.C -o ../bin/hhfilter $(CS_OBJECTS) 
 
+hhfilter_valgrind: hhfilter.C $(SOURCES) $(HEADERS)$(CS_OBJECTS)
+	  $(CPP_VALGRIND) hhfilter.C -o ../bin/hhfilter_valgrind $(CS_OBJECTS) 
+
 hhconsensus: hhconsensus.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
 	     $(CPP) hhconsensus.C -o ../bin/hhconsensus $(CS_OBJECTS)
 

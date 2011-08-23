@@ -137,7 +137,7 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline)
           cur_name=line+1;          //beginning of current sequence name
           if (k>=0) //if this is at least the second name line
             {
-              if (strlen(cur_seq)==0)
+              if (strlen(cur_seq)<=1)  // 1, because the sequence in cur_seq starts at position 1 => no residues = length 1 
                 {
                   cerr<<endl<<"Error: sequence "<<sname[k]<<" contains no residues."<<endl;
                   exit(1);
@@ -156,6 +156,7 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline)
 
           ++k;
           l=1; //position in current sequence (first=1)
+	  cur_seq[l]='\0'; // avoids taking wrong sequence in case the input alignment is corrupted (two header lines with no sequence line between)
 
           // display[k]= 0: do not show in Q-T alignments  1: show if not filtered out later     2: show in any case    (do not filter out)
           // keep[k]   = 0: do not include in profile      1: include if not filtered out later  2: include in any case (do not filter out)
@@ -238,7 +239,7 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline)
                   if (aa2i(line[h])>=0) // ignore white-space characters ' ', \t and \n (aa2i()==-1)
                     {cur_seq[l]=line[h]; l++;}
                   else if (aa2i(line[h])==-2 && v)
-                    cerr<<endl<<"WARNING: invalid symbol \'"<<line[h]<<"\' at pos. "<<h<<" in line "<<linenr<<" of "<<infile<<"\n";
+                    cerr<<endl<<"WARNING: ignoring invalid symbol \'"<<line[h]<<"\' at pos. "<<h<<" in line "<<linenr<<" of "<<infile<<"\n";
                   h++;
                 }
             }
@@ -249,7 +250,7 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline)
                   if (ss2i(line[h])>=0 && ss2i(line[h])<=7)
                     {cur_seq[l]=ss2ss(line[h]); l++;}
                   else if (v)
-                    cerr<<endl<<"WARNING: invalid symbol \'"<<line[h]<<"\' at pos. "<<h<<" in line "<<linenr<<" of "<<infile<<"\n";
+                    cerr<<endl<<"WARNING: ignoring invalid symbol \'"<<line[h]<<"\' at pos. "<<h<<" in line "<<linenr<<" of "<<infile<<"\n";
                   h++;
                 }
             }
@@ -260,7 +261,7 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline)
                   if (sa2i(line[h])>=0)
                     cur_seq[l++]=line[h];
                   else if (v)
-                    cerr<<endl<<"WARNING: invalid symbol \'"<<line[h]<<"\' at pos. "<<h<<" in line "<<linenr<<" of "<<infile<<"\n";
+                    cerr<<endl<<"WARNING: ignoring invalid symbol \'"<<line[h]<<"\' at pos. "<<h<<" in line "<<linenr<<" of "<<infile<<"\n";
                   h++;
                 }
             }
@@ -271,7 +272,7 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline)
                   if (ss2i(line[h])>=0 && ss2i(line[h])<=3)
                     {cur_seq[l]=ss2ss(line[h]); l++;}
                   else if (v)
-                    cerr<<endl<<"WARNING: invalid symbol \'"<<line[h]<<"\' at pos. "<<h<<" in line "<<linenr<<" of "<<infile<<"\n";
+                    cerr<<endl<<"WARNING: ignoring invalid symbol \'"<<line[h]<<"\' at pos. "<<h<<" in line "<<linenr<<" of "<<infile<<"\n";
                   h++;
                 }
             }
@@ -282,7 +283,7 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline)
                   if (line[h]=='-' || line[h]=='.' || (line[h]>='0' && line[h]<='9'))
                     {cur_seq[l]=line[h]; l++;}
                   else if (v)
-                    cerr<<endl<<"WARNING: invalid symbol \'"<<line[h]<<"\' at pos. "<<l<<" in line "<<linenr<<" of "<<infile<<"\n";
+                    cerr<<endl<<"WARNING: ignoring invalid symbol \'"<<line[h]<<"\' at pos. "<<l<<" in line "<<linenr<<" of "<<infile<<"\n";
                   h++;
                 }
             }
@@ -293,7 +294,7 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline)
                   if (line[h]=='-' || line[h]=='.' || (line[h]>='0' && line[h]<='9') || (line[h]>='A' && line[h]<='B'))
                     {cur_seq[l]=line[h]; l++;}
                   else if (v)
-                    cerr<<endl<<"WARNING: invalid symbol \'"<<line[h]<<"\' at pos. "<<l<<" in line "<<linenr<<" of "<<infile<<"\n";
+                    cerr<<endl<<"WARNING: ignoring invalid symbol \'"<<line[h]<<"\' at pos. "<<l<<" in line "<<linenr<<" of "<<infile<<"\n";
                   h++;
                 }
             }
@@ -1331,7 +1332,7 @@ void Alignment::FrequenciesAndTransitions(HMM& q, char* in, bool time)
   if (v>=3)
      cout<<"Calculating position-dependent weights on subalignments\n";
 
-  if (in==NULL) in=keep;  // why not in declaration?
+  if (in==NULL) in=keep;  //why not in declaration?
 
   if (N_filtered>1)
     {
@@ -1659,7 +1660,7 @@ void Alignment::Amino_acid_frequencies_and_transitions_from_M_state(HMM& q, char
                     {
                       if (in[k] && X[k][i]<ANY && X[k][j]<ANY)
                         {
-                          //                  if (!n[j][ (int)X[k][j]]) {fprintf(stderr,"Error: Mi=%i: n[%i][X[%i]]=0! (X[%i]=%i)\n",i,j,k,k,X[k][j]);}
+			  //if (!n[j][ (int)X[k][j]]) {fprintf(stderr,"Error: Mi=%i: n[%i][X[%i]]=0! (X[%i]=%i)\n",i,j,k,k,X[k][j]);}
                           wi[k]+=1.0/float(n[j][ (int)X[k][j] ]*naa);
                         }
                     }
@@ -2292,7 +2293,7 @@ void Alignment::MergeMasterSlave(Hit& hit, char ta3mfile[], FILE* ta3mf)
       // Advance to position of next T match state j
       while (hit.j[step]<j) step--;
       imatch[j] = hit.i[step];
-      if (v>3) { printf("step=%-3i  i=%-3i j=%-3i\n",step,imatch[j],j); }
+      if (v>3) { printf("step=%-3i  i=%-3i j=%-3i    i1: %4i  i2: %4i  j1: %4i  j2: %4i\n",step,imatch[j],j,hit.i1,hit.i2,hit.j1,hit.j2); }
     }
 
   // Determine number of match states of Qali

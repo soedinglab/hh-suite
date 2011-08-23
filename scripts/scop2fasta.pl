@@ -1,4 +1,4 @@
-#! /usr/bin/perl -w
+#! /usr/bin/env perl
 # Build astral-style fasta file from scop parseable files and pdb files
 
 my $rootdir;

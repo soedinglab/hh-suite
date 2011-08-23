@@ -7,14 +7,8 @@
 ##########
 hhblits
 
-# CS-database with context state sequences
--db /cluster/databases/hhblits/uniprot20.cs219
-
-# HHM database
--dbhhm /cluster/databases/hhblits/uniprot20_hhm_db
-
-# A3M database
--dba3m /cluster/databases/hhblits/uniprot20_a3m_db
+# database basename
+-d /cluster/databases/hhblits/uniprot20
 
 # context-state library
 -cs_lib /cluster/bioprogs/hhblits/cs219.lib

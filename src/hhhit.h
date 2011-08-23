@@ -31,12 +31,12 @@ class Hit
   float score_sort;     // score to sort hits in output list (negative means first/best!)
   float score_aass;     // first: just hit.score, then hit.logPval-SSSCORE2NATLOG*hit.score_ss;(negative means best!)
   float score_ss;       // Part of score due to secondary structure
-  float Pval;           // P-value for whole protein based on score distribution of query
-  float Pvalt;          // P-value for whole protein based on score distribution of template
-  float logPval;        // natural logarithm of Pval
-  float logPvalt;       // natural logarithm of Pvalt
-  float Eval;           // E-value for whole protein
-  float logEval;        // natural logarithm of Eval
+  double Pval;           // P-value for whole protein based on score distribution of query
+  double Pvalt;          // P-value for whole protein based on score distribution of template
+  double logPval;        // natural logarithm of Pval
+  double logPvalt;       // natural logarithm of Pvalt
+  double Eval;           // E-value for whole protein
+  double logEval;        // natural logarithm of Eval
   float Probab;         // probability in % for a positive (depends only on score)
   double Pforward;      // scaled total forward probability : Pforward * Product_{i=1}^{Lq+1}(scale[i])
   

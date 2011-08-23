@@ -19,6 +19,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <errno.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <sys/mman.h>
@@ -152,7 +153,7 @@ char* ffindex_mmap_data(FILE *file, size_t* size)
   *size = sb.st_size;
   int fd =  fileno(file);
   if(fd < 0)
-    return NULL;
+    return (char*)MAP_FAILED;
   return (char*)mmap(NULL, *size, PROT_READ, MAP_PRIVATE, fd, 0);
 }
 
@@ -173,30 +174,37 @@ ffindex_entry_t* ffindex_bsearch_get_entry(ffindex_index_t *index, char *name)
 }
 
 
-ffindex_index_t* ffindex_index_parse(FILE *index_file)
+ffindex_index_t* ffindex_index_parse(FILE *index_file, size_t num_max_entries)
 {
-  ffindex_index_t *index = (ffindex_index_t *)calloc(1, sizeof(ffindex_index_t));
+  if(num_max_entries == 0)
+    num_max_entries = FFINDEX_MAX_INDEX_ENTRIES_DEFAULT;
+  size_t nbytes = sizeof(ffindex_index_t) + (sizeof(ffindex_entry_t) * num_max_entries);
+  ffindex_index_t *index = (ffindex_index_t *)malloc(nbytes);
   if(index == NULL)
   {
-    perror("ffindex_index_parse: calloc failed: ");
-    exit(EXIT_FAILURE);
+    int myerrno = errno;
+    char* errstr = strerror(myerrno);
+    fprintf(stderr, "%s:%d ffindex_index_parse: malloc of %ld bytes failed: %s\n", __FILE__, __LINE__, nbytes ,errstr);
+    return NULL;
   }
 
   index->file = index_file;
   index->index_data = ffindex_mmap_data(index_file, &(index->index_data_size));
+  index->type = SORTED_FILE; /* Assume a sorted file for now */
   int i = 0;
   char* d = index->index_data;
   char* end;
   /* Faster than scanf per line */
   for(i = 0; d < (index->index_data + index->index_data_size); i++)
   {
-    //strncpy(index->entries[i].name, *d, FFINDEX_MAX_ENTRY_NAME_LENTH);
-    for(int p = 0; *d != '\t'; d++)
+    int p;
+    for(p = 0; *d != '\t'; d++)
       index->entries[i].name[p++] = *d;
+    index->entries[i].name[p] = '\0';
     index->entries[i].offset = strtol(d, &end, 10);
     d = end;
     index->entries[i].length  = strtol(d, &end, 10);
-    d = end + 1;
+    d = end + 1; /* +1 for newline */
   }
 
   index->n_entries = i;
