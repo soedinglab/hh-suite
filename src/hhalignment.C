@@ -1295,7 +1295,7 @@ float Alignment::filter_by_qsc(float qsc, char* keep_orig)
   HMM q;
   for (int k=0; k<N_in; ++k) keep[k]=keep_orig[k];
   Filter2(keep,par.coverage,0,qsc,par.max_seqid+1,par.max_seqid,0); 
-  FrequenciesAndTransitions(q);
+  FrequenciesAndTransitions(q); // Might be sped up by calculating wg and calling only Amino_acid_frequencies_and_transitions_from_M_state(q,in);
 //   printf("qsc=%4.1f  N_filtered=%-3i  Neff=%6.3f\n",qsc,n,q.Neff_HMM);
   return q.Neff_HMM;
 } 
@@ -1535,6 +1535,11 @@ void Alignment::FrequenciesAndTransitions(HMM& q, char* in, bool time)
   q.lamda=0.0;
   q.mu=0.0;
 
+  q.trans_lin=0; // transition probs in log space
+  q.has_pseudocounts=false;
+  q.dont_delete_seqs=false;
+  q.divided_by_local_bg_freqs=false;
+
   //if (time) { ElapsedTimeSinceLastCall("Copy sequences and SS"); }
 
   // Debug: print occurence of amino acids for each position i
@@ -1563,9 +1568,6 @@ void Alignment::FrequenciesAndTransitions(HMM& q, char* in, bool time)
           printf("%6.3f %6.3f %6.3f\n",q.Neff_M[i],q.Neff_I[i],q.Neff_D[i]);
         }
     }
-  q.trans_lin=0;
-  q.has_pseudocounts=false;
-
   return;
 }
 

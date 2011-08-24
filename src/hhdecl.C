@@ -150,6 +150,7 @@ public:
   char realign;           // realign database hits to be displayed with MAC algorithm
   char altali;            // find up to this many possibly overlapping alignments
   int columnscore;        // 0: no aa comp corr  1: 1/2(qav+tav) 2: template av freqs 3: query av freqs 4:...
+  int half_window_size_local_aa_bg_freqs; // half-window size to average local aa background frequencies
   float corr;             // Weight of correlations between scores with |i-j|<=4
   float shift;            // Score offset for match-match states
   float mact;             // Score threshold (negative offset) in MAC alignment

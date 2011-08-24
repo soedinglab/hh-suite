@@ -241,10 +241,7 @@ void ReadAndPrepare(char* infile, HMM& q, Alignment* qali=NULL)
 
     fgetline(line,LINELEN-1,inf);
 
-  // ... or is it an hhm file?
-    // else 
-    ///////////////////////////////////////////////////////////////////////////////////////
-
+    // Is it an hhm file?
     if (!strncmp(line,"NAME",4) || !strncmp(line,"HH",2))
     {
         if (v>=2) cout<<"Query file is in HHM format\n";
@@ -270,7 +267,8 @@ void ReadAndPrepare(char* infile, HMM& q, Alignment* qali=NULL)
         
         q.CalculateAminoAcidBackground();
     }
-    // ... or is it an alignment file
+
+    // ... or is it an a2m/a3m alignment file
     else if (line[0]=='#' || line[0]=='>')
     {
         Alignment* pali;
@@ -395,12 +393,12 @@ void PrepareTemplate(HMM& q, HMM& t, int format)
         // Add transition pseudocounts to template
         t.AddTransitionPseudocounts();
 
-		// Don't use CS-pseudocounts because of runtime!!!
-		// Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
-		t.PreparePseudocounts();
-
-		// Add amino acid pseudocounts to query:  p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
-		t.AddAminoAcidPseudocounts(t.has_pseudocounts ? 0:par.pcm, par.pca, par.pcb, par.pcc);
+	// Don't use CS-pseudocounts because of runtime!!!
+	// Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
+	t.PreparePseudocounts();
+	
+	// Add amino acid pseudocounts to query:  p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
+	t.AddAminoAcidPseudocounts(t.has_pseudocounts ? 0:par.pcm, par.pca, par.pcb, par.pcc);
 
         t.CalculateAminoAcidBackground();
     }

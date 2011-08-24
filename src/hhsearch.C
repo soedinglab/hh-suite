@@ -576,9 +576,9 @@ void ProcessArguments(int argc, char** argv)
       else if (!strcmp(argv[i],"-cal")) {par.calibrate=1; par.calm=0;}
       else if (!strcmp(argv[i],"-calm") && (i<argc-1)) par.calm=atoi(argv[++i]);
       else if (!strcmp(argv[i],"-shift") && (i<argc-1)) par.shift=atof(argv[++i]);
-      else if (!strcmp(argv[i],"-mact") && (i<argc-1)) par.mact=atof(argv[++i]);
-      else if (!strcmp(argv[i],"-mapt") && (i<argc-1)) par.mact=atof(argv[++i]);
+      else if ((!strcmp(argv[i],"-mact") || !strcmp(argv[i],"-mapt")) && (i<argc-1)) par.mact=atof(argv[++i]);
       else if (!strcmp(argv[i],"-sc") && (i<argc-1)) par.columnscore=atoi(argv[++i]);
+      else if (!strcmp(argv[i],"-scwin") && (i<argc-1)) {par.columnscore=5; par.half_window_size_local_aa_bg_freqs = imax(1,atoi(argv[++i]));}
       else if (!strcmp(argv[i],"-def")) ;
       else if (!strcmp(argv[i],"-maxres") && (i<argc-1)) {
 	MAXRES=atoi(argv[++i]);
@@ -1364,11 +1364,11 @@ int main(int argc, char **argv)
 		q->AddContextSpecificPseudocounts();
               }
 
-              q->CalculateAminoAcidBackground();
-
               // Transform transition freqs to lin space if not already done
 	      q->AddTransitionPseudocounts();
               q->Log2LinTransitionProbs(1.0); // transform transition freqs to lin space if not already done
+
+              q->CalculateAminoAcidBackground();
             }
         }
 

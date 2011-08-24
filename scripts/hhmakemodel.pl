@@ -1,4 +1,5 @@
 #! /usr/bin/env perl
+
 #
 # Generate a model from an output alignment of hhsearch. 
 # Usage: hhmakemodel.pl -i file.out (-ts file.pdb|-al file.al) [-m int|-m name|-m auto] [-pdb pdbdir] 

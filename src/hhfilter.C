@@ -219,7 +219,7 @@ int main(int argc, char **argv)
 
   // Remove sequences with seq. identity larger than seqid percent (remove the shorter of two)
   qali.N_filtered = qali.Filter(par.max_seqid,par.coverage,par.qid,par.qsc,par.Ndiff);
-
+  
   // Atune alignment diversity q.Neff with qsc to value Neff_goal
   if (par.Neff>=1.0) qali.FilterNeff();
 
