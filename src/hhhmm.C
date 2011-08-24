@@ -55,7 +55,7 @@ HMM::HMM(int maxseqdis, int maxres)
   g = new float*[maxres];         // f[i][a] = prob of finding amino acid a in column i WITH pseudocounts
   p = new float*[maxres];         // p[i][a] = prob of finding amino acid a in column i WITH OPTIMUM pseudocounts
   tr = new float*[maxres];        // log2 of transition probabilities M2M M2I M2D I2M I2I D2M D2D
-  //   tr_lin = new float*[maxres];    // linear transition probabilities M2M M2I M2D I2M I2I D2M D2D
+  //   tr_lin = new float*[maxres];  // linear transition probabilities M2M M2I M2D I2M I2I D2M D2D
   for (int i=0; i<maxres; i++) f[i]=new(float[NAA+3]);
   for (int i=0; i<maxres; i++) g[i]=new(float[NAA]);
   // for (int i=0; i<maxres; i++) p[i]=new(float[NAA]);
@@ -73,8 +73,9 @@ HMM::HMM(int maxseqdis, int maxres)
   lamda=0.0; mu=0.0;
   name[0]=longname[0]=fam[0]='\0';
   trans_lin=0; // transition probs in log space
-  dont_delete_seqs=0;
+  dont_delete_seqs=false;
   has_pseudocounts=false;
+  divided_by_local_bg_freqs=false;
 }
 
 
@@ -191,12 +192,14 @@ HMM& HMM::operator=(HMM& q)
 
   lamda=q.lamda;
   mu=q.mu;
+  trans_lin=q.trans_lin; // transition probs in log space
+  dont_delete_seqs=q.dont_delete_seqs;
   has_pseudocounts=q.has_pseudocounts;
+  divided_by_local_bg_freqs=q.divided_by_local_bg_freqs;
 
   for (int a=0; a<NAA; ++a) pav[a]=q.pav[a];
   N_in=q.N_in;
   N_filtered=q.N_filtered;
-  trans_lin=q.trans_lin;
   return (HMM&) (*this);
 }
 
@@ -227,16 +230,16 @@ int HMM::Read(FILE* dbf, char* path)
       }
     }
 
-  trans_lin=0;
   L=0;
   Neff_HMM=0;
   n_display=N_in=N_filtered=0;
   nss_dssp=nsa_dssp=nss_pred=nss_conf=nfirst=ncons=-1;
   lamda=mu=0.0;
-  trans_lin=0; // transition probs in log space
   name[0]=longname[0]=fam[0]='\0';
+  trans_lin=0; // transition probs in log space
   has_pseudocounts=false;
-  dont_delete_seqs=0;
+  dont_delete_seqs=false;
+  divided_by_local_bg_freqs=false;
   //If at the end of while-loop L is still 0 then we have reached end of db file
 
   while (fgetline(line,LINELEN-1,dbf) && !(line[0]=='/' && line[1]=='/'))
@@ -482,11 +485,7 @@ int HMM::Read(FILE* dbf, char* path)
       /////////////////////////////////////////////////////////////////////////////////////
       // Read average amino acid frequencies for HMM
       else if (!strcmp("FREQ",str4))
-        {
-          fprintf(stderr,"Error: hhm file has obsolete format.\n");
-          fprintf(stderr,"Please use hhmake version > 1.1 to generate hhm files.\n");
-          exit(1);
-        }
+	FormatError("??",sprintf("hhm file %s has obsolete format. Please use hhmake version > 1.1 to generate hhm files.\n",name));
 
       else if (!strcmp("AVER",str4)) {} // AVER line scrapped
       else if (!strcmp("NULL",str4))
@@ -631,13 +630,15 @@ int HMM::ReadHMMer(FILE* dbf, char* filestr)
   annotchr = new char[MAXRES]; // consensus amino acids in ASCII format, or, in HMMER format, the reference annotation character in insert line
   static int warn=0;
 
-  trans_lin=0;
   L=0;
   Neff_HMM=0;
   n_seqs=n_display=N_in=N_filtered=0;
   nss_dssp=nsa_dssp=nss_pred=nss_conf=nfirst=ncons=-1;
   lamda=mu=0.0;
   trans_lin=0; // transition probs in log space
+  has_pseudocounts=true; // !!
+  dont_delete_seqs=false;
+  divided_by_local_bg_freqs=false;
   name[0]=longname[0]=desc[0]=fam[0]='\0';
   //If at the end of while-loop L is still 0 then we have reached end of db file
 
@@ -844,8 +845,8 @@ int HMM::ReadHMMer(FILE* dbf, char* filestr)
                   }
               if (i>L)
                 {
-                  cerr<<endl<<"Error: in HMM "<<name<<" there are more columns than the stated length "<<L<<"\n";
-                  return 2;
+                  cerr<<endl<<"WARNING: in HMM "<<name<<" there are more columns than the stated length "<<L<<". Skipping columns.\n";
+                  break;
                 }
               if (i>L && v)
                 cerr<<endl<<"WARNING: in HMM "<<name<<" there are more columns than the stated length "<<L<<"\n";
@@ -1067,9 +1068,6 @@ int HMM::ReadHMMer(FILE* dbf, char* filestr)
   // Set emission probabilities of zero'th (begin) state and L+1st (end) state to background probabilities
   for (a=0; a<20; ++a) f[0][a]=f[L+1][a]=pb[a];
   delete[] annotchr;
-
-  has_pseudocounts=true;
-
   return 1; //return status: ok
 }
 
@@ -1091,13 +1089,15 @@ int HMM::ReadHMMer3(FILE* dbf, char* filestr)
   annotchr = new char[MAXRES]; // consensus amino acids in ASCII format, or, in HMMER format, the reference annotation character in insert line
   static int warn=0;
 
-  trans_lin=0;
   L=0;
   Neff_HMM=0;
   n_seqs=n_display=N_in=N_filtered=0;
   nss_dssp=nsa_dssp=nss_pred=nss_conf=nfirst=ncons=-1;
   lamda=mu=0.0;
   trans_lin=0; // transition probs in log space
+  has_pseudocounts=true; // !!
+  dont_delete_seqs=false;
+  divided_by_local_bg_freqs=false;
   name[0]=longname[0]=desc[0]=fam[0]='\0';
   //If at the end of while-loop L is still 0 then we have reached end of db file
 
@@ -1304,8 +1304,8 @@ int HMM::ReadHMMer3(FILE* dbf, char* filestr)
                   }
               if (i>L)
                 {
-                  cerr<<endl<<"Error: in HMM "<<name<<" there are more columns than the stated length "<<L<<"\n";
-                  return 2;
+                  cerr<<endl<<"WARNING: in HMM "<<name<<" there are more columns than the stated length "<<L<<". Skipping columns.\n";
+                   break;
                 }
               if (i>L && v)
                 cerr<<endl<<"WARNING: in HMM "<<name<<" there are more columns than the stated length "<<L<<"\n";
@@ -1534,9 +1534,6 @@ int HMM::ReadHMMer3(FILE* dbf, char* filestr)
   // Set emission probabilities of zero'th (begin) state and L+1st (end) state to background probabilities
   for (a=0; a<20; ++a) f[0][a]=f[L+1][a]=pb[a];
   delete[] annotchr;
-
-  has_pseudocounts=true;
-
   return 1; //return status: ok
 }
 
@@ -1898,37 +1895,129 @@ void HMM::AddAminoAcidPseudocounts(char pcm, float pca, float pcb, float pcc)
   return;
 }
 
+/////////////////////////////////////////////////////////////////////////////////////
+// Divide aa probabilties by square root of locally averaged background frequencies
+// !!!!! ATTENTION!!!!!!!  after this p is not the same as after adding pseudocounts !!!
+/////////////////////////////////////////////////////////////////////////////////////
+void HMM::DivideBySqrtOfLocalBackgroundFreqs(int D) // 2*D+1 is window size
+{
+  if (divided_by_local_bg_freqs) {cerr<<"WARNING: already divided probs by local aa frequencies!\n"; return;}
+  divided_by_local_bg_freqs=1;
+
+  int i;                     // query and template match state indices
+  int a;                     // amino acid index
+  float fac=1.0/(2*D+1);     // 1 / window size 
+
+  float* pnul = new float*[L+1];  // null model probabilities   
+  for (i=1; i<=L; i++) pnul[i] = new float[NAA];
+  for (a=0; a<NAA; ++a) pnul[0][a] = 0.0;
+
+  // HMM shorter than window length? => average over entire length L
+  if (L <= 2*D+1) 
+    {
+      for (i=1; i<=L; ++i)
+	for (a=0; a<NAA; ++a) 
+	  pnul[0][a] += p[i][a];
+      for (i=1; i<=L; ++i)
+	for (a=0; a<NAA; ++a)
+	  pnul[i][a] = pnul[0][a];
+      fac=1.0/L;
+    }
+  // HMM longer than window length? => average over window size 2*D+1
+  else 
+    {
+      // Calculate local amino acid background frequencies in leftmost window (1,..,2*D+1)
+      for (i=1; i<=2*D+1; ++i)
+	for (a=0; a<NAA; ++a)
+	  pnul[0][a] += p[i][a];
+
+      // Copy local amino acid background frequencies in leftmost window to positions 1,..,D+1
+      for (i=1; i<=D+1; ++i)
+	for (a=0; a<NAA; ++a)
+	  pnul[i][a] = pnul[0][a];
+      
+      // Calculate local amino acid background frequencies in window of size 2*D+1 around each residue 
+      for (i=D+2; i<=L-D; ++i)
+	for (a=0; a<NAA; ++a)
+	  pnul[i][a] = pnul[i-1][a] + p[i+D][a] - p[i-1-D][a];
+
+      // Copy local amino acid background frequencies from pos. L-D to positions L-D+1,..,L
+      for (i=L-D+1; i<=L; ++i)
+	for (a=0; a<NAA; ++a)
+	  pnul[i][a] = pnul[L-D][a];
+    }
+
+  // Divide amino acid probs by sqrt of local amino acid background frequencies
+  for (i=1; i<=L; ++i)
+    for (a=0; a<NAA; ++a)
+      p[i][a] /= sqrt(fac*pnul[i][a]);
+  
+  if (v>=2)
+    {
+      cout<<"\nLocal amino acid background frequencies\n";
+      cout<<"         A    R    N    D    C    Q    E    G    H    I    L    K    M    F    P    S    T    W    Y    V  sum\n";
+      for (i=1; i<=L; ++i)
+	{
+	  printf("%-5i ",i);
+	  float sum = 0.0;
+	  for (a=0; a<20; ++a)
+	    { 
+	      printf("%4.1f ",100*fac*pnul[i][a]);
+	      sum += fac*pnul[i][a];
+	    }
+	  printf("%4.1f ",100*sum);
+	}
+    }
+
+  for (i=0; i<=L; i++) delete[] pnul[i];
+  delete[] pnul;
+  return;
+}
+
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Factor Null model into HMM t
+// !!!!! ATTENTION!!!!!!!  after this t.p is not the same as after adding pseudocounts !!!
 /////////////////////////////////////////////////////////////////////////////////////
 void HMM::IncludeNullModelInHMM(HMM& q, HMM& t, int columnscore )
 {
 
-  int i,j;        //query and template match state indices
-  int a;          //amino acid index
+  int i,j;         //query and template match state indices
+  int a;           //amino acid index
 
+  // Multiply template frequencies with amino acid weights = 1/background_freq(a) (for all but SOP scores)
   switch (columnscore)
     {
     default:
     case 0: // Null model with background prob. from database
-      for (a=0; a<20; ++a) pnul[a]=pb[a];
+      for (j=0; j<=t.L+1; ++j)
+	for (a=0; a<20; ++a)
+	  t.p[j][a] /= pb[a];
       break;
 
     case 1: // Null model with background prob. equal average from query and template
-      for (a=0; a<20; ++a) pnul[a]=0.5*(q.pav[a]+t.pav[a]);
+      float pnul[NAA]; // null model probabilities used in comparison (only set in template/db HMMs)
+      for (a=0; a<20; ++a) pnul[a] = 0.5*(q.pav[a]+t.pav[a]);
+      for (j=0; j<=t.L+1; ++j)
+	for (a=0; a<20; ++a)
+	  t.p[j][a] /= pnul[a];
       break;
 
     case 2: // Null model with background prob. from template protein
-      for (a=0; a<20; ++a) pnul[a]=t.pav[a];
+      for (j=0; j<=t.L+1; ++j)
+	for (a=0; a<20; ++a)
+	  t.p[j][a] /= t.pav[a];
       break;
 
     case 3: // Null model with background prob. from query protein
-      for (a=0; a<20; ++a) pnul[a]=q.pav[a];
+      for (j=0; j<=t.L+1; ++j)
+	for (a=0; a<20; ++a)
+	  t.p[j][a] /= q.pav[a];
       break;
 
-    case 4: // Null model with background prob. equal average from query and template
-      for (a=0; a<20; ++a) pnul[a]=sqrt(q.pav[a]*t.pav[a]);
+    case 5: // Null model with local background prob. from template and query protein
+      if (!q.divided_by_local_bg_freqs) q.DivideBySqrtOfLocalBackgroundFreqs(par.half_window_size_local_aa_bg_freqs);
+      if (!t.divided_by_local_bg_freqs) t.DivideBySqrtOfLocalBackgroundFreqs(par.half_window_size_local_aa_bg_freqs);
       break;
 
     case 10: // Separated column scoring for Stochastic Backtracing (STILL USED??)
@@ -1954,13 +2043,6 @@ void HMM::IncludeNullModelInHMM(HMM& q, HMM& t, int columnscore )
 
     }
 
-  // !!!!! ATTENTION!!!!!!!  after this t.p is not the same as after adding pseudocounts !!!
-  //Introduce amino acid weights into template (for all but SOP scores)
-  if (par.columnscore!=10)
-    for (a=0; a<20; ++a)
-      for (j=0; j<=t.L+1; j++)
-        t.p[j][a]/=pnul[a];
-
   if (v>=4)
     {
       cout<<"\nAverage amino acid frequencies\n";
@@ -1969,8 +2051,6 @@ void HMM::IncludeNullModelInHMM(HMM& q, HMM& t, int columnscore )
       for (a=0; a<20; ++a) printf("%4.1f ",100*q.pav[a]);
       cout<<"\nT:    ";
       for (a=0; a<20; ++a) printf("%4.1f ",100*t.pav[a]);
-      cout<<"\nNull: ";
-      for (a=0; a<20; ++a) printf("%4.1f ",100*pnul[a]);
       cout<<"\npb:   ";
       for (a=0; a<20; ++a) printf("%4.1f ",100*pb[a]);
     }
@@ -2000,7 +2080,10 @@ void HMM::WriteToFile(char* outfile)
   const int SEQLEN=100;      // number of residues per line for sequences to be displayed
   int i,a;
 
-  if (trans_lin==1) {fprintf(stderr,"Error: Writing transition pseudocounts in linear representation not allowed. Please report this error to the HHsearch developers.\n"); exit(6);}
+  if (trans_lin==1) 
+    InternalError(sprintf("tried to write HMM %s to file %s with transition pseudocounts in linear representation",name,outfile));
+  if (divided_by_local_bg_freqs) 
+    InternalError(sprintf("tried to write HMM %s to file %s with amino acid probabilities divided by sqrt of local background frequencies\n",name,outfile));
 
   FILE *outf=NULL;
   if (strcmp(outfile,"stdout"))
@@ -2122,8 +2205,7 @@ void HMM::InsertCalibration(char* infile)
       // Found an EVD lamda mu line? -> remove, i.e., read next line
       while (!done && !strncmp(line,"EVD ",3) && !(line[0]=='/' && line[1]=='/') && nline<2*MAXRES)
         inf.getline(line,LINELEN);
-      if ((line[0]=='/' && line[1]=='/') || nline>=2*MAXRES)
-        {fprintf(stderr,"Error: wrong format in %s. Expecting hhm format\n",infile); exit(1);}
+      if ((line[0]=='/' && line[1]=='/') || nline>=2*MAXRES) FormatError(infile,"Expecting hhm format");
 
       // Found the SEQ line? -> insert calibration before this line
       if (!done && (!strncmp("SEQ",line,3) || !strncmp("HMM",line,3)) && (isspace(line[3]) || line[3]=='\0'))

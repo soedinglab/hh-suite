@@ -544,6 +544,7 @@ void SetDefaults()
 
   par.repmode=0;               // repeats score independently of one another
   par.columnscore=1;           // Default column score is 1: null model pnul = 1/2 * (q_av(a)+p_av(a))
+  par.half_window_size_local_aa_bg_freqs = 40;
   par.min_overlap=0;           // automatic minimum overlap used
   par.opt=0;                   // Default = optimization mode off
   par.readdefaultsfile=0;      // Default = do not read a defaults file ./.hhdefaults or HOME/.hhdefaults
@@ -553,7 +554,6 @@ void SetDefaults()
   par.jdummy=0;
 
   par.notags=1;                // neutralize His-tags, FLAG-tags, C-myc-tags
-
   par.hmmer_used=false;
 
   // Directories for SS-prediction

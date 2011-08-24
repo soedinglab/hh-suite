@@ -37,7 +37,6 @@ public:
     char cl[NAMELEN];         // class ID (derived from name)
 
     float lamda, mu;          // coefficients for aa score distribution of HMM using parameters in 'Parameters par'
-    bool has_pseudocounts;    // set to true if HMM contains pseudocounts
 
    // Make a flat copy of q
     void FlatCopyTo(HMM& t);
@@ -71,6 +70,9 @@ public:
 
     // Add no amino acid pseudocounts to HMM: copy  t.p[i][a] = f[i][a]
     void NoAminoAcidPseudocounts() {for(int i=1; i<=L; i++) for(int a=0; a<20; a++) p[i][a]=f[i][a];};
+
+    // Divide aa probabilties by square root of locally averaged background frequencies
+    void DivideBySqrtOfLocalBackgroundFreqs(int D);
 
     // Factor Null model into HMM t
     void IncludeNullModelInHMM(HMM& q, HMM& t, int columnscore=par.columnscore);
@@ -114,10 +116,11 @@ public:
     char* ss_pred;            // predicted secondary structure          0:-  1:H  2:E  3:C
     char* ss_conf;            // confidence value of prediction         0:-  1:0 ... 10:9
     char* Xcons;              // consensus sequence in internal representation (A=0 R=1 N=2 D=3 ...)
-    float pnul[NAA];          // null model probabilities used in comparison (only set in template/db HMMs)
     int* l;                   // l[i] = pos. of j'th match state in aligment
-    char dont_delete_seqs;    // set to one if flat copy of seqs and sname was made to a hit object, to avoid deletion
     char trans_lin;           // transition probs are given in log or lin space? (0: p_tr  1: log(p_tr)
+    bool dont_delete_seqs;    // set to one if flat copy of seqs and sname was made to a hit object, to avoid deletion
+    bool has_pseudocounts;    // set to true if HMM contains pseudocounts
+    bool divided_by_local_bg_freqs; // avoid dividing p[i]a[] by sqrt(pb[a]) more than once
 
     // Utility for Read()
     int Warning(FILE* dbf, char line[], char name[])
