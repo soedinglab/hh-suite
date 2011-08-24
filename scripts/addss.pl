@@ -91,6 +91,8 @@ if (@ARGV<1) {die ($help);}
 my $options="";
 for (my $i=0; $i<@ARGV; $i++) {$options.=" $ARGV[$i] ";}
 
+if ($options=~/ -h / || $options=~/ --help /) {die ($help);}
+
 #Input format fasta?
 if    ($options=~s/ -fas\s/ /g) {$informat="fas";}
 elsif ($options=~s/ -a2m\s/ /g) {$informat="a2m";}
