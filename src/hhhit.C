@@ -502,6 +502,7 @@ void Hit::Viterbi(HMM& q, HMM& t, float** Sstruc)
 /////////////////////////////////////////////////////////////////////////////////////
 // Compare two HMMs with Forward Algorithm in lin-space (~ 2x faster than in log-space)
 /////////////////////////////////////////////////////////////////////////////////////
+
 void Hit::Forward(HMM& q, HMM& t, float** Pstruc)
 {
 
@@ -512,6 +513,18 @@ void Hit::Forward(HMM& q, HMM& t, float** Pstruc)
   double Pmax_i;                        // maximum of F_MM in row i
   double scale_prod=1.0;                // Prod_i=1^i (scale[i])
   int jmin; 
+
+  double F_MM_prev[t.L + 1];
+  double F_GD_prev[t.L + 1];
+  double F_DG_prev[t.L + 1];
+  double F_IM_prev[t.L + 1];
+  double F_MI_prev[t.L + 1];
+
+  double F_MM_curr[t.L + 1];
+  double F_GD_curr[t.L + 1];
+  double F_DG_curr[t.L + 1];
+  double F_IM_curr[t.L + 1];
+  double F_MI_curr[t.L + 1];
 
   // First alignment of this pair of HMMs?
   if(irep==1) 
@@ -595,86 +608,140 @@ void Hit::Forward(HMM& q, HMM& t, float** Pstruc)
     }
 
 
-  // Initialization of top row, i.e. cells (0,j)
-  F_MM[1][0] = F_IM[1][0] = F_GD[1][0] =  F_MM[0][1] = F_MI[0][1] = F_DG[0][1] = 0.0;
   for (j=1; j<=t.L; ++j) 
+  {
+    F_MM_curr[j] = 0.0;
+    F_MI_curr[j] = 0.0;
+    F_IM_curr[j] = 0.0;
+    F_GD_curr[j] = 0.0;
+    F_DG_curr[j] = 0.0;
+  }
+
+  F_MM_curr[0] = 0.0;
+  F_IM_curr[0] = 0.0;
+  F_GD_curr[0] = 0.0;
+  for (j=1; j<=t.L; ++j)
+  {
+    if (cell_off[1][j])
+      F_MM_curr[j] = F_MI_curr[j] = F_DG_curr[j] = F_IM_curr[j] = F_GD_curr[j] = 0.0;
+    else
     {
-      if (cell_off[1][j]) 
-	F_MM[1][j] = F_MI[1][j] = F_DG[1][j] = F_IM[1][j] = F_GD[1][j] = 0.0;
-      else 
-	{
-	  F_MM[1][j] = ProbFwd(q.p[1],t.p[j]) * fpow2(ScoreSS(q,t,1,j)) * Cshift * (Pstruc==NULL? 1: Pstruc[1][j]) ;
-	  F_MI[1][j] = F_DG[1][j] = 0.0;
-	  F_IM[1][j] = F_MM[1][j-1] * q.tr[1][M2I] * t.tr[j-1][M2M] + F_IM[1][j-1] * q.tr[1][I2I] * t.tr[j-1][M2M];
-	  F_GD[1][j] = F_MM[1][j-1] * t.tr[j-1][M2D]                + F_GD[1][j-1] * t.tr[j-1][D2D];
-	}
+      F_MM_curr[j] = ProbFwd(q.p[1],t.p[j]) * fpow2(ScoreSS(q,t,1,j)) * Cshift * (Pstruc==NULL? 1: Pstruc[1][j]) ;
+      F_MI_curr[j] = F_DG_curr[j] = 0.0;
+      F_IM_curr[j] = F_MM_curr[j-1] * q.tr[1][M2I] * t.tr[j-1][M2M] + F_IM_curr[j-1] * q.tr[1][I2I] * t.tr[j-1][M2M];
+      F_GD_curr[j] = F_MM_curr[j-1] * t.tr[j-1][M2D]                + F_GD_curr[j-1] * t.tr[j-1][D2D];
     }
+  }
+
+  for (int j = 0; j <= t.L; j++)
+  {
+    F_MM[0][j] = F_MM_prev[j];
+    F_MM[1][j] = F_MM_curr[j];
+
+    F_MM_prev[j] = F_MM_curr[j];;
+    F_MI_prev[j] = F_MI_curr[j];;
+    F_IM_prev[j] = F_IM_curr[j];;
+    F_DG_prev[j] = F_DG_curr[j];;
+    F_GD_prev[j] = F_GD_curr[j];;
+  }
+
+
   scale[0]=scale[1]=scale[2]=1.0;
 
   // Forward algorithm
   for (i=2; i<=q.L; ++i) // Loop through query positions i
     {
       if (self) jmin = imin(i+SELFEXCL+1,t.L); else jmin=1;
-      
+
       if (scale_prod<DBL_MIN*100) scale_prod = 0.0; else scale_prod *= scale[i];
 
       // Initialize cells at (i,0)
       if (cell_off[i][jmin]) 
-	F_MM[i][jmin] = F_MI[i][jmin] = F_DG[i][jmin] = F_IM[i][jmin] = F_GD[i][jmin] = 0.0;
+	F_MM_curr[jmin] = F_MI_curr[jmin] = F_DG_curr[jmin] = F_IM_curr[jmin] = F_GD_curr[jmin] = 0.0;
       else 
-	{
-	  F_MM[i][jmin] = scale_prod * ProbFwd(q.p[i],t.p[jmin]) * fpow2(ScoreSS(q,t,i,jmin)) * Cshift * (Pstruc==NULL? 1: Pstruc[i][jmin]);
-	  F_IM[i][jmin] = F_GD[i][jmin] = 0.0; 
-	  F_MI[i][jmin] = scale[i] * (F_MM[i-1][jmin] * q.tr[i-1][M2M] * t.tr[jmin][M2I] + F_MI[i-1][jmin] * q.tr[i-1][M2M] * t.tr[jmin][I2I]);
-	  F_DG[i][jmin] = scale[i] * (F_MM[i-1][jmin] * q.tr[i-1][M2D]                   + F_DG[i-1][jmin] * q.tr[i-1][D2D]);
-	}
+      {
+	F_MM_curr[jmin] = scale_prod * ProbFwd(q.p[i],t.p[jmin]) * fpow2(ScoreSS(q,t,i,jmin)) * Cshift * (Pstruc==NULL? 1: Pstruc[i][jmin]);
+	F_IM_curr[jmin] = F_GD_curr[jmin] = 0.0; 
+	F_MI_curr[jmin] = scale[i] * (F_MM_prev[jmin] * q.tr[i-1][M2M] * t.tr[jmin][M2I] + F_MI_prev[jmin] * q.tr[i-1][M2M] * t.tr[jmin][I2I]);
+	F_DG_curr[jmin] = scale[i] * (F_MM_prev[jmin] * q.tr[i-1][M2D]                   + F_DG_prev[jmin] * q.tr[i-1][D2D]);
+      }
+
+      /* copy back */
+      F_MM[i][jmin] = F_MM_curr[jmin];
+      F_MI[i][jmin] = F_MI_curr[jmin];
+      F_IM[i][jmin] = F_IM_curr[jmin];
+      F_DG[i][jmin] = F_DG_curr[jmin];
+      F_GD[i][jmin] = F_GD_curr[jmin];
+
       Pmax_i=0;
  
       for (j=jmin+1; j<=t.L; ++j) // Loop through template positions j
-	{
+      {
 	  // Recursion relations
 
-	  if (cell_off[i][j]) 
-	    F_MM[i][j] = F_MI[i][j] = F_DG[i][j] = F_IM[i][j] = F_GD[i][j] = 0.0;
-	  else
-	    {
-	      F_MM[i][j] = ProbFwd(q.p[i],t.p[j]) * fpow2(ScoreSS(q,t,i,j)) * Cshift * (Pstruc==NULL? 1: Pstruc[i][j]) * scale[i] *
-		( pmin
-		  + F_MM[i-1][j-1] * q.tr[i-1][M2M] * t.tr[j-1][M2M] // BB -> MM (BB = Begin/Begin, for local alignment)
-		  + F_GD[i-1][j-1] * q.tr[i-1][M2M] * t.tr[j-1][D2M] // GD -> MM
-		  + F_IM[i-1][j-1] * q.tr[i-1][I2M] * t.tr[j-1][M2M] // IM -> MM
-		  + F_DG[i-1][j-1] * q.tr[i-1][D2M] * t.tr[j-1][M2M] // DG -> MM
-		  + F_MI[i-1][j-1] * q.tr[i-1][M2M] * t.tr[j-1][I2M] // MI -> MM
-		  );
-	      F_GD[i][j] = 
-		( F_MM[i][j-1] * t.tr[j-1][M2D]                    // GD -> MM
-		  + F_GD[i][j-1] * t.tr[j-1][D2D]                    // GD -> GD
-		  + (Pstruc==NULL? 0 : F_DG[i][j-1] * t.tr[j-1][M2D] * q.tr[i][D2M] ) // DG -> GD (only when structure scores given)
-		  );
-	      F_IM[i][j] = 
-		( F_MM[i][j-1] * q.tr[i][M2I] * t.tr[j-1][M2M]     // MM -> IM
-		  + F_IM[i][j-1] * q.tr[i][I2I] * t.tr[j-1][M2M]     // IM -> IM
-		  + (Pstruc==NULL? 0 : F_MI[i][j-1] * q.tr[i][M2I] * t.tr[j-1][I2M] ) // MI -> IM (only when structure scores given)
-		  );
-	      F_DG[i][j] = scale[i] * 
-		( F_MM[i-1][j] * q.tr[i-1][M2D]                    // DG -> MM
-		  + F_DG[i-1][j] * q.tr[i-1][D2D]                    // DG -> DG
-		  ) ;
-	      F_MI[i][j] = scale[i] * 
-		( F_MM[i-1][j] * q.tr[i-1][M2M] * t.tr[j][M2I]     // MI -> MM 
-		  + F_MI[i-1][j] * q.tr[i-1][M2M] * t.tr[j][I2I]     // MI -> MI
-		  );
+	if (cell_off[i][j]) 
+	{
+	  F_MM_curr[j] = F_MI_curr[j] = F_DG_curr[j] = F_IM_curr[j] = F_GD_curr[j] = 0.0;
+	  F_MM[i][j] = F_MM_curr[j];
+	  F_MI[i][j] = F_MI_curr[j];
+	  F_DG[i][j] = F_DG_curr[j];
+	  F_IM[i][j] = F_IM_curr[j];
+	  F_GD[i][j] = F_GD_curr[j];
+	}
+	else
+	{
+	  F_MM_curr[j] = ProbFwd(q.p[i],t.p[j]) * fpow2(ScoreSS(q,t,i,j)) * Cshift * (Pstruc==NULL? 1: Pstruc[i][j]) * scale[i] *
+	    ( pmin
+	      + F_MM_prev[j-1] * q.tr[i-1][M2M] * t.tr[j-1][M2M] // BB -> MM (BB = Begin/Begin, for local alignment)
+	      + F_GD_prev[j-1] * q.tr[i-1][M2M] * t.tr[j-1][D2M] // GD -> MM
+	      + F_IM_prev[j-1] * q.tr[i-1][I2M] * t.tr[j-1][M2M] // IM -> MM
+	      + F_DG_prev[j-1] * q.tr[i-1][D2M] * t.tr[j-1][M2M] // DG -> MM
+	      + F_MI_prev[j-1] * q.tr[i-1][M2M] * t.tr[j-1][I2M] // MI -> MM
+	    );
+	  F_GD_curr[j] = 
+	    ( F_MM_curr[j-1] * t.tr[j-1][M2D]                    // GD -> MM
+	      + F_GD_curr[j-1] * t.tr[j-1][D2D]                    // GD -> GD
+	      + (Pstruc==NULL? 0 : F_DG_curr[j-1] * t.tr[j-1][M2D] * q.tr[i][D2M] ) // DG -> GD (only when structure scores given)
+	    );
+	  F_IM_curr[j] = 
+	    ( F_MM_curr[j-1] * q.tr[i][M2I] * t.tr[j-1][M2M]     // MM -> IM
+	      + F_IM_curr[j-1] * q.tr[i][I2I] * t.tr[j-1][M2M]     // IM -> IM
+	      + (Pstruc==NULL? 0 : F_MI_curr[j-1] * q.tr[i][M2I] * t.tr[j-1][I2M] ) // MI -> IM (only when structure scores given)
+	    );
+	  F_DG_curr[j] = scale[i] * 
+	    ( F_MM_prev[j] * q.tr[i-1][M2D]                    // DG -> MM
+	      + F_DG_prev[j] * q.tr[i-1][D2D]                    // DG -> DG
+	    ) ;
+	  F_MI_curr[j] = scale[i] * 
+	    ( F_MM_prev[j] * q.tr[i-1][M2M] * t.tr[j][M2I]     // MI -> MM 
+	      + F_MI_prev[j] * q.tr[i-1][M2M] * t.tr[j][I2I]     // MI -> MI
+	    );
 
-	      if(F_MM[i][j]>Pmax_i) Pmax_i=F_MM[i][j];
-	  
-	    } // end else  	  
+	  if(F_MM_curr[j]>Pmax_i)
+	    Pmax_i=F_MM_curr[j];
 
-	} //end for j
+	} // end else  	  
+
+      } //end for j
+
+      /* F_MM_prev = F_MM_curr */
+      for (int jj = 0; jj <= t.L; jj++)
+      {
+	F_MM_prev[jj] = F_MM_curr[jj];
+	F_MI_prev[jj] = F_MI_curr[jj];
+	F_IM_prev[jj] = F_IM_curr[jj];
+	F_DG_prev[jj] = F_DG_curr[jj];
+	F_GD_prev[jj] = F_GD_curr[jj];
+
+	/* and fill matrix because it is reused elsewhere */
+	F_MM[i][jj] = F_MM_curr[jj];
+      }
 
       pmin *= scale[i];
       if (pmin<DBL_MIN*100) pmin = 0.0;
       scale[i+1] = 1.0/(Pmax_i+1.0);
 //    scale[i+1] = 1.0;   // to debug scaling
+
      
     } // end for i
   
@@ -712,6 +779,7 @@ void Hit::Forward(HMM& q, HMM& t, float** Pstruc)
     }
   
   // Debugging output
+  /*
   if (v>=4)
     {
       const int i0=0, i1=q.L;
@@ -735,10 +803,9 @@ void Hit::Forward(HMM& q, HMM& t, float** Pstruc)
       fprintf(stderr,"Template=%-12.12s  score=%6.3f i2=%i  j2=%i \n",t.name,score,i2,j2);
       fprintf(stderr,"\nForward total probability ratio: %8.3G\n",Pforward);
     }
+    */
   return;
 }
-
-
 
 
 
