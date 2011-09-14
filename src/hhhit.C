@@ -638,11 +638,11 @@ void Hit::Forward(HMM& q, HMM& t, float** Pstruc)
     F_MM[0][j] = F_MM_prev[j];
     F_MM[1][j] = F_MM_curr[j];
 
-    F_MM_prev[j] = F_MM_curr[j];;
-    F_MI_prev[j] = F_MI_curr[j];;
-    F_IM_prev[j] = F_IM_curr[j];;
-    F_DG_prev[j] = F_DG_curr[j];;
-    F_GD_prev[j] = F_GD_curr[j];;
+    F_MM_prev[j] = F_MM_curr[j];
+    F_MI_prev[j] = F_MI_curr[j];
+    F_IM_prev[j] = F_IM_curr[j];
+    F_DG_prev[j] = F_DG_curr[j];
+    F_GD_prev[j] = F_GD_curr[j];
   }
 
 
@@ -677,7 +677,7 @@ void Hit::Forward(HMM& q, HMM& t, float** Pstruc)
  
       for (j=jmin+1; j<=t.L; ++j) // Loop through template positions j
       {
-	  // Recursion relations
+	// Recursion relations
 
 	if (cell_off[i][j]) 
 	{
@@ -699,21 +699,21 @@ void Hit::Forward(HMM& q, HMM& t, float** Pstruc)
 	      + F_MI_prev[j-1] * q.tr[i-1][M2M] * t.tr[j-1][I2M] // MI -> MM
 	    );
 	  F_GD_curr[j] = 
-	    ( F_MM_curr[j-1] * t.tr[j-1][M2D]                    // GD -> MM
+	    (   F_MM_curr[j-1] * t.tr[j-1][M2D]                    // GD -> MM
 	      + F_GD_curr[j-1] * t.tr[j-1][D2D]                    // GD -> GD
 	      + (Pstruc==NULL? 0 : F_DG_curr[j-1] * t.tr[j-1][M2D] * q.tr[i][D2M] ) // DG -> GD (only when structure scores given)
 	    );
 	  F_IM_curr[j] = 
-	    ( F_MM_curr[j-1] * q.tr[i][M2I] * t.tr[j-1][M2M]     // MM -> IM
+	    (   F_MM_curr[j-1] * q.tr[i][M2I] * t.tr[j-1][M2M]     // MM -> IM
 	      + F_IM_curr[j-1] * q.tr[i][I2I] * t.tr[j-1][M2M]     // IM -> IM
 	      + (Pstruc==NULL? 0 : F_MI_curr[j-1] * q.tr[i][M2I] * t.tr[j-1][I2M] ) // MI -> IM (only when structure scores given)
 	    );
 	  F_DG_curr[j] = scale[i] * 
-	    ( F_MM_prev[j] * q.tr[i-1][M2D]                    // DG -> MM
+	    (   F_MM_prev[j] * q.tr[i-1][M2D]                    // DG -> MM
 	      + F_DG_prev[j] * q.tr[i-1][D2D]                    // DG -> DG
 	    ) ;
 	  F_MI_curr[j] = scale[i] * 
-	    ( F_MM_prev[j] * q.tr[i-1][M2M] * t.tr[j][M2I]     // MI -> MM 
+	    (   F_MM_prev[j] * q.tr[i-1][M2M] * t.tr[j][M2I]     // MI -> MM 
 	      + F_MI_prev[j] * q.tr[i-1][M2M] * t.tr[j][I2I]     // MI -> MI
 	    );
 
