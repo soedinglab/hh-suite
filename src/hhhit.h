@@ -160,16 +160,13 @@ private:
   char** cell_off;     // cell_off[i][j]=1 means this cell will get score -infinity
 
   double** F_MM;        // Forward matrices 
+  /*
   double** F_GD;        // F_XY[i][j] * Prod_1^i(scale[i]) 
   double** F_DG;        //   = Sum_x1..xl{ P(HMMs aligned up to Xi||Yj co-emmitted x1..xl ) / (Prod_k=1^l f(x_k)) }   
   double** F_IM;        // end gaps are not penalized!
   double** F_MI;        // 
+  */
   double* scale;        // 
-
-  double** B_GD;        // B_XY[i][j] * Prod_i+1^(L+1) (scale[i])
-  double** B_DG;        //   = Sum_x2..xl{ P(HMMs aligned from Xi||Yj to end co-emmitted x2..xl ) / (Prod_k=2^l f(x_k)) }   
-  double** B_IM;        // end gaps are not penalized!
-  double** B_MI;        // 
 
   void InitializeBacktrace(HMM& q, HMM& t);
   void InitializeForAlignment(HMM& q, HMM& t, bool vit=true);
