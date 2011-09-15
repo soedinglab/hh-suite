@@ -609,13 +609,7 @@ void Hit::Forward(HMM& q, HMM& t, float** Pstruc)
 
 
   for (j=1; j<=t.L; ++j) 
-  {
     F_MM_curr[j] = 0.0;
-    F_MI_curr[j] = 0.0;
-    F_IM_curr[j] = 0.0;
-    F_GD_curr[j] = 0.0;
-    F_DG_curr[j] = 0.0;
-  }
 
   F_MM_curr[0] = 0.0;
   F_IM_curr[0] = 0.0;
@@ -668,10 +662,6 @@ void Hit::Forward(HMM& q, HMM& t, float** Pstruc)
 
       /* copy back */
       F_MM[i][jmin] = F_MM_curr[jmin];
-      F_MI[i][jmin] = F_MI_curr[jmin];
-      F_IM[i][jmin] = F_IM_curr[jmin];
-      F_DG[i][jmin] = F_DG_curr[jmin];
-      F_GD[i][jmin] = F_GD_curr[jmin];
 
       Pmax_i=0;
  
@@ -680,14 +670,7 @@ void Hit::Forward(HMM& q, HMM& t, float** Pstruc)
 	// Recursion relations
 
 	if (cell_off[i][j]) 
-	{
 	  F_MM_curr[j] = F_MI_curr[j] = F_DG_curr[j] = F_IM_curr[j] = F_GD_curr[j] = 0.0;
-	  F_MM[i][j] = F_MM_curr[j];
-	  F_MI[i][j] = F_MI_curr[j];
-	  F_DG[i][j] = F_DG_curr[j];
-	  F_IM[i][j] = F_IM_curr[j];
-	  F_GD[i][j] = F_GD_curr[j];
-	}
 	else
 	{
 	  F_MM_curr[j] = ProbFwd(q.p[i],t.p[j]) * fpow2(ScoreSS(q,t,i,j)) * Cshift * (Pstruc==NULL? 1: Pstruc[i][j]) * scale[i] *
