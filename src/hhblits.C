@@ -97,7 +97,7 @@ const char print_elapsed=0;
 char tmp_file[]="/tmp/hhblitsXXXXXX";
 
 // HHblits variables
-const char HHBLITS_VERSION[]="version 2.2.17 (July 2011)";
+const char HHBLITS_VERSION[]="version 2.2.18 (Aug 2011)";
 const char HHBLITS_REFERENCE[]="to be published.\n";
 const char HHBLITS_COPYRIGHT[]="(C) Michael Remmert and Johannes Soeding\n";
 
@@ -411,8 +411,8 @@ void help_all()
   printf(" -realign_max <int>  realign max. <int> hits (default=%i)                                \n",par.realign_max);  
   printf(" -glob/-loc     use global/local alignment mode for searching/ranking (def=local)        \n");
   printf(" -alt <int>     show up to this many significant alternative alignments(def=%i)          \n",par.altali);
-  printf(" -jdummy [0,20] align <int> hits to query before realigning the remaining hits           \n");
-  printf("                to the new query profile (default=%i)                                    \n",par.jdummy);       
+  printf(" -premerge [0,20] align <int> hits to query before realigning the remaining hits           \n");
+  printf("                to the new query profile (default=%i)                                    \n",par.premerge);       
   printf(" -shift [-1,1] score offset (def=%-.2f)                                       \n",par.shift);
   printf(" -ssm  0-4     0:   no ss scoring                                             \n");
   printf("               1,2: ss scoring after or during alignment  [default=%1i]       \n",par.ssm);
@@ -681,7 +681,7 @@ void ProcessArguments(int argc, char** argv)
       else if ((!strcmp(argv[i],"-mact") || !strcmp(argv[i],"-mapt")) && (i<argc-1)) par.mact=atof(argv[++i]);
       else if (!strcmp(argv[i],"-scwin") && (i<argc-1)) {par.columnscore=5; par.half_window_size_local_aa_bg_freqs = imax(1,atoi(argv[++i]));}
       else if (!strncmp(argv[i],"-cpu",4) && (i<argc-1)) { threads=atoi(argv[++i]); cpu = threads; }
-      else if (!strncmp(argv[i],"-jdummy",7) && (i<argc-1)) par.jdummy=atoi(argv[++i]);
+      else if (!strncmp(argv[i],"-premerge",9) && (i<argc-1)) par.premerge=atoi(argv[++i]);
       else if (!strcmp(argv[i],"-csb") && (i<argc-1)) par.csb=atof(argv[++i]);
       else if (!strcmp(argv[i],"-csw") && (i<argc-1)) par.csw=atof(argv[++i]);
       else cerr<<endl<<"WARNING: Ignoring unknown option "<<argv[i]<<" ...\n";
@@ -760,7 +760,7 @@ void ReadInputFile()
   else 
     {
       if (num_seqs != 1) 
-      	par.jdummy=0;
+      	par.premerge=0;
       
       Qali.Read(qa3mf,qa3mfile);
 
@@ -829,6 +829,8 @@ void search_loop(char *dbfiles[], int ndb, bool alignByWorker=true)
 	strcat(filename,".a3m");
 	if(dba3m_index_file!=NULL) {
 	  dbf = ffindex_fopen(dba3m_data, dba3m_index, filename);
+	} else {
+	  cerr<<endl<<"Error opening "<<dbfiles[idb]<<": A3M database missing\n"; exit(4);
 	}
       }
       if (dbf == NULL) OpenFileError(dbfiles[idb]);
@@ -1218,7 +1220,7 @@ void perform_realign(char *dbfiles[], int ndb)
 	      // printf("\n");
 	    }
 	  
-	  if (nhits>=par.jdummy || hit_cur.irep>1 || hit_cur.Eval > par.e) // realign the first jdummy hits consecutively to query profile
+	  if (nhits>=par.premerge || hit_cur.irep>1 || hit_cur.Eval > par.e) // realign the first premerge hits consecutively to query profile
 	    {
 	      //fprintf(stderr,"hit.name=%-15.15s  hit.index=%-5i hit.ftellpos=%-8i  hit.dbfile=%s\n",hit_cur.name,hit_cur.index,(unsigned int)hit_cur.ftellpos,hit_cur.dbfile);
 
@@ -1285,21 +1287,21 @@ void perform_realign(char *dbfiles[], int ndb)
   int v1=v;
   if (v>0 && v<=3) v=1; else v-=2;  // Supress verbose output during iterative realignment and realignment
 
-  // Align the first par.jdummy templates?
-  if (par.jdummy>0)
+  // Align the first par.premerge templates?
+  if (par.premerge>0)
     {
-      if (v>=2) printf("Merging %i best hits to query alignment ...\n",par.jdummy);
+      if (v>=2) printf("Merging %i best hits to query alignment ...\n",par.premerge);
       
       bin=0;
       nhits=0;
       hitlist.Reset();
-      while (!hitlist.End() && nhits<par.jdummy)
+      while (!hitlist.End() && nhits<par.premerge)
 	{
 	  hit_cur = hitlist.ReadNext();
 	  if (nhits>=imax(par.B,par.Z)) break;
 	  if (nhits>=imax(par.b,par.z) && hit_cur.Probab < par.p) break;
 	  if (nhits>=imax(par.b,par.z) && hit_cur.Eval > par.E) continue;
-	  if (hit_cur.irep>1) continue;  // Align only the best hit of the first par.jdummy templates
+	  if (hit_cur.irep>1) continue;  // Align only the best hit of the first par.premerge templates
 	  
 	  nhits++;
 
@@ -1315,6 +1317,8 @@ void perform_realign(char *dbfiles[], int ndb)
 	    strcat(filename,".a3m");
 	    if(dba3m_index_file!=NULL) {
 	      dbf = ffindex_fopen(dba3m_data, dba3m_index, filename);
+	    } else {
+	      cerr<<endl<<"Error opening "<<hit_cur.dbfile<<": A3M database missing\n"; exit(4);
 	    }
 	  }
 	  if (dbf == NULL) OpenFileError(hit_cur.dbfile);
@@ -1393,7 +1397,7 @@ void perform_realign(char *dbfiles[], int ndb)
 	      if (!(N_aligned%500)) printf(" %-4i HMMs aligned\n",N_aligned);
 	      cout.flush();
 	    }
-	  
+
 	  // Prepare MAC comparison(s)
 	  PrepareTemplate(*q,*(t[bin]),format[bin]);
 	  t[bin]->Log2LinTransitionProbs(1.0);
@@ -1469,7 +1473,8 @@ void perform_realign(char *dbfiles[], int ndb)
 	  }
 
 	  q->CalculateAminoAcidBackground();
-	  
+	  if (par.columnscore == 5 && !q->divided_by_local_bg_freqs) q->DivideBySqrtOfLocalBackgroundFreqs(par.half_window_size_local_aa_bg_freqs);
+
 	  // Transform transition freqs to lin space if not already done
 	  q->AddTransitionPseudocounts();
 	  q->Log2LinTransitionProbs(1.0); // transform transition freqs to lin space if not already done
@@ -1477,7 +1482,7 @@ void perform_realign(char *dbfiles[], int ndb)
 	}
     }
   
-  if (print_elapsed) ElapsedTimeSinceLastCall("(jdummy)");
+  if (print_elapsed) ElapsedTimeSinceLastCall("(premerge)");
 
 #ifdef PTHREAD
   // Start threads for realignment
@@ -1511,6 +1516,8 @@ void perform_realign(char *dbfiles[], int ndb)
 	strcat(filename,".a3m");
 	if(dba3m_index_file!=NULL) {
 	  dbf = ffindex_fopen(dba3m_data, dba3m_index, filename);
+	} else {
+	  cerr<<endl<<"Error opening "<<dbfiles[idb]<<": A3M database missing\n"; exit(4);
 	}
       }
       if (dbf == NULL) OpenFileError(dbfiles[idb]);
@@ -1760,7 +1767,7 @@ int main(int argc, char **argv)
 
   SetDefaults();
   par.mact = 0.5;
-  par.jdummy = 3;
+  par.premerge = 3;
   par.Ndiff = 1000;
   par.prefilter=true;
   par.early_stopping_filter=true;
@@ -1871,8 +1878,8 @@ int main(int argc, char **argv)
   if (!*dba3m) {
     dba3m_data_file = dba3m_index_file = NULL;
     dba3m_index = NULL;
-    // set jdummy = 0 (no a3m database)
-    par.jdummy = 0;
+    // set premerge = 0 (no a3m database)
+    par.premerge = 0;
   } else {
     dba3m_data_file = fopen(dba3m, "r");
     if (!dba3m_data_file) OpenFileError(dba3m);
@@ -2006,14 +2013,14 @@ int main(int argc, char **argv)
     if (v>=2) printf("\nIteration %i\n",round);
 
     // Settings for different rounds
-    if (par.jdummy > 0 && round > 1 && previous_hits->Size() > (par.jdummy-1))
+    if (par.premerge > 0 && round > 1 && previous_hits->Size() > (par.premerge-1))
       {
-	if (v>3) printf("Set jdummy to 0! (jdummy: %i   round: %i   hits.Size: %i)\n",par.jdummy,round,previous_hits->Size());
-	par.jdummy = 0;
+	if (v>3) printf("Set premerge to 0! (premerge: %i   round: %i   hits.Size: %i)\n",par.premerge,round,previous_hits->Size());
+	par.premerge = 0;
       }
     else 
       {
-	par.jdummy -= previous_hits->Size();
+	par.premerge -= previous_hits->Size();
       }
 
     if (round == num_rounds && nodiff)
@@ -2062,6 +2069,8 @@ int main(int argc, char **argv)
       }
     
     q->CalculateAminoAcidBackground();
+
+    if (par.columnscore == 5 && !q->divided_by_local_bg_freqs) q->DivideBySqrtOfLocalBackgroundFreqs(par.half_window_size_local_aa_bg_freqs);
     
     if (print_elapsed) ElapsedTimeSinceLastCall("(before prefiltering (pseudocounts))");
 

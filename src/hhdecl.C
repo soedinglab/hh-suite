@@ -183,7 +183,7 @@ public:
   char clusterfile[NAMELEN];
 
   // HHblits
-  int jdummy;
+  int premerge;
   int dbsize;           // number of clusters of input database
 
   // HHblits Evalue calculation  (alpha = a + b(Neff(T) - 1)(1 - c(Neff(Q) - 1)) )

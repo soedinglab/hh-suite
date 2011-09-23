@@ -104,6 +104,7 @@ public:
     // Needed for SSE2 prefiltering with HHblits with amino acid alphabet
     float** p;                // p[i][a] = prob of finding amino acid a in column i WITH OPTIMUM pseudocounts
     float pav[NAA];           // pav[a] = average freq of amino acids in HMM (including subst matrix pseudocounts)
+    bool divided_by_local_bg_freqs; // avoid dividing p[i]a[] by sqrt(pb[a]) more than once
 
  private:
     float** f;                // f[i][a] = prob of finding amino acid a in column i WITHOUT pseudocounts
@@ -120,7 +121,6 @@ public:
     char trans_lin;           // transition probs are given in log or lin space? (0: p_tr  1: log(p_tr)
     bool dont_delete_seqs;    // set to one if flat copy of seqs and sname was made to a hit object, to avoid deletion
     bool has_pseudocounts;    // set to true if HMM contains pseudocounts
-    bool divided_by_local_bg_freqs; // avoid dividing p[i]a[] by sqrt(pb[a]) more than once
 
     // Utility for Read()
     int Warning(FILE* dbf, char line[], char name[])

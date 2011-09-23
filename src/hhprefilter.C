@@ -815,6 +815,8 @@ void init_prefilter()
 	  len = 0;
 	      
 	  strwrd(word,line+1);
+	  /////// TEMP - temporär, wird von alten DBs benötigt, alle DBs ab 2011 sollten auf neuem Stand sein
+	  strcut(word,"_cons");
 
 	  dbnames[num_dbs]=new(char[strlen(word)+1]);
 	  strcpy(dbnames[num_dbs],word);
@@ -1077,6 +1079,7 @@ void prefilter_with_SW_evalue_preprefilter_backtrace()
 	  doubled->Add(db_name);
 	  // check, if DB was searched in previous rounds 
 	  strcat(tmp_name,"__1");  // irep=1
+
 	  if (previous_hits->Contains(tmp_name))
 	    {
 	      dbfiles_old[ndb_old]=new(char[strlen(db_name)+1]);

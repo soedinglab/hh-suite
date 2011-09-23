@@ -592,7 +592,7 @@ void ProcessArguments(int argc, char** argv)
       else if (!strcmp(argv[i],"-notags")) par.notags=1;
       else if (!strcmp(argv[i],"-mode") && (i<argc-1)) par.mode=atoi(argv[++i]);
       else if (!strncmp(argv[i],"-idummy",7) && (i<argc-1)) par.idummy=atoi(argv[++i]);
-      else if (!strncmp(argv[i],"-jdummy",7) && (i<argc-1)) par.jdummy=atoi(argv[++i]);
+      else if (!strncmp(argv[i],"-premerge",9) && (i<argc-1)) par.premerge=atoi(argv[++i]);
       else if (!strncmp(argv[i],"-fdummy",7) && (i<argc-1)) par.fdummy=atof(argv[++i]);
       else if (!strncmp(argv[i],"-hhb_pval",8) && (i<argc-1)) par.hhblits_prefilter_logpval=-log(atof(argv[++i]));
       else if (!strcmp(argv[i],"-csb") && (i<argc-1)) par.csb=atof(argv[++i]);
@@ -1149,7 +1149,7 @@ int main(int argc, char **argv)
           if (hit_cur.L<=Lmaxmem)
             {
 //            fprintf(stderr,"hit.name=%-15.15s  hit.index=%-5i hit.ftellpos=%-8i  hit.dbfile=%s\n",hit_cur.name,hit_cur.index,(unsigned int)hit_cur.ftellpos,hit_cur.dbfile);
-              if (nhits>=par.jdummy || hit_cur.irep>1) // realign the first jdummy hits consecutively to query profile
+              if (nhits>=par.premerge || hit_cur.irep>1) // realign the first premerge hits consecutively to query profile
                 {
                   Posindex posindex;
                   posindex.ftellpos = hit_cur.ftellpos;
@@ -1195,8 +1195,8 @@ int main(int argc, char **argv)
       if (v>=1) printf("Realigning %i query-template alignments with maximum accuracy (MAC) algorithm ...\n",nhits);
       if (v>0 && v<=3) v=1; else v-=2;  // Supress verbose output during iterative realignment and realignment
 
-      // Align the first par.jdummy templates?
-      if (par.jdummy>0)
+      // Align the first par.premerge templates?
+      if (par.premerge>0)
         {
 
           // Read query alignment into Qali
@@ -1221,7 +1221,7 @@ int main(int argc, char **argv)
           bin=0;
           nhits=0;
           hitlist.Reset();
-          while (!hitlist.End() && nhits<par.jdummy)
+          while (!hitlist.End() && nhits<par.premerge)
             {
               hit_cur = hitlist.ReadNext();
               if (nhits>=imax(par.B,par.Z)) break;
@@ -1229,7 +1229,7 @@ int main(int argc, char **argv)
               if (nhits>=imax(par.b,par.z) && hit_cur.Eval > par.E) continue;
               nhits++;
 
-              if (hit_cur.irep>1) continue;  // Align only the best hit of the first par.jdummy templates
+              if (hit_cur.irep>1) continue;  // Align only the best hit of the first par.premerge templates
 	      if (hit_cur.L>Lmaxmem) continue;  //Don't align to long sequences due to memory limit
 
               // Open HMM database file dbfiles[idb]

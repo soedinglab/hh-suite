@@ -109,7 +109,7 @@ void RealignByWorker(int bin)
   t[bin]->Log2LinTransitionProbs(1.0);
 
 #ifdef PTHREAD
-          pthread_mutex_lock(&hitlist_mutex);   // lock access to hitlist
+      pthread_mutex_lock(&hitlist_mutex);   // lock access to hitlist
 #endif
 
   // Search positions in hitlist with correct index of template

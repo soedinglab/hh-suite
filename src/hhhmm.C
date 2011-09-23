@@ -485,7 +485,7 @@ int HMM::Read(FILE* dbf, char* path)
       /////////////////////////////////////////////////////////////////////////////////////
       // Read average amino acid frequencies for HMM
       else if (!strcmp("FREQ",str4))
-	FormatError("??",sprintf("hhm file %s has obsolete format. Please use hhmake version > 1.1 to generate hhm files.\n",name));
+	FormatError(file,"File has obsolete format. Please use hhmake version > 1.1 to generate hhm files.\n");
 
       else if (!strcmp("AVER",str4)) {} // AVER line scrapped
       else if (!strcmp("NULL",str4))
@@ -1667,6 +1667,10 @@ void HMM::AddContextSpecificPseudocounts(char pcm, float pca, float pcb, float p
   int i;               //position in HMM
   int a;               //amino acid (0..19)
   
+  if (has_pseudocounts) {
+    pcm = 0;
+  }
+
   cs::CountProfile<cs::AA> ali_profile(L);
   fillCountProfile(&ali_profile);
 
@@ -1800,6 +1804,10 @@ void HMM::AddAminoAcidPseudocounts(char pcm, float pca, float pcb, float pcc)
   float sum;
   float tau;           //tau = pseudocount admixture
 
+  if (has_pseudocounts) {
+    pcm = 0;
+  }
+
   // Calculate amino acid frequencies p[i][a] = (1-tau(i))*f[i][a] + tau(i)*g[i][a]
   switch (pcm)
     {
@@ -1908,8 +1916,8 @@ void HMM::DivideBySqrtOfLocalBackgroundFreqs(int D) // 2*D+1 is window size
   int a;                     // amino acid index
   float fac=1.0/(2*D+1);     // 1 / window size 
 
-  float* pnul = new float*[L+1];  // null model probabilities   
-  for (i=1; i<=L; i++) pnul[i] = new float[NAA];
+  float** pnul = new float*[L+1];  // null model probabilities   
+  for (i=0; i<=L; ++i) pnul[i] = new(float[NAA]);
   for (a=0; a<NAA; ++a) pnul[0][a] = 0.0;
 
   // HMM shorter than window length? => average over entire length L
@@ -1952,7 +1960,7 @@ void HMM::DivideBySqrtOfLocalBackgroundFreqs(int D) // 2*D+1 is window size
     for (a=0; a<NAA; ++a)
       p[i][a] /= sqrt(fac*pnul[i][a]);
   
-  if (v>=2)
+  if (v>=3)
     {
       cout<<"\nLocal amino acid background frequencies\n";
       cout<<"         A    R    N    D    C    Q    E    G    H    I    L    K    M    F    P    S    T    W    Y    V  sum\n";
@@ -1965,11 +1973,11 @@ void HMM::DivideBySqrtOfLocalBackgroundFreqs(int D) // 2*D+1 is window size
 	      printf("%4.1f ",100*fac*pnul[i][a]);
 	      sum += fac*pnul[i][a];
 	    }
-	  printf("%4.1f ",100*sum);
+	  printf("%4.1f\n",100*sum);
 	}
     }
 
-  for (i=0; i<=L; i++) delete[] pnul[i];
+  for (i=0; i<=L; ++i) delete[] pnul[i];
   delete[] pnul;
   return;
 }
@@ -2016,7 +2024,8 @@ void HMM::IncludeNullModelInHMM(HMM& q, HMM& t, int columnscore )
       break;
 
     case 5: // Null model with local background prob. from template and query protein
-      if (!q.divided_by_local_bg_freqs) q.DivideBySqrtOfLocalBackgroundFreqs(par.half_window_size_local_aa_bg_freqs);
+      //      if (!q.divided_by_local_bg_freqs) q.DivideBySqrtOfLocalBackgroundFreqs(par.half_window_size_local_aa_bg_freqs);
+      if (!q.divided_by_local_bg_freqs) InternalError("No local amino acid bias correction on query HMM!");
       if (!t.divided_by_local_bg_freqs) t.DivideBySqrtOfLocalBackgroundFreqs(par.half_window_size_local_aa_bg_freqs);
       break;
 
@@ -2081,9 +2090,9 @@ void HMM::WriteToFile(char* outfile)
   int i,a;
 
   if (trans_lin==1) 
-    InternalError(sprintf("tried to write HMM %s to file %s with transition pseudocounts in linear representation",name,outfile));
+    InternalError("tried to write HMM file with transition pseudocounts in linear representation");
   if (divided_by_local_bg_freqs) 
-    InternalError(sprintf("tried to write HMM %s to file %s with amino acid probabilities divided by sqrt of local background frequencies\n",name,outfile));
+    InternalError("tried to write HMM file with amino acid probabilities divided by sqrt of local background frequencies\n");
 
   FILE *outf=NULL;
   if (strcmp(outfile,"stdout"))

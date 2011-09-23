@@ -551,7 +551,7 @@ void SetDefaults()
   par.maxdbstrlen=200;         // maximum length of database string to be printed in 'Command' line of hhr file
   par.mode=0;
   par.idummy=0;
-  par.jdummy=0;
+  par.premerge=0;
 
   par.notags=1;                // neutralize His-tags, FLAG-tags, C-myc-tags
   par.hmmer_used=false;

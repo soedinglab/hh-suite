@@ -575,6 +575,7 @@ void ProcessArguments(int argc, char** argv)
       else if (!strcmp(argv[i],"-mact") && (i<argc-1)) {par.mact=atof(argv[++i]);}
       else if (!strcmp(argv[i],"-wstruc") && (i<argc-1)) par.wstruc=atof(argv[++i]); 
       else if (!strcmp(argv[i],"-opt") && (i<argc-1)) par.opt=atoi(argv[++i]); 
+      else if (!strcmp(argv[i],"-scwin") && (i<argc-1)) {par.columnscore=5; par.half_window_size_local_aa_bg_freqs = imax(1,atoi(argv[++i]));}
       else if (!strcmp(argv[i],"-sc") && (i<argc-1)) par.columnscore=atoi(argv[++i]); 
       else if (!strcmp(argv[i],"-corr") && (i<argc-1)) par.corr=atof(argv[++i]); 
       else if (!strcmp(argv[i],"-def")) par.readdefaultsfile=1; 
@@ -619,6 +620,17 @@ void RealignByWorker(Hit& hit)
   while (!hitlist.End())
     {
       hit_cur = hitlist.ReadNext();
+      
+      // Realign only around previous Viterbi hit
+      hit.i1 = hit_cur.i1;
+      hit.i2 = hit_cur.i2;
+      hit.j1 = hit_cur.j1;
+      hit.j2 = hit_cur.j2;
+      hit.nsteps = hit_cur.nsteps;
+      hit.i = hit_cur.i;
+      hit.j = hit_cur.j;
+      hit.realign_around_viterbi=true;
+
       //fprintf(stderr,"  t->name=%s   hit_cur.irep=%i  hit.irep=%i  nhits=%i\n",t.name,hit_cur.irep,hit.irep,nhits);
       // Align q to template in *hit[bin]
       hit.Forward(q,t);

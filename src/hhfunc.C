@@ -259,10 +259,10 @@ void ReadAndPrepare(char* infile, HMM& q, Alignment* qali=NULL)
 	  // Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
 	  q.PreparePseudocounts();
 	  // Add amino acid pseudocounts to query:  q.p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
-	  q.AddAminoAcidPseudocounts(q.has_pseudocounts ? 0:par.pcm, par.pca, par.pcb, par.pcc);;
+	  q.AddAminoAcidPseudocounts(par.pcm, par.pca, par.pcb, par.pcc);;
         } else {
 	  // Add context specific pseudocount to query
-	  q.AddContextSpecificPseudocounts(q.has_pseudocounts ? 0:par.pcm);
+	  q.AddContextSpecificPseudocounts(par.pcm);
         }
         
         q.CalculateAminoAcidBackground();
@@ -309,10 +309,10 @@ void ReadAndPrepare(char* infile, HMM& q, Alignment* qali=NULL)
 	  // Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
 	  q.PreparePseudocounts();
 	  // Add amino acid pseudocounts to query:  p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
-	  q.AddAminoAcidPseudocounts(q.has_pseudocounts ? 0:par.pcm, par.pca, par.pcb, par.pcc);
+	  q.AddAminoAcidPseudocounts(par.pcm, par.pca, par.pcb, par.pcc);
         } else {
 	  // Add context specific pseudocount to query
-	  q.AddContextSpecificPseudocounts(q.has_pseudocounts ? 0:par.pcm);
+	  q.AddContextSpecificPseudocounts(par.pcm);
         }
 
         q.CalculateAminoAcidBackground();
@@ -379,6 +379,8 @@ void ReadAndPrepare(char* infile, HMM& q, Alignment* qali=NULL)
     if (par.addss==1)
       CalculateSS(q);
 
+    if (par.columnscore == 5 && !q.divided_by_local_bg_freqs) q.DivideBySqrtOfLocalBackgroundFreqs(par.half_window_size_local_aa_bg_freqs);
+
     if (par.forward>=1) q.Log2LinTransitionProbs(1.0);
     return;
 }
@@ -398,7 +400,7 @@ void PrepareTemplate(HMM& q, HMM& t, int format)
 	t.PreparePseudocounts();
 	
 	// Add amino acid pseudocounts to query:  p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
-	t.AddAminoAcidPseudocounts(t.has_pseudocounts ? 0:par.pcm, par.pca, par.pcb, par.pcc);
+	t.AddAminoAcidPseudocounts(par.pcm, par.pca, par.pcb, par.pcc);
 
         t.CalculateAminoAcidBackground();
     }
