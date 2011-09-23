@@ -564,7 +564,7 @@ void ProcessArguments(int argc, char** argv)
       else if (!strcmp(argv[i],"-mac") || !strcmp(argv[i],"-MAC")) par.forward=2;
       else if (!strcmp(argv[i],"-map") || !strcmp(argv[i],"-MAP")) par.forward=2;
       else if (!strcmp(argv[i],"-vit")) par.forward=0;
-      else if (!strncmp(argv[i],"-glo",3)) {par.loc=0; if (par.mact>0.3 && par.mact<0.301) {par.mact=0;} }
+      else if (!strncmp(argv[i],"-glo",3)) {par.loc=0; if (par.mact>0.35 && par.mact<0.351) {par.mact=0;} }
       else if (!strncmp(argv[i],"-loc",4)) par.loc=1;
       else if (!strncmp(argv[i],"-alt",4) && (i<argc-1)) par.altali=atoi(argv[++i]);
       else if (!strcmp(argv[i],"-r")) par.repmode=1;

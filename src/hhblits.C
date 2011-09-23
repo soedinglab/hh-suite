@@ -674,7 +674,7 @@ void ProcessArguments(int argc, char** argv)
 	MAXRES=atoi(argv[++i]);
 	MAXCOL=2*MAXRES;
       }
-      else if (!strncmp(argv[i],"-glo",3)) {par.loc=0; if (par.mact>0.3 && par.mact<0.301) {par.mact=0;} }
+      else if (!strncmp(argv[i],"-glo",3)) {par.loc=0; if (par.mact>0.35 && par.mact<0.351) {par.mact=0;} }
       else if (!strncmp(argv[i],"-loc",4)) par.loc=1;
       else if (!strncmp(argv[i],"-alt",4) && (i<argc-1)) par.altali=atoi(argv[++i]);
       else if (!strcmp(argv[i],"-shift") && (i<argc-1)) par.shift=atof(argv[++i]);
@@ -1766,7 +1766,6 @@ int main(int argc, char **argv)
 #endif
 
   SetDefaults();
-  par.mact = 0.5;
   par.premerge = 3;
   par.Ndiff = 1000;
   par.prefilter=true;

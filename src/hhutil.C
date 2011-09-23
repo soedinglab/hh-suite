@@ -524,8 +524,8 @@ void SetDefaults()
   par.ssw=0.11f;               // weight of ss scoring
   par.ssw_realign=0.11f;       // weight of ss scoring for realign
   par.ssa=1.0f;                // weight of ss evolution matrix
-  par.shift=-0.01f;            // Shift match score up
-  par.mact=0.3001f;            // Score threshold for MAC alignment in local mode (set to 0.5001 to track user modification)
+  par.shift=-0.03f;            // Shift match score up
+  par.mact=0.3501f;            // Score threshold for MAC alignment in local mode (set to 0.5001 to track user modification)
   par.corr=0.1f;               // Weight of correlations of scores for |i-j|<=4
   par.wstruc=1.0f;             // Weight of structure scores
 
