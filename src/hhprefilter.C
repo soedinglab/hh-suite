@@ -727,9 +727,14 @@ void init_no_prefiltering()
 	  // Add hit to dbfiles
 	  char db_name[NAMELEN];
 	  
-	  if (!strncmp(word,"cl|",3))   // kClust formatted database (NR20, NR30, UNIPROT20)
+	  if (!strncmp(word,"cl|",3))   // kClust formatted database (NR20, ...)
 	    {
 	      substr(db_name,word,3,11);
+	      strcat(db_name,".hhm");
+	    }
+	  else if (!strncmp(word,"UP20|",5) || !strncmp(word,"NR20|",5)) // kClust formatted database (NR20, ...)
+	    {
+	      substr(db_name,word,5,13);
 	      strcat(db_name,".hhm");
 	    }
 	  else                              // other database
@@ -1064,6 +1069,11 @@ void prefilter_with_SW_evalue_preprefilter_backtrace()
       if (!strncmp(tmp_name,"cl|",3))   // kClust formatted database (NR20, NR30, UNIPROT20)
 	{
 	  substr(db_name,tmp_name,3,11);
+	  strcat(db_name,".hhm");
+	}
+      else if (!strncmp(tmp_name,"UP20|",5) || !strncmp(tmp_name,"NR20|",5)) // kClust formatted database (NR20, ...)
+	{
+	  substr(db_name,tmp_name,5,13);
 	  strcat(db_name,".hhm");
 	}
       else                              // other database

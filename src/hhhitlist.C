@@ -316,7 +316,7 @@ void HitList::WriteToAlifile(HMM& q, bool scop_only)
     {
       i++;
       hit = ReadNext();
-      if (scop_only && !strncmp(hit.name,"cl|",3)) continue;
+      if (scop_only && (!strncmp(hit.name,"cl|",3) || !strncmp(hit.name,"UP20|",5) || !strncmp(hit.name,"NR20|",5))) continue;
       if (twice[hit.name]==1) continue; // better hit with same HMM has been listed already
       twice.Add(hit.name,1);
       //if template and query are from the same superfamily

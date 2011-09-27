@@ -2168,7 +2168,7 @@ int main(int argc, char **argv)
 
 		// Update counts
 		cluster_found++;
-		if (!strncmp(hit_cur.name,"cl|",3))   // kClust formatted database (NR20, NR30)
+		if (!strncmp(hit_cur.name,"cl|",3) || !strncmp(hit_cur.name,"UP20|",5) || !strncmp(hit_cur.name,"NR20|",5))   // kClust formatted database (NR20, ...)
 		  {
 		    char *ptr;
 		    ptr = hit_cur.name;
@@ -2249,7 +2249,7 @@ int main(int argc, char **argv)
 
 	    // Update counts
 	    cluster_found++;
-	    if (!strncmp(hit_cur.name,"cl|",3))   // kClust formatted database (NR20, NR30)
+	    if (!strncmp(hit_cur.name,"cl|",3) || !strncmp(hit_cur.name,"UP20|",5) || !strncmp(hit_cur.name,"NR20|",5))   // kClust formatted database (NR20, ...)
 	      {
 		char *ptr;
 		ptr = hit_cur.name;
