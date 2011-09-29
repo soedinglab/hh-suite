@@ -93,6 +93,99 @@ Alignment::~Alignment()
   delete[] ksort;
 }
 
+/////////////////////////////////////////////////////////////////////////////////////
+// Deep-copy constructor
+/////////////////////////////////////////////////////////////////////////////////////
+Alignment& Alignment::operator=(Alignment& ali)
+{
+
+  for(int k=0; k<N_in; ++k)
+    {
+      delete[] sname[k];
+      delete[] seq[k];
+      delete[] X[k];
+      delete[] I[k];
+    }
+
+  L = ali.L;
+  N_in = ali.N_in;
+  N_filtered = ali.N_filtered;
+  N_ss = ali.N_ss;
+  n_display = ali.n_display;
+
+  if (ksort)
+    {
+      delete[] ksort; 
+      ksort=NULL; 
+    }
+
+  if (first)
+    {
+      delete[] first; 
+      first=NULL;
+    }
+
+  if (last)
+    {
+      delete[] last; 
+      last=NULL;
+    }
+
+  if (nres)
+    {
+      delete[] nres;
+      nres = NULL;
+    }
+
+  if (ali.nres)
+    {
+      nres=new(int[N_in]);
+      for(int k=0; k<N_in; ++k)
+	  nres[k] = ali.nres[k];
+    }
+
+  for(int k=0; k<N_in; ++k)
+    {
+      sname[k]=new(char[strlen(ali.sname[k])+1]);
+      if (!sname[k]) MemoryError("array of names for sequences to display");
+      strcpy(sname[k],ali.sname[k]);
+
+      seq[k]=new(char[strlen(ali.seq[k])+1]);
+      if (!seq[k]) MemoryError("array of names for sequences to display");
+      strcpy(seq[k],ali.seq[k]);
+      
+      X[k]=new(char[strlen(ali.seq[k])+2]);
+      if (!X[k]) MemoryError("array for input sequences");
+      I[k]=new(short unsigned int[strlen(ali.seq[k])+2]);
+      if (!I[k]) MemoryError("array for input sequences");
+
+      for(int i = 0; i<=L; ++i)
+	{
+	  X[k][i] = ali.X[k][i];
+	  I[k][i] = ali.I[k][i];
+	}
+
+      keep[k] = ali.keep[k];
+      display[k] = ali.display[k];
+      wg[k] = ali.wg[k];
+
+    }
+
+  kss_dssp = ali.kss_dssp;
+  ksa_dssp = ali.ksa_dssp;
+  kss_pred = ali.kss_pred;
+  kss_conf = ali.kss_conf;
+  kfirst = ali.kfirst;
+
+  strcpy(longname,ali.longname);
+  strcpy(name,ali.name);
+  strcpy(fam,ali.fam);
+  strcpy(file,ali.file);
+
+  for (int i=1; i<=L; ++i) l[i]=ali.l[i];
+
+  return (Alignment&) (*this);
+}
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Reads in an alignment from file into matrix seq[k][l] as ASCII
@@ -442,7 +535,10 @@ void Alignment::Compress(const char infile[])
 
   // Initialize
   for (k=0;k<N_in; ++k) 
-    I[k][0]=0;
+    {
+      I[k][0]=0;
+      X[k][0]=ANY;
+    }
 
   if (v>=3)
     {
@@ -2263,7 +2359,7 @@ void Alignment::WriteToFile(const char* alnfile, const char format[])
 /////////////////////////////////////////////////////////////////////////////////////
 // Read a3m slave alignment of hit from file and merge into (query) master alignment
 /////////////////////////////////////////////////////////////////////////////////////
-void Alignment::MergeMasterSlave(Hit& hit, char ta3mfile[], FILE* ta3mf)
+void Alignment::MergeMasterSlave(Hit& hit, char ta3mfile[], FILE* ta3mf, bool filter_tali)
 {
   Alignment Tali;
   char* cur_seq = new(char[MAXCOL]);   // Sequence currently read in
@@ -2285,7 +2381,8 @@ void Alignment::MergeMasterSlave(Hit& hit, char ta3mfile[], FILE* ta3mf)
 
   // Filter Tali alignment
   Tali.Compress(ta3mfile);
-  N_filtered = Tali.Filter(par.max_seqid,par.coverage,par.qid,par.qsc,par.Ndiff);
+  if (filter_tali)
+    N_filtered = Tali.Filter(par.max_seqid,par.coverage,par.qid,par.qsc,par.Ndiff);
 
   // Record imatch[j]
   int* imatch=new(int[hit.j2+1]);
@@ -2460,6 +2557,7 @@ void Alignment::MergeMasterSlave(Hit& hit, char ta3mfile[], FILE* ta3mf)
   delete[] ksort; ksort=NULL; // if ksort already existed it will be to short for merged alignment
   delete[] first; first=NULL; // if first already existed it will be to short for merged alignment
   delete[] last; last=NULL;   // if last  already existed it will be to short for merged alignment
+  delete[] nres; nres=NULL;   // if nres  already existed it will be to short for merged alignment
 }
 
 

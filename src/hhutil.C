@@ -490,8 +490,9 @@ void SetDefaults()
   par.qsc=-20.0f;              // default for minimum score per column with query
   par.coverage=0;              // default for minimum coverage threshold
   par.Ndiff=100;               // pick Ndiff most different sequences from alignment
+  par.nodiff = false;          // if true, do not filter in output alignment
 
-  par.Neff=0;                 // Filter alignment to a diversity (Neff) with a maximum Neff of par.Neff
+  par.Neff=0;                  // Filter alignment to a diversity (Neff) with a maximum Neff of par.Neff
 
   par.M=1;                     // match state assignment is by A2M/A3M
   par.Mgaps=50;                // Above this percentage of gaps, columns are assigned to insert states (for par.M=2)
@@ -525,7 +526,7 @@ void SetDefaults()
   par.ssw_realign=0.11f;       // weight of ss scoring for realign
   par.ssa=1.0f;                // weight of ss evolution matrix
   par.shift=-0.03f;            // Shift match score up
-  par.mact=0.3501f;            // Score threshold for MAC alignment in local mode (set to 0.5001 to track user modification)
+  par.mact=0.3501f;            // Score threshold for MAC alignment in local mode (set to 0.3501 to track user modification)
   par.corr=0.1f;               // Weight of correlations of scores for |i-j|<=4
   par.wstruc=1.0f;             // Weight of structure scores
 
