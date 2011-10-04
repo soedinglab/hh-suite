@@ -682,10 +682,10 @@ a tilde '~'. Roughly speaking, amino acids that occur with $>=60\%$ probability
 (before adding pseudocounts) are written as capital letters and amino acids that have 
 $>=40\%$ probability are written as lower case letters, where gaps are included
 in the fraction counts. More precisely, when the gap-corrected amino acid fraction
-    \[p_i(a)*N_eff(i)/(N_eff+1)\]
+    \[p_i(a)*N_{eff}(i)/(N_{eff}+1)\]
 is above 0.6 (0.4) an upper (lower) case letter is used for amino acid a.
-Here, $p_i(a)$ is the emission probability for a in column i, $N_eff$ is the effective 
-number of sequences in the entire multiple alignment (between 1 and 20) and $N_eff(i)$ is 
+Here, $p_i(a)$ is the emission probability for a in column i, $N_{eff}$ is the effective 
+number of sequences in the entire multiple alignment (between 1 and 20) and $N_{eff}(i)$ is 
 the effective number of sequences in the subalignment consisting of those sequences
 that do not have a gap in column i. These percentages increase
 approximately inversely proportionally with the fraction of gaps in the column, 
@@ -1003,7 +1003,11 @@ The next line specifies the null model frequencies, which are extracted from the
 \end{equation}
  After the two annotation lines that specify the order of columns for the emission and transition probabilities that follow, there is a line which is not currently read by HHsearch and that lists the transition frequencies from the begin state to the first Match state, Insert state and Delete state.
 
-The last block contains two lines for each column of the HMM. The first line starts with the amino acid in the master sequence at that column in the HMM and the column number. Following are 20  positive integers representing the match state amino acid emission frequencies (see eq.\ \ref{transformation}). Asterisks \verb`*` stand for a frequency of 0 (which would otherwise be represented by 99999). Please note that, unlike in HMMer format,  \emph{the emission frequencies do not contain pseudo-counts} in the HHsearch model format. The second line contains the seven transition frequencies (eq.\ \ref{transformation}) and three subalignment diversities. \verb`Neff` specifies to the local diversity, i.e. the diversity of the subalignment of all sequences containing a residue at this particular column of the alignment. Similarly, \verb`Neff_I` refers to the alignment of all sequences containing an insert at this position, and \verb`Neff_D` refers to the aligment of all sequences having a Delete at this position. The end of the model is indicated by a line containing only \verb`\\`. 
+The last block contains two lines for each column of the HMM. The first line starts with the amino acid in the master sequence at that column in the HMM and the column number. Following are 20  positive integers representing the match state amino acid emission frequencies (see eq.\ \ref{transformation}). Asterisks \verb`*` stand for a frequency of 0 (which would otherwise be represented by 99999). Please note that, unlike in HMMer format,  \emph{the emission frequencies do not contain pseudo-counts} in the HHsearch model format. The second line contains the seven transition frequencies (eq.\ \ref{transformation}) and three local diversities, \verb`Neff_M`, \verb`Neff_I`, and \verb`Neff_D` (see next paragraph). The end of the model is indicated by a line containing only \verb`\\`.
+
+\subsubsection*{Calculating of the local numbers of effective sequences}
+
+\verb`Neff_M(i)` quantifies the local diversity of the alignment at a position $i$. More precisely, it measures the diversity of subalignment $Ali_M(i)$ that contains all sequences that have a residue at column $i$ of the full alignment. The subalignment contains all columns for which at least 90\% of these sequences have no end gap. End gaps are gaps to the left of the first residue or to the right of the last residue. The latter condition ensures that the sequences in the subalignment $Ali_M(i)$ cover most of the columns in it. The number of effective sequences in the subalignment $Ali_M(i)$ is exp of the average sequence entropy over all columns of the subalignment. Hence, \verb`Neff_M` is bounded by 0 from below and 20 from above. (In practive, it is bounded by the entropy of a column with background amino acid distribution $f_a$: $N_{eff} < \sum_{a=1}^{20} f_a log f_a \approx 16$.) Similarly, \verb`Neff_I(i)` gives the diversity of the subalignment $Ali_I(i)$ of all sequences that have an insert at position $i$, and \verb`Neff_D(i)` refers to the diversity of subaligment $Ali_D(i)$ of all sequences that have a Delete (a gap) at position $i$ of the full alignment. The number of effective sequences of the full alignment, which appears as NEFF in the header of each hhm file, is the average of \verb`Neff_M(i)` over all alignment positions $i$.
 
 \newpage
 
