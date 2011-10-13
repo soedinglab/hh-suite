@@ -151,7 +151,6 @@ my $match='';     # match quality symbols
 my $program=0;    # 1: hhalign, 0: hhsearch; important to know in which databases to search for HMM
 
 my $hhblits_db = "";
-my $hhblits_mode = 0; # 0: normal, 1: hhblits database, need FFindex
 my $hhblits_hmms = "";
 
 my $createmodel = 0; # 0: normal search, 1: create model
@@ -233,6 +232,20 @@ while($line=<RESFILE>){
 			print("Error: '$template.hhm' could not be found in $db");
 			next;
 		}
+	} elsif ($program==2) {
+	    # HHblits identifier
+	    if ($template =~ /^\S+?\|(\S+?)\|.*/) {
+		$template = $1;
+		$tmp{'tag'}=$template;
+	    
+		$hhblits_hmms .= "$template.hhm "; 
+		$db = "";
+	    } else {
+		$tmp{'tag'}=$template;
+	    
+		$hhblits_hmms .= "$template.hhm "; 
+		$db = "";
+	    }
 	} else {
 	    # hhsearch: look in hhpred databases for HMM
 
@@ -301,29 +314,9 @@ while($line=<RESFILE>){
 		$tmp{'tag'}=$template;
 		@dirs=glob "$hhpred_dir/pdb*";
 		$db=pop(@dirs);
-	    } elsif ($template =~ /cl\|(\S+?)\|/) {
-		# HHblits identifier
-		$template = $1;
-		$tmp{'tag'}=$template;
-		
-		$hhblits_mode = 1;
-		$hhblits_hmms .= "$template.hhm "; 
-		$db = "";
-
-#		$db = "$tmpdir";
-#		if ($hhblits_db ne "") {
-#		    system("$rootdir/bioprogs/hhblits/ffindex_get $hhblits_db"."_hhm_db $hhblits_db"."_hhm_db.index $template.hhm > $tmpdir/$template.hhm");
-#		}
-#		open (IN, "$tmpdir/$template.hhm");
-#		my $tmp = <IN>;
-#		close IN;
-#		if ($tmp !~ /^HH/ && $hhblits_db ne "") {
-#		    system("$rootdir/bioprogs/hhblits/ffindex_get $hhblits_db"."_a3m_db $hhblits_db"."_a3m_db.index $template.a3m > $tmpdir/$template.a3m");
-#		    system("$hh/hhmake -i $tmpdir/$template.a3m -o $tmpdir/$template.hhm");
-#		}
 	    } 
 
-	    if ($hhblits_mode == 0 && (!$db || (! -e "$db/$template.hhm" && ! -e "$db/$template.db"))) {
+	    if (!$db || (! -e "$db/$template.hhm" && ! -e "$db/$template.db")) {
 		# Some other database?
 		$tmp{'tag'}=$template;
 		$template=~/(\w*)\d*/; # remove numbers
@@ -494,7 +487,7 @@ close RESFILE;
 $q_hmm_ref=&extractModel($basedir.'/'.$id.'.hhm');
 
 # read template hmms
-if ($hhblits_mode == 1) {
+if ($program == 2) {  # HHblits
     my $t_hmms_ref = &extractHHblitsModels($hhblits_hmms);
     @t_hmms = @$t_hmms_ref;
 } else {
