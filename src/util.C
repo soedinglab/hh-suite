@@ -452,8 +452,9 @@ inline int chomp(char str[])
 inline char* fgetline(char str[], const int maxlen, FILE* file)
 {
   if (!fgets(str,maxlen,file)) return NULL;
-  if (chomp(str)+2>=maxlen)    // if line is cut after maxlen characters...
+  if (chomp(str)+1>=maxlen)    // if line is cut after maxlen characters...
     while (fgetc(file)!='\n'); // ... read in rest of line
+  
   return(str);
 }
 
