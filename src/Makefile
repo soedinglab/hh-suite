@@ -1,4 +1,5 @@
-CS_DIR = ../cs/src
+CS_DIR = ../lib/cs/src
+FFINDEX_DIR?=../lib/ffindex/src
 
 # Convert BITS=?? to a -m flag
 BITS_FLAG =
@@ -11,13 +12,13 @@ endif
 
 ifdef ICC
 CXX = env LANG=C icc
-CXXFLAGS = -fast -Wall -fno-strict-aliasing -finline-functions -funroll-loops -fp-model fast=2 -fast-transcendentals -wd981 -wd383 -wd2259 -wd1572 -D HH_SSE3 -I$(CS_DIR)
+CXXFLAGS = -fast -Wall -fno-strict-aliasing -finline-functions -funroll-loops -fp-model fast=2 -fast-transcendentals -wd981 -wd383 -wd2259 -wd1572 -D HH_SSE3 -I$(CS_DIR) -I$(FFINDEX_DIR)
 HHSEARCH_LIBS = -lpthread -lrt
 HHBLITS_LIBS = -lpthread -lrt -openmp
 OBJECT_LIBS = -openmp
 else
 CXX = g++
-CXXFLAGS = -O3 -Wall -Wno-deprecated -Wno-char-subscripts -fno-strict-aliasing -DHH_SSE3 -march=core2 -I$(CS_DIR) $(BITS_FLAG)
+CXXFLAGS = -O3 -Wall -Wno-deprecated -Wno-char-subscripts -fno-strict-aliasing -DHH_SSE3 -march=core2 -I$(CS_DIR) $(BITS_FLAG) -I$(FFINDEX_DIR)
 HHSEARCH_LIBS = -lpthread -lrt
 HHBLITS_LIBS = -lpthread -lrt -fopenmp
 OBJECT_LIBS = -fopenmp
@@ -40,8 +41,8 @@ CS_OBJECTS = $(patsubst %.cc, %.o, $(CS_SOURCES))
 
 HEADERS = hhhitlist.h hhhit.h hhalignment.h hhhmm.h hhfullalignment.h hhfullalignment.h hash.h list.h
 
-TARGETS = hhblits hhsearch hhmake hhalign hhfilter hhconsensus ffindex_build cstranslate
-TARGETS_STATIC = hhblits_static hhsearch_static hhmake_static hhalign_static hhfilter_static hhconsensus_static ffindex_build_static cstranslate_static
+TARGETS = hhblits hhsearch hhmake hhalign hhfilter hhconsensus cstranslate
+TARGETS_STATIC = hhblits_static hhsearch_static hhmake_static hhalign_static hhfilter_static hhconsensus_static cstranslate_static
 TARGETS_VALGRIND = hhblits_valgrind hhsearch_valgrind hhalign_valgrind
 
 all: $(TARGETS)
@@ -59,15 +60,6 @@ cstranslate: $(CS_DIR)/cstranslate_app.cc $(CS_OBJECTS)
 cstranslate_static: $(CS_DIR)/cstranslate_app.cc $(CS_OBJECTS)
 	$(CPP) -static -lm -o ../bin/cstranslate $(CS_DIR)/cstranslate_app.cc $(CS_OBJECTS)
 
-ffindex.o:
-	$(CPP) -c -O3 -fopenmp -g -fPIC -o ffindex.o ffindex.c
-
-ffindex_build: ffindex_build.c
-	$(CPP) -O3 -fopenmp -g -fPIC -o ../bin/ffindex_build ffindex_build.c ffindex.o
-
-ffindex_build_static: ffindex_build.c
-	$(CPP) -static -O3 -fopenmp -g -fPIC -o ../bin/ffindex_build ffindex_build.c ffindex.o
-
 hhsearch: hhsearch.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
 	 $(CPP) hhsearch.C -o ../bin/hhsearch $(CS_OBJECTS) $(HHSEARCH_LIBS)
 
@@ -77,14 +69,14 @@ hhsearch_static: hhsearch.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
 hhsearch_valgrind: hhsearch.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
 	  $(CPP_VALGRIND) hhsearch.C -o ../bin/hhsearch_valgrind $(CS_OBJECTS) $(HHSEARCH_LIBS)
 
-hhblits: hhblits.C $(SOURCES) $(HEADERS) $(CS_OBJECTS) ffindex.o
-	 $(CPP) hhblits.C -o ../bin/hhblits $(CS_OBJECTS) ffindex.o $(HHBLITS_LIBS)
+hhblits: hhblits.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
+	 $(CPP) hhblits.C -o ../bin/hhblits $(CS_OBJECTS) $(HHBLITS_LIBS) $(FFINDEX_DIR)/libffindex.a
 
-hhblits_static: hhblits.C $(SOURCES) $(HEADERS)$(CS_OBJECTS) ffindex.o
-	 $(CPP) -static hhblits.C -o ../bin/hhblits $(CS_OBJECTS) ffindex.o $(HHBLITS_LIBS)
+hhblits_static: hhblits.C $(SOURCES) $(HEADERS)$(CS_OBJECTS)
+	 $(CPP) -static hhblits.C -o ../bin/hhblits $(CS_OBJECTS) $(HHBLITS_LIBS) $(FFINDEX_DIR)/libffindex.a
 
-hhblits_valgrind: hhblits.C $(SOURCES) $(HEADERS)$(CS_OBJECTS) ffindex.o
-	  $(CPP_VALGRIND) hhblits.C -o ../bin/hhblits_valgrind $(CS_OBJECTS) ffindex.o $(HHBLITS_LIBS)
+hhblits_valgrind: hhblits.C $(SOURCES) $(HEADERS)$(CS_OBJECTS)
+	  $(CPP_VALGRIND) hhblits.C -o ../bin/hhblits_valgrind $(CS_OBJECTS) $(HHBLITS_LIBS) $(FFINDEX_DIR)/libffindex.a
 
 hhmake: hhmake.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
 	$(CPP) hhmake.C -o ../bin/hhmake $(CS_OBJECTS)

@@ -55,8 +55,9 @@ using std::string;
 using std::stringstream;
 using std::vector;
 using std::pair;
-
-#include "ffindex.h"     // fast index-based database reading
+extern "C" {
+#include <ffindex.h>     // fast index-based database reading
+}
 
 #include "cs.h"          // context-specific pseudocounts
 #include "context_library.h"
