@@ -1,0 +1,64 @@
+############################
+# Install HHblits          #
+############################
+
+- set INSTALL_DIR in Makefile to preferred location
+
+- run "make"
+
+- run "make install"
+
+- download databases from FTP-server
+  (ftp://toolkit.lmb.uni-muenchen.de/HHblits/)
+
+
+############################
+# HHblits usage            #
+############################
+
+
+HHblits databases
+#################
+
+HHblits needs an HMM-database containing of HHM- or HMMER-files for all database proteins (e.g. uniprot20_hhm_db) 
+and a special cs-database-file for the fast prefilter (e.g. uniprot20.cs219). When performing more than 1 iteration 
+of HHblits or when an alignment should be generated (i.e. -oa3m option), HHblits needs also an A3M-database 
+containing A3M-alignments for each profile HMM (e.g. uniprot20_a3m_db).
+Databases can be downloaded from our FTP-server (ftp://toolkit.lmb.uni-muenchen.de/HHblits/databases/).
+
+
+HHblits libraries
+#################
+
+For running HHblits two library-files are needed which are located in the data folder. 
+The paths to these files need to be adapted in the default-file (.hhdefaults in the bin-directory).
+
+
+Running HHblits
+###############
+
+HHblits reads default options and directory paths from the file ".hhdefaults" in the binaries directory. This file needs to 
+be adapted. All default options can be overridden on the command line.
+
+For performing a single search iteration of HHblits (corresponding to an HHsearch run with prefiltering), run HHblits 
+with the following command:
+
+$ bin/hhblits -i <input-file> -o <result-file> -n 1 -d <database-basename>
+
+For generating an alignment of homologous sequences, we recommend the following options:
+
+$ bin/hhblits -i <input-file> -o <result-file> -oa3m <result-alignment> -d <database-basename>
+
+You can get a detailed list of options for HHblits by running HHblits with the "-h" option.
+
+
+License
+#######
+
+The HHblits/HHsearch software package is distributed under the terms of the "Attribution-NonCommercial-3.0 license"
+from Creative Commons (http://creativecommons.org/licenses/by-nc/3.0/). For a more detailed license info, see Userguide.
+
+
+************************************************
+* For a more detailed help, see the Userguide. *
+************************************************

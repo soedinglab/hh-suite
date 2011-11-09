@@ -1176,7 +1176,7 @@ sub ExtractPdbcodeAndChain()
     
     else {
 	$pdbcode=$name;
-	$chain="A";
+	$chain="[A1 ]";
 #	return 1; # no SCOP/DALI/pdb sequence 
     }
 

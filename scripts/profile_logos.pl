@@ -164,7 +164,7 @@ $matchcols=$1;
 while ($line=<RESFILE>) { if ($line=~/^Command/ || $line=~/^\s*$/) {last;} }
 if ($line=~/-aliw\s+(\d+)/) {$alnwidth=$1;} else {$alnwidth=80;}
 if ($line=~/hhalign/) {$program=1;} 
-elsif ($line=~/hhblits/) {
+elsif ($line=~/^Command\s+\S+hhblits /) {
     $program=2;
     if ($line =~ /-d (\S+) /) {
 	$hhblits_db = $1;
