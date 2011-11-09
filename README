@@ -31,14 +31,20 @@ HHblits libraries
 #################
 
 For running HHblits two library-files are needed which are located in the data folder. 
-The paths to these files need to be adapted in the default-file (.hhdefaults in the bin-directory).
+The paths to these files need to be adapted in the default-file (see below).
 
 
 Running HHblits
 ###############
 
-HHblits reads default options and directory paths from the file ".hhdefaults" in the binaries directory. This file needs to 
-be adapted. All default options can be overridden on the command line.
+HHblits reads default options and directory paths from the file ".hhdefaults". The method automatically checks the following
+locations for a default file:
+
+<program-path>/.hhdefaults
+<HOME>/.hhdefaults
+/etc/hh/hhdefaults
+
+This file needs to be adapted. All default options can be overridden on the command line.
 
 For performing a single search iteration of HHblits (corresponding to an HHsearch run with prefiltering), run HHblits 
 with the following command:
