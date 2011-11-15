@@ -1,4 +1,5 @@
 INSTALL_DIR?=/usr/local
+dist_name=hh-suite-2.2.21
 
 all_static: ffindex_static
 	cd src && make all_static
@@ -34,9 +35,18 @@ install:
 	mkdir -p $(INSTALL_DIR)/lib/hh
 	install data/context_data.lib $(INSTALL_DIR)/lib/hh/context_data.lib
 	install data/cs219.lib $(INSTALL_DIR)/lib/hh/cs219.lib
+	install bin/.hhdefaults $(INSTALL_DIR)/lib/hh/hhdefaults
 
 
 clean:
 	cd lib/cs/src && make clean
 	cd lib/ffindex && make clean
 	cd src && make clean
+
+dist/$(dist_name).tar.gz:
+	mkdir -p dist
+	git archive --prefix=$(dist_name)/ -o dist/$(dist_name).tar.gz HEAD
+	cd dist && tar xf $(dist_name).tar.gz
+	mkdir -p dist/$(dist_name)/bin
+	cd dist/$(dist_name) && rsync --exclude .git --exclude .hg -av ../../lib .
+	cd dist && tar czf $(dist_name).tar.gz $(dist_name)
