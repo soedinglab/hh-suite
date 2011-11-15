@@ -741,6 +741,7 @@ void init_no_prefiltering()
 	    {
 	      strcpy(db_name,word);
 	      strtr(db_name,"|", "_");
+	      strtr(db_name,".", "_");
 	      strcat(db_name,".");
 	      strcat(db_name,db_ext);
 	    }
@@ -1080,6 +1081,7 @@ void prefilter_with_SW_evalue_preprefilter_backtrace()
 	{
 	  strcpy(db_name,tmp_name);
 	  strtr(db_name,"|", "_");
+	  strtr(db_name,".", "_");
 	  strcat(db_name,".");
 	  strcat(db_name,db_ext);
 	}
