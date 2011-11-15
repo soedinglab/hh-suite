@@ -33,7 +33,7 @@ install:
 	install bin/hhblits $(INSTALL_DIR)/bin/hhfilter
 	install bin/hhblits $(INSTALL_DIR)/bin/hhmake
 	install bin/hhblits $(INSTALL_DIR)/bin/hhsearch
-	mkdir -p $(INSTALL_DIR)/lib/hh
+	mkdir -p $(INSTALL_DIR)/$(libdir)/hh
 	install data/context_data.lib $(INSTALL_DIR)/$(libdir)/hh/context_data.lib
 	install data/cs219.lib $(INSTALL_DIR)/$(libdir)/hh/cs219.lib
 	install bin/.hhdefaults $(INSTALL_DIR)/$(libdir)/hh/hhdefaults
