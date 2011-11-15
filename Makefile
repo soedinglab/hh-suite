@@ -1,4 +1,5 @@
 INSTALL_DIR?=/usr/local
+libdir=`([[ -d /usr/lib64 ]] && echo lib64) || echo lib`
 dist_name=hh-suite-2.2.21
 
 all_static: ffindex_static
@@ -33,9 +34,9 @@ install:
 	install bin/hhblits $(INSTALL_DIR)/bin/hhmake
 	install bin/hhblits $(INSTALL_DIR)/bin/hhsearch
 	mkdir -p $(INSTALL_DIR)/lib/hh
-	install data/context_data.lib $(INSTALL_DIR)/lib/hh/context_data.lib
-	install data/cs219.lib $(INSTALL_DIR)/lib/hh/cs219.lib
-	install bin/.hhdefaults $(INSTALL_DIR)/lib/hh/hhdefaults
+	install data/context_data.lib $(INSTALL_DIR)/$(libdir)/hh/context_data.lib
+	install data/cs219.lib $(INSTALL_DIR)/$(libdir)/hh/cs219.lib
+	install bin/.hhdefaults $(INSTALL_DIR)/$(libdir)/hh/hhdefaults
 
 
 clean:
