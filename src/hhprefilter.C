@@ -1029,7 +1029,7 @@ void prefilter_with_SW_evalue_preprefilter_backtrace()
     }
   if (v>=2)
     {
-      printf("HMMs passed prefilter 1 (gapless profile-profile alignment): %6i\n", count_dbs);
+      printf("HMMs passed prefilter 1 (gapless profile-profile alignment)  : %6i\n", count_dbs);
       //printf("%6i hits through preprefilter!\n", count_dbs);
     }
   if (print_elapsed) ElapsedTimeSinceLastCall("(ungapped preprefilter)");

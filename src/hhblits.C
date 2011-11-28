@@ -2100,8 +2100,8 @@ int main(int argc, char **argv)
 
     // Search datbases
     if (v>=2) {
-      printf("HMMs passed prefilter 2 (gapped profile-profile alignment) : %6i\n", (ndb_new+ndb_old));
-      printf("HMMs not found in previous iterations                      : %6i\n", ndb_new);
+      printf("HMMs passed prefilter 2 (gapped profile-profile alignment)   : %6i\n", (ndb_new+ndb_old));
+      printf("HMMs passed prefilter 2 and not found in previous iterations : %6i\n", ndb_new);
       printf("Searching with full HMM-HMM alignment\n");
     }
 
@@ -2293,7 +2293,7 @@ int main(int argc, char **argv)
       printf("Diversity of created alignment (%4.2f) is above threshold (%4.2f). Stop searching!\n", q->Neff_HMM, neffmax);
     } else {
       if (v>=2 && (round < num_rounds || *par.alnfile || *par.psifile || *par.hhmfile || *alis_basename))
-	printf("Number of effective sequences of resulting HMM: Neff = %4.2f\n", q->Neff_HMM);
+	printf("Number of effective sequences of resulting query HMM: Neff = %4.2f\n", q->Neff_HMM);
     }
 
     if (Qali.N_in>=MAXSEQ)
