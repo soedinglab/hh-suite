@@ -1,4 +1,4 @@
-CS_DIR = ../lib/cs/src
+CS_DIR = cs
 FFINDEX_DIR?=../lib/ffindex/src
 
 # Convert BITS=?? to a -m flag

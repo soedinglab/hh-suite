@@ -6,8 +6,8 @@
 #include <cstdio>     // printf
 #include <stdlib.h>   // exit
 #include <time.h>     // clock
-#include <cassert>
 #endif
+#include <cassert>
 #include <sys/time.h>
 #include <sys/stat.h>
 #include <sys/types.h>
