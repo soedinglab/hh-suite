@@ -16,23 +16,23 @@ struct ali_pos {
 
 #define SHORT_BIAS 32768
 
-int LDB = 0;              // number of characters of input cs-database
-int num_dbs = 0;
+int LDB = 0;              // number of characters of input prefilter database file
+int num_dbs = 0;          // number of sequences in prefilter database file
 Hash<char>* doubled;
 
-int pos;
-int block_count;
-char actual_hit[NAMELEN];
-int* block;
+int pos;                  // 
+int block_count;          //
+char actual_hit[NAMELEN]; //
+int* block;               // int array keeping start and stop positions (i1,j1, i2,j2) of prefilter alignment
 
-char** dbnames;
-int LQ;
-unsigned char* qc;
-unsigned char* X;
-unsigned char** first;
-int* length;
-int W;
-unsigned short* qw;
+char** dbnames;           // array containing all sequence names in prefilter db file
+int LQ;                   // length of query profile
+unsigned char* qc;        // extended column state query profile as char 
+unsigned char* X;         // database string of all concatenated all DB seqs in column state representation 
+unsigned char** first;    // pointer to first letter of next sequence in X
+int* length;              // length of next sequence in X
+int W;                    // 
+unsigned short* qw;       // extended column state query profile as short int
 int Ww;
 
 // fast Smith-Waterman with SSE
@@ -686,6 +686,8 @@ int ungapped_sse_score(const unsigned char* query_profile,
   return score;
 }
 
+
+// Pull out all names from prefilter db file and copy into dbfiles_new for full HMM-HMM comparison
 void init_no_prefiltering()
 {
   // Get DBsize
@@ -796,7 +798,7 @@ void init_prefilter()
 
   if (v>1) printf("\nFull database size: %6i\n",par.dbsize);
 
-  X = (unsigned char*)memalign(16,LDB*sizeof(unsigned char));                 // database string (concatenate all DB-seqs)
+  X = (unsigned char*)memalign(16,LDB*sizeof(unsigned char));                     // database string (concatenate all DB-seqs)
   first = (unsigned char**)memalign(16,(2*par.dbsize)*sizeof(unsigned char*));    // first characters of db sequences
   length = (int*)memalign(16,(2*par.dbsize)*sizeof(int));                         // lengths of db sequences
   dbnames = new char*[par.dbsize*2];                                              // names of db sequences
@@ -834,11 +836,12 @@ void init_prefilter()
 	  char* linep = line;
 	  while (*linep!=0)
 	    {
-	      c = *linep < 0 ? *linep + 256 : *linep;
+	      // The following arithmetic transformation is necessary since this is the way characters are encoded by the cstranslate program
+	      c = *linep < 0 ? *linep + 256 : *linep; // isn't it possible to remove the if using bit operations for speed-up??
 	      if (cs::AS219::kValidChar[c])
 	      	{
 	      	  X[pos++]=(unsigned char)(cs::AS219::kCharToInt[c]);
-	      	  len++;
+	      	  ++len;
 	      	}
 	      else
 	      	cerr<<endl<<"WARNING: ignoring invalid symbol \'"<<*linep<<"\' of "<<db<<"\n";
@@ -874,14 +877,14 @@ void stripe_query_profile()
       
   q_tmp->CalculateAminoAcidBackground();
 
-  // Build query profile with 62 column states
+  // Build query profile with 219 column states
   query_profile = new float*[LQ+1];
   for (i=0; i<LQ+1; ++i) 
     query_profile[i]=(float*) memalign(16,cs::AS219::kSize*sizeof(float));
       
   const cs::ContextLibrary<cs::AA>& lib = *cs_lib;
 
-  // log (S(i,c)) = log ( SUM_a p(i,a) * p(c,a) / f(a) )   c: column state, i: pos in ali, a: amino acid
+  // log (S(i,k)) = log ( SUM_a p(i,a) * p(k,a) / f(a) )   k: column state, i: pos in ali, a: amino acid
   for (i=0; i<LQ; ++i)
     for (k=0; k<(int)cs::AS219::kSize; ++k)
       {
@@ -909,9 +912,9 @@ void stripe_query_profile()
   	      else
   		{
   		  float dummy = flog2(query_profile[j+1][a])*par.prefilter_bit_factor + par.prefilter_score_offset + 0.5;
-  		  if (dummy>255.99) dummy = 255.5;
-  		  if (dummy<0) dummy = 0.0;
-  		  qc[h] = (unsigned char) dummy;  // 1/3 bits & make scores >=0 everywhere
+  		  if (dummy>255.0) qc[h] = 255;
+  		  else if (dummy<0) qc[h] = 0;
+  		  else if qc[h] = (unsigned char) dummy;  // 1/3 bits & make scores >=0 everywhere
   		}
   	      ++h;
   	      j+=W;

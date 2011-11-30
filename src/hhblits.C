@@ -92,29 +92,29 @@ extern "C" {
 
 char line[LINELEN]="";         // input line
 string command;
-char* ptr;                // pointer for string manipulation
+char* ptr;                     // pointer for string manipulation
 int bin;                       // bin index
-const char print_elapsed=0;
-char tmp_file[]="/tmp/hhblitsXXXXXX";
+const char print_elapsed=0;    // debug output for runtimes
+char tmp_file[]="/tmp/hhblitsXXXXXX";  // for runtime secondary structure prediction (only with -addss option)
 
 // HHblits variables
 const char HHBLITS_VERSION[]="version 2.2.20 (Sep 2011)";
-const char HHBLITS_REFERENCE[]="to be published.\n";
+const char HHBLITS_REFERENCE[]="Remmert M., Biegert A., Hauser A., and Soeding J., to be published.\n";
 const char HHBLITS_COPYRIGHT[]="(C) Michael Remmert and Johannes Soeding\n";
 
 const int MAXNUMDB=20000;               // maximal number of hits through prefiltering
-const int MAXNUMDB_NO_PREFILTER=100000; // maximal number of hits without prefiltering
+const int MAXNUMDB_NO_PREFILTER=200000; // maximal number of hits without prefiltering
 int num_rounds   = 2;                   // number of iterations
 bool last_round = false;                // set to true in last iteration
 bool already_seen_filter = true;        // Perform filtering of already seen HHMs
-bool block_filter = true;               // Perform viterbi and forward algorithm only on block given by prefiltering
+bool block_filter = true;               // Perform viterbi and forward algorithm only on unshaded tube given by prefiltering
 bool realign_old_hits = false;          // Realign old hits in last round or use previous alignments
 
-char input_format = 0;                  // Set to 1, if input in HMMER format (has already pseudocounts)
+char input_format = 0;                  // Set to 1 if input in HMMER format (has already pseudocounts)
 
 float neffmax = 10;                     // Break if Neff > Neffmax
 
-int cpu = 1;
+int cpu = 2;                            // default: use 2 cores
 
 char config_file[NAMELEN];
 char infile[NAMELEN];
@@ -222,6 +222,9 @@ inline int PickBin(char status)
 
 ///////////////////////////////////////////////////////////////////////////////////////
 //// Do the pairwise comparison of q and *(t[bin]) for the database search
+//// Combination of RealignByWorker and AlignByWorker: 
+//// Picks hits found in previous iterations and recalculates Viterbi scores using 
+//// query profile from last iteration while KEEPING original (MAC) alignment.
 //////////////////////////////////////////////////////////////////////////////////////
 void PerformViterbiByWorker(int bin)
 {
@@ -331,7 +334,7 @@ void help()
   printf("\n");
   printf("Other options:                                                                           \n");
   printf(" -v <int>       verbose mode: 0:no screen output  1:only warings  2: verbose (def=%i)    \n",v);
-  printf(" -cpu <int>     number of CPUs to use (for shared memory SMPs) (default=1)               \n");
+  printf(" -cpu <int>     number of CPUs to use (for shared memory SMPs) (default=%i)               \n",cpu);
 #ifndef PTHREAD
   printf("(The -cpu option is inactive since POSIX threads ae not supported on your platform)      \n");
 #endif
@@ -420,7 +423,6 @@ void help_all()
   printf("               1,2: ss scoring after or during alignment  [default=%1i]       \n",par.ssm);
   printf("               3,4: ss scoring after or during alignment, predicted vs. predicted \n");
   printf(" -ssw [0,1]    weight of ss score  (def=%-.2f)                                \n",par.ssw);
-  printf(" -ssw_mac [0,1]  weight of ss score for MAC algorithm while realigning (def=%-.2f)       \n",par.ssw_realign);
   printf("\n");
   printf("Pseudocount options:                                                                     \n");
   printf(" -pcm  0-2      Pseudocount mode (default=%-i)                                           \n",par.pcm);
@@ -453,7 +455,7 @@ void help_all()
   printf("\n");
   printf("Other options:                                                                           \n");
   printf(" -v <int>       verbose mode: 0:no screen output  1:only warings  2: verbose (def=%i)    \n",v);
-  printf(" -cpu <int>     number of CPUs to use (for shared memory SMPs) (default=1)               \n");
+  printf(" -cpu <int>     number of CPUs to use (for shared memory SMPs) (default=%i)              \n",cpu);
   printf(" -scores <file> write scores for all pairwise comparisions to file                       \n");
   printf(" -atab   <file> write all alignments in tabular layout to file                           \n");
   printf(" -maxres <int>  max number of columns in HMM (def=%5i)                                   \n",MAXRES);
@@ -671,7 +673,6 @@ void ProcessArguments(int argc, char** argv)
       else if (!strcmp(argv[i],"-norealign")) par.realign=0;
       else if (!strcmp(argv[i],"-ssm") && (i<argc-1)) par.ssm=atoi(argv[++i]);
       else if (!strcmp(argv[i],"-ssw") && (i<argc-1)) par.ssw=atof(argv[++i]);
-      else if (!strcmp(argv[i],"-ssw_mac") && (i<argc-1)) par.ssw_realign=atof(argv[++i]);
       else if (!strcmp(argv[i],"-maxres") && (i<argc-1)) {
 	MAXRES=atoi(argv[++i]);
 	MAXCOL=2*MAXRES;
@@ -725,8 +726,7 @@ void ReadInputFile()
       while (fgetline(line,LINELEN,inf))
       	  if (line[0] == '>')
       	      num_seqs++;
-      if (num_seqs == 1 && par.M == 1) 
-	par.M=3;
+      if (num_seqs == 1 && par.M == 1) par.M=3; // if only single sequence in input file, use par.M=3 (match states by first seq)
       fclose(inf);
     }
   else
@@ -748,7 +748,7 @@ void ReadInputFile()
   if (!qa3mf) 
     {
       // Read query alignment from HHM	
-      Qali.GetSeqsFromHMM(*q,par.infile);
+      Qali.GetSeqsFromHMM(*q);
       Qali.Compress("compress Qali");
 
       if (num_rounds > 1 || *par.alnfile || *par.psifile || *par.hhmfile || *alis_basename)
@@ -770,7 +770,7 @@ void ReadInputFile()
       if (num_seqs == 1 && par.M != 2) {
 	int num_gaps = strtr(Qali.seq[0], "-", "-");
 	if (num_gaps > 1) {  // 1 gap is always given at array pos 0
-	  fprintf(stderr, "WARNING! Your input sequence contains gaps. These gaps will be ignored in this search!\nIf you wan't to keep these gap as background states, you could start HHblits with the '-M 100' option.\n");
+	  fprintf(stderr, "WARNING! Your input sequence contains gaps. These gaps will be ignored in this search!\nIf you wan't to make HHblits treat these as match states, you could start HHblits with the '-M 100' option.\n");
 	}
       }
 
@@ -797,9 +797,12 @@ void ReadInputFile()
   v=v1;
 }
 
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Perform Viterbi HMM-HMM search on all db HMM names in dbfiles
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void search_loop(char *dbfiles[], int ndb, bool alignByWorker=true)
 {
-  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Search databases
   for (bin=0; bin<bins; bin++) {hit[bin]->realign_around_viterbi=false;}
 
@@ -1006,14 +1009,67 @@ void search_loop(char *dbfiles[], int ndb, bool alignByWorker=true)
 	}
     }
 #endif
-  // End search databases
-  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+}
+// End search_loop() of Viterbi HMM-HMM seach of database
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+// Wrapper around default Viterbi HMM-HMM search (function search_loop)
+void search_database(char *dbfiles[], int ndb, int db_size)
+{
+  // Initialize and allocate space for dynamic programming
+  jobs_running = 0;
+  jobs_submitted = 0;
+  reading_dbs=1;   // needs to be set to 1 before threads are created
+  for (bin=0; bin<bins; bin++)
+    bin_status[bin] = FREE;
+
+#ifdef PTHREAD
+  // Start threads for database search
+  for (int j=0; j<threads; j++)
+    {
+      thread_data[j].thread_id = j+1;
+      thread_data[j].function  = &AlignByWorker;
+      if (DEBUG_THREADS) fprintf(stderr,"Creating worker thread %i ...",j+1);
+      pthread_create(&pthread[j], &joinable, WorkerLoop, (void*)&thread_data[j]);
+      if (DEBUG_THREADS) fprintf(stderr," created!\n");
+    }
+#endif
+
+  // Initialize
+  int v1=v;
+  if (v>0 && v<=3) v=1; else v-=2;
+  if (print_elapsed) ElapsedTimeSinceLastCall("(preparing for search)");
+
+  hitlist.N_searched=db_size; //hand over number of HMMs scanned to hitlist (for E-value calculation)
+
+  //////////////////////////////////////////////////////////
+  // Start Viterbi search through db HMMs listed in dbfiles
+  search_loop(dbfiles,ndb);
+
+  if (v1>=1) cout<<"\n";
+  v=v1;
+
+  if (print_elapsed) ElapsedTimeSinceLastCall("(search through database)");
+
+  // Sort list according to sortscore
+  if (v>=3) printf("Sorting hit list ...\n");
+  hitlist.SortList();
+
+  // Use NN prediction of lamda and mu
+  hitlist.CalculatePvalues(*q);  
+
+  // Calculate E-values as combination of P-value for Viterbi HMM-HMM comparison and prefilter E-value: E = Ndb P (Epre/Ndb)^alpha
+  if (par.prefilter)
+    hitlist.CalculateHHblitsEvalues(*q);
 
 }
 
-/////////////////////////////////////////////////////////////////////////////////////
-// Perform Viterbi search on each hit object in previous_hits, but keep old alignment
-/////////////////////////////////////////////////////////////////////////////////////
+
+
+// Variant of search_database() function:
+// Perform Viterbi search on each hit object in global hash previous_hits, but keep old alignment
 void perform_viterbi_search(int db_size)
 {
   // Initialize and allocate space for dynamic programming
@@ -1058,15 +1114,20 @@ void perform_viterbi_search(int db_size)
 	  strcpy(dbfiles[ndb],hit_cur.dbfile);
 	  ++ndb;
 	}
-      // Seach only around viterbi hit
+
+      // Seach only around previous HMM-HMM alignment (not the prefilter alignment as in search_database())
       if (block_filter)
 	{
+	  // Hash par.block_shading contains pointer to int array which is here called block.
+	  //        This array contains start and stop positions of alignment for shading
+	  // Hash par.block_shading_counter contains currently next free position in par.block_shading int array
+
 	  //printf("Viterbi hit %s   q: %i-%i   t: %i-%i\n",hit_cur.name, hit_cur.i1, hit_cur.i2, hit_cur.j1, hit_cur.j2);
 	  int* block;
 	  int counter;
 	  if (par.block_shading->Contains(hit_cur.name))
 	    {
-	      block = par.block_shading->Show(hit_cur.name);
+	      block = par.block_shading->Show(hit_cur.name); 
 	      counter = par.block_shading_counter->Remove(hit_cur.name);
 	    }
 	  else
@@ -1090,6 +1151,8 @@ void perform_viterbi_search(int db_size)
   
   hitlist.N_searched=db_size; //hand over number of HMMs scanned to hitlist (for E-value calculation)
 
+  //////////////////////////////////////////////////////////
+  // Start Viterbi search through db HMMs listed in dbfiles
   search_loop(dbfiles,ndb,false);
 
   if (v1>=1) cout<<"\n";
@@ -1110,51 +1173,8 @@ void perform_viterbi_search(int db_size)
   
 }
 
-void search_database(char *dbfiles[], int ndb, int db_size)
-{
-  // Initialize and allocate space for dynamic programming
-  jobs_running = 0;
-  jobs_submitted = 0;
-  reading_dbs=1;   // needs to be set to 1 before threads are created
-  for (bin=0; bin<bins; bin++)
-    bin_status[bin] = FREE;
 
-#ifdef PTHREAD
-  // Start threads for database search
-  for (int j=0; j<threads; j++)
-    {
-      thread_data[j].thread_id = j+1;
-      thread_data[j].function  = &AlignByWorker;
-      if (DEBUG_THREADS) fprintf(stderr,"Creating worker thread %i ...",j+1);
-      pthread_create(&pthread[j], &joinable, WorkerLoop, (void*)&thread_data[j]);
-      if (DEBUG_THREADS) fprintf(stderr," created!\n");
-    }
-#endif
 
-  // Initialize
-  int v1=v;
-  if (v>0 && v<=3) v=1; else v-=2;
-  if (print_elapsed) ElapsedTimeSinceLastCall("(preparing for search)");
-
-  hitlist.N_searched=db_size; //hand over number of HMMs scanned to hitlist (for E-value calculation)
-
-  search_loop(dbfiles,ndb);
-
-  if (v1>=1) cout<<"\n";
-  v=v1;
-
-  if (print_elapsed) ElapsedTimeSinceLastCall("(search through database)");
-
-  // Sort list according to sortscore
-  if (v>=3) printf("Sorting hit list ...\n");
-  hitlist.SortList();
-
-  hitlist.CalculatePvalues(*q);  // Use NN prediction of lamda and mu
-
-  if (par.prefilter)
-    hitlist.CalculateHHblitsEvalues(*q);
-
-}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Realign hits with MAC algorithm
@@ -1196,6 +1216,10 @@ void perform_realign(char *dbfiles[], int ndb)
 	  // Seach only around viterbi hit
 	  if (block_filter)
 	    {
+	      // Hash par.block_shading contains pointer to int array which is here called block.
+	      //        This array contains start and stop positions of alignment for shading
+	      // Hash par.block_shading_counter contains currently next free position in par.block_shading int array
+	      
 	      //printf("Viterbi hit %s   q: %i-%i   t: %i-%i\n",hit_cur.name, hit_cur.i1, hit_cur.i2, hit_cur.j1, hit_cur.j2);
 	      int* block;
 	      int counter;
@@ -1955,7 +1979,7 @@ int main(int argc, char **argv)
 // Set secondary structure substitution matrix
   if (par.ssm) SetSecStrucSubstitutionMatrix();
 
-  // Prepare CS pseudocounts lib
+  // Prepare context state pseudocounts lib
   if (*par.clusterfile) {
     fin = fopen(par.clusterfile, "r");
     if (!fin) OpenFileError(par.clusterfile);
@@ -1966,6 +1990,7 @@ int main(int argc, char **argv)
     lib_pc = new cs::LibraryPseudocounts<cs::AA>(*context_lib, par.csw, par.csb);
   }
 
+  // Prepare column state lib (context size =1 )
   fin = fopen(par.cs_library, "r");
   if (!fin) OpenFileError(par.cs_library);
   cs_lib = new cs::ContextLibrary<cs::AA>(fin);
@@ -2019,7 +2044,7 @@ int main(int argc, char **argv)
     Qali_nodiff = Qali;
 
   //////////////////////////////////////////////////////////
-  // Main loop
+  // Main loop overs search iterations
   //////////////////////////////////////////////////////////
 
   if (v>=2) printf("\n************************************************************\n* Building alignment for query with %i iteration(s) HHblits *\n************************************************************\n\n",num_rounds);
@@ -2029,7 +2054,7 @@ int main(int argc, char **argv)
     if (v>=2) printf("\nIteration %i\n",round);
 
     // Settings for different rounds
-    if (par.premerge > 0 && round > 1 && previous_hits->Size() > (par.premerge-1))
+    if (par.premerge > 0 && round > 1 && previous_hits->Size() >= par.premerge)
       {
 	if (v>3) printf("Set premerge to 0! (premerge: %i   iteration: %i   hits.Size: %i)\n",par.premerge,round,previous_hits->Size());
 	par.premerge = 0;
@@ -2105,6 +2130,8 @@ int main(int argc, char **argv)
       printf("Searching with full HMM-HMM alignment\n");
     }
 
+    // Main Viterbi HMM-HMM search
+    // Starts with empty hitlist (hits of previous iterations were deleted) and creates a hitlist with the hits of this iteration
     search_database(dbfiles_new,ndb_new,(ndb_new + ndb_old));
 
     // check for new hits or end with iteration
@@ -2143,14 +2170,9 @@ int main(int argc, char **argv)
 	  }
       }
 
-    int ssw_orig = par.ssw;
-    par.ssw = par.ssw_realign;
-
     // Realign hits with MAC algorithm
     if (par.realign)
       perform_realign(dbfiles_new,ndb_new);
-
-    par.ssw = ssw_orig;
 
     // Generate alignment for next iteration
     if (round < num_rounds || *par.alnfile || *par.psifile || *par.hhmfile || *alis_basename)
@@ -2172,7 +2194,7 @@ int main(int argc, char **argv)
 		hit_cur = hitlist.ReadNext();
 		if (hit_cur.Eval > 100.0*par.e) break; // E-value much too large
 		if (hit_cur.Eval > par.e) continue; // E-value too large
-		if (hit_cur.matched_cols < MINCOLS_REALIGN) continue; // leave out to short alignments
+		if (hit_cur.matched_cols < MINCOLS_REALIGN) continue; // leave out too short alignments
 		stringstream ss_tmp;
 		ss_tmp << hit_cur.name << "__" << hit_cur.irep;
 		if (previous_hits->Contains((char*)ss_tmp.str().c_str())) continue;  // Already in alignment
@@ -2188,7 +2210,7 @@ int main(int argc, char **argv)
 		else
 		  seqs_found++;
 
-		// Continue, if template alignment already merged during premerging
+		// Skip mering this hit if hit alignment was already merged during premerging
 		if (premerged_hits->Contains((char*)ss_tmp.str().c_str())) continue;
 
 		// Read a3m alignment of hit from <file>.a3m file and merge into Qali alignment
@@ -2289,11 +2311,11 @@ int main(int argc, char **argv)
     if (v>=2)
       printf("%i sequences belonging to %i database HMMs found with an E-value < %-6.4g\n",seqs_found,cluster_found, par.e);
 
+    if (v>=2 && (round < num_rounds || *par.alnfile || *par.psifile || *par.hhmfile || *alis_basename))
+      printf("Number of effective sequences of resulting query HMM: Neff = %4.2f\n", q->Neff_HMM);
+
     if (q->Neff_HMM > neffmax && round < num_rounds) {
-      printf("Diversity of created alignment (%4.2f) is above threshold (%4.2f). Stop searching!\n", q->Neff_HMM, neffmax);
-    } else {
-      if (v>=2 && (round < num_rounds || *par.alnfile || *par.psifile || *par.hhmfile || *alis_basename))
-	printf("Number of effective sequences of resulting query HMM: Neff = %4.2f\n", q->Neff_HMM);
+      printf("Diversity is above threshold (%4.2f). Stop searching! (Change threshold using -neffmax <float>.)\n", neffmax);
     }
 
     if (Qali.N_in>=MAXSEQ)
@@ -2386,6 +2408,10 @@ int main(int argc, char **argv)
 	}
       
     }
+
+  ////////////////////////////////////////////////////
+  // Clean up 
+  ////////////////////////////////////////////////////
 
   fclose(dbhhm_data_file);
   fclose(dbhhm_index_file);

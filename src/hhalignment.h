@@ -34,7 +34,7 @@ public:
   void Read(FILE* inf, char infile[NAMELEN], char* line=NULL);
 
   // Read sequences from HHM-file into X (uncompressed) in ASCII characters
-  void GetSeqsFromHMM(HMM& q, char infile[NAMELEN]);
+  void GetSeqsFromHMM(HMM& q);
   
   // Convert ASCII to numbers between 0 and 20, throw out all insert states, 
   // record their number in I[k][i] and store sequences to be displayed in sname[k] and seq[k]

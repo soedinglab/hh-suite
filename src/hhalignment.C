@@ -454,15 +454,13 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline)
 /////////////////////////////////////////////////////////////////////////////////////
 // Copy sequences from HMM into matrix seq[k][l] as ASCII
 /////////////////////////////////////////////////////////////////////////////////////
-void Alignment::GetSeqsFromHMM(HMM& q, char infile[])
+void Alignment::GetSeqsFromHMM(HMM& q)
 {
   int qk;                 // Index of sequence in HHM
   int k;                  // Index of sequence being read currently (first=0)
 
   char cur_seq[MAXCOL];   // Sequence currently read in
   
-  RemoveExtension(file,infile);  //copy rootname (w/o path) of infile into file variable of class object
-
   kss_dssp=ksa_dssp=kss_pred=kss_conf=kfirst=-1;
   n_display=0;
   N_in=0;
