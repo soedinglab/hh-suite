@@ -11,11 +11,12 @@ all: ffindex_static
 hhblits_static: hhblits_static
 	cd src && make hhblits_static
 
-hhblits: cs ffindex
+hhblits: ffindex
+	mkdir -p bin
 	cd src && make all
 
-cs:
-	cd lib/cs/src && make OPENMP=1 cssgd
+#cs:
+#	cd lib/cs/src && make OPENMP=1 cssgd
 
 ffindex:
 	cd lib/ffindex && make
@@ -40,7 +41,7 @@ install:
 
 
 clean:
-	cd lib/cs/src && make clean
+	#cd lib/cs/src && make clean
 	cd lib/ffindex && make clean
 	cd src && make clean
 
