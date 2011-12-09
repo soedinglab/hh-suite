@@ -914,7 +914,7 @@ void stripe_query_profile()
   		  float dummy = flog2(query_profile[j+1][a])*par.prefilter_bit_factor + par.prefilter_score_offset + 0.5;
   		  if (dummy>255.0) qc[h] = 255;
   		  else if (dummy<0) qc[h] = 0;
-  		  else if qc[h] = (unsigned char) dummy;  // 1/3 bits & make scores >=0 everywhere
+  		  else qc[h] = (unsigned char) dummy;  // 1/3 bits & make scores >=0 everywhere
   		}
   	      ++h;
   	      j+=W;
