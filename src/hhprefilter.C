@@ -794,8 +794,6 @@ void init_prefilter()
   if (par.dbsize == 0 || LDB == 0)
     {cerr<<endl<<"Error! Could not determine DB-size of prefilter db ("<<db<<")\n"; exit(4);}
 	    
-  par.hhblits_prefilter_logpval=-log(par.prefilter_evalue_thresh / (float)par.dbsize);
-
   if (v>1) printf("\nFull database size: %6i\n",par.dbsize);
 
   X = (unsigned char*)memalign(16,LDB*sizeof(unsigned char));                     // database string (concatenate all DB-seqs)
@@ -819,7 +817,7 @@ void init_prefilter()
       if (line[0] == '>')  // Header
 	{
 	  if (len > 0)           // if it is not the first sequence
-	    length[num_dbs++] = imin(MAXRES,len);
+	    length[num_dbs++] = imin(par.maxres,len);
 	  len = 0;
 	      
 	  strwrd(word,line+1);
@@ -838,6 +836,7 @@ void init_prefilter()
 	    {
 	      // The following arithmetic transformation is necessary since this is the way characters are encoded by the cstranslate program
 	      c = *linep < 0 ? *linep + 256 : *linep; // isn't it possible to remove the if using bit operations for speed-up??
+	      if (linep-line<10) printf("",*linep,c);
 	      if (cs::AS219::kValidChar[c])
 	      	{
 	      	  X[pos++]=(unsigned char)(cs::AS219::kCharToInt[c]);
@@ -853,7 +852,7 @@ void init_prefilter()
     }
 
   if (len > 0)
-    length[num_dbs++] = imin(MAXRES,len);
+    length[num_dbs++] = imin(par.maxres,len);
       
   fclose(dbf);
 }
@@ -914,7 +913,7 @@ void stripe_query_profile()
   		  float dummy = flog2(query_profile[j+1][a])*par.prefilter_bit_factor + par.prefilter_score_offset + 0.5;
   		  if (dummy>255.0) qc[h] = 255;
   		  else if (dummy<0) qc[h] = 0;
-  		  else if qc[h] = (unsigned char) dummy;  // 1/3 bits & make scores >=0 everywhere
+  		  else qc[h] = (unsigned char) dummy;  // 1/3 bits & make scores >=0 everywhere
   		}
   	      ++h;
   	      j+=W;
@@ -922,7 +921,7 @@ void stripe_query_profile()
   	}
     }
 
-  // Add extra ANY-state
+  // Add extra ANY-state (220'th state) 
   h = par.prefilter_states*W*16;
   for (i=0; i < W; ++i) 
     {
@@ -966,7 +965,7 @@ void stripe_query_profile()
 	}
     }
       
-  // Add extra ANY-state
+  // Add extra ANY-state 
   h = par.prefilter_states*Ww*8;
   for (i=0; i < Ww; ++i) 
     {

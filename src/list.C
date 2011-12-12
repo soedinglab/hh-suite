@@ -23,6 +23,7 @@ using std::cerr;
 
 
 
+
 ////////////////////////////////////////////////////////////////////////////////////////////
 // Constructors and destructor
 
@@ -84,7 +85,7 @@ List<Typ>::~List()
 // Flat copy
 ////////////////////////////////////////////////////////////////////////////
 template <class Typ> 
-List<Typ>& List<Typ>::operator=(List<Typ>& l)
+inline List<Typ>& List<Typ>::operator=(List<Typ>& l)
 {
   head = l.head;
   tail = l.tail;
@@ -226,7 +227,7 @@ inline Typ List<Typ>::ReadPrevious()
 }
 
 ////////////////////////////////////////////////////////////////////////////
-// Reads next element; advances current position by 1
+// Reads address next data element; advances current position by 1
 ////////////////////////////////////////////////////////////////////////////
 template <class Typ> 
 inline Typ* List<Typ>::ReadNextAddress()
@@ -237,7 +238,7 @@ inline Typ* List<Typ>::ReadNextAddress()
 }
 
 ////////////////////////////////////////////////////////////////////////////
-// Reads address of current element again, returns NULL if at end of list
+// Reads address of data element if current element again, returns NULL if at end of list
 ////////////////////////////////////////////////////////////////////////////
 template <class Typ> 
 inline Typ* List<Typ>::ReadCurrentAddress()

@@ -39,7 +39,7 @@ const char VERSION_AND_DATE[]="version 1.0 November 2005";
 const char REFERENCE[]="Soding, J. To be published\n";
 const char COPYRIGHT[]="(C) Johannes Soeding (see LICENSE file)\n";
 const int MAXFILES=32768; // maximum number of files to process
-const int LINELEN=32768;  // max length of line read in from input files; must be >= MAXCOL 
+const int LINELEN=32768;  // max length of line read in from input files; must be >= par.maxcol 
 const int NAMELEN=128;    // max length of file names etc.
 const int IDLEN=32;       // max length of scop hierarchy id and pdb-id
  

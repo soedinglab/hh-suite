@@ -8,22 +8,23 @@
 // head and tail optionally contain a NULL element of Typ defined by method Null(Typ)
 ////////////////////////////////////////////////////////////////////////////////
 
+
 template<class Typ> 
 class List
 {
-protected:
-template<class Typ1> 
-class ListEl             //elements of List; essentially a data structure
-  {
-  public:
-    Typ1 data;           //Typ is type of data to be stored in list
-    ListEl* prev;        //points to previous list element
-    ListEl* next;        //points to next list element
+ protected:
+  template<class Typ1> 
+    class ListEl             //elements of List; essentially a data structure
+    {
+    public:
+      Typ1 data;           //Typ is type of data to be stored in list
+      ListEl* prev;        //points to previous list element
+      ListEl* next;        //points to next list element
     ListEl() : prev(0), next(0) {}
     ListEl(Typ1 d) : data(d), prev(0), next(0) {}
     ListEl(ListEl* p, ListEl* n) : prev(p), next(n) {}
     ListEl(Typ1 d, ListEl* p, ListEl* n) : data(d), prev(p), next(n) {}
-  };
+    };
   
   ListEl<Typ>* head;     //points to dummy element at beginning of list
   ListEl<Typ>* tail;     //points to dummy element at end of list    
@@ -90,10 +91,10 @@ public:
   // Moves current position back by 1 and reads previous element; returns head->data if at beginning of list.
   Typ ReadPrevious(); 
 
-  // Advances current position by 1 and reads address of next element; returns NULL if at end of list.
+  // Advances current position by 1 and reads address of next data element; returns NULL if at end of list.
   Typ* ReadNextAddress(); 
 
-  // Reads address of current element again, returns NULL if at end of list
+  // Reads address of current data element again, returns NULL if at end of list
   Typ* ReadCurrentAddress(); 
 
   // Sets current position to k and reads k'th element (first=1). Returns head->data if current points to no data element
@@ -114,6 +115,12 @@ public:
 
   // Reset current position to End (one AFTER the last)
   int SetToEnd() {current = tail; return size;} 
+
+  // Reads address of current data element again, returns NULL if at end of list
+  void* GetCurrentElementAddress() {return (void*) current;} 
+
+  // Set current position to pointer 
+  void SetCurrentElementAdress(void* pointer) {current = (ListEl<Typ>*) pointer;} 
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -168,5 +175,4 @@ public:
   // Use INSERTSORT to sort list in asscending order. Use only for PRESORTED lists, otherwise time O(N^2)!
   void ResortList(); 
 };
-
 

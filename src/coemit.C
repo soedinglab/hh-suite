@@ -33,9 +33,9 @@ if (var6>max)  { max=var6; varb=MI;};
 #define frand() ((float) rand()/(RAND_MAX+1.0))
 
 
-const int MAXRES=15002; //max number of columns in HMM; must be <= LINELEN
-const int MAXCOL=32766; //max number of residues in input files; must be <= LINELEN and >= MAXRES
-const int LINELEN=32766; //max length of line read in from input files; must be >= MAXCOL 
+const int par.maxres=15002; //max number of columns in HMM; must be <= LINELEN
+const int MAXCOL=32766; //max number of residues in input files; must be <= LINELEN and >= par.maxres
+const int LINELEN=32766; //max length of line read in from input files; must be >= par.maxcol 
 const int MAXSEQALI=10238; //max number of sequences stored in 'hit' objects and displayed in output alignment 
 const int NAA=20;       //number of amino acids (0-19)
 const int IDLEN=31;     //max length of scop hierarchy id and pdb-id
@@ -520,11 +520,11 @@ class HMM
   int L;                    // length of HMM = number of match states; set in declaration of HMM object
   int N_in;                 // number of sequences in alignment
   int N_filtered;           // number of sequences after filtering
-  float Neff_M[MAXRES];     // Neff_M[i] = diversity of subalignment of seqs that have residue in col i
-  float Neff_I[MAXRES];     // Neff_I[i] = diversity of subalignment of seqs that have insert in col i
-  float Neff_D[MAXRES];     // Neff_D[i] = diversity of subalignment of seqs that have delete in col i
+  float Neff_M[par.maxres];     // Neff_M[i] = diversity of subalignment of seqs that have residue in col i
+  float Neff_I[par.maxres];     // Neff_I[i] = diversity of subalignment of seqs that have insert in col i
+  float Neff_D[par.maxres];     // Neff_D[i] = diversity of subalignment of seqs that have delete in col i
   float Neff_HMM;           // average number of Neff over total length of HMM
-  char annotchr[MAXRES];    // consensus amino acids in ASCII format, or, in HMMER format, the reference annotation character in insert line
+  char annotchr[par.maxres];    // consensus amino acids in ASCII format, or, in HMMER format, the reference annotation character in insert line
 
   char longname[DESCLEN];   // Full name of first sequence of original alignment (NAME field)
   char name[NAMELEN];       // HMM name = first word in longname in lower case
@@ -536,10 +536,10 @@ class HMM
 
   float lamda, mu;          // coefficients for score distribution of HMM using parameters in 'Parameters par'
 
-  float f[MAXRES][NAA+3];   // f[i][a] = prob of finding amino acid a in column i WITHOUT pseudocounts
-  float g[MAXRES][NAA];     // f[i][a] = prob of finding amino acid a in column i WITH pseudocounts
-  float p[MAXRES][NAA];     // p[i][a] = prob of finding amino acid a in column i WITH OPTIMUM pseudocounts
-  float tr[MAXRES][NTRANS]; // log2 of transition probabilities M2M M2I M2D I2M I2I D2M D2D 
+  float f[par.maxres][NAA+3];   // f[i][a] = prob of finding amino acid a in column i WITHOUT pseudocounts
+  float g[par.maxres][NAA];     // f[i][a] = prob of finding amino acid a in column i WITH pseudocounts
+  float p[par.maxres][NAA];     // p[i][a] = prob of finding amino acid a in column i WITH OPTIMUM pseudocounts
+  float tr[par.maxres][NTRANS]; // log2 of transition probabilities M2M M2I M2D I2M I2I D2M D2D 
 
   // Read an HMM from a HHsearch .hhm file and return 0 at end of file
   int Read(FILE* dbf, char firstline[LINELEN]=NULL);
@@ -549,12 +549,12 @@ class HMM
 
 
 private:
-  char ss_dssp[MAXRES];     // secondary structure determined by dssp 0:-  1:H  2:E  3:C  4:S  5:T  6:G  7:B
-  char sa_dssp[MAXRES];     // solvent accessibility state determined by dssp 0:-  1:A (absolutely buried) 2:B  3:C  4:D  5:E (exposed)
-  char ss_pred[MAXRES];     // predicted secondary structure          0:-  1:H  2:E  3:C
-  char ss_conf[MAXRES];     // confidence value of prediction         0:-  1:0 ... 10:9
+  char ss_dssp[par.maxres];     // secondary structure determined by dssp 0:-  1:H  2:E  3:C  4:S  5:T  6:G  7:B
+  char sa_dssp[par.maxres];     // solvent accessibility state determined by dssp 0:-  1:A (absolutely buried) 2:B  3:C  4:D  5:E (exposed)
+  char ss_pred[par.maxres];     // predicted secondary structure          0:-  1:H  2:E  3:C
+  char ss_conf[par.maxres];     // confidence value of prediction         0:-  1:0 ... 10:9
   float pav[NAA];           // pav[a] = average freq of amino acids in HMM (including subst matrix pseudocounts)
-  int l[MAXRES];            // l[i] = pos. of j'th match state in aligment
+  int l[par.maxres];            // l[i] = pos. of j'th match state in aligment
 
   // Utility for Read()
   int Warning(FILE* dbf, char line[], char name[])
@@ -696,7 +696,7 @@ int HMM::Read(FILE* dbf, char firstline[LINELEN])
       // Read template sequences that should get displayed in output alignments 
       else if (!strcmp("SEQ",str3))
 	{
-	  char cur_seq[MAXCOL]; //Sequence currently read in
+	  char cur_seq[par.maxcol]; //Sequence currently read in
 	  int k;                // sequence index; start with -1; after reading name of n'th sequence-> k=n
 	  int h;                // index for character in input line
 	  int l=1;              // index of character in sequence seq[k]
@@ -752,7 +752,7 @@ int HMM::Read(FILE* dbf, char firstline[LINELEN])
 		  // Check whether all characters are correct; store into cur_seq
 		  if (k==nss_dssp) // lines with dssp secondary structure states (. - H E C S T G B)
 		    {
-		      while (h<LINELEN && line[h]>'\0' && l<MAXCOL-1)
+		      while (h<LINELEN && line[h]>'\0' && l<par.maxcol-1)
 			{
 			  if (ss2i(line[h])>=0 && line[h]!='.') 
 			    {
@@ -768,7 +768,7 @@ int HMM::Read(FILE* dbf, char firstline[LINELEN])
 		    }
 		  if (k==nsa_dssp) // lines with dssp secondary solvent accessibility (- A B C D E)
 		    {
-		      while (h<LINELEN && line[h]>'\0' && l<MAXCOL-1)
+		      while (h<LINELEN && line[h]>'\0' && l<par.maxcol-1)
 			{
 			  if (sa2i(line[h])>=0) 
 			    {
@@ -784,7 +784,7 @@ int HMM::Read(FILE* dbf, char firstline[LINELEN])
 		    }
 		  else if (k==nss_pred) // lines with predicted secondary structure (. - H E C)
 		    {
-		      while (h<LINELEN && line[h]>'\0' && l<MAXCOL-1)
+		      while (h<LINELEN && line[h]>'\0' && l<par.maxcol-1)
 			{
 			  if (ss2i(line[h])>=0 && ss2i(line[h])<=3 && line[h]!='.') 
 			    {
@@ -800,7 +800,7 @@ int HMM::Read(FILE* dbf, char firstline[LINELEN])
 		    }
 		  else if (k==nss_conf) // lines with confidence values should contain only 0-9, '-', or '.'
 		    {
-		      while (h<LINELEN && line[h]>'\0' && l<MAXCOL-1)
+		      while (h<LINELEN && line[h]>'\0' && l<par.maxcol-1)
 			{
 			  if (line[h]=='-' || (line[h]>='0' && line[h]<='9')) 
 			    {
@@ -815,7 +815,7 @@ int HMM::Read(FILE* dbf, char firstline[LINELEN])
 		    }
 		  else // normal line containing residues
 		    {
-		      while (h<LINELEN && line[h]>'\0' && l<MAXCOL-1)
+		      while (h<LINELEN && line[h]>'\0' && l<par.maxcol-1)
 			{
 			  if (aa2i(line[h])>=0 && line[h]!='.') // ignore '.' and white-space characters ' ', \t and \n (aa2i()==-1)
 			    {cur_seq[l]=line[h]; l++;}
@@ -826,8 +826,8 @@ int HMM::Read(FILE* dbf, char firstline[LINELEN])
 		    }
 		  cur_seq[l]='\0';  //Ensure that cur_seq ends with a '\0' character
 
-		  if (v && l>MAXRES-2) 
-		    cerr<<endl<<"WARNING: maximum number "<<MAXRES-2<<" of residues exceded in HMM "<<name<<"\n";
+		  if (v && l>par.maxres-2) 
+		    cerr<<endl<<"WARNING: maximum number "<<par.maxres-2<<" of residues exceded in HMM "<<name<<"\n";
 		} //end else
 	    } //while(getline)
 	  //If this is not the first sequence some residues have already been read in
@@ -940,7 +940,7 @@ int HMM::Read(FILE* dbf, char firstline[LINELEN])
 		  cerr<<endl<<"WARNING: in HMM "<<name<<" there are more columns than the stated length "<<L<<". Skipping HMM\n";
 		  return 2;
 		}
-	      if (i>=MAXRES-2) 
+	      if (i>=par.maxres-2) 
 		{
 		  fgetline(line,LINELEN-1,dbf); // Skip line
 		  continue;
@@ -990,7 +990,7 @@ int HMM::Read(FILE* dbf, char firstline[LINELEN])
   if (lamda && v>=3) printf("HMM %s is already calibrated: lamda=%-5.3f, mu=%-5.2f\n",name,lamda,mu);
 
   if (v && i!=L) cerr<<endl<<"Warning: in HMM "<<name<<" there are only "<<i<<" columns while the stated length is "<<L<<"\n";
-  if (v && i>=MAXRES-2) {i=MAXRES-2; cerr<<endl<<"WARNING: maximum number "<<MAXRES-2<<" of residues exceeded while reading HMM "<<name<<"\n";}
+  if (v && i>=par.maxres-2) {i=par.maxres-2; cerr<<endl<<"WARNING: maximum number "<<par.maxres-2<<" of residues exceeded while reading HMM "<<name<<"\n";}
   if (v && !i)  cerr<<endl<<"WARNING: HMM "<<name<<" contains no match states. Check the alignment that gave rise to this HMM.\n";
   if (v>=2) cout<<"Read in HMM "<<name<<" with "<<L<<" match states and effective number of sequences = "<<Neff_HMM<<"\n";
   L = i;
@@ -1090,7 +1090,7 @@ int HMM::ReadHMMer(FILE* dbf)
 	  if (nsa_dssp<0) 
 	    {
 	      nsa_dssp=k++;
-	      seq[nsa_dssp] = new(char[MAXRES+2]);
+	      seq[nsa_dssp] = new(char[par.maxres+2]);
 	      sname[nsa_dssp] = new(char[NAMELEN]);
 	      strcpy(seq[nsa_dssp]," ");
 	      strcpy(sname[nsa_dssp],"sa_dssp");
@@ -1100,8 +1100,8 @@ int HMM::ReadHMMer(FILE* dbf)
 	  if (ptr) 
 	    {
 	      strcut(ptr);
-	      if (strlen(seq[nsa_dssp])+strlen(ptr)>=(unsigned)(MAXRES)) 
-		printf("\nWARNING: HMM %s has SADSS records with more than %i residues.\n",name,MAXRES);
+	      if (strlen(seq[nsa_dssp])+strlen(ptr)>=(unsigned)(par.maxres)) 
+		printf("\nWARNING: HMM %s has SADSS records with more than %i residues.\n",name,par.maxres);
 	      else strcat(seq[nsa_dssp],ptr);
 	    }
 	}
@@ -1111,7 +1111,7 @@ int HMM::ReadHMMer(FILE* dbf)
 	  if (nss_pred<0) 
 	    {
 	      nss_pred=k++;
-	      seq[nss_pred] = new(char[MAXRES+2]);
+	      seq[nss_pred] = new(char[par.maxres+2]);
 	      sname[nss_pred] = new(char[NAMELEN]);
 	      strcpy(seq[nss_pred]," ");
 	      strcpy(sname[nss_pred],"ss_pred");
@@ -1121,8 +1121,8 @@ int HMM::ReadHMMer(FILE* dbf)
 	  if (ptr) 
 	    {
 	      strcut(ptr);
-	      if (strlen(seq[nss_pred])+strlen(ptr)>=(unsigned)(MAXRES)) 
-		printf("\nWARNING: HMM %s has SSPRD records with more than %i residues.\n",name,MAXRES);
+	      if (strlen(seq[nss_pred])+strlen(ptr)>=(unsigned)(par.maxres)) 
+		printf("\nWARNING: HMM %s has SSPRD records with more than %i residues.\n",name,par.maxres);
 	      else strcat(seq[nss_pred],ptr);
 	    }
 	}
@@ -1132,7 +1132,7 @@ int HMM::ReadHMMer(FILE* dbf)
 	  if (nss_conf<0) 
 	    {
 	      nss_conf=k++;
-	      seq[nss_conf] = new(char[MAXRES+2]);
+	      seq[nss_conf] = new(char[par.maxres+2]);
 	      sname[nss_conf] = new(char[NAMELEN]);
 	      strcpy(seq[nss_conf]," ");
 	      strcpy(sname[nss_conf],"ss_conf");
@@ -1141,8 +1141,8 @@ int HMM::ReadHMMer(FILE* dbf)
 	  if (ptr) 
 	    {
 	      strcut(ptr);
-	      if (strlen(seq[nss_conf])+strlen(ptr)>=(unsigned)(MAXRES)) 
-		printf("\nWARNING: HMM %s has SSPRD records with more than %i residues.\n",name,MAXRES);
+	      if (strlen(seq[nss_conf])+strlen(ptr)>=(unsigned)(par.maxres)) 
+		printf("\nWARNING: HMM %s has SSPRD records with more than %i residues.\n",name,par.maxres);
 	      else strcat(seq[nss_conf],ptr);
 	    }
 	}
@@ -1206,7 +1206,7 @@ int HMM::ReadHMMer(FILE* dbf)
 
 	  // Prepare to store DSSP states (if there are none, delete afterwards)
 	  nss_dssp=k++;
-	  seq[nss_dssp] = new(char[MAXRES+2]);
+	  seq[nss_dssp] = new(char[par.maxres+2]);
 	  sname[nss_dssp] = new(char[NAMELEN]);
 	  strcpy(sname[nss_dssp],"ss_dssp");
 
@@ -1229,7 +1229,7 @@ int HMM::ReadHMMer(FILE* dbf)
 		}
 	      if (i>L && v)
 		cerr<<endl<<"WARNING: in HMM "<<name<<" there are more columns than the stated length "<<L<<"\n";
-	      if (i>=MAXRES-2) 
+	      if (i>=par.maxres-2) 
 		{
 		  fgetline(line,LINELEN-1,dbf); // Skip two lines
 		  fgetline(line,LINELEN-1,dbf); 
@@ -1334,7 +1334,7 @@ int HMM::ReadHMMer(FILE* dbf)
   if (lamda && v>=2) printf("HMM %s is already calibrated: lamda=%-5.3f, mu=%-5.2f\n",name,lamda,mu);
   
   if (v && i!=L) cerr<<endl<<"Warning: in HMM "<<name<<" there are only "<<i<<" columns while the stated length is "<<L<<"\n";
-  if (v && i>=MAXRES-2) {i=MAXRES-2; cerr<<endl<<"WARNING: maximum number "<<MAXRES-2<<" of residues exceeded while reading HMM "<<name<<"\n";}
+  if (v && i>=par.maxres-2) {i=par.maxres-2; cerr<<endl<<"WARNING: maximum number "<<par.maxres-2<<" of residues exceeded while reading HMM "<<name<<"\n";}
   if (v && !i)  cerr<<endl<<"WARNING: HMM "<<name<<" contains no match states. Check the alignment that gave rise to this HMM.\n";
   L = i;
   

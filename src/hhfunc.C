@@ -1,7 +1,7 @@
 // hhfunc.C
 
 
-// Calculate secondary structure prediction with PSIpred
+// Calculate secondary structure prediction with PSIPRED
 void CalculateSS(char *ss_pred, char *ss_conf, char *tmpfile)
 {
   // Initialize
@@ -12,9 +12,9 @@ void CalculateSS(char *ss_pred, char *ss_conf, char *tmpfile)
   strcpy(ss_pred,"-");
   strcpy(ss_conf,"-");
   
-  // Run PSIpred
+  // Run PSIPRED
   
-  // Check for Psipred ver >= 3.0 (weights.dat4 doesn't exists an more)
+  // Check for PSIPRED ver >= 3.0 (weights.dat4 doesn't exists an more)
   strcpy(filename,par.psipred_data);
   strcat(filename,"/weights.dat4");
   FILE* check_exists = fopen(filename,"r");
@@ -113,8 +113,8 @@ void CalculateSS(HMM& q, char *ss_pred, char *ss_conf)
 // Calculate secondary structure for given HMM
 void CalculateSS(HMM& q)
 {
-  char ss_pred[MAXRES];
-  char ss_conf[MAXRES];
+  char ss_pred[par.maxres];
+  char ss_conf[par.maxres];
 
   CalculateSS(q, ss_pred, ss_conf);
 }

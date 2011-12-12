@@ -13,7 +13,7 @@
 #include <iostream>   // cin, cout, cerr
 #include <cstdio>     // printf
 #include <stdlib.h>   // exit
-#include <string>     // strcmp, strstr
+#include <string.h>   // strcmp, strstr
 #include <math.h>     // sqrt, pow
 #include <limits.h>   // INT_MIN
 #include <float.h>    // FLT_MIN
@@ -31,7 +31,7 @@ using std::ofstream;
 #ifndef JLIST
 #define JLIST
 #include "list.h"       // List<Typ>
-#include "list.C"    ////////////////////////////////// DEBUG
+////  #include "list.C"       ////////////////////////////////// DEBUG
 #endif
 
 #include "hash.h"

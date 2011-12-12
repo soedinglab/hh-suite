@@ -214,37 +214,37 @@ void help_out()
 {
   printf("\n");
   printf("Output options:                                                           \n");
-  printf(" -o <file>     write output alignment to file\n"); 
-  printf(" -ofas <file>  write alignments in FASTA, A2M (-oa2m) or A3M (-oa3m) format   \n"); 
-  printf(" -Oa3m <file>  write query alignment in a3m format to file (default=none)\n");
-  printf(" -Aa3m <file>  append query alignment in a3m format to file (default=none)\n");
-  printf(" -atab <file>  write alignment as a table (with posteriors) to file (default=none)\n");
-  printf(" -v <int>      verbose mode: 0:no screen output  1:only warings  2: verbose\n");
-  printf(" -seq  [1,inf[ max. number of query/template sequences displayed  (def=%i)  \n",par.nseqdis);
-  printf(" -nocons       don't show consensus sequence in alignments (default=show) \n");
-  printf(" -nopred       don't show predicted 2ndary structure in alignments (default=show) \n");
-  printf(" -nodssp       don't show DSSP 2ndary structure in alignments (default=show) \n");
-  printf(" -ssconf       show confidences for predicted 2ndary structure in alignments\n");
-  printf(" -aliw int     number of columns per line in alignment list (def=%i)\n",par.aliwidth);
-  printf(" -P <float>    for self-comparison: max p-value of alignments (def=%.2g\n",pself);
-  printf(" -p <float>    minimum probability in summary and alignment list (def=%G) \n",par.p);
-  printf(" -E <float>    maximum E-value in summary and alignment list (def=%G)     \n",par.E);
-  printf(" -Z <int>      maximum number of lines in summary hit list (def=%i)       \n",par.Z);
-  printf(" -z <int>      minimum number of lines in summary hit list (def=%i)       \n",par.z);
-  printf(" -B <int>      maximum number of alignments in alignment list (def=%i)    \n",par.B);
-  printf(" -b <int>      minimum number of alignments in alignment list (def=%i)    \n",par.b);
-  printf(" -rank int     specify rank of alignment to write with -Oa3m or -Aa3m option (default=1)\n");
-  printf(" -tc <file>    write a TCoffee library file for the pairwise comparison   \n");         
-  printf(" -tct [0,100]  min. probobability of residue pairs for TCoffee (def=%i%%)\n",iround(100*probmin_tc));         
+  printf(" -o <file>      write output alignment to file\n"); 
+  printf(" -ofas <file>   write alignments in FASTA, A2M (-oa2m) or A3M (-oa3m) format   \n"); 
+  printf(" -Oa3m <file>   write query alignment in a3m format to file (default=none)\n");
+  printf(" -Aa3m <file>   append query alignment in a3m format to file (default=none)\n");
+  printf(" -atab <file>   write alignment as a table (with posteriors) to file (default=none)\n");
+  printf(" -v <int>       verbose mode: 0:no screen output  1:only warings  2: verbose\n");
+  printf(" -seq  [1,inf[  max. number of query/template sequences displayed  (def=%i)  \n",par.nseqdis);
+  printf(" -nocons        don't show consensus sequence in alignments (default=show) \n");
+  printf(" -nopred        don't show predicted 2ndary structure in alignments (default=show) \n");
+  printf(" -nodssp        don't show DSSP 2ndary structure in alignments (default=show) \n");
+  printf(" -ssconf        show confidences for predicted 2ndary structure in alignments\n");
+  printf(" -aliw int      number of columns per line in alignment list (def=%i)\n",par.aliwidth);
+  printf(" -P <float>     for self-comparison: max p-value of alignments (def=%.2g\n",pself);
+  printf(" -p <float>     minimum probability in summary and alignment list (def=%G) \n",par.p);
+  printf(" -E <float>     maximum E-value in summary and alignment list (def=%G)     \n",par.E);
+  printf(" -Z <int>       maximum number of lines in summary hit list (def=%i)       \n",par.Z);
+  printf(" -z <int>       minimum number of lines in summary hit list (def=%i)       \n",par.z);
+  printf(" -B <int>       maximum number of alignments in alignment list (def=%i)    \n",par.B);
+  printf(" -b <int>       minimum number of alignments in alignment list (def=%i)    \n",par.b);
+  printf(" -rank int      specify rank of alignment to write with -Oa3m or -Aa3m option (default=1)\n");
+  printf(" -tc <file>     write a TCoffee library file for the pairwise comparison   \n");         
+  printf(" -tct [0,100]   min. probobability of residue pairs for TCoffee (def=%i%%)\n",iround(100*probmin_tc));         
   printf("\n");         
 #ifdef HH_PNG
   printf("Dotplot options:\n");
-  printf(" -dwin int     average score in dotplot over window [i-W..i+W] (def=%i)   \n",dotW);
-  printf(" -dthr float   score threshold for dotplot (default=%.2f)                 \n",dotthr);
-  printf(" -dsca int     size of dot plot box in pixels  (default=%i)               \n",dotscale);
-  printf(" -dali <list>  show alignments with indices in <list> in dot plot\n");
-  printf("               <list> = <index1> ... <indexN>  or  <list> = all              \n");
-  printf(" -dmap <file>  print list of coordinates in png plot  \n");
+  printf(" -dwin int      average score in dotplot over window [i-W..i+W] (def=%i)   \n",dotW);
+  printf(" -dthr float    score threshold for dotplot (default=%.2f)                 \n",dotthr);
+  printf(" -dsca int      size of dot plot box in pixels  (default=%i)               \n",dotscale);
+  printf(" -dali <list>   show alignments with indices in <list> in dot plot\n");
+  printf("                <list> = <index1> ... <indexN>  or  <list> = all              \n");
+  printf(" -dmap <file>   print list of coordinates in png plot  \n");
 #endif
 }
 
@@ -252,76 +252,77 @@ void help_hmm()
 {
   printf("\n");
   printf("Options to filter input alignment (options can be combined):              \n");
-  printf(" -id   [0,100] maximum pairwise sequence identity (%%) (def=%i)   \n",par.max_seqid);
-  printf(" -diff [0,inf[ filter most diverse set of sequences, keeping at least this    \n");
-  printf("               many sequences in each block of >50 columns (def=%i)\n",par.Ndiff);
-  printf(" -cov  [0,100] minimum coverage with query (%%) (def=%i) \n",par.coverage);
-  printf(" -qid  [0,100] minimum sequence identity with query (%%) (def=%i) \n",par.qid);
-  printf(" -qsc  [0,100] minimum score per column with query  (def=%.1f)\n",par.qsc);
+  printf(" -id   [0,100]  maximum pairwise sequence identity (%%) (def=%i)   \n",par.max_seqid);
+  printf(" -diff [0,inf[  filter most diverse set of sequences, keeping at least this    \n");
+  printf("                many sequences in each block of >50 columns (def=%i)\n",par.Ndiff);
+  printf(" -cov  [0,100]  minimum coverage with query (%%) (def=%i) \n",par.coverage);
+  printf(" -qid  [0,100]  minimum sequence identity with query (%%) (def=%i) \n",par.qid);
+  printf(" -qsc  [0,100]  minimum score per column with query  (def=%.1f)\n",par.qsc);
   printf("                                                                          \n");
   printf("HMM-building options:                                                     \n");
-  printf(" -M a2m        use A2M/A3M (default): upper case = Match; lower case = Insert;\n");         
-  printf("               '-' = Delete; '.' = gaps aligned to inserts (may be omitted)   \n");
-  printf(" -M first      use FASTA: columns with residue in 1st sequence are match states\n");
-  printf(" -M [0,100]    use FASTA: columns with fewer than X%% gaps are match states   \n");
-  printf(" -tags         do NOT neutralize His-, C-myc-, FLAG-tags, and \n");
-  printf("               trypsin recognition sequence to background distribution    \n");
+  printf(" -M a2m         use A2M/A3M (default): upper case = Match; lower case = Insert;\n");         
+  printf("                '-' = Delete; '.' = gaps aligned to inserts (may be omitted)   \n");
+  printf(" -M first       use FASTA: columns with residue in 1st sequence are match states\n");
+  printf(" -M [0,100]     use FASTA: columns with fewer than X%% gaps are match states   \n");
+  printf(" -tags          do NOT neutralize His-, C-myc-, FLAG-tags, and \n");
+  printf("                trypsin recognition sequence to background distribution    \n");
   printf("                                                                          \n");
   printf("Pseudocount options:                                                      \n");
-  printf(" -Gonnet       use the Gonnet substitution matrix (default)               \n");
-  printf(" -Blosum50     use the Blosum50 substitution matrix                       \n");
-  printf(" -Blosum62     use the Blosum62 substitution matrix                       \n");
-  printf(" -HSDM         use the structure-derived HSDM substitution matrix         \n");
-  printf(" -pcm  0-3     Pseudocount mode (default=%-i)                             \n",par.pcm);
-  printf("               tau = substitution matrix pseudocount admixture            \n");
-  printf("               0: no pseudo counts:     tau = 0                           \n");
-  printf("               1: constant              tau = a                           \n");
-  printf("               2: divergence-dependent: tau = a/(1 + ((Neff-1)/b)^c)       \n");
-  printf("                  Neff=( (Neff_q^d+Neff_t^d)/2 )^(1/d)                       \n");
-  printf("                  Neff_q = av number of different AAs per column in query  \n");
-  printf("               3: column-specific:      tau = \'2\' * (Neff(i)/Neff)^(w*Neff/20)\n");
-  printf(" -pca  [0,1]   set a (overall admixture) (def=%-.1f)                      \n",par.pca);
-  printf(" -pcb  [1,inf[ set b (threshold for Neff) (def=%-.1f)                      \n",par.pcb);
-  printf(" -pcc  [0,3]   set c (extinction exponent for tau(Neff))  (def=%-.1f)      \n",par.pcc);
-  printf(" -pcw  [0,3]   set w (weight of pos-specificity for pcs) (def=%-.1f)      \n",par.pcw);
+  printf(" -Gonnet        use the Gonnet substitution matrix (default)               \n");
+  printf(" -Blosum50      use the Blosum50 substitution matrix                       \n");
+  printf(" -Blosum62      use the Blosum62 substitution matrix                       \n");
+  printf(" -HSDM          use the structure-derived HSDM substitution matrix         \n");
+  printf(" -pcm  0-3      Pseudocount mode (default=%-i)                             \n",par.pcm);
+  printf("                tau = substitution matrix pseudocount admixture            \n");
+  printf("                0: no pseudo counts:     tau = 0                           \n");
+  printf("                1: constant              tau = a                           \n");
+  printf("                2: divergence-dependent: tau = a/(1 + ((Neff-1)/b)^c)       \n");
+  printf("                   Neff=( (Neff_q^d+Neff_t^d)/2 )^(1/d)                       \n");
+  printf("                   Neff_q = av number of different AAs per column in query  \n");
+  printf("                3: column-specific:      tau = \'2\' * (Neff(i)/Neff)^(w*Neff/20)\n");
+  printf(" -pca  [0,1]    set a (overall admixture) (def=%-.1f)                      \n",par.pca);
+  printf(" -pcb  [1,inf[  set b (threshold for Neff) (def=%-.1f)                      \n",par.pcb);
+  printf(" -pcc  [0,3]    set c (extinction exponent for tau(Neff))  (def=%-.1f)      \n",par.pcc);
+  printf(" -pcw  [0,3]    set w (weight of pos-specificity for pcs) (def=%-.1f)      \n",par.pcw);
 }
 
 void help_gap()
 {
   printf("\n");
-  printf("Gap cost options:                                                         \n");
-  printf(" -gapb [0,inf[ transition pseudocount admixture (def=%-.2f)               \n",par.gapb);
-  printf(" -gapd [0,inf[ Transition pseudocount admixture for opening gap (default=%-.2f)\n",par.gapd);
-  printf(" -gape [0,1.5] Transition pseudocount admixture for extending gap (def=%-.1f)\n",par.gape);
-  printf(" -gapf ]0,inf] factor for increasing/reducing the gap open penalty for deletes (def=%-.2f)\n",par.gapf);
-  printf(" -gapg ]0,inf] factor for increasing/reducing the gap open penalty for deletes (def=%-.2f)\n",par.gapg);
-  printf(" -gaph ]0,inf] factor for increasing/reducing the gap extension penalty for deletes(def=%-.2f)\n",par.gaph);
-  printf(" -gapi ]0,inf] factor for increasing/reducing the gap extension penalty for inserts(def=%-.2f)\n",par.gapi);
-  printf(" -egq  [0,inf[ penalty (bits) for end gaps aligned to query residues (def=%-.2f)\n",par.egq);
-  printf(" -egt  [0,inf[ penalty (bits) for end gaps aligned to template residues (def=%-.2f)\n",par.egt);
+  printf("Gap cost options:                                                                      \n");
+  printf(" -gapb [0,inf[  Transition pseudocount admixture (def=%-.2f)                           \n",par.gapb);
+  printf(" -gapd [0,inf[  Transition pseudocount admixture for open gap (default=%-.2f)          \n",par.gapd);
+  printf(" -gape [0,1.5]  Transition pseudocount admixture for extend gap (def=%-.2f)            \n",par.gape);
+  printf(" -gapf ]0,inf]  factor to increase/reduce the gap open penalty for deletes (def=%-.2f) \n",par.gapf);
+  printf(" -gapg ]0,inf]  factor to increase/reduce the gap open penalty for inserts (def=%-.2f) \n",par.gapg);
+  printf(" -gaph ]0,inf]  factor to increase/reduce the gap extend penalty for deletes(def=%-.2f)\n",par.gaph);
+  printf(" -gapi ]0,inf]  factor to increase/reduce the gap extend penalty for inserts(def=%-.2f)\n",par.gapi);
+  printf(" -egq  [0,inf[  penalty (bits) for end gaps aligned to query residues (def=%-.2f)      \n",par.egq);
+  printf(" -egt  [0,inf[  penalty (bits) for end gaps aligned to template residues (def=%-.2f)   \n",par.egt);
+  printf("\n");
 }
 
 void help_ali()
 {
   printf("\n");
   printf("Alignment options:  \n");
-  printf(" -glob/-loc    global or local alignment mode (def=global)                \n");
-  printf(" -mac          use Maximum Accuracy (MAC) alignment instead of Viterbi\n");
-  printf(" -mact [0,1]   posterior prob threshold for MAC alignment (def=%.3f)      \n",par.mact);
-  printf(" -sto <int>    use global stochastic sampling algorithm to sample this many alignments\n");
-  printf(" -sc   <int>   amino acid score         (tja: template HMM at column j) (def=%i)\n",par.columnscore);
-  printf("        0      = log2 Sum(tja*qia/pa)   (pa: aa background frequencies)    \n");
-  printf("        1      = log2 Sum(tja*qia/pqa)  (pqa = 1/2*(pa+ta) )               \n");
-  printf("        2      = log2 Sum(tja*qia/ta)   (ta: av. aa freqs in template)     \n");
-  printf("        3      = log2 Sum(tja*qia/qa)   (qa: av. aa freqs in query)        \n");
-  printf(" -corr [0,1]   weight of term for pair correlations (def=%.2f)            \n",par.corr);
-  printf(" -shift [-1,1] score offset (def=%-.3f)                                   \n",par.shift);
-  printf(" -r            repeat identification: multiple hits not treated as independent\n");
-  printf(" -ssm  0-2     0:no ss scoring [default=%i]               \n",par.ssm);
-  printf("               1:ss scoring after alignment                               \n");
-  printf("               2:ss scoring during alignment                              \n");
-  printf(" -ssw  [0,1]   weight of ss score compared to column score (def=%-.2f)    \n",par.ssw);
-  printf(" -ssa  [0,1]   ss confusion matrix = (1-ssa)*I + ssa*psipred-confusion-matrix [def=%-.2f)\n",par.ssa);
+  printf(" -glob/-loc     global or local alignment mode (def=global)                \n");
+  printf(" -mac           use Maximum Accuracy (MAC) alignment instead of Viterbi\n");
+  printf(" -mact [0,1]    posterior prob threshold for MAC alignment (def=%.3f)      \n",par.mact);
+  printf(" -sto <int>     use global stochastic sampling algorithm to sample this many alignments\n");
+  printf(" -sc   <int>    amino acid score         (tja: template HMM at column j) (def=%i)\n",par.columnscore);
+  printf("        0       = log2 Sum(tja*qia/pa)   (pa: aa background frequencies)    \n");
+  printf("        1       = log2 Sum(tja*qia/pqa)  (pqa = 1/2*(pa+ta) )               \n");
+  printf("        2       = log2 Sum(tja*qia/ta)   (ta: av. aa freqs in template)     \n");
+  printf("        3       = log2 Sum(tja*qia/qa)   (qa: av. aa freqs in query)        \n");
+  printf(" -corr [0,1]    weight of term for pair correlations (def=%.2f)            \n",par.corr);
+  printf(" -shift [-1,1]  score offset (def=%-.3f)                                   \n",par.shift);
+  printf(" -r             repeat identification: multiple hits not treated as independent\n");
+  printf(" -ssm  0-2      0:no ss scoring [default=%i]               \n",par.ssm);
+  printf("                1:ss scoring after alignment                               \n");
+  printf("                2:ss scoring during alignment                              \n");
+  printf(" -ssw  [0,1]    weight of ss score compared to column score (def=%-.2f)    \n",par.ssw);
+  printf(" -ssa  [0,1]    ss confusion matrix = (1-ssa)*I + ssa*psipred-confusion-matrix [def=%-.2f)\n",par.ssa);
 }
 
 void help_all()
@@ -331,7 +332,7 @@ void help_all()
   help_hmm();
   help_gap();
   help_ali();
-  printf(" -calm 0-3     empirical score calibration of 0:query 1:template 2:both (def=off)\n");
+  printf(" -calm 0-3      empirical score calibration of 0:query 1:template 2:both (def=off)\n");
   printf("\n");
   printf("Default options can be specified in './.hhdefaults' or '~/.hhdefaults'\n");
 }
@@ -1166,9 +1167,8 @@ int main(int argc, char **argv)
       for(i=1; i<=q.L; i++)
 	for (j=1; j<=t.L; j++) // Loop through template positions j
 	  {
- 	    //printf("%-3i %-3i %7.3f %7.3f\n",i,j,hit.ScoreTot(q,t,i,j),hit.ScoreAA(q,t,i,j));
-	    s[i][j]=hit.ScoreTot(q,t,i,j); 
-	  }
+	    s[i][j]=hit.Score(q.p[i],t.p[j]) + hit.ScoreSS(q,t,i,j) + par.shift;	  }
+ 	    //printf("%-3i %-3i %7.3f %7.3f\n",i,j,s[i][j],hit.Score(q.p[i],t.p[j]));
       
       if (0) 
 	{
