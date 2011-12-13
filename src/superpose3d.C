@@ -25,7 +25,7 @@
 
 const char VERSION[]="version 1.0  (August 2005)";
 const int MINRES=-100;     // min residue index  
-const int MAXRES=65536;    // max number of superposed atoms in pdb files and max residue index 
+const int par.maxres=65536;    // max number of superposed atoms in pdb files and max residue index 
 const int MAXLIN=64768;    // max number of lines when reading from standard input 
 const int LINELEN=128;     // max length of line read in from input files; must be >= 82
 const float blue=5.0;      // temperature factor corresponding to blue
@@ -428,7 +428,7 @@ void PdbFile::Read(char* infile)
   // Allocate memory
   record = new(char*[l+1]);     
   nres = new(int[l+1]);        
-  l_record = new(int[MAXRES-MINRES])-MINRES;        
+  l_record = new(int[par.maxres-MINRES])-MINRES;        
   x = new(float[l+1]);
   y = new(float[l+1]);
   z = new(float[l+1]);
@@ -438,7 +438,7 @@ void PdbFile::Read(char* infile)
   r[2] = new(float[l+1]);
  
   // Initialize 
-  for (int h=MINRES; h<MAXRES; h++) l_record[h]=-1; 
+  for (int h=MINRES; h<par.maxres; h++) l_record[h]=-1; 
   num_res=0; 
   l=0;
   
@@ -457,13 +457,13 @@ void PdbFile::Read(char* infile)
 	  // Found a backbone atom to superpose?
 	  if (!strncmp(line+13,"CA ",3))  // superpose only C_alpha atoms
 	    {
-	      if (nres[l]>=MAXRES) 
+	      if (nres[l]>=par.maxres) 
 		{
 		  if (v>=1 && warn_maxres==0) 
 		    {
 		      warn_maxres=1;
 		      fprintf(stderr,"WARNING: %s contains residue indices above %i that will be ignored for the superposition\n",
-			      program,infile,MAXRES);
+			      program,infile,par.maxres);
 		    }
 		} else {
 		  // Found an atom to superpose (C_alpha or backbone)?
@@ -510,9 +510,9 @@ void PdbFile::DebugPrint()
 // Residues whose index is contained in array *i get a temperature factor T1, all others get T0
 void PdbFile::Recolor(int *i, int n, float T0, float T1)
 {
-  char* aligned=new(char[MAXRES]);
+  char* aligned=new(char[par.maxres]);
   int h,k,l;
-  for (h=0; h<MAXRES; h++) aligned[h]=0;
+  for (h=0; h<par.maxres; h++) aligned[h]=0;
   for (k=0; k<n; k++) aligned[i[k]]=1;
   for (l=0; l<num_records-1; l++)       // last line is TER -> no temperature factor
     {

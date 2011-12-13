@@ -348,12 +348,12 @@ void Hit::Viterbi(HMM& q, HMM& t, float** Sstruc)
   
   
   // Variable declarations
-  float __attribute__((aligned(16))) Si[MAXRES];  // sMM[i][j] = score of best alignment up to indices (i,j) ending in (Match,Match) 
-  float sMM[MAXRES];          // sMM[i][j] = score of best alignment up to indices (i,j) ending in (Match,Match) 
-  float sGD[MAXRES];          // sGD[i][j] = score of best alignment up to indices (i,j) ending in (Gap,Delete) 
-  float sDG[MAXRES];          // sDG[i][j] = score of best alignment up to indices (i,j) ending in (Delete,Gap)
-  float sIM[MAXRES];          // sIM[i][j] = score of best alignment up to indices (i,j) ending in (Ins,Match)
-  float sMI[MAXRES];          // sMI[i][j] = score of best alignment up to indices (i,j) ending in (Match,Ins) 
+  float __attribute__((aligned(16))) Si[par.maxres];  // sMM[i][j] = score of best alignment up to indices (i,j) ending in (Match,Match) 
+  float sMM[par.maxres];          // sMM[i][j] = score of best alignment up to indices (i,j) ending in (Match,Match) 
+  float sGD[par.maxres];          // sGD[i][j] = score of best alignment up to indices (i,j) ending in (Gap,Delete) 
+  float sDG[par.maxres];          // sDG[i][j] = score of best alignment up to indices (i,j) ending in (Delete,Gap)
+  float sIM[par.maxres];          // sIM[i][j] = score of best alignment up to indices (i,j) ending in (Ins,Match)
+  float sMI[par.maxres];          // sMI[i][j] = score of best alignment up to indices (i,j) ending in (Match,Ins) 
   float smin=(par.loc? 0:-FLT_MAX);  //used to distinguish between SW and NW algorithms in maximization         
   int i,j;      //query and template match state indices
   float sMM_i_j=0,sMI_i_j,sIM_i_j,sGD_i_j,sDG_i_j;
@@ -412,7 +412,7 @@ void Hit::Viterbi(HMM& q, HMM& t, float** Sstruc)
 	sMM[jmax] = sIM[jmax] = sMI[jmax] = sDG[jmax] = sGD[jmax] = -FLT_MAX; 
       sIM[jmin-1] = sMI[jmin-1] = sDG[jmin-1] = sGD[jmin-1] = -FLT_MAX; // initialize at (i,jmin-1)
 
-      // Precalculate scores
+      // Precalculate amino acid profile-profile scores
 #ifdef HH_SSE3
       for (j=jmin; j<=jmax; ++j) 
 	Si[j] = ProbFwd(q.p[i],t.p[j]);
@@ -1077,7 +1077,7 @@ void Hit::MACAlignment(HMM& q, HMM& t)
 
 
 /////////////////////////////////////////////////////////////////////////////////////
-// Trace back alignment of two profiles based on matrices bXX[][]
+// Trace back Viterbi alignment of two profiles based on matrices bXX[][]
 /////////////////////////////////////////////////////////////////////////////////////
 void Hit::Backtrace(HMM& q, HMM& t)
 {
@@ -1920,46 +1920,7 @@ void Hit::ScoreAlignment(HMM& q, HMM& t, int steps)
 //Calculate score between columns i and j of two HMMs (query and template)
 inline float Score(float* qi, float* tj)
 {
-#ifdef HH_SSE3
-  float __attribute__((aligned(16))) res;
-  __m128 P; // product
-  __m128 R; // result  
-  __m128* Qi = (__m128*) qi;
-  __m128* Tj = (__m128*) tj;
-
-#ifdef HH_SSE4
-  R = _mm_dp_ps(*(Qi++),*(Tj++),0xFF);
-  P = _mm_dp_ps(*(Qi++),*(Tj++),0xFF);
-  R = _mm_add_ps(R,P);
-  P = _mm_dp_ps(*(Qi++),*(Tj++),0xFF);
-  R = _mm_add_ps(R,P);
-  P = _mm_dp_ps(*(Qi++),*(Tj++),0xFF);
-  R = _mm_add_ps(R,P);
-  P = _mm_dp_ps(*Qi,*Tj,0xFF);
-  R = _mm_add_ps(R,P);
-#else
-  R = _mm_mul_ps(*(Qi++),*(Tj++));
-  P = _mm_mul_ps(*(Qi++),*(Tj++));
-  R = _mm_add_ps(R,P);
-  P = _mm_mul_ps(*(Qi++),*(Tj++));
-  R = _mm_add_ps(R,P);
-  P = _mm_mul_ps(*(Qi++),*(Tj++));
-  R = _mm_add_ps(R,P);
-  P = _mm_mul_ps(*Qi,*Tj);
-  R = _mm_add_ps(R,P);
-  R = _mm_hadd_ps(R,R);
-  R = _mm_hadd_ps(R,R);
-#endif
-  _mm_store_ss(&res, R);
-  return fast_log2(res);
-
-#else
-  return fast_log2(
-		   tj[0] *qi[0] +tj[1] *qi[1] +tj[2] *qi[2] +tj[3] *qi[3] +tj[4] *qi[4]
-		   +tj[5] *qi[5] +tj[6] *qi[6] +tj[7] *qi[7] +tj[8] *qi[8] +tj[9] *qi[9]
-		   +tj[10]*qi[10]+tj[11]*qi[11]+tj[12]*qi[12]+tj[13]*qi[13]+tj[14]*qi[14]
-		   +tj[15]*qi[15]+tj[16]*qi[16]+tj[17]*qi[17]+tj[18]*qi[18]+tj[19]*qi[19]);
-#endif
+  return fast_log2(ProbFwd(qi,tj));
 }
 
 // Calculate score between columns i and j of two HMMs (query and template)
@@ -2027,25 +1988,12 @@ inline float Hit::ScoreSS(HMM& q, HMM& t, int i, int j, int ssm)
   return 0.0;
 }
 
+
 // Calculate secondary structure score between columns i and j of two HMMs (query and template)
 inline float Hit::ScoreSS(HMM& q, HMM& t, int i, int j)
 {
   return ScoreSS(q,t,i,j,ssm2);
 }
-
-
-// Calculate score between columns i and j of two HMMs (query and template)
-inline float Hit::ScoreTot(HMM& q, HMM& t, int i, int j)
-{
-  return Score(q.p[i],t.p[j]) + ScoreSS(q,t,i,j) + par.shift;
-}
-
-// Calculate score between columns i and j of two HMMs (query and template)
-inline float Hit::ScoreAA(HMM& q, HMM& t, int i, int j)
-{
-  return Score(q.p[i],t.p[j]);
-}
-
 
 /////////////////////////////////////////////////////////////////////////////////////
 //// Function for Viterbi()

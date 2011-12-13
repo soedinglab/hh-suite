@@ -196,7 +196,7 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline)
   int h;                  // Position in input line (first=0)
   int k;                  // Index of sequence being read currently (first=0)
   char line[LINELEN]="";  // input line
-  char cur_seq[MAXCOL];   // Sequence currently read in
+  char cur_seq[par.maxcol];   // Sequence currently read in
   char* cur_name;         // Sequence currently read in
   int linenr=0;           // current line number in input file
   char skip_sequence=0;
@@ -327,7 +327,7 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline)
           // Check whether all characters are correct; store into cur_seq
           if (keep[k] || k == kfirst) // normal line containing residues
             {
-              while (h<LINELEN && line[h]>'\0' && l<MAXCOL-1)
+              while (h<LINELEN && line[h]>'\0' && l<par.maxcol-1)
                 {
                   if (aa2i(line[h])>=0) // ignore white-space characters ' ', \t and \n (aa2i()==-1)
                     {cur_seq[l]=line[h]; l++;}
@@ -338,7 +338,7 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline)
             }
           else if (k==kss_dssp) // lines with dssp secondary structure states (. - H E C S T G B)
             {
-              while (h<LINELEN && line[h]>'\0' && l<MAXCOL-1)
+              while (h<LINELEN && line[h]>'\0' && l<par.maxcol-1)
                 {
                   if (ss2i(line[h])>=0 && ss2i(line[h])<=7)
                     {cur_seq[l]=ss2ss(line[h]); l++;}
@@ -349,7 +349,7 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline)
             }
           else if (k==ksa_dssp) // lines with dssp solvent accessibility states (. - ???)
             {
-              while (h<LINELEN && line[h]>'\0' && l<MAXCOL-1)
+              while (h<LINELEN && line[h]>'\0' && l<par.maxcol-1)
                 {
                   if (sa2i(line[h])>=0)
                     cur_seq[l++]=line[h];
@@ -360,7 +360,7 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline)
             }
           else if (k==kss_pred) // lines with predicted secondary structure (. - H E C)
             {
-              while (h<LINELEN && line[h]>'\0' && l<MAXCOL-1)
+              while (h<LINELEN && line[h]>'\0' && l<par.maxcol-1)
                 {
                   if (ss2i(line[h])>=0 && ss2i(line[h])<=3)
                     {cur_seq[l]=ss2ss(line[h]); l++;}
@@ -371,7 +371,7 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline)
             }
           else if (k==kss_conf) // lines with confidence values should contain only 0-9, '-', or '.'
             {
-              while (h<LINELEN && line[h]>'\0' && l<MAXCOL-1)
+              while (h<LINELEN && line[h]>'\0' && l<par.maxcol-1)
                 {
                   if (line[h]=='-' || line[h]=='.' || (line[h]>='0' && line[h]<='9'))
                     {cur_seq[l]=line[h]; l++;}
@@ -382,7 +382,7 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline)
             }
           else if (display[k]) // other lines such as >sa_pred etc
             {
-              while (h<LINELEN && line[h]>'\0' && l<MAXCOL-1)
+              while (h<LINELEN && line[h]>'\0' && l<par.maxcol-1)
                 {
                   if (line[h]=='-' || line[h]=='.' || (line[h]>='0' && line[h]<='9') || (line[h]>='A' && line[h]<='B'))
                     {cur_seq[l]=line[h]; l++;}
@@ -391,9 +391,9 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline)
                   h++;
                 }
             }
-          if (v && l>=MAXCOL-1)
+          if (v && l>=par.maxcol-1)
             {
-              cerr<<endl<<"WARNING: maximum number of residues "<<MAXCOL-2<<" exceded in sequence "<<sname[k]<<"\n";
+              cerr<<endl<<"WARNING: maximum number of residues "<<par.maxcol-2<<" exceded in sequence "<<sname[k]<<"\n";
               skip_sequence=1;
             }
           cur_seq[l]='\0';  //Ensure that cur_seq ends with a '\0' character
@@ -459,7 +459,7 @@ void Alignment::GetSeqsFromHMM(HMM& q)
   int qk;                 // Index of sequence in HHM
   int k;                  // Index of sequence being read currently (first=0)
 
-  char cur_seq[MAXCOL];   // Sequence currently read in
+  char cur_seq[par.maxcol];   // Sequence currently read in
   
   kss_dssp=ksa_dssp=kss_pred=kss_conf=kfirst=-1;
   n_display=0;
@@ -577,7 +577,7 @@ void Alignment::Compress(const char infile[])
               ptrS++;
             }
         }
-      L=MAXRES-2; // needed because L=imin(L,i)
+      L=par.maxres-2; // needed because L=imin(L,i)
       for (k=0; k<N_in; ++k)
         {
           i=1; l=1; // start at i=1, not i=0!
@@ -621,7 +621,7 @@ void Alignment::Compress(const char infile[])
             }
           else continue;
           i--;
-          if (L!=i && L!=MAXRES-2 && !unequal_lengths) 
+          if (L!=i && L!=par.maxres-2 && !unequal_lengths) 
 	    unequal_lengths=k;   //sequences have different lengths
 
           L=imin(L,i);
@@ -643,7 +643,7 @@ void Alignment::Compress(const char infile[])
           exit(1);
         }
 
-      if (L==MAXRES-2 && v>=2)
+      if (L==par.maxres-2 && v>=2)
         {
           printf("WARNING: Number of match columns too large. Only first %i match columns will be kept!\n",L);
           break;
@@ -656,7 +656,7 @@ void Alignment::Compress(const char infile[])
     case 2:
       {
 	int nl[NAA+2];              //nl[a] = number of seq's with amino acid a at position l
-	float* percent_gaps = new float[MAXCOL]; //percentage of gaps in column k (with weighted sequences)
+	float* percent_gaps = new float[par.maxcol]; //percentage of gaps in column k (with weighted sequences)
 	
 	//determine number of columns L in alignment
 	L=strlen(seq[kfirst])-1;
@@ -722,7 +722,7 @@ void Alignment::Compress(const char infile[])
 	  {
 	    if (percent_gaps[l]<=float(par.Mgaps))
 	      {
-		if (i>=MAXRES-2) {
+		if (i>=par.maxres-2) {
 		  if (v>=1)
 		    printf("WARNING: Number of match columns too large. Only first %i match columns will be kept!\n",i);
 		  break;
@@ -776,7 +776,7 @@ void Alignment::Compress(const char infile[])
     // Using residues of first sequence as match states
     case 3:
       {
-	char* match_state = new char[MAXCOL]; //1: column assigned to match state 0: insert state
+	char* match_state = new char[par.maxcol]; //1: column assigned to match state 0: insert state
 	
 	// Determine number of columns L in alignment
 	L=strlen(seq[0]+1); 
@@ -796,7 +796,7 @@ void Alignment::Compress(const char infile[])
 	  {
 	    if (match_state[l]) // does sequence 0 have residue at position l?
 	      {
-		if (i>=MAXRES-2) {
+		if (i>=par.maxres-2) {
 		  if (v>=1)
 		    printf("WARNING: Number of match columns too large. Only first %i match columns will be kept!\n",i);
 		  break;
@@ -1689,7 +1689,7 @@ void Alignment::Amino_acid_frequencies_and_transitions_from_M_state(HMM& q, char
   int naa;                    // number of different amino acids
   int** n;                    // n[j][a] = number of seq's with some residue at column i AND a at position j
   float wi[MAXSEQ];           // weight of sequence k in column i, calculated from subalignment i
-  float Neff[MAXRES];         // diversity of subalignment i
+  float Neff[par.maxres];         // diversity of subalignment i
   int nseqi=0;                // number of sequences in subalignment i
   int ncol=0;                 // number of columns j that contribute to Neff[i]
   char change;                // has the set of sequences in subalignment changed? 0:no  1:yes
@@ -1902,7 +1902,7 @@ void Alignment::Transitions_from_I_state(HMM& q, char* in)
   int naa;                    // number of different amino acids
   int** n;                    // n[j][a] = number of seq's with some residue at column i AND a at position j
   float wi[MAXSEQ];           // weight of sequence k in column i, calculated from subalignment i
-  float Neff[MAXRES];         // diversity of subalignment i
+  float Neff[par.maxres];         // diversity of subalignment i
   int nseqi;                  // number of sequences in subalignment i
   int ncol;                   // number of columns j that contribute to Neff[i]
   float fj[NAA+3];            // to calculate entropy
@@ -2094,7 +2094,7 @@ void Alignment::Transitions_from_D_state(HMM& q, char* in)
   int naa;                    // number of different amino acids
   int** n;                    // n[j][a] = number of seq's with some residue at column i AND a at position j
   float wi[MAXSEQ];           // weight of sequence k in column i, calculated from subalignment i
-  float Neff[MAXRES];         // diversity of subalignment i
+  float Neff[par.maxres];         // diversity of subalignment i
   int nseqi=0;                // number of sequences in subalignment i (for DEBUGGING)
   int ncol=0;                 // number of columns j that contribute to Neff[i]
   char change;                // has the set of sequences in subalignment changed? 0:no  1:yes
@@ -2360,8 +2360,8 @@ void Alignment::WriteToFile(const char* alnfile, const char format[])
 void Alignment::MergeMasterSlave(Hit& hit, char ta3mfile[], FILE* ta3mf, bool filter_tali)
 {
   Alignment Tali;
-  char* cur_seq = new(char[MAXCOL]);   // Sequence currently read in
-  int maxcol=MAXCOL;
+  char* cur_seq = new(char[par.maxcol]);   // Sequence currently read in
+  int maxcol=par.maxcol;
   int l,ll;           // position in unaligned template (T) sequence Tali.seq[l]
   int i;              // counts match states in query (Q) HMM
   int j;              // counts match states in T sequence Tali.seq[l]

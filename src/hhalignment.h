@@ -26,7 +26,7 @@ public:
 
   char* keep;             // keep[k]=1 if sequence is included in amino acid frequencies; 0 otherwise (first=0)
 
-  Alignment(int maxseq=MAXSEQ, int maxres=MAXRES);
+  Alignment(int maxseq=MAXSEQ, int maxres=par.maxres);
   ~Alignment();
   Alignment& operator=(Alignment&);
 

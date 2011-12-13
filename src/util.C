@@ -6,6 +6,9 @@
 #include <cstdio>     // printf
 #include <stdlib.h>   // exit
 #include <time.h>     // clock
+#include <math.h>     // sqrt, pow
+#include <limits.h>   // INT_MIN
+#include <float.h>    // FLT_MIN
 #endif
 #include <cassert>
 #include <sys/time.h>
@@ -16,6 +19,13 @@
 #include <stdexcept>
 #include <stdint.h>
 #include <string.h>     // strcmp, strstr
+
+using std::cout;
+using std::cerr;
+using std::endl;
+using std::ios;
+using std::ifstream;
+using std::ofstream;
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Arithmetics
@@ -650,7 +660,7 @@ inline char* strwrd(char* str, char* ptr, const char c)
 }
 
 // Similar to Perl's tr/abc/ABC/: Replaces all chars in str found in one list with characters from the second list
-// Returns the number of replaced charactrs
+// Returns the number of replaced characters
 int strtr(char* str, const char oldchars[], const char newchars[])
 {
   char* ptr;

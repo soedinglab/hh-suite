@@ -1,61 +1,102 @@
+#ifndef MAIN
+#define EXTERN extern
+#else
+#define EXTERN
+#endif
+
+
+
 /////////////////////////////////////////////////////////////////////////////////////
 //// Constants
 /////////////////////////////////////////////////////////////////////////////////////
 
-const char VERSION_AND_DATE[]="version 2.0.0.0 (June 2011)";
-const char REFERENCE[]="Soding, J. Protein homology detection by HMM-HMM comparison. Bioinformatics 2005, 21, 951-960.\n";
-const char COPYRIGHT[]="(C) Johannes Soeding (see LICENSE file)\n";
-const int MAXSEQ=65535; //max number of sequences in input alignment (must be <~30000 on cluster nodes)
-int MAXCOL=32765;            //max number of residues in input files; must be <= LINELEN and >= MAXRES
-int MAXRES=15002;            //max number of columns in HMM; must be <= LINELEN
-const int LINELEN=262144; //max length of line read in from input files; must be >= MAXCOL
-const int MAXSEQDIS=10238;//max number of sequences stored in 'hit' objects and displayed in output alignment
-const int IDLEN=255;     //max length of scop hierarchy id and pdb-id
-const int DESCLEN=32765;//max length of sequence description (longname)
-const int NAMELEN=511;  //max length of file names etc.
-const int MAXOPT=127;   //Maximum number of options to be read in from .hhconfig or command line
-const int NAA=20;       //number of amino acids (0-19)
-const int NTRANS=7;    //number of transitions recorded in HMM (M2M,M2I,M2D,I2M,I2I,D2M,D2D)
-const int NCOLMIN=10;   //min number of cols in subalignment for calculating pos-specific weights w[k][i]
-const int ANY=20;       //number representing an X (any amino acid) internally
-const int GAP=21;       //number representing a gap internally
-const int ENDGAP=22;    //Important to distinguish because end gaps do not contribute to tansition counts
-const int HMMSCALE=1000;//Scaling number for log2-values in HMMs
-const int NFAMMAX=5119; //Size of hash for counting number of HMMs in each family
-const int MAXPROF=32766;//Maximum number of HMM scores for fitting EVD
-const float MAXENDGAPFRAC=0.1; //For weighting: include only columns into subalignment i that have a max fraction of seqs with endgap
-const float SMIN= 20.;  //Minimum score of hit needed to search for another repeat of same profile: p=exp(-(4-mu)/lamda)=0.01
-const float LAMDA=0.388; //lamda in score EVD used for -local mode in length correction: S = S-log(Lq*Lt)/LAMDA)
-const float LAMDA_GLOB=0.42; //lamda in score EVD used for -global mode
-const float PMAX=1E-2;  //Maximum single-repeat p-value that can contribute to whole-protein p-value
-const float MINEVALEXCL=0.5; //above this E-value from first ML fit hits are not used for final ML fit of EVD
-const int SELFEXCL=3;   // exclude self-alignments with j-i<SELFEXCL
-const float PLTY_GAPOPEN=6.0f; // for -qsc option (filter for min similarity to query): 6 bits to open gap
-const float PLTY_GAPEXTD=1.0f; // for -qsc option (filter for min similarity to query): 1 bit to extend gap
-const int MINCOLS_REALIGN=6; // hits with MAC alignments with fewer matched columns will be deleted in hhsearch hitlist; must be at least 2 to avoid nonsense MAC alignments starting from the left/upper edge
-const float LOG1000=log(1000.0);
+EXTERN const char VERSION_AND_DATE[]="version 2.0.0.0 (June 2011)";
+EXTERN const char REFERENCE[]="Soding, J. Protein homology detection by HMM-HMM comparison. Bioinformatics 2005, 21, 951-960.\n";
+EXTERN const char COPYRIGHT[]="(C) Johannes Soeding (see LICENSE file)\n";
+EXTERN const int MAXSEQ=65535; //max number of sequences in input alignment (must be <~30000 on cluster nodes)
+EXTERN const int LINELEN=262144; //max length of line read in from input files; must be >= MAXCOL
+EXTERN const int MAXSEQDIS=10238;//max number of sequences stored in 'hit' objects and displayed in output alignment
+EXTERN const int IDLEN=255;     //max length of scop hierarchy id and pdb-id
+EXTERN const int DESCLEN=32765;//max length of sequence description (longname)
+EXTERN const int NAMELEN=511;  //max length of file names etc.
+EXTERN const int MAXOPT=127;   //Maximum number of options to be read in from .hhconfig or command line
+EXTERN const int NAA=20;       //number of amino acids (0-19)
+EXTERN const int NTRANS=7;    //number of transitions recorded in HMM (M2M,M2I,M2D,I2M,I2I,D2M,D2D)
+EXTERN const int NCOLMIN=10;   //min number of cols in subalignment for calculating pos-specific weights w[k][i]
+EXTERN const int ANY=20;       //number representing an X (any amino acid) internally
+EXTERN const int GAP=21;       //number representing a gap internally
+EXTERN const int ENDGAP=22;    //Important to distinguish because end gaps do not contribute to tansition counts
+EXTERN const int HMMSCALE=1000;//Scaling number for log2-values in HMMs
+EXTERN const int NFAMMAX=5119; //Size of hash for counting number of HMMs in each family
+EXTERN const int MAXPROF=32766;//Maximum number of HMM scores for fitting EVD
+EXTERN const float MAXENDGAPFRAC=0.1; //For weighting: include only columns into subalignment i that have a max fraction of seqs with endgap
+EXTERN const float SMIN= 20.;  //Minimum score of hit needed to search for another repeat of same profile: p=exp(-(4-mu)/lamda)=0.01
+EXTERN const float LAMDA=0.388; //lamda in score EVD used for -local mode in length correction: S = S-log(Lq*Lt)/LAMDA)
+EXTERN const float LAMDA_GLOB=0.42; //lamda in score EVD used for -global mode
+EXTERN const float PMAX=1E-2;  //Maximum single-repeat p-value that can contribute to whole-protein p-value
+EXTERN const float MINEVALEXCL=0.5; //above this E-value from first ML fit hits are not used for final ML fit of EVD
+EXTERN const int SELFEXCL=3;   // exclude self-alignments with j-i<SELFEXCL
+EXTERN const float PLTY_GAPOPEN=6.0f; // for -qsc option (filter for min similarity to query): 6 bits to open gap
+EXTERN const float PLTY_GAPEXTD=1.0f; // for -qsc option (filter for min similarity to query): 1 bit to extend gap
+EXTERN const int MINCOLS_REALIGN=6; // hits with MAC alignments with fewer matched columns will be deleted in hhsearch hitlist; must be at least 2 to avoid nonsense MAC alignments starting from the left/upper edge
+EXTERN const float LOG1000=log(1000.0);
 
-
-enum transitions {M2M,M2I,M2D,I2M,I2I,D2M,D2D}; // index for transitions within a HMM
-enum pair_states {STOP=0,SAME=1,GD=2,IM=3,DG=4,MI=5,MS=6,ML=7,SM=8,LM=9,MM=10};
+// Secondary structure
+EXTERN const int NDSSP=8;      //number of different ss states determined by dssp: 0-7 (0: no state available)
+EXTERN const int NSSPRED=4;    //number of different ss states predicted by psipred: 0-3 (0: no prediction availabe)
+EXTERN const int MAXCF=11;     //number of different confidence values: 0-10 (0: no prediction availabe)
+EXTERN const int NSA=7;        //number of classes relative solvent accesiblity (0:no coord,  1:<2%, 2:<14%, 3:<33%, 4:<55%, 5:>55%, 6:S-S bridge)
 
 // const char aa[]="ARNDCQEGHILKMFPSTWYVX-";
 //Amino acids Sorted by alphabet     -> internal numbers a
 //                0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20
 //                A  C  D  E  F  G  H  I  K  L  M  N  P  Q  R  S  T  V  W  Y  X
-const int s2a[]={ 0, 4, 3, 6,13, 7, 8, 9,11,10,12, 2,14, 5, 1,15,16,19,17,18,20};
+EXTERN const int s2a[]={ 0, 4, 3, 6,13, 7, 8, 9,11,10,12, 2,14, 5, 1,15,16,19,17,18,20};
 //Internal numbers a for amino acids -> amino acids Sorted by alphabet:
 //                0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20
 //                A  R  N  D  C  Q  E  G  H  I  L  K  M  F  P  S  T  W  Y  V  X
-const int a2s[]={ 0,14,11, 2, 1,13, 3, 5, 6, 7, 9, 8,10, 4,12,15,16,18,19,17,20};
+EXTERN const int a2s[]={ 0,14,11, 2, 1,13, 3, 5, 6, 7, 9, 8,10, 4,12,15,16,18,19,17,20};
 
-// Secondary structure
-const int NDSSP=8;      //number of different ss states determined by dssp: 0-7 (0: no state available)
-const int NSSPRED=4;    //number of different ss states predicted by psipred: 0-3 (0: no prediction availabe)
-const int MAXCF=11;     //number of different confidence values: 0-10 (0: no prediction availabe)
-const int NSA=7;        //number of classes relative solvent accesiblity (0:no coord,  1:<2%, 2:<14%, 3:<33%, 4:<55%, 5:>55%, 6:S-S bridge)
+enum transitions {M2M,M2I,M2D,I2M,I2I,D2M,D2D}; // index for transitions within a HMM
+enum pair_states {STOP=0,SAME=1,GD=2,IM=3,DG=4,MI=5,MS=6,ML=7,SM=8,LM=9,MM=10};
+
 
 /////////////////////////////////////////////////////////////////////////////////////
+//// Global variable declarations
+/////////////////////////////////////////////////////////////////////////////////////
+
+EXTERN char v;                //=2 1: show only warnings 2:verbose mode
+EXTERN Parameters par;
+EXTERN char program_name[NAMELEN]; //name of program executed (e.g. hhmake of hhsearch)
+EXTERN char program_path[NAMELEN]; //path of program executed
+
+// substitution matrix flavours
+EXTERN float P[21][21];      // P[a][b] = combined probability for a aligned to b
+EXTERN float R[21][21];      // R[a][b]=P[a][b]/p[b]=P(a|b); precalculated for pseudocounts
+EXTERN float Sim[21][21];    // Similarity matrix Sim[a][b]: how similar are a and b?
+EXTERN float S[21][21];      // Substitution score matrix S[a][b] = log2(Pab/pa/pb)
+EXTERN float pb[21];         // pb[a] = background amino acid probabilities for chosen substitution matrix
+EXTERN float qav[21];        // qav[a] = background amino acid probabilities for query HMM (needed for rate matrix rescaling)
+
+// secondary structure matrices
+EXTERN float S73[NDSSP][NSSPRED][MAXCF];           // P[A][B][cf]       =  log2 P(A,B,cf)/P(A)/P(B,cf)
+EXTERN float S33[NSSPRED][MAXCF][NSSPRED][MAXCF];  // P[B][cf][B'][cf'] =  log2 sum_B' P(A,B',cf)/P(A)/P(B,cf) * P_b(B'|B)
+// float S77[NDSSP][DSSP];                  // P[A][B]           =  log2 P(A,B)/P(A)/P(B)
+
+
+// cs object declarations
+cs::LibraryPseudocounts<cs::AA> *lib_pc;
+cs::ContextLibrary<cs::AA> *context_lib;
+
+// !!! This declaration should be moved to HHblits!!!
+#ifdef HHBLITS
+cs::ContextLibrary<cs::AA> *cs_lib;
+#endif
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+// Class declarations
 /////////////////////////////////////////////////////////////////////////////////////
 
 // Input parameters
@@ -77,8 +118,6 @@ public:
   char buffer[NAMELEN];   // buffer to write results for other programs into
   char wfile[NAMELEN];    // weights file generated with hhformat
   char alitabfile[NAMELEN]; // where to write pairs of aligned residues (-atab option)
-  char* blafile;          // output of 'blastpgp -m 8' with PSI-BLAST E-values for HHblits
-  float hhblits_prefilter_logpval;  // PSI-BLAST prefilter log P-value threshold of HHblits
   char* dbfiles;          // database filenames, separated by colons
   char* exclstr;          // optional string containing list of excluded residues, e.g. '1-33,97-168'
   int aliwidth;           // number of characters per line in output alignments for HMM search
@@ -166,8 +205,8 @@ public:
   char notags;            // neutralize His-tags, FLAG tags, C-myc tags?
   unsigned int maxdbstrlen; // maximum length of database string to be printed in 'Command' line of hhr file
 
-  int maxcol;             //max number of residues in input files; must be <= LINELEN and >= maxres
-  int maxres;             //max number of columns in HMM; must be <= LINELEN
+  int maxcol;             // max number of columns in sequence/MSA input files; must be <= LINELEN and >= maxres
+  int maxres;             // max number of states in HMM; must be <= LINELEN
 
   bool hmmer_used;        // True, if a HMMER database is used
 
@@ -212,8 +251,8 @@ public:
   double filter_sum;       // sum of evalues in array
   int filter_counter;      // counter for evalue array
 
-  Hash<int*>* block_shading;         // Cross out cells not covered by prefiltering hit in HHblits
-  Hash<int>* block_shading_counter;  // Cross out cells not covered by prefiltering hit in HHblits
+// Hash<int*>* block_shading;         // Cross out cells not covered by prefiltering hit in HHblits
+// Hash<int>* block_shading_counter;  // Cross out cells not covered by prefiltering hit in HHblits
   int block_shading_space;           // space added to the rands of prefilter HSP
   char block_shading_mode[NAMELEN];
 
@@ -235,31 +274,15 @@ public:
 
 };
 
-/////////////////////////////////////////////////////////////////////////////////////
-//// Global variable declarations
-/////////////////////////////////////////////////////////////////////////////////////
 
-char v=2;             // 1: show only warnings 2:verbose mode
-Parameters par;
-char program_name[NAMELEN]; //name of program executed (e.g. hhmake of hhsearch)
-char program_path[NAMELEN]; //path of program executed
 
-// substitution matrix flavours
-float P[21][21];      // P[a][b] = combined probability for a aligned to b
-float R[21][21];      // R[a][b]=P[a][b]/p[b]=P(a|b); precalculated for pseudocounts
-float Sim[21][21];    // Similarity matrix Sim[a][b]: how similar are a and b?
-float S[21][21];      // Substitution score matrix S[a][b] = log2(Pab/pa/pb)
-float pb[21];         // pb[a] = background amino acid probabilities for chosen substitution matrix
-float qav[21];        // qav[a] = background amino acid probabilities for query HMM (needed for rate matrix rescaling)
-
-// secondary structure matrices
-float S73[NDSSP][NSSPRED][MAXCF];           // P[A][B][cf]       =  log2 P(A,B,cf)/P(A)/P(B,cf)
-float S33[NSSPRED][MAXCF][NSSPRED][MAXCF];  // P[B][cf][B'][cf'] =  log2 sum_B' P(A,B',cf)/P(A)/P(B,cf) * P_b(B'|B)
-// float S77[NDSSP][DSSP];                  // P[A][B]           =  log2 P(A,B)/P(A)/P(B)
-
-cs::LibraryPseudocounts<cs::AA> *lib_pc;
-cs::ContextLibrary<cs::AA> *context_lib;
-
-#ifdef HHBLITS
-cs::ContextLibrary<cs::AA> *cs_lib;
-#endif
+// Class to store data about hit to realign
+class Realign_hitpos
+{
+public:
+  void* phit;        // Pointer to record in hitlist containing hit to be realigned 
+  long ftellpos;     // position of template in dbfile
+  int irep;          // index of (sub)optimal alignment: best = 1
+  int index;         // index of template in dbfile (1,2,..)
+  int operator<(const Realign_hitpos& realign_hitpos) {return ftellpos<realign_hitpos.ftellpos;}
+};

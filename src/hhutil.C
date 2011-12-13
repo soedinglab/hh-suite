@@ -484,6 +484,12 @@ void ReadDefaultsFile(int& argc_conf, char** argv_conf, char* path=NULL)
 void SetDefaults()
 {
 
+  // Moved from hhdecl.C 
+  v=2;
+
+  // Parameter class
+  par.maxcol=32765;            // max number of columns in sequence/MSA input files; must be <= LINELEN and >= maxres
+  par.maxres=15002;            // max number of states in HMM; must be <= LINELEN
   par.append=0;                // overwrite output file
   par.outformat=0;             // 0: hhr  1: FASTA  2:A2M   3:A3M
   par.p=20.0f;                 // minimum threshold for inclusion in hit list and alignment listing
@@ -581,8 +587,6 @@ void SetDefaults()
   strcpy(par.psipred_data,"");
 
   // HHblits parameters
-  par.hhblits_prefilter_logpval=0;
-
   par.dbsize = 0;
 
   // HHblits Evalue calculation  (alpha = a + b(Neff(T) - 1)(1 - c(Neff(Q) - 1)) )

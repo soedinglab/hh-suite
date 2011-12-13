@@ -23,10 +23,12 @@ class Hit
   char sfam[IDLEN];     // superfamily ID (derived from name) 
   char fold[IDLEN];     // fold ID (derived from name)
   char cl[IDLEN];       // class ID (derived from name)
-  int index;            // index of HMM in order of reading in (first=0)
+
   char* dbfile;         // full database file name from which HMM was read
   long ftellpos;        // start position of HMM in database file
-
+  int index;            // index of HMM in order of reading in (first=0)
+  void* phit;           // pointer to the element in hitlist that contains hit to be realigned
+  
   float score;          // Score of alignment (i.e. of Viterbi path)
   float score_sort;     // score to sort hits in output list (negative means first/best!)
   float score_aass;     // first: just hit.score, then hit.logPval-SSSCORE2NATLOG*hit.score_ss;(negative means best!)
@@ -47,8 +49,8 @@ class Hit
 /*   float logPrep;        // natural logarithm of P-value for single-repeat hit */
 
   int L;                // Number of match states in template
-  int irep;             // Index  of single-repeat hit (1: highest scoring repeat hit)
-  int nrep;             // Number of single-repeat hits with one template
+  short int irep;       // Index  of single-repeat hit (1: highest scoring repeat hit)
+  char lastrep;         // is current hit last (sub)optimal alignment? 0: no  1: yes
   
   int n_display;        // number of sequences stored for display of alignment 
   char** sname;         // names of stored sequences 
@@ -131,12 +133,6 @@ class Hit
 
   // Calculate secondary structure score between columns i and j of two HMMs (query and template)
   inline float ScoreSS(HMM& q, HMM& t, int i, int j);
-
-  // Calculate total score (including secondary structure score and compositional bias correction
-  inline float ScoreTot(HMM& q, HMM& t, int i, int j);
-
-  // Calculate score (excluding secondary structure score and compositional bias correction
-  inline float ScoreAA(HMM& q, HMM& t, int i, int j);
 
   // Calculate score for a given alignment
   void ScoreAlignment(HMM& q, HMM& t, int steps);

@@ -69,7 +69,7 @@ using std::ofstream;
 // Global variables 
 /////////////////////////////////////////////////////////////////////////////////////
 Alignment qali;              //Create an alignment 
-HMM q;                       //Create a HMM with maximum of MAXRES match states
+HMM q;                       //Create a HMM with maximum of par.maxres match states
  
 /////////////////////////////////////////////////////////////////////////////////////
 // Help functions
