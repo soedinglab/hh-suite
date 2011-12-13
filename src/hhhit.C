@@ -48,8 +48,6 @@ using std::ofstream;
 
 
 // Function declarations
-inline float Score(float* qi, float* tj);
-inline float ProbFwd(float* qi, float* tj);
 inline float max2(const float& xMM, const float& xX, char& b); 
 inline int pickprob2(const double& xMM, const double& xX, const int& state); 
 inline int pickprob3_GD(const double& xMM, const double& xDG, const double& xGD); 
@@ -1918,13 +1916,13 @@ void Hit::ScoreAlignment(HMM& q, HMM& t, int steps)
 
 
 //Calculate score between columns i and j of two HMMs (query and template)
-inline float Score(float* qi, float* tj)
+inline float Hit::Score(float* qi, float* tj)
 {
   return fast_log2(ProbFwd(qi,tj));
 }
 
 // Calculate score between columns i and j of two HMMs (query and template)
-inline float ProbFwd(float* qi, float* tj)
+inline float Hit::ProbFwd(float* qi, float* tj)
 {
 #ifdef HH_SSE3
   float __attribute__((aligned(16))) res;

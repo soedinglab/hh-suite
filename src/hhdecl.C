@@ -61,38 +61,6 @@ enum transitions {M2M,M2I,M2D,I2M,I2I,D2M,D2D}; // index for transitions within 
 enum pair_states {STOP=0,SAME=1,GD=2,IM=3,DG=4,MI=5,MS=6,ML=7,SM=8,LM=9,MM=10};
 
 
-/////////////////////////////////////////////////////////////////////////////////////
-//// Global variable declarations
-/////////////////////////////////////////////////////////////////////////////////////
-
-EXTERN char v;                //=2 1: show only warnings 2:verbose mode
-EXTERN Parameters par;
-EXTERN char program_name[NAMELEN]; //name of program executed (e.g. hhmake of hhsearch)
-EXTERN char program_path[NAMELEN]; //path of program executed
-
-// substitution matrix flavours
-EXTERN float P[21][21];      // P[a][b] = combined probability for a aligned to b
-EXTERN float R[21][21];      // R[a][b]=P[a][b]/p[b]=P(a|b); precalculated for pseudocounts
-EXTERN float Sim[21][21];    // Similarity matrix Sim[a][b]: how similar are a and b?
-EXTERN float S[21][21];      // Substitution score matrix S[a][b] = log2(Pab/pa/pb)
-EXTERN float pb[21];         // pb[a] = background amino acid probabilities for chosen substitution matrix
-EXTERN float qav[21];        // qav[a] = background amino acid probabilities for query HMM (needed for rate matrix rescaling)
-
-// secondary structure matrices
-EXTERN float S73[NDSSP][NSSPRED][MAXCF];           // P[A][B][cf]       =  log2 P(A,B,cf)/P(A)/P(B,cf)
-EXTERN float S33[NSSPRED][MAXCF][NSSPRED][MAXCF];  // P[B][cf][B'][cf'] =  log2 sum_B' P(A,B',cf)/P(A)/P(B,cf) * P_b(B'|B)
-// float S77[NDSSP][DSSP];                  // P[A][B]           =  log2 P(A,B)/P(A)/P(B)
-
-
-// cs object declarations
-cs::LibraryPseudocounts<cs::AA> *lib_pc;
-cs::ContextLibrary<cs::AA> *context_lib;
-
-// !!! This declaration should be moved to HHblits!!!
-#ifdef HHBLITS
-cs::ContextLibrary<cs::AA> *cs_lib;
-#endif
-
 
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -251,8 +219,8 @@ public:
   double filter_sum;       // sum of evalues in array
   int filter_counter;      // counter for evalue array
 
-// Hash<int*>* block_shading;         // Cross out cells not covered by prefiltering hit in HHblits
-// Hash<int>* block_shading_counter;  // Cross out cells not covered by prefiltering hit in HHblits
+  Hash<int*>* block_shading;         // Cross out cells not covered by prefiltering hit in HHblits
+  Hash<int>* block_shading_counter;  // Cross out cells not covered by prefiltering hit in HHblits
   int block_shading_space;           // space added to the rands of prefilter HSP
   char block_shading_mode[NAMELEN];
 
@@ -286,3 +254,37 @@ public:
   int index;         // index of template in dbfile (1,2,..)
   int operator<(const Realign_hitpos& realign_hitpos) {return ftellpos<realign_hitpos.ftellpos;}
 };
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+//// Global variable declarations
+/////////////////////////////////////////////////////////////////////////////////////
+
+EXTERN char v;                //=2 1: show only warnings 2:verbose mode
+EXTERN Parameters par;
+EXTERN char program_name[NAMELEN]; //name of program executed (e.g. hhmake of hhsearch)
+EXTERN char program_path[NAMELEN]; //path of program executed
+
+// substitution matrix flavours
+EXTERN float P[21][21];      // P[a][b] = combined probability for a aligned to b
+EXTERN float R[21][21];      // R[a][b]=P[a][b]/p[b]=P(a|b); precalculated for pseudocounts
+EXTERN float Sim[21][21];    // Similarity matrix Sim[a][b]: how similar are a and b?
+EXTERN float S[21][21];      // Substitution score matrix S[a][b] = log2(Pab/pa/pb)
+EXTERN float pb[21];         // pb[a] = background amino acid probabilities for chosen substitution matrix
+EXTERN float qav[21];        // qav[a] = background amino acid probabilities for query HMM (needed for rate matrix rescaling)
+
+// secondary structure matrices
+EXTERN float S73[NDSSP][NSSPRED][MAXCF];           // P[A][B][cf]       =  log2 P(A,B,cf)/P(A)/P(B,cf)
+EXTERN float S33[NSSPRED][MAXCF][NSSPRED][MAXCF];  // P[B][cf][B'][cf'] =  log2 sum_B' P(A,B',cf)/P(A)/P(B,cf) * P_b(B'|B)
+// float S77[NDSSP][DSSP];                  // P[A][B]           =  log2 P(A,B)/P(A)/P(B)
+
+
+// cs object declarations
+cs::LibraryPseudocounts<cs::AA> *lib_pc;
+cs::ContextLibrary<cs::AA> *context_lib;
+
+// !!! This declaration should be moved to HHblits!!!
+#ifdef HHBLITS
+cs::ContextLibrary<cs::AA> *cs_lib;
+#endif
+

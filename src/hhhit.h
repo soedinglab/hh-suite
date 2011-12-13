@@ -134,6 +134,12 @@ class Hit
   // Calculate secondary structure score between columns i and j of two HMMs (query and template)
   inline float ScoreSS(HMM& q, HMM& t, int i, int j);
 
+  // Calculate in log2 space the amino acid similarity score between columns i and j of two HMMs (query and template)
+  inline float Score(float* qi, float* tj);
+
+  // Calculate in lin space the amino acid similarity score between columns i and j of two HMMs (query and template)
+  inline float ProbFwd(float* qi, float* tj);
+
   // Calculate score for a given alignment
   void ScoreAlignment(HMM& q, HMM& t, int steps);
 
