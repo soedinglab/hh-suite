@@ -2,14 +2,20 @@
 # Install HHblits          #
 ############################
 
-- set INSTALL_DIR in Makefile to preferred location
+Compile:
 
-- run "make"
+$ make
 
-- run "make install"
+Either install in current directory:
 
-- download databases from FTP-server
-  (ftp://toolkit.lmb.uni-muenchen.de/HHblits/)
+$ make install
+
+Or set INSTALL_DIR to the base directory, e.g. /usr/local, where you want to install:
+
+$ make install INSTALL_DIR=/usr/local
+
+Download current databases from our FTP-server:
+ftp://toolkit.lmb.uni-muenchen.de/HHblits/
 
 
 ############################
