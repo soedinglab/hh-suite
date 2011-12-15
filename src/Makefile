@@ -55,63 +55,62 @@ $(CS_OBJECTS): $(CS_DIR)/%.o: $(CS_DIR)/%.cc
 	$(CPP) $(OBJECT_LIBS) -c $< -o $@
 
 cstranslate: $(CS_DIR)/cstranslate_app.cc $(CS_OBJECTS)
-	$(CPP) -lm -o ../bin/cstranslate $(CS_DIR)/cstranslate_app.cc $(CS_OBJECTS)
+	$(CPP) -lm -o cstranslate $(CS_DIR)/cstranslate_app.cc $(CS_OBJECTS)
 
 cstranslate_static: $(CS_DIR)/cstranslate_app.cc $(CS_OBJECTS)
-	$(CPP) -static -lm -o ../bin/cstranslate $(CS_DIR)/cstranslate_app.cc $(CS_OBJECTS)
+	$(CPP) -static -lm -o cstranslate $(CS_DIR)/cstranslate_app.cc $(CS_OBJECTS)
 
 hhsearch: hhsearch.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
-	 $(CPP) hhsearch.C -o ../bin/hhsearch $(CS_OBJECTS) $(HHSEARCH_LIBS)
+	 $(CPP) hhsearch.C -o hhsearch $(CS_OBJECTS) $(HHSEARCH_LIBS)
 
 hhsearch_static: hhsearch.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
-	 $(CPP) -static hhsearch.C -o ../bin/hhsearch $(CS_OBJECTS) $(HHSEARCH_LIBS)
+	 $(CPP) -static hhsearch.C -o hhsearch $(CS_OBJECTS) $(HHSEARCH_LIBS)
 
 hhsearch_valgrind: hhsearch.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
-	  $(CPP_VALGRIND) hhsearch.C -o ../bin/hhsearch_valgrind $(CS_OBJECTS) $(HHSEARCH_LIBS)
+	  $(CPP_VALGRIND) hhsearch.C -o hhsearch_valgrind $(CS_OBJECTS) $(HHSEARCH_LIBS)
 
 hhblits: hhblits.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
-	 $(CPP) hhblits.C -o ../bin/hhblits $(CS_OBJECTS) $(HHBLITS_LIBS) $(FFINDEX_DIR)/libffindex.a
+	 $(CPP) hhblits.C -o hhblits $(CS_OBJECTS) $(HHBLITS_LIBS) $(FFINDEX_DIR)/libffindex.a
 
 hhblits_static: hhblits.C $(SOURCES) $(HEADERS)$(CS_OBJECTS)
-	 $(CPP) -static hhblits.C -o ../bin/hhblits $(CS_OBJECTS) $(HHBLITS_LIBS) $(FFINDEX_DIR)/libffindex.a
+	 $(CPP) -static hhblits.C -o hhblits $(CS_OBJECTS) $(HHBLITS_LIBS) $(FFINDEX_DIR)/libffindex.a
 
 hhblits_valgrind: hhblits.C $(SOURCES) $(HEADERS)$(CS_OBJECTS)
-	  $(CPP_VALGRIND) hhblits.C -o ../bin/hhblits_valgrind $(CS_OBJECTS) $(HHBLITS_LIBS) $(FFINDEX_DIR)/libffindex.a
+	  $(CPP_VALGRIND) hhblits.C -o hhblits_valgrind $(CS_OBJECTS) $(HHBLITS_LIBS) $(FFINDEX_DIR)/libffindex.a
 
 hhmake: hhmake.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
-	$(CPP) hhmake.C -o ../bin/hhmake $(CS_OBJECTS)
+	$(CPP) hhmake.C -o hhmake $(CS_OBJECTS)
 
 hhmake_static: hhmake.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
-	$(CPP) -static hhmake.C -o ../bin/hhmake $(CS_OBJECTS)
+	$(CPP) -static hhmake.C -o hhmake $(CS_OBJECTS)
 
 hhalign: hhalign.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
-	 $(CPP) hhalign.C -o ../bin/hhalign $(CS_OBJECTS) $(HHALIGN_LIBS)
+	 $(CPP) hhalign.C -o hhalign $(CS_OBJECTS) $(HHALIGN_LIBS)
 
 hhalign_static: hhalign.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
-	 $(CPP) -static hhalign.C -o ../bin/hhalign $(CS_OBJECTS) $(HHALIGN_LIBS)
+	 $(CPP) -static hhalign.C -o hhalign $(CS_OBJECTS) $(HHALIGN_LIBS)
 
 hhalign_valgrind: hhalign.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
-	  $(CPP_VALGRIND) hhalign.C -o ../bin/hhalign_valgrind $(CS_OBJECTS) $(HHALIGN_LIBS)
+	  $(CPP_VALGRIND) hhalign.C -o hhalign_valgrind $(CS_OBJECTS) $(HHALIGN_LIBS)
 
 hhfilter: hhfilter.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
-	  $(CPP) hhfilter.C -o ../bin/hhfilter $(CS_OBJECTS)
+	  $(CPP) hhfilter.C -o hhfilter $(CS_OBJECTS)
 
 hhfilter_static: hhfilter.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
-	  $(CPP) -static hhfilter.C -o ../bin/hhfilter $(CS_OBJECTS) 
+	  $(CPP) -static hhfilter.C -o hhfilter $(CS_OBJECTS) 
 
 hhfilter_valgrind: hhfilter.C $(SOURCES) $(HEADERS)$(CS_OBJECTS)
-	  $(CPP_VALGRIND) hhfilter.C -o ../bin/hhfilter_valgrind $(CS_OBJECTS) 
+	  $(CPP_VALGRIND) hhfilter.C -o hhfilter_valgrind $(CS_OBJECTS) 
 
 hhconsensus: hhconsensus.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
-	     $(CPP) hhconsensus.C -o ../bin/hhconsensus $(CS_OBJECTS)
+	     $(CPP) hhconsensus.C -o hhconsensus $(CS_OBJECTS)
 
 hhconsensus_static: hhconsensus.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
-	     $(CPP) -static hhconsensus.C -o ../bin/hhconsensus $(CS_OBJECTS)
+	     $(CPP) -static hhconsensus.C -o hhconsensus $(CS_OBJECTS)
 
 hhconsensus_valgrind: hhconsensus.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
-	     $(CPP_VALGRIND) hhconsensus.C -o ../bin/hhconsensus_valgrind $(CS_OBJECTS)
+	     $(CPP_VALGRIND) hhconsensus.C -o hhconsensus_valgrind $(CS_OBJECTS)
 
 clean: 	
-	-rm -f *.o ../cs/src/*.o
-	-rm -f ../bin/*
-	-cp .hhdefaults ../bin/
+	-rm -f *.o
+	-rm -f hhconsensus hhconsensus_valgrind hhfilter_valgrind hhfilter hhalign_valgrind hhalign hhmake hhblits_valgrind hhblits hhsearch_valgrind hhsearch cstranslate 

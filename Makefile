@@ -1,6 +1,10 @@
-INSTALL_DIR?=/usr/local
-libdir=`([[ -d /usr/lib64 ]] && echo lib64) || echo lib`
-dist_name=hh-suite-2.2.21
+INSTALL_DIR?=$(PWD)
+libdir=`([ -d /usr/lib64 ] && echo lib64) || echo lib`
+# Overriding this is currently not fully supported as the code won't know
+# to what this is set then.
+INSTALL_LIB_DIR?=$(INSTALL_DIR)/$(libdir)/hh
+
+dist_name=hh-suite-2.2.22
 
 all_static: ffindex_static
 	cd src && make all_static
@@ -12,7 +16,6 @@ hhblits_static: hhblits_static
 	cd src && make hhblits_static
 
 hhblits: ffindex
-	mkdir -p bin
 	cd src && make all
 
 #cs:
@@ -27,18 +30,25 @@ ffindex_static:
 install:
 	cd lib/ffindex && make install INSTALL_DIR=$(INSTALL_DIR)
 	mkdir -p $(INSTALL_DIR)/bin
-	install bin/hhblits $(INSTALL_DIR)/bin/hhblits
-	install bin/hhblits $(INSTALL_DIR)/bin/cstranslate
-	install bin/hhblits $(INSTALL_DIR)/bin/hhalign
-	install bin/hhblits $(INSTALL_DIR)/bin/hhconsensus
-	install bin/hhblits $(INSTALL_DIR)/bin/hhfilter
-	install bin/hhblits $(INSTALL_DIR)/bin/hhmake
-	install bin/hhblits $(INSTALL_DIR)/bin/hhsearch
-	mkdir -p $(INSTALL_DIR)/$(libdir)/hh
-	install data/context_data.lib $(INSTALL_DIR)/$(libdir)/hh/context_data.lib
-	install data/cs219.lib $(INSTALL_DIR)/$(libdir)/hh/cs219.lib
-	install src/.hhdefaults $(INSTALL_DIR)/$(libdir)/hh/hhdefaults
+	install src/hhblits     $(INSTALL_DIR)/bin/hhblits
+	install src/cstranslate $(INSTALL_DIR)/bin/cstranslate
+	install src/hhalign     $(INSTALL_DIR)/bin/hhalign
+	install src/hhconsensus $(INSTALL_DIR)/bin/hhconsensus
+	install src/hhfilter    $(INSTALL_DIR)/bin/hhfilter
+	install src/hhmake      $(INSTALL_DIR)/bin/hhmake
+	install src/hhsearch    $(INSTALL_DIR)/bin/hhsearch
+	mkdir -p $(INSTALL_LIB_DIR)
+	install data/context_data.lib $(INSTALL_LIB_DIR)/context_data.lib
+	install data/cs219.lib        $(INSTALL_LIB_DIR)/cs219.lib
+	install src/.hhdefaults       $(INSTALL_LIB_DIR)/hhdefaults
 
+deinstall:
+	rm -f $(INSTALL_DIR)/bin/hhblits $(INSTALL_DIR)/bin/cstranslate $(INSTALL_DIR)/bin/hhalign \
+		$(INSTALL_DIR)/bin/hhconsensus $(INSTALL_DIR)/bin/hhfilter $(INSTALL_DIR)/bin/hhmake $(INSTALL_DIR)/bin/hhsearch
+	rmdir $(INSTALL_DIR)/bin || true
+	rm -f $(INSTALL_LIB_DIR)/context_data.lib $(INSTALL_LIB_DIR)/cs219.lib $(INSTALL_LIB_DIR)/hhdefaults
+	rmdir $(INSTALL_LIB_DIR) || true
+	cd lib/ffindex && make deinstall INSTALL_DIR=$(INSTALL_DIR)
 
 clean:
 	#cd lib/cs/src && make clean

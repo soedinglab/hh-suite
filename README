@@ -61,8 +61,8 @@ You can get a detailed list of options for HHblits by running HHblits with the "
 License
 #######
 
-The HHblits/HHsearch software package is distributed under the terms of the "Attribution-NonCommercial-3.0 license"
-from Creative Commons (http://creativecommons.org/licenses/by-nc/3.0/). For a more detailed license info, see Userguide.
+The HHblits/HHsearch software package is distributed under the terms of the GPL version 3,
+see LICENSE file.
 
 
 ************************************************
