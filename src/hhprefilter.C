@@ -836,7 +836,6 @@ void init_prefilter()
 	    {
 	      // The following arithmetic transformation is necessary since this is the way characters are encoded by the cstranslate program
 	      c = *linep < 0 ? *linep + 256 : *linep; // isn't it possible to remove the if using bit operations for speed-up??
-	      if (linep-line<10) printf("",*linep,c);
 	      if (cs::AS219::kValidChar[c])
 	      	{
 	      	  X[pos++]=(unsigned char)(cs::AS219::kCharToInt[c]);
