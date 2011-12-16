@@ -1848,7 +1848,6 @@ int main(int argc, char **argv)
     cerr<<"Error "<<pthread_attr_setdetachstate(&joinable, PTHREAD_CREATE_JOINABLE)<<": could not set detach state for thread attibute.\n";
 #endif
 
-  SetDefaults();
   par.premerge = 3;
   par.Ndiff = 1000;
   par.prefilter=true;

@@ -239,7 +239,6 @@ int main(int argc, char **argv)
   strcpy(par.alnfile,"");
 
   //Default parameter settings
-  SetDefaults();
   par.showcons=1;              // write consensus sequence into hhm file
   par.append=0;                // overwrite output file
   par.nseqdis=10;              // maximum number of query or template sequences to be recoreded in HMM and diplayed in output alignments

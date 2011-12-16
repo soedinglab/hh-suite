@@ -233,7 +233,6 @@ int main(int argc, char **argv)
   strcpy(par.alnfile,"");
   
   //Default parameter settings
-  SetDefaults();
   par.nseqdis=MAXSEQ-1;        // maximum number of sequences to be written 
   par.showcons=0;
   par.cons=1;

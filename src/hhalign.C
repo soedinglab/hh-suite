@@ -708,7 +708,6 @@ int main(int argc, char **argv)
 #endif
   int Nali;                    // number of normally backtraced alignments in dot plot
 
-  SetDefaults();
   strcpy(par.tfile,"");
   strcpy(par.alnfile,"");
   par.p=0.0 ;                  // minimum threshold for inclusion in hit list and alignment listing

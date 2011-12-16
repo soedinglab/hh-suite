@@ -165,7 +165,6 @@ int main(int argc, char **argv)
   strcpy(par.infile,"");
   strcpy(par.outfile,"");
   
-  SetDefaults();
   par.nseqdis=MAXSEQ-1;        // maximum number of sequences to be written 
   par.Ndiff=0;                 // no filtering for maximum diversity
 

@@ -1141,8 +1141,6 @@ int main(int argc, char **argv)
     cerr<<"Error "<<pthread_attr_setdetachstate(&joinable, PTHREAD_CREATE_JOINABLE)<<": could not set detach state for thread attibute.\n";
 #endif
 
-  SetDefaults();
-
   // Make command line input globally available
   par.argv=argv;
   par.argc=argc;
