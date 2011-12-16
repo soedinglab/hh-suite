@@ -806,7 +806,6 @@ void init_prefilter()
   num_dbs = 0;
   int len = 0;
   int pos = 0;
-  int c;
   char word[NAMELEN];
   FILE* dbf = NULL;
   dbf = fopen(db,"rb");
@@ -831,20 +830,18 @@ void init_prefilter()
 	}
       else
 	{
-	  char* linep = line;
-	  while (*linep!=0)
+	  unsigned char* c = (unsigned char*)line;
+	  while (*c!='\0')
 	    {
-	      // The following arithmetic transformation is necessary since this is the way characters are encoded by the cstranslate program
-	      c = *linep < 0 ? *linep + 256 : *linep; // isn't it possible to remove the if using bit operations for speed-up??
-	      if (cs::AS219::kValidChar[c])
+	      if (cs::AS219::kValidChar[*c])
 	      	{
-	      	  X[pos++]=(unsigned char)(cs::AS219::kCharToInt[c]);
+	      	  X[pos++]=(unsigned char)(cs::AS219::kCharToInt[*c]);
 	      	  ++len;
 	      	}
 	      else
-	      	cerr<<endl<<"WARNING: ignoring invalid symbol \'"<<*linep<<"\' of "<<db<<"\n";
+	      	cerr<<endl<<"WARNING: ignoring invalid symbol \'"<< *c <<"\' of "<<db<<"\n";
 
-	      linep++;
+	      c++;
 	    }
 	  
 	}
