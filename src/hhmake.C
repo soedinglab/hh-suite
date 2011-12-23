@@ -106,7 +106,6 @@ void help()
   printf(" -M [0,100]    use FASTA: columns with fewer than X%% gaps are match states   \n");
   printf("\n");
   printf("Other options:                                                               \n");
-  printf(" -def          read default options from ./.hhdefaults or <home>/.hhdefault. \n");
   printf("\n");
   printf("Example: %s -i test.a3m \n",program_name);
   printf("\n");

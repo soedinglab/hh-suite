@@ -65,8 +65,8 @@ void help()
   printf("\n");
   printf("HHfilter %s\n",VERSION_AND_DATE);
   printf("Filter an alignment by maximum sequence identity of match states and minimum coverage\n");
-  printf("%s",REFERENCE);
   printf("%s",COPYRIGHT);
+  printf("%s",REFERENCE);
   printf("\n");
   printf("Usage: %s -i infile -o outfile [options]                  \n",program_name);
   printf(" -i <file>     read input file in A3M/A2M or FASTA format                 \n");
@@ -82,7 +82,6 @@ void help()
   printf(" -qid  [0,100] minimum sequence identity with query (%%) (def=%i) \n",par.qid);
   printf(" -qsc  [0,100] minimum score per column with query  (def=%.1f)\n",par.qsc);
   printf(" -neff [1,inf] target diversity of alignment (default=off)\n");
-  printf(" -def          read default options from ./.hhdefaults or <home>/.hhdefault. \n");
   printf("\n");         
   printf("Input alignment format:                                                    \n");
   printf(" -M a2m        use A2M/A3M (default): upper case = Match; lower case = Insert;\n");         

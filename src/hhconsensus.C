@@ -79,8 +79,8 @@ void help()
   printf("\n");
   printf("HHconsensus %s\n",VERSION_AND_DATE);
   printf("Calculate the consensus sequence for an A3M/FASTA input file.   \n");
-  printf("%s",REFERENCE);
   printf("%s",COPYRIGHT);
+  printf("%s",REFERENCE);
   printf("\n");
   printf("Usage: %s -i <file> [options]                           \n",program_name);
   printf(" -i <file>     query alignment (A2M, A3M, or FASTA), or query HMM          \n");
@@ -109,7 +109,6 @@ void help()
   printf("\n");    
   printf("Other options:                                                               \n");
   printf(" -addss        add predicted secondary structure information from PSI-PRED   \n");
-  printf(" -def          read default options from ./.hhdefaults or <home>/.hhdefault. \n");
   printf("\n");    
   printf("Example: %s -i stdin -s stdout\n",program_name);
   printf("\n");    

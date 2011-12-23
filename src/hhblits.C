@@ -98,9 +98,7 @@ const char print_elapsed=0;    // debug output for runtimes
 char tmp_file[]="/tmp/hhblitsXXXXXX";  // for runtime secondary structure prediction (only with -addss option)
 
 // HHblits variables
-const char HHBLITS_VERSION[]="version 2.2.20 (Sep 2011)";
-const char HHBLITS_REFERENCE[]="Remmert M., Biegert A., Hauser A., and Soeding J., to be published.\n";
-const char HHBLITS_COPYRIGHT[]="(C) Michael Remmert and Johannes Soeding\n";
+const char HHBLITS_REFERENCE[] = "Remmert M., Biegert A., Hauser A., and Soding J.\nHHblits: Lightning-fast iterative protein sequence searching by HMM-HMM alignment.\nNat. Methods, epub Dec 25, doi: 10.1038/NMETH.1818 (2011).\n";
 
 const int MAXNUMDB=20000;               // maximal number of hits through prefiltering
 const int MAXNUMDB_NO_PREFILTER=200000; // maximal number of hits without prefiltering
@@ -288,22 +286,17 @@ void PerformViterbiByWorker(int bin)
 void help()
 {
   printf("\n");
-  printf("HHblits %s: HMM-HMM-based lighting-fast iterative sequence search\n",HHBLITS_VERSION);
-  printf("%s",HHBLITS_COPYRIGHT);
+  printf("HHblits %s: HMM-HMM-based lighting-fast iterative sequence search\n",VERSION_AND_DATE);
+  printf("HHblits is a sensitive, general-purpose, iterative sequence search tool that represents \n");
+  printf("both query and database sequences by HMMs. You can search HHblits databases starting\n");
+  printf("with a single query sequence, a multiple sequence alignment, or an HMM. HHblits prints out\n");
+  printf("a ranked list of database HMMs/alignments and can also generate a multiple sequence alignment\n");
+  printf("from the significant HMMs/alignments.\n");
   printf("\n");
-  printf("HHblits is a general-purpose, sensitive iterative sequence search tool that represents \n");
-  printf("both query and database sequences by HMMs. You can search HHblits databases starting  \n");
-  printf("with a single query sequence a multiple sequence alignment, or an HMM. HHblits prints out\n");
-  printf("a list of matches and can also generate a multiple sequence alignment from the significant\n");
-  printf("matches.\n");
-  printf("\n");
-  printf("Reference: \n");
-  printf("HHblits: Lightning-fast iterative protein sequence searching by HMM-HMM alignment. \n");
-  printf("Remmert M., Biegert A., Hauser A., and Soeding J.\n");
-  printf("Nat. Methods, in press (2012).\n");
+  printf("%s",HHBLITS_REFERENCE);
+  printf("%s",COPYRIGHT);
   printf("\n");
   printf("Usage: %s -i query [options]                                                             \n",program_name);
-  printf("\n");
   printf(" -i <file>      input query (single FASTA-sequence, A3M- or FASTA-alignment, HMM-file)   \n");
   printf("\n");
   printf("Options:                                                                                 \n");
@@ -312,12 +305,9 @@ void help()
   printf(" -e     [0,1]   E-value cutoff for inclusion in result alignment (def=%G)                \n",par.e);
   printf("\n");
   printf("Needed libraries                                                                         \n");
-  // HHsearch option should be the same as HHblits option
 //printf(" -cs   <file>   compute context-specific pseudocounts with context library (def=off)\n");
-//printf(" -contxt <file> compute context-specific pseudocounts with context file (default=%s)\n",par.clusterfile);
-//printf(" -column <file> column-state sequence file for fast database prefiltering (default=%s),par.cs_library)\n");
-  printf(" -context_data  <file> context_data library (default=%s)                                 \n",par.clusterfile);
-  printf(" -cs_lib        <file> cs-library (default=%s)                                           \n",par.cs_library); 
+  printf(" -contxt <file> context file for computing context-specific pseudocounts (default=%s)\n",par.clusterfile);
+  printf(" -cslib  <file> column state file for fast database prefiltering (default=%s)\n",par.cs_library);
   printf("\n");
   printf("Input alignment format:                                                       \n");
   printf(" -M a2m         use A2M/A3M (default): upper case = Match; lower case = Insert;\n");
@@ -327,8 +317,8 @@ void help()
   printf("\n");
   printf("Output options:                                                                          \n");
 
-  printf(" -ofas <file>  write multiple alignment of significant matches in FASTA format\n");
-  printf("               Analogous for output in a2m, a3m, hhm format (e.g. -ohhm, -Oa3m)\n");
+  printf(" -ofas <file>   write multiple alignment of significant matches in FASTA format\n");
+  printf("                Analogous for output in a2m, a3m, hhm format (e.g. -ohhm, -Oa3m)\n");
 
   printf(" -o <file>      write results in standard format to file (default=<infile.hhr>)          \n");
   printf(" -oa3m <file>   write multiple alignment of significant matches in a3m format\n");
@@ -359,9 +349,9 @@ void help()
 void help_all()
 {
   printf("\n");
-  printf("HHblits %s\n",HHBLITS_VERSION);
+  printf("HHblits %s\n",VERSION_AND_DATE);
   printf("Fast homology detection method HHblits to iteratively search a filtered NR HMM database.\n");
-  printf("%s",REFERENCE);
+  printf("%s",HHBLITS_REFERENCE);
   printf("%s",COPYRIGHT);
   printf("\n\n");
   printf("Usage: %s -i query [options]                                                           \n",program_name);
@@ -397,14 +387,10 @@ void help_all()
   printf(" -B <int>       maximum number of alignments in alignment list (default=%i)           \n",par.B);
   printf(" -b <int>       minimum number of alignments in alignment list (def=ault%i)           \n",par.b);
   printf("\n");
-// Why "programs"? these are also data files. Why "needed"? PSIPRED stuff is not needed.
-  printf("Directories for needed programs                                                        \n");
-  // HHsearch option should be the same as HHblits option!!
-//printf(" -contxt <file> context file to compute context-specific pseudocounts (default=%s)\n",par.clusterfile);
-//printf(" -column <file> column-state sequence file for fast database prefiltering (default=%s),par.cs_library)\n");
-  printf(" -context_data  <file> context_data library (default=%s)                               \n",par.clusterfile);
-  printf(" -cs_lib        <file> cs-library (default=%s)                                         \n",par.cs_library); 
-// Shouldn't one path be enough for PSIPRED?
+  printf("Directory paths                                                                       \n");
+//printf(" -cs   <file>   compute context-specific pseudocounts with context library (def=off)\n");
+  printf(" -contxt <file> context file for computing context-specific pseudocounts (default=%s)\n",par.clusterfile);
+  printf(" -cslib  <file> column state file for fast database prefiltering (default=%s)\n",par.cs_library);
   printf(" -psipred       <dir>  directory with PSIPRED executables (default=%s)                 \n",par.psipred);
   printf(" -psipred_data  <dir>  directory with PSIPRED data (default=%s)                        \n",par.psipred_data);
   printf("\n");
@@ -505,17 +491,17 @@ void ProcessArguments(int argc, char** argv)
           else
 	    strcpy(db_base,argv[i]);
         }
-      else if (!strcmp(argv[i],"-context_data"))
+      else if (!strcmp(argv[i],"-contxt") || !strcmp(argv[i],"-context_data"))
         {
           if (++i>=argc || argv[i][0]=='-')
-            {help() ; cerr<<endl<<"Error in "<<program_name<<": no lib following -context_data\n"; exit(4);}
+            {help() ; cerr<<endl<<"Error in "<<program_name<<": no lib following -contxt\n"; exit(4);}
           else
 	    strcpy(par.clusterfile,argv[i]);
         }
-      else if (!strcmp(argv[i],"-cs_lib"))
+      else if (!strcmp(argv[i],"-cslib") || !strcmp(argv[i],"-cs_lib"))
         {
           if (++i>=argc || argv[i][0]=='-')
-            {help() ; cerr<<endl<<"Error in "<<program_name<<": no lib following -cs_lib\n"; exit(4);}
+            {help() ; cerr<<endl<<"Error in "<<program_name<<": no lib following -cslib\n"; exit(4);}
           else strcpy(par.cs_library,argv[i]);
         }
       else if (!strcmp(argv[i],"-psipred"))
@@ -1889,9 +1875,9 @@ int main(int argc, char **argv)
   if (par.addss==1 && (!*par.psipred || !*par.psipred_data))
     {help(); cerr<<endl<<"Error in "<<program_name<<": missing PSIPRED directory (see -psipred and -psipred_data).\nIf you don't need the predicted secondary structure, don't use the -addss option!\n"; exit(4);}
   if (!strcmp(par.clusterfile,""))
-    {help(); cerr<<endl<<"Error in "<<program_name<<": context-specific library missing (see -cs_db)\n"; exit(4);}
+    {help(); cerr<<endl<<"Error in "<<program_name<<": context-specific library missing (see -contxt)\n"; exit(4);}
   if (!strcmp(par.cs_library,""))
-    {help(); cerr<<endl<<"Error in "<<program_name<<": context-state library (see -cs_lib)\n"; exit(4);}
+    {help(); cerr<<endl<<"Error in "<<program_name<<": colmun state library (see -cslib)\n"; exit(4);}
 
   // Set databases
   strcpy(db,db_base);
@@ -2263,17 +2249,17 @@ int main(int argc, char **argv)
 		FILE* ta3mf;
 		ta3mf = ffindex_fopen(dba3m_data, dba3m_index, ta3mfile);
 		if (ta3mf == NULL) OpenFileError(ta3mfile);
-
 		Qali.MergeMasterSlave(hit_cur,ta3mfile, ta3mf);
+		fclose(ta3mf);
+
 		if (par.nodiff)
 		  {
-		    fclose(ta3mf);
 		    ta3mf = ffindex_fopen(dba3m_data, dba3m_index, ta3mfile);
 		    Qali_nodiff.MergeMasterSlave(hit_cur,ta3mfile, ta3mf, false);
+		    fclose(ta3mf);
 		  }
 
 
-		fclose(ta3mf);
 
 		if (Qali.N_in>=MAXSEQ) break; // Maximum number of sequences reached 
 	      }

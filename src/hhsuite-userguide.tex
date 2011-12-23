@@ -45,18 +45,29 @@
 \begin{center}
 
 \vspace{30mm}
-{\Huge Quick guide to HHsearch/HHblits}\\[2mm]
-  Version 2.0.0 (June 2011)\\[2mm]
-\copyright  Michael Remmert \& Johannes S\"oding\\[2mm]
+{\Huge HHsearch suite user guide}\\[2mm]
+  Version 2.0.0 (January 2012)\\[2mm]
+\copyright  Johannes S\"oding, Michael Remmert, Andreas Hauser\\[2mm]
 For bug reports, questions, or comments please contact johannes@soeding.com
 \end{center}
 
-% {\noindent HHsearch/HHblits is a software suite for detecting remote homologues of proteins and generating high-quality alignments for homology modeling and function prediction. In addition to the command line package described here, there are two web server (HHblits, HHpred) available at \url{http://toolkit.tuebingen.mpg.de} or \url{http://toolkit.lmb.uni-muenchen.de} that runs the HHsearch/HHblits software and offers extended interactive functionality such as checking query and template alignments, histogram views of alignments, building 3D models with MODELER etc. The performance of this software suite is testified by the fact that in the latest CASP competition (2010) a fully automated version was assessed as one of the best out of the 81 servers, in particular in template-based structure prediction, the category most relevant for biological applications. (\url{http://predictioncenter.org/casp9/groups_analysis.cgi?type=server&tbm=on&submit=Filter}) Remarkable is that with $\sim 4$ minutes median response time, HHpred is about 100 faster than other top servers. Similar results could be achived in the previous rounds of CASP [Hildebrand A \emph{et al.} (2009) \emph{Proteins} {\bf 77}, 128-132. Battey JND \emph{et al.} (2007) \emph{Proteins} {\bf 69}, 68-82].}
 
-{\noindent HHsearch/HHblits is a software suite for detecting remote homologues of proteins and for generating high-quality alignments for homology modeling and function prediction. HHsearch is based on the pairwise comparison of profile hidden Markov models (HMMs). HHblits builds on top of HHsearch and achieves almost the same sensitivity as HHsearch at up to 1000 times the speed, by running a very fast profile-profile comparison prefilter before the full pairwise comparison of HMMs. HHblits can be used in an iterative search mode in combination with an HMM-encoded version of the UniProt or nr datbases. HHblits is faster than PSI-BLAST yet it achieves much higher sensitivity and generates alignments of much better quality.
+{\large \bf Summary}\\[2mm]
 
-In addition to the command line package described here, two web servers HHblits and HHpred are available at \url{http://toolkit.tuebingen.mpg.de} and \url{http://toolkit.lmb.uni-muenchen.de} that run the HHsearch and HHblits software and offer extended interactive functionality,  such as options for checking  query and template alignments, histogram views of alignments, building 3D models with MODELLER etc. In the latest CASP competition (2010), a fully automated version of HHpred based on HHsearch and HHblits was ranked best out of the 81 servers in template-based structure prediction, the category most relevant for biological applications, while having response times of minutes instead of days as most other servers (\url{http://predictioncenter.org/casp9/groups_analysis.cgi?type=server&tbm=on&submit=Filter}) 
+{
+\noindent The HHsearch/HHblits suite is an open source software package for highly sensitive sequence searching based on the pairwise comparison of hidden Markov models (HMMs). It contains HHsearch and HHblits among other programs and utilities. HHsearch takes as input a multiple sequence alignment or profile HMM and can search a database of HMMs such as the PDB, Pfam, or InterPro for homologous proteins. HHsearch is a the heart of the automatic protein structure prediction server HHpred, which uses HHsearch to build pairwise alignments of target and template sequences for homology modeling. 
+
+\noindent The HHblits program can build high-quality multiple sequence alignments starting from a single sequence or from a multiple sequence alignment. Compared to PSI-BLAST, HHblits is faster, up to twice as sensitive and produces more accurate alignments. It uses an iterative search strategy, adding significantly similar sequences from a previous search iteration to the evolving query HMM. Because HHblits is based on pairwise alignment of profile HMMs, it needs its own type of sequence databases that contain multiple sequence alignments the corresponding profile HMMs instead of single sequences. These databases are generated regularly by clustering UniProt and the nonredundant (nr) database from the NCBI. The HHblits databases UniProt20 and nr20 are regularly updated and can be downloaded together with HHblits. HHblits uses the HMM-HMM alignment algorithms in HHsearch, but it employs a fast prefilter to reduce the amount of database HMMs for which to perfrom the slow, full HMM-HMM comparison from tens of millions to a few thousands. 
+
+\noindent In addition to the command line package described here, two web servers HHpred and HHblits are available at \url{http://hhpred.tuebingen.mpg.de} and \url{http://hhblits.lmb.uni-muenchen.de} that run the HHsearch and HHblits software and offer extended interactive functionality, such as options for checking  query and template alignments, histogram views of alignments, and building 3D models with MODELLER. In the latest CASP competition (2010), a fully automated version of HHpred based on HHsearch and HHblits was ranked best out of the 81 servers in template-based structure prediction, the category most relevant for biological applications, while having response times of minutes instead of days as most other servers (\url{http://predictioncenter.org/casp9/groups_analysis.cgi?type=server&tbm=on&submit=Filter}) 
+
+Reference: 
+Remmert M., Biegert A., Hauser A., and S\"oding J. \\
+HHblits: Lightning-fast iterative protein sequence searching by HMM-HMM alignment.\\
+Nat. Methods, epub Dec 25, doi: 10.1038/NMETH.1818 (2011).\\
+
 }
+
 
 \newpage
 
