@@ -2,15 +2,17 @@
 INSTALL_DIR?=$(PWD)
 
 # Guess wether to use lib or lib64
-libdir=`([ -d /usr/lib64 ] && echo lib64) || echo lib`
+#libdir=`([ -d /usr/lib64 ] && echo lib64) || echo lib`
+# We don't have platform specific lib stuff
+libdir=lib
 
 # Overriding this is currently not fully supported as the code won't know
-# to what this is set then.
+# to what this is set then. You can try setting HHLIB.
 INSTALL_LIB_DIR?=$(INSTALL_DIR)/$(libdir)/hh
 INSTALL_SCRIPTS_DIR?=$(INSTALL_LIB_DIR)/scripts
 INSTALL_DATA_DIR?=$(INSTALL_LIB_DIR)/data
 
-dist_name=hh-suite-2.2.23
+dist_name=hh-suite-2.2.24
 
 all_static: ffindex_static
 	cd src && make all_static
@@ -72,7 +74,6 @@ deinstall:
 	rmdir $(INSTALL_LIB_DIR) || true
 
 clean:
-	#cd lib/cs/src && make clean
 	cd lib/ffindex && make clean
 	cd src && make clean
 
@@ -81,5 +82,5 @@ dist/$(dist_name).tar.gz:
 	git archive --prefix=$(dist_name)/ -o dist/$(dist_name).tar.gz HEAD
 	cd dist && tar xf $(dist_name).tar.gz
 	mkdir -p dist/$(dist_name)/bin
-	cd dist/$(dist_name) && rsync --exclude .git --exclude .hg -av ../../lib .
+	cd dist/$(dist_name) && rsync --exclude .git --exclude .hg -av ../../lib . && rm -rf scripts
 	cd dist && tar czf $(dist_name).tar.gz $(dist_name)
