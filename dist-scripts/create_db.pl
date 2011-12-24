@@ -1,12 +1,12 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # 
 # Creates HHblits databases from HMMER-files, HMM-files or A3M-files
 
 ################################################################################################################################
 # Update the following variables
 
-$hh_dir  = "/cluster/bioprogs/hhblits";         # path to needed tools (cstranslate, hhmake)
-$lib_dir = "/cluster/bioprogs/hhblits";         # path to needed libraries (context_data.lib, cs219.lib)
+use lib $ENV{HHLIB}."/scripts"
+use HHPaths;
 
 ################################################################################################################################
 
@@ -18,8 +18,6 @@ my $a3mext = "a3m";       # default A3M-file extension
 my $hhmext = "hhm";       # default HHM-file extension
 my $x = 0.3;
 my $c = 4;
-my $cs_lib = "$lib_dir/cs219.lib";
-my $context_lib = "$lib_dir/context_data.lib";
 
 my $append = 0;
 
@@ -178,9 +176,9 @@ if ($a3mfile ne "") {
     close OUT;
 
     if ($append) {
-	$command = "$hh_dir/ffindex_build -as -f $tmpdir/a3m.filelist $a3mfile $a3mfile.index";
+	$command = "ffindex_build -as -f $tmpdir/a3m.filelist $a3mfile $a3mfile.index";
     } else {
-	$command = "$hh_dir/ffindex_build -s -f $tmpdir/a3m.filelist $a3mfile $a3mfile.index";
+	$command = "ffindex_build -s -f $tmpdir/a3m.filelist $a3mfile $a3mfile.index";
     }
     if (&System($command) != 0) {
 	print "WARNING! Error with command $command!\n";
@@ -202,7 +200,7 @@ if ($hhmfile ne "") {
 	    @files = glob("$dir/*.$a3mext");
 	    foreach $file (@files) {
 		$file =~ /^\S+\/(\S+?)\.$a3mext$/;
-		$command = "$hh_dir/hhmake -i $file -o $hhmdir/$1.hhm";
+		$command = "hhmake -i $file -o $hhmdir/$1.hhm";
 		if (&System($command) != 0) {
 		    print "WARNING! Error with command $command!\n";
 		}
@@ -224,9 +222,9 @@ if ($hhmfile ne "") {
     print "Creating HHM database $hhmfile ...\n";
 
     if ($append) {
-	$command = "$hh_dir/ffindex_build -as -f $tmpdir/hhm.filelist $hhmfile $hhmfile.index";
+	$command = "ffindex_build -as -f $tmpdir/hhm.filelist $hhmfile $hhmfile.index";
     } else {
-	$command = "$hh_dir/ffindex_build -s -f $tmpdir/hhm.filelist $hhmfile $hhmfile.index";
+	$command = "ffindex_build -s -f $tmpdir/hhm.filelist $hhmfile $hhmfile.index";
     }
     if (&System($command) != 0) {
 	print "WARNING! Error with command $command!\n";
