@@ -1,13 +1,12 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # 
 # Create a HHblits CS-database from HMMER-files, HMM-files or A3M-files
 
 ################################################################################################################################
 # Update the following variables
 
-$script_dir = "/cluster/bioprogs/hhblits/scripts";  # path to directory with scripts (create_profile_from_hmmer.pl, create_profile_from_hhm.pl)
-$lib_dir = "/cluster/bioprogs/hhblits";             # path to needed libraries (context_data.lib, cs219.lib)
-$hh_dir = "/cluster/bioprogs/hhblits";              # path to needed HH-tools (cstranslate)
+use lib $ENV{HHLIB}."/scripts"
+use HHPaths;
 
 ################################################################################################################################
 
@@ -18,8 +17,6 @@ our $v=2;              # verbose mode
 my $ext = "a3m";       # default file extension
 my $x = 0.3;
 my $c = 4;
-my $cs_lib = "$lib_dir/cs219.lib";
-my $context_lib = "$lib_dir/context_data.lib";
 my $append = 0;
 
 my $help="
@@ -108,7 +105,7 @@ if ($ext eq "a3m") {
 	elsif (($count % 50) == 0) { print ". "; }
 
 	# Create CS-sequence for CS-database
-	$command = "$hh_dir/cstranslate -i $file -a $outfile -D $context_lib -A $cs_lib -x $x -c $c > /dev/null 2>&1";
+	$command = "cstranslate -i $file -a $outfile -D $context_lib -A $cs_lib -x $x -c $c > /dev/null 2>&1";
 	if (&System($command) != 0) {
 	    print "WARNING! Error with command $command!\n";
 	}
@@ -123,13 +120,13 @@ if ($ext eq "a3m") {
 	elsif (($count % 50) == 0) { print ". "; }
 
 	# Extract profile from HHM-file
-	$command = "$script_dir/create_profile_from_hhm.pl -i $file -o $tmpdir/file.prf > /dev/null 2>&1";
+	$command = "create_profile_from_hhm.pl -i $file -o $tmpdir/file.prf > /dev/null 2>&1";
 	if (&System($command) != 0) {
 	    print "WARNING! Error with command $command!\n";
 	}
 
 	# Create CS-sequence for CS-database
-	$command = "$hh_dir/cstranslate -i $tmpdir/file.prf -a $outfile -D $context_lib -A $cs_lib -x $x -c $c > /dev/null 2>&1";
+	$command = "cstranslate -i $tmpdir/file.prf -a $outfile -D $context_lib -A $cs_lib -x $x -c $c > /dev/null 2>&1";
 	if (&System($command) != 0) {
 	    print "WARNING! Error with command $command!\n";
 	}
@@ -144,13 +141,13 @@ if ($ext eq "a3m") {
 	elsif (($count % 50) == 0) { print ". "; }
 
 	# Extract profile from HMMER-file
-	$command = "$script_dir/create_profile_from_hmmer.pl -i $file -o $tmpdir/file.prf > /dev/null 2>&1";
+	$command = "create_profile_from_hmmer.pl -i $file -o $tmpdir/file.prf > /dev/null 2>&1";
 	if (&System($command) != 0) {
 	    print "WARNING! Error with command $command!\n";
 	}
 
 	# Create CS-sequence for CS-database
-	$command = "$hh_dir/cstranslate -i $tmpdir/file.prf -a $outfile -A $cs_lib > /dev/null 2>&1";
+	$command = "cstranslate -i $tmpdir/file.prf -a $outfile -A $cs_lib > /dev/null 2>&1";
 	if (&System($command) != 0) {
 	    print "WARNING! Error with command $command!\n";
 	}
