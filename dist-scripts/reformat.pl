@@ -1,4 +1,4 @@
-#! /usr/bin/perl -w
+#! /usr/bin/env perl
 #
 # reformat.pl version 1.1.4 (June 2005)
 # Reformat a multiple alignment file
@@ -6,6 +6,7 @@
 # Please report bugs to johannes@soeding.com. Thank you.
 
 use strict;
+use warnings;
 my $numres=100;             # number of residues per line
 my $desclen=1000;           # maximum number of characters in nameline
 my $ARGC=scalar(@ARGV);
