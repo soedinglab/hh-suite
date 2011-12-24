@@ -7,8 +7,8 @@ libdir=`([ -d /usr/lib64 ] && echo lib64) || echo lib`
 # Overriding this is currently not fully supported as the code won't know
 # to what this is set then.
 INSTALL_LIB_DIR?=$(INSTALL_DIR)/$(libdir)/hh
-INSTALL_SCRIPT_DIR?=$(INSTALL_LIB_DIR)/scripts
-INSTALL_DATA_DIR?=$(INSTALL_LIB_DIR)/scripts
+INSTALL_SCRIPTS_DIR?=$(INSTALL_LIB_DIR)/scripts
+INSTALL_DATA_DIR?=$(INSTALL_LIB_DIR)/data
 
 dist_name=hh-suite-2.2.23
 
@@ -41,13 +41,13 @@ install:
 	install src/hhmake      $(INSTALL_DIR)/bin/hhmake
 	install src/hhsearch    $(INSTALL_DIR)/bin/hhsearch
 	mkdir -p $(INSTALL_LIB_DIR)
-	install src/.hhdefaults       $(INSTALL_LIB_DIR)/hhdefaults
 	mkdir -p $(INSTALL_DATA_DIR)
 	install data/context_data.lib $(INSTALL_DATA_DIR)/context_data.lib
 	install data/cs219.lib        $(INSTALL_DATA_DIR)/cs219.lib
+	install data/do_not_delete    $(INSTALL_DATA_DIR)/do_not_delete
 	mkdir -p $(INSTALL_SCRIPTS_DIR)
 	install dist-scripts/Align.pm        $(INSTALL_SCRIPTS_DIR)/Align.pm
-	install dist-scripts/MyPaths.pm      $(INSTALL_SCRIPTS_DIR)/MyPaths.pm
+	install dist-scripts/HHPaths.pm      $(INSTALL_SCRIPTS_DIR)/HHPaths.pm
 	install dist-scripts/addss.pl        $(INSTALL_SCRIPTS_DIR)/addss.pl
 	install dist-scripts/create_cs_db.pl $(INSTALL_SCRIPTS_DIR)/create_cs_db.pl
 	install dist-scripts/create_db.pl    $(INSTALL_SCRIPTS_DIR)/create_db.pl
@@ -57,12 +57,19 @@ install:
 	install dist-scripts/reformat.pl    $(INSTALL_SCRIPTS_DIR)/reformat.pl
 
 deinstall:
+	cd lib/ffindex && make deinstall INSTALL_DIR=$(INSTALL_DIR)
 	rm -f $(INSTALL_DIR)/bin/hhblits $(INSTALL_DIR)/bin/cstranslate $(INSTALL_DIR)/bin/hhalign \
 		$(INSTALL_DIR)/bin/hhconsensus $(INSTALL_DIR)/bin/hhfilter $(INSTALL_DIR)/bin/hhmake $(INSTALL_DIR)/bin/hhsearch
+	rm -f $(INSTALL_DATA_DIR)/context_data.lib $(INSTALL_DATA_DIR)/cs219.lib $(INSTALL_DATA_DIR)/do_not_delete
+	rm -f $(INSTALL_SCRIPTS_DIR)/Align.pm $(INSTALL_SCRIPTS_DIR)/HHPaths.pm \
+		$(INSTALL_SCRIPTS_DIR)/addss.pl $(INSTALL_SCRIPTS_DIR)/create_cs_db.pl \
+		$(INSTALL_SCRIPTS_DIR)/create_db.pl $(INSTALL_SCRIPTS_DIR)/create_profile_from_hhm.pl \
+		$(INSTALL_SCRIPTS_DIR)/create_profile_from_hmmer.pl $(INSTALL_SCRIPTS_DIR)/hhmakemodel.pl \
+		$(INSTALL_SCRIPTS_DIR)/reformat.pl
 	rmdir $(INSTALL_DIR)/bin || true
-	rm -f $(INSTALL_LIB_DIR)/context_data.lib $(INSTALL_LIB_DIR)/cs219.lib $(INSTALL_LIB_DIR)/hhdefaults
+	rmdir $(INSTALL_DATA_DIR) || true
+	rmdir $(INSTALL_SCRIPTS_DIR) || true
 	rmdir $(INSTALL_LIB_DIR) || true
-	cd lib/ffindex && make deinstall INSTALL_DIR=$(INSTALL_DIR)
 
 clean:
 	#cd lib/cs/src && make clean
