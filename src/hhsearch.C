@@ -161,8 +161,8 @@ void help()
   printf("\n");
   printf("HHsearch %s\n",VERSION_AND_DATE);
   printf("Search a database of HMMs with a query alignment or query HMM\n");
-  printf("%s",REFERENCE);
   printf("%s",COPYRIGHT);
+  printf("%s",REFERENCE);
   printf("\n");
   printf("Usage: %s -i query -d database [options]                       \n",program_name);
   printf(" -i <file>     input query alignment (A2M, A3M, FASTA) or HMM\n");
@@ -224,9 +224,6 @@ void help()
   printf(" -ssw [0,1]    weight of ss score  (def=%-.2f)                                \n",par.ssw);
   printf("\n");
   printf("Other options:                                                                \n");
-  printf(" -def          read default options from ./.hhdefaults or <home>/.hhdefault.  \n");
-  printf("               Write 'hhsearch', 'hhmake' and/or 'hhfilter' etc. in one line, \n");
-  printf("               followed by its list of options, one per line.\n");
   printf(" -cpu <int>    number of CPUs to use (for shared memory SMPs) (default=1)\n");
 #ifndef PTHREAD
   printf("(The -cpu option is inactive since POSIX threads ae not supported on your platform)\n");
@@ -307,8 +304,7 @@ void help_hmm()
   printf(" -pcc  [0,3]    extinction exponent for tau(Neff)  (def=%-.1f)     \n",par.pcc);
   printf(" -pcw  [0,3]    weight of pos-specificity for pcs  (def=%-.1f)      \n",par.pcw);
   // HHsearch option should be the same as HHblits option!!
-//printf(" -contxt <file> context file to compute context-specific pseudocounts (default=%s)\n",par.clusterfile);
-  printf(" -cs   <file>   compute context-specific pseudocounts with context library (def=off)\n");
+  printf(" -contxt <file> context file for computing context-specific pseudocounts (default=%s)\n",par.clusterfile);
   printf(" -csw  [0,inf]  weight of central position in cs pseudocount mode (def=%.1f)\n", par.csw);
   printf(" -csb  [0,1]    weight decay parameter for positions in cs pc mode (def=%.1f)\n", par.csb);
 }
@@ -597,10 +593,10 @@ void ProcessArguments(int argc, char** argv)
       else if (!strncmp(argv[i],"-fdummy",7) && (i<argc-1)) par.fdummy=atof(argv[++i]);
       else if (!strcmp(argv[i],"-csb") && (i<argc-1)) par.csb=atof(argv[++i]);
       else if (!strcmp(argv[i],"-csw") && (i<argc-1)) par.csw=atof(argv[++i]);
-      else if (!strcmp(argv[i],"-cs"))
+      else if (!strcmp(argv[i],"-contxt") || !strcmp(argv[i],"-cs"))
         {
           if (++i>=argc || argv[i][0]=='-')
-            {help() ; cerr<<endl<<"Error in "<<program_name<<": no query file following -cs\n"; exit(4);}
+            {help() ; cerr<<endl<<"Error in "<<program_name<<": no query file following -contxt\n"; exit(4);}
           else strcpy(par.clusterfile,argv[i]);
         }
       else cerr<<endl<<"WARNING: Ignoring unknown option "<<argv[i]<<" ...\n";

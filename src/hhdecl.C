@@ -10,9 +10,9 @@
 //// Constants
 /////////////////////////////////////////////////////////////////////////////////////
 
-EXTERN const char VERSION_AND_DATE[]="version 2.0.0.0 (June 2011)";
+EXTERN const char VERSION_AND_DATE[]="version 2.0.0 (Jan 2012)";
 EXTERN const char REFERENCE[]="Soding, J. Protein homology detection by HMM-HMM comparison. Bioinformatics 2005, 21, 951-960.\n";
-EXTERN const char COPYRIGHT[]="(C) Johannes Soeding (see LICENSE file)\n";
+EXTERN const char COPYRIGHT[]="(C) Johannes Soeding, Michael Remmert, Andrease Biegert, Andreas Hauser\n";
 EXTERN const int MAXSEQ=65535; //max number of sequences in input alignment (must be <~30000 on cluster nodes)
 EXTERN const int LINELEN=262144; //max length of line read in from input files; must be >= MAXCOL
 EXTERN const int MAXSEQDIS=10238;//max number of sequences stored in 'hit' objects and displayed in output alignment
