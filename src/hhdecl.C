@@ -18,7 +18,7 @@ EXTERN const int LINELEN=262144; //max length of line read in from input files; 
 EXTERN const int MAXSEQDIS=10238;//max number of sequences stored in 'hit' objects and displayed in output alignment
 EXTERN const int IDLEN=255;     //max length of scop hierarchy id and pdb-id
 EXTERN const int DESCLEN=32765;//max length of sequence description (longname)
-EXTERN const int NAMELEN=511;  //max length of file names etc.
+EXTERN const int NAMELEN=PATH_MAX;  //max length of file names etc.
 EXTERN const int MAXOPT=127;   //Maximum number of options to be read in from .hhconfig or command line
 EXTERN const int NAA=20;       //number of amino acids (0-19)
 EXTERN const int NTRANS=7;    //number of transitions recorded in HMM (M2M,M2I,M2D,I2M,I2I,D2M,D2D)
@@ -104,6 +104,9 @@ class Parameters          // Parameters for gap penalties and pseudocounts
 public:
   char** argv;            //command line parameters
   char argc;              //dimension of argv
+
+  char hhlib[PATH_MAX];   // lib base path e.g. /usr/lib64/hh
+  char hhdata[PATH_MAX];  // data base path e.g. /usr/lib64/hh/data
 
   char infile[NAMELEN];   // input filename
   char outfile[NAMELEN];  // output filename
@@ -280,6 +283,13 @@ void Parameters::SetDefaults()
 
   // Moved from hhdecl.C 
   v=2;
+
+  // set hhlib
+  strcat(strcpy(hhlib, program_path), "../lib/hh");
+  if(getenv("HHLIB"))
+    strcpy(hhlib, getenv("HHLIB"));
+
+  strcat(strcpy(hhdata, hhlib), "/data");
 
   // Parameter class
   maxcol=32765;            // max number of columns in sequence/MSA input files; must be <= LINELEN and >= maxres
