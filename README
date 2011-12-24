@@ -23,8 +23,6 @@ These are then usually specified on the command line (e.g. -d ...).
 
 If you also want to make use of the scripts, e.g. addss.pl, edit HHPaths.pm in
 $INSTALL_DIR/lib/hh/scripts/HHPaths.pm
-or
-$INSTALL_DIR/lib64/hh/scripts/HHPaths.pm
 
 
 * Usage
