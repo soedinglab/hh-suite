@@ -1,11 +1,10 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # addss.pl version 1.0.0 (October 2009)
 # Add DSSP states (if available) and PSIPRED secondary structure prediction to a FASTA or A3M alignment or HMMER file.
 # Output format is A3M (for input alignments) or HMMER (see User Guide).
 
-#XXX HHLIB
 use lib $ENV{"HHLIB"}."/scripts";
-use MyPaths;   # config file with path variables for nr, blast, psipred, pdb, dssp etc.
+use HHPaths;   # config file with path variables for nr, blast, psipred, pdb, dssp etc.
 
 my $ss_cit="PSIPRED: Jones DT. (1999) Protein secondary structure prediction based on position-specific scoring matrices. JMB 292:195-202.";
 
@@ -111,7 +110,7 @@ if ($informat ne "hmm") {
 
     # Use first sequence to define match states and reformat input file to a3m and psi
     if ($informat ne "a3m") {
-	&System("perl $perl/reformat.pl -v $v2 -M first $informat a3m $infile $inbase.in.a3m");
+	&System("reformat.pl -v $v2 -M first $informat a3m $infile $inbase.in.a3m");
     } else {
 	&System("cp $infile $inbase.in.a3m");
     }
@@ -140,7 +139,7 @@ if ($informat ne "hmm") {
 	$/="\n"; # set input field separator
 	
 	# First sequence contains gaps => calculate consensus sequence
-	&System("$hh/hhconsensus -i $inbase.in.a3m -s $inbase.sq -o $inbase.in.a3m > /dev/null");
+	&System("hhconsensus -i $inbase.in.a3m -s $inbase.sq -o $inbase.in.a3m > /dev/null");
 	
     } else {
 	
