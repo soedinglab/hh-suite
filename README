@@ -13,7 +13,8 @@ Either install in current directory:
 
 $ make install
 
-Or set INSTALL_DIR to the base directory, e.g. /usr/local, where you want to install:
+Or set INSTALL_DIR to the base directory (absolute path), e.g. /usr/local,
+where you want to install:
 
 $ make install INSTALL_DIR=/usr/local
 

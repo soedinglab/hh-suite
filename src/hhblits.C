@@ -1860,6 +1860,8 @@ int main(int argc, char **argv)
       else if (argc>2 && !strcmp(argv[i],"-v")) v=atoi(argv[i+1]);
     }
 
+  par.SetDefaultPaths(program_path);
+
   // Process default otpions from .hhdefaults file
   ReadDefaultsFile(argc_conf,argv_conf,program_path);
   ProcessArguments(argc_conf,argv_conf);

@@ -274,22 +274,32 @@ public:
   int idummy;
   float fdummy;
 
+  void SetDefaultPaths(char *program_path);
   void SetDefaults();
   Parameters();
 };
+
+
+void Parameters::SetDefaultPaths(char *program_path)
+{
+  // set hhlib
+  if(program_path != NULL)
+    strcat(strcpy(hhlib, program_path), "../lib/hh");
+  if(getenv("HHLIB"))
+    strcpy(hhlib, getenv("HHLIB"));
+
+  strcat(strcpy(hhdata, hhlib), "/data");
+
+  strcat(strcpy(clusterfile, hhdata), "/context_data.lib");
+  strcat(strcpy(cs_library, hhdata), "/cs219.lib");
+}
+
 
 void Parameters::SetDefaults()
 {
 
   // Moved from hhdecl.C 
   v=2;
-
-  // set hhlib
-  strcat(strcpy(hhlib, program_path), "../lib/hh");
-  if(getenv("HHLIB"))
-    strcpy(hhlib, getenv("HHLIB"));
-
-  strcat(strcpy(hhdata, hhlib), "/data");
 
   // Parameter class
   maxcol=32765;            // max number of columns in sequence/MSA input files; must be <= LINELEN and >= maxres
@@ -445,8 +455,6 @@ void Parameters::SetDefaults()
   // parameters for context-specific pseudocounts
   csb = 0.85;
   csw = 1.6;
-  strcpy(clusterfile,""); // default in config-file: /cluster/user/michael/hh/cs/data/K4000.lib
-  strcpy(cs_library,""); // default in config-file: /cluster/scripts/update_scripts/nr20/nr20_sampled_clusters_neff1.2_W1_N10M_n0_nopc_K62_wcenter1000_gauss_init.lib
 
   return;
 }

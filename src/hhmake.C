@@ -269,6 +269,8 @@ int main(int argc, char **argv)
       else if (argc>2 && !strcmp(argv[i],"-v")) v=atoi(argv[i+1]);
     }
 
+  par.SetDefaultPaths(program_path);
+
   // Read .hhdefaults file?
   if (par.readdefaultsfile)
     {
