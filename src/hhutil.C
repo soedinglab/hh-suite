@@ -401,7 +401,7 @@ void ReadDefaultsFile(int& argc_conf, char** argv_conf, char* path=NULL)
     strcat(filename,"/.hhdefaults");
     configf = fopen(filename,"r");
   }
-  else if (!configf) return; // only webserver has no home directory => need no warning
+  if (!configf) return; // only webserver has no home directory => need no warning
 
   // Scan file until line 'program_nameANYTHING'
   while (fgets(line,LINELEN,configf))
