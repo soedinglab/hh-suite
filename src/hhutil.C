@@ -389,41 +389,18 @@ void ReadDefaultsFile(int& argc_conf, char** argv_conf, char* path=NULL)
   // Open config file
   strcpy(filename,"./.hhdefaults");
   configf = fopen(filename,"r");
-  if (!configf && path) 
-    {
-      strcpy(filename,path);
-      strcat(filename,".hhdefaults");
-      configf = fopen(filename,"r");
-    }
+  if (!configf && path)
+  {
+    strcpy(filename,path);
+    strcat(filename,".hhdefaults");
+    configf = fopen(filename,"r");
+  }
   if (!configf && getenv("HOME"))
-    {
-      strcpy(filename,getenv("HOME"));
-      strcat(filename,"/.hhdefaults");
-      configf = fopen(filename,"r");
-      if (!configf)
-        {
-	  strcpy(filename,"/etc/hh");
-	  strcat(filename,"/hhdefaults");
-	  configf = fopen(filename,"r");
-          if (!configf)
-          {
-            strcpy(filename,path);
-            strcat(filename,"/../lib64/hh/hhdefaults");
-            configf = fopen(filename,"r");
-            if (!configf)
-            {
-              strcpy(filename,path);
-              strcat(filename,"/../lib/hh/hhdefaults");
-              configf = fopen(filename,"r");
-              if (!configf)
-              {
-                if (v>=3) cerr<<"Warning: could not find ./.hhdefaults or "<<filename<<"\n";
-                return;
-              }
-            }
-          }
-        }
-    }
+  {
+    strcpy(filename,getenv("HOME"));
+    strcat(filename,"/.hhdefaults");
+    configf = fopen(filename,"r");
+  }
   else if (!configf) return; // only webserver has no home directory => need no warning
 
   // Scan file until line 'program_nameANYTHING'
