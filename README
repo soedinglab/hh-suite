@@ -1,6 +1,9 @@
-############################
-# Install HHblits          #
-############################
+* About
+
+This README only serves as a quick start guide.
+For full documentation see the user guide.
+
+* Installation
 
 Compile:
 
@@ -16,15 +19,17 @@ $ make install INSTALL_DIR=/usr/local
 
 Download current databases from our FTP-server:
 ftp://toolkit.lmb.uni-muenchen.de/HHblits/
+These are then usually specified on the command line (e.g. -d ...).
+
+If you also want to make use of the scripts, e.g. addss.pl, edit HHPaths.pm in
+$INSTALL_DIR/lib/hh/scripts/HHPaths.pm
+or
+$INSTALL_DIR/lib64/hh/scripts/HHPaths.pm
 
 
-############################
-# HHblits usage            #
-############################
+* Usage
 
-
-HHblits databases
-#################
+** Databases
 
 HHblits needs an HMM-database containing of HHM- or HMMER-files for all database proteins (e.g. uniprot20_hhm_db) 
 and a special cs-database-file for the fast prefilter (e.g. uniprot20.cs219). When performing more than 1 iteration 
@@ -32,45 +37,25 @@ of HHblits or when an alignment should be generated (i.e. -oa3m option), HHblits
 containing A3M-alignments for each profile HMM (e.g. uniprot20_a3m_db).
 Databases can be downloaded from our FTP-server (ftp://toolkit.lmb.uni-muenchen.de/HHblits/databases/).
 
-
-HHblits libraries
-#################
-
-For running HHblits two library-files are needed which are located in the data folder. 
-The paths to these files need to be adapted in the default-file (see below).
-
-
-Running HHblits
-###############
-
-HHblits reads default options and directory paths from the file ".hhdefaults". The method automatically checks the following
-locations for a default file:
-
-<program-path>/.hhdefaults
-<HOME>/.hhdefaults
-/etc/hh/hhdefaults
-
-This file needs to be adapted. All default options can be overridden on the command line.
+** Running
 
 For performing a single search iteration of HHblits (corresponding to an HHsearch run with prefiltering), run HHblits 
 with the following command:
 
-$ bin/hhblits -i <input-file> -o <result-file> -n 1 -d <database-basename>
+$ hhblits -i <input-file> -o <result-file> -n 1 -d <database-basename>
 
 For generating an alignment of homologous sequences, we recommend the following options:
 
-$ bin/hhblits -i <input-file> -o <result-file> -oa3m <result-alignment> -d <database-basename>
+$ hhblits -i <input-file> -o <result-file> -oa3m <result-alignment> -d <database-basename>
 
 You can get a detailed list of options for HHblits by running HHblits with the "-h" option.
 
 
-License
-#######
+* License
 
 The HHblits/HHsearch software package is distributed under the terms of the GPL version 3,
 see LICENSE file.
 
 
-************************************************
-* For a more detailed help, see the Userguide. *
-************************************************
+-- 
+For a more detailed help, see the Userguide.
