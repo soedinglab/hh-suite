@@ -12,7 +12,7 @@ INSTALL_LIB_DIR?=$(INSTALL_DIR)/$(libdir)/hh
 INSTALL_SCRIPTS_DIR?=$(INSTALL_LIB_DIR)/scripts
 INSTALL_DATA_DIR?=$(INSTALL_LIB_DIR)/data
 
-dist_name=hh-suite-2.2.24
+dist_name=hh-suite-2.2.26
 
 all_static: ffindex_static
 	cd src && make all_static

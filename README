@@ -5,9 +5,16 @@ For full documentation see the user guide.
 
 * Installation
 
-Compile:
+** Compilation
 
 $ make
+
+Compilation produces by default static binaries. If you encounter
+missing library errors, also make sure you have the static versions
+installed, e.g. glibc-static.
+
+
+** Installation
 
 Either install in current directory:
 
@@ -18,12 +25,25 @@ where you want to install:
 
 $ make install INSTALL_DIR=/usr/local
 
+
+** Download Databases
+
 Download current databases from our FTP-server:
 ftp://toolkit.lmb.uni-muenchen.de/HHblits/
 These are then usually specified on the command line (e.g. -d ...).
 
 If you also want to make use of the scripts, e.g. addss.pl, edit HHPaths.pm in
 $INSTALL_DIR/lib/hh/scripts/HHPaths.pm
+
+
+** Setup Environment (HHLIB)
+
+In your shell set HHLIB to $INSTALL_DIR/lib/hh, e.g (for bash, zsh, ksh):
+
+$ export HHLIB=/usr/local/lib/hh
+
+Otherwise the programms will not find the cs and context libraries,
+which then have to be specified on the command line.
 
 
 * Usage
@@ -48,6 +68,10 @@ For generating an alignment of homologous sequences, we recommend the following 
 $ hhblits -i <input-file> -o <result-file> -oa3m <result-alignment> -d <database-basename>
 
 You can get a detailed list of options for HHblits by running HHblits with the "-h" option.
+
+Example (if HHLIB is set):
+
+$ hhblits -d uniprot20_02Sep11 -i ephrines_hhb4.fas
 
 
 * License
