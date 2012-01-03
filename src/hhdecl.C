@@ -18,7 +18,7 @@ EXTERN const int LINELEN=262144; //max length of line read in from input files; 
 EXTERN const int MAXSEQDIS=10238;//max number of sequences stored in 'hit' objects and displayed in output alignment
 EXTERN const int IDLEN=255;     //max length of scop hierarchy id and pdb-id
 EXTERN const int DESCLEN=32765;//max length of sequence description (longname)
-EXTERN const int NAMELEN=511;  //max length of file names etc.
+EXTERN const int NAMELEN=PATH_MAX;  //max length of file names etc.
 EXTERN const int MAXOPT=127;   //Maximum number of options to be read in from .hhconfig or command line
 EXTERN const int NAA=20;       //number of amino acids (0-19)
 EXTERN const int NTRANS=7;    //number of transitions recorded in HMM (M2M,M2I,M2D,I2M,I2I,D2M,D2D)
@@ -104,6 +104,9 @@ class Parameters          // Parameters for gap penalties and pseudocounts
 public:
   char** argv;            //command line parameters
   char argc;              //dimension of argv
+
+  char hhlib[PATH_MAX];   // lib base path e.g. /usr/lib64/hh
+  char hhdata[PATH_MAX];  // data base path e.g. /usr/lib64/hh/data
 
   char infile[NAMELEN];   // input filename
   char outfile[NAMELEN];  // output filename
@@ -271,9 +274,26 @@ public:
   int idummy;
   float fdummy;
 
+  void SetDefaultPaths(char *program_path);
   void SetDefaults();
   Parameters();
 };
+
+
+void Parameters::SetDefaultPaths(char *program_path)
+{
+  // set hhlib
+  if(program_path != NULL)
+    strcat(strcpy(hhlib, program_path), "../lib/hh");
+  if(getenv("HHLIB"))
+    strcpy(hhlib, getenv("HHLIB"));
+
+  strcat(strcpy(hhdata, hhlib), "/data");
+
+  strcat(strcpy(clusterfile, hhdata), "/context_data.lib");
+  strcat(strcpy(cs_library, hhdata), "/cs219.lib");
+}
+
 
 void Parameters::SetDefaults()
 {
@@ -435,8 +455,6 @@ void Parameters::SetDefaults()
   // parameters for context-specific pseudocounts
   csb = 0.85;
   csw = 1.6;
-  strcpy(clusterfile,""); // default in config-file: /cluster/user/michael/hh/cs/data/K4000.lib
-  strcpy(cs_library,""); // default in config-file: /cluster/scripts/update_scripts/nr20/nr20_sampled_clusters_neff1.2_W1_N10M_n0_nopc_K62_wcenter1000_gauss_init.lib
 
   return;
 }

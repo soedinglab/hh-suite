@@ -1858,6 +1858,8 @@ int main(int argc, char **argv)
       else if (argc>2 && !strcmp(argv[i],"-v")) v=atoi(argv[i+1]);
     }
 
+  par.SetDefaultPaths(program_path);
+
   // Process default otpions from .hhdefaults file
   ReadDefaultsFile(argc_conf,argv_conf,program_path);
   ProcessArguments(argc_conf,argv_conf);
@@ -1875,7 +1877,7 @@ int main(int argc, char **argv)
   if (!strcmp(par.clusterfile,""))
     {help(); cerr<<endl<<"Error in "<<program_name<<": context-specific library missing (see -contxt)\n"; exit(4);}
   if (!strcmp(par.cs_library,""))
-    {help(); cerr<<endl<<"Error in "<<program_name<<": colmun state library (see -cslib)\n"; exit(4);}
+    {help(); cerr<<endl<<"Error in "<<program_name<<": column state library (see -cslib)\n"; exit(4);}
 
   // Set databases
   strcpy(db,db_base);
