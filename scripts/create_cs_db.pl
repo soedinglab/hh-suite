@@ -2,12 +2,14 @@
 # 
 # Create a HHblits CS-database from HMMER-files, HMM-files or A3M-files
 
+use strict;
+
 ################################################################################################################################
 # Update the following variables
 
-$script_dir = "/cluster/bioprogs/hhblits/scripts";  # path to directory with scripts (create_profile_from_hmmer.pl, create_profile_from_hhm.pl)
-$lib_dir = "/cluster/bioprogs/hhblits";             # path to needed libraries (context_data.lib, cs219.lib)
-$hh_dir = "/cluster/bioprogs/hhblits";              # path to needed HH-tools (cstranslate)
+my $script_dir = "/cluster/bioprogs/hhblits/scripts";  # path to directory with scripts (create_profile_from_hmmer.pl, create_profile_from_hhm.pl)
+my $lib_dir = "/cluster/bioprogs/hhblits";             # path to needed libraries (context_data.lib, cs219.lib)
+my $hh_dir = "/cluster/bioprogs/hhblits";              # path to needed HH-tools (cstranslate)
 
 ################################################################################################################################
 
@@ -23,21 +25,21 @@ my $context_lib = "$lib_dir/context_data.lib";
 my $append = 0;
 
 my $help="
-Create a HHblits CS-database from HMMER-files, HMM-files or A3M-files
+Create a column state sequence file for an HHblits database
 
 Usage: perl create_cs_db.pl -i <dir> [options]
 
 Options:
   -i <dir>    Input directory with HMMER-, HMM- or A3M-files
-  -o <file>   Output basename for the CS-database (default: <indir>)
+  -o <file>    Output basename for the CS-database (default: <indir>)
               (will generate output in BASENAME.cs219)
 
-  -ext <ext>  File extension, which identifies file-typ (default: $ext)
-              - A3M-type  : a3m
-              - HHM-type  : hhm
-              - HMMER-type: hmmer or hmm
+  -ext <ext>  Extension of files in input directory from which to calculate column state sequences (default: $ext)
+              - A3M format  : a3m
+              - HHM format  : hhm
+              - HMMER format: hmmer or hmm
 
-  -append     append to CS-database (default: overwrite file, if existing)
+  -append     append to CS database file (default: overwrite file, if existing)
 
   -v [0-5]    verbose mode (default: $v)
 \n";
@@ -68,7 +70,9 @@ if ($options=~s/ -append //) {$append=1;}
 
 if ($options=~s/ -v\s+(\S+) //) {$v=$1;}
 
+# Glob input files
 @files = glob("$indir/*.$ext");
+
 if (scalar(@files) == 0) {print($help); print "ERROR! No files in $indir with extension $ext!\n"; exit(1);}
 
 if ($append == 0 && -e $outfile) {
@@ -162,8 +166,8 @@ if ($ext eq "a3m") {
 }
 
 # Get number of sequences and characters from CS-database
-$num_seqs = 0;
-$num_chars = 0;
+my $num_seqs = 0;
+my $num_chars = 0;
 
 open (IN, "cat $outfile |grep \"^>\" |wc -l |");
 $line = <IN>;
