@@ -478,3 +478,63 @@ void ReadDefaultsFile(int& argc_conf, char** argv_conf, char* path=NULL)
 }
 
 
+/////////////////////////////////////////////////////////////////////////////////////
+// Count the number of sequences "^>" in <file>
+/////////////////////////////////////////////////////////////////////////////////////
+int CountSeqsInFile(char* file, int& numseqs)
+{
+  char line[LINELEN]="";         // input line
+  char tmp_file[NAMELEN];
+  int LDB=0;
+  numseqs=0;
+  strcpy(tmp_file, file);
+  strcat(tmp_file, ".sizes");
+  FILE* fin = fopen(tmp_file, "r");
+  if (fin)
+    {
+      char* ptr=fgets(line, LINELEN, fin);
+      numseqs = strint(ptr);
+      LDB = strint(ptr);
+      fclose(fin);
+     } 
+  else 
+    {
+      fin = fopen(file, "r");
+      if (!fin) OpenFileError(file);
+      while (fgets(line,LINELEN,fin))
+	{ 
+	  if (line[0]=='>') numseqs++;
+	  else LDB += strlen(line);
+	}
+      fclose(fin);
+    }
+  return LDB;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+// Count number of lines in <file>
+/////////////////////////////////////////////////////////////////////////////////////
+int CountLinesInFile(char* file)
+{
+  char line[LINELEN]="";         // input line
+  int numlines=0;
+  char tmp_file[NAMELEN];
+  strcpy(tmp_file, file);
+  strcat(tmp_file, ".sizes");
+  FILE* fin = fopen(tmp_file, "r");
+  if (fin)
+    {
+      char* ptr=fgets(line, LINELEN, fin);
+      numlines = strint(ptr);
+      fclose(fin);
+    } 
+  else 
+    {
+      fin = fopen(file, "r");
+      if (!fin) OpenFileError(file);
+      while (fgets(line,LINELEN,fin)) numlines++; 
+      fclose(fin);
+    }
+  return numlines;
+}

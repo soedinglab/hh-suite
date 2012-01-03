@@ -91,8 +91,6 @@ extern "C" {
 ////////////////////////////////////////////////////////////////////////////////////
 
 char line[LINELEN]="";         // input line
-string command;
-char* ptr;                     // pointer for string manipulation
 int bin;                       // bin index
 const char print_elapsed=0;    // debug output for runtimes
 char tmp_file[]="/tmp/hhblitsXXXXXX";  // for runtime secondary structure prediction (only with -addss option)
@@ -160,8 +158,8 @@ int jobs_submitted;       // number of submitted jobs, i.e. number of bins set t
 char reading_dbs;         // 1: still HMMs to read in a database;  0: finshed reading all HMMs, no db left
 const char DEBUG_THREADS=0; // Debugging flag
 
-HMM* q;                    // Create query HMM with maximum of par.maxres match states
-HMM* q_tmp;                // Create query HMM with maximum of par.maxres match states (needed for prefiltering)
+HMM* q;                   // Create query HMM with maximum of par.maxres match states
+HMM* q_tmp;               // Create query HMM with maximum of par.maxres match states (needed for prefiltering)
 HMM* t[MAXBINS];          // Each bin has a template HMM allocated that was read from the database file
 Hit* hit[MAXBINS];        // Each bin has an object of type Hit allocated with a separate dynamic programming matrix (memory!!)
 Hit hit_cur;              // Current hit when going through hitlist
@@ -1914,29 +1912,13 @@ int main(int argc, char **argv)
   if (!dbhhm_data_file) OpenFileError(dbhhm);
   strcpy(filename, dbhhm);
   strcat(filename, ".index");
+
+  int filesize;
+  filesize = CountLinesInFile(filename); 
+
   dbhhm_index_file = fopen(filename, "r");
   if (!dbhhm_index_file) OpenFileError(filename);
-  // Get number of indices in index-file
-  int filesize = 0;
-  char tmp_file[NAMELEN];
-  strcpy(tmp_file, filename);
-  strcat(tmp_file, ".sizes");
-  fin = fopen(tmp_file, "r");
-  if (!fin)
-    {
-      // Get DB-size
-      command = "cat " + (string)filename + " |wc -l";
-      fin = popen(command.c_str(), "r");
-      ptr=fgets(line, LINELEN, fin);
-      filesize = strint(ptr);
-      pclose(fin);
-    } 
-  else 
-    {
-      ptr=fgets(line, LINELEN, fin);
-      filesize = strint(ptr);
-      fclose(fin);
-    }
+
   dbhhm_index = ffindex_index_parse(dbhhm_index_file, filesize);
   if (dbhhm_index==NULL) {
     NoMemoryError("index-file parsing by ffindex");
@@ -1953,28 +1935,12 @@ int main(int argc, char **argv)
     if (!dba3m_data_file) OpenFileError(dba3m);
     strcpy(filename, dba3m);
     strcat(filename, ".index");
+
+    filesize = CountLinesInFile(filename);
+    
     dba3m_index_file = fopen(filename, "r");
     if (!dba3m_index_file) OpenFileError(filename);
-    // Get number of indices in index-file
-    filesize = 0;
-    strcpy(tmp_file, filename);
-    strcat(tmp_file, ".sizes");
-    fin = fopen(tmp_file, "r");
-    if (!fin)
-      {
-	// Get DB-size
-	command = "cat " + (string)filename + " |wc -l";
-	fin = popen(command.c_str(), "r");
-	ptr=fgets(line, LINELEN, fin);
-	filesize = strint(ptr);
-	pclose(fin);
-      } 
-    else 
-      {
-	ptr=fgets(line, LINELEN, fin);
-	filesize = strint(ptr);
-	fclose(fin);
-      }
+
     dba3m_index = ffindex_index_parse(dba3m_index_file,filesize);
     if (dba3m_index==NULL) {
       NoMemoryError("index-file parsing by ffindex");
@@ -2233,8 +2199,7 @@ int main(int argc, char **argv)
 		cluster_found++;
 		if (!strncmp(hit_cur.name,"cl|",3) || !strncmp(hit_cur.name,"UP20|",5) || !strncmp(hit_cur.name,"NR20|",5))   // kClust formatted database (NR20, ...)
 		  {
-		    char *ptr;
-		    ptr = hit_cur.name;
+		    char *ptr = hit_cur.name;
 		    seqs_found += strint(ptr);
 		  }
 		else
@@ -2328,8 +2293,7 @@ int main(int argc, char **argv)
 	    cluster_found++;
 	    if (!strncmp(hit_cur.name,"cl|",3) || !strncmp(hit_cur.name,"UP20|",5) || !strncmp(hit_cur.name,"NR20|",5))   // kClust formatted database (NR20, ...)
 	      {
-		char *ptr;
-		ptr = hit_cur.name;
+		char *ptr = hit_cur.name;
 		seqs_found += strint(ptr);
 	      }
 	    else

@@ -690,27 +690,30 @@ int ungapped_sse_score(const unsigned char* query_profile,
 // Pull out all names from prefilter db file and copy into dbfiles_new for full HMM-HMM comparison
 void init_no_prefiltering()
 {
-  // Get DBsize
-  char tmp_file[NAMELEN];
-  strcpy(tmp_file, db);
-  strcat(tmp_file, ".sizes");
-  FILE* fin = fopen(tmp_file, "r");
-  if (!fin)
-    {
-      FILE *stream;
-      // Get DB-size
-      command = "cat " + (string)db + " |grep \">\" |wc -l";
-      stream = popen(command.c_str(), "r");
-      ptr=fgets(line, LINELEN, stream);
-      par.dbsize = strint(ptr);
-      pclose(stream);
-    } 
-  else 
-    {
-      ptr=fgets(line, LINELEN, fin);
-      par.dbsize = strint(ptr);
-      fclose(fin);
-    }
+  // Get DBsize and num_chars
+  CountSeqsInFile(db, par.dbsize);  // Get DBsize but not number of chars
+  
+  // The following code has been updated and moved to CountSeqsInFile(...) 
+  // char tmp_file[NAMELEN];
+  // strcpy(tmp_file, db);
+  // strcat(tmp_file, ".sizes");
+  // FILE* fin = fopen(tmp_file, "r");
+  // if (!fin)
+  //   {
+  //     FILE *stream;
+  //     // Get DB-size
+  //     string command = "cat " + (string)db + " |grep \">\" |wc -l";
+  //     stream = popen(command.c_str(), "r");
+  //     char* ptr=fgets(line, LINELEN, stream);
+  //     par.dbsize = strint(ptr);
+  //     pclose(stream);
+  //   } 
+  // else 
+  //   {
+  //     char* ptr=fgets(line, LINELEN, fin);
+  //     par.dbsize = strint(ptr);
+  //     fclose(fin);
+  //   }
   
   if (par.dbsize > MAXNUMDB_NO_PREFILTER)
     {cerr<<endl<<"Error in "<<program_name<<": Without prefiltering, the max. number of database HHMs is "<<MAXNUMDB_NO_PREFILTER<<" (actual: "<<par.dbsize<<")\n"; exit(4);}
@@ -763,33 +766,36 @@ void init_no_prefiltering()
 void init_prefilter()
 {
   // Get Prefilter Pvalue (Evalue / Par.Dbsize)
-  char tmp_file[NAMELEN];
-  strcpy(tmp_file, db);
-  strcat(tmp_file, ".sizes");
-  FILE* fin = fopen(tmp_file, "r");
-  if (!fin)
-    {
-      FILE *stream;
-      // Get DB-size
-      command = "cat " + (string)db + " |grep \"^>\" |wc -l";
-      stream = popen(command.c_str(), "r");
-      ptr=fgets(line, LINELEN, stream);
-      par.dbsize = strint(ptr);
-      pclose(stream);
-      // Get DB-length
-      command = "cat " + (string)db + " |grep -v \"^>\" |wc -c";
-      stream = popen(command.c_str(), "r");
-      ptr=fgets(line, LINELEN, stream);
-      LDB = strint(ptr);
-      pclose(stream);
-    } 
-  else 
-    {
-      ptr=fgets(line, LINELEN, fin);
-      par.dbsize = strint(ptr);
-      LDB = strint(ptr);
-      fclose(fin);
-    }
+  LDB = CountSeqsInFile(db, par.dbsize);  // Get DBsize but not number of chars
+
+  // The following code has been updated and moved to CountSeqsInFile(...) 
+  // char tmp_file[NAMELEN];
+  // strcpy(tmp_file, db);
+  // strcat(tmp_file, ".sizes");
+  // FILE* fin = fopen(tmp_file, "r");
+  // if (!fin)
+  //   {
+  //     FILE *stream;
+  //     // Get DB-size
+  //     string command = "cat " + (string)db + " |grep \"^>\" |wc -l";
+  //     stream = popen(command.c_str(), "r");
+  //     char* ptr=fgets(line, LINELEN, stream);
+  //     par.dbsize = strint(ptr);
+  //     pclose(stream);
+  //     // Get DB-length
+  //     command = "cat " + (string)db + " |grep -v \"^>\" |wc -c";
+  //     stream = popen(command.c_str(), "r");
+  //     ptr=fgets(line, LINELEN, stream);
+  //     LDB = strint(ptr);
+  //     pclose(stream);
+  //   } 
+  // else 
+  //   {
+  //     char* ptr=fgets(line, LINELEN, fin);
+  //     par.dbsize = strint(ptr);
+  //     LDB = strint(ptr);
+  //     fclose(fin);
+  //   }
 
   if (par.dbsize == 0 || LDB == 0)
     {cerr<<endl<<"Error! Could not determine DB-size of prefilter db ("<<db<<")\n"; exit(4);}
@@ -1063,7 +1069,7 @@ void prefilter_with_SW_evalue_preprefilter_backtrace()
       // Add hit to dbfiles
       char tmp_name[NAMELEN];
       char db_name[NAMELEN];
-      ptr=strwrd(tmp_name,dbnames[(*it).second]);
+      strwrd(tmp_name,dbnames[(*it).second]);
       
       if (!strncmp(tmp_name,"cl|",3))   // kClust formatted database (NR20, NR30, UNIPROT20)
 	{
@@ -1140,7 +1146,7 @@ void prefilter_with_SW_evalue_preprefilter_backtrace()
 	      if (num_res > 0) 
 		{
 		  char tmp_name[NAMELEN];
-		  ptr=strwrd(tmp_name,dbnames[backtrace_hits[n]]);
+		  strwrd(tmp_name,dbnames[backtrace_hits[n]]);
 		  block = new(int[400]);
 		  block_count = 0;
 		  for (int a = 0; a < num_res; a++) 
