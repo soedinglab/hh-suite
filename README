@@ -1,12 +1,36 @@
-* About
+*****************************************************************************
+*****************************************************************************
+   HH-suite for sensitive sequence searching version 2.0.0 (January 2012)
+
+ (C) Johannes Soeding, Michael Remmert, Andreas Hauser, Andreas Biegert 2012
+
+We are very grateful for bug reports! 
+Please contact us at soeding@genzentrum.lmu.de
 
 This README only serves as a quick start guide.
-For full documentation see the user guide.
+For full documentation see the user guide in hhsuite-userguide.pdf
 
-* Installation
+*****************************************************************************
+ Installation
+*****************************************************************************
 
-** Compilation
+1. Downloading
 
+Download the sources from ftp://toolkit.lmb.uni-muenchen.de/HH-suite/, e.g.
+
+$ mkdir ~/programs/hh/
+$ cd ~/programs/hh/
+$ wget ftp://toolkit.lmb.uni-muenchen.de/HH-suite/hhsuite_2.0.0.tar.gz
+
+Unzip and untar
+
+$ gunzip hhsuite_2.0.0.tar.gz
+$ tar -xvf hhsuite_2.0.0.tar
+
+
+2. Compilation 
+
+$ cd src/
 $ make
 
 Compilation produces by default static binaries. If you encounter
@@ -14,7 +38,7 @@ missing library errors, also make sure you have the static versions
 installed, e.g. glibc-static.
 
 
-** Installation
+3. Installation
 
 Either install in current directory:
 
@@ -26,44 +50,42 @@ where you want to install:
 $ make install INSTALL_DIR=/usr/local
 
 
-** Download Databases
+4. Set paths 
 
-Download current databases from our FTP-server:
-ftp://toolkit.lmb.uni-muenchen.de/HHblits/
-These are then usually specified on the command line (e.g. -d ...).
-
-If you also want to make use of the scripts, e.g. addss.pl, edit HHPaths.pm in
-$INSTALL_DIR/lib/hh/scripts/HHPaths.pm
-
-
-** Setup Environment (HHLIB)
-
-In your shell set HHLIB to $INSTALL_DIR/lib/hh, e.g (for bash, zsh, ksh):
+4.1. In your shell set environment variable HHLIB to $INSTALL_DIR/lib/hh, 
+e.g (for bash, zsh, ksh):
 
 $ export HHLIB=/usr/local/lib/hh
 
-Otherwise the programms will not find the cs and context libraries,
-which then have to be specified on the command line.
+HHsearch and HHblits look for the column state library file cs219.lib
+and the context library file context_data.lib in $HHLIB/data/. The hh-suite
+perl scripts also read HHLIB to locate 
+
+4.2. Specify paths to BLAST, PSIPRED, PDB, DSSP etc. in 
+$INSTALL_DIR/lib/hh/scripts/HHPaths.pm
+where they are read by the perl scripst in hh-suite.
 
 
+5. Download Databases
+
+Download current databases from our FTP-server:
+ftp://toolkit.lmb.uni-muenchen.de/HH-suite/hhblits_dbs/
+ftp://toolkit.lmb.uni-muenchen.de/HH-suite/hhsearch_dbs/
+
+Either uniprot20 or nr20 is sufficient. 
+
+
+*****************************************************************************
 * Usage
+*****************************************************************************
 
-** Databases
 
-HHblits needs an HMM-database containing of HHM- or HMMER-files for all database proteins (e.g. uniprot20_hhm_db) 
-and a special cs-database-file for the fast prefilter (e.g. uniprot20.cs219). When performing more than 1 iteration 
-of HHblits or when an alignment should be generated (i.e. -oa3m option), HHblits needs also an A3M-database 
-containing A3M-alignments for each profile HMM (e.g. uniprot20_a3m_db).
-Databases can be downloaded from our FTP-server (ftp://toolkit.lmb.uni-muenchen.de/HHblits/databases/).
-
-** Running
-
-For performing a single search iteration of HHblits (corresponding to an HHsearch run with prefiltering), run HHblits 
-with the following command:
+For performing a single search iteration of HHblits, run HHblits with the 
+following command:
 
 $ hhblits -i <input-file> -o <result-file> -n 1 -d <database-basename>
 
-For generating an alignment of homologous sequences, we recommend the following options:
+For generating an alignment of homologous sequences:
 
 $ hhblits -i <input-file> -o <result-file> -oa3m <result-alignment> -d <database-basename>
 
@@ -71,14 +93,25 @@ You can get a detailed list of options for HHblits by running HHblits with the "
 
 Example (if HHLIB is set):
 
-$ hhblits -d uniprot20_02Sep11 -i ephrines_hhb4.fas
+$ hhblits -d $HHLIB/hhblits_dbs/uniprot20_02Sep11 -i $HHLIB/data/query.a3m
 
 
+*****************************************************************************
 * License
+*****************************************************************************
 
-The HHblits/HHsearch software package is distributed under the terms of the GPL version 3,
-see LICENSE file.
+The HHsearch/HHblits software package is distributed under Gnu Public Licence, Version 3.
+This means that the HH-suite is free software: you can redistribute it and/or modify it under the
+terms of the GNU General Public License as published by the Free Software Foundation, either
+version 3 of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+PURPOSE. See the GNU General Public License for more details.
+
+See the copy of the GNU General Public License in the LICENSE file. 
+If you do not have this file, see http://www.gnu.org/licenses/
 
 
 -- 
-For a more detailed help, see the Userguide.
+For a more detailed help, see the hhsuite-userguid.pdf

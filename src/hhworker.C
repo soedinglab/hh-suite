@@ -78,99 +78,63 @@ void AlignByWorker(int bin)
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////
-//// Realign q and *(t[bin]) with the MAC algorithm (after the database search)
+//// Realign q and with *(t[bin]) in all hits from same tempate using  MAC algorithm 
 //////////////////////////////////////////////////////////////////////////////////////
 void RealignByWorker(int bin)
 {
-  Hit hit_cur = *( (Hit*) hit[bin]->phit); // hit[bin]->phit points to irep=1 element in hitlist that needs to be realigned
-  int nhits=0;
-  void* pos;
-  hit[bin]->irep=1; 
+  // Realign all hits pointed to by list List<void*>* hit[bin]->plist_phits;
+  // This list is set up in HHseach and HHblits at the beginning of perform_realign()
+  Hit* hit_cur;
 
   // Prepare MAC comparison(s)
   PrepareTemplate(*q,*(t[bin]),format[bin]);
   t[bin]->Log2LinTransitionProbs(1.0);
 
-#ifdef PTHREAD
-  pthread_mutex_lock(&hitlist_mutex);   // lock access to hitlist
-#endif
-
-  // Go to element in hitlist that contains first, optimal query-template alingment(irep=1)
-  hitlist.SetCurrentElementAdress(hit[bin]->phit); 
-  hitlist.ReadPrevious(); // go one element back to then ReadNext()
-
-  do 
+  hit[bin]->irep=1; 
+  hit[bin]->plist_phits->Reset();
+  while (! hit[bin]->plist_phits->End())
     {
+      // Set pointer hit_cur to next hit to be realigned
+      hit_cur = (Hit*) hit[bin]->plist_phits->ReadNext();
 
-      hit_cur = hitlist.ReadNext();
+      // Realign only around previous Viterbi hit
+      // hit[bin] = *hit_cur; is not possible because the pointers to the DP matrices would be overwritten
+      hit[bin]->i1 = hit_cur->i1;
+      hit[bin]->i2 = hit_cur->i2;
+      hit[bin]->j1 = hit_cur->j1;
 
-      if (nhits > (2*par.realign_max) && nhits>=imax(par.B,par.Z)) break;
+      hit[bin]->j2 = hit_cur->j2;
+      hit[bin]->nsteps = hit_cur->nsteps;
+      hit[bin]->i  = hit_cur->i;
+      hit[bin]->j  = hit_cur->j;
+      hit[bin]->realign_around_viterbi=true;
+      
+      // Align q to template in *hit[bin]
+      hit[bin]->Forward(*q,*(t[bin]));
+      hit[bin]->Backward(*q,*(t[bin]));
+      hit[bin]->MACAlignment(*q,*(t[bin]));
+      hit[bin]->BacktraceMAC(*q,*(t[bin]));
+      
+      // Overwrite *hit[bin] with Viterbi scores, Probabilities etc. of hit_cur
+      hit[bin]->score      = hit_cur->score;
+      hit[bin]->score_ss   = hit_cur->score_ss;
+      hit[bin]->score_aass = hit_cur->score_aass;
+      hit[bin]->score_sort = hit_cur->score_sort;
+      hit[bin]->Pval       = hit_cur->Pval;
+      hit[bin]->Pvalt      = hit_cur->Pvalt;
+      hit[bin]->logPval    = hit_cur->logPval;
+      hit[bin]->logPvalt   = hit_cur->logPvalt;
+      hit[bin]->Eval       = hit_cur->Eval;
+      hit[bin]->logEval    = hit_cur->logEval;
+      hit[bin]->Probab     = hit_cur->Probab;
+      
+      // Replace original hit in hitlist with realigned hit
+      hit_cur->Delete();     // delete content of pointers etc. of hit_cur (but not DP matrices)
+      *hit_cur = *hit[bin];  // copy all variables and pointers from *hit[bin] into hitlist
 
-      if (hit_cur.index==hit[bin]->index) // found position with correct template
-        {
-	  pos = hitlist.GetCurrentElementAddress(); // pos will contain void* pointer to current element of hitlist
-
-#ifdef PTHREAD
-	  pthread_mutex_unlock(&hitlist_mutex); // unlock access to hitlist
-#endif
-
-	  // Realign only around previous Viterbi hit
-	  hit[bin]->i1 = hit_cur.i1;
-	  hit[bin]->i2 = hit_cur.i2;
-	  hit[bin]->j1 = hit_cur.j1;
-	  hit[bin]->j2 = hit_cur.j2;
-	  hit[bin]->nsteps = hit_cur.nsteps;
-	  hit[bin]->i = hit_cur.i;
-	  hit[bin]->j = hit_cur.j;
-	  hit[bin]->realign_around_viterbi=true;
-	  Hit hit_tmp = hit_cur;
-	  
-	  // Align q to template in *hit[bin]
-          hit[bin]->Forward(*q,*(t[bin]));
-          hit[bin]->Backward(*q,*(t[bin]));
-          hit[bin]->MACAlignment(*q,*(t[bin]));
-          hit[bin]->BacktraceMAC(*q,*(t[bin]));
-
-          // Overwrite *hit[bin] with Viterbi scores, Probabilities etc. of hit_cur
-          hit[bin]->score      = hit_tmp.score;
-          hit[bin]->score_aass = hit_tmp.score_aass;
-          hit[bin]->score_ss   = hit_tmp.score_ss; // comment out?? => Andrea
-          hit[bin]->Pval       = hit_tmp.Pval;
-          hit[bin]->Pvalt      = hit_tmp.Pvalt;
-          hit[bin]->logPval    = hit_tmp.logPval;
-          hit[bin]->logPvalt   = hit_tmp.logPvalt;
-          hit[bin]->Eval       = hit_tmp.Eval;
-          hit[bin]->logEval    = hit_tmp.logEval;
-          hit[bin]->Probab     = hit_tmp.Probab;
-
- #ifdef PTHREAD
-	  pthread_mutex_lock(&hitlist_mutex);   // lock access to hitlist
-#endif
-	  hitlist.SetCurrentElementAdress(pos); // current element of hitlist is set to state previous to mutex unlock
-	  
-	  // Replace original hit in hitlist with realigned hit
-          //hitlist.ReadCurrent().Delete();
-          hitlist.Delete().Delete();                // delete list record and hit object
-          hitlist.Insert(*hit[bin]);
-          hit[bin]->irep++;
-
-        }
-
-      nhits++;
-    } while (!hitlist.End() && hit[bin]->lastrep==0);
-
-#ifdef PTHREAD
-  pthread_mutex_unlock(&hitlist_mutex); // unlock access to hitlist
-#endif
-
-
-  if (hit[bin]->irep==1)
-    {
-      fprintf(stderr,"*************************************************\n");
-      fprintf(stderr,"\nError: could not find template %s in hit list (index:%i dbfile:%s ftell:%i\n\n",hit[bin]->name, hit[bin]->index,hit[bin]->dbfile,(unsigned int)hit[bin]->ftellpos);
-      fprintf(stderr,"*************************************************\n");
+      hit[bin]->irep++;
     }
-  
+
   return;
 }
 

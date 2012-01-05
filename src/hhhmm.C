@@ -463,6 +463,8 @@ int HMM::Read(FILE* dbf, char* path)
 	      if (n_seq<=par.nseqdis)
 		n_display=k+1;
             } //while(getline)
+
+
           //If this is not the first sequence some residues have already been read in
           if (k>=0) {
             seq[k]=new(char[strlen(cur_seq)+1]);
@@ -2115,7 +2117,7 @@ void HMM::WriteToFile(char* outfile)
   if (v>=2) cout<<"Writing HMM to "<<outfile<<"\n";
 
   //   fprintf(outf,"HHsearch HHM format 1.5\n");
-  fprintf(outf,"HHsearch 1.6\n");         // format specification
+  fprintf(outf,"HHsearch 1.5\n");         // format specification
   fprintf(outf,"NAME  %s\n",longname);    // name of first sequence
   fprintf(outf,"FAM   %s\n",fam);         // family name
   char file_nopath[NAMELEN];

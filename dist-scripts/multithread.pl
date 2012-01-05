@@ -2,20 +2,35 @@
 # multithread.pl: 
 # Run a command with different file names as arguments on multiple threads in parallel 
 # Usage:   multithread.pl <fileglob> '<command>' [-cpu <int>] 
-# (C) Johannes Soeding
-# Available under GNU Public License Version 3
 #
-# Reference: 
-# Remmert M., Biegert A., Hauser A., and Soding J.
-# HHblits: Lightning-fast iterative protein sequence searching by HMM-HMM alignment.
-# Nat. Methods, epub Dec 25, doi: 10.1038/NMETH.1818 (2011).
+#     Reference: 
+#     Remmert M., Biegert A., Hauser A., and Soding J.
+#     HHblits: Lightning-fast iterative protein sequence searching by HMM-HMM alignment.
+#     Nat. Methods, epub Dec 25, doi: 10.1038/NMETH.1818 (2011).
+
+#     (C) Johannes Soeding, 2012
+
+#     This program is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version.
+
+#     This program is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+
+#     You should have received a copy of the GNU General Public License
+#     along with this program.  If not, see <http:#www.gnu.org/licenses/>.
+
+#     We are very grateful for bug reports! Please contact us at soeding@genzentrum.lmu.de
 
 use strict;
 use POSIX;
 $|=1; # autoflush on
 
 # Variables 
-my $cpu=4;        # number of cpus to use
+my $cpu=8;        # number of cpus to use
 my $parent_pid=$$; # main process id
 my $pid;           # process id of child
 my %pid=();        # hash has all running PIDs as keys and the file name as data
@@ -29,7 +44,7 @@ my $numerr=0;
 
 if (scalar(@ARGV)<2) {
     print("
- Run a command with different file names as arguments on multiple threads in parallel 
+ Run a command for many files in parallel using multiple threads
  Usage: multithread.pl '<fileglob>' '<command>' [-cpu <int>] [-v {0,1,2}]
 
  <command> can include symbol 
@@ -55,8 +70,8 @@ if (@ARGV>2) {
     $options.=join(" ",@ARGV[2..$#ARGV]);
 }
 # Set number of cpus to use
-if ($options=~s/-cpu\s*(\d)\s*//g) {$cpu=$1;}
-if ($options=~s/-v\s*(\d)\s*//g) {$v=$1;}
+if ($options=~s/-cpu\s*(\d+)\s*//g) {$cpu=$1;}
+if ($options=~s/-v\s*(\d+)\s*//g) {$v=$1;}
 
 # Warn if unknown options found
 if ($options!~/^\s*$/) {$options=~s/^\s*(.*?)\s*$/$1/g; print("WARNING: unknown options '$options'\n");}

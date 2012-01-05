@@ -1,7 +1,29 @@
 #!/usr/bin/env perl
 # addss.pl version 1.0.0 (October 2009)
-# Add DSSP states (if available) and PSIPRED secondary structure prediction to a FASTA or A3M alignment or HMMER file.
+# Add PSIPRED secondary structure prediction (and DSSP annotation) to an MSA or HMMER file.
 # Output format is A3M (for input alignments) or HMMER (see User Guide).
+
+#     Reference: 
+#     Remmert M., Biegert A., Hauser A., and Soding J.
+#     HHblits: Lightning-fast iterative protein sequence searching by HMM-HMM alignment.
+#     Nat. Methods, epub Dec 25, doi: 10.1038/NMETH.1818 (2011).
+
+#     (C) Michael Remmert and Johannes Soeding, 2012
+
+#     This program is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version.
+
+#     This program is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+
+#     You should have received a copy of the GNU General Public License
+#     along with this program.  If not, see <http:#www.gnu.org/licenses/>.
+
+#     We are very grateful for bug reports! Please contact us at soeding@genzentrum.lmu.de
 
 use lib $ENV{"HHLIB"}."/scripts";
 use HHPaths;   # config file with path variables for nr, blast, psipred, pdb, dssp etc.
@@ -23,19 +45,16 @@ my $informat="a3m";    # input format
 my $neff = 7;          # use alignment with this diversity for PSIPRED prediction
 
 my $help="
-Add DSSP states (if available) and PSIPRED secondary structure prediction to a multiple sequence alignment.
+Add PSIPRED secondary structure prediction (and DSSP annotation) to an MSA or HMMER file.
 Input is a  multiple sequence alignment or a HMMER (multi-)model file. Allowed input formats are 
 A2M/FASTA (default), A3M (-a3m), CLUSTAL (-clu), STOCKHOLM (-sto), HMMER (-hmm).
 If the input file is an alignment, the output file is in A3M with default name <basename>.a3m.
 If the input file is in HMMER format, the output is the same as the input, except that records SSPRD 
 and SSCON are added to each model which contain predicted secondary structure and confidence values. 
 In this case the output file name is obligatory and must be different from the input file name.
-(( Remark: A3M looks misaligned but it is not. To reconvert to FASTA, type ))
-((   'reformat.pl file.a3m file.fas'.                                      ))
-(( For an explanation of the A3M format, see the User Guide.               ))
 
-Usage: perl addss.pl <ali file> [<outfile>] [-fas|-a3m|-clu|-sto]  
-  or   perl addss.pl <ali file> <outfile> -hmm  
+Usage: perl addss.pl <ali_file> [<outfile>] [-fas|-a3m|-clu|-sto]  
+  or   perl addss.pl <hhm_file> <outfile> -hmm  
 \n";
 
 # Variable declarations

@@ -90,7 +90,7 @@ public:
   Hash();
   Hash(int nslots);
   Hash(int nslots, Typ n);
-  ~Hash();
+  ~Hash(); // note: if <Typ> data is a pointer to another data structure, that structure is not deleted!
 
   // Set Fail element to be returned when the current key or supplied key are not defined
   inline void Null(Typ f) {fail=f;}

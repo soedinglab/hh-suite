@@ -221,7 +221,7 @@ HHsearch 1.5.0 August 2007
 
 _______________________________________________________________________________
 
-HHsearch 1.6.0 sometime in 2010
+HHsearch 1.6.0 November 2010
 
 * A new procedure for estimation of P- and E-values has been implemented that
   circumvents the need to calibrate HMMs. Calibration can still be done if 
@@ -298,49 +298,19 @@ HHsearch 1.6.1 April 2011
 _______________________________________________________________________________
 
 
-HHblits/HHsearch 2.2.20  November 2011
+HH-suite 2.0.0  January 2012
 
-* Add new method HHblits that perform lightning-fast iterative sequence searches 
-  based on HMM-HMM comparison
+* The iterative HMM-HMM search method HHblits has been added and the entire package is now called HH-suite. HHblits brings the power of HMM-HMM comparison to mainstream, general-purpose sequence searching and sequence analysis. 
 
-_______________________________________________________________________________
+* The speed of HHsearch was further increase through the use of SSE3 instructions.
 
-Suggestions later releases
+* An option \verb`-atab` for writing alignment as a table (with posteriors) to file was introduced
 
-	
-* HHsearch now scores similarity in (estimated) relative solvent accessibility 
-  (RSA) of query and database sequences by default, in a similar way as for 
-  secondary structure scoring. The A3M alignments and HHM alignments have added
-  special sequences, sa_dssp for actual RSA values calculated by DSSP, and 
-  sa_pred for RSA values predicted with SABLE2 (Adamczak R, Porollo A, and 
-  Meller J, Bioinformatics (2004) 56:753-767). Ten bins are used, denoted by
-  0 to 9, with bin borders at RSA values 0.01, 0.04, 0.09, 0.16,.., and 0.81.
+* HHsearch is now able to read HMMER3 profiles (but should not be used due to a loss of sensitivity).
 
-* Binary format .hhb for HMM files 
-
-* Add script hhssearch.pl <sequence> or <file> or stdin
-
-* Add scoring + display of repeat proteins in a similar (better?) way as HMMER
-   => it should get to be the preferred tool for sensitive repeat detection
-
-* Add -M center option, which will choose the sequence most similar to all others
-  as the first and master sequence.  This requires N^2L comparisons, in principle,
-  but for N>100 we could simply choose 100 random sequences and for each
-  sequence in the alignment calculate the sum of amino acid similarity scores with
-  those 100 sequences. For N=10000 sequences with L=1000 columns, this would
-  take ~ N*100*L*3E-8 = 30s, which is fine for such a big alignment.
-
-* Open source ??
-
-* Add -M center option, which will choose the sequence most similar to all others
-  as the first and master sequence.  This requires N^2L comparisons, in principle,
-  but for N>100 we could simply choose 100 random sequences and for each
-  sequence in the alignment calculate the sum of amino acid similarity scores with
-  those 100 sequences. For N=10000 sequences with L=1000 columns, this would
-  take ~ N*100*L*3E-8 = 30s, which is fine for such a big alignment.
+* A local amino acid compositional bias correction was introduced. Improvements are slight (<=1%) on a standard SCOP single domain benchmark. However, the improvement for more realistic sequences containing multiple domains, repeats, and regions of strong compositional bias will is probably more pronounced. The score shift parameter has been set to -0.03 bits and the mact parameter to 0.3. 
 
 
 Bugs? Ideas? Need for improvement? 
-soeding@lmb.uni-muenchen.de
-johannes@soeding.com
+soeding@genzentrum.lmu.de
 

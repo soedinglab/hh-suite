@@ -1,10 +1,29 @@
 // hhalign.C: 
 // Align a multiple alignment to an alignment or HMM 
 // Print out aligned input sequences in a3m format
-// Compile:              g++ hhalign.C -o hhalign -DHH_SSE3 -DHH_PNG -I/usr/include/ -L/usr/lib -lpng -lz -O3 -fno-strict-aliasing 
-// Compile with efence:  g++ hhalign.C -o hhalign -DHH_SSE3 -DHH_PNG -I/usr/include/ -lefence -L/usr/lib -lpng -lz -O -g  
-//
 // Error codes: 0: ok  1: file format error  2: file access error  3: memory error  4: internal numeric error  5: command line error
+
+//     (C) Johannes Soeding 2012
+
+//     This program is free software: you can redistribute it and/or modify
+//     it under the terms of the GNU General Public License as published by
+//     the Free Software Foundation, either version 3 of the License, or
+//     (at your option) any later version.
+
+//     This program is distributed in the hope that it will be useful,
+//     but WITHOUT ANY WARRANTY; without even the implied warranty of
+//     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//     GNU General Public License for more details.
+
+//     You should have received a copy of the GNU General Public License
+//     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+//     We are very grateful for bug reports! Please contact us at soeding@genzentrum.lmu.de
+
+//     Reference: 
+//     Remmert M., Biegert A., Hauser A., and Soding J.
+//     HHblits: Lightning-fast iterative protein sequence searching by HMM-HMM alignment.
+//     Nat. Methods, epub Dec 25, doi: 10.1038/NMETH.1818 (2011).
 
 ////#define WINDOWS
 #define MAIN
@@ -1016,7 +1035,7 @@ int main(int argc, char **argv)
   Nali = hit.irep;
 
   if (par.realign) {
-    printf("Realigning hits with maximum accuracy (MAC) alignment algorithm ...\n");
+    printf("Realigning using HMM-HMM Maximum Accuracy algorithm\n");
     RealignByWorker(hit);
   }
   

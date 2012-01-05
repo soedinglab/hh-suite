@@ -1,12 +1,30 @@
 // hhsearch.C:
 // Search for a multiple alignment (transformed into HMM) in a profile HMM database
-// Compile:              g++ hhsearch.C -o hhsearch -O3 -lpthread -lrt -fno-strict-aliasing -march=core2 -DHH_SSE3 
-// Compile with efence:  g++ hhsearch.C -o hhsearch -lefence -lpthread -lrt -O -g -march=core2 -DHH_SSE3
-// Compile for Valgrind: g++ hhsearch.C -o hhsearch2 -lpthread -lrt -O -g -DHH_SSE3
-// With wnlib:           g++ hhsearch.C /home/soeding/programs/wnlib/acc/text.a  -o hhsearch -O3 -lpthread -lrt -fno-strict-aliasing -g -I/home/soeding/programs/wnlib/acc/h/ -L/home/soeding/programs/electric-fence-2.1.13/
-//
+
 // Error codes: 0: ok  1: file format error  2: file access error  3: memory error  4: command line error  6: internal logic error  7: internal numeric error
 
+
+//     (C) Johannes Soeding and Michael Remmert 2012
+
+//     This program is free software: you can redistribute it and/or modify
+//     it under the terms of the GNU General Public License as published by
+//     the Free Software Foundation, either version 3 of the License, or
+//     (at your option) any later version.
+
+//     This program is distributed in the hope that it will be useful,
+//     but WITHOUT ANY WARRANTY; without even the implied warranty of
+//     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//     GNU General Public License for more details.
+
+//     You should have received a copy of the GNU General Public License
+//     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+//     We are very grateful for bug reports! Please contact us at soeding@genzentrum.lmu.de
+
+//     Reference: 
+//     Remmert M., Biegert A., Hauser A., and Soding J.
+//     HHblits: Lightning-fast iterative protein sequence searching by HMM-HMM alignment.
+//     Nat. Methods, epub Dec 25, doi: 10.1038/NMETH.1818 (2011).
 
 ////#define WINDOWS
 #define PTHREAD
@@ -230,7 +248,7 @@ void help()
 #endif
   printf("\n");
   printf("An extended list of options can be obtained by using '--help all' as parameter \n");
-  printf("\n\n");
+  printf("\n");
   printf("Example: %s -i a.1.1.1.a3m -d scop70_1.71.hhm \n",program_name);
   cout<<endl;
 
@@ -611,428 +629,453 @@ void ProcessArguments(int argc, char** argv)
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void perform_realign(char *dbfiles[], int ndb)
 {
-      q->Log2LinTransitionProbs(1.0); // transform transition freqs to lin space if not already done
+  q->Log2LinTransitionProbs(1.0); // transform transition freqs to lin space if not already done
+  
+  const float MEMSPACE_DYNPROG = 3.0*1024.0*1024.0*1024.0;
+  int nhits=0;
+  int Lmax=0;      // length of longest HMM to be realigned
+  int Lmaxmem=(int)((float)MEMSPACE_DYNPROG/q->L/6.0/8.0/bins); // longest allowable length of database HMM
+  int N_aligned=0;
+  
+  // phash_plist_realignhitpos->Show(dbfile) is pointer to list with template indices and their ftell positions.
+  // This list can be sorted by ftellpos to access one template after the other efficiently during realignment
+  Hash< List<Realign_hitpos>* >* phash_plist_realignhitpos;
+  phash_plist_realignhitpos = new Hash< List<Realign_hitpos>* > (2311,NULL);
+  
+  // Some templates have several (suboptimal) alignments in hitlist. For realignment, we need to efficiently 
+  // access all hit objects in hitlist belonging to one template (because we don't want to read templates twice)
+  // We therefore need for each template (identified by its index between 0 and N_searched-1) a list of elements 
+  // in hitlist that store the alignments with the template of that index. 
+  // This list is pointed to by array_plist_phits[index].
+  List<void*>** array_plist_phits; 
+  array_plist_phits = new List<void*>*[N_searched];
+  for (int index=0; index<N_searched; index++) array_plist_phits[index] = NULL; // initialize 
+  
+  // Store all dbfiles and ftell positions of templates to be displayed and realigned
+  hitlist.Reset();
+  while (!hitlist.End())
+    {
+      hit_cur = hitlist.ReadNext();
+      if (nhits >= par.realign_max && nhits>=imax(par.B,par.Z)) break;
+      if (hit_cur.Eval > par.e)
+	{
+	  if (nhits>=imax(par.B,par.Z)) continue;
+	  if (nhits>=imax(par.b,par.z) && hit_cur.Probab < par.p) continue;
+	  if (nhits>=imax(par.b,par.z) && hit_cur.Eval > par.E) continue;
+	}
+      if (hit_cur.L>Lmax) Lmax=hit_cur.L;
+      if (hit_cur.L<=Lmaxmem)
+	{
+//        fprintf(stderr,"hit.name=%-15.15s  hit.index=%-5i hit.ftellpos=%-8i  hit.dbfile=%s\n",hit_cur.name,hit_cur.index,(unsigned int)hit_cur.ftellpos,hit_cur.dbfile);
+	  if (nhits>=par.premerge || hit_cur.irep>1) // realign the first premerge hits consecutively to query profile
+	    {
+	      if (hit_cur.irep==1) 
+		{
+		  // For each template (therefore irep==1), store template index and position on disk in a list
+		  Realign_hitpos realign_hitpos;
+		  realign_hitpos.ftellpos = hit_cur.ftellpos;    // stores position on disk of template for current hit
+		  realign_hitpos.index = hit_cur.index;          // stores index of template of current hit
+		  if (! phash_plist_realignhitpos->Contains(hit_cur.dbfile))
+		    {
+		      List<Realign_hitpos>* newlist = new List<Realign_hitpos>;
+		      phash_plist_realignhitpos->Add(hit_cur.dbfile,newlist);
+		    }
+		  // Add template index and ftellpos to list which belongs to key dbfile in hash
+		  phash_plist_realignhitpos->Show(hit_cur.dbfile)->Push(realign_hitpos);
+		}
+	      if (! array_plist_phits[hit_cur.index]) // pointer at index is still NULL  
+		{
+		  List<void*>* newlist = new List<void*>; // create new list of pointers to all aligments of a template
+		  array_plist_phits[hit_cur.index] = newlist; // set array[index] to newlist
+		}
+	      // Push(hitlist.ReadCurrentAddress()) :  Add address of current hit in hitlist to list... 
+	      // array_plist_phits[hit_cur.index]-> :  pointed to by hit_cur.index'th element of array_plist_phits
+	      array_plist_phits[hit_cur.index]->Push(hitlist.ReadCurrentAddress());
+	    }
+	}
+      nhits++;
+    }
+  if (Lmax>Lmaxmem)
+    {
+      Lmax=Lmaxmem;
+      if (v>=1) 
+	{
+	  cerr<<"WARNING: Realigning sequences only up to length "<<Lmaxmem<<" due to limited memory."<<endl;
+	  cerr<<"This is genarally unproboblematic but may lead to slightly sub-optimal alignments."<<endl; 
+	  //	      cerr<<"You can allow HHblits to use more than "<<par.maxmem<<"GB of memory with option -mem <GB>"<<endl;  // still to be implemented
+	  if (bins>1) cerr<<"Note: you can reduce memory requirement by lowering N in the -cpu N option."<<endl;
+	}
+    }
+  
+  // Initialize and allocate space for dynamic programming
+  jobs_running = 0;
+  jobs_submitted = 0;
+  reading_dbs=1;   // needs to be set to 1 before threads are created
+  for (bin=0; bin<bins; bin++)
+    {
+      if (par.forward==0)
+	hit[bin]->AllocateForwardMatrix(q->L+2,Lmax+1);
+      if (par.forward<=1)
+	hit[bin]->AllocateBackwardMatrix(q->L+2,Lmax+1);
+      bin_status[bin] = FREE;
+    }
+  
+  int v1 = v;
+  if (v>=2) printf("Realigning %i database HMMs using HMM-HMM Maximum Accuracy algorithm\n",nhits);
+  if (v>0 && v<=3) v=1; else v-=2;  // Supress verbose output during iterative realignment and realignment
+  
+  /////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Start premerge: align the first par.premerge templates?
+  if (par.premerge>0)
+    {
       
-      // Realign->Show(dbfile) is list with positions of templates in dbfile, pointer to position in hitlist, and index of template to be realigned
-      Hash< List<Realign_hitpos>* >* realign; 
-      realign = new(Hash< List<Realign_hitpos>* >);
-      realign->New(3601,NULL);
-
-
-      const float MEMSPACE_DYNPROG = 3.0*1024.0*1024.0*1024.0;
-      int nhits=0;
-      int Lmax=0;      // length of longest HMM to be realigned
-      int Lmaxmem=(int)((float)MEMSPACE_DYNPROG/q->L/6.0/8.0/bins); // longest allowable length of database HMM
-      int N_aligned=0;
-
-      // Store all dbfiles and ftell positions of templates to be displayed and realigned
+      // Read query alignment into Qali
+      Alignment Qali;  // output A3M generated by merging A3M alignments for significant hits to the query alignment
+      char qa3mfile[NAMELEN];
+      char ta3mfile[NAMELEN];
+      RemoveExtension(qa3mfile,par.infile); // directory??
+      strcat(qa3mfile,".a3m");
+      FILE* qa3mf=fopen(qa3mfile,"r");
+      if (!qa3mf) OpenFileError(qa3mfile);
+      Qali.Read(qa3mf,qa3mfile);
+      fclose(qa3mf);
+      delete[] Qali.longname;
+      Qali.longname = new(char[strlen(q->longname)+1]);
+      strcpy(Qali.longname,q->longname);
+      strcpy(Qali.name,q->name);
+      strcpy(Qali.fam,q->fam);
+      RemovePathAndExtension(Qali.file,par.hhmfile);
+      
+      if (v>=2) printf("Merging best hits to query alignment %s ...\n",qa3mfile);
+      
+      bin=0;
+      nhits=0;
       hitlist.Reset();
-      while (!hitlist.End())
-        {
-          hit_cur = hitlist.ReadNext();
+      while (!hitlist.End() && nhits<par.premerge)
+	{
+	  hit_cur = hitlist.ReadNext();
+	  if (nhits>=imax(par.B,par.Z)) break;
+	  if (nhits>=imax(par.b,par.z) && hit_cur.Probab < par.p) break;
+	  if (nhits>=imax(par.b,par.z) && hit_cur.Eval > par.E) continue;
+	  nhits++;
+	  
+	  if (hit_cur.irep>1) continue;  // Align only the best hit of the first par.premerge templates
+	  if (hit_cur.L>Lmaxmem) continue;  //Don't align to long sequences due to memory limit
+	  
+	  // Open HMM database file dbfiles[idb]
+	  FILE* dbf=fopen(hit_cur.dbfile,"rb");
+	  if (!dbf) OpenFileError(hit_cur.dbfile);
+	  read_from_db=1;
+	  
+	  // Forward stream position to start of next database HMM to be realigned
+	  hit[bin]->index = hit_cur.index; // give hit a unique index for HMM
+	  hit[bin]->ftellpos = hit_cur.ftellpos;
+	  fseek(dbf,hit_cur.ftellpos,SEEK_SET);
+	  hit[bin]->dbfile = new(char[strlen(hit_cur.dbfile)+1]);
+	  strcpy(hit[bin]->dbfile,hit_cur.dbfile); // record db file name from which next HMM is read
+	  hit[bin]->irep = 1;  // Needed for min_overlap calculation in InitializeForAlignment in hhhit.C
+	  
+	  char path[NAMELEN];
+	  Pathname(path,hit_cur.dbfile);
+	  
+	  ///////////////////////////////////////////////////
+	  // Read next HMM from database file
+	  if (!fgetline(line,LINELEN,dbf)) {fprintf(stderr,"Error: end of file %s reached prematurely!\n",hit_cur.dbfile); exit(1);}
+	  while (strscn(line)==NULL && fgetline(line,LINELEN,dbf)) {} // skip lines that contain only white space
 
-	  if (hit_cur.Eval > par.e)
+	  if (!strncmp(line,"HMMER3",6))      // read HMMER3 format
 	    {
-	      if (nhits>=imax(par.B,par.Z)) continue;
-	      if (nhits>=imax(par.b,par.z) && hit_cur.Probab < par.p) continue;
-	      if (nhits>=imax(par.b,par.z) && hit_cur.Eval > par.E) continue;
+	      format[bin] = 1;
+	      read_from_db = t[bin]->ReadHMMer3(dbf,hit_cur.dbfile);
+	      par.hmmer_used = true;
 	    }
-	  if (hit_cur.L>Lmax) Lmax=hit_cur.L;
-          if (hit_cur.L<=Lmaxmem)
-            {
-//            fprintf(stderr,"hit.name=%-15.15s  hit.index=%-5i hit.ftellpos=%-8i  hit.dbfile=%s\n",hit_cur.name,hit_cur.index,(unsigned int)hit_cur.ftellpos,hit_cur.dbfile);
-              if (nhits>=par.premerge || hit_cur.irep>1) // realign the first premerge hits consecutively to query profile
-                {
-                  Realign_hitpos realign_hitpos;
-                  realign_hitpos.ftellpos = hit_cur.ftellpos;         // stores position on disk of template for current hit
-                  realign_hitpos.index = hit_cur.index;               // stores index of template to current hit
-                  realign_hitpos.irep = hit_cur.irep;                 // stores irep index (sub)optimal alignment
-		  realign_hitpos.phit = hitlist.GetCurrentElementAddress(); // stores pointer address to current hit
-                  if (realign->Contains(hit_cur.dbfile))
-                    realign->Show(hit_cur.dbfile)->Push(realign_hitpos);
-                  else
-                    {
-                      List<Realign_hitpos>* newlist = new(List<Realign_hitpos>);
-                      newlist->Push(realign_hitpos);
-                      realign->Add(hit_cur.dbfile,newlist);
-                    }
-                }
-            }
-          nhits++;
-        }
-      if (Lmax>Lmaxmem)
-        {
-          Lmax=Lmaxmem;
-          if (v>=1) 
+	  else if (!strncmp(line,"HMMER",5))      // read HMMER format
 	    {
-	      cerr<<"WARNING: Realigning sequences only up to length "<<Lmaxmem<<" due to limited memory."<<endl;
-	      cerr<<"This is genarally unproboblematic but may lead to slightly sub-optimal alignments."<<endl; 
-//	      cerr<<"You can allow HHblits to use more than "<<par.maxmem<<"GB of memory with option -mem <GB>"<<endl;  // still to be implemented
-	      if (bins>1) cerr<<"Note: you can reduce memory requirement by lowering N in the -cpu N option."<<endl;
+	      format[bin] = 1;
+	      read_from_db = t[bin]->ReadHMMer(dbf,hit_cur.dbfile);
+	      par.hmmer_used = true;
 	    }
-        }
+	  else if (!strncmp(line,"HH",2))     // read HHM format
+	    {
+	      format[bin] = 0;
+	      read_from_db = t[bin]->Read(dbf,path);
+	    }
+	  else if (!strncmp(line,"NAME",4))  // The following lines are for backward compatibility of HHM format version 1.2 with 1.1
+	    {
+	      format[bin] = 0;
+	      fseek(dbf,hit_cur.ftellpos,SEEK_SET); // rewind to beginning of line
+	      read_from_db = t[bin]->Read(dbf,path);
+	    }
+	  else if (line[0]=='#')             // read a3m alignment
+	    {
+	      Alignment tali;
+	      tali.Read(dbf,hit_cur.dbfile,line);
+	      tali.Compress(hit_cur.dbfile);
+//            qali.FilterForDisplay(par.max_seqid,par.coverage,par.qid,par.qsc,par.nseqdis);
+	      tali.N_filtered = tali.Filter(par.max_seqid_db,par.coverage_db,par.qid_db,par.qsc_db,par.Ndiff_db);
+	      t[bin]->name[0]=t[bin]->longname[0]=t[bin]->fam[0]='\0';
+	      tali.FrequenciesAndTransitions(*(t[bin]));
+	      format[bin] = 0;
+	    }
+	  else {
+	    cerr<<endl<<"Error in "<<program_name<<": unrecognized HMM file format in \'"<<hit_cur.dbfile<<"\'. \n";
+	    cerr<<"Context:\n'"<<line<<"\n";
+	    fgetline(line,LINELEN,dbf); cerr<<line<<"\n";
+	    fgetline(line,LINELEN,dbf); cerr<<line<<"'\n";
+	    exit(1);
+	  }
+	  fclose(dbf);
+	  
+	  if (read_from_db!=1)
+	    {
+	      fprintf(stderr,"Error: illegal format in %s while reading HMM %s\n",hit_cur.dbfile,hit_cur.name);
+	      continue;
+	    }
+	  if (v>=2) fprintf(stderr,"Realigning with %s ***** \n",t[bin]->name);
+	  ///////////////////////////////////////////////////
+	  
+	  N_aligned++;
+	  if (v>=1 && !(N_aligned%10))
+	    {
+	      cout<<".";
+	      if (!(N_aligned%500)) printf(" %-4i HMMs aligned\n",N_aligned);
+	      cout.flush();
+	    }
+	  
+	  // Prepare MAC comparison(s)
+	  PrepareTemplate(*q,*(t[bin]),format[bin]);
+	  t[bin]->Log2LinTransitionProbs(1.0);
+	  
+	  // Align q to template in *hit[bin]
+	  hit[bin]->Forward(*q,*(t[bin]));
+	  hit[bin]->Backward(*q,*(t[bin]));
+	  hit[bin]->MACAlignment(*q,*(t[bin]));
+	  hit[bin]->BacktraceMAC(*q,*(t[bin]));
+	  
+	  // Overwrite *hit[bin] with Viterbi scores, Probabilities etc. of hit_cur
+	  hit[bin]->score      = hit_cur.score;
+	  hit[bin]->score_aass = hit_cur.score_aass;
+	  hit[bin]->score_ss   = hit_cur.score_ss;
+	  hit[bin]->Pval       = hit_cur.Pval;
+	  hit[bin]->Pvalt      = hit_cur.Pvalt;
+	  hit[bin]->logPval    = hit_cur.logPval;
+	  hit[bin]->logPvalt   = hit_cur.logPvalt;
+	  hit[bin]->Eval       = hit_cur.Eval;
+	  hit[bin]->logEval    = hit_cur.logEval;
+	  hit[bin]->Probab     = hit_cur.Probab;
+	  hit[bin]->irep       = hit_cur.irep;
+	  
+	  // Replace original hit in hitlist with realigned hit
+	  //hitlist.ReadCurrent().Delete();
+	  hitlist.Delete().Delete();               // delete the list record and hit object
+	  hitlist.Insert(*hit[bin]);
+	  
+	  // Read a3m alignment of hit and merge with Qali according to Q-T-alignment in hit[bin]
+	  strcpy(ta3mfile,hit[bin]->file); // copy filename including path but without extension
+	  strcat(ta3mfile,".a3m");
+	  FILE* ta3mf=fopen(ta3mfile,"r");
+	  if (!ta3mf) OpenFileError(ta3mfile);
+	  Qali.MergeMasterSlave(*hit[bin],ta3mfile, ta3mf);
+	  fclose(ta3mf);
+	  
+	  // Convert ASCII to int (0-20),throw out all insert states, record their number in I[k][i]
+	  Qali.Compress("merged A3M file");
+	  
+	  // Remove sequences with seq. identity larger than seqid percent (remove the shorter of two)
+	  Qali.N_filtered = Qali.Filter(par.max_seqid,par.coverage,par.qid,par.qsc,par.Ndiff);
+	  
+	  // Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
+	  Qali.FrequenciesAndTransitions(*q);
+	  
+	  if (!*par.clusterfile) { //compute context-specific pseudocounts?
+	    // Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
+	    q->PreparePseudocounts();
+	    // Add amino acid pseudocounts to query: p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
+	    q->AddAminoAcidPseudocounts();
+	  } else {
+	    // Generate an amino acid frequency matrix from f[i][a] with full context specific pseudocount admixture (tau=1) -> g[i][a]
+	    // q->PrepareContextSpecificPseudocounts(); //OLD
+	    q->AddContextSpecificPseudocounts();
+	  }
+	  
+	  // Transform transition freqs to lin space if not already done
+	  q->AddTransitionPseudocounts();
+	  q->Log2LinTransitionProbs(1.0); // transform transition freqs to lin space if not already done
+	  
+	  q->CalculateAminoAcidBackground();
+	}
+    }
+  // End premerge: align the first par.premerge templates?
+  /////////////////////////////////////////////////////////////////////////////////////////////////////
+  
+  
+  
+#ifdef PTHREAD
+  // Start threads for realignment
+  for (int j=0; j<threads; j++)
+    {
+      thread_data[j].thread_id = j+1;
+      thread_data[j].function  = &RealignByWorker;
+      if (DEBUG_THREADS) fprintf(stderr,"Creating worker thread %i ...",j+1);
+      pthread_create(&pthread[j], &joinable, WorkerLoop, (void*)&thread_data[j]);
+      if (DEBUG_THREADS) fprintf(stderr," created!\n");
+    }
+#endif
+  
+  // Read all HMMs whose position is given in phash_plist_realignhitpos
+  for (int idb=0; idb<ndb; idb++)
+    {
+      
+      // Can we skip dbfiles[idb] because it contains no template to be realigned?
+      if (! phash_plist_realignhitpos->Contains(dbfiles[idb])) continue;
+      
+      // phash_plist_realignhitpos->Show(dbfile) is pointer to list with template indices and their ftell positions.
+      // This list is now sorted by ftellpos in ascending order to access one template after the other efficiently
+      phash_plist_realignhitpos->Show(dbfiles[idb])->SortList();
+      
+      // Open HMM database file dbfiles[idb]
+      FILE* dbf=fopen(dbfiles[idb],"rb");
+      if (!dbf) OpenFileError(dbfiles[ndb]);
+      read_from_db=1;
+      
+      ///////////////////////////////////////////////////////////////////////////////////////
+      // The loop (reads HMMs from the database file and) submits jobs into free bins as soon as they become available
+      phash_plist_realignhitpos->Show(dbfiles[idb])->Reset();
+      while (! phash_plist_realignhitpos->Show(dbfiles[idb])->End())
+	{
+	  // Submit jobs until no bin is free anymore
+	  while (! phash_plist_realignhitpos->Show(dbfiles[idb])->End() && jobs_submitted+jobs_running<bins)
+	    {
+	      
+	      // Allocate free bin
+	      bin = PickBin(FREE);
+	      if (bin<0) {
+		fprintf(stderr,"Error during realignment: found no free bin! jobs running: %i  jobs_submitted:%i  threads:%i\n",jobs_running,jobs_submitted,threads);
+		for (bin=0; bin<bins; bin++) fprintf(stderr,"bin_status[%i]=%i\n",bin,bin_status[bin]);
+		exit(6);
+	      }
+	      
+	      // Forward stream position to start of next database HMM to be realigned
+	      Realign_hitpos hitpos_curr = phash_plist_realignhitpos->Show(dbfiles[idb])->ReadNext();
+	      hit[bin]->index = hitpos_curr.index;      // give hit[bin] a unique index for HMM
+	      fseek(dbf,hitpos_curr.ftellpos,SEEK_SET); // start to read at ftellpos for template
+	      
+	      // Give hit[bin] the pointer to the list of pointers to hitlist elements of same template (for realignment)
+	      hit[bin]->plist_phits = array_plist_phits[hitpos_curr.index];
+	      
+	      // fprintf(stderr,"dbfile=%-40.40s  index=%-5i  ftellpos=%l\n",dbfiles[idb],hitpos_curr.index,hitpos_curr.ftellpos);
+	      
+	      char path[NAMELEN];
+	      Pathname(path,dbfiles[idb]);
+	      
+	      ///////////////////////////////////////////////////
+	      // Read next HMM from database file
+	      if (!fgetline(line,LINELEN,dbf)) 
+		{fprintf(stderr,"Error: end of file %s reached prematurely!\n",dbfiles[idb]); exit(1);}
+	      while (strscn(line)==NULL && fgetline(line,LINELEN,dbf)) {} // skip lines that contain only white space
 
-      // Initialize and allocate space for dynamic programming
-      jobs_running = 0;
-      jobs_submitted = 0;
-      reading_dbs=1;   // needs to be set to 1 before threads are created
-      for (bin=0; bin<bins; bin++)
-        {
-          if (par.forward==0)
-            hit[bin]->AllocateForwardMatrix(q->L+2,Lmax+1);
-          if (par.forward<=1)
-            hit[bin]->AllocateBackwardMatrix(q->L+2,Lmax+1);
-          bin_status[bin] = FREE;
-        }
-
-
-      if (v>=1) printf("Realigning %i query-template alignments with maximum accuracy (MAC) algorithm ...\n",nhits);
-      if (v>0 && v<=3) v=1; else v-=2;  // Supress verbose output during iterative realignment and realignment
-
-      /////////////////////////////////////////////////////////////////////////////////////////////////////
-      // Start premerge: align the first par.premerge templates?
-      if (par.premerge>0)
-        {
-
-          // Read query alignment into Qali
-          Alignment Qali;  // output A3M generated by merging A3M alignments for significant hits to the query alignment
-          char qa3mfile[NAMELEN];
-          char ta3mfile[NAMELEN];
-          RemoveExtension(qa3mfile,par.infile); // directory??
-          strcat(qa3mfile,".a3m");
-          FILE* qa3mf=fopen(qa3mfile,"r");
-          if (!qa3mf) OpenFileError(qa3mfile);
-          Qali.Read(qa3mf,qa3mfile);
-          fclose(qa3mf);
-	  delete[] Qali.longname;
-          Qali.longname = new(char[strlen(q->longname)+1]);
-          strcpy(Qali.longname,q->longname);
-          strcpy(Qali.name,q->name);
-          strcpy(Qali.fam,q->fam);
-          RemovePathAndExtension(Qali.file,par.hhmfile);
-
-          if (v>=2) printf("Merging best hits to query alignment %s ...\n",qa3mfile);
-
-          bin=0;
-          nhits=0;
-          hitlist.Reset();
-          while (!hitlist.End() && nhits<par.premerge)
-            {
-              hit_cur = hitlist.ReadNext();
-              if (nhits>=imax(par.B,par.Z)) break;
-              if (nhits>=imax(par.b,par.z) && hit_cur.Probab < par.p) break;
-              if (nhits>=imax(par.b,par.z) && hit_cur.Eval > par.E) continue;
-              nhits++;
-
-              if (hit_cur.irep>1) continue;  // Align only the best hit of the first par.premerge templates
-	      if (hit_cur.L>Lmaxmem) continue;  //Don't align to long sequences due to memory limit
-
-              // Open HMM database file dbfiles[idb]
-              FILE* dbf=fopen(hit_cur.dbfile,"rb");
-              if (!dbf) OpenFileError(hit_cur.dbfile);
-              read_from_db=1;
-
-              // Forward stream position to start of next database HMM to be realigned
-              hit[bin]->index = hit_cur.index; // give hit a unique index for HMM
-              hit[bin]->ftellpos = hit_cur.ftellpos;
-              fseek(dbf,hit_cur.ftellpos,SEEK_SET);
-              hit[bin]->dbfile = new(char[strlen(hit_cur.dbfile)+1]);
-              strcpy(hit[bin]->dbfile,hit_cur.dbfile); // record db file name from which next HMM is read
-              hit[bin]->irep = 1;  // Needed for min_overlap calculation in InitializeForAlignment in hhhit.C
-
-              char path[NAMELEN];
-              Pathname(path,hit_cur.dbfile);
-
-              ///////////////////////////////////////////////////
-              // Read next HMM from database file
-              if (!fgetline(line,LINELEN,dbf)) {fprintf(stderr,"Error: end of file %s reached prematurely!\n",hit_cur.dbfile); exit(1);}
-              if (!strncmp(line,"HMMER3",6))      // read HMMER3 format
-                {
-                  format[bin] = 1;
-                  read_from_db = t[bin]->ReadHMMer3(dbf,hit_cur.dbfile);
+	      if (!strncmp(line,"HMMER3",6))      // read HMMER3 format
+		{
+		  format[bin] = 1;
+		  read_from_db = t[bin]->ReadHMMer3(dbf,dbfiles[idb]);
 		  par.hmmer_used = true;
-                }
-              else if (!strncmp(line,"HMMER",5))      // read HMMER format
-                {
-                  format[bin] = 1;
-                  read_from_db = t[bin]->ReadHMMer(dbf,hit_cur.dbfile);
+		}
+	      else if (!strncmp(line,"HMMER",5))      // read HMMER format
+		{
+		  format[bin] = 1;
+		  read_from_db = t[bin]->ReadHMMer(dbf,dbfiles[idb]);
 		  par.hmmer_used = true;
-                }
-              else if (!strncmp(line,"HH",2))     // read HHM format
-                {
-                  format[bin] = 0;
-                  read_from_db = t[bin]->Read(dbf,path);
-                }
-              else if (!strncmp(line,"NAME",4))  // The following lines are for backward compatibility of HHM format version 1.2 with 1.1
-                {
-                  format[bin] = 0;
-                  fseek(dbf,hit_cur.ftellpos,SEEK_SET); // rewind to beginning of line
-                  read_from_db = t[bin]->Read(dbf,path);
-                }
-              else if (line[0]=='#')             // read a3m alignment
-                {
-                  Alignment tali;
-                  tali.Read(dbf,hit_cur.dbfile,line);
-                  tali.Compress(hit_cur.dbfile);
-                  //              qali.FilterForDisplay(par.max_seqid,par.coverage,par.qid,par.qsc,par.nseqdis);
-                  tali.N_filtered = tali.Filter(par.max_seqid_db,par.coverage_db,par.qid_db,par.qsc_db,par.Ndiff_db);
-                  t[bin]->name[0]=t[bin]->longname[0]=t[bin]->fam[0]='\0';
-                  tali.FrequenciesAndTransitions(*(t[bin]));
-                  format[bin] = 0;
-                }
-              else {
-                cerr<<endl<<"Error in "<<program_name<<": unrecognized HMM file format in \'"<<hit_cur.dbfile<<"\'\n";
-                cerr<<"line = "<<line<<"\n";
-                exit(1);
-              }
-              fclose(dbf);
+		}
+	      else if (!strncmp(line,"HH",2))     // read HHM format
+		{
+		  format[bin] = 0;
+		  read_from_db = t[bin]->Read(dbf,path);
+		}
+	      else if (!strncmp(line,"NAME",4))  // The following lines are for backward compatibility of HHM format version 1.2 with 1.1
+		{
+		  format[bin] = 0;
+		  fseek(dbf,hitpos_curr.ftellpos,SEEK_SET); // rewind to beginning of line
+		  read_from_db = t[bin]->Read(dbf,path);
+		}
+	      else if (line[0]=='#')                 // read a3m alignment
+		{
+		  Alignment tali;
+		  tali.Read(dbf,dbfiles[idb],line);
+		  tali.Compress(dbfiles[idb]);
+		  // qali.FilterForDisplay(par.max_seqid,par.coverage,par.qid,par.qsc,par.nseqdis);
+		  tali.N_filtered = tali.Filter(par.max_seqid_db,par.coverage_db,par.qid_db,par.qsc_db,par.Ndiff_db);
+		  t[bin]->name[0]=t[bin]->longname[0]=t[bin]->fam[0]='\0';
+		  tali.FrequenciesAndTransitions(*(t[bin]));
+		  format[bin] = 0;
+		}
+	      else {
+		cerr<<endl<<"Error in "<<program_name<<": unrecognized HMM file format in \'"<<dbfiles[idb]<<"\'. \n";
+		cerr<<"Context:\n'"<<line<<"\n";
+		fgetline(line,LINELEN,dbf); cerr<<line<<"\n";
+		fgetline(line,LINELEN,dbf); cerr<<line<<"'\n";
+		exit(1);
 
-              if (read_from_db!=1)
-                {
-                  fprintf(stderr,"Error: illegal format in %s while reading HMM %s\n",hit_cur.dbfile,hit_cur.name);
-                  continue;
-                }
-              if (v>=2) fprintf(stderr,"Realigning with %s ***** \n",t[bin]->name);
-              ///////////////////////////////////////////////////
-
-              N_aligned++;
-              if (v>=1 && !(N_aligned%10))
-                {
-                  cout<<".";
-                  if (!(N_aligned%500)) printf(" %-4i HMMs aligned\n",N_aligned);
-                  cout.flush();
-                }
-
-              // Prepare MAC comparison(s)
-              PrepareTemplate(*q,*(t[bin]),format[bin]);
-              t[bin]->Log2LinTransitionProbs(1.0);
-
-              // Align q to template in *hit[bin]
-              hit[bin]->Forward(*q,*(t[bin]));
-              hit[bin]->Backward(*q,*(t[bin]));
-              hit[bin]->MACAlignment(*q,*(t[bin]));
-              hit[bin]->BacktraceMAC(*q,*(t[bin]));
-
-              // Overwrite *hit[bin] with Viterbi scores, Probabilities etc. of hit_cur
-              hit[bin]->score      = hit_cur.score;
-              hit[bin]->score_aass = hit_cur.score_aass;
-              hit[bin]->score_ss   = hit_cur.score_ss;
-              hit[bin]->Pval       = hit_cur.Pval;
-              hit[bin]->Pvalt      = hit_cur.Pvalt;
-              hit[bin]->logPval    = hit_cur.logPval;
-              hit[bin]->logPvalt   = hit_cur.logPvalt;
-              hit[bin]->Eval       = hit_cur.Eval;
-              hit[bin]->logEval    = hit_cur.logEval;
-              hit[bin]->Probab     = hit_cur.Probab;
-              hit[bin]->irep       = hit_cur.irep;
-
-              // Replace original hit in hitlist with realigned hit
-              //hitlist.ReadCurrent().Delete();
-              hitlist.Delete().Delete();               // delete the list record and hit object
-              hitlist.Insert(*hit[bin]);
-
-              // Read a3m alignment of hit and merge with Qali according to Q-T-alignment in hit[bin]
-              strcpy(ta3mfile,hit[bin]->file); // copy filename including path but without extension
-              strcat(ta3mfile,".a3m");
-	      FILE* ta3mf=fopen(ta3mfile,"r");
-	      if (!ta3mf) OpenFileError(ta3mfile);
-              Qali.MergeMasterSlave(*hit[bin],ta3mfile, ta3mf);
-	      fclose(ta3mf);
-
-              // Convert ASCII to int (0-20),throw out all insert states, record their number in I[k][i]
-              Qali.Compress("merged A3M file");
-
-              // Remove sequences with seq. identity larger than seqid percent (remove the shorter of two)
-              Qali.N_filtered = Qali.Filter(par.max_seqid,par.coverage,par.qid,par.qsc,par.Ndiff);
-
-              // Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
-              Qali.FrequenciesAndTransitions(*q);
-
-              if (!*par.clusterfile) { //compute context-specific pseudocounts?
-                // Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
-                q->PreparePseudocounts();
-		// Add amino acid pseudocounts to query: p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
-		q->AddAminoAcidPseudocounts();
-              } else {
-                // Generate an amino acid frequency matrix from f[i][a] with full context specific pseudocount admixture (tau=1) -> g[i][a]
-                // q->PrepareContextSpecificPseudocounts(); //OLD
-		q->AddContextSpecificPseudocounts();
-              }
-
-              // Transform transition freqs to lin space if not already done
-	      q->AddTransitionPseudocounts();
-              q->Log2LinTransitionProbs(1.0); // transform transition freqs to lin space if not already done
-
-              q->CalculateAminoAcidBackground();
-            }
-        }
-      // End premerge: align the first par.premerge templates?
-      /////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
+	      }
+	      
+	      
+	      if (read_from_db==2) continue;  // skip current HMM or reached end of database
+	      if (read_from_db==0) break;     // finished reading HMMs
+	      if (v>=2) fprintf(stderr,"Realigning with %s\n",t[bin]->name);
+	      ///////////////////////////////////////////////////
+	      
+	      hit[bin]->dbfile = new(char[strlen(dbfiles[idb])+1]);
+	      strcpy(hit[bin]->dbfile,dbfiles[idb]); // record db file name from which next HMM is read
+	      
+	      N_aligned++;
+	      if (v>=1 && !(N_aligned%10))
+		{
+		  cout<<".";
+		  if (!(N_aligned%500)) printf(" %-4i HMMs aligned\n",N_aligned);
+		  cout.flush();
+		}
 #ifdef PTHREAD
-      // Start threads for realignment
-      for (int j=0; j<threads; j++)
-        {
-          thread_data[j].thread_id = j+1;
-          thread_data[j].function  = &RealignByWorker;
-          if (DEBUG_THREADS) fprintf(stderr,"Creating worker thread %i ...",j+1);
-          pthread_create(&pthread[j], &joinable, WorkerLoop, (void*)&thread_data[j]);
-          if (DEBUG_THREADS) fprintf(stderr," created!\n");
-        }
+	      // Lock access to bin_status
+	      if (threads>0) rc = pthread_mutex_lock(&bin_status_mutex);
 #endif
-
-      // Read all HMMs whose position is given in list realign_pos
-      for (int idb=0; idb<ndb; idb++)
-        {
-
-          // Can we skip dbfiles[idb] because it contains no template to be realigned?
-          if (! realign->Contains(dbfiles[idb])) continue;
-
-          // Should depend on mode -Ohhm: no resort; else resort !!!!!!!!! ////////////////////////////////////////
-          // Sort dbfile list of ftell positions in ascending order
-          realign->Show(dbfiles[idb])->SortList();
-
-          // Open HMM database file dbfiles[idb]
-          FILE* dbf=fopen(dbfiles[idb],"rb");
-          if (!dbf) OpenFileError(dbfiles[ndb]);
-          read_from_db=1;
-
-          ///////////////////////////////////////////////////////////////////////////////////////
-          // The loop (reads HMMs from the database file and) submits jobs into free bins as soon as they become available
-          realign->Show(dbfiles[idb])->Reset();
-          while (! realign->Show(dbfiles[idb])->End())
-            {
-
-              // Submit jobs until no bin is free anymore
-              while (! realign->Show(dbfiles[idb])->End() && jobs_submitted+jobs_running<bins)
-                {
-
-                  // Allocate free bin
-                  bin = PickBin(FREE);
-                  if (bin<0) {
-                    fprintf(stderr,"Error during realignment: found no free bin! jobs running: %i  jobs_submitted:%i  threads:%i\n",jobs_running,jobs_submitted,threads);
-                    for (bin=0; bin<bins; bin++) fprintf(stderr,"bin_status[%i]=%i\n",bin,bin_status[bin]);
-                    exit(6);
-                  }
-
-                  // Forward stream position to start of next database HMM to be realigned
-		  Realign_hitpos curr_hitpos = realign->Show(dbfiles[idb])->ReadNext();
-                  hit[bin]->index = curr_hitpos.index;  // give hit a unique index for HMM
-
-		  if (curr_hitpos.irep > 1) continue; // only call RealignByWorker (through WorkerLoop) once for each template
-
-                  fseek(dbf,curr_hitpos.ftellpos,SEEK_SET);
-		  hit[bin]->phit = curr_hitpos.phit;  // hand pointer to hit object to the bin data used by workers
-
-//                fprintf(stderr,"dbfile=%-40.40s  index=%-5i  ftellpos=%i\n",dbfiles[idb],curr_hitpos.index,(unsigned int) curr_hit.ftellpos);
-
-                  char path[NAMELEN];
-                  Pathname(path,dbfiles[idb]);
-
-                  ///////////////////////////////////////////////////
-                  // Read next HMM from database file
-                  if (!fgetline(line,LINELEN,dbf)) {fprintf(stderr,"Error: end of file %s reached prematurely!\n",dbfiles[idb]); exit(1);}
-                  if (!strncmp(line,"HMMER3",6))      // read HMMER3 format
-                    {
-                      format[bin] = 1;
-                      read_from_db = t[bin]->ReadHMMer3(dbf,dbfiles[idb]);
-		      par.hmmer_used = true;
-                    }
-                  else if (!strncmp(line,"HMMER",5))      // read HMMER format
-                    {
-                      format[bin] = 1;
-                      read_from_db = t[bin]->ReadHMMer(dbf,dbfiles[idb]);
-		      par.hmmer_used = true;
-                    }
-                  else if (!strncmp(line,"HH",2))     // read HHM format
-                    {
-                      format[bin] = 0;
-                      read_from_db = t[bin]->Read(dbf,path);
-                    }
-                  else if (!strncmp(line,"NAME",4))  // The following lines are for backward compatibility of HHM format version 1.2 with 1.1
-                    {
-                      format[bin] = 0;
-                      fseek(dbf,curr_hitpos.ftellpos,SEEK_SET); // rewind to beginning of line
-                      read_from_db = t[bin]->Read(dbf,path);
-                    }
-                  else if (line[0]=='#')                 // read a3m alignment
-                    {
-                      Alignment tali;
-                      tali.Read(dbf,dbfiles[idb],line);
-                      tali.Compress(dbfiles[idb]);
-                      // qali.FilterForDisplay(par.max_seqid,par.coverage,par.qid,par.qsc,par.nseqdis);
-                      tali.N_filtered = tali.Filter(par.max_seqid_db,par.coverage_db,par.qid_db,par.qsc_db,par.Ndiff_db);
-                      t[bin]->name[0]=t[bin]->longname[0]=t[bin]->fam[0]='\0';
-                      tali.FrequenciesAndTransitions(*(t[bin]));
-                      format[bin] = 0;
-                    }
-                  else {
-                    cerr<<endl<<"Error in "<<program_name<<": unrecognized HMM file format in \'"<<dbfiles[idb]<<"\'\n";
-                    cerr<<"line = "<<line<<"\n";
-                    exit(1);
-                  }
-
-
-                  if (read_from_db==2) continue;  // skip current HMM or reached end of database
-                  if (read_from_db==0) break;     // finished reading HMMs
-                  if (v>=2) fprintf(stderr,"Realigning with %s\n",t[bin]->name);
-                  ///////////////////////////////////////////////////
-
-                  hit[bin]->dbfile = new(char[strlen(dbfiles[idb])+1]);
-                  strcpy(hit[bin]->dbfile,dbfiles[idb]); // record db file name from which next HMM is read
-
-                  N_aligned++;
-                  if (v>=1 && !(N_aligned%10))
-                    {
-                      cout<<".";
-                      if (!(N_aligned%500)) printf(" %-4i HMMs aligned\n",N_aligned);
-                      cout.flush();
-                    }
+	      // Send the job in bin to a thread
+	      bin_status[bin] = SUBMITTED;
+	      jobs_submitted++;
+	      
+	      if (threads==0) // if no multi-threading mode, main thread executes job itself
+		{
+		  RealignByWorker(bin);
+		  bin_status[bin] = FREE;
+		  jobs_submitted--;
+		  break;
+		}
+	      
 #ifdef PTHREAD
-                  // Lock access to bin_status
-                  if (threads>0) rc = pthread_mutex_lock(&bin_status_mutex);
+	      // Restart threads waiting for a signal
+	      rc = pthread_cond_signal(&new_job);
+	      
+	      // Unlock access to bin_status
+	      rc = pthread_mutex_unlock(&bin_status_mutex);
+	      
+	      if (DEBUG_THREADS)
+		fprintf(stderr,"Main: put job into bin %i  name=%-7.7s  Jobs running: %i  jobs_submitted:%i \n",bin,t[bin]->name,jobs_running,jobs_submitted);
 #endif
-                  // Send the job in bin to a thread
-                  bin_status[bin] = SUBMITTED;
-                  jobs_submitted++;
-
-                  if (threads==0) // if no multi-threading mode, main thread executes job itself
-                    {
-                      RealignByWorker(bin);
-                      bin_status[bin] = FREE;
-                      jobs_submitted--;
-                      break;
-                    }
-
+	    }
+	  
 #ifdef PTHREAD
-                  // Restart threads waiting for a signal
-                  rc = pthread_cond_signal(&new_job);
-
-                  // Unlock access to bin_status
-                  rc = pthread_mutex_unlock(&bin_status_mutex);
-
-                  if (DEBUG_THREADS)
-                    fprintf(stderr,"Main: put job into bin %i  name=%-7.7s  Jobs running: %i  jobs_submitted:%i \n",bin,t[bin]->name,jobs_running,jobs_submitted);
-#endif
-                }
-
-#ifdef PTHREAD
-              if (threads>0)
-                {
-                  // Lock mutex
-                  rc = pthread_mutex_lock(&bin_status_mutex);
-
-                  // Wait until job finishes and a bin becomes free
-                  if (jobs_submitted+jobs_running>=bins)
-                    {
-                      if (DEBUG_THREADS) fprintf(stderr,"Master thread is waiting for jobs to be finished...\n");
+	  if (threads>0)
+	    {
+	      // Lock mutex
+	      rc = pthread_mutex_lock(&bin_status_mutex);
+	      
+	      // Wait until job finishes and a bin becomes free
+	      if (jobs_submitted+jobs_running>=bins)
+		{
+		  if (DEBUG_THREADS) fprintf(stderr,"Master thread is waiting for jobs to be finished...\n");
 #ifdef WINDOWS
-                      rc = pthread_cond_wait(&finished_job, &bin_status_mutex);
+		  rc = pthread_cond_wait(&finished_job, &bin_status_mutex);
 #else
 #ifdef HH_MAC
-
+		  
 		  // If no submitted jobs are in the queue we have to wait for a new job ...
 		  struct timespec ts;
 		  struct timeval tv;
@@ -1048,75 +1091,82 @@ void perform_realign(char *dbfiles[], int ndb)
 		  rc = pthread_cond_timedwait(&finished_job, &bin_status_mutex,&ts);
 #endif
 #endif
-                    }
-                  // Unlock mutex
-                  rc = pthread_mutex_unlock(&bin_status_mutex);
-                }
+		}
+	      // Unlock mutex
+	      rc = pthread_mutex_unlock(&bin_status_mutex);
+	    }
 #endif
-
-            }
-          // End while(1)
-          ///////////////////////////////////////////////////////////////////////////////////////
-
-          fclose(dbf);
-        }
-      reading_dbs=0;
-
+	  
+	}
+      // End while(1)
+      ///////////////////////////////////////////////////////////////////////////////////////
+      
+      fclose(dbf);
+    }
+  reading_dbs=0;
+  
 #ifdef PTHREAD
-      if (threads>0)
-        {
-          // No more HMMs in database => wait until all threads have finished
-          if (DEBUG_THREADS)
-            fprintf(stderr,"No more jobs read from database         Jobs running:%i  jobs_submitted:%i \n",jobs_running,jobs_submitted);
-
-          // Free all threads still waiting for jobs
-          rc = pthread_mutex_lock(&bin_status_mutex);
-          rc = pthread_cond_broadcast(&new_job);
-          rc = pthread_mutex_unlock(&bin_status_mutex); // Unlock mutex
-
-          // Wait for all jobs to finish => join all jobs to main
-          for (int j=0; j<threads; j++)
-            {
-              int status;
-              pthread_join(pthread[j], (void **)&status);
-              if (DEBUG_THREADS) fprintf(stderr,"Thread %i finished its work\n",j+1);
-            }
-        }
+  if (threads>0)
+    {
+      // No more HMMs in database => wait until all threads have finished
+      if (DEBUG_THREADS)
+	fprintf(stderr,"No more jobs read from database         Jobs running:%i  jobs_submitted:%i \n",jobs_running,jobs_submitted);
+      
+      // Free all threads still waiting for jobs
+      rc = pthread_mutex_lock(&bin_status_mutex);
+      rc = pthread_cond_broadcast(&new_job);
+      rc = pthread_mutex_unlock(&bin_status_mutex); // Unlock mutex
+      
+      // Wait for all jobs to finish => join all jobs to main
+      for (int j=0; j<threads; j++)
+	{
+	  int status;
+	  pthread_join(pthread[j], (void **)&status);
+	  if (DEBUG_THREADS) fprintf(stderr,"Thread %i finished its work\n",j+1);
+	}
+    }
 #endif
-
-      // Print for each HMM: n  score  -log2(Pval)  L  name  (n=5:same name 4:same fam 3:same sf...)
-      if (*par.scorefile) {
-        if (v>=3) printf("Printing scores file ...\n");
-        hitlist.PrintScoreFile(*q);
-      }
-
-      // Delete all hitlist entries with too short alignments
-      nhits=0;
-      hitlist.Reset();
-      while (!hitlist.End())
-        {
-          hit_cur = hitlist.ReadNext();
-	  //        printf("Deleting alignment of %s with length %i? nhits=%-2i  par.B=%-3i  par.Z=%-3i par.e=%.2g par.b=%-3i  par.z=%-3i par.p=%.2g\n",hit_cur.name,hit_cur.matched_cols,nhits,par.B,par.Z,par.e,par.b,par.z,par.p);
-          if (nhits>=imax(par.B,par.Z)) break;
-          if (nhits>=imax(par.b,par.z) && hit_cur.Probab < par.p) break;
-          if (nhits>=imax(par.b,par.z) && hit_cur.Eval > par.E) continue;
-          if (hit_cur.matched_cols < MINCOLS_REALIGN)
-            {
-              if (v>=3) printf("Deleting alignment of %s with length %i\n",hit_cur.name,hit_cur.matched_cols);
-              //hitlist.ReadCurrent().Delete();
-              hitlist.Delete().Delete();               // delete the list record and hit object
-              // Make sure only realigned alignments get displayed!
-              if (par.B>par.Z) par.B--; else if (par.B==par.Z) {par.B--; par.Z--;} else par.Z--;
-              if (par.b>par.z) par.b--; else if (par.b==par.z) {par.b--; par.z--;} else par.z--;
-            }
-          else nhits++;
-        }
-
-      // Delete realign hash with lists
-      realign->Reset();
-      while (!realign->End())
-        delete(realign->ReadNext()); // delete List<Realign_hitpos> to which realign->ReadNext() points
-      delete(realign);
+  v=v1;
+  
+  // Print for each HMM: n  score  -log2(Pval)  L  name  (n=5:same name 4:same fam 3:same sf...)
+  if (*par.scorefile) {
+    if (v>=3) printf("Printing scores file ...\n");
+    hitlist.PrintScoreFile(*q);
+  }
+  
+  
+  // Delete all hitlist entries with too short alignments
+  nhits=0;
+  hitlist.Reset();
+  while (!hitlist.End())
+    {
+      hit_cur = hitlist.ReadNext();
+      //        printf("Deleting alignment of %s with length %i? nhits=%-2i  par.B=%-3i  par.Z=%-3i par.e=%.2g par.b=%-3i  par.z=%-3i par.p=%.2g\n",hit_cur.name,hit_cur.matched_cols,nhits,par.B,par.Z,par.e,par.b,par.z,par.p);
+      if (nhits>=imax(par.B,par.Z)) break;
+      if (nhits>=imax(par.b,par.z) && hit_cur.Probab < par.p) break;
+      if (nhits>=imax(par.b,par.z) && hit_cur.Eval > par.E) continue;
+      if (hit_cur.matched_cols < MINCOLS_REALIGN)
+	{
+	  if (v>=3) printf("Deleting alignment of %s with length %i\n",hit_cur.name,hit_cur.matched_cols);
+	  //hitlist.ReadCurrent().Delete();
+	  hitlist.Delete().Delete();               // delete the list record and hit object
+	  // Make sure only realigned alignments get displayed!
+	  if (par.B>par.Z) par.B--; else if (par.B==par.Z) {par.B--; par.Z--;} else par.Z--;
+	  if (par.b>par.z) par.b--; else if (par.b==par.z) {par.b--; par.z--;} else par.z--;
+	}
+      else nhits++;
+    }
+  
+  // Delete hash phash_plist_realignhitpos with lists
+  phash_plist_realignhitpos->Reset();
+  while (!phash_plist_realignhitpos->End())
+    delete(phash_plist_realignhitpos->ReadNext()); // delete list to which phash_plist_realignhitpos->ReadNext() points
+  delete(phash_plist_realignhitpos);
+  
+  // Delete array_plist_phits with lists
+  for (int index=0; index<N_searched; index++) 
+    if (array_plist_phits[index]) delete(array_plist_phits[index]); // delete list to which array[index] points
+  delete(array_plist_phits); 
 }
 
 
@@ -1388,7 +1438,10 @@ int main(int argc, char **argv)
               ///////////////////////////////////////////////////
               // Read next HMM from database file
               if (!fgetline(line,LINELEN,dbf)) {read_from_db=0; break;}
-              if (!strncmp(line,"HMMER3",6))      // read HMMER3 format
+	      while (strscn(line)==NULL && fgetline(line,LINELEN,dbf)) {} // skip lines that contain only white space
+	      if (strscn(line)==NULL) break;
+       
+	      if (!strncmp(line,"HMMER3",6))      // read HMMER3 format
                 {
                   format[bin] = 1;
                   read_from_db = t[bin]->ReadHMMer3(dbf,dbfiles[idb]);
@@ -1426,9 +1479,11 @@ int main(int argc, char **argv)
                 }
               else
                 {
-                  cerr<<endl<<"Error in "<<program_name<<": unrecognized HMM file format in \'"<<dbfiles[idb]<<"\'\n";
-                  cerr<<"line = "<<line<<"\n";
-                  exit(1);
+		  cerr<<endl<<"Error in "<<program_name<<": unrecognized HMM file format in \'"<<dbfiles[idb]<<"\'. \n";
+		  cerr<<"Context:\n'"<<line<<"\n";
+		  fgetline(line,LINELEN,dbf); cerr<<line<<"\n";
+		  fgetline(line,LINELEN,dbf); cerr<<line<<"'\n";
+		  exit(1);
                 }
               if (read_from_db==2) continue;  // skip current HMM or reached end of database
               if (read_from_db==0) break;     // finished reading HMMs
@@ -1610,15 +1665,16 @@ int main(int argc, char **argv)
 
   
   // Realign hits with MAC algorithm
-  if (par.realign && par.forward!=2) perform_realign(dbfiles,ndb); 
-  else 
+  if (par.realign && par.forward!=2) 
     {
-      // Print for each HMM: n  score  -log2(Pval)  L  name  (n=5:same name 4:same fam 3:same sf...)
-      if (*par.scorefile) {
-	if (v>=3) printf("Printing scores file ...\n");
-	hitlist.PrintScoreFile(*q);
-      }
+      perform_realign(dbfiles,ndb); 
+    } 
+  else {
+    // Print for each HMM: n  score  -log2(Pval)  L  name  (n=5:same name 4:same fam 3:same sf...)
+    if (*par.scorefile) {
+      if (v>=3) printf("Printing scores file ...\n");
     }
+  }
   
   // // Print for each HMM: n  score  -log2(Pval)  L  name  (n=5:same name 4:same fam 3:same sf...)
   // if (*par.scorefile) {

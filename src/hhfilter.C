@@ -1,6 +1,27 @@
 // hhfilterC: filter alignment in a2m format with maximum sequence identity of match states and minimum coverage
-// Compile:             g++ hhfilter.C -o hhfilter -O3 -fno-strict-aliasing 
-// Compile with efence: g++ hhfilter.C -o hhfilter -g -O -lefence 
+// 
+//     (C) Johannes Soeding 2012
+
+//     This program is free software: you can redistribute it and/or modify
+//     it under the terms of the GNU General Public License as published by
+//     the Free Software Foundation, either version 3 of the License, or
+//     (at your option) any later version.
+
+//     This program is distributed in the hope that it will be useful,
+//     but WITHOUT ANY WARRANTY; without even the implied warranty of
+//     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//     GNU General Public License for more details.
+
+//     You should have received a copy of the GNU General Public License
+//     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+//     We are very grateful for bug reports! Please contact us at soeding@genzentrum.lmu.de
+
+//     Reference: 
+//     Remmert M., Biegert A., Hauser A., and Soding J.
+//     HHblits: Lightning-fast iterative protein sequence searching by HMM-HMM alignment.
+//     Nat. Methods, epub Dec 25, doi: 10.1038/NMETH.1818 (2011).
+
 #define MAIN
 #include <iostream>   // cin, cout, cerr
 #include <fstream>    // ofstream, ifstream

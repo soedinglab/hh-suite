@@ -3,6 +3,28 @@
 //
 // Error codes: 0: ok  1: file format error  2: file access error  3: memory error  4: command line error  6: internal logic error  7: internal numeric error
 
+//     (C) Michael Remmert  and Johannes Soeding, 2012
+
+//     This program is free software: you can redistribute it and/or modify
+//     it under the terms of the GNU General Public License as published by
+//     the Free Software Foundation, either version 3 of the License, or
+//     (at your option) any later version.
+
+//     This program is distributed in the hope that it will be useful,
+//     but WITHOUT ANY WARRANTY; without even the implied warranty of
+//     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//     GNU General Public License for more details.
+
+//     You should have received a copy of the GNU General Public License
+//     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+//     We are very grateful for bug reports! Please contact us at soeding@genzentrum.lmu.de
+
+//     Reference: 
+//     Remmert M., Biegert A., Hauser A., and Soding J.
+//     HHblits: Lightning-fast iterative protein sequence searching by HMM-HMM alignment.
+//     Nat. Methods, epub Dec 25, doi: 10.1038/NMETH.1818 (2011).
+
 ////#define WINDOWS
 #define PTHREAD
 #define MAIN
@@ -284,7 +306,7 @@ void PerformViterbiByWorker(int bin)
 void help()
 {
   printf("\n");
-  printf("HHblits %s: HMM-HMM-based lighting-fast iterative sequence search\n",VERSION_AND_DATE);
+  printf("HHblits %s:\nHMM-HMM-based lighting-fast iterative sequence search\n",VERSION_AND_DATE);
   printf("HHblits is a sensitive, general-purpose, iterative sequence search tool that represents \n");
   printf("both query and database sequences by HMMs. You can search HHblits databases starting\n");
   printf("with a single query sequence, a multiple sequence alignment, or an HMM. HHblits prints out\n");
@@ -302,11 +324,11 @@ void help()
   printf(" -n     [1,8]   number of iterations (default=%i)                                        \n",num_rounds); 
   printf(" -e     [0,1]   E-value cutoff for inclusion in result alignment (def=%G)                \n",par.e);
   printf("\n");
-  printf("Needed libraries                                                                         \n");
-//printf(" -cs   <file>   compute context-specific pseudocounts with context library (def=off)\n");
-  printf(" -contxt <file> context file for computing context-specific pseudocounts (default=%s)\n",par.clusterfile);
-  printf(" -cslib  <file> column state file for fast database prefiltering (default=%s)\n",par.cs_library);
-  printf("\n");
+  // printf("Needed libraries                                                                         \n");
+  // printf(" -cs   <file>   compute context-specific pseudocounts with context library (def=off)\n");
+  // printf(" -contxt <file> context file for computing context-specific pseudocounts (default=%s)\n",par.clusterfile);
+  // printf(" -cslib  <file> column state file for fast database prefiltering (default=%s)\n",par.cs_library);
+  // printf("\n");
   printf("Input alignment format:                                                       \n");
   printf(" -M a2m         use A2M/A3M (default): upper case = Match; lower case = Insert;\n");
   printf("               ' -' = Delete; '.' = gaps aligned to inserts (may be omitted)   \n");
@@ -339,7 +361,7 @@ void help()
 #endif
   printf("\n");
   printf("An extended list of options can be obtained by using '--help all' as parameter           \n");
-  printf("\n\n");
+  printf("\n");
   printf("Example: %s -i query.fas -oa3m query.a3m -n 2                                            \n",program_name);
   cout<<endl;
 }
@@ -754,8 +776,10 @@ void ReadInputFile()
     }
   else
     {
-      cerr<<endl<<"Error in "<<program_name<<": unrecognized input file format in \'"<<par.infile<<"\'\n";
-      cerr<<"line = "<<line<<"\n";
+      cerr<<endl<<"Error in "<<program_name<<": unrecognized HMM file format in \'"<<par.infile<<"\'. \n";
+      cerr<<"Context:\n'"<<line<<"\n";
+      fgetline(line,LINELEN,qf); cerr<<line<<"\n";
+      fgetline(line,LINELEN,qf); cerr<<line<<"'\n";
       exit(1);
     }
   fclose(qf);
@@ -877,12 +901,16 @@ void search_loop(char *dbfiles[], int ndb, bool alignByWorker=true)
 	  }
 	  hit[bin]->index = N_searched;          // give hit a unique index for HMM
 	  hit[bin]->ftellpos = ftell(dbf);       // record position in dbfile of next HMM to be read
+	  //	  fprintf(stderr,"dbfile=%-40.40s  index=%-5i  ftellpos=%i\n",dbfiles[idb],N_searched,(int) hit[bin]->ftellpos);
+
 	  char path[NAMELEN];
 	  Pathname(path,dbfiles[idb]);
 
 	  ///////////////////////////////////////////////////
 	  // Read next HMM from database file
 	  if (!fgetline(line,LINELEN,dbf)) {continue;}
+	  while (strscn(line)==NULL && fgetline(line,LINELEN,dbf)) {} // skip lines that contain only white space
+
 	  if (!strncmp(line,"HMMER3",6))      // read HMMER3 format
 	    {
 	      format[bin] = 1;
@@ -921,8 +949,10 @@ void search_loop(char *dbfiles[], int ndb, bool alignByWorker=true)
 	    }
 	  else
 	    {
-	      cerr<<endl<<"Error in "<<program_name<<": unrecognized HMM file format in \'"<<dbfiles[idb]<<"\'\n";
-	      cerr<<"line = "<<line<<"\n";
+	      cerr<<endl<<"Error in "<<program_name<<": unrecognized HMM file format in \'"<<dbfiles[idb]<<"\'. \n";
+	      cerr<<"Context:\n'"<<line<<"\n";
+	      fgetline(line,LINELEN,dbf); cerr<<line<<"\n";
+	      fgetline(line,LINELEN,dbf); cerr<<line<<"'\n";
 	      exit(1);
 	    }
 	  if (v>=4) printf("Aligning with %s\n",t[bin]->name);  /////////////////////v>=4
@@ -1038,7 +1068,9 @@ void search_loop(char *dbfiles[], int ndb, bool alignByWorker=true)
 
 
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Wrapper around default Viterbi HMM-HMM search (function search_loop)
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void search_database(char *dbfiles[], int ndb, int db_size)
 {
   // Initialize and allocate space for dynamic programming
@@ -1090,9 +1122,10 @@ void search_database(char *dbfiles[], int ndb, int db_size)
 }
 
 
-
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Variant of search_database() function:
 // Perform Viterbi search on each hit object in global hash previous_hits, but keep old alignment
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void perform_viterbi_search(int db_size)
 {
   // Initialize and allocate space for dynamic programming
@@ -1201,16 +1234,11 @@ void perform_viterbi_search(int db_size)
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Realign hits with MAC algorithm
-
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void perform_realign(char *dbfiles[], int ndb)
 {
   q->Log2LinTransitionProbs(1.0); // transform transition freqs to lin space if not already done
       
-  // Realign->Show(dbfile) is list with positions of templates in dbfile, pointer to position in hitlist, and index of template to be realigned
-  Hash< List<Realign_hitpos>* >* realign; 
-  realign = new(Hash< List<Realign_hitpos>* >);
-  realign->New(3601,NULL);
-  
   par.block_shading->Reset();
   while (!par.block_shading->End())
     delete[] (par.block_shading->ReadNext()); 
@@ -1221,6 +1249,20 @@ void perform_realign(char *dbfiles[], int ndb)
   int Lmax=0;      // length of longest HMM to be realigned
   int Lmaxmem=(int)((float)MEMSPACE_DYNPROG/q->L/6.0/8.0/bins); // longest allowable length of database HMM
   int N_aligned=0;
+  
+  // phash_plist_realignhitpos->Show(dbfile) is pointer to list with template indices and their ftell positions.
+  // This list can be sorted by ftellpos to access one template after the other efficiently during realignment
+  Hash< List<Realign_hitpos>* >* phash_plist_realignhitpos;
+  phash_plist_realignhitpos = new Hash< List<Realign_hitpos>* > (30031,NULL);
+  
+  // Some templates have several (suboptimal) alignments in hitlist. For realignment, we need to efficiently 
+  // access all hit objects in hitlist belonging to one template (because we don't want to read templates twice)
+  // We therefore need for each template (identified by its index between 0 and N_searched-1) a list of elements 
+  // in hitlist that store the alignments with the template of that index. 
+  // This list is pointed to by array_plist_phits[index].
+  List<void*>** array_plist_phits; 
+  array_plist_phits = new List<void*>*[N_searched];
+  for (int index=0; index<N_searched; index++) array_plist_phits[index] = NULL; // initialize 
   
   // Store all dbfiles and ftell positions of templates to be displayed and realigned
   hitlist.Reset();
@@ -1234,7 +1276,6 @@ void perform_realign(char *dbfiles[], int ndb)
 	  if (nhits>=imax(par.b,par.z) && hit_cur.Probab < par.p) continue;
 	  if (nhits>=imax(par.b,par.z) && hit_cur.Eval > par.E) continue;
 	}
-
       if (hit_cur.L>Lmax) Lmax=hit_cur.L;
       if (hit_cur.L<=Lmaxmem)
 	{
@@ -1275,19 +1316,28 @@ void perform_realign(char *dbfiles[], int ndb)
 
 	  if (nhits>=par.premerge || hit_cur.irep>1) // realign the first premerge hits consecutively to query profile
 	    {
-	      Realign_hitpos realign_hitpos;
-	      realign_hitpos.ftellpos = hit_cur.ftellpos;         // stores position on disk of template for current hit
-	      realign_hitpos.index = hit_cur.index;               // stores index of template to current hit
-	      realign_hitpos.irep = hit_cur.irep;                 // stores irep index (sub)optimal alignment
-	      realign_hitpos.phit = hitlist.GetCurrentElementAddress(); // stores pointer address to current hit
-	      if (realign->Contains(hit_cur.dbfile))
-		realign->Show(hit_cur.dbfile)->Push(realign_hitpos);
-	      else
+	      if (hit_cur.irep==1) 
 		{
-		  List<Realign_hitpos>* newlist = new(List<Realign_hitpos>);
-		  newlist->Push(realign_hitpos);
-		  realign->Add(hit_cur.dbfile,newlist);
+		  // For each template (therefore irep==1), store template index and position on disk in a list
+		  Realign_hitpos realign_hitpos;
+		  realign_hitpos.ftellpos = hit_cur.ftellpos;    // stores position on disk of template for current hit
+		  realign_hitpos.index = hit_cur.index;          // stores index of template of current hit
+		  if (!phash_plist_realignhitpos->Contains(hit_cur.dbfile))
+		    {
+		      List<Realign_hitpos>* newlist = new List<Realign_hitpos>;
+		      phash_plist_realignhitpos->Add(hit_cur.dbfile,newlist);
+		    }
+		  // Add template index and ftellpos to list which belongs to key dbfile in hash
+		  phash_plist_realignhitpos->Show(hit_cur.dbfile)->Push(realign_hitpos);
 		}
+	      if (! array_plist_phits[hit_cur.index]) // pointer at index is still NULL  
+		{
+		  List<void*>* newlist = new List<void*>; // create new list of pointers to all aligments of a template
+		  array_plist_phits[hit_cur.index] = newlist; // set array[index] to newlist
+		}
+	      // Push(hitlist.ReadCurrentAddress()) :  Add address of current hit in hitlist to list... 
+	      // array_plist_phits[hit_cur.index]-> :  pointed to by hit_cur.index'th element of array_plist_phits
+	      array_plist_phits[hit_cur.index]->Push(hitlist.ReadCurrentAddress());
 	    }
 	  
 	}
@@ -1332,10 +1382,10 @@ void perform_realign(char *dbfiles[], int ndb)
       int num_realign=0;
       for (int idb=0; idb<ndb; idb++)
 	{
-	  if (realign->Contains(dbfiles[idb]))
+	  if (phash_plist_realignhitpos->Contains(dbfiles[idb]))
 	    num_realign++;
 	}
-      printf("Realigning %i HMM-HMM alignments with Maximum Accuracy algorithm\n",num_realign);
+      printf("Realigning %i HMMs using HMM-HMM Maximum Accuracy algorithm\n",num_realign);
     }
 
   int v1=v;
@@ -1393,6 +1443,8 @@ void perform_realign(char *dbfiles[], int ndb)
 	  ///////////////////////////////////////////////////
 	  // Read next HMM from database file
 	  if (!fgetline(line,LINELEN,dbf)) {fprintf(stderr,"Error: end of file %s reached prematurely!\n",hit_cur.dbfile); exit(1);}
+	  while (strscn(line)==NULL && fgetline(line,LINELEN,dbf)) {} // skip lines that contain only white space
+
 	  if (!strncmp(line,"HMMER3",5))      // read HMMER3 format
 	    {
 	      format[bin] = 1;
@@ -1428,8 +1480,10 @@ void perform_realign(char *dbfiles[], int ndb)
 	      format[bin] = 0;
 	    }
 	  else {
-	    cerr<<endl<<"Error in "<<program_name<<": unrecognized HMM file format in \'"<<hit_cur.dbfile<<"\'\n";
-	    cerr<<"line = "<<line<<"\n";
+	    cerr<<endl<<"Error in "<<program_name<<": unrecognized HMM file format in \'"<<hit_cur.dbfile<<"\'. \n";
+	    cerr<<"Context:\n'"<<line<<"\n";
+	    fgetline(line,LINELEN,dbf); cerr<<line<<"\n";
+	    fgetline(line,LINELEN,dbf); cerr<<line<<"'\n";
 	    exit(1);
 	  }
 	  fclose(dbf);
@@ -1474,9 +1528,10 @@ void perform_realign(char *dbfiles[], int ndb)
 	  
 	  // Overwrite *hit[bin] with Viterbi scores, Probabilities etc. of hit_cur
 	  hit[bin]->score      = hit_cur.score;
-	  hit[bin]->score_aass = hit_cur.score_aass;
 	  hit[bin]->score_ss   = hit_cur.score_ss;
-	  hit[bin]->Pval       = hit_cur.Pval;
+	  hit[bin]->score_aass = hit_cur.score_aass;
+	  hit[bin]->score_sort = hit_cur.score_sort;
+ 	  hit[bin]->Pval       = hit_cur.Pval;
 	  hit[bin]->Pvalt      = hit_cur.Pvalt;
 	  hit[bin]->logPval    = hit_cur.logPval;
 	  hit[bin]->logPvalt   = hit_cur.logPvalt;
@@ -1561,16 +1616,16 @@ void perform_realign(char *dbfiles[], int ndb)
     }
 #endif
 
-  // Read all HMMs whose position is given in list realign_pos
+  // Read all HMMs whose position is given in phash_plist_realignhitpos
   for (int idb=0; idb<ndb; idb++)
     {
 
       // Can we skip dbfiles[idb] because it contains no template to be realigned?
-      if (! realign->Contains(dbfiles[idb])) continue;
+      if (! phash_plist_realignhitpos->Contains(dbfiles[idb])) continue;
       
-      // Should depend on mode -ohhm: no resort; else resort !!!!!!!!! ////////////////////////////////////////
-      // Sort dbfile list of ftell positions in ascending order
-      realign->Show(dbfiles[idb])->SortList();
+      // phash_plist_realignhitpos->Show(dbfile) is pointer to list with template indices and their ftell positions.
+      // This list is now sorted by ftellpos in ascending order to access one template after the other efficiently
+      phash_plist_realignhitpos->Show(dbfiles[idb])->SortList();
       
       // Open HMM database file dbfiles[idb]
       FILE* dbf;
@@ -1591,11 +1646,11 @@ void perform_realign(char *dbfiles[], int ndb)
       
       ///////////////////////////////////////////////////////////////////////////////////////
       // The loop (reads HMMs from the database file and) submits jobs into free bins as soon as they become available
-      realign->Show(dbfiles[idb])->Reset();
-      while (! realign->Show(dbfiles[idb])->End())
+      phash_plist_realignhitpos->Show(dbfiles[idb])->Reset();
+      while (! phash_plist_realignhitpos->Show(dbfiles[idb])->End())
 	{
 	  // Submit jobs until no bin is free anymore
-	  while (! realign->Show(dbfiles[idb])->End() && jobs_submitted+jobs_running<bins)
+	  while (! phash_plist_realignhitpos->Show(dbfiles[idb])->End() && jobs_submitted+jobs_running<bins)
 	    {
 	      
 	      // Allocate free bin
@@ -1607,15 +1662,14 @@ void perform_realign(char *dbfiles[], int ndb)
 	      }
 	      
 	      // Forward stream position to start of next database HMM to be realigned
-	      Realign_hitpos curr_hitpos = realign->Show(dbfiles[idb])->ReadNext();
-	      hit[bin]->index = curr_hitpos.index;  // give hit a unique index for HMM
+	      Realign_hitpos hitpos_curr = phash_plist_realignhitpos->Show(dbfiles[idb])->ReadNext();
+	      hit[bin]->index = hitpos_curr.index;      // give hit[bin] a unique index for HMM
+	      fseek(dbf,hitpos_curr.ftellpos,SEEK_SET); // start to read at ftellpos for template
 	      
-	      if (curr_hitpos.irep > 1) continue; // only call RealignByWorker (through WorkerLoop) once for each template
+	      // Give hit[bin] the pointer to the list of pointers to hitlist elements of same template (for realignment)
+	      hit[bin]->plist_phits = array_plist_phits[hitpos_curr.index];
 	      
-	      fseek(dbf,curr_hitpos.ftellpos,SEEK_SET);
-	      hit[bin]->phit = curr_hitpos.phit;  // hand pointer to hit object to the bin data used by workers
-
-//            fprintf(stderr,"dbfile=%-40.40s  index=%-5i  ftellpos=%i\n",dbfiles[idb],curr_hitpos.index,(unsigned int) curr_hit.ftellpos);
+	      // fprintf(stderr,"dbfile=%-40.40s  index=%-5i  ftellpos=%l\n",dbfiles[idb],hitpos_curr.index,hitpos_curr.ftellpos);
 	      
 	      char path[NAMELEN];
 	      Pathname(path,dbfiles[idb]);
@@ -1623,6 +1677,8 @@ void perform_realign(char *dbfiles[], int ndb)
 	      ///////////////////////////////////////////////////
 	      // Read next HMM from database file
 	      if (!fgetline(line,LINELEN,dbf)) {fprintf(stderr,"Error: end of file %s reached prematurely!\n",dbfiles[idb]); exit(1);}
+	      while (strscn(line)==NULL && fgetline(line,LINELEN,dbf)) {} // skip lines that contain only white space
+
 	      if (!strncmp(line,"HMMER3",5))      // read HMMER3 format
 		{
 		  format[bin] = 1;
@@ -1643,7 +1699,7 @@ void perform_realign(char *dbfiles[], int ndb)
 	      else if (!strncmp(line,"NAME",4))  // The following lines are for backward compatibility of HHM format version 1.2 with 1.1
 		{
 		  format[bin] = 0;
-		  fseek(dbf,curr_hitpos.ftellpos,SEEK_SET); // rewind to beginning of line
+		  fseek(dbf,hitpos_curr.ftellpos,SEEK_SET); // rewind to beginning of line
 		  read_from_db = t[bin]->Read(dbf,path);
 		}
 	      else if (line[0]=='#' || line[0]=='>')                 // read a3m alignment
@@ -1658,8 +1714,10 @@ void perform_realign(char *dbfiles[], int ndb)
 		  format[bin] = 0;
 		}
 	      else {
-		cerr<<endl<<"Error in "<<program_name<<": unrecognized HMM file format in \'"<<dbfiles[idb]<<"\'\n";
-		cerr<<"line = "<<line<<"\n";
+		cerr<<endl<<"Error in "<<program_name<<": unrecognized HMM file format in \'"<<dbfiles[idb]<<"\'. \n";
+		cerr<<"Context:\n'"<<line<<"\n";
+		fgetline(line,LINELEN,dbf); cerr<<line<<"\n";
+		fgetline(line,LINELEN,dbf); cerr<<line<<"'\n";
 		exit(1);
 	      }
 	      
@@ -1805,19 +1863,22 @@ void perform_realign(char *dbfiles[], int ndb)
       else nhits++;
     }
 
-  // Delete realign hash with lists
-  realign->Reset();
-  while (!realign->End())
-    delete(realign->ReadNext()); // delete List< Realing_hitpos<Hit*> > to which realign->ReadNext() points
-  delete(realign);
-
-  if (print_elapsed) ElapsedTimeSinceLastCall("(realign)");
+  // Delete hash phash_plist_realignhitpos with lists
+  phash_plist_realignhitpos->Reset();
+  while (!phash_plist_realignhitpos->End())
+    delete(phash_plist_realignhitpos->ReadNext()); // delete list to which phash_plist_realignhitpos->ReadNext() points
+  delete(phash_plist_realignhitpos);
+  
+  // Delete array_plist_phits with lists
+  for (int index=0; index<N_searched; index++) 
+    if (array_plist_phits[index]) delete(array_plist_phits[index]); // delete list to which array[index] points
+  delete(array_plist_phits); 
 }
 
 
-/////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //// MAIN PROGRAM
-/////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
 int main(int argc, char **argv)
 {
   int cluster_found = 0;
@@ -1939,7 +2000,7 @@ int main(int argc, char **argv)
     strcat(filename, ".index");
 
     filesize = CountLinesInFile(filename);
-    
+
     dba3m_index_file = fopen(filename, "r");
     if (!dba3m_index_file) OpenFileError(filename);
 
@@ -2002,10 +2063,11 @@ int main(int argc, char **argv)
   ReadInputFile();
 
   if (print_elapsed) ElapsedTimeSinceLastCall("(initialize)");
-
+  
   if (par.prefilter)
     {
       // Initialize Prefiltering (Get DBsize)
+      if (v>=2) printf("Reading in column state sequences for prefiltering\n");
       init_prefilter();
     }
   else // Set all HMMs in database as new_dbs
@@ -2045,8 +2107,6 @@ int main(int argc, char **argv)
   //////////////////////////////////////////////////////////
   // Main loop overs search iterations
   //////////////////////////////////////////////////////////
-
-  if (v>=2) printf("\n************************************************************\n* Building alignment for query with %i iteration(s) HHblits *\n************************************************************\n\n",num_rounds);
 
   for (int round = 1; round <= num_rounds; round++) {
 
@@ -2113,6 +2173,7 @@ int main(int argc, char **argv)
     ///////////////////////////////////////////////////////////////////////////////
 
     if (par.prefilter)
+      if (v>=2) printf("Prefiltering database\n");
       prefilter_db();  // in hhprefilter.C
     
     if (print_elapsed) ElapsedTimeSinceLastCall("(prefiltering)"); 
@@ -2126,7 +2187,7 @@ int main(int argc, char **argv)
     if (v>=2) {
       printf("HMMs passed prefilter 2 (gapped profile-profile alignment)   : %6i\n", (ndb_new+ndb_old));
       printf("HMMs passed prefilter 2 and not found in previous iterations : %6i\n", ndb_new);
-      printf("Searching with full HMM-HMM alignment\n");
+      printf("Scoring %i HMMs using HMM-HMM Viterbi alignment\n", ndb_new);
     }
 
     // Main Viterbi HMM-HMM search
@@ -2152,7 +2213,7 @@ int main(int argc, char **argv)
 
 	if (ndb_old > 0 && realign_old_hits)
 	  {
-	    printf("Rescore previously found HMMs with Viterbi\n");
+	    printf("Rescoring previously found HMMs with Viterbi algorithm\n");
 	    search_database(dbfiles_old,ndb_old,(ndb_new + ndb_old));
 	    // Add dbfiles_old to dbfiles_new for realign
 	    for (int a = 0; a < ndb_old; a++) 
@@ -2164,7 +2225,7 @@ int main(int argc, char **argv)
 	  }
 	else if (!realign_old_hits && previous_hits->Size() > 0)
 	  {
-	    printf("Rescore previously found HMMs with Viterbi\n");
+	    printf("Rescoring previously found HMMs with Viterbi algorithm\n");
 	    perform_viterbi_search(ndb_new+previous_hits->Size());
 	  }
       }

@@ -20,10 +20,11 @@ class List
       Typ1 data;           //Typ is type of data to be stored in list
       ListEl* prev;        //points to previous list element
       ListEl* next;        //points to next list element
-    ListEl() : prev(0), next(0) {}
-    ListEl(Typ1 d) : data(d), prev(0), next(0) {}
-    ListEl(ListEl* p, ListEl* n) : prev(p), next(n) {}
-    ListEl(Typ1 d, ListEl* p, ListEl* n) : data(d), prev(p), next(n) {}
+      ListEl() : prev(0), next(0) {}
+      ListEl(Typ1 d) : data(d), prev(0), next(0) {}
+      ListEl(ListEl* p, ListEl* n) : prev(p), next(n) {}
+      ListEl(Typ1 d, ListEl* p, ListEl* n) : data(d), prev(p), next(n) {}
+      // Note: If data is a pointer to another data structure, that structure is not deleted
     };
   
   ListEl<Typ>* head;     //points to dummy element at beginning of list
@@ -46,7 +47,7 @@ public:
 // General methods
   List();
   List(Typ d);
-  ~List();
+  ~List(); // note: if <Typ> data is a pointer to another data structure, that structure is not deleted!
   List<Typ>& operator=(List<Typ>&);
     
   // Set Null element that will be returned when trying to read from an empty list
@@ -116,11 +117,6 @@ public:
   // Reset current position to End (one AFTER the last)
   int SetToEnd() {current = tail; return size;} 
 
-  // Reads address of current data element again, returns NULL if at end of list
-  void* GetCurrentElementAddress() {return (void*) current;} 
-
-  // Set current position to pointer 
-  void SetCurrentElementAdress(void* pointer) {current = (ListEl<Typ>*) pointer;} 
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////

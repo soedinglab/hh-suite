@@ -27,7 +27,7 @@ class Hit
   char* dbfile;         // full database file name from which HMM was read
   long ftellpos;        // start position of HMM in database file
   int index;            // index of HMM in order of reading in (first=0)
-  void* phit;           // pointer to the element in hitlist that contains hit to be realigned
+  List<void*>* plist_phits; // points to a list of pointers to hitlist elements of same template (for realignment)
   
   float score;          // Score of alignment (i.e. of Viterbi path)
   float score_sort;     // score to sort hits in output list (negative means first/best!)
@@ -42,12 +42,6 @@ class Hit
   float Probab;         // probability in % for a positive (depends only on score)
   double Pforward;      // scaled total forward probability : Pforward * Product_{i=1}^{Lq+1}(scale[i])
   
-/*   float score_comp;     // compositional similarity score */
-/*   float logPcomp;       // natural logarithm of Pvalue for compositional similarity score */
-/*   float Prep;           // P-value for single-repeat hit */
-/*   float Erep;           // E-value for single-repeat hit */
-/*   float logPrep;        // natural logarithm of P-value for single-repeat hit */
-
   int L;                // Number of match states in template
   short int irep;       // Index  of single-repeat hit (1: highest scoring repeat hit)
   char lastrep;         // is current hit last (sub)optimal alignment? 0: no  1: yes

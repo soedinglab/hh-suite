@@ -283,15 +283,35 @@ public:
 void Parameters::SetDefaultPaths(char *program_path)
 {
   // set hhlib
-  if(program_path != NULL)
-    strcat(strcpy(hhlib, program_path), "../lib/hh");
+  FILE* testf = NULL;
   if(getenv("HHLIB"))
-    strcpy(hhlib, getenv("HHLIB"));
+    {
+      strcpy(hhlib, getenv("HHLIB"));
+      strcat(strcpy(hhdata, hhlib), "/data");
+      strcat(strcpy(clusterfile, hhdata), "/context_data.lib");
+      strcat(strcpy(cs_library, hhdata), "/cs219.lib");
+     testf = fopen(clusterfile, "r");
+      if (testf) { fclose(testf); return;}
+    }
+  if(program_path != NULL)
+    {
+      strcat(strcpy(hhlib, program_path), "../lib/hh");
+      strcat(strcpy(hhdata, hhlib), "/data");
+      strcat(strcpy(clusterfile, hhdata), "/context_data.lib");
+      strcat(strcpy(cs_library, hhdata), "/cs219.lib");
+      testf = fopen(clusterfile, "r");
+      if (testf) { fclose(testf); return;}
 
-  strcat(strcpy(hhdata, hhlib), "/data");
+      strcat(strcpy(hhlib, program_path), "..");
+      strcat(strcpy(hhdata, hhlib), "/data");
+      strcat(strcpy(clusterfile, hhdata), "/context_data.lib");
+      strcat(strcpy(cs_library, hhdata), "/cs219.lib");	  
+      testf = fopen(clusterfile, "r");
+      if (testf) { fclose(testf); return;}
+    }
 
-  strcat(strcpy(clusterfile, hhdata), "/context_data.lib");
-  strcat(strcpy(cs_library, hhdata), "/cs219.lib");
+  cerr<<endl<<"Error in "<<argv[0]<<": could not find context_data.lib and cs219.lib.\nPlease set the HHLIB environment variable to the HH-suite directory (under Linux: export HHLIB=<hh_dir>).\nThe missing files should be in $HHLIB/data/.\n ";
+  exit(2);
 }
 
 
@@ -469,12 +489,9 @@ Parameters::Parameters()
 class Realign_hitpos
 {
 public:
-  void* phit;        // Pointer to record in hitlist containing hit to be realigned 
-  long ftellpos;     // position of template in dbfile
-  int irep;          // index of (sub)optimal alignment: best = 1
   int index;         // index of template in dbfile (1,2,..)
+  long ftellpos;     // position of template in dbfile
   int operator<(const Realign_hitpos& realign_hitpos) {return ftellpos<realign_hitpos.ftellpos;}
 };
-
 
 EXTERN Parameters par;

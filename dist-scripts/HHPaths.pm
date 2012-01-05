@@ -13,16 +13,16 @@ our @EXPORT  = qw($hhlib $hhdata $dummydb $perl $hhblits $dsspdir $dssp $pdbdir 
 
 # Please set HHLIB 
 our $hhlib   = $ENV{"HHLIB"};     # hh perl scripts (addss.pl, reformat.pl etc.)
-our $hhdata  = $hhlib."/data"
+our $hhdata  = $hhlib."/data";
 
 # PSIPRED etc
-our $execdir = ".../psipred/bin";        # Where the PSIPRED V2 programs have been installed
-our $datadir = ".../psipred/data";       # Where the PSIPRED V2 data files have been installed    
+our $execdir = ".../psipred/bin";         # Where the PSIPRED V2 programs have been installed
+our $datadir = ".../psipred/data";        # Where the PSIPRED V2 data files have been installed    
 our $hmmerdir= ".../hmmer/binaries";
-our $dummydb = "$hhdata/do_not_delete";  # Name of a dummy blast database (single sequence formatted with formatdb)
+our $dummydb = "$hhdata/do_not_delete";   # Name of a dummy blast database (single sequence formatted with formatdb)
 
 # BLAST
-our $ncbidir = ".../blast/bin";          # Where the NCBI programs have been installed (for PSIPRED in addss.pl)
+our $ncbidir = ".../blast/bin";           # Where the NCBI programs have been installed (for PSIPRED in addss.pl)
 
 # Structures
 our $pdbdir  =  ".../pdb/all";            # where are the pdb files? Used in hhmakemodel.pl.

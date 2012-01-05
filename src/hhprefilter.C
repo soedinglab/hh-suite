@@ -742,11 +742,12 @@ void init_no_prefiltering()
 	      substr(db_name,word,5,13);
 	      strcat(db_name,".hhm");
 	    }
-	  else                              // other database
+	  else // other database
 	    {
 	      strcpy(db_name,word);
-	      strtr(db_name,"|", "_");
-	      strtr(db_name,".", "_");
+// What was the reasone to have this code? Michael does not remember...
+	      // strtr(db_name,"|", "_");
+	      // strtr(db_name,".", "_");
 	      strcat(db_name,".");
 	      strcat(db_name,db_ext);
 	    }
@@ -800,7 +801,7 @@ void init_prefilter()
   if (par.dbsize == 0 || LDB == 0)
     {cerr<<endl<<"Error! Could not determine DB-size of prefilter db ("<<db<<")\n"; exit(4);}
 	    
-  if (v>1) printf("\nFull database size: %6i\n",par.dbsize);
+  if (v>=3) printf("Number of column-state sequences: %6i\n",par.dbsize);
 
   X = (unsigned char*)memalign(16,LDB*sizeof(unsigned char));                     // database string (concatenate all DB-seqs)
   first = (unsigned char**)memalign(16,(2*par.dbsize)*sizeof(unsigned char*));    // first characters of db sequences
@@ -817,8 +818,10 @@ void init_prefilter()
   dbf = fopen(db,"rb");
   if (!dbf) OpenFileError(db);
 
-  while(fgetline(line,LINELEN,dbf)) // read prefilter database
+//  while(fgetline(line,LINELEN,dbf)) // read prefilter database
+  while(fgets(line,LINELEN,dbf)) // read prefilter database
     {
+      
       if (line[0] == '>')  // Header
 	{
 	  if (len > 0)           // if it is not the first sequence
@@ -837,17 +840,19 @@ void init_prefilter()
       else
 	{
 	  unsigned char* c = (unsigned char*)line;
-	  while (*c!='\0')
+//	  while (*c!='\0')
+ 	  while (*c!='\n')
 	    {
-	      if (cs::AS219::kValidChar[*c])
-	      	{
-	      	  X[pos++]=(unsigned char)(cs::AS219::kCharToInt[*c]);
+	      // if (cs::AS219::kValidChar[*c])
+	      // 	{
+	      X[pos++]= (unsigned char)(cs::AS219::kCharToInt[*c++]);
+	      //		  ++c;
 	      	  ++len;
-	      	}
-	      else
-	      	cerr<<endl<<"WARNING: ignoring invalid symbol \'"<< *c <<"\' of "<<db<<"\n";
+	      // 	}
+	      // else
+	      // 	cerr<<endl<<"WARNING: ignoring invalid symbol \'"<< *c <<"\' of "<<db<<"\n";
 
-	      c++;
+	      // c++;
 	    }
 	  
 	}
@@ -1081,15 +1086,16 @@ void prefilter_with_SW_evalue_preprefilter_backtrace()
 	  substr(db_name,tmp_name,5,13);
 	  strcat(db_name,".hhm");
 	}
-      else                              // other database
-	{
-	  strcpy(db_name,tmp_name);
-	  strtr(db_name,"|", "_");
-	  strtr(db_name,".", "_");
-	  strcat(db_name,".");
-	  strcat(db_name,db_ext);
-	}
-      
+       else // other database
+      	{
+      	  strcpy(db_name,tmp_name);
+// What was the reasone to have this code? Michael does not remember...
+// 	  strtr(db_name,"|", "_");
+// 	  strtr(db_name,".", "_");
+      	  strcat(db_name,".");
+      	  strcat(db_name,db_ext);
+      	}
+	        
       if (! doubled->Contains(db_name))
 	{
 	  doubled->Add(db_name);
