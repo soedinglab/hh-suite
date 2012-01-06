@@ -133,7 +133,7 @@ void HalfAlignment::Set(char* name, char** seq_in, char** sname_in, int n_in, in
       m[k][i]=mm;   //set m[k][L+1]
      if ((i-1)!=L && !warned) 
 	{
-	  cerr<<"Warning: sequence "<<sname[k]<<" in HMM "<<name<<" has "<<i<<" match states but should have "<<L<<"\n"; 
+	  cerr<<"WARNING: sequence "<<sname[k]<<" in HMM "<<name<<" has "<<i<<" match states but should have "<<L<<"\n"; 
 	  warned=1;
 	}
     }

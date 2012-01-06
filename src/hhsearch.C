@@ -1369,7 +1369,7 @@ int main(int argc, char **argv)
                       ndb++;
                     }
                   else
-                    printf("WARNING: skipping doubled datbase file %s\n",dbfile);
+                    printf(stderr,"WARNING: skipping doubled datbase file %s\n",dbfile);
                 }
               fclose(palf);
             }
@@ -1383,7 +1383,7 @@ int main(int argc, char **argv)
             }
         }
       else
-        printf("WARNING: skipping doubled datbase file %s\n",dbfile_cur);
+        printf(stderr,"WARNING: skipping doubled datbase file %s\n",dbfile_cur);
 
      dbfile_cur=dbfile_next;
     }
@@ -1631,7 +1631,7 @@ int main(int argc, char **argv)
           else
             {
               if (v>=2)
-                fprintf(stderr,"\nWARNING: E-values for global alignment option may be unreliable.\n");
+                fprintf(stderr,"WARNING: E-values for global alignment option may be unreliable.\n");
               hitlist.ResortList();
             }
         }
@@ -1690,7 +1690,7 @@ int main(int argc, char **argv)
   
   // Warn, if HMMER files were used
   if (par.hmmer_used)
-    printf("\n!!!WARNING!!! Using HMMER files results in a drastically reduced sensitivity (>10%%).\nWe strongly recommend to use HHMs build by hhmake!\n");
+    printf(stderr,"WARNING: Using HMMER files results in a drastically reduced sensitivity (>10%%).\nWe recommend to use HHMs build by hhmake.\n");
 
   // Print summary listing of hits
   if (v>=3) printf("Printing hit list ...\n");

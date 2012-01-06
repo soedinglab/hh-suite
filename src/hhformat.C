@@ -368,7 +368,7 @@ int main(int argc, char **argv)
     } // while ((dirt = readdir(dirp))!=NULL)
 
   if (index.Size()!=M && v>=1) 
-    printf("WARNING: the total number of template HMMs is %i instead of %i\n",index.Size(),M);
+    printf(stderr,"WARNING: the total number of template HMMs is %i instead of %i\n",index.Size(),M);
 
   if (v>=3) 
     {

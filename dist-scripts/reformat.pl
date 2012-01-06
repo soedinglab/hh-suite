@@ -52,7 +52,7 @@ Available output formats:
    a3m:     like a2m, but gaps aligned to inserts are omitted
    sto:     Stockholm format; sequences in just one block, one line per sequence
    psi:     format as read by PSI-BLAST using the -B option 
-   clu:     CLUSTAL format
+   clu:     Clustal format
 If no input or output format is given the file extension is interpreted as format 
 specification ('aln' as 'clu')
 
@@ -72,7 +72,7 @@ Options:
   -g '-'    write all gaps as '-'
   -uc       write all residues in upper case (AFTER all other options have been processed)
   -lc       write all residues in lower case (AFTER all other options have been processed)
-  -l        number of residues per line (for CLUSTAL, FASTA, A2M, A3M formats) 
+  -l        number of residues per line (for Clustal, FASTA, A2M, A3M formats) 
             (default=$numres)
   -d        maximum number of characers in nameline (default=$desclen)
 
@@ -360,7 +360,7 @@ sub reformat()
 		if ($noss && ($line=~/^aa_/ || $line=~/^ss_/ || $line=~/^sa_/)) {next;} # do not read in >ss_ and >aa_ sequences
 		chomp($line);
 		if ($line!~/^(\S{1,20})([a-zA-Z0-9.-]{$residues_per_line})(\s+\d+)?$/) {
-		    die ("\nError found in CLUSTAL format in $infile, line $.: '$line'\n");
+		    die ("\nError found in Clustal format in $infile, line $.: '$line'\n");
 		} 
 		$name=$1;
 		$residues=$2;

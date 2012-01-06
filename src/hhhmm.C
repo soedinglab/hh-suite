@@ -608,7 +608,7 @@ int HMM::Read(FILE* dbf, char* path)
   //   mu    = mu_hash.Show(par.Key());
   if (lamda && v>=3) printf("HMM %s is already calibrated: lamda=%-5.3f, mu=%-5.2f\n",name,lamda,mu);
 
-  if (v && i!=L) cerr<<endl<<"Warning: in HMM "<<name<<" there are only "<<i<<" columns while the stated length is "<<L<<"\n";
+  if (v && i!=L) cerr<<endl<<"WARNING: in HMM "<<name<<" there are only "<<i<<" columns while the stated length is "<<L<<"\n";
   if (v && i>par.maxres-2) {i=par.maxres-2; cerr<<endl<<"WARNING: maximum number "<<par.maxres-2<<" of residues exceeded while reading HMM "<<name<<"\n";}
   if (v && !i)  cerr<<endl<<"WARNING: HMM "<<name<<" contains no match states. Check the alignment that gave rise to this HMM.\n";
   if (v>=2) cout<<"Read in HMM "<<name<<" with "<<L<<" match states and effective number of sequences = "<<Neff_HMM<<"\n";
@@ -729,7 +729,7 @@ int HMM::ReadHMMer(FILE* dbf, char* filestr)
             {
               strcut(ptr);
               if (strlen(seq[nsa_dssp])+strlen(ptr)>=(unsigned)(par.maxres))
-                printf("\nWARNING: HMM %s has SADSS records with more than %i residues.\n",name,par.maxres);
+                printf("WARNING: HMM %s has SADSS records with more than %i residues.\n",name,par.maxres);
               else strcat(seq[nsa_dssp],ptr);
             }
         }
@@ -770,7 +770,7 @@ int HMM::ReadHMMer(FILE* dbf, char* filestr)
             {
               strcut(ptr);
               if (strlen(seq[nss_conf])+strlen(ptr)>=(unsigned)(par.maxres))
-                printf("\nWARNING: HMM %s has SSPRD records with more than %i residues.\n",name,par.maxres);
+                printf("WARNING: HMM %s has SSPRD records with more than %i residues.\n",name,par.maxres);
               else strcat(seq[nss_conf],ptr);
             }
         }
@@ -804,7 +804,7 @@ int HMM::ReadHMMer(FILE* dbf, char* filestr)
           if (lamda<0)
             {
               if (v>=2 && ignore_hmmer_cal==0)
-                cerr<<endl<<"Warning: some HMMs have been calibrated with HMMER's 'hmmcalibrate'. These calibrations will be ignored\n";
+                cerr<<endl<<"WARNING: some HMMs have been calibrated with HMMER's 'hmmcalibrate'. These calibrations will be ignored\n";
               ignore_hmmer_cal=1;
               mu = lamda = 0.0;
             }
@@ -970,7 +970,7 @@ int HMM::ReadHMMer(FILE* dbf, char* filestr)
   //   mu    = mu_hash.Show(par.Key());
   if (lamda && v>=2) printf("HMM %s is already calibrated: lamda=%-5.3f, mu=%-5.2f\n",name,lamda,mu);
 
-  if (v && i!=L) cerr<<endl<<"Warning: in HMM "<<name<<" there are only "<<i<<" columns while the stated length is "<<L<<"\n";
+  if (v && i!=L) cerr<<endl<<"WARNING: in HMM "<<name<<" there are only "<<i<<" columns while the stated length is "<<L<<"\n";
   if (v && i>=par.maxres-2) {i=par.maxres-2; cerr<<endl<<"WARNING: maximum number "<<par.maxres-2<<" of residues exceeded while reading HMM "<<name<<"\n";}
   if (v && !i)  cerr<<endl<<"WARNING: HMM "<<name<<" contains no match states. Check the alignment that gave rise to this HMM.\n";
   L = i;
@@ -1191,7 +1191,7 @@ int HMM::ReadHMMer3(FILE* dbf, char* filestr)
             {
               strcut(ptr);
               if (strlen(seq[nsa_dssp])+strlen(ptr)>=(unsigned)(par.maxres))
-                printf("\nWARNING: HMM %s has SADSS records with more than %i residues.\n",name,par.maxres);
+                printf("WARNING: HMM %s has SADSS records with more than %i residues.\n",name,par.maxres);
               else strcat(seq[nsa_dssp],ptr);
             }
         }
@@ -1212,7 +1212,7 @@ int HMM::ReadHMMer3(FILE* dbf, char* filestr)
             {
               strcut(ptr);
               if (strlen(seq[nss_pred])+strlen(ptr)>=(unsigned)(par.maxres))
-                printf("\nWARNING: HMM %s has SSPRD records with more than %i residues.\n",name,par.maxres);
+                printf("WARNING: HMM %s has SSPRD records with more than %i residues.\n",name,par.maxres);
               else strcat(seq[nss_pred],ptr);
             }
         }
@@ -1232,7 +1232,7 @@ int HMM::ReadHMMer3(FILE* dbf, char* filestr)
             {
               strcut(ptr);
               if (strlen(seq[nss_conf])+strlen(ptr)>=(unsigned)(par.maxres))
-                printf("\nWARNING: HMM %s has SSPRD records with more than %i residues.\n",name,par.maxres);
+                printf("WARNING: HMM %s has SSPRD records with more than %i residues.\n",name,par.maxres);
               else strcat(seq[nss_conf],ptr);
             }
         }
@@ -1431,7 +1431,7 @@ int HMM::ReadHMMer3(FILE* dbf, char* filestr)
 
   if (L==0) return 0; //End of db file -> stop reading in
 
-  if (v && i!=L) cerr<<endl<<"Warning: in HMM "<<name<<" there are only "<<i<<" columns while the stated length is "<<L<<"\n";
+  if (v && i!=L) cerr<<endl<<"WARNING: in HMM "<<name<<" there are only "<<i<<" columns while the stated length is "<<L<<"\n";
   if (v && i>=par.maxres-2) {i=par.maxres-2; cerr<<endl<<"WARNING: maximum number "<<par.maxres-2<<" of residues exceeded while reading HMM "<<name<<"\n";}
   if (v && !i)  cerr<<endl<<"WARNING: HMM "<<name<<" contains no match states. Check the alignment that gave rise to this HMM.\n";
   L = i;
@@ -2338,7 +2338,7 @@ void HMM::AddSSPrediction(char seq_pred[], char seq_conf[])
 
   if ((int)strlen(seq_pred)!=L+1)
     {
-      cerr<<"WARNING! Could not add secondary struture prediction - unequal length!\n";
+      cerr<<"WARNING: Could not add secondary struture prediction - unequal length!\n";
       return;
     }
 

@@ -147,7 +147,7 @@ void ReadInput(char* infile, HMM& q, Alignment* qali=NULL)
     if (!strncmp(line,"HMMER3",6))
     {
         if (v>=2) cout<<"Query file is in HMMER3 format\n";
-	cout<<"WARNING! Use of HMMER3 format as input results in dramatically loss of sensitivity!\n";
+	cerr<<"WARNING: Use of HMMER3 format as input results in dramatically loss of sensitivity!\n";
 
         // Read 'query HMMER file
         rewind(inf);
@@ -158,7 +158,7 @@ void ReadInput(char* infile, HMM& q, Alignment* qali=NULL)
     else if (!strncmp(line,"HMMER",5))
     {
         if (v>=2) cout<<"Query file is in HMMER format\n";
-	cout<<"WARNING! Use of HMMER format as input results in dramatically loss of sensitivity!\n";
+	cerr<<"WARNING: Use of HMMER format as input results in dramatically loss of sensitivity!\n";
 
         // Read 'query HMMER file
         rewind(inf);

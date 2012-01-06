@@ -634,7 +634,7 @@ void ProcessArguments(int argc, char** argv)
 	    num_rounds=1; 
 	  if (num_rounds > 8) 
 	    {
-	      cerr<<endl<<"WARNING! Number of iterations ("<<num_rounds<<") to large => Set to 8 iterations\n";
+	      cerr<<endl<<"WARNING: Number of iterations ("<<num_rounds<<") to large => Set to 8 iterations\n";
 	      num_rounds=8; 
 	    }
 	}
@@ -801,9 +801,9 @@ void ReadInputFile()
       if (num_rounds > 1 || *par.alnfile || *par.psifile || *par.hhmfile || *alis_basename)
 	{
 	  if (input_format == 0)   // HHM format
-	    cout<<"WARNING! No alignment-file found, use only representative seqs from HHM-file as base alignment for evolving alignment!\n";
+	    cerr<<"WARNING: No alignment-file found, use only representative seqs from HHM-file as base alignment for evolving alignment!\n";
 	  else if (input_format == 1)
-	    cout<<"WARNING! No alignment-file found, use only consensus sequence from HMMER-file as base alignment for evolving alignment!\n";
+	    cerr<<"WARNING: No alignment-file found, use only consensus sequence from HMMER-file as base alignment for evolving alignment!\n";
 	}
     } 
   else 
@@ -817,7 +817,7 @@ void ReadInputFile()
       if (num_seqs == 1 && par.M != 2) {
 	int num_gaps = strtr(Qali.seq[0], "-", "-");
 	if (num_gaps > 1) {  // 1 gap is always given at array pos 0
-	  fprintf(stderr, "WARNING! Your input sequence contains gaps. These gaps will be ignored in this search!\nIf you wan't to make HHblits treat these as match states, you could start HHblits with the '-M 100' option.\n");
+	  fprintf(stderr, "WARNING: Your input sequence contains gaps. These gaps will be ignored in this search!\nIf you wan't to make HHblits treat these as match states, you could start HHblits with the '-M 100' option.\n");
 	}
       }
 
@@ -2408,7 +2408,7 @@ int main(int argc, char **argv)
 
   // Warn, if HMMER files were used
   if (par.hmmer_used)
-    printf("\n!!!WARNING!!! Using HMMER files results in a drastically reduced sensitivity (>10%%).\nWe strongly recommend to use HHMs build by hhmake!\n");
+    printf(stderr,"WARNING: Using HMMER files results in a drastically reduced sensitivity (>10%%).\nWe recommend to use HHMs build by hhmake.\n");
 
   // Print for each HMM: n  score  -log2(Pval)  L  name  (n=5:same name 4:same fam 3:same sf...)
   if (*par.scorefile) {

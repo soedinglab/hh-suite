@@ -750,6 +750,7 @@ void init_no_prefiltering()
 	      // strtr(db_name,".", "_");
 	      strcat(db_name,".");
 	      strcat(db_name,db_ext);
+	      strcpy(db_name,tmp_name);
 	    }
 	  
 	  dbfiles_new[ndb_new]=new(char[strlen(db_name)+1]);
@@ -1118,7 +1119,7 @@ void prefilter_with_SW_evalue_preprefilter_backtrace()
 
       if (count_dbs >= MAXNUMDB) 
 	{
-	  printf("\nWARNING! To many hits through prefilter! (MAXNUM = %6i, hits = %6i)\n",MAXNUMDB, (int)hits.size());
+	  printf(stderr,"WARNING: Number of hits passing prefilter 2 reduced from %6i to allowed maximum of %i.\n", (int)hits.size(),MAXNUMDB);
 	  break;
 	}
     }
