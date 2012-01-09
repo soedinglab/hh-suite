@@ -26,9 +26,11 @@ Unzip and untar
 
 $ tar -xzvf hhsuite-latest.tar.gz
 
+This will unpack the sources to hhsuite-<VERSION>.
 
 2. Compilation 
 
+$ cd hhsuite-<VERSION>/
 $ cd src/
 $ make
 
