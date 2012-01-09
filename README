@@ -20,11 +20,11 @@ Download the sources from ftp://toolkit.genzentrum.lmu.de/HH-suite/, e.g.
 
 $ mkdir ~/programs/hh/
 $ cd ~/programs/hh/
-$ wget ftp://toolkit.genzentrum.lmu.de/HH-suite/hhsuite_latest.tar.gz
+$ wget ftp://toolkit.genzentrum.lmu.de/HH-suite/hhsuite-latest.tar.gz
 
 Unzip and untar
 
-$ tar -xzvf hhsuite_latest.tar.gz
+$ tar -xzvf hhsuite-latest.tar.gz
 
 
 2. Compilation 
