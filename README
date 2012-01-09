@@ -16,16 +16,15 @@ For full documentation see the user guide in hhsuite-userguide.pdf
 
 1. Downloading
 
-Download the sources from ftp://toolkit.lmb.uni-muenchen.de/HH-suite/, e.g.
+Download the sources from ftp://toolkit.genzentrum.lmu.de/HH-suite/, e.g.
 
 $ mkdir ~/programs/hh/
 $ cd ~/programs/hh/
-$ wget ftp://toolkit.lmb.uni-muenchen.de/HH-suite/hhsuite_2.0.0.tar.gz
+$ wget ftp://toolkit.genzentrum.lmu.de/HH-suite/hhsuite_latest.tar.gz
 
 Unzip and untar
 
-$ gunzip hhsuite_2.0.0.tar.gz
-$ tar -xvf hhsuite_2.0.0.tar
+$ tar -xzvf hhsuite_latest.tar.gz
 
 
 2. Compilation 
@@ -69,8 +68,8 @@ where they are read by the perl scripst in hh-suite.
 5. Download Databases
 
 Download current databases from our FTP-server:
-ftp://toolkit.lmb.uni-muenchen.de/HH-suite/hhblits_dbs/
-ftp://toolkit.lmb.uni-muenchen.de/HH-suite/hhsearch_dbs/
+ftp://toolkit.genzentrum.lmu.de/HH-suite/hhblits_dbs/
+ftp://toolkit.genzentrum.lmu.de/HH-suite/hhsearch_dbs/
 
 Either uniprot20 or nr20 is sufficient. 
 
