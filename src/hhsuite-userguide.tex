@@ -249,12 +249,13 @@ The HHblits databases consist of eight files, which all start with the name of t
 <dbname>_a3m_db.index.sizes   number of lines in <dbname>_a3m_db.index
 \end{verbatim}
 
-The last two files are not needed for a single search iteration when no output MSA is requested. To get started, download the uniprot20 or nr20 database files. For example:
+The last three files are not needed for a single search iteration when no output MSA is requested. To get started, download the uniprot20 or nr20 database files. For example:
 
 \begin{verbatim}
 > cd /home/soeding/hh  % change to hh-suite directory
 > mkdir hhblits_dbs; cd hhblits_dbs
-> wget ftp://toolkit.lmb.uni-muenchen.de/HH-suite/hhblits_dbs/uniprot20*`
+> wget ftp://toolkit.lmb.uni-muenchen.de/HH-suite/hhblits_dbs/uniprot20_<date>.tar.gz`
+> tar -xzvf uniprot20_<date>.tar.gz`
 \end{verbatim}
 
 \subsection{HHsearch databases} \label{hhsearch_dbs}
@@ -431,7 +432,7 @@ Next, to add secondary structure information to the MSA we call the script \verb
 \begin{verbatim}
 > addss.pl query.a3m
 \end{verbatim}
-When the sequence has a SCOP or PDB identifier as first word in its name, the script tries to add the DSSP states as well. For this to work, the path to the pdb and dssp directories needs to be specified in the perl file \verb`HHPaths.pm`.Open the \verb`query.a3m` file and check out the two lines that have been added to the MSA. Now you can generate a hidden Markov model (HMM) from this MSA:
+When the sequence has a SCOP or PDB identifier as first word in its name, the script tries to add the DSSP states as well. For this to work, the path to the pdb and dssp directories needs to be specified in the perl file \verb`HHPaths.pm`. Open the \verb`query.a3m` file and check out the two lines that have been added to the MSA. Now you can generate a hidden Markov model (HMM) from this MSA:
 \begin{verbatim}
 > hhmake -i query.a3m
 \end{verbatim}
@@ -461,13 +462,13 @@ Previous versions of HH-suite (the 'HHsearch package') included a perl script \v
 
 \subsection{Building customized databases}
 
-It is simple to build custom databases for HHsearch and HHblits using the same tools we use to build the standard HH-suite databases. An example application is to search for homologs among all proteins of an organism. To build build your own HHsearch or HHblits database from a set of sequences, you first need to generate an MSA with predicted secondary structure for every sequence in the set. This can be conveniently done using the script \verb`multithread.pl` in the HH-suite. This script runs a command for many files in parallel, distributing the individual jobs to multiple cores on your server. This will shorten the run-time roughly by the number of cores. 
+It is simple to build custom databases for HHsearch and HHblits using the same tools we use to build the standard HH-suite databases. An example application is to search for homologs among all proteins of an organism. To build your own HHsearch or HHblits database from a set of sequences, you first need to generate an MSA with predicted secondary structure for every sequence in the set. This can be conveniently done using the script \verb`multithread.pl` in the HH-suite. This script runs a command for many files in parallel, distributing the individual jobs to multiple cores on your server. This will shorten the run-time roughly by the number of cores. 
 
 To build MSAs with HHblits from sequences \verb`dbs/scop70_1.75/*.seq`, run
 \begin{verbatim}
-> multithread.pl 'dbs/scop70_1.75/*.seq' 'hhblits -i $file -d hhblits_dbs/uniprot20' 
+> multithread.pl 'dbs/scop70_1.75/*.seq' 'hhblits -i $file -d hhblits_dbs/uniprot20 -oa3m $name.a3m' 
 \end{verbatim}
-The first argument is the file globbing expression, which selects the files with which to run the command given as second argument. In this command, the string \verb`$file` is replaced by the actual, globbed file. You might also want to pipe the stdout and stderr streams of the command into a log-file: \verb`'hhblits -i $file -d hhblits_dbs/uniprot20 1> stdout.log 2>stderr.log'`. The MSAs are written to the same file name as the input sequence file, except that the extension, here \verb`.seq`, is replaced by \verb`.a3m`. The number of threads launched can be specified with option \verb`-cpu <int>` (default value is 8). To be sure that everything went smoothly, check that the number of \verb`*.a3m` files is the same as the number of \verb`*.seq` files, and browse the file \verb`'stderr.log'` for error messages. The number of HHblits search iterations and the HMM inclusion E-value threshold for hhblits can be changed from their default values (2 and 0.01, respectively) using the \verb`'-n <int>'` and \verb`'-e <float>'` options. 
+The first argument is the file globbing expression, which selects the files with which to run the command given as second argument. In this command, the string \verb`$file` is replaced by the actual, globbed file. You might also want to pipe the stdout and stderr streams of the command into a log-file: \verb`'hhblits -i $file -d hhblits_dbs/uniprot20 1> stdout.log 2>stderr.log'`. The MSAs are written to the file \verb`$name.seq`, which stands for the globbed file name without extension, (\verb`$name`) plus an appended extension \verb`.a3m`. The number of threads launched can be specified with option \verb`-cpu <int>` (default value is 8). To be sure that everything went smoothly, check that the number of \verb`*.a3m` files is the same as the number of \verb`*.seq` files, and browse the file \verb`'stderr.log'` for error messages. The number of HHblits search iterations and the HMM inclusion E-value threshold for hhblits can be changed from their default values (2 and 0.01, respectively) using the \verb`'-n <int>'` and \verb`'-e <float>'` options. 
 
 Now, add PSIPRED-predicted secondary structure to all MSAs:
 \begin{verbatim}
@@ -591,7 +592,7 @@ Let's do a search with the human PIP49/FAM69B protein, for which we generated an
 
 \scriptsize
 \begin{verbatim}
-earch results will be written to query.hhr
+Search results will be written to query.hhr
 query.a3m is in A2M, A3M or FASTA format
 Read query.a3m with 272 sequences
 Alignment in query.a3m contains 431 match states
@@ -744,7 +745,7 @@ between 0 and 9 (as in versions up to 1.5).
 
 The consensus sequence uses capital letters for well conserved columns and
 lower case for partially conserved columns. Unconserved columns are marked by 
-a tilde '~'. Roughly speaking, amino acids that occur with $>=60\%$ probability 
+a tilde \verb`~`. Roughly speaking, amino acids that occur with $>=60\%$ probability 
 (before adding pseudocounts) are written as capital letters and amino acids that have 
 $>=40\%$ probability are written as lower case letters, where gaps are included
 in the fraction counts. More precisely, when the gap-corrected amino acid fraction
@@ -768,10 +769,10 @@ amino acid distributions. It gives a valuable indication for the alignment quali
   | : column score above   +1.5
 \end{verbatim}\normalsize
 
-(A unit of column score corresponds approximately to 0.6 bits.)
-From the column score line the excellent alignment around the highly conserved 
-{\tt 'LPGIG'} motif in the turn between two helices is evident. The alignment around the 
-first helix by contrast scores only slightly better than zero per residue and is
+A unit of column score corresponds approximately to 0.6 bits.
+From the column score line the excellent alignment around the conserved 
+{\tt 'D.n.DG.i...E'} motif in the turn between two helices is evident. The alignment around the 
+gap by contrast scores only a bit better than zero per residue and is
 therefore not very reliable.
 
 After the template block, which consists of the following lines, 
@@ -1437,13 +1438,18 @@ Examples: reformat.pl 1hjra.a3m 1hjra.a2m
 
 
 \subsection{{\tt addss.pl} -- add predicted secondary structure to an MSA or HMM}
-Add PSIPRED secondary structure prediction (and DSSP annotation) to an MSA or HMMER file.
-Input is a  multiple sequence alignment or a HMMER (multi-)model file. Allowed input formats are 
-A2M/FASTA (default), A3M (-a3m), Clustal (-clu), Stockholm (-sto), HMMer (-hmm).
-If the input file is an alignment, the output file is in A3M with default name <basename>.a3m.
-If the input file is in HMMER format, the output is the same as the input, except that records SSPRD 
-and SSCON are added to each model which contain predicted secondary structure and confidence values. 
-In this case the output file name is obligatory and must be different from the input file name.
+Add PSIPRED secondary structure prediction (and DSSP annotation) to a multiple sequence alignment (MSA) 
+or HMMER (multi-)model file. 
+
+If the input file is an MSA, the predicted secondary structure and confidence values are added as 
+special annotation sequences with names \verb`>ss_pred`, \verb`>ss_conf`, and \verb`>ss_dssp` to the top of the output 
+A3M alignment. If no output file is given, the output file will have the same name as the input file, 
+except for the extension being replaced by \verb`'.a3m'`. Allowed input formats are A2M/FASTA (default), 
+A3M (-a3m), CLUSTAL (-clu), STOCKHOLM (-sto), HMMER (-hmm).
+
+If the input file contains HMMER models, records SSPRD and SSCON containing predicted secondary 
+structure and confidence values are added to each model. In this case the output file name is 
+obligatory and must be different from the input file name.
 
 \small 
 \begin{verbatim}
@@ -1507,44 +1513,45 @@ Builds the HHblits database files from MSA and HMM files
 
 \small 
 \begin{verbatim}
-Usage: perl hhblitsdb.pl -o <db_name> [-ia3m <a3m_dir>] [-ihhm <hhm_dir>] [-ics <cs_dir>] [more_options]
+Usage: hhblitsdb.pl -o <db_name> [-ia3m <a3m_dir>] [-ihhm <hhm_dir>] [-ics <cs_dir>] 
+                                                                            [more_options]
 
-Depending on the input directories, the script generates the following HHblits database files:
-  <db_name>.cs219               column-state sequences, one for each MSA/HMM (used by HHblits for prefiltering)
-  <db_name>.cs219.sizes         number of sequences and characters in <db_name>.cs219
-  <db_name>_a3m_db              packed file containing A3M alignments read from <a3m_dir>
-  <db_name>_a3m_db.index        index file for packed A3M file
-  <db_name>_a3m.db.index.sizes  number of lines in <db_name>_a3m_db.index
-  <db_name>_hhm_db              packed file containing HHM-formatted HMMs read from <hhm_dir>
-  <db_name>_hhm_db.index        index file for packed HHM file
-  <db_name>_hhm_db.index.sizes  number of lines in <db_name>_hhm_db.index
+Depending on the input directories, the following HHblits database files are generated:
+ <db_name>.cs219              column-state sequences, one for each MSA/HMM (for prefilter)
+ <db_name>.cs219.sizes        number of sequences and characters in <db_name>.cs219
+ <db_name>_a3m_db             packed file containing A3M alignments read from <a3m_dir>
+ <db_name>_a3m_db.index       index file for packed A3M file
+ <db_name>_a3m.db.index.sizes number of lines in <db_name>_a3m_db.index
+ <db_name>_hhm_db             packed file containing HHM-formatted HMMs read from <hhm_dir>
+ <db_name>_hhm_db.index       index file for packed HHM file
+ <db_name>_hhm_db.index.sizes number of lines in <db_name>_hhm_db.index
 
 Options:
-  -o <db_name>     name of database
-  -ia3m <a3m_dir>  input directory (or glob of directories) with A3M-formatted files
-  -ihhm <hhm_dir>  input directory (or glob of directories) with HHM- (or HMMER-) formatted files 
-                   (WARNING! Using HMMER instead of HHM format will result in a decreased performance)
-  -ics  <cs_dir>   input directory (or glob of directories) with column state sequences
+ -o <db_name>    name of database
+ -ia3m <a3m_dir> input directory (or glob of directories) with A3M-formatted files
+ -ihhm <hhm_dir> input directory (or glob of directories) with HHM (or HMMER) files 
+                 (WARNING! HMMER format results in decreased performance over HHM format)
+ -ics  <cs_dir>  input directory (or glob of directories) with column state sequences
+ -log <logfile>  log file recording stderr stream of cstranslate and hhmake commands
 
-  -log <logfile>   log file recording stderr stream of cstranslate and hhmake commands
-  -csext           extension of column state sequences (default: seq219)
-  -a3mext          extension of A3M-formatted files (default: a3m)
-  -hhmext          extension of HHM- or HMMER-formatted files (default: hhm)
-  -append          if the packed db files exists, append input A3M/HHM files (default: overwrite)
-  -v [1-3]         verbose mode (default: 2)
-  -cpu <int>       numbers of threads to launch for generating cs219 and hhm files (default = 8)
+ -csext          extension of column state sequences (default: $csext)
+ -a3mext         extension of A3M-formatted files (default: $a3mext)
+ -hhmext         extension of HHM- or HMMER-formatted files (default: $hhmext)
+ -append         if the packed db files exists, append input A3M/HHM files (def: overwrite)
+ -v [1-3]        verbose mode (default: $v)
+ -cpu <int>      numbers of threads for generating cs219 and hhm files (default = $cpu)
 
  
-Example 1: only -ia3m is given; cs sequences and hhm files are generated from a3m files
+Example 1: only -ia3m given; cs sequences and hhm files are generated from a3m files
    perl hhblitsdb.pl -o hhblits_dbs/mydb -ia3m mydb/a3ms 
 
-Example 2: only -ihhm is given; cs sequences are generated from hhm files, no a3m db file is generated
+Example 2: only -ihhm given; cs sequences are generated from hhm files, but no a3m db file 
    perl hhblitsdb.pl -o hhblits_dbs/mydb -ihhm mydb/hhms 
 
-Example 3: -ia3m and -ihhm are given; cs sequences are generated from a3m files
+Example 3: -ia3m and -ihhm given; cs sequences are generated from a3m files
    perl hhblitsdb.pl -o hhblits_dbs/mydb -ia3m mydb/a3ms -ihhm mydb/hhms   
 
-Example 4: -ics, -ia3m, and -ihhm are given; all db files are created 
+Example 4: -ics, -ia3m, and -ihhm given; all db files are created 
    perl hhblitsdb.pl -o hhblits_dbs/mydb -ia3m mydb/a3ms -ihhm mydb/hhms -ics mydb/cs  
 
 Example 5: using glob expression to specify several input databases
@@ -1799,7 +1806,7 @@ Good luck with your work!
 \vspace{5mm}
 Johannes S\"oding, Michael Remmert, Andy Hauser\\[2mm]
 Gene Center Munich\\
-Ludwig-Maximilians-Universit"at M\"unchen\\
+Ludwig-Maximilians-Universit\"at M\"unchen\\
 Feodor-Lynen-Strasse 25\\
 81377 Munich\\
 http://www.soeding.genzentrum.lmu.de\\

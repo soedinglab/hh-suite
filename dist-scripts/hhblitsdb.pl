@@ -68,46 +68,46 @@ my $numcsfiles=0;
 my $numa3mfiles=0;
 my $numhhmfiles=0;
 my $help="
-Creates HHblits database files from MSA and HMM files 
+Builds the HHblits database files from MSA and HMM files 
 
-Usage: perl hhblitsdb.pl -o <db_name> [-ia3m <a3m_dir>] [-ihhm <hhm_dir>] [-ics <cs_dir>] [more_options]
+Usage: hhblitsdb.pl -o <db_name> [-ia3m <a3m_dir>] [-ihhm <hhm_dir>] [-ics <cs_dir>] [options]
 
-Depending on the input directories, the script generates the following HHblits database files:
-  <db_name>.cs219               column-state sequences, one for each MSA/HMM (used by HHblits for prefiltering)
-  <db_name>.cs219.sizes         number of sequences and characters in <db_name>.cs219
-  <db_name>_a3m_db              packed file containing A3M alignments read from <a3m_dir>
-  <db_name>_a3m_db.index        index file for packed A3M file
-  <db_name>_a3m.db.index.sizes  number of lines in <db_name>_a3m_db.index
-  <db_name>_hhm_db              packed file containing HHM-formatted HMMs read from <hhm_dir>
-  <db_name>_hhm_db.index        index file for packed HHM file
-  <db_name>_hhm_db.index.sizes  number of lines in <db_name>_hhm_db.index
+Depending on the input directories, the following HHblits database files are generated:
+ <db_name>.cs219              column-state sequences, one for each MSA/HMM (for prefilter)
+ <db_name>.cs219.sizes        number of sequences and characters in <db_name>.cs219
+ <db_name>_a3m_db             packed file containing A3M alignments read from <a3m_dir>
+ <db_name>_a3m_db.index       index file for packed A3M file
+ <db_name>_a3m.db.index.sizes number of lines in <db_name>_a3m_db.index
+ <db_name>_hhm_db             packed file containing HHM-formatted HMMs read from <hhm_dir>
+ <db_name>_hhm_db.index       index file for packed HHM file
+ <db_name>_hhm_db.index.sizes number of lines in <db_name>_hhm_db.index
 
 Options:
-  -o <db_name>     name of database
-  -ia3m <a3m_dir>  input directory (or glob of directories) with A3M-formatted files
-  -ihhm <hhm_dir>  input directory (or glob of directories) with HHM- (or HMMER-) formatted files 
-                   (WARNING! Using HMMER instead of HHM format will result in a decreased performance)
-  -ics  <cs_dir>   input directory (or glob of directories) with column state sequences
+ -o <db_name>    name of database
+ -ia3m <a3m_dir> input directory (or glob of directories) with A3M-formatted files
+ -ihhm <hhm_dir> input directory (or glob of directories) with HHM (or HMMER) files 
+                 (WARNING! HMMER format results in decreased performance over HHM format)
+ -ics  <cs_dir>  input directory (or glob of directories) with column state sequences
+ -log <logfile>  log file recording stderr stream of cstranslate and hhmake commands
 
-  -log <logfile>   log file recording stderr stream of cstranslate and hhmake commands
-  -csext           extension of column state sequences (default: $csext)
-  -a3mext          extension of A3M-formatted files (default: $a3mext)
-  -hhmext          extension of HHM- or HMMER-formatted files (default: $hhmext)
-  -append          if the packed db files exists, append input A3M/HHM files (default: overwrite)
-  -v [1-3]         verbose mode (default: $v)
-  -cpu <int>       numbers of threads to launch for generating cs219 and hhm files (default = $cpu)
+ -csext          extension of column state sequences (default: $csext)
+ -a3mext         extension of A3M-formatted files (default: $a3mext)
+ -hhmext         extension of HHM- or HMMER-formatted files (default: $hhmext)
+ -append         if the packed db files exists, append input A3M/HHM files (def: overwrite)
+ -v [1-3]        verbose mode (default: $v)
+ -cpu <int>      numbers of threads for generating cs219 and hhm files (default = $cpu)
 
  
-Example 1: only -ia3m is given; cs sequences and hhm files are generated from a3m files
+Example 1: only -ia3m given; cs sequences and hhm files are generated from a3m files
    perl hhblitsdb.pl -o hhblits_dbs/mydb -ia3m mydb/a3ms 
 
-Example 2: only -ihhm is given; cs sequences are generated from hhm files, no a3m db file is generated
+Example 2: only -ihhm given; cs sequences are generated from hhm files, but no a3m db file 
    perl hhblitsdb.pl -o hhblits_dbs/mydb -ihhm mydb/hhms 
 
-Example 3: -ia3m and -ihhm are given; cs sequences are generated from a3m files
+Example 3: -ia3m and -ihhm given; cs sequences are generated from a3m files
    perl hhblitsdb.pl -o hhblits_dbs/mydb -ia3m mydb/a3ms -ihhm mydb/hhms   
 
-Example 4: -ics, -ia3m, and -ihhm are given; all db files are created 
+Example 4: -ics, -ia3m, and -ihhm given; all db files are created 
    perl hhblitsdb.pl -o hhblits_dbs/mydb -ia3m mydb/a3ms -ihhm mydb/hhms -ics mydb/cs  
 
 Example 5: using glob expression to specify several input databases

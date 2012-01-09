@@ -45,13 +45,18 @@ my $informat="a3m";    # input format
 my $neff = 7;          # use alignment with this diversity for PSIPRED prediction
 
 my $help="
-Add PSIPRED secondary structure prediction (and DSSP annotation) to an MSA or HMMER file.
-Input is a  multiple sequence alignment or a HMMER (multi-)model file. Allowed input formats are 
-A2M/FASTA (default), A3M (-a3m), CLUSTAL (-clu), STOCKHOLM (-sto), HMMER (-hmm).
-If the input file is an alignment, the output file is in A3M with default name <basename>.a3m.
-If the input file is in HMMER format, the output is the same as the input, except that records SSPRD 
-and SSCON are added to each model which contain predicted secondary structure and confidence values. 
-In this case the output file name is obligatory and must be different from the input file name.
+Add PSIPRED secondary structure prediction (and DSSP annotation) to a multiple sequence alignment (MSA) 
+or HMMER (multi-)model file. 
+
+If the input file is an MSA, the predicted secondary structure and confidence values are added as 
+special annotation sequences with names >ss_pred, >ss_conf, and >ss_dssp to the top of the output 
+A3M alignment. If no output file is given, the output file will have the same name as the input file, 
+except for the extension being replaced by '.a3m'. Allowed input formats are A2M/FASTA (default), 
+A3M (-a3m), CLUSTAL (-clu), STOCKHOLM (-sto), HMMER (-hmm).
+
+If the input file contains HMMER models, records SSPRD and SSCON containing predicted secondary 
+structure and confidence values are added to each model. In this case the output file name is 
+obligatory and must be different from the input file name.
 
 Usage: perl addss.pl <ali_file> [<outfile>] [-fas|-a3m|-clu|-sto]  
   or   perl addss.pl <hhm_file> <outfile> -hmm  

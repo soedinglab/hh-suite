@@ -750,7 +750,7 @@ int HMM::ReadHMMer(FILE* dbf, char* filestr)
             {
               strcut(ptr);
               if (strlen(seq[nss_pred])+strlen(ptr)>=(unsigned)(par.maxres))
-                printf("\nWARNING: HMM %s has SSPRD records with more than %i residues.\n",name,par.maxres);
+                printf("WARNING: HMM %s has SSPRD records with more than %i residues.\n",name,par.maxres);
               else strcat(seq[nss_pred],ptr);
             }
         }
