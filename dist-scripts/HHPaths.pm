@@ -14,6 +14,7 @@ our @EXPORT  = qw($hhlib $hhdata $dummydb $perl $hhblits $dsspdir $dssp $pdbdir 
 # Please set HHLIB 
 our $hhlib   = $ENV{"HHLIB"};     # hh perl scripts (addss.pl, reformat.pl etc.)
 our $hhdata  = $hhlib."/data";
+our $hhlibbin= $hhlib."/bin";    # path to cstranslate
 
 # PSIPRED etc
 our $execdir = ".../psipred/bin";         # Where the PSIPRED V2 programs have been installed
