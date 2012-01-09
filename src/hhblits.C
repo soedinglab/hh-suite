@@ -1243,7 +1243,7 @@ void perform_realign(char *dbfiles[], int ndb)
   while (!par.block_shading->End())
     delete[] (par.block_shading->ReadNext()); 
   par.block_shading->New(16381,NULL);
-  par.block_shading_counter->New(16381,NULL);
+  par.block_shading_counter->New(16381,0);
   const float MEMSPACE_DYNPROG = 2.0*1024.0*1024.0*1024.0;
   int nhits=0;
   int Lmax=0;      // length of longest HMM to be realigned
@@ -1967,7 +1967,7 @@ int main(int argc, char **argv)
   par.block_shading = new Hash<int*>;
   par.block_shading_counter = new Hash<int>;
   par.block_shading->New(16381,NULL);
-  par.block_shading_counter->New(16381,NULL);
+  par.block_shading_counter->New(16381,0);
 
   // Prepare index-based databases
   char filename[NAMELEN];

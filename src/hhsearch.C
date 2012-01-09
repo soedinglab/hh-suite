@@ -361,6 +361,7 @@ void help_ali()
   printf("        1       = log2 Sum(tja*qia/pqa)  (pqa = 1/2*(pa+ta) )               \n");
   printf("        2       = log2 Sum(tja*qia/ta)   (ta: av. aa freqs in template)     \n");
   printf("        3       = log2 Sum(tja*qia/qa)   (qa: av. aa freqs in query)        \n");
+  printf("        5       local amino acid composition correction                     \n");
   printf(" -corr [0,1]    weight of term for pair correlations (def=%.2f)             \n",par.corr);
   printf(" -shift [-1,1]  score offset (def=%-.3f)                                    \n",par.shift);
   printf(" -r             repeat identification: multiple hits not treated as independent\n");
