@@ -562,7 +562,7 @@ void Alignment::Compress(const char infile[])
           for (k=1; k<N_in; ++k)
             if (strpbrk(seq[k],"abcdefghiklmnpqrstuvwxyz.")) break;
           if (k==N_in) // ... but alignment contains no lower case residue
-            printf(stderr,"WARNING: input alignment %s looks like aligned FASTA instead of A2M/A3M format. Consider using '-M first' or '-M 50'\n",infile);
+            fprintf(stderr,"WARNING: input alignment %s looks like aligned FASTA instead of A2M/A3M format. Consider using '-M first' or '-M 50'\n",infile);
         }
 
       // Remove '.' characters from seq[k]
@@ -645,7 +645,7 @@ void Alignment::Compress(const char infile[])
 
       if (L==par.maxres-2 && v>=2)
         {
-          printf(stderr,"WARNING: Number of match columns too large. Only first %i match columns will be kept!\n",L);
+          fprintf(stderr,"WARNING: Number of match columns too large. Only first %i match columns will be kept!\n",L);
           break;
         }
       if (v>=2) cout<<"Alignment in "<<infile<<" contains "<<L<<" match states\n";
@@ -724,7 +724,7 @@ void Alignment::Compress(const char infile[])
 	      {
 		if (i>=par.maxres-2) {
 		  if (v>=1)
-		    printf(stderr,"WARNING: Number of match columns too large. Only first %i match columns will be kept!\n",i);
+		    fprintf(stderr,"WARNING: Number of match columns too large. Only first %i match columns will be kept!\n",i);
 		  break;
 		}
 		++i;
@@ -798,7 +798,7 @@ void Alignment::Compress(const char infile[])
 	      {
 		if (i>=par.maxres-2) {
 		  if (v>=1)
-		    printf(stderr,"WARNING: Number of match columns too large. Only first %i match columns will be kept!\n",i);
+		    fprintf(stderr,"WARNING: Number of match columns too large. Only first %i match columns will be kept!\n",i);
 		  break;
 		}
 		++i;

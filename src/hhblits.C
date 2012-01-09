@@ -2408,7 +2408,7 @@ int main(int argc, char **argv)
 
   // Warn, if HMMER files were used
   if (par.hmmer_used)
-    printf(stderr,"WARNING: Using HMMER files results in a drastically reduced sensitivity (>10%%).\nWe recommend to use HHMs build by hhmake.\n");
+    fprintf(stderr,"WARNING: Using HMMER files results in a drastically reduced sensitivity (>10%%).\nWe recommend to use HHMs build by hhmake.\n");
 
   // Print for each HMM: n  score  -log2(Pval)  L  name  (n=5:same name 4:same fam 3:same sf...)
   if (*par.scorefile) {
