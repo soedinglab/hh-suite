@@ -44,7 +44,7 @@ install:
 	install src/hhsearch    $(INSTALL_DIR)/bin/hhsearch
 	mkdir -p $(INSTALL_LIB_DIR)
 	mkdir -p $(INSTALL_LIB_BIN_DIR)
-	install src/cstranslate $(INSTALL_LIB_BIN_DIR)/bin/cstranslate
+	install src/cstranslate $(INSTALL_LIB_BIN_DIR)/cstranslate
 	mkdir -p $(INSTALL_DATA_DIR)
 	install data/context_data.lib $(INSTALL_DATA_DIR)/context_data.lib
 	install data/cs219.lib        $(INSTALL_DATA_DIR)/cs219.lib
