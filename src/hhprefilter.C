@@ -1028,7 +1028,7 @@ void prefilter_with_SW_evalue_preprefilter_backtrace()
       // Perform search step
       score = ungapped_sse_score(qc, LQ, first[n], length[n], par.prefilter_score_offset, workspace[thread_id]);
   
-      score = score - par.prefilter_bit_factor * (log_qlen + flog2(length[n]));
+      score = score - (int)(par.prefilter_bit_factor * (log_qlen + flog2(length[n])));
     
       if (score > par.preprefilter_smax_thresh)
 	{
@@ -1204,8 +1204,7 @@ void prefilter_db()
   while (!par.block_shading->End())
     delete[] (par.block_shading->ReadNext()); 
   par.block_shading->New(16381,NULL);
-  par.block_shading_counter->New(16381,NULL);
-  
+  par.block_shading_counter->New(16381,0);
   prefilter_with_SW_evalue_preprefilter_backtrace();
 
   if(doubled) delete doubled;

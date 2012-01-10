@@ -33,7 +33,7 @@ else
 HHALIGN_LIBS = -DHH_PNG -lpng -lz -I/usr/include/ -L/usr/lib
 endif
 
-SOURCES = hhsearch.C hhhitlist.C hhhit.C hhalignment.C hhhmm.C hhmatrices.C hhdecl.C hhfunc.C hhprefilter.C hhfullalignment.C hhfullalignment.C hash.C hhutil.C util.C list.C thread.C 
+SOURCES = hhsearch.C hhhitlist.C hhhit.C hhalignment.C hhhmm.C hhmatrices.C hhdecl.C hhfunc.C hhprefilter.C hhworker.C hhfullalignment.C hhhalfalignment.C hhutil.C util.C hash.C list.C
 
 CS_SOURCES_WITH_APPS = $(filter-out $(wildcard $(CS_DIR)/*test*.cc), $(wildcard $(CS_DIR)/*.cc))
 CS_SOURCES = $(filter-out $(wildcard $(CS_DIR)/*app.cc), $(CS_SOURCES_WITH_APPS))
