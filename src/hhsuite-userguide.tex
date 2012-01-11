@@ -1579,13 +1579,17 @@ Example 5: using glob expression to specify several input databases
 
 \item The iterative HMM-HMM search method HHblits has been added and the entire package is now called HH-suite. HHblits brings the power of HMM-HMM comparison to mainstream, general-purpose sequence searching and sequence analysis. 
 
-\item The speed of HHsearch was further increase through the use of SSE3 instructions.
+\item Context-specific pseudocounts have been implemented HHsearch, improving its sensitivity and quality of alignments.
+
+\item The speed of HHsearch was further increased through the use of SSE3 instructions.
 
 \item An option \verb`-atab` for writing alignment as a table (with posteriors) to file was introduced
 
 \item HHsearch is now able to read HMMER3 profiles (but should not be used due to a loss of sensitivity).
 
-\item A local amino acid compositional bias correction was introduced. Improvements are slight ($<=1 \%$) on a standard SCOP single domain benchmark. However, the improvement for more realistic sequences containing multiple domains, repeats, and regions of strong compositional bias will is probably more pronounced. The score shift parameter has been set to $-0.03$ bits and the mact parameter to $0.30$. 
+\item An optional local amino acid compositional bias correction was introduced(options \verb`-sc 5` and \verb`-scwin <window_halfsize>`). No improvements are seen on a standard SCOP single domain benchmark. However, their probably will be an improvement for more realistic sequences containing multiple domains, repeats, and regions of strong compositional bias. 
+
+\item The score shift parameter and mact parameter have been optimized together on the optimization set of hhblits \cite{Remmert:2011}, which resulted in slight improvements of sensitivity and alignment quality. New default values are  \verb`shift -0.03` bits and \verb`-mact 0.30`. 
 
 \end{itemize}
 

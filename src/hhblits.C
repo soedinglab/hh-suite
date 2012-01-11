@@ -455,7 +455,6 @@ void help_all()
   printf("                   Neff=( (Neff_q^d+Neff_t^d)/2 )^(1/d)                                \n");
   printf("                   Neff_q = av number of different AAs per column in query             \n");
   printf("                3: constant divergence pseudocounts                                    \n");
-  printf("                4: divergence-dependent, with composition-adjusted matrix              \n");
   printf(" -pca  [0,1]    overall pseudocount admixture (def=%-.1f)                              \n",par.pca);
   printf(" -pcb  [1,inf[  threshold for Neff (def=%-.1f)                                         \n",par.pcb);
   printf(" -pcc  [0,3]    extinction exponent for tau(Neff)  (def=%-.1f)                         \n",par.pcc);
