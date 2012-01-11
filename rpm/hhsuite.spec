@@ -16,7 +16,7 @@ Protein homology detection tools using HMM-HMM comparison.
 %setup
 
 %build
-make all doc
+make all
 
 %install
 mkdir -p "$RPM_BUILD_ROOT/usr"
