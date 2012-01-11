@@ -99,19 +99,19 @@ Options:
 
  
 Example 1: only -ia3m given; cs sequences and hhm files are generated from a3m files
-   perl hhblitsdb.pl -o hhblits_dbs/mydb -ia3m mydb/a3ms 
+   perl hhblitsdb.pl -o databases/mydb -ia3m mydb/a3ms 
 
 Example 2: only -ihhm given; cs sequences are generated from hhm files, but no a3m db file 
-   perl hhblitsdb.pl -o hhblits_dbs/mydb -ihhm mydb/hhms 
+   perl hhblitsdb.pl -o databases/mydb -ihhm mydb/hhms 
 
 Example 3: -ia3m and -ihhm given; cs sequences are generated from a3m files
-   perl hhblitsdb.pl -o hhblits_dbs/mydb -ia3m mydb/a3ms -ihhm mydb/hhms   
+   perl hhblitsdb.pl -o databases/mydb -ia3m mydb/a3ms -ihhm mydb/hhms   
 
 Example 4: -ics, -ia3m, and -ihhm given; all db files are created 
-   perl hhblitsdb.pl -o hhblits_dbs/mydb -ia3m mydb/a3ms -ihhm mydb/hhms -ics mydb/cs  
+   perl hhblitsdb.pl -o databases/mydb -ia3m mydb/a3ms -ihhm mydb/hhms -ics mydb/cs  
 
 Example 5: using glob expression to specify several input databases
-   perl hhblitsdb.pl -o hhblits_dbs/mydb -ihhm 'mydbs*/hhms'  
+   perl hhblitsdb.pl -o databases/mydb -ihhm 'mydbs*/hhms'  
 \n";
 
 

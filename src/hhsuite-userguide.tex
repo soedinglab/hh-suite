@@ -96,7 +96,7 @@ By generating highly accurate and diverse MSAs, HHblits can improve almost all d
 
 HHsearch takes as input an MSA (e.g. built by HHblits) or a profile HMM and searches a database of HMMs for homologous proteins. Many HHsearch databases can be downloaded (see next section). The pdb70 database, for instance, consists of profile HMMs for a set of representative sequences from the PDB database; the Pfam, InterPro and CDD domain databases are large collections of curated MSAs and profile HMMs for conserved, functionally annotated domains. HHsearch is often used to predict the domain architectures and the functions of domains in proteins by finding similarities to domains in the pdb70, Pfam, InterPro or other databases. 
 
-In addition to the command line package described here, two interactive web servers at \url{http://hhpred.tuebingen.mpg.de} \cite{Soding:2005b, Hildebrand:2009} and \url{http://hhblits.genzentrum.lmu.de} run HHsearch and HHblits. They offer extended functionality, such as Jalview applets for checking query and template alignments, histogram views of alignments, and building 3D models with MODELLER. 
+In addition to the command line package described here, two interactive web servers at \url{http://hhpred.tuebingen.mpg.de} \cite{Soding:2005b, Hildebrand:2009} and \url{http://hhblits.genzentrum.lmu.de} run HHsearch and HHblits. They offer extended functionality, such as Jalview applets for checking query and template alignments, histogram views of alignments, and building 3D models with MODELLER \cite{Sali:1993}. 
 
 In the CASP9 competition (Critical Assessment of Techniques for Protein Structure Prediction) in 2010, a fully automated version of HHpred based on HHsearch and HHblits was ranked best out of the 81 servers in template-based structure prediction, the category most relevant for biological applications, while having an average response time of minutes instead of days like most other servers \cite{Mariani:2011} (\url{http://predictioncenter.org/casp9/groups_analysis.cgi?type=server&tbm=on}). 
 
@@ -109,8 +109,6 @@ The HH-suite source code, executable RPM and DPKG packages for most Linux 64 bit
 
 
 \subsection{Installation} \label{installation}
-
-{\bf !!!!!!!!!!!!!!! Andy, please complete these subsections !!!!!!!!!!!!!!!!!}
 
 \subsubsection*{Installation under Linux from source code} 
 
@@ -178,10 +176,9 @@ The last line defines default parameters for hhblits.
 \verb`hh/scripts/HHPaths.pm`
 They are read by the perl scripts in hh-suite.
 
-{\bf !!!!!!!!!!! Andy, is there anything missing? !!!!!!!!!!!!! }
 \end{enumerate}
 
-\subsubsection*{Installation under x86 64bit Linux with the red hat package manager RPM'}
+\subsubsection*{Installation under x86 64bit Linux with the red hat package manager RPM}
 
 \begin{enumerate}
 \item Download the HH-suite RPM package at \url{ftp://toolkit.genzentrum.lmu.de/HH-suite/hh-suite-v2.0.0.rpm}.
@@ -224,8 +221,7 @@ Then follow instructions under point 5 and 6 of the first subsection.
 
 \subsection{HHblits databases} \label{hhblits_dbs}
 To build MSAs using iterative HHblits searches, you need either the uniprot20 or the nr20 HHblits database. Both yield MSAs of equivalent quality and diversity, so which one you should choose depends on what sequence annotation and name formats you prefer. The pdb70 and scop70 databases are not suited for iterative searches as they do not cover the entire sequence space. They are useful as an alternatives to the versions formatted for HHsearch (next subsection), because HHblits is almost as sensitive as HHsearch while being much faster. The following HHblits databases can be downloaded at 
-\verb`ftp://toolkit.lmb.uni-muenchen.de/HH-suite/hhblits_dbs/`: 
-{\bf  !!!!!! Andy: please set softlinks to previous paths !!!!! }
+\verb`ftp://toolkit.lmb.uni-muenchen.de/HH-suite/databases/` as of January 2012: 
 
 \small 
 \begin{verbatim}
@@ -249,20 +245,21 @@ The HHblits databases consist of eight files, which all start with the name of t
 <dbname>_a3m_db.index.sizes   number of lines in <dbname>_a3m_db.index
 \end{verbatim}
 
-The last three files are not needed for a single search iteration when no output MSA is requested. To get started, download the uniprot20 or nr20 database files. For example:
+The packed files \verb`<dbname>_a3m_db` and \verb`<dbname>_hhm_db` contain simply the concatenated A3M MSAs and HHMs, respectively, with a \verb`\0` character at the beginning of each file. They are therefore human-readable and are parsable for specific MSAs or models using tools such as grep or search functions in text editors (which however should be able to ignore the \verb`\0` character). The \verb`.index` files contain indices to provide fast access to these two packed files. The \verb`a3m` files are not needed for a single search iteration when no output MSA is requested. 
 
+To get started, download the uniprot20 or nr20 database files. For example:
 \begin{verbatim}
 > cd /home/soeding/hh  % change to hh-suite directory
-> mkdir hhblits_dbs; cd hhblits_dbs
-> wget ftp://toolkit.lmb.uni-muenchen.de/HH-suite/hhblits_dbs/uniprot20_<date>.tar.gz`
+> mkdir databases; cd databases
+> wget ftp://toolkit.lmb.uni-muenchen.de/HH-suite/databases/uniprot20_<date>.tar.gz`
 > tar -xzvf uniprot20_<date>.tar.gz`
 \end{verbatim}
 
-\subsection{HHsearch databases} \label{hhsearch_dbs}
-HHsearch databases have a simple, human-readable format. They consist of a single file that is a concatenation of all HMM files in HHsearch/HHblits hhm format. The following HHsearch databases can be downloaded at
-\verb`ftp://toolkit.lmb.uni-muenchen.de/HH-suite/hhsearch_dbs/`: 
+More databases will become available in HHblits format that are only available for HHsearch at the time of writing (see next subsection).
 
-{\bf !!!!!! Andy: please set softlinks to previous paths !!!!!}
+\subsection{HHsearch databases} \label{hhsearch_dbs}
+HHsearch needs just the \verb`<dbname>_hhm_db` file from the hhblits database. This file is simply a concatenation of of all HMM files in HHsearch/HHblits \verb`hhm` format with a leading \verb`\0` character. The following HHsearch databases can be downloaded at
+\verb`ftp://toolkit.lmb.uni-muenchen.de/HH-suite/hhsearch_dbs/`: 
 
 \small 
 \begin{verbatim}
@@ -281,8 +278,10 @@ HHsearch databases have a simple, human-readable format. They consist of a singl
 13  CATH/Gene3D http://cathwww.biochem.ucl.ac.uk/latest/, from InterPro 
 \end{verbatim} 
 \normalsize
+In the future, all these databases will become available for HHblits in the HHblits format described in the previous subsection.
 
-The eight databases marked by asterisks can be downloaded with HMMs in HHsearch 
+For the time being, however, these databases are formatted for as they have been in the past:
+The eight databases marked by asterisks contain both HMMs in HHsearch 
 format (*.hhm.tar files) and the multiple sequence alignments (MSAs) in 
 A3M format (*.a3m.tar files).  The *.hhm.tar and *.a3m.tar files untar into thousands
 of separate files, so before unzipping and untarring, first create a directory for 
@@ -298,17 +297,16 @@ To generate an HHsearch database file, concatenate all *.hhm files:
 > cat *.hhm > scop70_1.75.hhm
 \end{verbatim}
 For the databases without asterisks, you can download the HMM models in HMMER format as 
-*.hmm.tar files. Each *.hmm.tar file untars into a single concatenated HMME-formatted 
+*.hmm.tar files. Each *.hmm.tar file untars into a single concatenated HMMER-formatted 
 database file that can be read by HHsearch. For theses databases, unfortunately no 
 alignments are publicly available. (Information to the contrary is welcome!) 
 
 The pdb70 and scop70 databases are built at the Gene Center using in-house scripts 
-to select representatives and using three {\bf (!!!!!! Michael, Joern: correct?!!!!!)}
-iterations of HHblits to generate MSAs for the representative 
-sequences. They are distributed freely under the Lesser Gnu Public License. 
+to select representatives and using two iterations of HHblits to generate MSAs for the 
+representative sequences. They are distributed freely under the Lesser Gnu Public License. 
 For the other databases, different copy right regulations may apply. 
-Please refer to the databases' original web sites for the copy right notes and references to 
-cite.
+Please refer to the databases' original web sites for the copy right notes and 
+references to cite.
 
 
 \section{Brief tutorial to HH-suite tools}
@@ -342,14 +340,10 @@ its syntax.
 
 \subsection{Searching databases of HMMs using HHsearch and HHblits}\label{searching_hm_dbs}
 
-{\bf !!!!!!! Andy, does HHsearch find context\_data.lib automatically at a hard-coded location? Does HHblits find cs219.lib and context\_data.lib automatically at a hard-coded location? Is the .hhdefaults file removed and HHblits still works? !!!!!!!!!!!!}
-
-{\bf !!!!!!! Andy, we have to put files query.a3m, query.seq, and query.hhm into directory data. We can simply take these from pdb70/1tv9\_A.a3m and 1tv9\_A.hhm. For the .seq file, we can delete everything from .a3m except the sequence with name >1tv9\_A. !!!!!!!!!!!}
-
 We will use the MSA \verb`query.a3m` in the \verb`data/` subdirectory of the HH-suite as an example query. To search for sequences in the \verb`scop70_1.75` database that are homologous to the query sequence or MSA in \verb`query.a3m`, type
 
 \begin{verbatim}
-> hhsearch  -cpu 4 -i data/query.a3m -d hhsearch_dbs/scop70_1.75.hhm
+> hhsearch  -cpu 4 -i data/query.a3m -d databases/scop70_1.75.hhm
 \end{verbatim}
 
 If the input file is an MSA or a single sequence, HHsearch calculates an HMM from it
@@ -381,7 +375,7 @@ at the cost of only a few percent lower sensitivity (Fig. \ref{fig:hhsearch_hhbl
 
 The same search as above is performed here using hhblits instead of hhsearch:
 \begin{verbatim}
-> hhblits  -cpu 4 -i data/query.a3m -d hhblits_dbs/scop70_1.75 -n 1
+> hhblits  -cpu 4 -i data/query.a3m -d databases/scop70_1.75 -n 1
 \end{verbatim}
 
 HHblits first scans the column state sequences in \verb`scop70_1.75.cs219` with its fast prefilter. HMMs whose column state sequences pass the prefilter are read from the packed file \verb`scop70_1.75_hhm_db` (using the index file \verb`scop70_1.75_hhm_db.index`) and are aligned to the query HMM generated from \verb`query.a3m` using the slow Viterbi HMM-HMM alignment algorithm. The search results are written to the default output file \verb`query.hhr`. The option \verb`-n 1` tells hhblits to perform a single search iteration. (The default is 2 iterations.)
@@ -391,19 +385,19 @@ HHblits first scans the column state sequences in \verb`scop70_1.75.cs219` with 
 
 To generate an MSA for a sequence or initial MSA in query.a3m, the database to be searched should cover the entire sequence space, such as uniprot20 or nr20. The option \verb`-oa3m <msa_file>` tells HHblits to generate an output MSA from the significant hits:
 \begin{verbatim}
-> hhblits -cpu 4 -i data/query.seq -d hhblits_dbs/uniprot20 -oa3m query.a3m -n 1
+> hhblits -cpu 4 -i data/query.seq -d databases/uniprot20 -oa3m query.a3m -n 1
 \end{verbatim}
 
 At the end of the search, HHblits reads from the packed database file containing the MSAs the sequences belonging to HMMs with E-value below the threshold. The E-value threshold for inclusion into the MSA can be specified using the \verb`-e <E-value>` option. After the search, \verb`query.a3m` will contain the MSA in A3M format. 
 
 We could do a second search iteration, starting with the MSA from the previous search, to add more sequences. Since the MSA generated after the previous search contains more information than the single sequence in \verb`query.seq`, searching with this MSA will probably result in many more homologous database matches.
 \begin{verbatim}
-> hhblits -cpu 4 -i query.a3m -d hhblits_dbs/uniprot20 -oa3m query.a3m -n 1
+> hhblits -cpu 4 -i query.a3m -d databases/uniprot20 -oa3m query.a3m -n 1
 \end{verbatim}
 
 Instead, we could start the search with \verb`query.seq` and directly perform two search iterations, by adding the option \verb`-n 2`:
 \begin{verbatim}
-> hhblits -cpu 4 -i data/query.seq -d hhblits_dbs/uniprot20 -oa3m query.a3m -n 2 
+> hhblits -cpu 4 -i data/query.seq -d databases/uniprot20 -oa3m query.a3m -n 2 
 \end{verbatim}
 
 In practice, it is recommended to use between 1 and 4 iterations for building MSAs, depending on the trade-off between reliability and specificity on one side and sensitivity for remotely homologous sequences on the other side. The more search iterations are done, the higher will be the risk of non-homologous sequences or sequence segments entering the MSA and recruiting more of their kind in subsequent iterations. This is particularly problematic when searching with sequences containing short repeats, regions with amino acid compositional bias and, although less dramatic,  with multiple domains. Fortunately, this problem is much less pronounced in hhblits as compared to PSI-BLAST due to hhblits's lower number of iterations, its more robust Maximum Accuracy alignment algorithm, and the higher precision of its HMM-HMMs alignments. 
@@ -418,7 +412,7 @@ To avoid unnecessarily large and diverse MSAs, HHblits stops iterating when the 
 
 To avoid the final MSAs to grow unnecessarily large, by default the cluster MSAs are filtered with the option \verb`-diff 1000` prior to merging them with the query MSA. (The \verb`-diff 1000` option selects the most representative sequences from an MSA such that every regions is covered by at least 1000 sequences.) To turn off the filtering and obtain all sequences in the significantly similar uniprot20 clusters, use the \verb`-nodiff` option: 
 \begin{verbatim}
-> hhblits -cpu 4 -i data/query. -d hhblits_dbs/uniprot20 -oa3m query.a3m -nodiff
+> hhblits -cpu 4 -i data/query. -d databases/uniprot20 -oa3m query.a3m -nodiff
 \end{verbatim}
 
 The A3M format uses small letters to mark inserts and capital letters to designate match and delete columns (see subsection \ref{aliformats}), allowing to omit gaps aligned to insert columns. The A3M format therefore uses much less space for large alignments than FASTA but looks misaligned to the human eye. Use the \verb`reformat.pl` script to reformat \verb`query.a3m` to other formats, e.g. for reformatting the MSA to Clustal and FASTA format, type
@@ -466,9 +460,9 @@ It is simple to build custom databases for HHsearch and HHblits using the same t
 
 To build MSAs with HHblits from sequences \verb`dbs/scop70_1.75/*.seq`, run
 \begin{verbatim}
-> multithread.pl 'dbs/scop70_1.75/*.seq' 'hhblits -i $file -d hhblits_dbs/uniprot20 -oa3m $name.a3m' 
+> multithread.pl 'dbs/scop70_1.75/*.seq' 'hhblits -i $file -d databases/uniprot20 -oa3m $name.a3m' 
 \end{verbatim}
-The first argument is the file globbing expression, which selects the files with which to run the command given as second argument. In this command, the string \verb`$file` is replaced by the actual, globbed file. You might also want to pipe the stdout and stderr streams of the command into a log-file: \verb`'hhblits -i $file -d hhblits_dbs/uniprot20 1> stdout.log 2>stderr.log'`. The MSAs are written to the file \verb`$name.seq`, which stands for the globbed file name without extension, (\verb`$name`) plus an appended extension \verb`.a3m`. The number of threads launched can be specified with option \verb`-cpu <int>` (default value is 8). To be sure that everything went smoothly, check that the number of \verb`*.a3m` files is the same as the number of \verb`*.seq` files, and browse the file \verb`'stderr.log'` for error messages. The number of HHblits search iterations and the HMM inclusion E-value threshold for hhblits can be changed from their default values (2 and 0.01, respectively) using the \verb`'-n <int>'` and \verb`'-e <float>'` options. 
+The first argument is the file globbing expression, which selects the files with which to run the command given as second argument. In this command, the string \verb`$file` is replaced by the actual, globbed file. You might also want to pipe the stdout and stderr streams of the command into a log-file: \verb`'hhblits -i $file -d databases/uniprot20 1> stdout.log 2>stderr.log'`. The MSAs are written to the file \verb`$name.seq`, which stands for the globbed file name without extension, (\verb`$name`) plus an appended extension \verb`.a3m`. The number of threads launched can be specified with option \verb`-cpu <int>` (default value is 8). To be sure that everything went smoothly, check that the number of \verb`*.a3m` files is the same as the number of \verb`*.seq` files, and browse the file \verb`'stderr.log'` for error messages. The number of HHblits search iterations and the HMM inclusion E-value threshold for hhblits can be changed from their default values (2 and 0.01, respectively) using the \verb`'-n <int>'` and \verb`'-e <float>'` options. 
 
 Now, add PSIPRED-predicted secondary structure to all MSAs:
 \begin{verbatim}
@@ -480,13 +474,13 @@ Again, piping stdout and stderr into log files and inspecting the warnings and e
 
 An HHblits database consists of eight files, as described in subsection \ref{hhblits_dbs}. These files can be generated by a single call to \verb`hhblitsdb.pl`:
 \begin{verbatim}
-> hhblitsdb.pl -o hhblits_dbs/scop70_1.75 -ia3m 'dbs/scop70_1.75' -cpu 16
+> hhblitsdb.pl -o databases/scop70_1.75 -ia3m 'dbs/scop70_1.75' -cpu 16
 \end{verbatim}
 In order to build the file containing the column state sequence for prefiltering, \verb`hhblitsdb.pl` will generate a column state sequence for each MSAs. As this can take some time, the script calls \verb`multithread.pl` to distribute the jobs to multiple cores. The script also needs to generate an HHM files for each A3M MSA file, for which again \verb`multithread.pl` is called. In the end, the \verb`ffindex` utility is generates the packed files containing the A3M MSAs and HHM models with corresponding index files. The script will report the number of files of each category (column-state, A3M, HHM) and warn if the numbers differ. The option \verb`-log err.log` pipes the stderr stream of each command executed into a log file. As with all perl scripts in the hh-suite, a list of additional options can be retrieved by calling the scripts without parameters.
 
 Alternatively, if you have a set of HHM or HMMER model files, for example for Pfam, you can build an HHblits database with the command
 \begin{verbatim}
-> hhblitsdb.pl -o hhblits_dbs/pfamA_25 -ihhm 'dbs/pfamA_25' -hhmext hmm -cpu 16
+> hhblitsdb.pl -o databases/pfamA_25 -ihhm 'dbs/pfamA_25' -hhmext hmm -cpu 16
 \end{verbatim}
 The script will then build the column state sequences from the HMMER files instead of the A3M and will generate five database files. The three files referring to the A3M MSAs can not be built since no MSAs were supplied. However, these file are only needed to build output MSAs from merging the query MSA with the MSAs of significant hits and are therefore dispensable.
 
@@ -1469,7 +1463,7 @@ template sequences from all selected alignments (options -fas, -a2m, -a3m, -pir)
 \item{generate several concatenated coarse 3D models in PDB format (option -ts)}
 \end{itemize}
 In PIR, PDB and AL format, the pdb files are required in order to read the pdb residue numbers 
-and ATOM records. The PIR formatted file can be used directly as input to the MODELLER 
+and ATOM records. The PIR formatted file can be used directly as input to the MODELLER\cite{Sali:1993} 
 homology modeling package.
 
 \small 
@@ -1543,19 +1537,19 @@ Options:
 
  
 Example 1: only -ia3m given; cs sequences and hhm files are generated from a3m files
-   perl hhblitsdb.pl -o hhblits_dbs/mydb -ia3m mydb/a3ms 
+   perl hhblitsdb.pl -o databases/mydb -ia3m mydb/a3ms 
 
 Example 2: only -ihhm given; cs sequences are generated from hhm files, but no a3m db file 
-   perl hhblitsdb.pl -o hhblits_dbs/mydb -ihhm mydb/hhms 
+   perl hhblitsdb.pl -o databases/mydb -ihhm mydb/hhms 
 
 Example 3: -ia3m and -ihhm given; cs sequences are generated from a3m files
-   perl hhblitsdb.pl -o hhblits_dbs/mydb -ia3m mydb/a3ms -ihhm mydb/hhms   
+   perl hhblitsdb.pl -o databases/mydb -ia3m mydb/a3ms -ihhm mydb/hhms   
 
 Example 4: -ics, -ia3m, and -ihhm given; all db files are created 
-   perl hhblitsdb.pl -o hhblits_dbs/mydb -ia3m mydb/a3ms -ihhm mydb/hhms -ics mydb/cs  
+   perl hhblitsdb.pl -o databases/mydb -ia3m mydb/a3ms -ihhm mydb/hhms -ics mydb/cs  
 
 Example 5: using glob expression to specify several input databases
-   perl hhblitsdb.pl -o hhblits_dbs/mydb -ihhm 'mydbs*/hhms'  
+   perl hhblitsdb.pl -o databases/mydb -ihhm 'mydbs*/hhms'  
 \end{verbatim} 
 \normalsize
 
