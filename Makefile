@@ -21,6 +21,9 @@ all_static: ffindex_static
 all: ffindex
 	cd src && make all
 
+doc:
+	cd src && make hhsuite-userguide.pdf
+
 hhblits_static: hhblits_static
 	cd src && make hhblits_static
 
