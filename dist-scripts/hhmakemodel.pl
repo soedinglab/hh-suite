@@ -6,7 +6,8 @@
 # IF YOU ARE NOT SOEDING YOU SHOULD UNCOMMENT AND COMPLETE THE FOLLOWING LINE
 # my $pdbdir="<path to your local pdb structure directory>"; 
 
-use lib $ENV{"HHLIB"};
+use lib $ENV{"HHLIB"}."/scripts";
+use HHPaths;   # config file with path variables for nr, blast, psipred, pdb, dssp etc.
 use strict;
 use Align;
 
@@ -16,7 +17,7 @@ $|=1;  # force flush after each print
 # Default parameters
 our $d=7;     # gap opening penalty for Align.pm; more than 2 mismatches - 2 matches    ## previously: 1
 our $e=0.01;  # gap extension penatlty for Align.pm; allow to leave large gaps bridging uncrystallized regions  ## previously: 0.1
-our $g=0.1;   # endgap penatlty for Align.pm; allow to shift SEQRES residues for uncrystallized aas to ends of alignment  ## previously: 0.9
+our $g=0.1;   # endgap penalty for Align.pm; allow to shift SEQRES residues for uncrystallized aas to ends of alignment  ## previously: 0.9
 my $v=2;      # 3: DEBUG
 
 my $formatting="CASP";     # CASP or LIVEBENCH
