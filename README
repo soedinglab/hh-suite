@@ -30,8 +30,9 @@ This will unpack the sources to hhsuite-<VERSION>.
 
 2. Compilation 
 
+The following dependencies exist: perl, libpng, libz
+
 $ cd hhsuite-<VERSION>/
-$ cd src/
 $ make
 
 Compilation produces by default static binaries. If you encounter
