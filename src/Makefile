@@ -116,6 +116,7 @@ hhsuite-userguide.pdf: hhsuite-userguide.tex
 	bibtex hhsuite-userguide
 	pdflatex hhsuite-userguide.tex
 	pdflatex hhsuite-userguide.tex
+	cp hhsuite-userguide.pdf ../
 
 clean: 	
 	-rm -f *.o cs/*.o
