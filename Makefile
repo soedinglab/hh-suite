@@ -13,7 +13,7 @@ INSTALL_SCRIPTS_DIR?=$(INSTALL_LIB_DIR)/scripts
 INSTALL_DATA_DIR?=$(INSTALL_LIB_DIR)/data
 INSTALL_LIB_BIN_DIR?=$(INSTALL_LIB_DIR)/bin
 
-dist_name=hhsuite-2.2.27
+dist_name=hhsuite-2.0.0
 
 all_static: ffindex_static
 	cd src && make all_static
@@ -82,6 +82,7 @@ clean:
 	cd src && make clean
 
 dist/$(dist_name).tar.gz:
+	make clean
 	mkdir -p dist
 	git archive --prefix=$(dist_name)/ -o dist/$(dist_name).tar.gz HEAD
 	cd dist && tar xf $(dist_name).tar.gz
