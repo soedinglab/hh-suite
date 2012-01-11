@@ -23,7 +23,7 @@ mkdir -p "$RPM_BUILD_ROOT/usr"
 make install INSTALL_DIR="$RPM_BUILD_ROOT/usr"
 
 %files
-%doc CHANGES LICENSE README src/hhsuite-userguide.pdf
+%doc CHANGES LICENSE README hhsuite-userguide.pdf
 
 /usr/bin/hhmake
 /usr/bin/hhalign
