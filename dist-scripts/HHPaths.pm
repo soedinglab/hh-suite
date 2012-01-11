@@ -19,10 +19,8 @@ our $hhlibbin= $hhlib."/bin";    # path to cstranslate
 # PSIPRED etc
 our $execdir = ".../psipred/bin";         # Where the PSIPRED V2 programs have been installed
 our $datadir = ".../psipred/data";        # Where the PSIPRED V2 data files have been installed    
-our $hmmerdir= ".../hmmer/binaries";
 our $dummydb = "$hhdata/do_not_delete";   # Name of a dummy blast database (single sequence formatted with formatdb)
-
-# BLAST
+our $hmmerdir= ".../hmmer/binaries";      # HMMER suite by Sean Eddy
 our $ncbidir = ".../blast/bin";           # Where the NCBI programs have been installed (for PSIPRED in addss.pl)
 
 # Structures
