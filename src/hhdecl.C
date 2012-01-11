@@ -285,30 +285,34 @@ void Parameters::SetDefaultPaths(char *program_path)
   // set hhlib
   FILE* testf = NULL;
   if(getenv("HHLIB"))
-    {
-      strcpy(hhlib, getenv("HHLIB"));
-      strcat(strcpy(hhdata, hhlib), "/data");
-      strcat(strcpy(clusterfile, hhdata), "/context_data.lib");
-      strcat(strcpy(cs_library, hhdata), "/cs219.lib");
-     testf = fopen(clusterfile, "r");
-      if (testf) { fclose(testf); return;}
-    }
-  if(program_path != NULL)
-    {
-      strcat(strcpy(hhlib, program_path), "../lib/hh");
-      strcat(strcpy(hhdata, hhlib), "/data");
-      strcat(strcpy(clusterfile, hhdata), "/context_data.lib");
-      strcat(strcpy(cs_library, hhdata), "/cs219.lib");
-      testf = fopen(clusterfile, "r");
-      if (testf) { fclose(testf); return;}
+    strcpy(hhlib, getenv("HHLIB"));
+  else
+    strcpy(hhlib, "/usr/lib/hh");
 
-      strcat(strcpy(hhlib, program_path), "..");
-      strcat(strcpy(hhdata, hhlib), "/data");
-      strcat(strcpy(clusterfile, hhdata), "/context_data.lib");
-      strcat(strcpy(cs_library, hhdata), "/cs219.lib");	  
-      testf = fopen(clusterfile, "r");
-      if (testf) { fclose(testf); return;}
-    }
+  strcat(strcpy(hhdata, hhlib), "/data");
+  strcat(strcpy(clusterfile, hhdata), "/context_data.lib");
+  strcat(strcpy(cs_library, hhdata), "/cs219.lib");
+
+  testf = fopen(clusterfile, "r");
+  if (testf) { fclose(testf); return;}
+
+  /* we did not find HHLIB, if called with full path or in dist dir, we can try relative to program path */
+  if(program_path != NULL)
+  {
+    strcat(strcpy(hhlib, program_path), "../lib/hh");
+    strcat(strcpy(hhdata, hhlib), "/data");
+    strcat(strcpy(clusterfile, hhdata), "/context_data.lib");
+    strcat(strcpy(cs_library, hhdata), "/cs219.lib");
+    testf = fopen(clusterfile, "r");
+    if (testf) { fclose(testf); return;}
+
+    strcat(strcpy(hhlib, program_path), "..");
+    strcat(strcpy(hhdata, hhlib), "/data");
+    strcat(strcpy(clusterfile, hhdata), "/context_data.lib");
+    strcat(strcpy(cs_library, hhdata), "/cs219.lib");	  
+    testf = fopen(clusterfile, "r");
+    if (testf) { fclose(testf); return;}
+  }
 
   cerr<<endl<<"Error in "<<argv[0]<<": could not find context_data.lib and cs219.lib.\nPlease set the HHLIB environment variable to the HH-suite directory (under Linux: export HHLIB=<hh_dir>).\nThe missing files should be in $HHLIB/data/.\n ";
   exit(2);

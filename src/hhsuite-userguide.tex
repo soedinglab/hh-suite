@@ -115,22 +115,24 @@ The HH-suite source code, executable RPM and DPKG packages for most Linux 64 bit
 % HHblits needs the path to the two needed libraries (\verb`context_data.lib` and \verb`cs219.lib` in the \verb`libs`-directory of this package)  and the basename of the database (e.g. \verb`databases/uniprot20`). These default parameters for HHblits can be adapted in the configuration file \verb`.hhdefaults` in the binary directory or they have to be specified when calling of HHblits on the command line. All default options can be overridden on the command line.
 
 \begin{enumerate}
-\item Downloading: Download the sources from \url{ftp://toolkit.lmb.uni-muenchen.de/HH-suite/}, for example
+\item Downloading: Download the sources from \url{ftp://toolkit.genzentrum.lmu.de/HH-suite/}, for example
 
 \begin{verbatim}
 $ mkdir ~/programs/hh/
 $ cd ~/programs/hh/
-$ wget ftp://toolkit.lmb.uni-muenchen.de/HH-suite/hhsuite_2.0.0.tar.gz
+$ wget ftp://toolkit.genzentrum.lmu.de/HH-suite/hhsuite-latest.tar.gz
 \end{verbatim}
 
 \item Then unzip and untar the file
 \begin{verbatim}
-$ gunzip hhsuite_2.0.0.tar.gz
-$ tar -xvf hhsuite_2.0.0.tar
+$ tar -xzvf hhsuite-latest.tar.gz
 \end{verbatim}
+
+This will unpack the sources to hhsuite-<VERSION>.
 
 \item Compilation: Run the Makefile in \verb`src/`:
 \begin{verbatim}
+$ cd hhsuite-<VERSION>/
 $ cd src/
 $ make
 \end{verbatim}
@@ -161,14 +163,14 @@ perl scripts also read HHLIB to locate
 
 Put the location of your binaries into your path, e.g.
 \begin{verbatim}
-$ export PATH=$PATH:$HHLIB:$HHLIB/scripts:$HHLIB/bin
+$ export PATH=$PATH:<install_dir/bin>:$HHLIB/scripts
 \end{verbatim}
 
 To save you typing these commands every time you open a new shell, you can also add the following lines to the \verb`.profile` or \verb`.bashrc` file in your home directory:
 \begin{verbatim}
 export HHLIB=/usr/local/lib/hh
-PATH=$PATH:$HHLIB:$HHLIB/scripts:HHLIB/bin
-alias hhblits='$HHLIB/hhblits -d <path/uniprot20 or path/nr20>'
+PATH=$PATH:<install_dir/bin>:$HHLIB/scripts
+alias hhblits='hhblits -d <path/uniprot20 or path/nr20>'
 \end{verbatim}
 The last line defines default parameters for hhblits. 
 
@@ -180,47 +182,54 @@ They are read by the perl scripts in hh-suite.
 
 \subsubsection*{Installation under x86 64bit Linux with the red hat package manager RPM}
 
+If you use a RPM based distribution like Scientific Linux (SL), Red Hat Enterprise Linux (RHEL) or CentOS we provide precompiled x86\_64 packages for
+Version 6.x, which might also work on Version 5.x and other RPM based distros
+like SuSE.
+
 \begin{enumerate}
+<<<<<<< HEAD
 \item Download and install:
 
   \verb`> rpm -hvU ftp://toolkit.lmb.uni-muenchen.de/HHblits/hhsuite-latest.x86_64.rpm`.
   
   The default installation path is \verb`/usr/local/`, but you can specify a custom path before the file name with the rpm option \verb`--prefix <install_dir>`.
+=======
+\item Run the RPM package:
+
+  \verb`> rpm -hvU ftp://toolkit.genzentrum.lmu.de/HH-suite/hh-suite-latest.rpm`
+>>>>>>> 08867634bffb59a9086ef9c8b9e79bbaff572d01
 \end{enumerate}
+
 Then follow instructions under point 5 and 6 of the first subsection.
 
 \subsubsection*{Installation under x86 64bit Linux with the Debian package manager DPKG}
 
-\begin{enumerate}
-\item Download the HH-suite Debian package at \url{ftp://toolkit.genzentrum.lmu.de/HH-suite/hh-suite-v2.0.0.deb}.
-\item Run the Debian package:
+To be written.
 
-\verb`  > dpkg --install ~/<download_dir>/hh-suite-v2.0.0.deb`
-\end{enumerate}
-Then follow instructions under point 5 and 6 of the first subsection.
+%\verb`  > dpkg --install ~/<download_dir>/hh-suite-latest.deb`
+%Then follow instructions under point 5 and 6 of the first subsection.
 
 \subsubsection*{Installation under x86 64bit Max OS X}
 
-\begin{enumerate}
-\item Download the HH-suite MAC OS X package at \url{ftp://toolkit.genzentrum.lmu.de/HH-suite/hh-suite-v2.0.0.XXX}.
-\item Run ...
-\end{enumerate}
-Then follow instructions under point 5 and 6 of the first subsection.
+To be written.
 
-
+%Then follow instructions under point 5 and 6 of the first subsection.
 
 \subsubsection*{Installation under x86 64bit BSD Unix}
 
-\begin{enumerate}
-\item Download the HH-suite BSD package at \url{ftp://toolkit.genzentrum.lmu.de/HH-suite/hh-suite-v2.0.0.bsd}.
-\item ...\\
-\end{enumerate}
-Then follow instructions under point 5 and 6 of the first subsection.
+To be written.
+
+%Then follow instructions under point 5 and 6 of the first subsection.
 
 
 \subsection{HHblits databases} \label{hhblits_dbs}
 To build MSAs using iterative HHblits searches, you need either the uniprot20 or the nr20 HHblits database. Both yield MSAs of equivalent quality and diversity, so which one you should choose depends on what sequence annotation and name formats you prefer. The pdb70 and scop70 databases are not suited for iterative searches as they do not cover the entire sequence space. They are useful as an alternatives to the versions formatted for HHsearch (next subsection), because HHblits is almost as sensitive as HHsearch while being much faster. The following HHblits databases can be downloaded at 
+<<<<<<< HEAD
 \verb`ftp://toolkit.lmb.uni-muenchen.de/HH-suite/databases/` as of January 2012: 
+=======
+\verb`ftp://toolkit.genzentrum.lmu.de/HH-suite/hhblits_dbs/`: 
+{\bf  !!!!!! Andy: please set softlinks to previous paths !!!!! }
+>>>>>>> 08867634bffb59a9086ef9c8b9e79bbaff572d01
 
 \small 
 \begin{verbatim}
@@ -249,16 +258,26 @@ The packed files \verb`<dbname>_a3m_db` and \verb`<dbname>_hhm_db` contain simpl
 To get started, download the uniprot20 or nr20 database files. For example:
 \begin{verbatim}
 > cd /home/soeding/hh  % change to hh-suite directory
+<<<<<<< HEAD
 > mkdir databases; cd databases
 > wget ftp://toolkit.lmb.uni-muenchen.de/HH-suite/databases/uniprot20_<date>.tar.gz`
+=======
+> mkdir hhblits_dbs; cd hhblits_dbs
+> wget ftp://toolkit.genzentrum.lmu.de/HH-suite/hhblits_dbs/uniprot20_<date>.tar.gz`
+>>>>>>> 08867634bffb59a9086ef9c8b9e79bbaff572d01
 > tar -xzvf uniprot20_<date>.tar.gz`
 \end{verbatim}
 
 More databases will become available in HHblits format that are only available for HHsearch at the time of writing (see next subsection).
 
 \subsection{HHsearch databases} \label{hhsearch_dbs}
+<<<<<<< HEAD
 HHsearch needs just the \verb`<dbname>_hhm_db` file from the hhblits database. This file is simply a concatenation of of all HMM files in HHsearch/HHblits \verb`hhm` format with a leading \verb`\0` character. The following HHsearch databases can be downloaded at
 \verb`ftp://toolkit.lmb.uni-muenchen.de/HH-suite/hhsearch_dbs/`: 
+=======
+HHsearch databases have a simple, human-readable format. They consist of a single file that is a concatenation of all HMM files in HHsearch/HHblits hhm format. The following HHsearch databases can be downloaded at
+\verb`ftp://toolkit.genzentrum.lmu.de/HH-suite/hhsearch_dbs/`: 
+>>>>>>> 08867634bffb59a9086ef9c8b9e79bbaff572d01
 
 \small 
 \begin{verbatim}
@@ -1083,7 +1102,7 @@ This is just a brief summary of command line parameters for the various binaries
 perl scripts as they are displayed by the programs when calling them without 
 command line parameters. On the help pages of our HHpred/HHblits web servers
 
-\url{http://toolkit.tuebingen.mpg.de} or \url{http://toolkit.lmb.uni-muenchen.de}
+\url{http://toolkit.tuebingen.mpg.de} or \url{http://toolkit.genzentrum.lmu.de}
 
 you can find more detailed explanations about some of the input parameters 
 ('Parameters' section) and about how to interpret the output ('Results' section). The FAQ 
@@ -1793,7 +1812,7 @@ If not, see \url{http://www.gnu.org/licenses/}.
 
 
 %\bibliographystyle{model3-num-names}
-\bibliography{/home/soeding/papers/johannes}
+\bibliography{johannes}
 
  
 \vspace{20mm}

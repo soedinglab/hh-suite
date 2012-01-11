@@ -111,6 +111,13 @@ hhconsensus_static: hhconsensus.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
 hhconsensus_valgrind: hhconsensus.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
 	     $(CPP_VALGRIND) hhconsensus.C -o hhconsensus_valgrind $(CS_OBJECTS)
 
+hhsuite-userguide.pdf: hhsuite-userguide.tex
+	pdflatex hhsuite-userguide.tex
+	bibtex hhsuite-userguide
+	pdflatex hhsuite-userguide.tex
+	pdflatex hhsuite-userguide.tex
+	cp hhsuite-userguide.pdf ../
+
 clean: 	
 	-rm -f *.o cs/*.o
 	-rm -f hhconsensus hhconsensus_valgrind hhfilter_valgrind hhfilter hhalign_valgrind hhalign hhmake hhblits_valgrind hhblits hhsearch_valgrind hhsearch cstranslate 
