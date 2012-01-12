@@ -53,15 +53,15 @@ install:
 	install data/cs219.lib        $(INSTALL_DATA_DIR)/cs219.lib
 	install data/do_not_delete    $(INSTALL_DATA_DIR)/do_not_delete
 	mkdir -p $(INSTALL_SCRIPTS_DIR)
-	install dist-scripts/Align.pm        $(INSTALL_SCRIPTS_DIR)/Align.pm
-	install dist-scripts/HHPaths.pm      $(INSTALL_SCRIPTS_DIR)/HHPaths.pm
-	install dist-scripts/addss.pl        $(INSTALL_SCRIPTS_DIR)/addss.pl
-	install dist-scripts/create_cs_db.pl $(INSTALL_SCRIPTS_DIR)/create_cs_db.pl
-	install dist-scripts/create_db.pl    $(INSTALL_SCRIPTS_DIR)/create_db.pl
-	install dist-scripts/create_profile_from_hhm.pl   $(INSTALL_SCRIPTS_DIR)/create_profile_from_hhm.pl
-	install dist-scripts/create_profile_from_hmmer.pl $(INSTALL_SCRIPTS_DIR)/create_profile_from_hmmer.pl
-	install dist-scripts/hhmakemodel.pl $(INSTALL_SCRIPTS_DIR)/hhmakemodel.pl
-	install dist-scripts/reformat.pl    $(INSTALL_SCRIPTS_DIR)/reformat.pl
+	install scripts/Align.pm        $(INSTALL_SCRIPTS_DIR)/Align.pm
+	install scripts/HHPaths.pm      $(INSTALL_SCRIPTS_DIR)/HHPaths.pm
+	install scripts/addss.pl        $(INSTALL_SCRIPTS_DIR)/addss.pl
+	install scripts/create_cs_db.pl $(INSTALL_SCRIPTS_DIR)/create_cs_db.pl
+	install scripts/create_db.pl    $(INSTALL_SCRIPTS_DIR)/create_db.pl
+	install scripts/create_profile_from_hhm.pl   $(INSTALL_SCRIPTS_DIR)/create_profile_from_hhm.pl
+	install scripts/create_profile_from_hmmer.pl $(INSTALL_SCRIPTS_DIR)/create_profile_from_hmmer.pl
+	install scripts/hhmakemodel.pl $(INSTALL_SCRIPTS_DIR)/hhmakemodel.pl
+	install scripts/reformat.pl    $(INSTALL_SCRIPTS_DIR)/reformat.pl
 
 deinstall:
 	cd lib/ffindex && make deinstall INSTALL_DIR=$(INSTALL_DIR)
@@ -90,5 +90,5 @@ dist/$(dist_name).tar.gz:
 	git archive --prefix=$(dist_name)/ -o dist/$(dist_name).tar.gz HEAD
 	cd dist && tar xf $(dist_name).tar.gz
 	mkdir -p dist/$(dist_name)/bin
-	cd dist/$(dist_name) && rsync --exclude .git --exclude .hg -av ../../lib . && rm -rf scripts
+	cd dist/$(dist_name) && rsync --exclude .git --exclude .hg -av ../../lib .
 	cd dist && tar czf $(dist_name).tar.gz $(dist_name)
