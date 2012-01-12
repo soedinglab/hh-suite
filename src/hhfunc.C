@@ -14,7 +14,7 @@ void CalculateSS(char *ss_pred, char *ss_conf, char *tmpfile)
   
   // Run PSIPRED
   
-  // Check for PSIPRED ver >= 3.0 (weights.dat4 doesn't exists an more)
+  // Check for PSIPRED ver >= 3.0 (weights.dat4 doesn't exists anymore)
   strcpy(filename,par.psipred_data);
   strcat(filename,"/weights.dat4");
   FILE* check_exists = fopen(filename,"r");

@@ -10,7 +10,7 @@ our $v=2;              # verbose mode
 my $help="
 Create a profile (.prf) from a given HHM file
 
-Usage: perl create_profile_from_hmmer.pl -i <infile> [-o <outfile>]
+Usage: perl create_profile_from_hhm.pl -i <infile> [-o <outfile>]
 
 Options:
   -i <infile>   Input file in HHM format

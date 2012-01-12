@@ -1,31 +1,23 @@
 #! /usr/bin/env perl
-
 #
 # Generate a model from an output alignment of hhsearch. 
 # Usage: hhmakemodel.pl -i file.out (-ts file.pdb|-al file.al) [-m int|-m name|-m auto] [-pdb pdbdir] 
 
-# IF YOU ARE NOT SOEDING YOU SHOULD DELETE THE FOLLOWING BLOCK OF LINES
-my $rootdir;
-BEGIN {
-    if (defined $ENV{TK_ROOT}) {$rootdir=$ENV{TK_ROOT};} else {$rootdir="/cluster";}
-};
-use lib "$rootdir/bioprogs/hhpred";
-use lib "/cluster/lib";              # for chimaera webserver: ConfigServer.pm
-
-use strict;
-use MyPaths;                         # config file with path variables for nr, blast, psipred, pdb, dssp etc.
-use Align;
-
 # IF YOU ARE NOT SOEDING YOU SHOULD UNCOMMENT AND COMPLETE THE FOLLOWING LINE
 # my $pdbdir="<path to your local pdb structure directory>"; 
+
+use lib $ENV{"HHLIB"}."/scripts";
+use HHPaths;   # config file with path variables for nr, blast, psipred, pdb, dssp etc.
+use strict;
+use Align;
+
 
 $|=1;  # force flush after each print
 
 # Default parameters
 our $d=7;     # gap opening penalty for Align.pm; more than 2 mismatches - 2 matches    ## previously: 1
 our $e=0.01;  # gap extension penatlty for Align.pm; allow to leave large gaps bridging uncrystallized regions  ## previously: 0.1
-our $g=0.009; # endgap penatlty for Align.pm; allow to shift SEQRES residues for uncrystallized aas to ends of alignment  ## previously: 0.9
-              # Must be smaller than $e to avoid shifting single residue to end
+our $g=0.1;   # endgap penalty for Align.pm; allow to shift SEQRES residues for uncrystallized aas to ends of alignment  ## previously: 0.9
 my $v=2;      # 3: DEBUG
 
 my $formatting="CASP";     # CASP or LIVEBENCH
@@ -1176,7 +1168,7 @@ sub ExtractPdbcodeAndChain()
     
     else {
 	$pdbcode=$name;
-	$chain="[A1 ]";
+	$chain="A";
 #	return 1; # no SCOP/DALI/pdb sequence 
     }
 

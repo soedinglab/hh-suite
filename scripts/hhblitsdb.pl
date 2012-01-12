@@ -26,7 +26,7 @@
 
 #     We are very grateful for bug reports! Please contact us at soeding@genzentrum.lmu.de
 
-use lib $ENV{"HHLIB"}."/dist-scripts";
+use lib $ENV{"HHLIB"}."/scripts";
 use HHPaths;   # config file with path variables for nr, blast, psipred, pdb, dssp etc.
 use strict;
 
