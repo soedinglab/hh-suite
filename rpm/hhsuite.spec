@@ -45,11 +45,9 @@ make install INSTALL_DIR="$RPM_BUILD_ROOT/usr"
 /usr/lib/hh/scripts
 /usr/lib/hh/scripts/create_profile_from_hmmer.pl
 /usr/lib/hh/scripts/hhmakemodel.pl
-/usr/lib/hh/scripts/create_db.pl
 /usr/lib/hh/scripts/Align.pm
 /usr/lib/hh/scripts/create_profile_from_hhm.pl
 /usr/lib/hh/scripts/HHPaths.pm
-/usr/lib/hh/scripts/create_cs_db.pl
 /usr/lib/hh/scripts/reformat.pl
 /usr/lib/hh/scripts/addss.pl
 /usr/lib/hh/data/do_not_delete
