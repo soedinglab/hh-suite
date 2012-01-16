@@ -843,16 +843,19 @@ void init_prefilter()
 //	  while (*c!='\0')
  	  while (*c!='\n')
 	    {
-	      // if (cs::AS219::kValidChar[*c])
-	      // 	{
+#ifdef DEBUG
+	      if (cs::AS219::kValidChar[*c])
+	      	{
+		  X[pos++]= (unsigned char)(cs::AS219::kCharToInt[*c]);
+		  ++len;
+	      	}
+	      else
+	      	cerr<<endl<<"WARNING: ignoring invalid symbol \'"<< *c <<"\' of "<<db<<"\n";
+	      c++;
+#else
 	      X[pos++]= (unsigned char)(cs::AS219::kCharToInt[*c++]);
-	      //		  ++c;
-	      	  ++len;
-	      // 	}
-	      // else
-	      // 	cerr<<endl<<"WARNING: ignoring invalid symbol \'"<< *c <<"\' of "<<db<<"\n";
+#endif
 
-	      // c++;
 	    }
 	  
 	}
