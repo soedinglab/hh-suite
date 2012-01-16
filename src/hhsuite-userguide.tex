@@ -571,6 +571,32 @@ Here is a list of things to check if a database match really is at least locally
 \item{Verify predictions experimentally: The ultimate confirmation of a homologous relationship or structural model is, of course, the experimental verification of some of its key predictions, such as validating the binding to certain ligands by binding assays, measuring biochemical activity, or comparing the knock-out phenotype with the one obtained when the putative functional residues are mutated.}
 \end{itemize}
 
+
+\section{Frequently asked questions}
+
+\begin{itemize}
+
+\item \emph{What is HMM-HMM comparison and why is it so powerful?}
+When searching for remote homologs, it is wise to make use of as much information about the query and database proteins as possible in order to better distinguish true from false positives and to produce optimal alignments. This is the reason why sequence-sequence comparison is inferior to profile-sequence comparison. Sequence profiles contain for each column of a multiple alignment the frequencies of the 20 amino acids. They therefore contain detailed information about the conservation of each residue position, i.e. how important each position is for defining other members of the protein family, and about the preferred amino acids. Profile Hidden Markov Models (HMMs) are similar to simple sequence profiles, but in addition to the amino acid frequencies in the columns of a multiple sequence alignment they contain information about the frequency of inserts and deletions at each column. Using profile HMMs in place of simple sequence profiles should therefore further improve sensitivity. Using HMMs both on the query and the database side greatly enhances the sensitivity/selectivity and alignment quality over sequence-profile based methods such as PSI-BLAST. HHsearch is the first software to employ HMM-HMM comparison and HHblits is the first HMM-HMM comparison method that is fast enough to do iterative searches to build MSAs. 
+
+\item \emph{When can the HH-suite be useful for me?}
+Sequence search methods such as BLAST, FASTA, or PSI-BLAST are of prime importance for biological research because functional information of a protein or gene can be inferred from homologous proteins or genes identified in a sequence search. But quite often no significant relationship to a protein of known function can be established. This is certainly the case for the most interesting group of proteins, those for which no ortholog has yet been studied. In cases where conventional sequence search methods fail, HHblits and HHsearch quite often allow to make inferences from more remotely homologous relationships. HHblits builds builds better MSAs, with which more remote homologs can be then found using HHsearch or HHblits, e.g. by searcing the PDB or domain databases such as Pfam. If the relationship is so remote that no common function can be assumed, one can generally still derive hypotheses about possible mechanisms, active site positions and residues, or the class of substrate bound \cite{Todd:2001, Pawlowski:2000}. When a homologous protein with known structure can be identified, its stucture can be used as a template to model the 3D structure of the protein of interest [cite{Rychlewski:1998}], since even remotely homologous proteins generally have quite similar 3D structure cite{Kinch:2002}. The 3D model may then help to generate hypotheses to guide experiments. 
+
+\item \emph{What does homology mean exactly and why is it important for strucuture and function prediction?}
+Two protein sequences are homologous to each other if they descended from a common ancestor sequence. Generally, homologous proteins (or protein fragments) have similar structure because structures diverge much more slowly than their sequences (see, e.g. \cite{Chothia:1986}). Depending on the degree of divergence between the sequences, the proteins may also have similar cellular functions, ligands, protein interaction partners, or enzymatic mechanisms cite{Todd:2001}. On the contrary, proteins that have a similar structure by convergence (i.e. by chance) are said to be analogous. They don't generally share similar functions or biochemical mechanisms and are therefore much less helpful for making inferences. HHsarch and HHblits are a tools for homology detection and as such do not normally detect analogous relationships.
+
+\item \emph{Global versus local alignment: I want to build an HMM database for a proteome. I then want to find global matches to my genome's proteins. Should I use the -global option to build MSAs with  hhblits?} 
+Never use \verb`-global` when building MSAs with hhblits. Remember that global alignments are very greedy alignments, where everything until the end of either query of database HMM is included. Therefore, this will often lead to non-homologous segments getting included in the MSA, which is catastrophic, as these false segments will lead to many false positive matches. But you may use \verb`-global` when searching for global matches of your Pfam HMMs through your genomic HMM database, for example.
+
+\item \emph{Do HHsearch and HHblits work fine with multi-domain sequences?}
+HHblits and HHsearch have been designed to work with multi-domain queries. However, the chances for false positives entering the query alginment during the HHblits iterations is greater for multi-domain proteins. For long sequences, it may therefore be of advantage to first search the PDB or ths SCOP domain database and then to cut the query sequence into smaller parts on the basis of the identified structural domains. Pfam or CDD are - in our opinion - not suitable to determine domain boundaries.
+
+\item \emph{Don't I need to calibrate my query or database HMMs anymore?}
+No. By default, the two parameters of the extreme-value distribution for the query are estimated by a neural network that was trained on a large set of example queries, in an approach simlar to the one used in \cite{Sadreyev:2008}. However, the old calibration is still available as an option in HHsearch.
+
+\end{itemize}
+
+
 \section{HHsearch/HHblits output: hit list and pairwise alignments}
 
 \subsection{Summary hit list}
@@ -1787,7 +1813,7 @@ If not, see \url{http://www.gnu.org/licenses/}.
 
 
 %\bibliographystyle{model3-num-names}
-\bibliography{johannes}
+\bibliography{../../papers/johannes}
 
  
 \vspace{20mm}

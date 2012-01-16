@@ -25,10 +25,13 @@
 //     HHblits: Lightning-fast iterative protein sequence searching by HMM-HMM alignment.
 //     Nat. Methods, epub Dec 25, doi: 10.1038/NMETH.1818 (2011).
 
-////#define WINDOWS
 #define PTHREAD
 #define MAIN
 #define HHBLITS
+// #define DEBUG
+// #define DEBUG_THREADS
+// #define WINDOWS
+
 #include <iostream>   // cin, cout, cerr
 #include <fstream>    // ofstream, ifstream
 #include <cstdio>     // printf
