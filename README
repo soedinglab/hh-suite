@@ -39,6 +39,12 @@ Compilation produces by default static binaries. If you encounter
 missing library errors, also make sure you have the static versions
 installed, e.g. glibc-static.
 
+A dynamically linked version of the programs can be compiled with:
+
+$ make all
+
+On Mac OS X only dynamic linking is supported.
+
 
 3. Installation
 

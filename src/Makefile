@@ -1,37 +1,43 @@
 CS_DIR = cs
 FFINDEX_DIR?=../lib/ffindex/src
 
+OS:= $(shell uname)
+
 # Convert BITS=?? to a -m flag
 BITS_FLAG =
 ifeq (32,$(BITS))
-BITS_FLAG = -m32
+ BITS_FLAG = -m32
 endif
 ifeq (64,$(BITS))
-BITS_FLAG = -m64
+ BITS_FLAG = -m64
 endif
 
 ifdef ICC
-CXX = env LANG=C icc
-CXXFLAGS = -fast -Wall -fno-strict-aliasing -finline-functions -funroll-loops -fp-model fast=2 -fast-transcendentals -wd981 -wd383 -wd2259 -wd1572 -D HH_SSE3 -I$(CS_DIR) -I$(FFINDEX_DIR)
-HHSEARCH_LIBS = -lpthread -lrt
-HHBLITS_LIBS = -lpthread -lrt -openmp
-OBJECT_LIBS = -openmp
+  CXX = env LANG=C icc
+C  XXFLAGS = -fast -Wall -fno-strict-aliasing -finline-functions -funroll-loops -fp-model fast=2 -fast-transcendentals -wd981 -wd383 -wd2259 -wd1572 -D HH_SSE3 -I$(CS_DIR) -I$(FFINDEX_DIR)
+  HHSEARCH_LIBS = -lpthread -lrt
+  HHBLITS_LIBS = -lpthread -lrt -openmp
+  OBJECT_LIBS = -openmp
 else
-CXX = g++
-CXXFLAGS = -O3 -Wall -Wno-deprecated -Wno-char-subscripts -fno-strict-aliasing -DHH_SSE3 -march=core2 -I$(CS_DIR) $(BITS_FLAG) -I$(FFINDEX_DIR)
-HHSEARCH_LIBS = -lpthread -lrt
-HHBLITS_LIBS = -lpthread -lrt -fopenmp
-OBJECT_LIBS = -fopenmp
+  CXX = g++
+  CXXFLAGS = -O3 -Wall -Wno-deprecated -Wno-char-subscripts -fno-strict-aliasing -DHH_SSE3 -march=core2 -I$(CS_DIR) $(BITS_FLAG) -I$(FFINDEX_DIR)
+  HHSEARCH_LIBS = -lpthread
+  HHBLITS_LIBS = -lpthread -fopenmp
+  HHALIGN_LIBS = 
+  OBJECT_LIBS = -fopenmp
+ifeq ($(OS), Darwin)
+  CXXFLAGS+=-DHH_MAC
+endif
+ifeq ($(OS), Linux)
+  HHSEARCH_LIBS = -lpthread -lrt
+  HHLIBS+=-lrt
+  HHALIGN_LIBS = -DHH_PNG -lpng -lz -I/usr/include/ -L/usr/lib
+endif
 endif
 
 CPP = $(CXX) $(CXXFLAGS)
 CPP_VALGRIND = $(CXX) -g $(CXXFLAGS)
 
-ifeq (32,$(BITS))
-HHALIGN_LIBS = 
-else
-HHALIGN_LIBS = -DHH_PNG -lpng -lz -I/usr/include/ -L/usr/lib
-endif
 
 SOURCES = hhsearch.C hhhitlist.C hhhit.C hhalignment.C hhhmm.C hhmatrices.C hhdecl.C hhfunc.C hhprefilter.C hhworker.C hhfullalignment.C hhhalfalignment.C hhutil.C util.C hash.C list.C
 
