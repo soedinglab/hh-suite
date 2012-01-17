@@ -139,6 +139,16 @@ $ make
 This compiles all programs and creates the binaries in \verb`src/`. Binaries are by default static. If you encounter
 missing library errors, also make sure you have the static versions installed, e.g. glibc-static.
 
+A dynamically linked version of the programs can be compiled with:
+
+\begin{verbatim}
+$ make all
+\end{verbatim}
+
+On Mac OS X only dynamic linking is supported.
+
+
+
 \item Installation: Either install in current directory:
 
 \begin{verbatim}
@@ -176,6 +186,27 @@ The last line defines default parameters for hhblits.
 \item Perl paths: Specify paths to BLAST, PSIPRED, PDB, DSSP etc. in 
 \verb`hh/scripts/HHPaths.pm`
 They are read by the perl scripts in hh-suite.
+
+
+\item Paths for dynamic builds only
+
+To use a dynamic build, in the lib subdirectory must either be in the system
+library path, e.g. the ones configured in /etc/ld.so.conf on linux, or a
+variable must be set for the run-time linker to find the libraries.
+
+Assuming INSTALL\_DIR was set to /opt/hhsuite, on linux LD\_LIBRARY\_PATH must
+be set, e.g. in bourne shell format (bash, zsh etc):
+
+\begin{verbatim}
+$ export LD_LIBRARY_PATH=/opt/hhsuite/lib
+\end{verbatim}
+
+on Mac OSX DYLD\_LIBRARY\_PATH must be set, e.g.:
+
+\begin{verbatim}
+$ export DYLD_LIBRARY_PATH=/opt/hhsuite/lib
+\end{verbatim}
+
 
 \end{enumerate}
 
