@@ -4,7 +4,7 @@ Version: 2.0.2
 Release: 1
 License: GPL
 Group: Utilities/System
-Source: ftp://toolkit.genzentrum.lmu.de/HH-suite/hhsuite-2.0.1.tar.gz
+Source: ftp://toolkit.genzentrum.lmu.de/HH-suite/hhsuite-2.0.2.tar.gz
 Requires: libpng, perl
 BuildRequires: libpng-devel
 BuildRoot: /tmp/hhsuite-build
