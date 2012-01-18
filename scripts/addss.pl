@@ -146,7 +146,7 @@ if ($informat ne "hmm") {
 
     # Use first sequence to define match states and reformat input file to a3m and psi
     if ($informat ne "a3m") {
-	&System("reformat.pl -v $v2 -M first $informat a3m $infile $tmpfile.in.a3m");
+	&System("$hhscripts/reformat.pl -v $v2 -M first $informat a3m $infile $tmpfile.in.a3m");
     } else {
 	&System("cp $infile $tmpfile.in.a3m");
     }
@@ -175,7 +175,7 @@ if ($informat ne "hmm") {
 	$/="\n"; # set input field separator
 	
 	# First sequence contains gaps => calculate consensus sequence
-	&System("hhconsensus -i $tmpfile.in.a3m -s $tmpfile.sq -o $tmpfile.in.a3m > /dev/null");
+	&System("$hhbin/hhconsensus -i $tmpfile.in.a3m -s $tmpfile.sq -o $tmpfile.in.a3m > /dev/null");
 	
     } else {
 	
@@ -207,10 +207,10 @@ if ($informat ne "hmm") {
     
     # Filter alignment to diversity $neff 
     if ($v>=1) {printf ("Filtering alignment to diversity $neff ...\n");}
-    &System("hhfilter -v $v2 -neff $neff -i $tmpfile.in.a3m -o $tmpfile.in.a3m");
+    &System("$hhbin/hhfilter -v $v2 -neff $neff -i $tmpfile.in.a3m -o $tmpfile.in.a3m");
     
     # Reformat into PSI-BLAST readable file for jumpstarting 
-    &System("reformat.pl -v $v2 -r -noss a3m psi $tmpfile.in.a3m $tmpfile.in.psi");
+    &System("$hhscripts/reformat.pl -v $v2 -r -noss a3m psi $tmpfile.in.a3m $tmpfile.in.psi");
     
     open (ALIFILE, ">$outfile") || die("ERROR: cannot open $outfile: $!\n");
     
@@ -426,8 +426,11 @@ sub RunPsipred() {
 
     # Does dummy database exist?
     if (!-e "$dummydb.phr") {
+	if (!-e "$dummydb") {die "Error in addss.pl: Could not find $dummydb\n";}
+
 	&System("cp $infile $dummydb");
 	&System("$ncbidir/formatdb -i $dummydb");
+	if (!-e "$dummydb.phr") {die "Error in addss.pl: Could not find nor create index files for $dummydb\n";}
     }
 
     # Start Psiblast from checkpoint file tmp.chk that was generated to build the profile
