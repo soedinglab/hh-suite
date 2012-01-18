@@ -399,12 +399,11 @@ void help_all()
   help_ali();
   help_other();
   printf("\n");
-  printf("Default options can be specified in './.hhdefaults' or '~/.hhdefaults'\n");
 }
 
 
 /////////////////////////////////////////////////////////////////////////////////////
-//// Processing input options from command line and .hhdefaults file
+//// Processing input options from command line
 /////////////////////////////////////////////////////////////////////////////////////
 void ProcessArguments(int argc, char** argv)
 {
