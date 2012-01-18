@@ -1,6 +1,6 @@
 Summary: Protein sequenging analysing tools using HMM-HMM comparison
 Name: hhsuite
-Version: 2.0.1
+Version: 2.0.2
 Release: 1
 License: GPL
 Group: Utilities/System
