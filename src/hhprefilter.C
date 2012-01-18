@@ -715,8 +715,8 @@ void init_no_prefiltering()
   //     fclose(fin);
   //   }
   
-  if (par.dbsize > MAXNUMDB_NO_PREFILTER)
-    {cerr<<endl<<"Error in "<<program_name<<": Without prefiltering, the max. number of database HHMs is "<<MAXNUMDB_NO_PREFILTER<<" (actual: "<<par.dbsize<<")\n"; exit(4);}
+  if (par.dbsize > par.maxnumdb_no_prefilter)
+    {cerr<<endl<<"Error in "<<program_name<<": Without prefiltering, the max. number of database HHMs is "<<par.maxnumdb_no_prefilter<<" (actual: "<<par.dbsize<<")\n"; exit(4);}
 
   char word[NAMELEN];
   FILE* dbf = NULL;
@@ -1001,7 +1001,7 @@ void prefilter_with_SW_evalue_preprefilter_backtrace()
   stripe_query_profile();
   
   int* prefiltered_hits = new int[par.dbsize+1];
-  int* backtrace_hits = new int[MAXNUMDB+1];
+  int* backtrace_hits = new int[par.maxnumdb+1];
 
   __m128i** workspace = new(__m128i*[cpu]);
 
@@ -1119,9 +1119,9 @@ void prefilter_with_SW_evalue_preprefilter_backtrace()
 	    }
 	}
 
-      if (count_dbs >= MAXNUMDB) 
+      if (count_dbs >= par.maxnumdb) 
 	{
-	  fprintf(stderr,"WARNING: Number of hits passing prefilter 2 reduced from %6i to allowed maximum of %i.\n", (int)hits.size(),MAXNUMDB);
+	  fprintf(stderr,"WARNING: Number of hits passing prefilter 2 reduced from %6i to allowed maximum of %i.\n", (int)hits.size(),par.maxnumdb);
 	  break;
 	}
     }

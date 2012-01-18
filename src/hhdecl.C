@@ -10,7 +10,7 @@
 //// Constants
 /////////////////////////////////////////////////////////////////////////////////////
 
-EXTERN const char VERSION_AND_DATE[]="version 2.0.0 (Jan 2012)";
+EXTERN const char VERSION_AND_DATE[]="version 2.0.1 (Jan 2012)";
 EXTERN const char REFERENCE[]="Soding, J. Protein homology detection by HMM-HMM comparison. Bioinformatics 2005, 21, 951-960.\n";
 EXTERN const char COPYRIGHT[]="(C) Johannes Soeding, Michael Remmert, Andrease Biegert, Andreas Hauser\n";
 EXTERN const int MAXSEQ=65535; //max number of sequences in input alignment (must be <~30000 on cluster nodes)
@@ -209,6 +209,8 @@ public:
 
   int maxcol;             // max number of columns in sequence/MSA input files; must be <= LINELEN and >= maxres
   int maxres;             // max number of states in HMM; must be <= LINELEN
+  int maxnumdb;           // max number of hits allowed past prefilter
+  int maxnumdb_no_prefilter;// max number of hits without prefiltering
 
   bool hmmer_used;        // True, if a HMMER database is used
 
@@ -328,6 +330,9 @@ void Parameters::SetDefaults()
   // Parameter class
   maxcol=32765;            // max number of columns in sequence/MSA input files; must be <= LINELEN and >= maxres
   maxres=15002;            // max number of states in HMM; must be <= LINELEN
+  maxnumdb=20000;          // max number of hits allowed past prefilter
+  maxnumdb_no_prefilter=20000;// max number of hits without prefiltering
+  
   append=0;                // overwrite output file
   outformat=0;             // 0: hhr  1: FASTA  2:A2M   3:A3M
   p=20.0f;                 // minimum threshold for inclusion in hit list and alignment listing

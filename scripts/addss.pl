@@ -1,8 +1,11 @@
 #!/usr/bin/env perl
-# addss.pl version 1.0.0 (October 2009)
+#
+# addss.pl
 # Add PSIPRED secondary structure prediction (and DSSP annotation) to an MSA or HMMER file.
 # Output format is A3M (for input alignments) or HMMER (see User Guide).
 
+#     HHsuite version 2.0.1 (January 2012)
+#
 #     Reference: 
 #     Remmert M., Biegert A., Hauser A., and Soding J.
 #     HHblits: Lightning-fast iterative protein sequence searching by HMM-HMM alignment.
@@ -27,13 +30,10 @@
 
 use lib $ENV{"HHLIB"}."/scripts";
 use HHPaths;   # config file with path variables for nr, blast, psipred, pdb, dssp etc.
-my $ss_cit="PSIPRED: Jones DT. (1999) Protein secondary structure prediction based on position-specific scoring matrices. JMB 292:195-202.";
-
 use Align;     # Needleman-Wunsch and Smith-Waterman alignment functions
 use File::Temp qw/ tempfile tempdir /;
 use strict;
 
-my $dummydb = $ENV{"HHLIB"}."/data/do_not_delete";
 my $ss_cit="PSIPRED: Jones DT. (1999) Protein secondary structure prediction based on position-specific scoring matrices. JMB 292:195-202.";
 
 

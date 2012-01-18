@@ -4,6 +4,8 @@
 # Creates HHblits database files from A3M and HHM/HMMER-formatted files 
 # Usage: Usage: perl hhblitsdb.pl -o <db_name> [-ia3m <a3m_dir>] [-ihhm <hhm_dir>] [-ics <cs_dir>] [more_options]
 #
+#     HHsuite version 2.0.1 (January 2012)
+#
 #     Reference: 
 #     Remmert M., Biegert A., Hauser A., and Soding J.
 #     HHblits: Lightning-fast iterative protein sequence searching by HMM-HMM alignment.
@@ -30,15 +32,6 @@ use lib $ENV{"HHLIB"}."/scripts";
 use HHPaths;   # config file with path variables for nr, blast, psipred, pdb, dssp etc.
 use strict;
 
-################################################################################################################################
-# Check the following paths
-
-my $hhscripts = $ENV{"HHLIB"}."/dist-scripts";# path to directory with scripts (create_profile_from_hhm.pl, create_profile_from_hmmer.pl)
-my $hhbin     = $ENV{"HHLIB"}."/bin";    # path to cstranslate, hhmake
-
-
-################################################################################################################################
-
 $|= 1; # Activate autoflushing on STDOUT
 
 # Default values:
@@ -47,8 +40,6 @@ my $a_if_append = ""; # do not append by default
 my $a3mext = "a3m";   # default A3M-file extension
 my $hhmext = "hhm";   # default HHM-file extension
 my $csext = "seq219";   # default HHM-file extension
-my $cs_lib = "$hhdata/cs219.lib";
-my $context_lib = "$hhdata/context_data.lib";
 my $cpu = 8;
 
 # Variable declarations
@@ -61,7 +52,7 @@ my $a3mfile = "";     # name of packed ouput A3M file
 my $hhmfile = "";     # name of packed ouput HHM file
 my $csfile = "";      # name of cs sequence db file
 my $dbname = "";      # output db name
-my $logfile = "/null/dev"; # log file 
+my $logfile = "/dev/null"; # log file 
 my $file;
 my $dir;
 my $numcsfiles=0;

@@ -1,6 +1,9 @@
 #! /usr/bin/env perl
 
+# reformat.pl 
 # Reformat a multiple alignment file
+#
+#     HHsuite version 2.0.1 (January 2012)
 #
 #     Reference: 
 #     Remmert M., Biegert A., Hauser A., and Soding J.

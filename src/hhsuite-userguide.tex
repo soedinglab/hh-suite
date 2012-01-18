@@ -110,13 +110,12 @@ The HH-suite source code, executable RPM and DPKG packages for most Linux 64 bit
 
 \subsection{Installation} \label{installation}
 
-\subsubsection*{Installation under Linux from source code} 
+\subsubsection*{Installation from source code} 
 
 % HHblits needs the path to the two needed libraries (\verb`context_data.lib` and \verb`cs219.lib` in the \verb`libs`-directory of this package)  and the basename of the database (e.g. \verb`databases/uniprot20`). These default parameters for HHblits can be adapted in the configuration file \verb`.hhdefaults` in the binary directory or they have to be specified when calling of HHblits on the command line. All default options can be overridden on the command line.
 
 \begin{enumerate}
-\item Downloading: Download the sources from \url{ftp://toolkit.genzentrum.lmu.de/HH-suite/}, for example
-
+\item Download the sources from \url{ftp://toolkit.genzentrum.lmu.de/HH-suite/}, for example
 \begin{verbatim}
 $ mkdir ~/programs/hh/
 $ cd ~/programs/hh/
@@ -127,84 +126,75 @@ $ wget ftp://toolkit.genzentrum.lmu.de/HH-suite/hhsuite-latest.tar.gz
 \begin{verbatim}
 $ tar -xzvf hhsuite-latest.tar.gz
 \end{verbatim}
-
-This will unpack the sources to hhsuite-<VERSION>.
+This will unpack the sources to \verb`hhsuite-<VERSION>`.
 
 \item Compilation: You need libpng and libz in order to compile hhalign and generate dotplots. Run the Makefile in \verb`$HHLIB`:
 \begin{verbatim}
 $ cd hhsuite-<VERSION>/
 $ make
 \end{verbatim}
-
 This compiles all programs and creates the binaries in \verb`src/`. Binaries are by default static. If you encounter
 missing library errors, also make sure you have the static versions installed, e.g. glibc-static.
 
 A dynamically linked version of the programs can be compiled with:
-
 \begin{verbatim}
 $ make all
 \end{verbatim}
-
 On Mac OS X only dynamic linking is supported.
 
 
-
 \item Installation: Either install in current directory:
-
 \begin{verbatim}
 $ make install
 \end{verbatim}
-
-Or set \verb`INSTALL_DIR` to the base directory (absolute path), e.g. \verb`/usr/local`, where you want to install:
-
+Or set \verb`INSTALL_DIR` to the absolute path of the base directory where you want to install, for example:
 \begin{verbatim}
 $ make install INSTALL_DIR=/usr/local
 \end{verbatim}
 
-\item Set HHLIB: In your shell, set the environment variable HHLIB to \verb`$INSTALL_DIR/lib/hh`, 
+\item Set HHLIB and paths: In your shell, set the environment variable HHLIB to \verb`$INSTALL_DIR/lib/hh`, 
 e.g (for bash, zsh, ksh):
 \begin{verbatim}
 $ export HHLIB=/usr/local/lib/hh
 \end{verbatim}
 HHsearch and HHblits look for the column state library file \verb`cs219.lib`
 and the context library file \verb`context_data.lib` in \verb`$HHLIB/data/`. The hh-suite
-perl scripts also read HHLIB to locate 
+perl scripts also read HHLIB (via file \verb`HHPaths.pm`) to locate hh-suite binaries and data files.
 
-Put the location of your binaries into your path, e.g.
+Put the location of your hh-suite binaries and scripts into your search path:
 \begin{verbatim}
 $ export PATH=$PATH:<install_dir/bin>:$HHLIB/scripts
 \end{verbatim}
 
-To save you typing these commands every time you open a new shell, you can also add the following lines to the \verb`.profile` or \verb`.bashrc` file in your home directory:
+To spare you from typing these commands every time you open a new shell, you may add the following lines to the \verb`.profile` or \verb`.bashrc` file in your home directory:
 \begin{verbatim}
 export HHLIB=/usr/local/lib/hh
 PATH=$PATH:<install_dir/bin>:$HHLIB/scripts
 alias hhblits='hhblits -d <path/uniprot20 or path/nr20>'
 \end{verbatim}
-The last line defines default parameters for hhblits. 
+The last line defines a default database for hhblits. 
 
-\item Perl paths: Specify paths to BLAST, PSIPRED, PDB, DSSP etc. in 
+\item Set Perl paths: Specify paths to BLAST, PSIPRED, PDB, DSSP etc. in 
 \verb`hh/scripts/HHPaths.pm`
-They are read by the perl scripts in hh-suite.
+These are used by the perl scripts in hh-suite.
 
 
-\item Paths for dynamic builds only
+\item If you compiled dynamically, the run-time linker needs to know about the lib subdirectory 
+of the hh-suite (e.g. \verb`/opt/hh/lib/`.
+You can either add the \verb`hh/lib` library to your shared library search path. 
+Under Linux, for example, these are configured in \verb`/etc/ld.so.conf`. 
+Or the \verb`hh/lib` library must be appended to a system-dependent environment variable 
+containing the additional shared library paths for the run-time linker.
 
-To use a dynamic build, in the lib subdirectory must either be in the system
-library path, e.g. the ones configured in /etc/ld.so.conf on linux, or a
-variable must be set for the run-time linker to find the libraries.
-
-Assuming INSTALL\_DIR was set to /opt/hhsuite, on linux LD\_LIBRARY\_PATH must
-be set, e.g. in bourne shell format (bash, zsh etc):
-
+Under Linux, this variable is called \verb`LD_LIBRARY_PATH`. 
+Assuming \verb`INSTALL_DIR` was set to \verb`/opt/hh`, the bourne shell version (bash, zsh etc.) looks like this:
 \begin{verbatim}
-$ export LD_LIBRARY_PATH=/opt/hhsuite/lib
+$ export LD_LIBRARY_PATH=/opt/hh/lib
 \end{verbatim}
 
-on Mac OSX DYLD\_LIBRARY\_PATH must be set, e.g.:
-
+Under Mac OSX, the equivalent command in bourne shell format is:
 \begin{verbatim}
-$ export DYLD_LIBRARY_PATH=/opt/hhsuite/lib
+$ export DYLD_LIBRARY_PATH=/opt/hh/lib
 \end{verbatim}
 
 
@@ -218,7 +208,9 @@ like SuSE.
 
 \begin{enumerate}
 \item Download and install:
-  \verb`> rpm -hvU ftp://toolkit.lmb.uni-muenchen.de/HHblits/hhsuite-latest.x86_64.rpm`.
+\begin{verbatim}
+$ rpm -hvU ftp://toolkit.lmb.uni-muenchen.de/HHblits/hhsuite-latest.x86_64.rpm
+\end{verbatim}
 \end{enumerate}
 
 Then follow instructions under point 5 and 6 of the first subsection.
@@ -227,7 +219,7 @@ Then follow instructions under point 5 and 6 of the first subsection.
 
 To follow.
 
-%\verb`  > dpkg --install ~/<download_dir>/hh-suite-latest.deb`
+%\verb`  $ dpkg --install ~/<download_dir>/hh-suite-latest.deb`
 %Then follow instructions under point 5 and 6 of the first subsection.
 
 \subsubsection*{Installation under x86 64bit Max OS X}
@@ -273,10 +265,10 @@ The packed files \verb`<dbname>_a3m_db` and \verb`<dbname>_hhm_db` contain simpl
 
 To get started, download the uniprot20 or nr20 database files. For example:
 \begin{verbatim}
-> cd /home/soeding/hh  % change to hh-suite directory
-> mkdir databases; cd databases
-> wget ftp://toolkit.lmb.uni-muenchen.de/HH-suite/databases/uniprot20_<date>.tar.gz`
-> tar -xzvf uniprot20_<date>.tar.gz`
+$ cd /home/soeding/hh  % change to hh-suite directory
+$ mkdir databases; cd databases
+$ wget ftp://toolkit.lmb.uni-muenchen.de/HH-suite/databases/uniprot20_<date>.tar.gz`
+$ tar -xzvf uniprot20_<date>.tar.gz`
 \end{verbatim}
 
 More databases will become available in HHblits format that are only available for HHsearch at the time of writing (see next subsection).
@@ -311,14 +303,14 @@ A3M format (*.a3m.tar files).  The *.hhm.tar and *.a3m.tar files untar into thou
 of separate files, so before unzipping and untarring, first create a directory for 
 the database and untar the tar file within this directory. Under Linux, type
 \begin{verbatim}
-> mkdir scop70_1.75
-> cd scop70_1.75
-> tar -xzvf scop70_1.75.hhm.tar.gz
+$ mkdir scop70_1.75
+$ cd scop70_1.75
+$ tar -xzvf scop70_1.75.hhm.tar.gz
 \end{verbatim}
 
 To generate an HHsearch database file, concatenate all *.hhm files:
 \begin{verbatim}
-> cat *.hhm > scop70_1.75.hhm
+$ cat *.hhm > scop70_1.75.hhm
 \end{verbatim}
 For the databases without asterisks, you can download the HMM models in HMMER format as 
 *.hmm.tar files. Each *.hmm.tar file untars into a single concatenated HMMER-formatted 
@@ -367,7 +359,7 @@ its syntax.
 We will use the MSA \verb`query.a3m` in the \verb`data/` subdirectory of the HH-suite as an example query. To search for sequences in the \verb`scop70_1.75` database that are homologous to the query sequence or MSA in \verb`query.a3m`, type
 
 \begin{verbatim}
-> hhsearch  -cpu 4 -i data/query.a3m -d databases/scop70_1.75.hhm
+$ hhsearch  -cpu 4 -i data/query.a3m -d databases/scop70_1.75.hhm
 \end{verbatim}
 
 If the input file is an MSA or a single sequence, HHsearch calculates an HMM from it
@@ -399,7 +391,7 @@ at the cost of only a few percent lower sensitivity (Fig. \ref{fig:hhsearch_hhbl
 
 The same search as above is performed here using hhblits instead of hhsearch:
 \begin{verbatim}
-> hhblits  -cpu 4 -i data/query.a3m -d databases/scop70_1.75 -n 1
+$ hhblits  -cpu 4 -i data/query.a3m -d databases/scop70_1.75 -n 1
 \end{verbatim}
 
 HHblits first scans the column state sequences in \verb`scop70_1.75.cs219` with its fast prefilter. HMMs whose column state sequences pass the prefilter are read from the packed file \verb`scop70_1.75_hhm_db` (using the index file \verb`scop70_1.75_hhm_db.index`) and are aligned to the query HMM generated from \verb`query.a3m` using the slow Viterbi HMM-HMM alignment algorithm. The search results are written to the default output file \verb`query.hhr`. The option \verb`-n 1` tells hhblits to perform a single search iteration. (The default is 2 iterations.)
@@ -409,19 +401,19 @@ HHblits first scans the column state sequences in \verb`scop70_1.75.cs219` with 
 
 To generate an MSA for a sequence or initial MSA in query.a3m, the database to be searched should cover the entire sequence space, such as uniprot20 or nr20. The option \verb`-oa3m <msa_file>` tells HHblits to generate an output MSA from the significant hits:
 \begin{verbatim}
-> hhblits -cpu 4 -i data/query.seq -d databases/uniprot20 -oa3m query.a3m -n 1
+$ hhblits -cpu 4 -i data/query.seq -d databases/uniprot20 -oa3m query.a3m -n 1
 \end{verbatim}
 
 At the end of the search, HHblits reads from the packed database file containing the MSAs the sequences belonging to HMMs with E-value below the threshold. The E-value threshold for inclusion into the MSA can be specified using the \verb`-e <E-value>` option. After the search, \verb`query.a3m` will contain the MSA in A3M format. 
 
 We could do a second search iteration, starting with the MSA from the previous search, to add more sequences. Since the MSA generated after the previous search contains more information than the single sequence in \verb`query.seq`, searching with this MSA will probably result in many more homologous database matches.
 \begin{verbatim}
-> hhblits -cpu 4 -i query.a3m -d databases/uniprot20 -oa3m query.a3m -n 1
+$ hhblits -cpu 4 -i query.a3m -d databases/uniprot20 -oa3m query.a3m -n 1
 \end{verbatim}
 
 Instead, we could start the search with \verb`query.seq` and directly perform two search iterations, by adding the option \verb`-n 2`:
 \begin{verbatim}
-> hhblits -cpu 4 -i data/query.seq -d databases/uniprot20 -oa3m query.a3m -n 2 
+$ hhblits -cpu 4 -i data/query.seq -d databases/uniprot20 -oa3m query.a3m -n 2 
 \end{verbatim}
 
 In practice, it is recommended to use between 1 and 4 iterations for building MSAs, depending on the trade-off between reliability and specificity on one side and sensitivity for remotely homologous sequences on the other side. The more search iterations are done, the higher will be the risk of non-homologous sequences or sequence segments entering the MSA and recruiting more of their kind in subsequent iterations. This is particularly problematic when searching with sequences containing short repeats, regions with amino acid compositional bias and, although less dramatic,  with multiple domains. Fortunately, this problem is much less pronounced in hhblits as compared to PSI-BLAST due to hhblits's lower number of iterations, its more robust Maximum Accuracy alignment algorithm, and the higher precision of its HMM-HMMs alignments. 
@@ -436,23 +428,23 @@ To avoid unnecessarily large and diverse MSAs, HHblits stops iterating when the 
 
 To avoid the final MSAs to grow unnecessarily large, by default the cluster MSAs are filtered with the option \verb`-diff 1000` prior to merging them with the query MSA. (The \verb`-diff 1000` option selects the most representative sequences from an MSA such that every regions is covered by at least 1000 sequences.) To turn off the filtering and obtain all sequences in the significantly similar uniprot20 clusters, use the \verb`-nodiff` option: 
 \begin{verbatim}
-> hhblits -cpu 4 -i data/query. -d databases/uniprot20 -oa3m query.a3m -nodiff
+$ hhblits -cpu 4 -i data/query. -d databases/uniprot20 -oa3m query.a3m -nodiff
 \end{verbatim}
 
 The A3M format uses small letters to mark inserts and capital letters to designate match and delete columns (see subsection \ref{aliformats}), allowing to omit gaps aligned to insert columns. The A3M format therefore uses much less space for large alignments than FASTA but looks misaligned to the human eye. Use the \verb`reformat.pl` script to reformat \verb`query.a3m` to other formats, e.g. for reformatting the MSA to Clustal and FASTA format, type
 
 \begin{verbatim}
-> reformat.pl a3m clu query.a3m query.clu
-> reformat.pl a3m fas query.a3m query.fas
+$ reformat.pl a3m clu query.a3m query.clu
+$ reformat.pl a3m fas query.a3m query.fas
 \end{verbatim}
 
 Next, to add secondary structure information to the MSA we call the script \verb`addss.pl`. For \verb`addss.pl` to work, you have to make sure that the paths to BLAST and PSIPRED in the \verb`scripts/HHPaths.pm` are correctly filled in. Then type
 \begin{verbatim}
-> addss.pl query.a3m
+$ addss.pl query.a3m
 \end{verbatim}
 When the sequence has a SCOP or PDB identifier as first word in its name, the script tries to add the DSSP states as well. For this to work, the path to the pdb and dssp directories needs to be specified in the perl file \verb`HHPaths.pm`. Open the \verb`query.a3m` file and check out the two lines that have been added to the MSA. Now you can generate a hidden Markov model (HMM) from this MSA:
 \begin{verbatim}
-> hhmake -i query.a3m
+$ hhmake -i query.a3m
 \end{verbatim}
 The default output file is \verb`query.hhm`. By default, the option \verb`-M first` will 
 be used. This means that exactly those columns of 
@@ -484,13 +476,13 @@ It is simple to build custom databases for HHsearch and HHblits using the same t
 
 To build MSAs with HHblits from sequences \verb`dbs/scop70_1.75/*.seq`, run
 \begin{verbatim}
-> multithread.pl 'dbs/scop70_1.75/*.seq' 'hhblits -i $file -d databases/uniprot20 -oa3m $name.a3m' 
+$ multithread.pl 'dbs/scop70_1.75/*.seq' 'hhblits -i $file -d databases/uniprot20 -oa3m $name.a3m' 
 \end{verbatim}
 The first argument is the file globbing expression, which selects the files with which to run the command given as second argument. In this command, the string \verb`$file` is replaced by the actual, globbed file. You might also want to pipe the stdout and stderr streams of the command into a log-file: \verb`'hhblits -i $file -d databases/uniprot20 1> stdout.log 2>stderr.log'`. The MSAs are written to the file \verb`$name.seq`, which stands for the globbed file name without extension, (\verb`$name`) plus an appended extension \verb`.a3m`. The number of threads launched can be specified with option \verb`-cpu <int>` (default value is 8). To be sure that everything went smoothly, check that the number of \verb`*.a3m` files is the same as the number of \verb`*.seq` files, and browse the file \verb`'stderr.log'` for error messages. The number of HHblits search iterations and the HMM inclusion E-value threshold for hhblits can be changed from their default values (2 and 0.01, respectively) using the \verb`'-n <int>'` and \verb`'-e <float>'` options. 
 
 Now, add PSIPRED-predicted secondary structure to all MSAs:
 \begin{verbatim}
-> multithread.pl 'dbs/scop70_1.75/*.a3m' 'addss.pl $file' -cpu 16 
+$ multithread.pl 'dbs/scop70_1.75/*.a3m' 'addss.pl $file' -cpu 16 
 \end{verbatim}
 Again, piping stdout and stderr into log files and inspecting the warnings and errors is recommended. From here on, the steps to build an HHblits database differ from those needed to build an HHsearch database.
 
@@ -498,13 +490,13 @@ Again, piping stdout and stderr into log files and inspecting the warnings and e
 
 An HHblits database consists of eight files, as described in subsection \ref{hhblits_dbs}. These files can be generated by a single call to \verb`hhblitsdb.pl`:
 \begin{verbatim}
-> hhblitsdb.pl -o databases/scop70_1.75 -ia3m 'dbs/scop70_1.75' -cpu 16
+$ hhblitsdb.pl -o databases/scop70_1.75 -ia3m 'dbs/scop70_1.75' -cpu 16
 \end{verbatim}
 In order to build the file containing the column state sequence for prefiltering, \verb`hhblitsdb.pl` will generate a column state sequence for each MSAs. As this can take some time, the script calls \verb`multithread.pl` to distribute the jobs to multiple cores. The script also needs to generate an HHM files for each A3M MSA file, for which again \verb`multithread.pl` is called. In the end, the \verb`ffindex` utility is generates the packed files containing the A3M MSAs and HHM models with corresponding index files. The script will report the number of files of each category (column-state, A3M, HHM) and warn if the numbers differ. The option \verb`-log err.log` pipes the stderr stream of each command executed into a log file. As with all perl scripts in the hh-suite, a list of additional options can be retrieved by calling the scripts without parameters.
 
 Alternatively, if you have a set of HHM or HMMER model files, for example for Pfam, you can build an HHblits database with the command
 \begin{verbatim}
-> hhblitsdb.pl -o databases/pfamA_25 -ihhm 'dbs/pfamA_25' -hhmext hmm -cpu 16
+$ hhblitsdb.pl -o databases/pfamA_25 -ihhm 'dbs/pfamA_25' -hhmext hmm -cpu 16
 \end{verbatim}
 The script will then build the column state sequences from the HMMER files instead of the A3M and will generate five database files. The three files referring to the A3M MSAs can not be built since no MSAs were supplied. However, these file are only needed to build output MSAs from merging the query MSA with the MSAs of significant hits and are therefore dispensable.
 
@@ -513,16 +505,16 @@ The script will then build the column state sequences from the HMMER files inste
 
 An HHsearch database consists simply of concatenated hhm files. If you already have an hhblits database, you can simply use the file \verb`<dbname>_hhm_db` as HHsearch database. Otherwise, you may generate the \verb`hhm` files using \verb`multithread.pl`:
 \begin{verbatim}
-> multithread.pl 'dbs/scop70_1.75/*.a3m' 'hhmake -i $file' -cpu 8 
+$ multithread.pl 'dbs/scop70_1.75/*.a3m' 'hhmake -i $file' -cpu 8 
 \end{verbatim}
 The \verb`hhm` files will have the same name but with a different extension as their \verb`a3m` files. Now you 
 can then concatenate your individual HMMs into your database:
 \begin{verbatim}
-> cat *.hhm > scop70_1.75_hhm
+$ cat *.hhm > scop70_1.75_hhm
 \end{verbatim}
 or, if the maximum command line buffer size is exceeded, 
 \begin{verbatim}
-> find $tmpdir -name '*.seq219' -exec cat '{}' + >> scop70_1.75_hhm
+$ find $tmpdir -name '*.seq219' -exec cat '{}' + >> scop70_1.75_hhm
 \end{verbatim}
 
 
@@ -560,8 +552,8 @@ conjunction with -realign, the mact parameter is automatically set to 0 in order
 produce global alignments. In other words, both following two commands will give 
 global alignments:
 \begin{verbatim}
-> hhsearch -i <query> -d <db.hhm> -realign -mact 0
-> hhsearch -i <query> -d <db.hhm> -realign -global
+$ hhsearch -i <query> -d <db.hhm> -realign -mact 0
+$ hhsearch -i <query> -d <db.hhm> -realign -global
 \end{verbatim}
 
 The first version uses \emph{local} Viterbi to search and then uses MAC to realign the 
@@ -844,7 +836,7 @@ Performance is not as good for HMMER-format as for hhm format, so please use
 our hhm format if possible. HMMER's hmm format can be converted to hhm format simply 
 with hhmake:
 \begin{verbatim}
-  > hhmake -i test.hmm -o test.hhm
+  $ hhmake -i test.hmm -o test.hhm
 \end{verbatim}
 
 This works only for a single HMM per file, not for concatenated HMMs. A safer way to 
@@ -859,15 +851,15 @@ supplied in this package.
 
 To reformat from Clustal format to A3M:
 \begin{verbatim}
-  > reformat.pl test.aln test.a3m
+  $ reformat.pl test.aln test.a3m
 \end{verbatim}
 or explicitly, if the formats can not be recognized from the extensions:
 \begin{verbatim}
-  > reformat.pl clu a3m test.clustal test.a3m
+  $ reformat.pl clu a3m test.clustal test.a3m
 \end{verbatim}
 To reformat from Stockholm to aligned FASTA:
 \begin{verbatim}
-  > reformat.pl test.sto test.fas
+  $ reformat.pl test.sto test.fas
 \end{verbatim}
 
 

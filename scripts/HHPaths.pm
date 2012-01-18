@@ -1,42 +1,49 @@
+# Align.pm 
+
+# HHsuite version 2.0.1 (January 2012)
+# (c) J. Soeding, A. Hauser 2012
 #
-# Please edit and adjust to your local environment.
-#
+
+# PLEASE INSERT CORRECT PATHS AT POSITIONS INDICATED BY ... BELOW
+# THE ENVIRONMENT VARIABLE HHLIB NEEDS TO BE SET TO YOUR LOCAL HH-SUITE DIRECTORY, 
+# AS DESCRIBED IN THE HH-SUITE USER GUIDE AND README FILE
+
 package HHPaths;
 
-# Skip this
+# This block can stay unmodified
 use vars qw(@ISA @EXPORT @EXPORT_OK %EXPORT_TAGS $VERSION);
 use Exporter;
 our $VERSION = 2.00;
 our @ISA     = qw(Exporter);
-our @EXPORT  = qw($hhlib $hhdata $dummydb $perl $hhblits $dsspdir $dssp $pdbdir $ncbidir $execdir $datadir);
+our @EXPORT  = qw($hhlib $hhdata $hhbin $hhscripts $execdir $datadir $ncbidir $dummydb $pdbdir $dsspdir $dssp $cs_lib $context_lib);
 
+##############################################################################################
+# PLEASE COMPLETE THE PATHS TO PSIPRED AND OLD-STYLE BLAST (NOT BLAST+) (NEEDED FOR PSIPRED) 
+our $execdir = ".../psipred/bin";         # path to PSIPRED V2 binaries
+our $datadir = ".../psipred/data";        # path to PSIPRED V2 data files
+our $ncbidir = ".../blast/bin";           # path to NCBI binaries (for PSIPRED in addss.pl)
 
-# Please set HHLIB 
-our $hhlib   = $ENV{"HHLIB"};     # hh perl scripts (addss.pl, reformat.pl etc.)
-our $hhdata  = $hhlib."/data";
-our $hhlibbin= $hhlib."/bin";    # path to cstranslate
-
-# PSIPRED etc
-our $execdir = ".../psipred/bin";         # Where the PSIPRED V2 programs have been installed
-our $datadir = ".../psipred/data";        # Where the PSIPRED V2 data files have been installed    
-our $dummydb = "$hhdata/do_not_delete";   # Name of a dummy blast database (single sequence formatted with formatdb)
-our $hmmerdir= ".../hmmer/binaries";      # HMMER suite by Sean Eddy
-our $ncbidir = ".../blast/bin";           # Where the NCBI programs have been installed (for PSIPRED in addss.pl)
-
-# Structures
+##############################################################################################
+# PLEASE COMPLETE THE PATHS TO YOUR LOCAL PDB FILES, DSSP FILES ETC.
 our $pdbdir  =  ".../pdb/all";            # where are the pdb files? Used in hhmakemodel.pl.
 our $dsspdir =  ".../dssp/data";          # where are the dssp files? Used in addss.pl.
 our $dssp    =  ".../dssp/bin/dsspcmbi";  # where is the dssp binary? Used in addss.pl.
+##############################################################################################
 
+# The lines below probably do not need to be changed
 
-# Below probably does not need to be edited.
+# Setting paths for hh-suite perl scripts
+our $hhlib    = $ENV{"HHLIB"};     # main hh-suite directory
+our $hhdata   = $hhlib."/data";    # path to data directory for hhblits, example files
+our $hhbin    = $hhlib."/bin";     # path to cstranslate
+our $hhscripts= $hhlib."/scripts"; # path to hh perl scripts (addss.pl, reformat.pl, hhblitsdb.pl etc.)
+our $dummydb  = $hhdata."/do_not_delete"; # Name of dummy blast db for PSIPRED (single sequence formatted with NCBI formatdb)
 
-# Essential databases
+# HHblits data files
 our $cs_lib = "$hhdata/cs219.lib";
-our $context_lib = "$ahhdata/context_data.lib";
+our $context_lib = "$hhdata/context_data.lib";
 
-# Perl
-our $perl_dir= $ENV{"HHLIB"}."/scripts";   # hh perl scripts (addss.pl, reformat.pl etc.)
-$ENV{"PATH"} = $perl_dir.":".$ENV{"PATH"}; # Add Perl scripts directory to PATH
+# Add hh-suite scripts directory to search path
+$ENV{"PATH"} = $hhscripts.":".$ENV{"PATH"}; # Add hh scripts directory to PATH
 
 return 1;
