@@ -247,7 +247,7 @@ void help()
   printf("(The -cpu option is inactive since POSIX threads ae not supported on your platform)\n");
 #endif
   printf("\n");
-  printf("An extended list of options can be obtained by using '--help all' as parameter \n");
+  printf("An extended list of options can be obtained by using '-help all' as parameter \n");
   printf("\n");
   printf("Example: %s -i a.1.1.1.a3m -d scop70_1.71.hhm \n",program_name);
   cout<<endl;
@@ -496,7 +496,7 @@ void ProcessArguments(int argc, char** argv)
 	    {help(); cerr<<endl<<"Error in "<<program_name<<": no query file following -atab\n"; exit(4);}
 	  else strncpy(par.alitabfile,argv[i],NAMELEN);
 	}
-      else if (!strcmp(argv[i],"-h")|| !strcmp(argv[i],"--help"))
+      else if (!strcmp(argv[i],"-h")|| !strcmp(argv[i],"-help"))
         {
           if (++i>=argc || argv[i][0]=='-') {help(); exit(0);}
           if (!strcmp(argv[i],"out")) {help_out(); exit(0);}

@@ -716,7 +716,10 @@ void init_no_prefiltering()
   //   }
   
   if (par.dbsize > par.maxnumdb_no_prefilter)
-    {cerr<<endl<<"Error in "<<program_name<<": Without prefiltering, the max. number of database HHMs is "<<par.maxnumdb_no_prefilter<<" (actual: "<<par.dbsize<<")\n"; exit(4);}
+    {cerr<<endl<<"Error in "<<program_name<<": Without prefiltering, the max. number of database HHMs is "<<par.maxnumdb_no_prefilter<<" (actual: "<<par.dbsize<<")\n";
+      fprintf(stderr,"You can increase the allowed maximum using the -maxfilt <max> option.\n");
+      exit(4);
+    }
 
   char word[NAMELEN];
   FILE* dbf = NULL;
@@ -854,6 +857,7 @@ void init_prefilter()
 	      c++;
 #else
 	      X[pos++]= (unsigned char)(cs::AS219::kCharToInt[*c++]);
+	      ++len;
 #endif
 
 	    }
@@ -1122,6 +1126,7 @@ void prefilter_with_SW_evalue_preprefilter_backtrace()
       if (count_dbs >= par.maxnumdb) 
 	{
 	  fprintf(stderr,"WARNING: Number of hits passing prefilter 2 reduced from %6i to allowed maximum of %i.\n", (int)hits.size(),par.maxnumdb);
+	  fprintf(stderr,"You can increase the allowed maximum using the -maxfilt <max> option.\n\n");
 	  break;
 	}
     }
@@ -1208,6 +1213,8 @@ void prefilter_db()
     delete[] (par.block_shading->ReadNext()); 
   par.block_shading->New(16381,NULL);
   par.block_shading_counter->New(16381,0);
+
+  // Do prefiltering
   prefilter_with_SW_evalue_preprefilter_backtrace();
 
   if(doubled) delete doubled;
