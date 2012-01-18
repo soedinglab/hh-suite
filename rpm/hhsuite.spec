@@ -51,3 +51,6 @@ make install INSTALL_DIR="$RPM_BUILD_ROOT/usr"
 /usr/lib/hh/scripts/reformat.pl
 /usr/lib/hh/scripts/addss.pl
 /usr/lib/hh/data/do_not_delete
+/usr/lib/hh/data/do_not_delete.phr
+/usr/lib/hh/data/do_not_delete.pin
+/usr/lib/hh/data/do_not_delete.psq
