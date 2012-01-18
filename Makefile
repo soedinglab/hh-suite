@@ -13,7 +13,7 @@ INSTALL_SCRIPTS_DIR?=$(INSTALL_LIB_DIR)/scripts
 INSTALL_DATA_DIR?=$(INSTALL_LIB_DIR)/data
 INSTALL_LIB_BIN_DIR?=$(INSTALL_LIB_DIR)/bin
 
-dist_name=hhsuite-2.0.1
+dist_name=hhsuite-2.0.2
 
 all_static: ffindex_static
 	cd src && make all_static
@@ -52,6 +52,9 @@ install:
 	install data/context_data.lib $(INSTALL_DATA_DIR)/context_data.lib
 	install data/cs219.lib        $(INSTALL_DATA_DIR)/cs219.lib
 	install data/do_not_delete    $(INSTALL_DATA_DIR)/do_not_delete
+	install data/do_not_delete.phr $(INSTALL_DATA_DIR)/do_not_delete.phr
+	install data/do_not_delete.pin $(INSTALL_DATA_DIR)/do_not_delete.pin
+	install data/do_not_delete.psq $(INSTALL_DATA_DIR)/do_not_delete.psq
 	mkdir -p $(INSTALL_SCRIPTS_DIR)
 	install scripts/Align.pm        $(INSTALL_SCRIPTS_DIR)/Align.pm
 	install scripts/HHPaths.pm      $(INSTALL_SCRIPTS_DIR)/HHPaths.pm
@@ -65,7 +68,8 @@ deinstall:
 	cd lib/ffindex && make deinstall INSTALL_DIR=$(INSTALL_DIR)
 	rm -f $(INSTALL_DIR)/bin/hhblits $(INSTALL_DIR)/bin/hhalign \
 		$(INSTALL_DIR)/bin/hhconsensus $(INSTALL_DIR)/bin/hhfilter $(INSTALL_DIR)/bin/hhmake $(INSTALL_DIR)/bin/hhsearch
-	rm -f $(INSTALL_DATA_DIR)/context_data.lib $(INSTALL_DATA_DIR)/cs219.lib $(INSTALL_DATA_DIR)/do_not_delete
+	rm -f $(INSTALL_DATA_DIR)/context_data.lib $(INSTALL_DATA_DIR)/cs219.lib $(INSTALL_DATA_DIR)/do_not_delete \
+		$(INSTALL_DATA_DIR)/do_not_delete.phr $(INSTALL_DATA_DIR)/do_not_delete.pin $(INSTALL_DATA_DIR)/do_not_delete.psq
 	rm -f $(INSTALL_SCRIPTS_DIR)/Align.pm $(INSTALL_SCRIPTS_DIR)/HHPaths.pm \
 		$(INSTALL_SCRIPTS_DIR)/addss.pl $(INSTALL_SCRIPTS_DIR)/create_profile_from_hhm.pl \
 		$(INSTALL_SCRIPTS_DIR)/create_profile_from_hmmer.pl $(INSTALL_SCRIPTS_DIR)/hhmakemodel.pl \
