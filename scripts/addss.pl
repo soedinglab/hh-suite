@@ -44,7 +44,7 @@ $|= 1; # Activate autoflushing on STDOUT
 # Default values:
 our $v=2;              # verbose mode
 
-my $numres=100;        # number of residues per line for secondary structure
+my $numres=0;          # number of residues per line for secondary structure
 my $informat="a3m";    # input format
 my $neff = 7;          # use alignment with this diversity for PSIPRED prediction
 
@@ -115,7 +115,7 @@ if ($options!~/^\s*$/) {$options=~s/^\s*(.*?)\s*$/$1/g; die("Error: unknown opti
 if (!$infile) {print($help); exit(1);}
 
 my $v2 = $v-1;
-if ($v2>2) {$v2-=2;}
+if ($v2>2) {$v2--;}
 if ($v2<0) {$v2=0;}
 
 if ($informat eq "hmm" && !$outfile) {
@@ -132,8 +132,11 @@ if ($infile=~/(.*)\..*/) {$inbase=$1;} else {$inbase=$infile;}  # remove extensi
 if ($inbase=~/.*\/(.*)/)  {$inroot=$1;} else {$inroot=$inbase;} # remove path 
 
 # Create tmpfile
-my $tmpdir = tempdir( CLEANUP => 1 );
+my $tmpdir;
+if ($v<3) {$tmpdir = tempdir( CLEANUP => 1);} else {$tmpdir = tempdir( CLEANUP => 0);}
 my ($tmpf, $tmpfile) = tempfile( DIR => $tmpdir );
+#my $tmpdir="/tmp/GEj9twYZaL";               ##################################DEBUG#########
+#my $tmpfile = "/tmp/GEj9twYZaL/IcluHhmvmf"; ##################################DEBUG#########
 my $tmpfile_no_dir;
 if ($tmpfile=~/.*\/(.*)/)  {$tmpfile_no_dir=$1;} else {$tmpfile_no_dir=$tmpfile;} # remove path 
 
@@ -164,7 +167,7 @@ if ($informat ne "hmm") {
 	if(!$qseq) {
 	    $line=~s/^(.*)[^\n]*//;
 	    $name=$1;
-	    $qseq=uc($line);
+	    $qseq=$line;
 	    $qseq=~s/\n//g;
 	}
     }
@@ -175,12 +178,12 @@ if ($informat ne "hmm") {
 	$/="\n"; # set input field separator
 	
 	# First sequence contains gaps => calculate consensus sequence
-	&System("$hhbin/hhconsensus -i $tmpfile.in.a3m -s $tmpfile.sq -o $tmpfile.in.a3m > /dev/null");
+	&System("hhconsensus -i $tmpfile.in.a3m -s $tmpfile.sq -o $tmpfile.in.a3m > /dev/null");
 	
     } else {
 	
 	$query_length = ($qseq=~tr/A-Z/A-Z/);
-	$qseq=~tr/a-zA-Z//cd;
+	$qseq=~tr/A-Z//cd; # remove everything except capital letters
 	
 	# If less than 26 match states => add sufficient number of Xs to the end of each sequence in $tmpfile.in.a3m
 	my $q_match = ($qseq=~tr/A-Z/A-Z/); # count number of capital letters
@@ -207,7 +210,7 @@ if ($informat ne "hmm") {
     
     # Filter alignment to diversity $neff 
     if ($v>=1) {printf ("Filtering alignment to diversity $neff ...\n");}
-    &System("$hhbin/hhfilter -v $v2 -neff $neff -i $tmpfile.in.a3m -o $tmpfile.in.a3m");
+    &System("hhfilter -v $v2 -neff $neff -i $tmpfile.in.a3m -o $tmpfile.in.a3m");
     
     # Reformat into PSI-BLAST readable file for jumpstarting 
     &System("$hhscripts/reformat.pl -v $v2 -r -noss a3m psi $tmpfile.in.a3m $tmpfile.in.psi");
@@ -217,7 +220,9 @@ if ($informat ne "hmm") {
     # Add DSSP sequence (if available)
     if ($dssp ne "") {
         if (!&AppendDsspSequences("$tmpfile.sq")) {
-	    $ss_dssp=~s/(\S{$numres})/$1\n/g;
+	    if ($numres) {
+		$ss_dssp=~s/(\S{$numres})/$1\n/g;  # insert a line break every $numres residues
+	    }
 	    print(ALIFILE ">ss_dssp\n$ss_dssp\n");
 	    if ($v>=1) {printf ("\nAdding DSSP state sequence ...\n");}
         }
@@ -237,8 +242,10 @@ if ($informat ne "hmm") {
 	}
 	close(PSIPREDFILE);
 	$ss_conf=~tr/0-9/0/c; # replace all non-numerical symbols with a 0
-	$ss_pred=~s/(\S{$numres})/$1\n/g;
-	$ss_conf=~s/(\S{$numres})/$1\n/g;
+	    if ($numres) {
+		$ss_pred=~s/(\S{$numres})/$1\n/g; # insert a line break every $numres residues
+		$ss_conf=~s/(\S{$numres})/$1\n/g; # insert a line break every $numres residues
+	    }
 	print(ALIFILE ">ss_pred PSIPRED predicted secondary structure\n$ss_pred\n");
 	print(ALIFILE ">ss_conf PSIPRED confidence values\n$ss_conf\n");
     }
@@ -379,8 +386,8 @@ else
 	foreach $line (@lines) {
 	    if ($line=~/^SSPRD/ || $line=~/^SSCON/|| $line=~/^SSCIT/) {next;}
 	    if ($line=~/^HMM /) {
-		$ss_pred=~s/(\S{$numres})/$1\nSSPRD /g;
-		$ss_conf=~s/(\S{$numres})/$1\nSSCON /g;
+		$ss_pred=~s/(\S{80})/$1\nSSPRD /g; # insert a line break every 80 residues
+		$ss_conf=~s/(\S{80})/$1\nSSCON /g; # insert a line break every 80 residues
 		printf(OUTFILE "SSCIT HHsearch-readable PSIPRED secondary structure prediction:\n");
 		printf(OUTFILE "SSPRD %s\n",$ss_pred);
 		printf(OUTFILE "SSCON %s\n",$ss_conf);
@@ -397,7 +404,7 @@ else
     if ($v>=2) {printf("Added PSIPRED secondary structure to %i models\n",$nmodels);}
 }    
 
-if ($v<=4) {
+if ($v<=3) {
     unlink("$tmpfile.in.a3m");
     unlink("$tmpfile.in.psi");
     unlink("$tmpfile.horiz");
@@ -447,7 +454,7 @@ sub RunPsipred() {
     &System("$execdir/psipass2 $datadir/weights_p2.dat 1 0.98 1.09 $tmpfile.ss2 $tmpfile.ss > $tmpfile.horiz");
     
     # Remove temporary files
-    unlink(split ' ', "$tmpfile.pn $tmpfile.sn $tmpfile.mn $tmpfile.chk $tmpfile.blalog $tmpfile.mtx $tmpfile.aux $tmpfile.ss $tmpfile.ss2 $tmpfile.sq");
+    if ($v<=3) { unlink(split ' ', "$tmpfile.pn $tmpfile.sn $tmpfile.mn $tmpfile.chk $tmpfile.blalog $tmpfile.mtx $tmpfile.aux $tmpfile.ss $tmpfile.ss2 $tmpfile.sq");}
     return;
 }
 

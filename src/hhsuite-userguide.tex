@@ -1617,7 +1617,7 @@ Example 5: using glob expression to specify several input databases
 
 \section{Changes from previous versions}
 
-\subsection{2.0.0 (January 2012)}
+\subsection{2.0.2 (January 2012)}
 
 \begin{itemize}
 
@@ -1634,6 +1634,10 @@ Example 5: using glob expression to specify several input databases
 \item An optional local amino acid compositional bias correction was introduced(options \verb`-sc 5` and \verb`-scwin <window_halfsize>`). No improvements are seen on a standard SCOP single domain benchmark. However, their probably will be an improvement for more realistic sequences containing multiple domains, repeats, and regions of strong compositional bias. 
 
 \item The score shift parameter and mact parameter have been optimized together on the optimization set of hhblits \cite{Remmert:2011}, which resulted in slight improvements of sensitivity and alignment quality. New default values are  \verb`shift -0.03` bits and \verb`-mact 0.30`. 
+
+\item We removed a bug in \verb`-neff <target_diversity>` option that lead to the input MSA being reduced to only the master sequence when the target diversity was higher than the diversity of the input MSA.
+
+\item We removed a bug in addss.pl that could lead to errors for FASTA-formatted MSAs.
 
 \end{itemize}
 
