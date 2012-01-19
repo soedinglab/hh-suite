@@ -1408,8 +1408,6 @@ HMM-HMM alignment options:
                2:ss scoring during alignment                                 
  -ssw  [0,1]   weight of ss score  (def=0.11)                               
 
- -def          read default options from ./.hhdefaults or <home>/.hhdefault. 
-
 Example: hhalign -i T0187.a3m -t d1hz4a_.hhm -png T0187pdb.png 
 \end{verbatim} 
 \normalsize
@@ -1634,6 +1632,9 @@ Example 5: using glob expression to specify several input databases
 \item An optional local amino acid compositional bias correction was introduced(options \verb`-sc 5` and \verb`-scwin <window_halfsize>`). No improvements are seen on a standard SCOP single domain benchmark. However, their probably will be an improvement for more realistic sequences containing multiple domains, repeats, and regions of strong compositional bias. 
 
 \item The score shift parameter and mact parameter have been optimized together on the optimization set of hhblits \cite{Remmert:2011}, which resulted in slight improvements of sensitivity and alignment quality. New default values are  \verb`shift -0.03` bits and \verb`-mact 0.30`. 
+
+\item Use of \verb`.hhdefaults` still works but is deprecated. Use an alias in 
+your \verb`.bashrc` or equivalent file instead (See Installation).
 
 \end{itemize}
 
