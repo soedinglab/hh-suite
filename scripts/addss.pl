@@ -4,7 +4,7 @@
 # Add PSIPRED secondary structure prediction (and DSSP annotation) to an MSA or HMMER file.
 # Output format is A3M (for input alignments) or HMMER (see User Guide).
 
-#     HHsuite version 2.0.1 (January 2012)
+#     HHsuite version 2.0.3 (January 2012)
 #
 #     Reference: 
 #     Remmert M., Biegert A., Hauser A., and Soding J.
@@ -133,10 +133,8 @@ if ($inbase=~/.*\/(.*)/)  {$inroot=$1;} else {$inroot=$inbase;} # remove path
 
 # Create tmpfile
 my $tmpdir;
-if ($v<3) {$tmpdir = tempdir( CLEANUP => 1);} else {$tmpdir = tempdir( CLEANUP => 0);}
+if ($v<=3) {$tmpdir = tempdir( CLEANUP => 1);} else {$tmpdir = tempdir( CLEANUP => 0);}
 my ($tmpf, $tmpfile) = tempfile( DIR => $tmpdir );
-#my $tmpdir="/tmp/GEj9twYZaL";               ##################################DEBUG#########
-#my $tmpfile = "/tmp/GEj9twYZaL/IcluHhmvmf"; ##################################DEBUG#########
 my $tmpfile_no_dir;
 if ($tmpfile=~/.*\/(.*)/)  {$tmpfile_no_dir=$1;} else {$tmpfile_no_dir=$tmpfile;} # remove path 
 
@@ -367,8 +365,12 @@ else
 	}
 	close(MTXFILE);
 	
-	# Call PSIPRED
-	&System("$execdir/psipred $tmpfile.mtx $datadir/weights.dat $datadir/weights.dat2 $datadir/weights.dat3 $datadir/weights.dat4 > $tmpfile.ss");
+	# Start Psiblast from checkpoint file tmp.chk that was generated to build the profile
+	if (-e "$datadir/weights.dat4") { # Psipred version < 3.0
+	    &System("$execdir/psipred $tmpfile.mtx $datadir/weights.dat $datadir/weights.dat2 $datadir/weights.dat3 $datadir/weights.dat4 > $tmpfile.ss");
+	} else {
+	    &System("$execdir/psipred $tmpfile.mtx $datadir/weights.dat $datadir/weights.dat2 $datadir/weights.dat3 > $tmpfile.ss");
+	}
 	
 	# READ PSIPRED file
 	if (open (PSIPRED, "$execdir/psipass2 $datadir/weights_p2.dat 1 0.98 1.09 $tmpfile.ss2 $tmpfile.ss |")) {
@@ -449,7 +451,12 @@ sub RunPsipred() {
     &System("echo "."$tmpfile_no_dir".".sq  > $tmpfile.sn\n");
     &System("$ncbidir/makemat -P $tmpfile");
     
-    &System("$execdir/psipred $tmpfile.mtx $datadir/weights.dat $datadir/weights.dat2 $datadir/weights.dat3 $datadir/weights.dat4 > $tmpfile.ss");
+    # Start Psiblast from checkpoint file tmp.chk that was generated to build the profile
+    if (-e "$datadir/weights.dat4") { # Psipred version < 3.0
+	&System("$execdir/psipred $tmpfile.mtx $datadir/weights.dat $datadir/weights.dat2 $datadir/weights.dat3 $datadir/weights.dat4 > $tmpfile.ss");
+    } else {
+	&System("$execdir/psipred $tmpfile.mtx $datadir/weights.dat $datadir/weights.dat2 $datadir/weights.dat3 > $tmpfile.ss");
+    }
 
     &System("$execdir/psipass2 $datadir/weights_p2.dat 1 0.98 1.09 $tmpfile.ss2 $tmpfile.ss > $tmpfile.horiz");
     

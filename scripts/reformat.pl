@@ -3,14 +3,14 @@
 # reformat.pl 
 # Reformat a multiple alignment file
 #
-#     HHsuite version 2.0.1 (January 2012)
+#     HHsuite version 2.0.3 (January 2012)
 #
 #     Reference: 
 #     Remmert M., Biegert A., Hauser A., and Soding J.
 #     HHblits: Lightning-fast iterative protein sequence searching by HMM-HMM alignment.
 #     Nat. Methods, epub Dec 25, doi: 10.1038/NMETH.1818 (2011).
 
-#     (C) Johannes Soeding and Michael Remmert, 2012
+#     (C) Johannes Soeding, 2012
 
 #     This program is free software: you can redistribute it and/or modify
 #     it under the terms of the GNU General Public License as published by

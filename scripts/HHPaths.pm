@@ -1,6 +1,6 @@
 # Align.pm 
 
-# HHsuite version 2.0.1 (January 2012)
+# HHsuite version 2.0.3 (January 2012)
 # (c) J. Soeding, A. Hauser 2012
 #
 
@@ -18,7 +18,7 @@ our @ISA     = qw(Exporter);
 our @EXPORT  = qw($hhlib $hhdata $hhbin $hhscripts $execdir $datadir $ncbidir $dummydb $pdbdir $dsspdir $dssp $cs_lib $context_lib);
 
 ##############################################################################################
-# PLEASE COMPLETE THE PATHS TO PSIPRED AND OLD-STYLE BLAST (NOT BLAST+) (NEEDED FOR PSIPRED) 
+# PLEASE COMPLETE THE PATHS ... TO PSIPRED AND OLD-STYLE BLAST (NOT BLAST+) (NEEDED FOR PSIPRED) 
 #our $execdir = ".../psipred/bin";         # path to PSIPRED V2 binaries
 #our $datadir = ".../psipred/data";        # path to PSIPRED V2 data files
 #our $ncbidir = ".../blast/bin";           # path to NCBI binaries (for PSIPRED in addss.pl)
@@ -27,7 +27,7 @@ our $datadir = "/cluster/bioprogs/psipred/data";        # Where the PSIPRED V2 d
 our $ncbidir = "/cluster/bioprogs/blast/bin";           # Where the NCBI programs have been installed (for PSIPRED in addss.pl)
 
 ##############################################################################################
-# PLEASE COMPLETE THE PATHS TO YOUR LOCAL PDB FILES, DSSP FILES ETC.
+# PLEASE COMPLETE THE PATHS ... TO YOUR LOCAL PDB FILES, DSSP FILES ETC.
 #our $pdbdir  =  ".../pdb/all";            # where are the pdb files? Used in hhmakemodel.pl.
 #our $dsspdir =  ".../dssp/data";          # where are the dssp files? Used in addss.pl.
 #our $dssp    =  ".../dssp/bin/dsspcmbi";  # where is the dssp binary? Used in addss.pl.

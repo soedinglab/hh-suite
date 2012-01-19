@@ -4,7 +4,7 @@
 # Generate a model from an output alignment of hhsearch. 
 # Usage: hhmakemodel.pl -i file.out (-ts file.pdb|-al file.al) [-m int|-m name|-m auto] [-pdb pdbdir] 
 
-#     HHsuite version 2.0.1 (January 2012)
+#     HHsuite version 2.0.3 (January 2012)
 #
 #     Reference: 
 #     Remmert M., Biegert A., Hauser A., and Soding J.
