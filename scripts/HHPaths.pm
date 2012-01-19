@@ -41,7 +41,7 @@ our $dssp    =  "/cluster/databases/dssp/bin/dsspcmbi";  # where is the dssp bin
 # Setting paths for hh-suite perl scripts
 our $hhlib    = $ENV{"HHLIB"};     # main hh-suite directory
 our $hhdata   = $hhlib."/data";    # path to data directory for hhblits, example files
-our $hhbin    = $hhlib."/bin";     # path to cstranslate
+our $hhbin    = $hhlib."/bin";     # path to cstranslate (path to hhsearch, hhblits etc. should be in $PATH)
 our $hhscripts= $hhlib."/scripts"; # path to hh perl scripts (addss.pl, reformat.pl, hhblitsdb.pl etc.)
 our $dummydb  = $hhdata."/do_not_delete"; # Name of dummy blast db for PSIPRED (single sequence formatted with NCBI formatdb)
 

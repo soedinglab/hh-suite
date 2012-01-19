@@ -176,7 +176,7 @@ if ($informat ne "hmm") {
 	$/="\n"; # set input field separator
 	
 	# First sequence contains gaps => calculate consensus sequence
-	&System("hhconsensus -i $tmpfile.in.a3m -s $tmpfile.sq -o $tmpfile.in.a3m > /dev/null");
+	&System("$hhbin/hhconsensus -i $tmpfile.in.a3m -s $tmpfile.sq -o $tmpfile.in.a3m > /dev/null");
 	
     } else {
 	
