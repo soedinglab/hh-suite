@@ -1357,18 +1357,21 @@ void Alignment::FilterNeff()
   for (int k=0; k<N_in; ++k) keep_orig[k]=keep[k];
   float x0=-1.0;
   float x1=+2.0;
-  float y0=filter_by_qsc(x0,keep_orig);
-  float y1=filter_by_qsc(x1,keep_orig);
   float x=0.0;
-  float y=y0;
+  float y1;
+  float y0;
+  float y;
   int i=2;
 
+  y=y0=filter_by_qsc(x0,keep_orig);
   if (y0<par.Neff) 
     {
-      if (v>=1) 
+      v=v1;
+      if (v>=2) 
 	printf("Diversity of unfiltered alignment %.2f is below target diversity %.2f.\n",y0,par.Neff);
       return;
     }
+  y1=filter_by_qsc(x1,keep_orig);
   
   while (fabs(par.Neff-y)>TOLY && x1-x0>TOLX)
     {
