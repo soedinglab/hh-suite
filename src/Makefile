@@ -30,7 +30,7 @@ ifeq ($(OS), Darwin)
 endif
 ifeq ($(OS), Linux)
   HHSEARCH_LIBS = -lpthread -lrt
-  HHLIBS+=-lrt
+  HHBLITS_LIBS+=-lrt
   HHALIGN_LIBS = -DHH_PNG -lpng -lz -I/usr/include/ -L/usr/lib
 endif
 endif
