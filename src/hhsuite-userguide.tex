@@ -472,13 +472,14 @@ Previous versions of HH-suite (the 'HHsearch package') included a perl script \v
 
 \subsection{Building customized databases}
 
-It is simple to build custom databases for HHsearch and HHblits using the same tools we use to build the standard HH-suite databases. An example application is to search for homologs among all proteins of an organism. To build your own HHsearch or HHblits database from a set of sequences, you first need to generate an MSA with predicted secondary structure for every sequence in the set. This can be conveniently done using the script \verb`multithread.pl` in the HH-suite. This script runs a command for many files in parallel, distributing the individual jobs to multiple cores on your server. This will shorten the run-time roughly by the number of cores. 
+It is simple to build custom databases for HHsearch and HHblits using the same tools we use to build the standard HH-suite databases (except UniProt20 and nr20). An example application is to search for homologs among all proteins of an organism. To build your own HHsearch or HHblits database from a set of sequences, you first need to generate an MSA with predicted secondary structure for every sequence in the set. This can conveniently be done using the script \verb`multithread.pl` in the HH-suite. This script runs a command for many files in parallel, distributing the individual jobs to multiple cores on your server, one file per thread. This will shorten the run-time roughly by the number of cores. 
 
-To build MSAs with HHblits from sequences \verb`dbs/scop70_1.75/*.seq`, run
-\begin{verbatim}
-$ multithread.pl 'dbs/scop70_1.75/*.seq' 'hhblits -i $file -d databases/uniprot20 -oa3m $name.a3m' 
-\end{verbatim}
-The first argument is the file globbing expression, which selects the files with which to run the command given as second argument. In this command, the string \verb`$file` is replaced by the actual, globbed file. You might also want to pipe the stdout and stderr streams of the command into a log-file: \verb`'hhblits -i $file -d databases/uniprot20 1> stdout.log 2>stderr.log'`. The MSAs are written to the file \verb`$name.seq`, which stands for the globbed file name without extension, (\verb`$name`) plus an appended extension \verb`.a3m`. The number of threads launched can be specified with option \verb`-cpu <int>` (default value is 8). To be sure that everything went smoothly, check that the number of \verb`*.a3m` files is the same as the number of \verb`*.seq` files, and browse the file \verb`'stderr.log'` for error messages. The number of HHblits search iterations and the HMM inclusion E-value threshold for hhblits can be changed from their default values (2 and 0.01, respectively) using the \verb`'-n <int>'` and \verb`'-e <float>'` options. 
+To build MSAs with HHblits from sequences \verb`dbs/scop70_1.75/*.seq`, run\\[-1mm]
+
+\verb`$ multithread.pl 'dbs/scop70_1.75/*.seq' 'hhblits -i $file -d databases/uniprot20`\\
+\verb`                                                                 -oa3m $name.a3m'`\\[-1mm]
+
+The first argument is the file globbing expression, which selects the files with which to run the command given as second argument. In this command, the string \verb`$file` is replaced by the actual, globbed file. You might also want to pipe the stdout and stderr streams of the command into a log-file: \verb`'hhblits -i $file -d databases/uniprot20 1> stdout.log 2>stderr.log'`. The MSAs are written to the file \verb`$name.a3m`. Here,\verb`$name` stands for the globbed file name without its extension. The number of thread to launch can be specified with option \verb`-cpu <int>` (default value is 8). To be sure that everything went smoothly, check that the number of \verb`*.a3m` files is the same as the number of \verb`*.seq` files, and browse the file \verb`'stderr.log'` for error messages. The number of HHblits search iterations and the HMM inclusion E-value threshold for hhblits can be changed from their default values (2 and 0.01, respectively) using the \verb`'-n <int>'` and \verb`'-e <float>'` options. 
 
 Now, add PSIPRED-predicted secondary structure to all MSAs:
 \begin{verbatim}
@@ -494,11 +495,11 @@ $ hhblitsdb.pl -o databases/scop70_1.75 -ia3m 'dbs/scop70_1.75' -cpu 16
 \end{verbatim}
 In order to build the file containing the column state sequence for prefiltering, \verb`hhblitsdb.pl` will generate a column state sequence for each MSAs. As this can take some time, the script calls \verb`multithread.pl` to distribute the jobs to multiple cores. The script also needs to generate an HHM files for each A3M MSA file, for which again \verb`multithread.pl` is called. In the end, the \verb`ffindex` utility is generates the packed files containing the A3M MSAs and HHM models with corresponding index files. The script will report the number of files of each category (column-state, A3M, HHM) and warn if the numbers differ. The option \verb`-log err.log` pipes the stderr stream of each command executed into a log file. As with all perl scripts in the hh-suite, a list of additional options can be retrieved by calling the scripts without parameters.
 
-Alternatively, if you have a set of HHM or HMMER model files, for example for Pfam, you can build an HHblits database with the command
+Alternatively, if you have a set of HHM or HMMER model files but no MSA files, for example for Pfam, you can build an HHblits database with the command
 \begin{verbatim}
 $ hhblitsdb.pl -o databases/pfamA_25 -ihhm 'dbs/pfamA_25' -hhmext hmm -cpu 16
 \end{verbatim}
-The script will then build the column state sequences from the HMMER files instead of the A3M and will generate five database files. The three files referring to the A3M MSAs can not be built since no MSAs were supplied. However, these file are only needed to build output MSAs from merging the query MSA with the MSAs of significant hits and are therefore dispensable.
+The script will then build the column state sequences from the HMMER files instead of the A3M files and will generate five database files. The three files referring to the A3M MSAs can not be built since no MSAs were supplied. However, these file are only needed to build output MSAs by merging the query MSA with the MSAs of significant hits. The MSA files are therefore dispensable for non-iterative searches.
 
 
 \subsubsection*{HHsearch databases}
@@ -507,7 +508,7 @@ An HHsearch database consists simply of concatenated hhm files. If you already h
 \begin{verbatim}
 $ multithread.pl 'dbs/scop70_1.75/*.a3m' 'hhmake -i $file' -cpu 8 
 \end{verbatim}
-The \verb`hhm` files will have the same name but with a different extension as their \verb`a3m` files. Now you 
+The \verb`hhm` files will have the same name but with a different extension as their \verb`a3m` files. You 
 can then concatenate your individual HMMs into your database:
 \begin{verbatim}
 $ cat *.hhm > scop70_1.75_hhm
