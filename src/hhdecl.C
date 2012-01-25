@@ -70,12 +70,12 @@ EXTERN char program_name[NAMELEN]; //name of program executed (e.g. hhmake of hh
 EXTERN char program_path[NAMELEN]; //path of program executed
 
 // substitution matrix flavours
-EXTERN float P[21][21];      // P[a][b] = combined probability for a aligned to b
-EXTERN float R[21][21];      // R[a][b]=P[a][b]/p[b]=P(a|b); precalculated for pseudocounts
-EXTERN float Sim[21][21];    // Similarity matrix Sim[a][b]: how similar are a and b?
-EXTERN float S[21][21];      // Substitution score matrix S[a][b] = log2(Pab/pa/pb)
-EXTERN float pb[21];         // pb[a] = background amino acid probabilities for chosen substitution matrix
-EXTERN float qav[21];        // qav[a] = background amino acid probabilities for query HMM (needed for rate matrix rescaling)
+EXTERN float __attribute__((aligned(16))) P[20][20]; // P[a][b] = combined probability for a aligned to b
+EXTERN float __attribute__((aligned(16))) R[20][20]; // R[a][b]=P[a][b]/p[b]=P(a|b); precalculated for pseudocounts
+EXTERN float __attribute__((aligned(16))) Sim[20][20]; // Similarity matrix Sim[a][b]: how similar are a and b?
+EXTERN float __attribute__((aligned(16))) S[20][20]; // Substitution score matrix S[a][b] = log2(Pab/pa/pb)
+EXTERN float __attribute__((aligned(16))) pb[21];    // pb[a] = background amino acid probabilities for chosen substitution matrix
+EXTERN float __attribute__((aligned(16))) qav[21];   // qav[a] = background amino acid probabilities for query HMM (needed for rate matrix rescaling)
 
 // secondary structure matrices
 EXTERN float S73[NDSSP][NSSPRED][MAXCF];           // P[A][B][cf]       =  log2 P(A,B,cf)/P(A)/P(B,cf)

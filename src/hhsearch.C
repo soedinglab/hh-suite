@@ -60,9 +60,13 @@
 #endif
 
 #ifdef HH_SSE3
+#include <pmmintrin.h>   // SSE3
+#define HH_SSE2
+#endif
+
+#ifdef HH_SSE2
 #ifndef __SUNPRO_C
 #include <emmintrin.h>   // SSE2
-#include <pmmintrin.h>   // SSE3
 #else
 #include <sunmedia_intrin.h>
 #endif

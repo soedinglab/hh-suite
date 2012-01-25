@@ -62,7 +62,7 @@ inline double Pvalue(float x, float lamda, float mu);
 inline double logPvalue(float x, float lamda, float mu);
 inline double logPvalue(float x, double a[]);
 inline double Probab(Hit& hit);
-#ifdef HH_SSE3
+#ifdef HH_SSE2
 inline __m128 _mm_flog2_ps(__m128 X); // Fast SSE2 log2 for four floats
 #endif
 
@@ -412,7 +412,7 @@ void Hit::Viterbi(HMM& q, HMM& t, float** Sstruc)
       sIM[jmin-1] = sMI[jmin-1] = sDG[jmin-1] = sGD[jmin-1] = -FLT_MAX; // initialize at (i,jmin-1)
 
       // Precalculate amino acid profile-profile scores
-#ifdef HH_SSE3
+#ifdef HH_SSE2
       for (j=jmin; j<=jmax; ++j) 
 	Si[j] = ProbFwd(q.p[i],t.p[j]);
       __m128* sij = (__m128*)(Si+(jmin/4)*4);
@@ -1921,46 +1921,7 @@ inline float Hit::Score(float* qi, float* tj)
 // Calculate score between columns i and j of two HMMs (query and template)
 inline float Hit::ProbFwd(float* qi, float* tj)
 {
-#ifdef HH_SSE3
-  float __attribute__((aligned(16))) res;
-  __m128 P; // query 128bit SSE2 register holding 4 floats
-  __m128 R; // result  
-  __m128* Qi = (__m128*) qi;
-  __m128* Tj = (__m128*) tj;
-
-#ifdef HH_SSE4
-  R = _mm_dp_ps(*(Qi++),*(Tj++),0xFF); // dot product
-  P = _mm_dp_ps(*(Qi++),*(Tj++),0xFF); // dot product
-  R = _mm_add_ps(R,P);
-  P = _mm_dp_ps(*(Qi++),*(Tj++),0xFF);
-  R = _mm_add_ps(R,P);
-  P = _mm_dp_ps(*(Qi++),*(Tj++),0xFF);
-  R = _mm_add_ps(R,P);
-  P = _mm_dp_ps(*Qi,*Tj,0xFF);
-  R = _mm_add_ps(R,P);
-#else
-  R = _mm_mul_ps(*(Qi++),*(Tj++));
-  P = _mm_mul_ps(*(Qi++),*(Tj++));
-  R = _mm_add_ps(R,P);
-  P = _mm_mul_ps(*(Qi++),*(Tj++));
-  R = _mm_add_ps(R,P);
-  P = _mm_mul_ps(*(Qi++),*(Tj++));
-  R = _mm_add_ps(R,P);
-  P = _mm_mul_ps(*Qi,*Tj);
-  R = _mm_add_ps(R,P);
-  R = _mm_hadd_ps(R,R);
-  R = _mm_hadd_ps(R,R);
-#endif
-
-  _mm_store_ss(&res, R);
-  return res;
-
-#else
-  return  tj[0] *qi[0] +tj[1] *qi[1] +tj[2] *qi[2] +tj[3] *qi[3] +tj[4] *qi[4]
-    +tj[5] *qi[5] +tj[6] *qi[6] +tj[7] *qi[7] +tj[8] *qi[8] +tj[9] *qi[9]
-    +tj[10]*qi[10]+tj[11]*qi[11]+tj[12]*qi[12]+tj[13]*qi[13]+tj[14]*qi[14]
-    +tj[15]*qi[15]+tj[16]*qi[16]+tj[17]*qi[17]+tj[18]*qi[18]+tj[19]*qi[19];
-#endif
+  return ScalarProd20(qi,tj); //
 }
 
 
@@ -2180,7 +2141,7 @@ inline double Probab(Hit& hit)
 // Order 5: log2(1+y) = ((((a*y+b)+c)*y+d)*y + 1-a-b-c-d)*y, a=-0.0803 b=0.3170 c=-0.6748 
 //  => max dev = +/- 2.1E-5, run time ~ 5.6ns?
 
-#ifdef HH_SSE3
+#ifdef HH_SSE2
 __m128 _mm_flog2_ps(__m128 X)
 {
   const __m128i CONST32_0x7f = _mm_set_epi32(0x7f,0x7f,0x7f,0x7f);

@@ -1632,42 +1632,9 @@ void HMM::AddTransitionPseudocounts(float gapd, float gape, float gapf, float ga
 /////////////////////////////////////////////////////////////////////////////////////
 void HMM::PreparePseudocounts()
 {
-  // Mit SSE3 gibt es seg-faults (nicht in Valgrind) - Problem, dass R und f nicht mit new angelegt wurden???
-// #ifdef HH_SSE3
-//   float __attribute__((aligned(16))) res;
-//   __m128 P; // product
-//   __m128 Res; // result  
-//   __m128* Ra;
-//   __m128* fi;
-
-//   for (int i=0; i<=L+1; ++i)
-//     for (int a=0; a<20; ++a)
-//       {
-// 	Ra = (__m128*) R[a];
-// 	fi = (__m128*) f[i];
-// 	Res = _mm_mul_ps(*(Ra++),*(fi++));
-// 	P = _mm_mul_ps(*(Ra++),*(fi++));
-// 	Res = _mm_add_ps(Res,P);
-// 	P = _mm_mul_ps(*(Ra++),*(fi++));
-// 	Res = _mm_add_ps(Res,P);
-// 	P = _mm_mul_ps(*(Ra++),*(fi++));
-// 	Res = _mm_add_ps(Res,P);
-// 	P = _mm_mul_ps(*Ra,*fi);
-// 	Res = _mm_add_ps(Res,P);
-// 	Res = _mm_hadd_ps(Res,Res);
-// 	Res = _mm_hadd_ps(Res,Res);
-// 	_mm_store_ss(&res, Res);
-// 	g[i][a] = res;
-//       }
-// #else  
   for (int i=0; i<=L+1; ++i)
-    for (int a=0; a<20; ++a)
-      g[i][a] = // produces fast code
-	R[a][0]*f[i][0]  +R[a][1]*f[i][1]  +R[a][2]*f[i][2]  +R[a][3]*f[i][3]  +R[a][4]*f[i][4]
-	+R[a][5]*f[i][5]  +R[a][6]*f[i][6]  +R[a][7]*f[i][7]  +R[a][8]*f[i][8]  +R[a][9]*f[i][9]
-	+R[a][10]*f[i][10]+R[a][11]*f[i][11]+R[a][12]*f[i][12]+R[a][13]*f[i][13]+R[a][14]*f[i][14]
-	+R[a][15]*f[i][15]+R[a][16]*f[i][16]+R[a][17]*f[i][17]+R[a][18]*f[i][18]+R[a][19]*f[i][19];
-  //#endif
+      for (int a=0; a<20; ++a)
+	g[i][a] = ScalarProd20(R[a],f[i]);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////

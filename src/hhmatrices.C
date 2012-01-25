@@ -316,7 +316,6 @@ void SetBlosumMatrix(const float BlosumXX[])
   for (a=0; a<19; a++)
     for (b=a+1; b<20; ++b)
       P[a][b] = P[b][a];
-  for (a=0; a<20; ++a) P[a][20]=P[20][a]=1.0f;
   return;
 }
 
@@ -334,7 +333,6 @@ void SetSubstitutionMatrix()
       for (a=0; a<20; ++a)
 	for (pb[a]=0.0f, b=0; b<20; ++b)
 	  P[a][b] = 0.000001f*Gonnet[a*20+b];
-      for (a=0; a<20; ++a) P[a][20]=P[20][a]=1.0f;
       break;
 
     case 30:  //BLOSUM30
