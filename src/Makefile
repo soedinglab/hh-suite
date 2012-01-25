@@ -20,11 +20,16 @@ C  XXFLAGS = -fast -Wall -fno-strict-aliasing -finline-functions -funroll-loops 
   OBJECT_LIBS = -openmp
 else
   CXX = g++
-  CXXFLAGS = -O3 -Wall -Wno-deprecated -Wno-char-subscripts -fno-strict-aliasing -DHH_SSE3 -march=core2 -I$(CS_DIR) $(BITS_FLAG) -I$(FFINDEX_DIR)
+  CXXFLAGS = -O3 -Wall -Wno-deprecated -Wno-char-subscripts -fno-strict-aliasing -I$(CS_DIR) $(BITS_FLAG) -I$(FFINDEX_DIR)
   HHSEARCH_LIBS = -lpthread
   HHBLITS_LIBS = -lpthread -fopenmp
   HHALIGN_LIBS = 
   OBJECT_LIBS = -fopenmp
+ifndef NO_SSE3
+  CXXFLAGS += -DHH_SSE3 -march=core2 
+else
+  CXXFLAGS += -DHH_SSE2
+endif
 ifeq ($(OS), Darwin)
   CXXFLAGS+=-DHH_MAC
 endif
