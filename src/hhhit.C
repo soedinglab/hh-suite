@@ -817,9 +817,7 @@ void Hit::Backward(HMM& q, HMM& t)
   int jmin;
   
   double B_MM_prev[t.L + 1];
-  double B_GD_prev[t.L + 1];
   double B_DG_prev[t.L + 1];
-  double B_IM_prev[t.L + 1];
   double B_MI_prev[t.L + 1];
 
   double B_MM_curr[t.L + 1];
@@ -835,7 +833,7 @@ void Hit::Backward(HMM& q, HMM& t)
       B_MM[q.L][j] = B_MM_prev[j] = 0.0;
     else 
       B_MM[q.L][j] = B_MM_prev[j] = scale[q.L+1];
-    B_IM_prev[j] = B_MI_prev[j] = B_DG_prev[j] = B_GD_prev[j] = 0.0;
+    B_MI_prev[j] = B_DG_prev[j] = 0.0;
   }
   if (par.loc) pmin = scale[q.L+1]; else pmin = 0.0; // transform pmin (for local alignment) to scale of present (i'th) row 
 
@@ -908,9 +906,7 @@ void Hit::Backward(HMM& q, HMM& t)
       for(int jj = 0; jj <= t.L; jj++)
       {
 	B_MM_prev[jj] = B_MM_curr[jj];
-	B_GD_prev[jj] = B_GD_curr[jj];
 	B_DG_prev[jj] = B_DG_curr[jj];
-	B_IM_prev[jj] = B_IM_curr[jj];
 	B_MI_prev[jj] = B_MI_curr[jj];
       }
     } // end for i

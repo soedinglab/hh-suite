@@ -149,11 +149,10 @@ void* WorkerLoop(void* data)
 {
   int thread_id = (*((Thread_args*)data)).thread_id;  // typecast 'data' from pointer-to-void to pointer-to-Thread_args
   void (*ExecuteJob)(int) = (*((Thread_args*)data)).function; // dito; data.function is a pointer to a function(int) that returns void
-  int rc;                            // return code for threading commands
   int bin;                           // bin index
 
   // Lock access to bin_status
-  rc = pthread_mutex_lock(&bin_status_mutex);
+  pthread_mutex_lock(&bin_status_mutex);
 
   ///////////////////////////////////////////////////////////////////////////////////////
   // Take jobs from one of the SUBMITTED bins and execute them. If no submitted jobs found, wait for signal 'new_job'

@@ -299,12 +299,13 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline)
         {
           // #PF01367.9 5_3_exonuc: 5'-3' exonuclease, C-terminal SAM fold; PDB 1taq, 1bgx (T:271-174), 1taq (271-174)
           if (name[0]) continue;  // if already name defined: skip commentary line
-          char *ptr1, *ptr2;
+          char *ptr1;
           ptr1=strscn_(line+1); // set ptr1 to first non-whitespace character after '#' -> AC number
           strncpy(longname,ptr1,DESCLEN-1); // copy whole commentary line after '# ' into longname
           longname[DESCLEN-1]='\0';
           strtr(longname,""," ");
-          ptr2=strcut_(ptr1);  // cut after AC number and set ptr2 to first non-whitespace character after AC number
+          strcut_(ptr1); // cut after AC number and set ptr2 to first non-whitespace character after AC number
+//        char* ptr2=strcut_(ptr1); // **instead** of previous line
 //        strcpy(fam,ptr1);    // copy AC number to fam
 //        if (!strncmp(fam,"PF",2)) strcut_(fam,'.'); // if PFAM identifier contains '.' cut it off
 //        strcut_(ptr2);       // cut after first word ...
@@ -459,14 +460,11 @@ void Alignment::GetSeqsFromHMM(HMM& q)
   int qk;                 // Index of sequence in HHM
   int k;                  // Index of sequence being read currently (first=0)
 
-  char cur_seq[par.maxcol];   // Sequence currently read in
-  
   kss_dssp=ksa_dssp=kss_pred=kss_conf=kfirst=-1;
   n_display=0;
   N_in=0;
   N_filtered=0;
   N_ss=0;
-  cur_seq[0]=' ';         // overwrite '\0' character at beginning to be able to do strcpy(*,cur_seq)
   k=0;
 
   for (qk=0; qk<q.n_seqs; ++qk)
@@ -1310,17 +1308,17 @@ int Alignment::FilterWithCoreHMM(char in[], float coresc, HMM& qcore)
     {
       if (!in[k]) continue;  // if in[k]==0 sequence k will be suppressed directly
 
-      float score_M=0.0;
-      float score_prev=0.0;
+      // float score_M=0.0;
+      // float score_prev=0.0;
 
       // Calculate score of sequence k with core HMM
       score=0; gap=0;
       for (i=first[k]; i<=last[k]; ++i)
         {
-          score_M=0.0;
+          // score_M=0.0;
           if (X[k][i]<=ANY)       // current state is Match
             {
-              score_M=logodds[i][ (int)X[k][i]];
+              // score_M=logodds[i][ (int)X[k][i]];
               score+=logodds[i][ (int)X[k][i]];
               if (gap) score+=qcore.tr[i][D2M]; else score+=qcore.tr[i][M2M];
               gap=0;
@@ -1332,7 +1330,7 @@ int Alignment::FilterWithCoreHMM(char in[], float coresc, HMM& qcore)
             }
           if (I[k][i]) score+=qcore.tr[i][M2I]+(I[k][i]-1)*qcore.tr[i][I2I]+qcore.tr[i][I2M];
 //        if (k==2) printf("i=%3i %c:%c   score_M=%6.2f   score=%6.2f  score_sum=%6.2f \n",i,i2aa(X[kfirst][i]),i2aa(X[k][i]),score_M,score-score_prev,score);
-          score_prev=score;
+          // score_prev=score;
         }
 
       printf("k=%3i score=%6.2f\n",k,score);

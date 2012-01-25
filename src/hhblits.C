@@ -59,14 +59,18 @@
 
 #include <sys/time.h>
 
+#ifdef HH_SSE4
+#include <tmmintrin.h>   // SSSE3
+#include <smmintrin.h>   // SSE4.1
+#define HH_SSE3
+#endif
+
 #ifdef HH_SSE3
-#ifdef __SUNPRO_C
-#include <sunmedia_intrin.h>
-#else
+#ifndef __SUNPRO_C
 #include <emmintrin.h>   // SSE2
 #include <pmmintrin.h>   // SSE3
-#include <tmmintrin.h>   // SSSE3
-///#include <smmintrin.h>   // SSE4.1
+#else
+#include <sunmedia_intrin.h>
 #endif
 #endif
 
