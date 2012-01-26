@@ -46,9 +46,10 @@ using std::ofstream;
 #include "context_library.h"
 #include "library_pseudocounts-inl.h"
 
+#include "list.h"        // list data structure
+#include "hash.h"        // hash data structure
+
 #include "util.C"        // imax, fmax, iround, iceil, ifloor, strint, strscn, strcut, substr, uprstr, uprchr, Basename etc.
-#include "list.C"        // list data structure
-#include "hash.C"        // hash data structure
 #include "hhdecl.C"      // Constants, global variables, struct Parameters
 #include "hhutil.C"      // MatchChr, InsertChr, aa2i, i2aa, log2, fast_log2, ScopID, WriteToScreen,
 #include "hhmatrices.C"  // BLOSUM50, GONNET, HSDM
