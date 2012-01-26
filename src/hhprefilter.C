@@ -248,6 +248,11 @@ int swStripedByte(unsigned char   *querySeq,
   return score;
 }
 
+
+////////////////////////////////////////////////////////////////////////////
+// The following method is based on code by Michael Farrar and was extended 
+// by Michael Remmert by a backtracing routine
+
 int swStripedWord_backtrace(int              queryLength,
 			    unsigned char   *dbSeq,
 			    int              dbLength,
