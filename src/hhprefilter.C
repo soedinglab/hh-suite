@@ -16,6 +16,7 @@ struct ali_pos {
 
 #define SHORT_BIAS 32768
 
+const int NUMCOLSTATES = cs::AS219::kSize;
 int LDB = 0;              // number of characters of input prefilter database file
 int num_dbs = 0;          // number of sequences in prefilter database file
 Hash<char>* doubled;
@@ -893,13 +894,13 @@ void stripe_query_profile()
   // Build query profile with 219 column states
   query_profile = new float*[LQ+1];
   for (i=0; i<LQ+1; ++i) 
-    query_profile[i]=(float*) memalign(16,cs::AS219::kSize*sizeof(float));
-      
+    query_profile[i]=(float*) memalign(16,NUMCOLSTATES*sizeof(float));
+ 
   const cs::ContextLibrary<cs::AA>& lib = *cs_lib;
 
   // log (S(i,k)) = log ( SUM_a p(i,a) * p(k,a) / f(a) )   k: column state, i: pos in ali, a: amino acid
   for (i=0; i<LQ; ++i)
-    for (k=0; k<(int)cs::AS219::kSize; ++k)
+    for (k=0; k<NUMCOLSTATES; ++k)
       {
 	float sum = 0;
 	for (a=0; a<20; ++a)
@@ -909,10 +910,10 @@ void stripe_query_profile()
       
   /////////////////////////////////////////
   // Stripe query profile with chars
-  qc = (unsigned char*)memalign(16,(par.prefilter_states+1)*(LQ+15)*sizeof(unsigned char));   // query profile (states + 1 because of ANY char)
+  qc = (unsigned char*)memalign(16,(NUMCOLSTATES+1)*(LQ+15)*sizeof(unsigned char));   // query profile (states + 1 because of ANY char)
   W = (LQ+15) / 16;   // band width = hochgerundetes LQ/16
   
-  for (a=0; a < par.prefilter_states; ++a)  
+  for (a=0; a < NUMCOLSTATES; ++a)  
     {
       h = a*W*16;
       for (i=0; i < W; ++i) 
@@ -936,7 +937,7 @@ void stripe_query_profile()
     }
 
   // Add extra ANY-state (220'th state) 
-  h = par.prefilter_states*W*16;
+  h = NUMCOLSTATES*W*16;
   for (i=0; i < W; ++i) 
     {
       j = i;
@@ -953,12 +954,12 @@ void stripe_query_profile()
   
   //////////////////////////////////////////////+
   // Stripe query profile with shorts
-  qw = (unsigned short*)memalign(16,(par.prefilter_states+1)*(LQ+7)*sizeof(unsigned short));   // query profile (states + 1 because of ANY char)
+  qw = (unsigned short*)memalign(16,(NUMCOLSTATES+1)*(LQ+7)*sizeof(unsigned short));   // query profile (states + 1 because of ANY char)
   Ww = (LQ+7) / 8;
   
   /////////////////////////////////////////
   // Stripe query profile
-  for (a=0; a < par.prefilter_states; ++a)  
+  for (a=0; a < NUMCOLSTATES; ++a)  
     {
       h = a*Ww*8;
       for (i=0; i < Ww; ++i) 
@@ -980,7 +981,7 @@ void stripe_query_profile()
     }
       
   // Add extra ANY-state 
-  h = par.prefilter_states*Ww*8;
+  h = NUMCOLSTATES*Ww*8;
   for (i=0; i < Ww; ++i) 
     {
       j = i;

@@ -96,6 +96,7 @@ extern "C" {
 #include "context_library.h"
 #include "library_pseudocounts-inl.h"
 #include "abstract_state_matrix.h"
+cs::ContextLibrary<cs::AA> *cs_lib;
 
 #include "util.C"        // imax, fmax, iround, iceil, ifloor, strint, strscn, strcut, substr, uprstr, uprchr, Basename etc.
 #include "list.C"        // list data structure

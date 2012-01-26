@@ -583,7 +583,6 @@ void ProcessArguments(int argc, char** argv)
       else if (!strcmp(argv[i],"-realign")) par.realign=1;
       else if (!strcmp(argv[i],"-norealign")) par.realign=0;
       else if (!strcmp(argv[i],"-sto") && (i<argc-1))  {Nstochali=atoi(argv[++i]); par.forward=1; par.realign=0;}
-      else if (!strcmp(argv[i],"-r")) par.repmode=1; 
       else if (!strcmp(argv[i],"-M") && (i<argc-1)) 
 	if (!strcmp(argv[++i],"a2m") || !strcmp(argv[i],"a3m"))  par.M=1; 
 	else if(!strcmp(argv[i],"first"))  par.M=3; 

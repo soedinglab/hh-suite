@@ -72,8 +72,6 @@
 #endif
 #endif
 
-
-
 using std::cout;
 using std::cerr;
 using std::endl;
@@ -587,7 +585,6 @@ void ProcessArguments(int argc, char** argv)
       else if (!strncmp(argv[i],"-glo",3)) {par.loc=0; if (par.mact>0.35 && par.mact<0.351) {par.mact=0;} }
       else if (!strncmp(argv[i],"-loc",4)) par.loc=1;
       else if (!strncmp(argv[i],"-alt",4) && (i<argc-1)) par.altali=atoi(argv[++i]);
-      else if (!strcmp(argv[i],"-r")) par.repmode=1;
       else if (!strcmp(argv[i],"-M") && (i<argc-1))
         if (!strcmp(argv[++i],"a2m") || !strcmp(argv[i],"a3m"))  par.M=1;
         else if(!strcmp(argv[i],"first"))  par.M=3;
@@ -610,7 +607,6 @@ void ProcessArguments(int argc, char** argv)
       else if (!strcmp(argv[i],"-dbstrlen") && (i<argc-1)) par.maxdbstrlen=atoi(argv[++i]);
       else if (!strcmp(argv[i],"-tags")) par.notags=0;
       else if (!strcmp(argv[i],"-notags")) par.notags=1;
-      else if (!strcmp(argv[i],"-mode") && (i<argc-1)) par.mode=atoi(argv[++i]);
       else if (!strncmp(argv[i],"-idummy",7) && (i<argc-1)) par.idummy=atoi(argv[++i]);
       else if (!strncmp(argv[i],"-premerge",9) && (i<argc-1)) par.premerge=atoi(argv[++i]);
       else if (!strncmp(argv[i],"-fdummy",7) && (i<argc-1)) par.fdummy=atof(argv[++i]);
