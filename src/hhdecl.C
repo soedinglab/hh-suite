@@ -261,9 +261,7 @@ public:
   double prefilter_evalue_thresh;
   int preprefilter_smax_thresh;
 
-  // SCRAP THE FOLLOWING VARIABLES?
-
-  // float wstruc;          // weight of structure scores
+  float wstruc;          // weight of structure scores in hhalign
   int idummy;
   float fdummy;
 
@@ -470,7 +468,7 @@ void Parameters::SetDefaults()
   csb = 0.85;
   csw = 1.6;
 
-  // wstruc=1.0f;             // Weight of structure scores
+  wstruc=1.0f;             // Weight of structure score in hhalign
   idummy=0;
 
   return;
