@@ -51,7 +51,7 @@
 
 {\Large \bf User Guide}
 
-  Version 2.0.7, January 2012\\[2mm]
+  Version 2.0.8, January 2012\\[2mm]
 {\copyright  Johannes S\"oding, Michael Remmert, Andreas Hauser}\\[2mm]
 Available under the Gnu Public License (version 3)\\[2mm]
 We are very grateful for bug reports! Please contact us at soeding@genzentrum.lmu.de
@@ -90,7 +90,7 @@ The HH-suite is an open-source software package for highly sensitive sequence se
 
 Profile HMMs are a concise representation of \textit{multiple sequence alignments} (MSAs). Like sequence profiles, they contain for each position in the master sequence the probabilities to observe each of the 20 amino acids in homologous proteins. The amino acid distributions for each column are extrapolated from the homologous sequences in the MSA by adding \textit{pseudocounts} to the amino acid counts observed in the MSA. Unlike sequence profiles, profile HMMs also contain position-specific gap penalties. More precisely, they contain for each position in the master sequence the probability to observe an insertion or a deletion after that position (the log of which corresponds to gap-open penalties) and the probabilities to extend the insertion or deletion (the log of which corresponds to gap-extend penalties). A profile HMM is thus much better suited than a single sequence to find homologous sequences and calculate accurate alignments. By representing both the query sequence and the database sequences by profile HMMs, HHsearch and HHblits are more sensitive for detecting remotely homologous proteins than methods based on pairwise sequence comparison or profile-sequence comparison.
 
-HHblits can build high-quality multiple sequence alignments (MSAs) starting from a single sequence or from an MSA. Compared to PSI-BLAST, HHblits is faster, finds up to two times more homologous proteins and produces more accurate alignments. It uses an iterative search strategy, adding sequences from significantly similar database HMMs from a previous search iteration to the query HMM for the next search. Because HHblits is based on the pairwise alignment of profile HMMs, it needs its own type of databases that contain multiple sequence alignments and the corresponding profile HMMs instead of single sequences. The HHblits databases uniprot20 and nr20 are generated regularly by clustering the UniProt database from EBI and the nonredundant (nr) database from the NCBI into groups of similar sequences alignable over at least 80 \% of their length and down to $\sim 20 \%$ pairwise sequence identity. These databases can be downloaded together with HHblits. HHblits uses the HMM-HMM alignment algorithms in HHsearch, but it employs a fast prefilter that reduces the number of database HMMs for which to perform the slow HMM-HMM comparison from tens of millions to a few thousands. At the same time, the prefilter is sensitive enough to reduce the sensitivity of HHblits only marginally in comparison to HHsearch. 
+HHblits can build high-quality multiple sequence alignments (MSAs) starting from a single sequence or from an MSA. Compared to PSI-BLAST, HHblits is faster, finds up to two times more homologous proteins and produces more accurate alignments. It uses an iterative search strategy, adding sequences from significantly similar database HMMs from a previous search iteration to the query HMM for the next search. Because HHblits is based on the pairwise alignment of profile HMMs, it needs its own type of databases that contain multiple sequence alignments and the corresponding profile HMMs instead of single sequences. The HHblits databases uniprot20 and nr20 are generated regularly by clustering the UniProt database from EBI and the nonredundant (nr) database from the NCBI into groups of similar sequences alignable over at least 80 \% of their length and down to $\sim 20 \%$ pairwise sequence identity. These databases can be downloaded together with HHblits. HHblits uses the HMM-HMM alignment algorithms in HHsearch, but it employs a fast prefilter (based partly on code from Michael Farrar, \cite{Farrar:2007}) that reduces the number of database HMMs for which to perform the slow HMM-HMM comparison from tens of millions to a few thousands. At the same time, the prefilter is sensitive enough to reduce the sensitivity of HHblits only marginally in comparison to HHsearch. 
 
 By generating highly accurate and diverse MSAs, HHblits can improve almost all downstream sequence analysis methods, such as the prediction of secondary and tertiary structure \cite{Jones:1999, Marks:2011}, of membrane helices, functionally conserved residues, binding pockets, protein interaction interfaces, or short linear motifs. The accuracy of all these methods depends critically on the accuracy and the diversity of the underlying MSAs, as too few or too similar sequences do not add significant information for the predictions. As an example, running the popular PSIPRED secondary structure prediction program \cite{Jones:1999} on MSAs generated by HHblits instead of PSI-BLAST improved the accuracy of PSIPRED significantly even without retraining PSIPRED on the HHblits alignments \cite{Remmert:2011}. 
 
@@ -1846,6 +1846,30 @@ You should have received a copy of the GNU General Public License
 along with this program in the file \verb`LICENSE`.  
 If not, see \url{http://www.gnu.org/licenses/}.
 
+The hhsuite contains in file \verb`hhprefilter.C` code adapted from Michael 
+Farrar (\url{http://sites.google.com/site/farrarmichael/smith-waterman}
+and \cite{Farrar:2007}) His code is marked in the file hhprefilter.C. 
+The copy right of his code is shown below:
+
+\begin{verbatim}
+Copyright 2006, by Michael Farrar.  All rights reserved. The SWSSE2
+program and documentation may not be sold or incorporated into a
+commercial product, in whole or in part, without written consent of
+Michael Farrar.
+
+For further information regarding permission for use or reproduction, 
+please contact Michael Farrar at:
+
+    farrar.michael@gmail.com
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, 
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF 
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY 
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+\end{verbatim}
 
 %\bibliographystyle{model3-num-names}
 \bibliography{../../papers/johannes}

@@ -1,6 +1,38 @@
 // hhprefilter.C
 //
-// some function for prefiltering in HHblits
+// Functions for prefiltering in HHblits
+
+//////////////////////////////////////////////////////////////////////////////////////////
+//     This file contains code adapted from Michael Farrar
+//     (http://sites.google.com/site/farrarmichael/smith-waterman). His code is marked.
+//     The copy right of his code is shown below:
+
+//     Copyright 2006, by Michael Farrar.  All rights reserved. The SWSSE2
+//     program and documentation may not be sold or incorporated into a
+//     commercial product, in whole or in part, without written consent of
+//     Michael Farrar.
+//
+//     For further information regarding permission for use or reproduction, 
+//     please contact Michael Farrar at:
+//
+//         farrar.michael@gmail.com
+//
+//
+//     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, 
+//     EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF 
+//     MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
+//     IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY 
+//     CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
+//     TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+//     SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+//     Reference: 
+//     Farrar M. Striped Smith-Waterman speeds database searches 
+//     six times over other SIMD implementations. Bioinformatics. 2007, 23:156-61.
+//     
+//     Michael Farrar died unexpectedly in December 2010. 
+//     Many thanks posthumously for your great code!
+//     Johannes
 
 #define SWAP(tmp, arg1, arg2) tmp = arg1; arg1 = arg2; arg2 = tmp;
 
@@ -35,6 +67,18 @@ int* length;              // length of next sequence in X
 int W;                    // 
 unsigned short* qw;       // extended column state query profile as short int
 int Ww;
+
+///////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
+//     Copyright 2006, by Michael Farrar.  All rights reserved. The SWSSE2
+//     program and documentation may not be sold or incorporated into a
+//     commercial product, in whole or in part, without written consent of
+//     Michael Farrar.
+//
+//     For further information regarding permission for use or reproduction, 
+//     please contact Michael Farrar at:
+//
+//         farrar.michael@gmail.com
 
 // fast Smith-Waterman with SSE
 int swStripedByte(unsigned char   *querySeq,
@@ -410,6 +454,19 @@ int swStripedWord_backtrace(int              queryLength,
         }
     }
     
+//     Copyright 2006, by Michael Farrar.  All rights reserved. The SWSSE2
+//     program and documentation may not be sold or incorporated into a
+//     commercial product, in whole or in part, without written consent of
+//     Michael Farrar.
+//
+//     For further information regarding permission for use or reproduction, 
+//     please contact Michael Farrar at:
+//
+//         farrar.michael@gmail.com
+///////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
+
+
   // Extract all alignments with score > threshold
   __m128i vMax;
   __m128i Dt;
