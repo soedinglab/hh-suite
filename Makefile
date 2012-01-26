@@ -13,7 +13,7 @@ INSTALL_SCRIPTS_DIR?=$(INSTALL_LIB_DIR)/scripts
 INSTALL_DATA_DIR?=$(INSTALL_LIB_DIR)/data
 INSTALL_LIB_BIN_DIR?=$(INSTALL_LIB_DIR)/bin
 
-dist_name=hhsuite-2.0.7
+dist_name=hhsuite-2.0.8
 
 all_static: ffindex_static
 	cd src && make all_static
