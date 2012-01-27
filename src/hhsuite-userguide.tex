@@ -60,7 +60,7 @@ We are very grateful for bug reports! Please contact us at soeding@genzentrum.lm
 
 \end{center}
 
-\noindent The HH-suite is an open-source software package for sensitive sequence searching based on the pairwise alignment of hidden Markov models (HMMs). It contains HHsearch [1] and HHblits [2] among other programs and utilities. HHsearch takes as input a multiple sequence alignment (MSA) or profile HMM and searches a database of HMMs (e.g. PDB, Pfam, or InterPro) for homologous proteins. HHsearch is often used for protein structure prediction to detect homologous templates and to build highly accurate query-template pairwise alignments for homology modeling. In the CASP9 competition (2010), a fully automated version of HHpred based on HHsearch and HHblits was ranked best out of 81 servers in template-based structure prediction. HHblits can build high-quality MSAs starting from single sequences or from MSAs. It transforms these into a query HMM and iteratively searches through UniProt20 or nr20 databases by adding significantly similar sequences from the previous search to the updated query HMM for the next search iteration. Compared to PSI-BLAST, HHblits is faster, up to twice as sensitive and produces more accurate alignments. HHblits uses the same HMM-HMM alignment algorithms as HHsearch, but it employs a fast prefilter that reduces the number of database HMMs for which to perform the slow HMM-HMM comparison from tens of millions to a few thousands. \\[2mm]
+\noindent The HH-suite is an open-source software package for sensitive sequence searching based on the pairwise alignment of hidden Markov models (HMMs). It contains HHsearch [1] and HHblits [2] among other programs and utilities. HHsearch takes as input a multiple sequence alignment (MSA) or profile HMM and searches a database of HMMs (e.g. PDB, Pfam, or InterPro) for homologous proteins. HHsearch is often used for protein structure prediction to detect homologous templates and to build highly accurate query-template pairwise alignments for homology modeling. In the CASP9 competition (2010), a fully automated version of HHpred based on HHsearch and HHblits was ranked best out of 81 servers in template-based structure prediction. HHblits can build high-quality MSAs starting from single sequences or from MSAs. It transforms these into a query HMM and iteratively searches through uniprot20 or nr20 databases by adding significantly similar sequences from the previous search to the updated query HMM for the next search iteration. Compared to PSI-BLAST, HHblits is faster, up to twice as sensitive and produces more accurate alignments. HHblits uses the same HMM-HMM alignment algorithms as HHsearch, but it employs a fast prefilter that reduces the number of database HMMs for which to perform the slow HMM-HMM comparison from tens of millions to a few thousands. \\[2mm]
 
 {\bf References:}
 
@@ -88,17 +88,20 @@ We are very grateful for bug reports! Please contact us at soeding@genzentrum.lm
 \section{Introduction}
 The HH-suite is an open-source software package for highly sensitive sequence searching and sequence alignment. Its two most important programs are HHsearch and HHblits. Both are based on the pairwise comparison of \textit{profile hidden Markov models} (HMMs). 
 
-Profile HMMs are a concise representation of \textit{multiple sequence alignments} (MSAs). Like sequence profiles, they contain for each position in the master sequence the probabilities to observe each of the 20 amino acids in homologous proteins. The amino acid distributions for each column are extrapolated from the homologous sequences in the MSA by adding \textit{pseudocounts} to the amino acid counts observed in the MSA. Unlike sequence profiles, profile HMMs also contain position-specific gap penalties. More precisely, they contain for each position in the master sequence the probability to observe an insertion or a deletion after that position (the log of which corresponds to gap-open penalties) and the probabilities to extend the insertion or deletion (the log of which corresponds to gap-extend penalties). A profile HMM is thus much better suited than a single sequence to find homologous sequences and calculate accurate alignments. By representing both the query sequence and the database sequences by profile HMMs, HHsearch and HHblits are more sensitive for detecting remotely homologous proteins than methods based on pairwise sequence comparison or profile-sequence comparison.
+Profile HMMs are a concise representation of \textit{multiple sequence alignments} (MSAs) \cite{Durbin:2008,Krogh:1994}. Like sequence profiles, they contain for each position in the master sequence the probabilities to observe each of the 20 amino acids in homologous proteins. The amino acid distributions for each column are extrapolated from the homologous sequences in the MSA by adding \textit{pseudocounts} to the amino acid counts observed in the MSA. Unlike sequence profiles, profile HMMs also contain position-specific gap penalties. More precisely, they contain for each position in the master sequence the probability to observe an insertion or a deletion after that position (the log of which corresponds to gap-open penalties) and the probabilities to extend the insertion or deletion (the log of which corresponds to gap-extend penalties). A profile HMM is thus much better suited than a single sequence to find homologous sequences and calculate accurate alignments. By representing both the query sequence and the database sequences by profile HMMs, HHsearch and HHblits are more sensitive for detecting and aligning remotely homologous proteins than methods based on pairwise sequence comparison or profile-sequence comparison.
 
-HHblits can build high-quality multiple sequence alignments (MSAs) starting from a single sequence or from an MSA. Compared to PSI-BLAST, HHblits is faster, finds up to two times more homologous proteins and produces more accurate alignments. It uses an iterative search strategy, adding sequences from significantly similar database HMMs from a previous search iteration to the query HMM for the next search. Because HHblits is based on the pairwise alignment of profile HMMs, it needs its own type of databases that contain multiple sequence alignments and the corresponding profile HMMs instead of single sequences. The HHblits databases uniprot20 and nr20 are generated regularly by clustering the UniProt database from EBI and the nonredundant (nr) database from the NCBI into groups of similar sequences alignable over at least 80 \% of their length and down to $\sim 20 \%$ pairwise sequence identity. These databases can be downloaded together with HHblits. HHblits uses the HMM-HMM alignment algorithms in HHsearch, but it employs a fast prefilter (based partly on code from Michael Farrar, \cite{Farrar:2007}) that reduces the number of database HMMs for which to perform the slow HMM-HMM comparison from tens of millions to a few thousands. At the same time, the prefilter is sensitive enough to reduce the sensitivity of HHblits only marginally in comparison to HHsearch. 
+HHblits can build high-quality multiple sequence alignments (MSAs) starting from a single sequence or from an MSA. Compared to PSI-BLAST \cite{Altschul:1997}, HHblits is faster, finds up to two times more homologous proteins and produces more accurate alignments. It uses an iterative search strategy, adding sequences from significantly similar database HMMs from a previous search iteration to the query HMM for the next search. Because HHblits is based on the pairwise alignment of profile HMMs, it needs its own type of databases that contain multiple sequence alignments and the corresponding profile HMMs instead of single sequences. The HHblits databases uniprot20 and nr20 are generated regularly by clustering the UniProt database \cite{uniprot:2010} from EBI/SIB/PIR and the nonredundant (nr) database from the NCBI into groups of similar sequences alignable over at least 80 \% of their length and down to $\sim 20 \%$ pairwise sequence identity. These databases can be downloaded together with HHblits. HHblits uses the HMM-HMM alignment algorithms in HHsearch, but it employs a fast prefilter (based partly on code from Michael Farrar, \cite{Farrar:2007}) that reduces the number of database HMMs for which to perform the slow HMM-HMM comparison from tens of millions to a few thousands. At the same time, the prefilter is sensitive enough to reduce the sensitivity of HHblits only marginally in comparison to HHsearch. 
 
 By generating highly accurate and diverse MSAs, HHblits can improve almost all downstream sequence analysis methods, such as the prediction of secondary and tertiary structure \cite{Jones:1999, Marks:2011}, of membrane helices, functionally conserved residues, binding pockets, protein interaction interfaces, or short linear motifs. The accuracy of all these methods depends critically on the accuracy and the diversity of the underlying MSAs, as too few or too similar sequences do not add significant information for the predictions. As an example, running the popular PSIPRED secondary structure prediction program \cite{Jones:1999} on MSAs generated by HHblits instead of PSI-BLAST improved the accuracy of PSIPRED significantly even without retraining PSIPRED on the HHblits alignments \cite{Remmert:2011}. 
 
-HHsearch takes as input an MSA (e.g. built by HHblits) or a profile HMM and searches a database of HMMs for homologous proteins. Many HHsearch databases can be downloaded (see next section). The pdb70 database, for instance, consists of profile HMMs for a set of representative sequences from the PDB database; the Pfam, InterPro and CDD domain databases are large collections of curated MSAs and profile HMMs for conserved, functionally annotated domains. HHsearch is often used to predict the domain architectures and the functions of domains in proteins by finding similarities to domains in the pdb70, Pfam, InterPro or other databases. 
+HHsearch takes as input an MSA (e.g. built by HHblits) or a profile HMM and searches a database of HMMs for homologous proteins. Many HHsearch databases can be downloaded (see next section). The pdb70 database, for instance, consists of profile HMMs for a set of representative sequences from the PDB database \cite{PDB:2004}; the scop70 database has profile HMMs for representative domain sequences from the SCOP database of structural domains \cite{SCOP:2000}; the Pfam \cite{Finn:2010}, InterPro \cite{Hunter:2009} and CDD \cite{Marchler:2011} domain databases are large collections of curated MSAs and profile HMMs for conserved, functionally annotated domains. HHsearch is often used to predict the domain architectures and the functions of domains in proteins by finding similarities to domains in the pdb70, Pfam, InterPro or other databases. 
 
 In addition to the command line package described here, two interactive web servers at \url{http://hhpred.tuebingen.mpg.de} \cite{Soding:2005b, Hildebrand:2009} and \url{http://hhblits.genzentrum.lmu.de} run HHsearch and HHblits. They offer extended functionality, such as Jalview applets for checking query and template alignments, histogram views of alignments, and building 3D models with MODELLER \cite{Sali:1993}. 
 
 In the CASP9 competition (Critical Assessment of Techniques for Protein Structure Prediction) in 2010, a fully automated version of HHpred based on HHsearch and HHblits was ranked best out of the 81 servers in template-based structure prediction, the category most relevant for biological applications, while having an average response time of minutes instead of days like most other servers \cite{Mariani:2011} (\url{http://predictioncenter.org/casp9/groups_analysis.cgi?type=server&tbm=on}). 
+
+Other popular programs for sensitive, iterative sequence searching are PSI-BLAST \cite{Altschul:1997} and HMMER (\url{http://hmmer.org/}). Since they are based on profile-to-sequence and HMM-to-sequence comparison, respectively, they have the advantage over HHblits and HHsearch of being able to search raw sequence databases.
+
 
 \section{Installation of the HH-suite and its databases}
 
@@ -236,12 +239,14 @@ To follow.
 
 
 \subsection{HHblits databases} \label{hhblits_dbs}
-To build MSAs using iterative HHblits searches, you need either the uniprot20 or the nr20 HHblits database. Both yield MSAs of equivalent quality and diversity, so which one you should choose depends on what sequence annotation and name formats you prefer. The pdb70 and scop70 databases are not suited for iterative searches as they do not cover the entire sequence space. They are useful as alternatives to the versions formatted for HHsearch (next subsection), because HHblits is almost as sensitive as HHsearch while being much faster. The following HHblits databases can be downloaded at 
-\verb`ftp://toolkit.genzentrum.lmu.de/HH-suite/hhblits_dbs/`: 
+Databases for HHblits are of two types. The first type, uniprot20 and nr20, cover essentially all of the known sequence space and are obtained by clustering UniProt \cite{uniprot:2010} and the non-redundant database from NCBI, respectively. Clusters  contain seququences that need to be almost full-length (80\%) alignable and typically have pairwise sequence identities down to 20\%-30\%. The clustering is done by kClust (Hauser M, Mayer CE, and Soeding J., to be published), a very fast algorithm for all-against-all sequence comparison and clustering developed in our group. Sequences in each cluster are globally aligned into an MSA (using ClustalOmega \cite{Higgins:2011}). The clusters in uniprot20 and nr20 thus treat all member sequences equally, and the annotatation of the cluster is a non-redundant sum of all annotations found in the cluster member sequences. You need this type of database to build MSAs using iterative HHblits searches. Both uniprot20 and nr20 yield MSAs of equivalent quality and diversity, so which one you should choose depends on what sequence annotation and name formats you prefer. 
 
+The second type of HHblits database, for example the pdb70, scop70, represent each master sequence by an MSA. The MSAs are typically built by HHblits searches starting with the master sequence as a query (Pfam uses HMMER searches \url{http://hmmer.org/}). The MSAs and HMMs typically carry the name and annotation of the master sequence. In contrast to the clusters in the first type of database, sequences can in principle occur in several MSAs. These homologous sequences merely serve to contribute evolutionary information to the master sequence. As the second type of databases do not cover the entire sequence space, they are not suited for iterative searches. The HHblits versions are useful as alternatives to the versions formatted for HHsearch (next subsection), because HHblits is almost as sensitive as HHsearch while being much faster. See  section \ref{building_dbs} for how to build your own type 2 databases.
+
+The following HHblits databases can be downloaded at \url{ftp://toolkit.genzentrum.lmu.de/HH-suite/hhblits_dbs/}: 
 \small 
 \begin{verbatim}
- 1 uniprot20    based on UniProt database from EBI, clustered to 20 % seq. identity
+ 1 uniprot20    based on UniProt db from EBI/SIB/PIR, clustered to 20 % seq. identity
  2 nr20         based on nonredundant db from NCBI, clustered to 20% seq. identity
  3 pdb70        representatives from PDB (70% max. sequence identity), updated weekly
  4 scop70       representatives from SCOP (70% max. sequence identity)
@@ -274,8 +279,7 @@ $ tar -xzvf uniprot20_<date>.tar.gz`
 More databases will become available in HHblits format that are only available for HHsearch at the time of writing (see next subsection).
 
 \subsection{HHsearch databases} \label{hhsearch_dbs}
-HHsearch needs just the \verb`<dbname>_hhm_db` file from the hhblits database. This file is simply a concatenation of of all HMM files in HHsearch/HHblits \verb`hhm` format with a leading \verb`\0` character. The following HHsearch databases can be downloaded at
-\verb`ftp://toolkit.lmb.uni-muenchen.de/HH-suite/hhsearch_dbs/`: 
+HHsearch needs just the \verb`<dbname>_hhm_db` file from the hhblits database. This file is simply a concatenation of of all HMM files in HHsearch/HHblits \verb`hhm` format with a leading \verb`\0` character. The following HHsearch databases can be downloaded at \url{ftp://toolkit.lmb.uni-muenchen.de/HH-suite/hhsearch_dbs/}
 
 \small 
 \begin{verbatim}
@@ -312,8 +316,8 @@ To generate an HHsearch database file, concatenate all *.hhm files:
 \begin{verbatim}
 $ cat *.hhm > scop70_1.75.hhm
 \end{verbatim}
-For the databases without asterisks, you can download the HMM models in HMMER format as 
-*.hmm.tar files. Each *.hmm.tar file untars into a single concatenated HMMER-formatted 
+For the databases without asterisks, you can download the HMM models in HMMER format (\url{http://hmmer.org/})
+as *.hmm.tar files. Each *.hmm.tar file untars into a single concatenated HMMER-formatted 
 database file that can be read by HHsearch. For theses databases, unfortunately no 
 alignments are publicly available. (Information to the contrary is welcome!) 
 
@@ -470,9 +474,9 @@ detect remote homologs.
 Previous versions of HH-suite (the 'HHsearch package') included a perl script \verb`buildali.pl` to build MSAs for a query sequence using PSI-BLAST as its search engine. Because HHblits performs better than PSI-BLAST in all aspects that we have tested, we decided to remove this script from HH-suite. It can still be downloaded as part of HHsearch version 1.5.0.
 
 
-\subsection{Building customized databases}
+\subsection{Building customized databases} \label{building_dbs}
 
-It is simple to build custom databases for HHsearch and HHblits using the same tools we use to build the standard HH-suite databases (except UniProt20 and nr20). An example application is to search for homologs among all proteins of an organism. To build your own HHsearch or HHblits database from a set of sequences, you first need to generate an MSA with predicted secondary structure for every sequence in the set. This can conveniently be done using the script \verb`multithread.pl` in the HH-suite. This script runs a command for many files in parallel, distributing the individual jobs to multiple cores on your server, one file per thread. This will shorten the run-time roughly by the number of cores. 
+It is simple to build custom databases for HHsearch and HHblits using the same tools we use to build the standard HH-suite databases (except uniprot20 and nr20). An example application is to search for homologs among all proteins of an organism. To build your own HHsearch or HHblits database from a set of sequences, you first need to generate an MSA with predicted secondary structure for every sequence in the set. This can conveniently be done using the script \verb`multithread.pl` in the HH-suite. This script runs a command for many files in parallel, distributing the individual jobs to multiple cores on your server, one file per thread. This will shorten the run-time roughly by the number of cores. 
 
 To build MSAs with HHblits from sequences \verb`dbs/scop70_1.75/*.seq`, run\\[-1mm]
 
@@ -570,61 +574,65 @@ it is recommended to run both versions and compare the results.
 
 Here is a list of things to check if a database match really is at least locally homologous.
  
-\begin{itemize}
+{\bf Check probability and E-value}:
+HHsearch and HHblits can detect homologous relationships far beyond the twilight zone, i.e. below 20\% sequence identity. Sequence identity is therefore not an appropriate measure of relatedness anymore. The estimated probability of the template to be (at least partly) homologous to your query sequence is the most important criterion to decide whether a template HMM is actually homologous or just a high-scoring chance hit. When it is larger than 95\%, say, the homology is nearly certain. Roughly speaking, one should give a hit serious consideration (i.e. check the other points in this list) whenever (1) the hit has $>50\%$ probability, or (2) it has $>30\%$ probability and is among the top three hits. The E-value is an alternative measure of statistical significance. It tells you how many chance hits with a score better than this would be expected if the database contained only hits unrelated to the query. At E-values below one, matches start to get marginally significant. Contrary to the probability, when calculating the E-value HHsearch and HHblits do not take into account the secondary structure similarity. Therefore, the probability is a more sensitive measure than the E-value.
 
-\item{Check probability and E-value: HHsearch and HHblits can detect homologous relationships far beyond the twilight zone, i.e. below 20\% sequence identity. Sequence identity is therefore not an appropriate measure of relatedness anymore. The estimated probability of the template to be (at least partly) homologous to your query sequence is the most important criterion to decide whether a template HMM is actually homologous or just a high-scoring chance hit. When it is larger than 95\%, say, the homology is nearly certain. Roughly speaking, one should give a hit serious consideration (i.e. check the other points in this list) whenever (1) the hit has $>50\%$ probability, or (2) it has $>30\%$ probability and is among the top three hits. The E-value is an alternative measure of statistical significance. It tells you how many chance hits with a score better than this would be expected if the database contained only hits unrelated to the query. At E-values below one, matches start to get marginally significant. Contrary to the probability, when calculating the E-value HHsearch and HHblits do not take into account the secondary structure similarity. Therefore, the probability is a more sensitive measure than the E-value.}
+{\bf Check if homology is biologically suggestive or at least reasonable}:
+Does the database hit have a function you would expect also for your query? Does it come from an organism that is likely to contain a homolog of your query protein?
 
-\item{Check if homology is biologically suggestive or at least reasonable: Does the database hit have a function you would expect also for your query? Does it come from an organism that is likely to contain a homolog of your query protein?}
+{\bf Check secondary structure similarity}:
+If the secondary structure of query and template is very different or you can't see how they could fit together in 3D, then this is a reason to distrust the hit. Note however that if the query alignment contains only a single sequence, the secondary structure prediction is quite unreliable and confidence values are overestimated.
 
-\item{Check secondary structure similarity: If the secondary structure of query and template is very different or you can't see how they could fit together in 3D, then this is a reason to distrust the hit. Note however that if the query alignment contains only a single sequence, the secondary structure prediction is quite unreliable and confidence values are overestimated.}
+{\bf Check relationship among top hits}: 
+If several of the top hits are homologous to each other, (e.g. when they are members of the same SCOP superfamily), then this will considerably reduce the chances of all of them being chance hits, especially if these related hits are themselves not very similar to each other. Searching the SCOP database is very useful precisely for this reason, since the SCOP family identifier (e.g. a.118.8.2) allows to tell immediately if two templates are likely homologs.
 
-\item{Check relationship among top hits: If several of the top hits are homologous to each other, (e.g. when they are members of the same SCOP superfamily), then this will considerably reduce the chances of all of them being chance hits, especially if these related hits are themselves not very similar to each other. Searching the SCOP database is very useful precisely for this reason, since the SCOP family identifier (e.g. a.118.8.2) allows to tell immediately if two templates are likely homologs.}
+{\bf Check for possible conserved motifs}:
+Most homologous pairs of alignments will have at least one (semi-)conserved motif in common. You can identify such putative (semi-)conserved motifs by the agglomeration of three or more well-matching columns (marked with a '\verb`|`' sign between the aligned HMMs) occurring within a few residues, as well as by matching consensus sequences. Some false positive hits have decent scores due to a similar amino acid composition of the template. In these cases, the alignments tend to be long and to lack conserved motifs.
 
-\item{Check for possible conserved motifs: Most homologous pairs of alignments will have at least one (semi-)conserved motif in common. You can identify such putative (semi-)conserved motifs by the agglomeration of three or more well-matching columns (marked with a '\verb`|`' sign between the aligned HMMs) occurring within a few residues, as well as by matching consensus sequences. Some false positive hits have decent scores due to a similar amino acid composition of the template. In these cases, the alignments tend to be long and to lack conserved motifs.}
+{\bf Check residues and role of conserved motifs}: 
+If you can identify possible conserved motifs, are the corresponding conserved template residues involved in binding or enzymatic function?
 
-\item{Check residues and role of conserved motifs: If you can identify possible conserved motifs, are the corresponding conserved template residues involved in binding or enzymatic function?}
+{\bf Check query and template alignments}: 
+A corrupted query or template alignment is the main source of high-scoring false positives. The two most common sources of corruption in an alignment are (1) non-homologous sequences, especially repetitive or low-complexity sequences in the alignment, and (2) non-homologous fragments at the ends of the aligned database sequences. Check the query and template MSAs in an alignment viewer such as Jalview or ALNEDIT.
 
-\item{Check query and template alignments: A corrupted query or template alignment is the main source of high-scoring false positives. The two most common sources of corruption in an alignment are (1) non-homologous sequences, especially repetitive or low-complexity sequences in the alignment, and (2) non-homologous fragments at the ends of the aligned database sequences. Check the query and template MSAs in an alignment viewer such as Jalview or ALNEDIT.}
+{\bf Realign with other parameters}: 
+change the alignment parameters. Choose global instead of local mode, for instance, if you expect your query to be globally homologous to the putative homolog. Try to improve the probability by changing the values for minimum coverage or minimum sequence identity. You can also run the query HMM against other databases.
 
-\item{Realign with other parameters: change the alignment parameters. Choose global instead of local mode, for instance, if you expect your query to be globally homologous to the putative homolog. Try to improve the probability by changing the values for minimum coverage or minimum sequence identity. You can also run the query HMM against other databases.}
+{\bf Build the query and/or database MSAs more aggressively}:
+If your query (or template) MSA is not diverse enough, you could increase sensitivity substantially by trying to include more remotely homologous sequences into the MSA. Try using our HHsenser web server at \url{http://toolkit.tuebingen.mpg.de/hhsenser} \cite{Soding:2006b}. Check the HHsenser alignment manually using an alignment editor. Have non-homologous sequences or sequence segments been accidentally included? You can also try to build a more diverse MSA manually: Inspect the HHblits results after the first iteration and consider including hits above the E-value inclusion threshold of 0.001, based on biological plausibility, relatedness of the organism, a reasonable looking alignment, or just guessing. Then start the second HHblits search iteration HHblits with this manually enriched alignment. 
 
-\item{Inspect the  HHblits results after the first iteration and to include also hits above the E-value threshold of 0.001, based on biological plausibility, relatedness of the organism, reasonable looking alignment, or just based on guessing. Then jump-start HHblits with this manually enriched alignment.}
+{\bf Try out other tools}:
+Try other tools (e.g. for profile-profil comparison) and servers for remote homology detection and structure prediction. 
+A list of servers can be found in \cite{Mariani:2011} and \cite{Battey:2007}.
 
-\item{Try out servers for remote homology detection and structure prediction servers: A list of servers can be found in \cite{Mariani:2011} and \cite{Battey:2007}.}
-
-\item{Verify predictions experimentally: The ultimate confirmation of a homologous relationship or structural model is, of course, the experimental verification of some of its key predictions, such as validating the binding to certain ligands by binding assays, measuring biochemical activity, or comparing the knock-out phenotype with the one obtained when the putative functional residues are mutated.}
-\end{itemize}
+{\bf Verify predictions experimentally}: 
+The ultimate confirmation of a homologous relationship or structural model is, of course, the experimental verification of some of its key predictions, such as validating the binding to certain ligands by binding assays, measuring biochemical activity, or comparing the knock-out phenotype with the one obtained when the putative functional residues are mutated.
 
 
 \section{Frequently asked questions}
 
-\begin{itemize}
-
-\item \emph{What is HMM-HMM comparison and why is it so powerful?}
+{\bf What is HMM-HMM comparison and why is it so powerful?}
 When searching for remote homologs, it is wise to make use of as much information about the query and database proteins as possible in order to better distinguish true from false positives and to produce optimal alignments. This is the reason why sequence-sequence comparison is inferior to profile-sequence comparison. Sequence profiles contain for each column of a multiple alignment the frequencies of the 20 amino acids. They therefore contain detailed information about the conservation of each residue position, i.e. how important each position is for defining other members of the protein family, and about the preferred amino acids. Profile Hidden Markov Models (HMMs) are similar to simple sequence profiles, but in addition to the amino acid frequencies in the columns of a multiple sequence alignment they contain information about the frequency of inserts and deletions at each column. Using profile HMMs in place of simple sequence profiles should therefore further improve sensitivity. Using HMMs both on the query and the database side greatly enhances the sensitivity/selectivity and alignment quality over sequence-profile based methods such as PSI-BLAST. HHsearch is the first software to employ HMM-HMM comparison and HHblits is the first profile-profile comparison method that is fast enough to do iterative searches to build MSAs. 
 
-\item \emph{When can the HH-suite be useful for me?}
-Sequence search methods such as BLAST, FASTA, or PSI-BLAST are of prime importance for biological research because functional information of a protein or gene can be inferred from homologous proteins or genes identified in a sequence search. But quite often no significant relationship to a protein of known function can be established. This is certainly the case for the most interesting group of proteins, those for which no ortholog has yet been studied. In cases where conventional sequence search methods fail, HHblits and HHsearch quite often allow to make inferences from more remotely homologous relationships. HHblits builds better MSAs, with which more remote homologs can then be found using HHsearch or HHblits, e.g. by searching the PDB or domain databases such as Pfam. If the relationship is so remote that no common function can be assumed, one can generally still derive hypotheses about possible mechanisms, active site positions and residues, or the class of substrate bound \cite{Todd:2001, Pawlowski:2000}. When a homologous protein with known structure can be identified, its stucture can be used as a template to model the 3D structure of the protein of interest \cite{Rychlewski:1998}, since even remotely homologous proteins generally have quite similar 3D structure \cite{Kinch:2002}. The 3D model may then help to generate hypotheses to guide experiments. 
+{\bf When can the HH-suite be useful for me?}
+Sequence search methods such as BLAST, FASTA, or PSI-BLAST are of prime importance for biological research because functional information of a protein or gene can be inferred from homologous proteins or genes identified in a sequence search. But quite often no significant relationship to a protein of known function can be established. This is certainly the case for the most interesting group of proteins, those for which no ortholog has yet been studied. In cases where conventional sequence search methods fail, HHblits and HHsearch quite often allow to make inferences from more remotely homologous relationships. HHblits builds better MSAs, with which more remote homologs can then be found using HHsearch or HHblits, e.g. by searching the PDB or domain databases such as Pfam. If the relationship is so remote that no common function can be assumed, one can often still derive hypotheses about possible mechanisms, active site positions and residues, or the class of substrate bound \cite{Todd:2001, Pawlowski:2000}. When a homologous protein with known structure can be identified, its stucture can be used as a template to model the 3D structure of the protein of interest \cite{Rychlewski:1998}, since even protein domains that shared a common ancestor some 3 billion years ago mostly have similar 3D structures \cite{Kinch:2002,Soding:2006a,Alva:2010}. The 3D model may then help to generate hypotheses to guide experiments. 
 
-\item \emph{What does homology mean exactly and why is it important for strucuture and function prediction?}
-Two protein sequences are homologous to each other if they descended from a common ancestor sequence. Generally, homologous proteins (or protein fragments) have similar structure because structures diverge much more slowly than their sequences \cite{Chothia:1986}. Depending on the degree of divergence between the sequences, the proteins may also have similar cellular functions, ligands, protein interaction partners, or enzymatic mechanisms \cite{Todd:2001}. On the contrary, proteins that have a similar structure by convergence (i.e. by chance) are said to be analogous. They don't generally share similar functions or biochemical mechanisms and are therefore much less helpful for making inferences. HHsearch and HHblits are tools for homology detection and as such do not normally detect analogous relationships.
+{\bf What does homology mean exactly and why is it important for strucuture and function prediction?}
+Two protein sequences are homologous to each other if they descended from a common ancestor sequence. Generally, homologous proteins (or protein fragments) have similar structure because structures diverge much more slowly than their sequences \cite{Chothia:1986}. Depending on the degree of divergence between the sequences, the proteins may also have similar cellular functions, ligands, protein interaction partners, or enzymatic mechanisms \cite{Todd:2001}. On the contrary, proteins that have a similar structure by convergence (i.e. by chance) are said to be analogous. They don't generally share similar functions or biochemical mechanisms and are therefore much less helpful for making inferences. HHsearch and HHblits are tools for homology detection and as such do not normally detect analogous relationships \cite{Alva:2010,Remmert:2010}.
 
-\item \emph{Global versus local alignment: I want to build an HMM database for a proteome. I then want to find global matches to my genome's proteins. Should I use the -global option to build MSAs with  hhblits?} 
-Never use \verb`-global` when building MSAs with hhblits. Remember that global alignments are very greedy alignments, where alignments stretch to the ends of either query of database HMM, no matter what. Global alignments will therefore often lead to non-homologous segments getting included in the MSA, which is catastrophic, as these false segments will lead to many false positive matches when searching with this MSA. But you may use \verb`-global` when searching for global matches of your Pfam HMMs through your genomic HMM database, for example.
+{\bf Should I use the \verb`-global` option to build MSAs for an hhblits database if I am intersted in global alignments to these database HMMs?}
+Never use \verb`-global` when building MSAs with HHblits. Remember that global alignments are very greedy alignments, where alignments stretch to the ends of either query of database HMM, no matter what. Global alignments will therefore often lead to non-homologous segments getting included in the MSA, which is catastrophic, as these false segments will lead to many false positive matches when searching with this MSA. But you may use \verb`-global` when searching for global matches of your query HMMs through your customized HHblits database, for example.
 
-\item \emph{Do HHsearch and HHblits work fine with multi-domain sequences?}
+{\bf Do HHsearch and HHblits work fine with multi-domain sequences?}
 HHblits and HHsearch have been designed to work with multi-domain queries. However, the chances for false positives entering the query alginment during the HHblits iterations is greater for multi-domain proteins. For long sequences, it may therefore be of advantage to first search the PDB or the SCOP domain database and then to cut the query sequence into smaller parts on the basis of the identified structural domains. Pfam or CDD are - in our opinion - not suitable to determine domain boundaries.
 
-\item \emph{Don't I need to calibrate my query or database HMMs anymore?}
-No. By default, the two parameters of the extreme-value distribution for the query are estimated by a neural network that was trained on a large set of example queries, in an approach simlar to the one used in \cite{Sadreyev:2008}. However, the old calibration is still available as an option in HHsearch.
+{\bf Don't I need to calibrate my query or database HMMs anymore?}
+No. By default, the two parameters of the extreme-value distribution for the query are estimated by a neural network that was trained on a large set of example queries-template pairs, in an approach simlar to the one used in \cite{Sadreyev:2008}. However, the old calibration is still available as an option in HHsearch.
 
-\item \emph{How can I build my own UniProt datbase for HHblits? CD-hit only clusters down to 40\% sequence identity.}
-The procedure to cluster the nr or UniProt databases is much more complicated than building a database for a genome or for the sequences in the pdb. As its first step it involves clustering these huge databases down to 20\%-30\% sequence identity. The clustering is done in our lab using a new method, kClust (Hauser M, Meier CE, Hauser A, and Soeding J., to be published). We will add all scripts to build these HHblits databases to the HH-suite in due time. These scripts generate A3M files, HHM files, and consensus sequences. Because of the large number of files to generate, these scripts need to be run on a computer cluster. Ideally you would simply download the clustered UniProt20 or nr20 from the soeding lab's ftp server.
+{\bf How can I build my own UniProt datbase for HHblits? CD-hit only clusters down to 40\% sequence identity.}
+The procedure to cluster the nr or UniProt databases is more complicated than building a database for a genome or for the sequences in the pdb. As its first step it involves clustering these huge databases down to 20\%-30\% sequence identity. The clustering is done in our lab using a new method, kClust (Hauser M, Mayer CE, and Soeding J., to be published). We will add all scripts to build these HHblits databases to the HH-suite in due time. These scripts generate A3M files, HHM files, and consensus sequences. Because of the large number of files to generate, these scripts need to be run on a computer cluster. Ideally you would simply download the clustered uniprot20 or nr20 from the soeding lab's ftp server.
 
-\item \emph{How do I reconcile overlapping nd conflicting domain predictions, for example a domain A predicted from residues 2-50 with 98\% probability and domain B from 2-200 with 95\% probability?} The probability that a pair of residues is correctly aligned is the product of the probability for the database match to be homologous (given by the values in the \verb`Probab` column of the hit list) times the posterior probability of the residue pair to be correctly aligned given the database match is correct in the first place. The posterior probabilities are specified by the confidence numbers in the last line of the alignment blocks. A 0 corresponds to 0-10\%, a 9 to 90-100\%. Therefore, an obvious solution is to prune the alignments in the overlapping region such that the sum of total probabilities is maximized. There is no script yet that does this automatically.
-
-
-\end{itemize}
+{\bf How do I reconcile overlapping and conflicting domain predictions, for example domain A predicted from residues 2-50 with 98\% probability and domain B from 2-200 with 95\% probability?} The probability that a pair of residues is correctly aligned is the product of the probability for the database match to be homologous (given by the values in the \verb`Probab` column of the hit list) times the posterior probability of the residue pair to be correctly aligned given the database match is correct in the first place. The posterior probabilities are specified by the confidence numbers in the last line of the alignment blocks (0 corresponds approximately to 0-10\%, 9 to 90-100\%). Therefore, an obvious solution is to prune the alignments in the overlapping region such that the sum of total probabilities is maximized. There is no script yet that does this automatically.
 
 
 \section{HHsearch/HHblits output: hit list and pairwise alignments}
@@ -705,47 +713,51 @@ The meaning of the columns is the following:
 \vspace{5mm}
 
 \renewcommand{\arraystretch}{1.2}
-\begin{longtable}{lp{110mm}}
-Column 1 'No': & Index of hit\\
 
-Column 2 'Hit': & First 30 characters of domain description (from name line of query sequence)\\
+\begin{description}
+\item{\verb`No`}: the index of the datbase match.
 
-Column 3 'Prob': & Probability of target to be a true positive
+\item{\verb`Hit`}: the first 30 characters of the name line.
+
+\item{\verb`Prob`}: the Probability of target to be a true positive.
 For the probability of being a true positive, the secondary structure score 
-in column 7 is taken into account, together with the raw score in column 6 ('Score'). 
+in column \verb`SS` is taken into account, together with the raw score incolumn \verb`Score`. 
 True positives are defined to be either globally homologous or they are at least 
 homologous in parts, and thereby locally similar in structure. More precisely, 
 the latter criterion demands that the MAXSUB score between query and hit is at 
 least 0.1. In almost all cases the structural similarity will we be due to a global
-OR LOCAL homology between query and target. \\
+OR LOCAL homology between query and target.
 
-Column 4 'E-value': & 
-E-value and P-value are calculated without taking the secondary structure into account!
+\item{\verb`E-value`}:
 The E-value gives the average number of false positives ('wrong hits') with a score 
 better than the one for the target when scanning the database. It is a measure of 
 reliability: E-values near to 0 signify a very reliable hit, an E-value of 10 means 
 about 10 wrong hits are expected to be found in the database with a score at least 
-this good.\\
+this good. Note that E-value and P-value are calculated without taking the secondary 
+structure into account!
 
-Column 5 'P-value': & 
-The P-value is just the E-value divided by the number of sequences in the database.
-It is the probability that in a PAIRWISE comparison a wrong hit will score at least 
-this good.\\
 
-Column 6 'Score': & Raw score, does not include the secondary structure score\\
+\item{\verb`P-value`}: 
+The P-value is the E-value divided by the number of sequences in the database.
+It is the probability that in a \emph{pairwise} comparison a wrong hit will score at least 
+this good.
 
-Column 7 'SS':    & Secondary structure score
-This score tells how well the PSIPRED-predicted (3-state) or actual DSSP-determined 
+\item{\verb`Score`}: the raw score, which does not include the secondary structure score.
+
+\item{\verb`SS`}: the secondary structure score.
+This score tells you how well the PSIPRED-predicted (3-state) or actual DSSP-determined 
 (8-state) secondary structure sequences agree with each other. PSIPRED confidence 
-values are used in the scoring, low confidences getting less statistical weight.\\
+values are used in the scoring, low confidences getting less statistical weight.
 
-Column 8 'Cols': & The number of aligned Match columns in the HMM-HMM alignment.\\
+\item{\verb`Cols`}: the number of aligned Match columns in the HMM-HMM alignment.
 
-Columns 9,10: &  Range of aligned match states from query HMM\\
+\item{\verb`Query HMM`}: the range of aligned match states from query HMM.
 
-Columns 11,12: & Range of aligned match states from target HMM\\
-Column 14: & Number of match states in target HMM\\
-\end{longtable}
+\item{\verb`Template HMM`}: the range of aligned match states from the database/template HMM and, 
+in parenthesis, the number of match states in the database HMM.
+
+\end{description}
+
 
 
 \subsection{HMM-HMM pairwise alignments}
@@ -838,7 +850,8 @@ The {\tt Confidence} line is only displayed when the -realign option is active.
 
 \subsection{Input alignment formats} \label{aliformats}
 
-HMMs can be read by HHsearch/HHblits in its own .hhm format, as well as in HMMER format (.hmm).
+HMMs can be read by HHsearch/HHblits in its own .hhm format, as well as in HMMER format 
+(.hmm) (\url{http://hmmer.org/}).
 Performance is not as good for HMMER-format as for hhm format, so please use 
 our hhm format if possible. HMMER's hmm format can be converted to hhm format simply 
 with hhmake:
@@ -1638,7 +1651,7 @@ Example 5: using glob expression to specify several input databases
 
 \item An optional local amino acid compositional bias correction was introduced(options \verb`-sc 5` and \verb`-scwin <window_halfsize>`). No improvements are seen on a standard SCOP single domain benchmark. However, their probably will be an improvement for more realistic sequences containing multiple domains, repeats, and regions of strong compositional bias. 
 
-\item The score shift parameter and mact parameter have been optimized together on the optimization set of hhblits \cite{Remmert:2011}, which resulted in slight improvements of sensitivity and alignment quality. New default values are  \verb`shift -0.03` bits and \verb`-mact 0.30`. 
+\item The score shift parameter and mact parameter have been optimized together on the optimization set of HHblits \cite{Remmert:2011}, which resulted in slight improvements of sensitivity and alignment quality. New default values are  \verb`shift -0.03` bits and \verb`-mact 0.30`. 
 
 \item Use of \verb`.hhdefaults` still works but is deprecated. Use an alias in 
 your \verb`.bashrc` or equivalent file instead (See Installation).

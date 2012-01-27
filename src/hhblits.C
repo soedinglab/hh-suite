@@ -664,17 +664,7 @@ void ProcessArguments(int argc, char** argv)
       else if (!strcmp(argv[i],"-v"))  v=2;
       else if (!strcmp(argv[i],"-v0")) v=0;
       else if (!strcmp(argv[i],"-v1")) v=1;
-      else if (!strcmp(argv[i],"-n") && (i<argc-1)) 
-	{ 
-	  num_rounds = atoi(argv[++i]); 
-	  if (num_rounds < 1) 
-	    num_rounds=1; 
-	  if (num_rounds > 8) 
-	    {
-	      cerr<<endl<<"WARNING: Number of iterations ("<<num_rounds<<") to large => Set to 8 iterations\n";
-	      num_rounds=8; 
-	    }
-	}
+      else if (!strcmp(argv[i],"-n") && (i<argc-1)) num_rounds = atoi(argv[++i]); 
       else if (!strncmp(argv[i],"-BLOSUM",7) || !strncmp(argv[i],"-Blosum",7))
         {
           if (!strcmp(argv[i]+7,"30")) par.matrix=30;
@@ -838,9 +828,9 @@ void ReadInputFile()
 
       if (num_rounds > 1 || *par.alnfile || *par.psifile || *par.hhmfile || *alis_basename)
 	{
-	  if (input_format == 0)   // HHM format
+	  if (input_format == 0 && v>=1)   // HHM format
 	    cerr<<"WARNING: No alignment-file found, use only representative seqs from HHM-file as base alignment for evolving alignment!\n";
-	  else if (input_format == 1)
+	  else if (input_format == 1 && v>=1)
 	    cerr<<"WARNING: No alignment-file found, use only consensus sequence from HMMER-file as base alignment for evolving alignment!\n";
 	}
     } 
@@ -854,7 +844,7 @@ void ReadInputFile()
       // Warn, if there are gaps in a single sequence
       if (num_seqs == 1 && par.M != 2) {
 	int num_gaps = strtr(Qali.seq[0], "-", "-");
-	if (num_gaps > 1) {  // 1 gap is always given at array pos 0
+	if (num_gaps > 1 && v>=1) {  // 1 gap is always given at array pos 0
 	  fprintf(stderr, "WARNING: Your input sequence contains gaps. These gaps will be ignored in this search!\nIf you wan't to make HHblits treat these as match states, you could start HHblits with the '-M 100' option.\n");
 	}
       }
@@ -1977,6 +1967,14 @@ int main(int argc, char **argv)
     {help(); cerr<<endl<<"Error in "<<program_name<<": context-specific library missing (see -contxt)\n"; exit(4);}
   if (!strcmp(par.cs_library,""))
     {help(); cerr<<endl<<"Error in "<<program_name<<": column state library (see -cslib)\n"; exit(4);}
+  if (par.loc==0 && num_rounds>=2 && v>=1) cerr<<"WARNING: using -global alignment for iterative searches is deprecated since non-homologous sequence segments can easily enter the MSA and corrupt it.\n";
+    if (num_rounds < 1) num_rounds=1; 
+    else if (num_rounds > 8) 
+      {
+	if (v>=1) cerr<<"WARNING: Number of iterations ("<<num_rounds<<") to large => Set to 8 iterations\n";
+	num_rounds=8; 
+      }
+
 
   // Set databases
   strcpy(db,db_base);
@@ -2448,7 +2446,7 @@ int main(int argc, char **argv)
   //////////////////////////////////////////////////////////
 
   // Warn, if HMMER files were used
-  if (par.hmmer_used)
+  if (par.hmmer_used && v>=1)
     fprintf(stderr,"WARNING: Using HMMER files results in a drastically reduced sensitivity (>10%%).\nWe recommend to use HHMs build by hhmake.\n");
 
   // Print for each HMM: n  score  -log2(Pval)  L  name  (n=5:same name 4:same fam 3:same sf...)

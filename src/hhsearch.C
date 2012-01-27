@@ -1369,7 +1369,7 @@ int main(int argc, char **argv)
 //	   	       printf("dbfiles[%i]='%s'\n",ndb,dbfiles[ndb]);
                       ndb++;
                     }
-                  else
+                  else if (v>=1) 
                     fprintf(stderr,"WARNING: skipping doubled datbase file %s\n",dbfile);
                 }
               fclose(palf);
@@ -1383,7 +1383,7 @@ int main(int argc, char **argv)
               ndb++;
             }
         }
-      else
+      else if (v>=1)
         fprintf(stderr,"WARNING: skipping doubled datbase file %s\n",dbfile_cur);
 
      dbfile_cur=dbfile_next;
@@ -1690,7 +1690,7 @@ int main(int argc, char **argv)
   }
   
   // Warn, if HMMER files were used
-  if (par.hmmer_used)
+  if (par.hmmer_used && v>=1)
     fprintf(stderr,"WARNING: Using HMMER files results in a drastically reduced sensitivity (>10%%).\nWe recommend to use HHMs build by hhmake.\n");
 
   // Print summary listing of hits
