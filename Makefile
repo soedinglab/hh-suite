@@ -13,7 +13,7 @@ INSTALL_SCRIPTS_DIR?=$(INSTALL_LIB_DIR)/scripts
 INSTALL_DATA_DIR?=$(INSTALL_LIB_DIR)/data
 INSTALL_LIB_BIN_DIR?=$(INSTALL_LIB_DIR)/bin
 
-dist_name=hhsuite-2.0.8
+dist_name=hhsuite-2.0.10
 
 all_static: ffindex_static
 	cd src && make all_static
@@ -63,6 +63,8 @@ install:
 	install scripts/create_profile_from_hmmer.pl $(INSTALL_SCRIPTS_DIR)/create_profile_from_hmmer.pl
 	install scripts/hhmakemodel.pl $(INSTALL_SCRIPTS_DIR)/hhmakemodel.pl
 	install scripts/reformat.pl    $(INSTALL_SCRIPTS_DIR)/reformat.pl
+	install scripts/multithread.pl    $(INSTALL_SCRIPTS_DIR)/multithread.pl
+	install scripts/hhblitsdb.pl    $(INSTALL_SCRIPTS_DIR)/hhblitsdb.pl
 
 deinstall:
 	cd lib/ffindex && make deinstall INSTALL_DIR=$(INSTALL_DIR)
@@ -73,7 +75,7 @@ deinstall:
 	rm -f $(INSTALL_SCRIPTS_DIR)/Align.pm $(INSTALL_SCRIPTS_DIR)/HHPaths.pm \
 		$(INSTALL_SCRIPTS_DIR)/addss.pl $(INSTALL_SCRIPTS_DIR)/create_profile_from_hhm.pl \
 		$(INSTALL_SCRIPTS_DIR)/create_profile_from_hmmer.pl $(INSTALL_SCRIPTS_DIR)/hhmakemodel.pl \
-		$(INSTALL_SCRIPTS_DIR)/reformat.pl
+		$(INSTALL_SCRIPTS_DIR)/reformat.pl $(INSTALL_SCRIPTS_DIR)/multithread.pl $(INSTALL_SCRIPTS_DIR)/hhblitsdb.pl
 	rm -f $(INSTALL_LIB_BIN_DIR)/cstranslate 
 	rmdir $(INSTALL_LIB_BIN_DIR) || true
 	rmdir $(INSTALL_DIR)/bin || true
