@@ -23,17 +23,20 @@
 #     GNU General Public License for more details.
 
 #     You should have received a copy of the GNU General Public License
-#     along with this program.  If not, see <http:#www.gnu.org/licenses/>.
+#     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #     We are very grateful for bug reports! Please contact us at soeding@genzentrum.lmu.de
 
+use lib $ENV{"HHLIB"}."/scripts";
+use HHPaths;   # config file with path variables for nr, blast, psipred, pdb, dssp etc.
 use strict;
 use warnings;
 my $numres=100;             # number of residues per line
 my $desclen=1000;           # maximum number of characters in nameline
 my $ARGC=scalar(@ARGV);
 if ($ARGC<2) {
-    print("
+    die("
+reformat.pl from HHsuite $VERSION  
 Read a multiple alignment in one format and write it in another format
 Usage: reformat.pl [informat] [outformat] infile outfile [options] 
   or   reformat.pl [informat] [outformat] 'fileglob' .ext [options] 
@@ -87,7 +90,6 @@ Examples: reformat.pl 1hjra.a3m 1hjra.a2m
 #  clu:  clustal format (hmmer output)
 #  sel:  Selex format
 #  phy:  Phylip format
-    exit(1);
 }
 
 my $informat="";

@@ -102,7 +102,6 @@ void RealignByWorker(int bin)
       hit[bin]->i1 = hit_cur->i1;
       hit[bin]->i2 = hit_cur->i2;
       hit[bin]->j1 = hit_cur->j1;
-
       hit[bin]->j2 = hit_cur->j2;
       hit[bin]->nsteps = hit_cur->nsteps;
       hit[bin]->i  = hit_cur->i;

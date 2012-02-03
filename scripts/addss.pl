@@ -4,7 +4,7 @@
 # Add PSIPRED secondary structure prediction (and DSSP annotation) to an MSA or HMMER file.
 # Output format is A3M (for input alignments) or HMMER (see User Guide).
 
-#     HHsuite version 2.0.3 (January 2012)
+#     HHsuite version 2.0
 #
 #     Reference: 
 #     Remmert M., Biegert A., Hauser A., and Soding J.
@@ -24,7 +24,7 @@
 #     GNU General Public License for more details.
 
 #     You should have received a copy of the GNU General Public License
-#     along with this program.  If not, see <http:#www.gnu.org/licenses/>.
+#     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #     We are very grateful for bug reports! Please contact us at soeding@genzentrum.lmu.de
 
@@ -49,6 +49,7 @@ my $informat="a3m";    # input format
 my $neff = 7;          # use alignment with this diversity for PSIPRED prediction
 
 my $help="
+addss.pl from HHsuite $VERSION  
 Add PSIPRED secondary structure prediction (and DSSP annotation) to a multiple sequence alignment (MSA) 
 or HMMER (multi-)model file. 
 

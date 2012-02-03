@@ -1,8 +1,7 @@
-# Align.pm 
-
-# HHsuite version 2.0.3 (January 2012)
+# HHPaths.pm 
 # (c) J. Soeding, A. Hauser 2012
-#
+
+# HHsuite version 2.0
 
 # PLEASE INSERT CORRECT PATHS AT POSITIONS INDICATED BY ... BELOW
 # THE ENVIRONMENT VARIABLE HHLIB NEEDS TO BE SET TO YOUR LOCAL HH-SUITE DIRECTORY, 
@@ -13,9 +12,9 @@ package HHPaths;
 # This block can stay unmodified
 use vars qw(@ISA @EXPORT @EXPORT_OK %EXPORT_TAGS $VERSION);
 use Exporter;
-our $VERSION = 2.00;
+our $VERSION = "version 2.0.9 (Jan 2012)";
 our @ISA     = qw(Exporter);
-our @EXPORT  = qw($hhlib $hhdata $hhbin $hhscripts $execdir $datadir $ncbidir $dummydb $pdbdir $dsspdir $dssp $cs_lib $context_lib);
+our @EXPORT  = qw($VERSION $hhlib $hhdata $hhbin $hhscripts $execdir $datadir $ncbidir $dummydb $pdbdir $dsspdir $dssp $cs_lib $context_lib);
 
 ##############################################################################################
 # PLEASE COMPLETE THE PATHS ... TO PSIPRED AND OLD-STYLE BLAST (NOT BLAST+) (NEEDED FOR PSIPRED) 

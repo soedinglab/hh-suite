@@ -24,7 +24,7 @@
 #     GNU General Public License for more details.
 
 #     You should have received a copy of the GNU General Public License
-#     along with this program.  If not, see <http:#www.gnu.org/licenses/>.
+#     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #     We are very grateful for bug reports! Please contact us at soeding@genzentrum.lmu.de
 
@@ -59,7 +59,8 @@ my $numcsfiles=0;
 my $numa3mfiles=0;
 my $numhhmfiles=0;
 my $help="
-Builds the HHblits database files from MSA and HMM files 
+hhblitsdb.pl from HHsuite $VERSION  
+Builds HHblits database files from MSA and HMM files 
 
 Usage: hhblitsdb.pl -o <db_name> [-ia3m <a3m_dir>] [-ihhm <hhm_dir>] [-ics <cs_dir>] [options]
 
@@ -215,7 +216,7 @@ if (!$csdir)
 	my @dirs = glob($a3mdir);
 	foreach $dir (@dirs) {
 	    print("\nGenerating seq219 files in $tmpdir/ from a3m files in $dir/\n\n");
-	    $command = "$hhbin/cstranslate -i \$file -o $tmpdir/\$base.seq219 -D $context_lib -A $cs_lib -x $x -c $c 1>/dev/null 2>>$logfile";
+	    $command = "$hhbin/cstranslate -i \$file -o $tmpdir/\$base.seq219 -D $context_lib -A $cs_lib -x $x -c $c 1>>$logfile 2>>$logfile";
 	    &System("$hhscripts/multithread.pl '".$dir."/*.".$a3mext."' '$command' -cpu $cpu");
 	    $numa3mfiles += scalar(glob("$dir/*.a3m"));
 	}

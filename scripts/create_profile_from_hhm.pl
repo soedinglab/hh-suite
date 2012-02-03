@@ -1,15 +1,16 @@
 #!/usr/bin/env perl
 # 
+# create_profile_from_hhm.pl 
 # Create a profile (.prf) from a given HHM file
 
-#     HHsuite version 2.0.1 (January 2012)
+#     HHsuite version 2.0
 #
 #     Reference: 
 #     Remmert M., Biegert A., Hauser A., and Soding J.
 #     HHblits: Lightning-fast iterative protein sequence searching by HMM-HMM alignment.
 #     Nat. Methods, epub Dec 25, doi: 10.1038/NMETH.1818 (2011).
 
-#     (C) Johannes Soeding and Michael Remmert, 2012
+#     (C) Michael Remmert and Johannes Soeding, 2012
 
 #     This program is free software: you can redistribute it and/or modify
 #     it under the terms of the GNU General Public License as published by
@@ -22,9 +23,13 @@
 #     GNU General Public License for more details.
 
 #     You should have received a copy of the GNU General Public License
-#     along with this program.  If not, see <http:#www.gnu.org/licenses/>.
+#     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #     We are very grateful for bug reports! Please contact us at soeding@genzentrum.lmu.de
+
+use lib $ENV{"HHLIB"}."/scripts";
+use HHPaths;   # config file with path variables for nr, blast, psipred, pdb, dssp etc.
+use strict;
 
 $|= 1; # Activate autoflushing on STDOUT
 
@@ -32,6 +37,7 @@ $|= 1; # Activate autoflushing on STDOUT
 our $v=2;              # verbose mode
 
 my $help="
+create_profile_from_hhm.pl from HHsuite $VERSION  
 Create a profile (.prf) from a given HHM file
 
 Usage: perl create_profile_from_hhm.pl -i <infile> [-o <outfile>]

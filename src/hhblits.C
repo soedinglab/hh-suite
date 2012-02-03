@@ -252,279 +252,164 @@ struct Thread_args thread_data[MAXTHREADS]; // store a threads thread_id and fun
 pthread_t pthread[MAXTHREADS]; // info on thread's structures (needed by system)
 pthread_attr_t joinable;       // attribute set for describing threads
 int rc;                        // return code for threading commands
-
 #endif
 
-///////////////////////////////////////////////////////////////////////////////////////
-//// For multi-threading: return a bin with the desired status, return -1 if no such bin found
-//////////////////////////////////////////////////////////////////////////////////////
-inline int PickBin(char status)
-{
-  for (int b=0; b<bins; b++) {if (bin_status[b]==status) return b;}
-  return -1;
-}
+inline int PickBin(char status);
+
 
 // Include hhworker.C and hhprefilter.C here, because it needs some of the above variables
 #include "hhworker.C"      // functions: AlignByWorker, RealignByWorker, WorkerLoop
 #include "hhprefilter.C"   // some prefilter functions
 
-///////////////////////////////////////////////////////////////////////////////////////
-//// Do the pairwise comparison of q and *(t[bin]) for the database search
-//// Combination of RealignByWorker and AlignByWorker: 
-//// Picks hits found in previous iterations and recalculates Viterbi scores using 
-//// query profile from last iteration while KEEPING original (MAC) alignment.
-//////////////////////////////////////////////////////////////////////////////////////
-void PerformViterbiByWorker(int bin)
-{
-  // Prepare q ant t and compare
-  PrepareTemplate(*q,*(t[bin]),format[bin]);
-
-  // Do HMM-HMM comparison
-  for (hit[bin]->irep=1; hit[bin]->irep<=par.altali; hit[bin]->irep++)
-    {
-      // Break, if no previous_hit with irep is found
-      hit[bin]->Viterbi(*q,*(t[bin]));
-      if (hit[bin]->irep>1 && hit[bin]->score <= SMIN) break;
-      hit[bin]->Backtrace(*q,*(t[bin]));
-      
-      hit[bin]->score_sort = hit[bin]->score_aass;
-      //printf("PerformViterbiByWorker:   %-12.12s  %-12.12s   irep=%-2i  score=%6.2f\n",hit[bin]->name,hit[bin]->fam,hit[bin]->irep,hit[bin]->score);
-
-#ifdef PTHREAD
-      pthread_mutex_lock(&hitlist_mutex);   // lock access to hitlist
-#endif
-     
-      stringstream ss_tmp;
-      ss_tmp << hit[bin]->name << "__" << hit[bin]->irep;
-
-      if (previous_hits->Contains((char*)ss_tmp.str().c_str()))
-	{
-	  //printf("Previous hits contains %s!\n",(char*)ss_tmp.str().c_str());
-	  hit_cur = previous_hits->Remove((char*)ss_tmp.str().c_str());
-	  previous_hits->Add((char*)ss_tmp.str().c_str(), *(hit[bin]));
-	  
-	  // Overwrite *hit[bin] with alignment, etc. of hit_cur
-	  hit_cur.score      = hit[bin]->score;
-	  hit_cur.score_aass = hit[bin]->score_aass;
-	  hit_cur.score_ss   = hit[bin]->score_ss;
-	  hit_cur.Pval       = hit[bin]->Pval;
-	  hit_cur.Pvalt      = hit[bin]->Pvalt;
-	  hit_cur.logPval    = hit[bin]->logPval;
-	  hit_cur.logPvalt   = hit[bin]->logPvalt;
-	  hit_cur.Eval       = hit[bin]->Eval;
-	  hit_cur.logEval    = hit[bin]->logEval;
-	  hit_cur.Probab     = hit[bin]->Probab;
-
-	  hitlist.Push(hit_cur);            // insert hit at beginning of list (last repeats first!)
-	  
-	}
-      else
-	{
-	  // don't save alignments which where not found in previous rounds
-
-	  //printf("Don't save %s!\n",(char*)ss_tmp.str().c_str());
-	  //hitlist.Push(*(hit[bin]));          // insert hit at beginning of list (last repeats first!)
-	}
-	  
-
-#ifdef PTHREAD
-      pthread_mutex_unlock(&hitlist_mutex); // unlock access to hitlist
-#endif
-
-      if (hit[bin]->score <= SMIN) break;  // break if score for first hit is already worse than SMIN
-    }
-
-  return;
-}
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Help functions
 /////////////////////////////////////////////////////////////////////////////////////
-void help()
+void help(char all=0)
 {
+  //      ----+----1----+----2----+----3----+----4----+----5----+----6----+----7----+---8-----+----9----+----0
   printf("\n");
-  printf("HHblits %s:\nHMM-HMM-based lighting-fast iterative sequence search\n",VERSION_AND_DATE);
-  printf("HHblits is a sensitive, general-purpose, iterative sequence search tool that represents \n");
+  printf("HHblits %s:\nHMM-HMM-based lightning-fast iterative sequence search\n",VERSION_AND_DATE);
+  printf("HHblits is a sensitive, general-purpose, iterative sequence search tool that represents\n");
   printf("both query and database sequences by HMMs. You can search HHblits databases starting\n");
-  printf("with a single query sequence, a multiple sequence alignment, or an HMM. HHblits prints out\n");
-  printf("a ranked list of database HMMs/alignments and can also generate a multiple sequence alignment\n");
-  printf("from the significant HMMs/alignments.\n");
+  printf("with a single query sequence, a multiple sequence alignment (MSA), or an HMM. HHblits\n");
+  printf("prints out a ranked list of database HMMs/MSAs and can also generate an MSA by merging\n");
+  printf("the significant database HMMs/MSAs onto the query MSA.\n");
   printf("\n");
   printf("%s",HHBLITS_REFERENCE);
   printf("%s",COPYRIGHT);
   printf("\n");
-  printf("Usage: %s -i query [options]                                                             \n",program_name);
-  printf(" -i <file>      input query (single FASTA-sequence, A3M- or FASTA-alignment, HMM-file)   \n");
+  printf("Usage: %s -i query [options] \n",program_name);
+  printf(" -i <file>      input query (single FASTA-sequence, A3M- or FASTA-alignment, HMM-file)\n");
   printf("\n");
-  printf("Options:                                                                                 \n");
-  printf(" -d    <base>   database basename (default=%s)                                           \n",db_base);
-  printf(" -n     [1,8]   number of iterations (default=%i)                                        \n",num_rounds); 
-  printf(" -e     [0,1]   E-value cutoff for inclusion in result alignment (def=%G)                \n",par.e);
+  printf("Options:                                                                       \n");
+  printf(" -d    <base>   database basename (default=%s)                                 \n",db_base);
+  printf(" -n     [1,8]   number of iterations (default=%i)                              \n",num_rounds); 
+  printf(" -e     [0,1]   E-value cutoff for inclusion in result alignment (def=%G)      \n",par.e);
+  printf("                evolving query MSA becomes larger than neffmax (default=%f) \n",neffmax); 
   printf("\n");
-  // printf("Needed libraries                                                                         \n");
-  // printf(" -cs   <file>   compute context-specific pseudocounts with context library (def=off)\n");
-  // printf(" -contxt <file> context file for computing context-specific pseudocounts (default=%s)\n",par.clusterfile);
-  // printf(" -cslib  <file> column state file for fast database prefiltering (default=%s)\n",par.cs_library);
-  // printf("\n");
   printf("Input alignment format:                                                       \n");
   printf(" -M a2m         use A2M/A3M (default): upper case = Match; lower case = Insert;\n");
   printf("               ' -' = Delete; '.' = gaps aligned to inserts (may be omitted)   \n");
   printf(" -M first       use FASTA: columns with residue in 1st sequence are match states\n");
   printf(" -M [0,100]     use FASTA: columns with fewer than X%% gaps are match states   \n");
-  printf("\n");
-  printf("Output options:                                                                          \n");
-
-  printf(" -ofas <file>   write multiple alignment of significant matches in FASTA format\n");
-  printf("                Analogous for output in a2m, a3m, hhm format (e.g. -ohhm, -Oa3m)\n");
-
-  printf(" -o <file>      write results in standard format to file (default=<infile.hhr>)          \n");
-  printf(" -oa3m <file>   write multiple alignment of significant matches in a3m format\n");
-  printf(" -opsi <file>   write multiple alignment of significant matches in PSI format\n");
-  printf(" -ohhm <file>   write HHM file for multiple alignment of significant matches\n");
-  printf(" -oalis <base>  write multiple alignments in A3M format after each iteration\n");
-  printf(" -Ofas <file>   write pairwise alignments of significant matches in FASTA format\n");
-  printf("\n");
-  printf("HMM-HMM alignment options:                                                               \n");
-  printf(" -norealign     do NOT realign displayed hits with MAC algorithm (default=realign)       \n");
-  printf(" -mact [0,1[    posterior probability threshold for MAC re-alignment (def=%.3f)          \n",par.mact);
-  printf("                Parameter controls alignment greediness: 0:global >0.1:local             \n");
-  printf(" -glob/-loc     use global/local Viterbi alignment for searching/ranking (def=local)     \n");
-  printf("\n");
-  printf("Other options:                                                                           \n");
-  printf(" -v <int>       verbose mode: 0:no screen output  1:only warings  2: verbose (def=%i)    \n",v);
-  printf(" -cpu <int>     number of CPUs to use (for shared memory SMPs) (default=%i)              \n",cpu);
-#ifndef PTHREAD
-  printf("(The -cpu option is inactive since POSIX threads ae not supported on your platform)      \n");
-#endif
-  printf("\n");
-  printf("An extended list of options can be obtained by using '-help all' as parameter           \n");
-  printf("\n");
-  printf("Example: %s -i query.fas -oa3m query.a3m -n 2                                            \n",program_name);
-  cout<<endl;
-}
-
-void help_all()
-{
-  printf("\n");
-  printf("HHblits %s\n",VERSION_AND_DATE);
-  printf("Fast homology detection method HHblits to iteratively search a filtered NR HMM database.\n");
-  printf("%s",HHBLITS_REFERENCE);
-  printf("%s",COPYRIGHT);
-  printf("\n\n");
-  printf("Usage: %s -i query [options]                                                           \n",program_name);
-  printf("\n");
-  printf(" -i <file>      input query (single FASTA-sequence, A3M- or FASTA-alignment, hhm-file)\n");
-  printf("\n");
-  printf("Options:                                                                               \n");
-  printf(" -d <base>      database basename (default=%s)                                         \n",db_base);
-  printf(" -n [1,8]       number of iterations (default=%i)                                     \n",num_rounds); 
-  printf(" -neffmax [0,15] break if neff > neffmax (default=%f)                                  \n",neffmax); 
-  printf(" -e [0,1]       E-value cutoff for inclusion in result alignment (def=%G)             \n",par.e);
-  printf("\n");
-  printf("Input alignment format:                                                                \n");
-  printf(" -M a2m         use A2M/A3M (default): upper case = Match; lower case = Insert;       \n");
-  printf("                '-' = Delete; '.' = gaps aligned to inserts (may be omitted)          \n");
-  printf(" -M first       use FASTA: columns with residue in 1st sequence are match states      \n");
-  printf(" -M [0,100]     use FASTA: columns with fewer than X%% gaps are match states          \n");
-  printf("\n");
-  printf("Output options:                                                                        \n");
-  printf(" -o <file>      write results in standard format to file (default=<infile.hhr>)       \n");
-  printf(" -oa3m <file>   write pairwise alignments in A3M format (default=off)                 \n");
-  printf(" -opsi <file>   write pairwise alignments in PSI format (default=off)                 \n");
-  printf(" -ohhm <file>   write HHM file of the pairwise alignments (default=off)               \n");
-  printf(" -oalis <base>  write pairwise alignments in A3M format after each iteration (def=off)\n");
-  printf(" -qhhm <file>   write query input HHM file of last iteration (default=off)            \n");
-  printf(" -seq <int>     max. number of query/template sequences displayed (default=%i)        \n",par.nseqdis);
-  printf(" -addss         add predicted 2ndary structure in output alignments                   \n");
-  printf(" -aliw <int>    number of columns per line in alignment list (default=%i)             \n",par.aliwidth);
-  printf(" -p <float>     minimum probability in summary and alignment list (default=%G)        \n",par.p);
-  printf(" -E <float>     maximum E-value in summary and alignment list (default=%G)            \n",par.E);
-  printf(" -Z <int>       maximum number of lines in summary hit list (default=%i)              \n",par.Z);
-  printf(" -z <int>       minimum number of lines in summary hit list (default=%i)              \n",par.z);
-  printf(" -B <int>       maximum number of alignments in alignment list (default=%i)           \n",par.B);
-  printf(" -b <int>       minimum number of alignments in alignment list (def=ault%i)           \n",par.b);
-  printf("\n");
-  printf("Directory paths                                                                       \n");
-//printf(" -cs   <file>   compute context-specific pseudocounts with context library (def=off)\n");
+  if (all) { 
+  printf("Directory paths \n");
   printf(" -contxt <file> context file for computing context-specific pseudocounts (default=%s)\n",par.clusterfile);
   printf(" -cslib  <file> column state file for fast database prefiltering (default=%s)\n",par.cs_library);
-  printf(" -psipred       <dir>  directory with PSIPRED executables (default=%s)                 \n",par.psipred);
-  printf(" -psipred_data  <dir>  directory with PSIPRED data (default=%s)                        \n",par.psipred_data);
+  printf(" -psipred      <dir>  directory with PSIPRED executables (default=%s)  \n",par.psipred);
+  printf(" -psipred_data <dir>  directory with PSIPRED data (default=%s) \n",par.psipred_data);
   printf("\n");
-  printf("Prefilter options                                                                         \n");
-  printf(" -nofilter      disable all filter steps                                               \n");
-  printf(" -noaddfilter   disable all filter steps (except for fast prefiltering)                \n");
-  printf(" -nodbfilter    disable additional filtering of prefiltered HMMs                       \n");
-  printf(" -noblockfilter search complete matrix in Viterbi                                      \n");
-  printf(" -maxfilt       max number of hits allowed to pass prefilter 2 (default=%i)       \n",par.maxnumdb);
+  }
   printf("\n");
-  printf("Filter result alignment (options can be combined):                                     \n");
-  printf(" -id   [0,100]  maximum pairwise sequence identity (%%) (def=%i)                       \n",par.max_seqid);
-  printf(" -diff [0,inf[  filter most diverse set of sequences, keeping at least this            \n");
-  printf("                many sequences in each block of >50 columns (def=%i)                   \n",par.Ndiff);
-  printf(" -nodiff        do not filter sequences in output alignment (def=off)                  \n");
-  printf(" -cov  [0,100]  minimum coverage with query (%%) (def=%i)                              \n",par.coverage);
-  printf(" -qid  [0,100]  minimum sequence identity with query (%%) (def=%i)                     \n",par.qid);
-  printf(" -neff [1,inf]  target diversity of alignment (default=off)                            \n");
-  printf(" -qsc  [0,100]  minimum score per column with query  (def=%.1f)                        \n",par.qsc);
+  printf("Output options: \n");
+  printf(" -o <file>      write results in standard format to file (default=<infile.hhr>)\n");
+  printf(" -oa3m <file>   write multiple alignment of significant matches in a3m format\n");
+  if (!all) {
+  printf("                Analogous for a2m, a3m, fas, psi, hhm format (e.g. -ohhm, -Oa3m)\n");
+  printf(" -oalis <name>  write MSAs in A3M format after each iteration\n");
+  } else {
+  printf(" -ofas <file>   write MSA of significant matches in FASTA format\n");
+  printf(" -opsi <file>   write MSA of significant matches in PSI format\n");
+  printf(" -ohhm <file>   write HHM file for MSA of significant matches\n");
+  printf(" -oalis <name>  write MSAs in A3M format after each iteration\n");
+  printf(" -Ofas <file>   write pairwise alignments of significant matches in FASTA format\n");
+  printf(" -qhhm <file>   write query input HHM file of last iteration (default=off)      \n");
+  printf(" -seq <int>     max. number of query/template sequences displayed (default=%i)  \n",par.nseqdis);
+  printf(" -addss         add predicted 2ndary structure in output alignments             \n");
+  printf(" -aliw <int>    number of columns per line in alignment list (default=%i)       \n",par.aliwidth);
+  printf(" -p [0,100]     minimum probability in summary and alignment list (default=%G)  \n",par.p);
+  printf(" -E [0,inf[     maximum E-value in summary and alignment list (default=%G)      \n",par.E);
+  printf(" -Z <int>       maximum number of lines in summary hit list (default=%i)        \n",par.Z);
+  printf(" -z <int>       minimum number of lines in summary hit list (default=%i)        \n",par.z);
+  printf(" -B <int>       maximum number of alignments in alignment list (default=%i)     \n",par.B);
+  printf(" -b <int>       minimum number of alignments in alignment list (def=ault%i)     \n",par.b);
   printf("\n");
-  printf("HMM-HMM alignment options:                                                             \n");
-  printf(" -realign       realign displayed hits with max. accuracy (MAC) algorithm              \n");
-  printf(" -norealign     do NOT realign displayed hits with MAC algorithm (def=realign)         \n");
-  printf(" -mact [0,1[    posterior probability threshold for MAC re-alignment (def=%.3f)        \n",par.mact);
-  printf("                Parameter controls alignment greediness: 0:global >0.1:local           \n");
-  printf(" -realign_max <int>  realign max. <int> hits (default=%i)                              \n",par.realign_max);  
-  printf(" -glob/-loc     use global/local alignment mode for searching/ranking (def=local)      \n");
-  printf(" -alt <int>     show up to this many significant alternative alignments(def=%i)        \n",par.altali);
-  printf(" -premerge [0,20] align <int> hits to query before realigning the remaining hits       \n");
-  printf("                to the new query profile (default=%i)                                  \n",par.premerge);       
-  printf(" -shift [-1,1] score offset (def=%-.2f)                                                \n",par.shift);
-  printf(" -ssm  0-4     0:   no ss scoring                                                      \n");
-  printf("               1,2: ss scoring after or during alignment  [default=%1i]                \n",par.ssm);
-  printf("               3,4: ss scoring after or during alignment, predicted vs. predicted      \n");
-  printf(" -ssw [0,1]    weight of ss score  (def=%-.2f)                                         \n",par.ssw);
+  printf("Prefilter options                                                               \n");
+  printf(" -nofilter      disable all filter steps                                        \n");
+  printf(" -noaddfilter   disable all filter steps (except for fast prefiltering)         \n");
+  printf(" -nodbfilter    disable additional filtering of prefiltered HMMs                \n");
+  printf(" -noblockfilter search complete matrix in Viterbi                               \n");
+  printf(" -maxfilt       max number of hits allowed to pass prefilter 2 (default=%i)  \n",par.maxnumdb);
   printf("\n");
-  printf("Pseudocount options:                                                                   \n");
-  printf(" -pcm  0-2      Pseudocount mode (default=%-i)                                         \n",par.pcm);
-  printf("                tau = substitution matrix pseudocount admixture                        \n");
-  printf("                0: no pseudo counts:     tau = 0                                       \n");
-  printf("                1: constant              tau = a                                       \n");
-  printf("                2: divergence-dependent: tau = a/(1 + ((Neff-1)/b)^c)                  \n");
-  printf("                   Neff=( (Neff_q^d+Neff_t^d)/2 )^(1/d)                                \n");
-  printf("                   Neff_q = av number of different AAs per column in query             \n");
-  printf("                3: constant divergence pseudocounts                                    \n");
-  printf(" -pca  [0,1]    overall pseudocount admixture (def=%-.1f)                              \n",par.pca);
-  printf(" -pcb  [1,inf[  threshold for Neff (def=%-.1f)                                         \n",par.pcb);
-  printf(" -pcc  [0,3]    extinction exponent for tau(Neff)  (def=%-.1f)                         \n",par.pcc);
-  printf(" -pcw  [0,3]    weight of pos-specificity for pcs  (def=%-.1f)                         \n",par.pcw);
+  printf("Filter result alignment (options can be combined):                              \n");
+  printf(" -id   [0,100]  maximum pairwise sequence identity (%%) (def=%i)                \n",par.max_seqid);
+  printf(" -diff [0,inf[  filter query and db MSAs by selecting most diverse set of sequences,\n");
+  printf("                keeping at least this many seq's in each MSA block of length 50 (def=%i)\n",par.Ndiff);
+  printf(" -nodiff        do not filter sequences in output alignment (def=off)           \n");
+  printf(" -cov  [0,100]  minimum coverage with query (%%) (def=%i)                       \n",par.coverage);
+  printf(" -qid  [0,100]  minimum sequence identity with query (%%) (def=%i)              \n",par.qid);
+  printf(" -neff [1,inf]  target diversity of alignment (default=off)                     \n");
+  printf(" -qsc  [0,100]  minimum score per column with query  (def=%.1f)                 \n",par.qsc);
   printf("\n");
-  printf(" -pre_pca [0,1]   PREFILTER pseudocount admixture (def=%-.1f)                          \n",par.pre_pca);
-  printf(" -pre_pcb [1,inf[ PREFILTER threshold for Neff (def=%-.1f)                             \n",par.pre_pcb);
+  }
   printf("\n");
-  printf("Gap cost options:                                                                      \n");
-  printf(" -gapb [0,inf[  Transition pseudocount admixture (def=%-.2f)                           \n",par.gapb);
-  printf(" -gapd [0,inf[  Transition pseudocount admixture for open gap (default=%-.2f)          \n",par.gapd);
-  printf(" -gape [0,1.5]  Transition pseudocount admixture for extend gap (def=%-.2f)            \n",par.gape);
-  printf(" -gapf ]0,inf]  factor to increase/reduce the gap open penalty for deletes (def=%-.2f) \n",par.gapf);
-  printf(" -gapg ]0,inf]  factor to increase/reduce the gap open penalty for inserts (def=%-.2f) \n",par.gapg);
-  printf(" -gaph ]0,inf]  factor to increase/reduce the gap extend penalty for deletes(def=%-.2f)\n",par.gaph);
-  printf(" -gapi ]0,inf]  factor to increase/reduce the gap extend penalty for inserts(def=%-.2f)\n",par.gapi);
-  printf(" -egq  [0,inf[  penalty (bits) for end gaps aligned to query residues (def=%-.2f)      \n",par.egq);
-  printf(" -egt  [0,inf[  penalty (bits) for end gaps aligned to template residues (def=%-.2f)   \n",par.egt);
+  printf("HMM-HMM alignment options:                                                       \n");
+  printf(" -norealign     do NOT realign displayed hits with MAC algorithm (def=realign)   \n");
+  printf(" -mact [0,1[    posterior probability threshold for MAC re-alignment (def=%.3f)  \n",par.mact);
+  printf("                Parameter controls alignment greediness: 0:global >0.1:local     \n");
+  printf(" -glob/-loc     use global/local alignment mode for searching/ranking (def=local)\n");
+  if (all) {
+  printf(" -realign_max <int>  realign max. <int> hits (default=%i)                        \n",par.realign_max);  
+  printf(" -alt <int>     show up to this many significant alternative alignments(def=%i)  \n",par.altali);
+  printf(" -premerge <int> merge <int> hits to query MSA before aligning remaining hits (def=%i)\n",par.premerge);
+  printf(" -shift [-1,1]  profile-profile score offset (def=%-.2f)                         \n",par.shift);
+  printf(" -ssm  0-4      0:   no ss scoring                                               \n");
+  printf("                1,2: ss scoring after or during alignment  [default=%1i]         \n",par.ssm);
+  printf("                3,4: ss scoring after or during alignment, predicted vs. predicted\n");
+  printf(" -ssw [0,1]     weight of ss score  (def=%-.2f)                                  \n",par.ssw);
   printf("\n");
-  printf("Other options:                                                                         \n");
-  printf(" -v <int>       verbose mode: 0:no screen output  1:only warings  2: verbose (def=%i)  \n",v);
-  printf(" -cpu <int>     number of CPUs to use (for shared memory SMPs) (default=%i)            \n",cpu);
-  printf(" -scores <file> write scores for all pairwise comparisions to file                     \n");
-  printf(" -atab   <file> write all alignments in tabular layout to file                         \n");
-  printf(" -maxres <int>  max number of HMM columns, scales linearly with needed memory (def=%5i)\n",par.maxres);
-#ifndef PTHREAD
-  printf("(The -cpu option is inactive since POSIX threads are not supported on your platform)\n");
+  printf("Pseudocount options:                                                             \n");
+  printf(" -pcm  0-2      Pseudocount mode (default=%-i)                                   \n",par.pcm);
+  printf("                tau = substitution matrix pseudocount admixture                  \n");
+  printf("                0: no pseudo counts:     tau = 0                                 \n");
+  printf("                1: constant              tau = a                                 \n");
+  printf("                2: divergence-dependent: tau = a/(1 + ((Neff-1)/b)^c)            \n");
+  printf("                   Neff=( (Neff_q^d+Neff_t^d)/2 )^(1/d)                          \n");
+  printf("                   Neff_q = av number of different AAs per column in query       \n");
+  printf("                3: constant divergence pseudocounts                              \n");
+  printf(" -pca  [0,1]    overall pseudocount admixture (def=%-.1f)                        \n",par.pca);
+  printf(" -pcb  [1,inf[  threshold for Neff (def=%-.1f)                                   \n",par.pcb);
+  printf(" -pcc  [0,3]    extinction exponent for tau(Neff)  (def=%-.1f)                   \n",par.pcc);
+  printf(" -pcw  [0,3]    weight of pos-specificity for pcs  (def=%-.1f)                   \n",par.pcw);
+  printf(" -pre_pca [0,1]   PREFILTER pseudocount admixture (def=%-.1f)                    \n",par.pre_pca);
+  printf(" -pre_pcb [1,inf[ PREFILTER threshold for Neff (def=%-.1f)                       \n",par.pre_pcb);
+  printf("\n");
+  printf("Gap cost options:                                                                \n");
+  printf(" -gapb [0,inf[  Transition pseudocount admixture (def=%-.2f)                     \n",par.gapb);
+  printf(" -gapd [0,inf[  Transition pseudocount admixture for open gap (default=%-.2f)    \n",par.gapd);
+  printf(" -gape [0,1.5]  Transition pseudocount admixture for extend gap (def=%-.2f)      \n",par.gape);
+  printf(" -gapf ]0,inf]  factor to increase/reduce gap open penalty for deletes (def=%-.2f) \n",par.gapf);
+  printf(" -gapg ]0,inf]  factor to increase/reduce gap open penalty for inserts (def=%-.2f) \n",par.gapg);
+  printf(" -gaph ]0,inf]  factor to increase/reduce gap extend penalty for deletes(def=%-.2f)\n",par.gaph);
+  printf(" -gapi ]0,inf]  factor to increase/reduce gap extend penalty for inserts(def=%-.2f)\n",par.gapi);
+  printf(" -egq  [0,inf[  penalty (bits) for end gaps aligned to query residues (def=%-.2f) \n",par.egq);
+  printf(" -egt  [0,inf[  penalty (bits) for end gaps aligned to template residues (def=%-.2f)\n",par.egt);
+  printf("\n");
+  }
+  printf("Other options:                                                                   \n");
+  printf(" -v <int>       verbose mode: 0:no screen output  1:only warings  2: verbose (def=%i)\n",v);
+#ifdef PTHREAD
+  printf(" -cpu <int>     number of CPUs to use (for shared memory SMPs) (default=%i)      \n",cpu);
 #endif
-  printf("\n\n");
-  printf("Example: %s -i query.fas -oa3m query.a3m -n 2\n",program_name);
+  if (all) {
+  printf(" -neffmax ]1,20] stop iterative search when number of effective sequences Neff in \n");
+  printf(" -scores <file> write scores for all pairwise comparisions to file               \n");
+  printf(" -atab   <file> write all alignments in tabular layout to file                   \n");
+  printf(" -maxres <int>  max number of HMM columns, scales linearly with needed memory (def=%5i)\n",par.maxres);
+  } 
+#ifndef PTHREAD
+  printf("(The -cpu option is inactive since HHblits was not compiled with POSIX thread support)\n");
+#endif
+  printf("\n");
+  if (!all) {
+  printf("An extended list of options can be obtained by using '-help all' as parameter    \n");
+  }
+  printf("\n");
+  printf("Example: %s -i query.fas -oa3m query.a3m -n 2                   \n",program_name);
   cout<<endl;
 }
+
 
 /////////////////////////////////////////////////////////////////////////////////////
 //// Processing input options from command line and .hhdefaults file
@@ -657,7 +542,7 @@ void ProcessArguments(int argc, char** argv)
       else if (!strcmp(argv[i],"-h")|| !strcmp(argv[i],"-help"))
         {
           if (++i>=argc || argv[i][0]=='-') {help(); exit(0);}
-          if (!strcmp(argv[i],"all")) {help_all(); exit(0);}
+          if (!strcmp(argv[i],"all")) {help(1); exit(0);}
           else {help(); exit(0);}
         }
       else if (!strcmp(argv[i],"-v") && (i<argc-1) && argv[i+1][0]!='-' ) v=atoi(argv[++i]);
@@ -763,6 +648,84 @@ void ProcessArguments(int argc, char** argv)
       else cerr<<endl<<"WARNING: Ignoring unknown option "<<argv[i]<<" ...\n";
       if (v>=4) cout<<i<<"  "<<argv[i]<<endl; //PRINT
     } // end of for-loop for command line input
+}
+
+///////////////////////////////////////////////////////////////////////////////////////
+//// For multi-threading: return a bin with the desired status, return -1 if no such bin found
+//////////////////////////////////////////////////////////////////////////////////////
+inline int PickBin(char status)
+{
+  for (int b=0; b<bins; b++) {if (bin_status[b]==status) return b;}
+  return -1;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////
+//// Do the pairwise comparison of q and *(t[bin]) for the database search
+//// Combination of RealignByWorker and AlignByWorker: 
+//// Picks hits found in previous iterations and recalculates Viterbi scores using 
+//// query profile from last iteration while KEEPING original (MAC) alignment.
+//////////////////////////////////////////////////////////////////////////////////////
+void PerformViterbiByWorker(int bin)
+{
+  // Prepare q ant t and compare
+  PrepareTemplate(*q,*(t[bin]),format[bin]);
+
+  // Do HMM-HMM comparison
+  for (hit[bin]->irep=1; hit[bin]->irep<=par.altali; hit[bin]->irep++)
+    {
+      // Break, if no previous_hit with irep is found
+      hit[bin]->Viterbi(*q,*(t[bin]));
+      if (hit[bin]->irep>1 && hit[bin]->score <= SMIN) break;
+      hit[bin]->Backtrace(*q,*(t[bin]));
+      
+      hit[bin]->score_sort = hit[bin]->score_aass;
+      //printf("PerformViterbiByWorker:   %-12.12s  %-12.12s   irep=%-2i  score=%6.2f\n",hit[bin]->name,hit[bin]->fam,hit[bin]->irep,hit[bin]->score);
+
+#ifdef PTHREAD
+      pthread_mutex_lock(&hitlist_mutex);   // lock access to hitlist
+#endif
+     
+      stringstream ss_tmp;
+      ss_tmp << hit[bin]->name << "__" << hit[bin]->irep;
+
+      if (previous_hits->Contains((char*)ss_tmp.str().c_str()))
+	{
+	  //printf("Previous hits contains %s!\n",(char*)ss_tmp.str().c_str());
+	  hit_cur = previous_hits->Remove((char*)ss_tmp.str().c_str());
+	  previous_hits->Add((char*)ss_tmp.str().c_str(), *(hit[bin]));
+	  
+	  // Overwrite *hit[bin] with alignment, etc. of hit_cur
+	  hit_cur.score      = hit[bin]->score;
+	  hit_cur.score_aass = hit[bin]->score_aass;
+	  hit_cur.score_ss   = hit[bin]->score_ss;
+	  hit_cur.Pval       = hit[bin]->Pval;
+	  hit_cur.Pvalt      = hit[bin]->Pvalt;
+	  hit_cur.logPval    = hit[bin]->logPval;
+	  hit_cur.logPvalt   = hit[bin]->logPvalt;
+	  hit_cur.Eval       = hit[bin]->Eval;
+	  hit_cur.logEval    = hit[bin]->logEval;
+	  hit_cur.Probab     = hit[bin]->Probab;
+
+	  hitlist.Push(hit_cur);            // insert hit at beginning of list (last repeats first!)
+	  
+	}
+      else
+	{
+	  // don't save alignments which where not found in previous rounds
+
+	  //printf("Don't save %s!\n",(char*)ss_tmp.str().c_str());
+	  //hitlist.Push(*(hit[bin]));          // insert hit at beginning of list (last repeats first!)
+	}
+	  
+
+#ifdef PTHREAD
+      pthread_mutex_unlock(&hitlist_mutex); // unlock access to hitlist
+#endif
+
+      if (hit[bin]->score <= SMIN) break;  // break if score for first hit is already worse than SMIN
+    }
+
+  return;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -1342,7 +1305,7 @@ void perform_realign(char *dbfiles[], int ndb)
 	  
 	      //fprintf(stderr,"hit.name=%-15.15s  hit.index=%-5i hit.ftellpos=%-8i  hit.dbfile=%s\n",hit_cur.name,hit_cur.index,(unsigned int)hit_cur.ftellpos,hit_cur.dbfile);
 
-	  if (nhits>=par.premerge || hit_cur.irep>1) // realign the first premerge hits consecutively to query profile
+	  if (nhits>=par.premerge) // realign the first premerge hits consecutively to query profile
 	    {
 	      if (hit_cur.irep==1) 
 		{
@@ -1433,7 +1396,6 @@ void perform_realign(char *dbfiles[], int ndb)
 	  if (nhits>=imax(par.B,par.Z)) break;
 	  if (nhits>=imax(par.b,par.z) && hit_cur.Probab < par.p) break;
 	  if (nhits>=imax(par.b,par.z) && hit_cur.Eval > par.E) continue;
-	  if (hit_cur.irep>1) continue;  // Align only the best hit of the first par.premerge templates
 	  
 	  nhits++;
 

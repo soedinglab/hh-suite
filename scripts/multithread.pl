@@ -1,5 +1,5 @@
-#! /usr/bin/env perl
-#
+#!/usr/bin/env perl
+
 # multithread.pl: 
 # Run a command with different file names as arguments on multiple threads in parallel 
 # Usage:   multithread.pl <fileglob> '<command>' [-cpu <int>] 
@@ -25,16 +25,17 @@
 #     GNU General Public License for more details.
 
 #     You should have received a copy of the GNU General Public License
-#     along with this program.  If not, see <http:#www.gnu.org/licenses/>.
+#     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #     We are very grateful for bug reports! Please contact us at soeding@genzentrum.lmu.de
 
+use lib $ENV{"HHLIB"}."/scripts";
+use HHPaths;   # config file with path variables for nr, blast, psipred, pdb, dssp etc.
 use strict;
 use POSIX;
-$|=1; # autoflush on
 
 # Variables 
-my $cpu=8;        # number of cpus to use
+my $cpu=8;         # number of cpus to use
 my $parent_pid=$$; # main process id
 my $pid;           # process id of child
 my %pid=();        # hash has all running PIDs as keys and the file name as data
@@ -45,24 +46,26 @@ my $ifile=0;
 my $v=1;
 my $numerr=0;
 
-
 if (scalar(@ARGV)<2) {
-    print("
- Run a command for many files in parallel using multiple threads
- Usage: multithread.pl '<fileglob>' '<command>' [-cpu <int>] [-v {0,1,2}]
+    die("
+multithread.pl from HHsuite $VERSION  
+Run a command for many files in parallel using multiple threads
+Usage: multithread.pl '<fileglob>' '<command>' [-cpu <int>] [-v {0,1,2}]
 
- <command> can include symbol 
-    \$file for the full filename, e.g. /tmp/hh/1c1g_A.a3m, 
-    \$name the filename without extension, e.g. /tmp/hh/1c1g_A, and 
-    \$base for the filename without extension and path, e.g. 1c1g_A.
+<command> can include symbol 
+   \$file for the full filename, e.g. /tmp/hh/1c1g_A.a3m, 
+   \$name the filename without extension, e.g. /tmp/hh/1c1g_A, and 
+   \$base for the filename without extension and path, e.g. 1c1g_A.
 
-  -cpu <int>  number of threads to launch (default = $cpu)
-  -v {0,1,2}  verbose mode (default = $v)
+ -cpu <int>  number of threads to launch (default = $cpu)
+ -v {0,1,2}  verbose mode (default = $v)
 
- Example: multithread.pl '*.a3m' 'hhmake -i \$file 1>\$name.log 2>>error.log' -cpu 16
+Example: multithread.pl '*.a3m' 'hhmake -i \$file 1>\$name.log 2>>error.log' -cpu 16
 \n"); 
-    exit;
 }
+
+$|=1; # autoflush on
+
 
 my @files=glob($ARGV[0]); 
 my $command=$ARGV[1]; 

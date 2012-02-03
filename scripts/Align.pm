@@ -1,9 +1,30 @@
-#############################################################################
-# Package Align
-# Author: Johannes Soeding, 2006
-# This is free software. You may use it under the terms of the GNU public license
-# No warranty of any kind is given.
-#############################################################################
+# Package Align.pl
+# (c) Johannes Soeding, 2006
+# Perl functions for Smith-Waterman and Needleman-Wunsch sequence alignment
+
+#     HHsuite version 2.0
+#
+#     Reference: 
+#     Remmert M., Biegert A., Hauser A., and Soding J.
+#     HHblits: Lightning-fast iterative protein sequence searching by HMM-HMM alignment.
+#     Nat. Methods, epub Dec 25, doi: 10.1038/NMETH.1818 (2011).
+
+#     (C) Johannes Soeding and Michael Remmert, 2012
+
+#     This program is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version.
+
+#     This program is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+
+#     You should have received a copy of the GNU General Public License
+#     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#     We are very grateful for bug reports! Please contact us at soeding@genzentrum.lmu.de
 
 #############################################################################
 # Subroutine AlignSW
@@ -67,7 +88,6 @@ package Align;
 use strict;
 use vars qw(@ISA @EXPORT @EXPORT_OK %EXPORT_TAGS $VERSION);
 use Exporter;
-our $VERSION=1.00;
 our @ISA          = qw(Exporter);
 our @EXPORT       = qw(&AlignSW &AlignNW $matrix);
 

@@ -24,7 +24,7 @@
 #     GNU General Public License for more details.
 
 #     You should have received a copy of the GNU General Public License
-#     along with this program.  If not, see <http:#www.gnu.org/licenses/>.
+#     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #     We are very grateful for bug reports! Please contact us at soeding@genzentrum.lmu.de
 
@@ -57,49 +57,49 @@ my $NLEN=14;       # length of the name field in alignments of hhsearch-output
 my $NUMRES=100;    # number of residues per line in FASTA, A2M, PIR format
 my $program="hhmakemodel.pl";
 my $usage="
- From the top hits in an hhsearch output file (hhr), you can  
-   * generate a MSA (multiple sequence alignment) containing all representative 
-     template sequences from all selected alignments (options -fas, -a2m, -a3m, -pir) 
-   * generate several concatenated pairwise alignments in AL format (option -al)
-   * generate several concatenated coarse 3D models in PDB format (option -ts) 
- In PIR, PDB and AL format, the pdb files are required in order to read the pdb residue numbers 
- and ATOM records.
- The PIR formatted file can be used directly as input to the MODELLER homology modelling package.
- Usage: $program [-i] file.hhr [options]
+hhmakemodel.pl from HHsuite $VERSION  
+From the top hits in an hhsearch output file (hhr), you can  
+  * generate a MSA (multiple sequence alignment) containing all representative 
+    template sequences from all selected alignments (options -fas, -a2m, -a3m, -pir) 
+  * generate several concatenated pairwise alignments in AL format (option -al)
+  * generate several concatenated coarse 3D models in PDB format (option -ts) 
+In PIR, PDB and AL format, the pdb files are required in order to read the pdb residue numbers 
+and ATOM records.
+The PIR formatted file can be used directly as input to the MODELLER homology modelling package.
+Usage: $program [-i] file.hhr [options]
 
  Options:
-  -i   <file.hhr>        results file from hhsearch with hit list and alignments
-  -fas <file.fas>        write a FASTA-formatted multiple alignment to file.fas
-  -a2m <file.a2m>        write an A2M-formatted multiple alignment to file.a2m
-  -a3m <file.a3m>        write an A3M-formatted multiple alignment to file.a3m
-  -m   <int> [<int> ...] pick hits with specified indices  (default='-m 1')
-  -p   <probability>     minimum probability threshold (default=$Pthr)        
-  -e   <E-value>         maximum E-value threshold (default=$Ethr)        
-  -q   <query_ali>       use the full-length query sequence in the alignment 
-                         (not only the aligned part);
-                         the query alignment file must be in HHM, FASTA, A2M,  
-                         or A3M format.
-  -N                     use query name from hhr filename (default: use same  
-                         name as in hhr file)
-  -first                 include only first Q or T sequence of each hit in MSA
-  -v                     verbose mode (default=$v)
+ -i   <file.hhr>        results file from hhsearch with hit list and alignments
+ -fas <file.fas>        write a FASTA-formatted multiple alignment to file.fas
+ -a2m <file.a2m>        write an A2M-formatted multiple alignment to file.a2m
+ -a3m <file.a3m>        write an A3M-formatted multiple alignment to file.a3m
+ -m   <int> [<int> ...] pick hits with specified indices  (default='-m 1')
+ -p   <probability>     minimum probability threshold (default=$Pthr)        
+ -e   <E-value>         maximum E-value threshold (default=$Ethr)        
+ -q   <query_ali>       use the full-length query sequence in the alignment 
+                        (not only the aligned part);
+                        the query alignment file must be in HHM, FASTA, A2M,  
+                        or A3M format.
+ -N                     use query name from hhr filename (default: use same  
+                        name as in hhr file)
+ -first                 include only first Q or T sequence of each hit in MSA
+ -v                     verbose mode (default=$v)
 
- Options when database matches in hhr file are PDB or SCOP sequences
-  -pir <file.pir>        write a PIR-formatted multiple alignment to file.pir 
-  -ts  <file.pdb>        write the PDB-formatted models based on *pairwise*  
-                         alignments into file.pdb
-  -al  <file.al>         write the AL-formatted *pairwise* alignments into file.al
-  -d   <pdbdirs>         directories containing the pdb files (for PDB, SCOP, or DALI  
-                         sequences) (default=$pdbdir)
-  -s   <int>             shift the residue indices up/down by an integer (default=$shift);           
-  -CASP                  formatting for CASP (for -ts, -al options) (default: LIVEBENCH  
-                         formatting)
-
+Options when database matches in hhr file are PDB or SCOP sequences
+ -pir <file.pir>        write a PIR-formatted multiple alignment to file.pir 
+ -ts  <file.pdb>        write the PDB-formatted models based on *pairwise*  
+                        alignments into file.pdb
+ -al  <file.al>         write the AL-formatted *pairwise* alignments into file.al
+ -d   <pdbdirs>         directories containing the pdb files (for PDB, SCOP, or DALI  
+                        sequences) (default=$pdbdir)
+ -s   <int>             shift the residue indices up/down by an integer (default=$shift);           
+ -CASP                  formatting for CASP (for -ts, -al options) (default: LIVEBENCH  
+                        formatting)
  Options when query is compared to itself (for repeat detection) 
-  -conj                  include also conjugate alignments in MSA (with query and  
-                         template exchanged) 
-  -conjs                 include conjugate alignments and sort by ascending diagonal  
-                         value (i.e. i0-j0)
+ -conj                  include also conjugate alignments in MSA (with query and  
+                        template exchanged) 
+ -conjs                 include conjugate alignments and sort by ascending diagonal  
+                        value (i.e. i0-j0)
 \n"; 
 
 # Options to help extract repeats from self-alignments:

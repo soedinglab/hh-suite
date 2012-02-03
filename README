@@ -4,22 +4,19 @@
 
  (C) Johannes Soeding, Michael Remmert, Andreas Hauser, Andreas Biegert 2012
 
-We are very grateful for bug reports! 
-Please contact us at soeding@genzentrum.lmu.de
+This README only serves as a quick start guide.
+For full documentation see the user guide in hhsuite-userguide.pdf
 
+########################################################################
 The hhsuite contains in file hhprefilter.C code adapted from Michael 
 Farrar (http://sites.google.com/site/farrarmichael/smith-waterman). 
 His code is marked in the file hhprefilter.C. For the copy right of that 
 code, please see the LICENSE file that comes with HHsuite.
-Reference: 
-Farrar M. Striped Smith-Waterman speeds database searches 
-six times over other SIMD implementations. Bioinformatics. 2007, 23:156-61.
+Reference: Farrar M. Striped Smith-Waterman speeds database searches six 
+times over other SIMD implementations. Bioinformatics. 2007, 23:156-61.
 Many posthumous thanks to Michael Farrar for his great code!
+########################################################################
 
-
-
-This README only serves as a quick start guide.
-For full documentation see the user guide in hhsuite-userguide.pdf
 
 *****************************************************************************
  Installation
@@ -153,4 +150,8 @@ If you do not have this file, see http://www.gnu.org/licenses/
 
 
 -- 
-For a more detailed help, see the hhsuite-userguid.pdf
+For full documentation see the user guide in hhsuite-userguide.pdf
+
+
+We are very grateful for bug reports! 
+Please contact us at soeding@genzentrum.lmu.de

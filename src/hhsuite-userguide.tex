@@ -131,13 +131,13 @@ $ tar -xzvf hhsuite-latest.tar.gz
 \end{verbatim}
 This will unpack the sources to \verb`hhsuite-<VERSION>`.
 
-\item Compilation: You need libpng and libz in order to compile hhalign and generate dotplots. Run the Makefile in \verb`$HHLIB`:
+\item Compilation: Run the Makefile in \verb`$HHLIB`:
 \begin{verbatim}
 $ cd hhsuite-<VERSION>/
 $ make
 \end{verbatim}
 This compiles all programs and creates the binaries in \verb`src/`. Binaries are by default static. If you encounter
-missing library errors, also make sure you have the static versions installed, e.g. glibc-static.
+missing library errors, also make sure you have installed the static versions of zlib, libpng, and glibc, e.g. zlib-static, libpng-static, and glibc-static. (You only need zlib and libpng if you want to generate dotplots with hhbalign. If you don't need this, you can remove the \verb`HH_LIB` compilation flag for compiling hhalign in \verb`hh/src/Makefile`.)
 
 A dynamically linked version of the programs can be compiled with:
 \begin{verbatim}
@@ -243,7 +243,7 @@ Databases for HHblits are of two types. The first type, uniprot20 and nr20, cove
 
 The second type of HHblits database, for example the pdb70, scop70, represent each master sequence by an MSA. The MSAs are typically built by HHblits searches starting with the master sequence as a query (Pfam uses HMMER searches \url{http://hmmer.org/}). The MSAs and HMMs typically carry the name and annotation of the master sequence. In contrast to the clusters in the first type of database, sequences can in principle occur in several MSAs. These homologous sequences merely serve to contribute evolutionary information to the master sequence. As the second type of databases do not cover the entire sequence space, they are not suited for iterative searches. The HHblits versions are useful as alternatives to the versions formatted for HHsearch (next subsection), because HHblits is almost as sensitive as HHsearch while being much faster. See  section \ref{building_dbs} for how to build your own type 2 databases.
 
-The following HHblits databases can be downloaded at \url{ftp://toolkit.genzentrum.lmu.de/HH-suite/hhblits_dbs/}: 
+The following HHblits databases can be downloaded at \url{ftp://toolkit.genzentrum.lmu.de/HH-suite/databases/}: 
 \small 
 \begin{verbatim}
  1 uniprot20    based on UniProt db from EBI/SIB/PIR, clustered to 20 % seq. identity
@@ -279,7 +279,7 @@ $ tar -xzvf uniprot20_<date>.tar.gz`
 More databases will become available in HHblits format that are only available for HHsearch at the time of writing (see next subsection).
 
 \subsection{HHsearch databases} \label{hhsearch_dbs}
-HHsearch needs just the \verb`<dbname>_hhm_db` file from the hhblits database. This file is simply a concatenation of of all HMM files in HHsearch/HHblits \verb`hhm` format with a leading \verb`\0` character. The following HHsearch databases can be downloaded at \url{ftp://toolkit.lmb.uni-muenchen.de/HH-suite/hhsearch_dbs/}
+HHsearch needs just the \verb`<dbname>_hhm_db` file from the hhblits database. This file is simply a concatenation of of all HMM files in HHsearch/HHblits \verb`hhm` format with a leading \verb`\0` character. The following HHsearch databases can be downloaded at \url{ftp://toolkit.lmb.uni-muenchen.de/HH-suite/databases/}
 
 \small 
 \begin{verbatim}
@@ -415,7 +415,7 @@ We could do a second search iteration, starting with the MSA from the previous s
 $ hhblits -cpu 4 -i query.a3m -d databases/uniprot20 -oa3m query.a3m -n 1
 \end{verbatim}
 
-Instead, we could start the search with \verb`query.seq` and directly perform two search iterations, by adding the option \verb`-n 2`:
+Instead, we could start the search with \verb`query.seq` and directly perform two search iterations, by doing two search iterations using the option \verb`-n 2`:
 \begin{verbatim}
 $ hhblits -cpu 4 -i data/query.seq -d databases/uniprot20 -oa3m query.a3m -n 2 
 \end{verbatim}
@@ -430,7 +430,7 @@ results in shorter but very precise alignments. The default value of mact in HHb
 
 To avoid unnecessarily large and diverse MSAs, HHblits stops iterating when the diversity of the query MSA -- measured as number of effective sequences, see section \ref{aliformats} -- grows passed a threshold of 10.0. This threshold can be modified with the \verb`--neffmax <float>` option. See subsection \ref{hhmformat} for a description of how the number of effective sequences is calculated in HH-suite.
 
-To avoid the final MSAs to grow unnecessarily large, by default the cluster MSAs are filtered with the option \verb`-diff 1000` prior to merging them with the query MSA. (The \verb`-diff 1000` option selects the most representative sequences from an MSA such that every regions is covered by at least 1000 sequences.) To turn off the filtering and obtain all sequences in the significantly similar uniprot20 clusters, use the \verb`-nodiff` option: 
+To avoid the final MSAs to grow unnecessarily large, by default the cluster MSAs are filtered with the option \verb`-diff 1000` prior to merging them with the query MSA. The \verb`-diff 1000` option selects the most representative sequences from an MSA such that every regions is covered by at least 1000 sequences. To turn off the filtering and obtain all sequences in the significantly similar uniprot20 clusters, use the \verb`-nodiff` option: 
 \begin{verbatim}
 $ hhblits -cpu 4 -i data/query. -d databases/uniprot20 -oa3m query.a3m -nodiff
 \end{verbatim}
