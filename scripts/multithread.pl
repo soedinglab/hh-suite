@@ -25,7 +25,6 @@
 #     GNU General Public License for more details.
 
 #     You should have received a copy of the GNU General Public License
-<<<<<<< HEAD
 #     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #     We are very grateful for bug reports! Please contact us at soeding@genzentrum.lmu.de
