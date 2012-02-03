@@ -122,7 +122,7 @@ The HH-suite source code, executable RPM and DPKG packages for most Linux 64 bit
 \begin{verbatim}
 $ mkdir ~/programs/hh/
 $ cd ~/programs/hh/
-$ wget ftp://toolkit.genzentrum.lmu.de/HH-suite/hhsuite-latest.tar.gz
+$ wget ftp://toolkit.genzentrum.lmu.de/HH-suite/hhsuite-latest.tar.gz 
 \end{verbatim}
 
 \item Then unzip and untar the file
@@ -272,7 +272,7 @@ To get started, download the uniprot20 or nr20 database files. For example:
 \begin{verbatim}
 $ cd /home/soeding/hh  % change to hh-suite directory
 $ mkdir databases; cd databases
-$ wget ftp://toolkit.lmb.uni-muenchen.de/HH-suite/databases/uniprot20_<date>.tar.gz`
+$ wget ftp://toolkit.genzentrum.lmu.de/HH-suite/databases/uniprot20_<date>.tar.gz`
 $ tar -xzvf uniprot20_<date>.tar.gz`
 \end{verbatim}
 
@@ -1156,52 +1156,122 @@ significant database matches or how to avoid high-scoring false positives.
 
 \subsection{{\tt hhblits} -- HMM-HMM-based lighting-fast iterative sequence search}
 
-HHblits is a sensitive, general-purpose, iterative sequence search tool that represents 
+HHblits is a sensitive, general-purpose, iterative sequence search tool that represents
 both query and database sequences by HMMs. You can search HHblits databases starting
-with a single query sequence, a multiple sequence alignment, or an HMM. HHblits prints out
-a ranked list of database HMMs/alignments and can also generate a multiple sequence alignment
-from the significant HMMs/alignments.
+with a single query sequence, a multiple sequence alignment (MSA), or an HMM. HHblits
+prints out a ranked list of database HMMs/MSAs and can also generate an MSA by merging
+the significant database HMMs/MSAs onto the query MSA.
 
 \small 
 \begin{verbatim}
-Usage: hhblits -i query [options]                                                             
+Usage: hhblits -i query [options] 
+ -i <file>      input query (single FASTA-sequence, A3M- or FASTA-alignment, HMM-file)
 
- -i <file>      input query (single FASTA-sequence, A3M- or FASTA-alignment, HMM-file)   
-
-Options:                                                                                 
- -d    <base>   database basename (default=)                                           
- -n     [1,8]   number of iterations (default=2)                                        
- -e     [0,1]   E-value cutoff for inclusion in result alignment (def=0.001)                
+Options:                                                                       
+ -d    <base>   database basename (default=)                                 
+ -n     [1,8]   number of iterations (default=2)                              
+ -e     [0,1]   E-value cutoff for inclusion in result alignment (def=0.001)      
 
 Input alignment format:                                                       
  -M a2m         use A2M/A3M (default): upper case = Match; lower case = Insert;
                ' -' = Delete; '.' = gaps aligned to inserts (may be omitted)   
  -M first       use FASTA: columns with residue in 1st sequence are match states
  -M [0,100]     use FASTA: columns with fewer than X% gaps are match states   
+Directory paths 
+ -contxt <file> context file for computing context-specific pseudocounts (default=)
+ -cslib  <file> column state file for fast database prefiltering (default=)
+ -psipred      <dir>  directory with PSIPRED executables (default=)  
+ -psipred_data <dir>  directory with PSIPRED data (default=) 
 
-Output options:                                                                          
- -ofas <file>   write multiple alignment of significant matches in FASTA format
-                Analogous for output in a2m, a3m, hhm format (e.g. -ohhm, -Oa3m)
- -o <file>      write results in standard format to file (default=<infile.hhr>)          
+
+Output options: 
+ -o <file>      write results in standard format to file (default=<infile.hhr>)
  -oa3m <file>   write multiple alignment of significant matches in a3m format
- -opsi <file>   write multiple alignment of significant matches in PSI format
- -ohhm <file>   write HHM file for multiple alignment of significant matches
- -oalis <base>  write multiple alignments in A3M format after each iteration
+ -ofas <file>   write MSA of significant matches in FASTA format
+ -opsi <file>   write MSA of significant matches in PSI format
+ -ohhm <file>   write HHM file for MSA of significant matches
+ -oalis <name>  write MSAs in A3M format after each iteration
  -Ofas <file>   write pairwise alignments of significant matches in FASTA format
+ -qhhm <file>   write query input HHM file of last iteration (default=off)      
+ -seq <int>     max. number of query/template sequences displayed (default=1)  
+ -addss         add predicted 2ndary structure in output alignments             
+ -aliw <int>    number of columns per line in alignment list (default=80)       
+ -p [0,100]     minimum probability in summary and alignment list (default=20)  
+ -E [0,inf[     maximum E-value in summary and alignment list (default=1E+06)      
+ -Z <int>       maximum number of lines in summary hit list (default=500)        
+ -z <int>       minimum number of lines in summary hit list (default=10)        
+ -B <int>       maximum number of alignments in alignment list (default=500)     
+ -b <int>       minimum number of alignments in alignment list (def=ault10)     
 
-HMM-HMM alignment options:                                                               
- -norealign     do NOT realign displayed hits with MAC algorithm (default=realign)       
- -mact [0,1[    posterior probability threshold for MAC re-alignment (def=0.350)          
-                Parameter controls alignment greediness: 0:global >0.1:local             
- -glob/-loc     use global/local Viterbi alignment for searching/ranking (def=local)     
+Prefilter options                                                               
+ -nofilter      disable all filter steps                                        
+ -noaddfilter   disable all filter steps (except for fast prefiltering)         
+ -nodbfilter    disable additional filtering of prefiltered HMMs                
+ -noblockfilter search complete matrix in Viterbi                               
+ -maxfilt       max number of hits allowed to pass prefilter 2 (default=20000)  
 
-Other options:                                                                           
- -v <int>       verbose mode: 0:no screen output  1:only warings  2: verbose (def=2)    
- -cpu <int>     number of CPUs to use (for shared memory SMPs) (default=2)              
+Filter result alignment (options can be combined):                              
+ -id   [0,100]  maximum pairwise sequence identity (%) (def=90)                
+ -diff [0,inf[  filter query and db MSAs by selecting most diverse set of sequences,
+                keeping at least this many seq's in each MSA block of length 50 (def=1000)
+ -nodiff        do not filter sequences in output alignment (def=off)           
+ -cov  [0,100]  minimum coverage with query (%) (def=0)                       
+ -qid  [0,100]  minimum sequence identity with query (%) (def=0)              
+ -neff [1,inf]  target diversity of alignment (default=off)                     
+ -qsc  [0,100]  minimum score per column with query  (def=-20.0)                 
 
-An extended list of options can be obtained by using '--help all' as parameter           
 
-Example: hhblits -i query.fas -oa3m query.a3m -n 2                                            
+HMM-HMM alignment options:                                                       
+ -norealign     do NOT realign displayed hits with MAC algorithm (def=realign)   
+ -mact [0,1[    posterior probability threshold for MAC re-alignment (def=0.350)  
+                Parameter controls alignment greediness: 0:global >0.1:local     
+ -glob/-loc     use global/local alignment mode for searching/ranking (def=local)
+ -realign_max <int>  realign max. <int> hits (default=1000)                        
+ -alt <int>     show up to this many significant alternative alignments(def=2)  
+ -premerge <int> merge <int> hits to query MSA before aligning remaining hits (def=3)
+ -shift [-1,1]  profile-profile score offset (def=-0.03)                         
+ -ssm  0-4      0:   no ss scoring                                               
+                1,2: ss scoring after or during alignment  [default=2]         
+                3,4: ss scoring after or during alignment, predicted vs. predicted
+ -ssw [0,1]     weight of ss score  (def=0.11)                                  
+
+Pseudocount options:                                                             
+ -pcm  0-2      Pseudocount mode (default=2)                                   
+                tau = substitution matrix pseudocount admixture                  
+                0: no pseudo counts:     tau = 0                                 
+                1: constant              tau = a                                 
+                2: divergence-dependent: tau = a/(1 + ((Neff-1)/b)^c)            
+                   Neff=( (Neff_q^d+Neff_t^d)/2 )^(1/d)                          
+                   Neff_q = av number of different AAs per column in query       
+                3: constant divergence pseudocounts                              
+ -pca  [0,1]    overall pseudocount admixture (def=1.0)                        
+ -pcb  [1,inf[  threshold for Neff (def=1.5)                                   
+ -pcc  [0,3]    extinction exponent for tau(Neff)  (def=1.0)                   
+ -pcw  [0,3]    weight of pos-specificity for pcs  (def=0.0)                   
+ -pre_pca [0,1]   PREFILTER pseudocount admixture (def=0.8)                    
+ -pre_pcb [1,inf[ PREFILTER threshold for Neff (def=1.8)                       
+
+Gap cost options:                                                                
+ -gapb [0,inf[  Transition pseudocount admixture (def=1.00)                     
+ -gapd [0,inf[  Transition pseudocount admixture for open gap (default=0.15)    
+ -gape [0,1.5]  Transition pseudocount admixture for extend gap (def=1.00)      
+ -gapf ]0,inf]  factor to increase/reduce gap open penalty for deletes (def=0.60) 
+ -gapg ]0,inf]  factor to increase/reduce gap open penalty for inserts (def=0.60) 
+ -gaph ]0,inf]  factor to increase/reduce gap extend penalty for deletes(def=0.60)
+ -gapi ]0,inf]  factor to increase/reduce gap extend penalty for inserts(def=0.60)
+ -egq  [0,inf[  penalty (bits) for end gaps aligned to query residues (def=0.00) 
+ -egt  [0,inf[  penalty (bits) for end gaps aligned to template residues (def=0.00)
+
+Other options:                                                                   
+ -v <int>       verbose mode: 0:no screen output  1:only warings  2: verbose (def=2)
+ -cpu <int>     number of CPUs to use (for shared memory SMPs) (default=2)      
+ -neffmax ]1,20] stop iterative search when number of effective sequences Neff in 
+                evolving query MSA becomes larger than neffmax (default=10.0) 
+ -scores <file> write scores for all pairwise comparisions to file               
+ -atab   <file> write all alignments in tabular layout to file                   
+ -maxres <int>  max number of HMM columns, scales linearly with needed memory (def=15002)
+
+Example: hhblits -i query.fas -oa3m query.a3m -n 2   
 \end{verbatim} 
 \normalsize
 

@@ -286,7 +286,6 @@ void help(char all=0)
   printf(" -d    <base>   database basename (default=%s)                                 \n",db_base);
   printf(" -n     [1,8]   number of iterations (default=%i)                              \n",num_rounds); 
   printf(" -e     [0,1]   E-value cutoff for inclusion in result alignment (def=%G)      \n",par.e);
-  printf("                evolving query MSA becomes larger than neffmax (default=%f) \n",neffmax); 
   printf("\n");
   printf("Input alignment format:                                                       \n");
   printf(" -M a2m         use A2M/A3M (default): upper case = Match; lower case = Insert;\n");
@@ -394,6 +393,7 @@ void help(char all=0)
 #endif
   if (all) {
   printf(" -neffmax ]1,20] stop iterative search when number of effective sequences Neff in \n");
+  printf("                evolving query MSA becomes larger than neffmax (default=%.1f) \n",neffmax); 
   printf(" -scores <file> write scores for all pairwise comparisions to file               \n");
   printf(" -atab   <file> write all alignments in tabular layout to file                   \n");
   printf(" -maxres <int>  max number of HMM columns, scales linearly with needed memory (def=%5i)\n",par.maxres);
@@ -406,7 +406,7 @@ void help(char all=0)
   printf("An extended list of options can be obtained by using '-help all' as parameter    \n");
   }
   printf("\n");
-  printf("Example: %s -i query.fas -oa3m query.a3m -n 2                   \n",program_name);
+  printf("Example: %s -i query.fas -oa3m query.a3m -n 2  \n",program_name);
   cout<<endl;
 }
 
