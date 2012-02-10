@@ -14,7 +14,7 @@ endif
 
 ifdef ICC
   CXX = env LANG=C icc
-C  XXFLAGS = -fast -Wall -fno-strict-aliasing -finline-functions -funroll-loops -fp-model fast=2 -fast-transcendentals -wd981 -wd383 -wd2259 -wd1572 -D HH_SSE3 -I$(CS_DIR) -I$(FFINDEX_DIR)
+  CXXFLAGS = -fast -Wall -fno-strict-aliasing -finline-functions -funroll-loops -fp-model fast=2 -fast-transcendentals -wd981 -wd383 -wd2259 -wd1572 -D HH_SSE3 -I$(CS_DIR) -I$(FFINDEX_DIR)
   HHSEARCH_LIBS = -lpthread -lrt
   HHBLITS_LIBS = -lpthread -lrt -openmp
   OBJECT_LIBS = -openmp
