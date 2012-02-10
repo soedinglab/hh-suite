@@ -117,19 +117,29 @@ The HH-suite source code, executable RPM and DPKG packages for most Linux 64 bit
 
 % HHblits needs the path to the two needed libraries (\verb`context_data.lib` and \verb`cs219.lib` in the \verb`libs`-directory of this package)  and the basename of the database (e.g. \verb`databases/uniprot20`). These default parameters for HHblits can be adapted in the configuration file \verb`.hhdefaults` in the binary directory or they have to be specified when calling of HHblits on the command line. All default options can be overridden on the command line.
 
-\begin{enumerate}
+\newcounter{mycounter}  
+\newenvironment{enum}
+ {\begin{list}{\arabic{mycounter}.~~}{\usecounter{mycounter} \labelsep=0em \labelwidth=0em \leftmargin=0em \itemindent=0em}}
+ {\end{list}}
+
+
+\begin{enum}
 \item Download the sources from \url{ftp://toolkit.genzentrum.lmu.de/HH-suite/}, for example
 \begin{verbatim}
 $ mkdir ~/programs/hh/
 $ cd ~/programs/hh/
 $ wget ftp://toolkit.genzentrum.lmu.de/HH-suite/hhsuite-latest.tar.gz 
 \end{verbatim}
+\vspace{2mm}
+
 
 \item Then unzip and untar the file
 \begin{verbatim}
 $ tar -xzvf hhsuite-latest.tar.gz
 \end{verbatim}
 This will unpack the sources to \verb`hhsuite-<VERSION>`.
+\vspace{2mm}
+
 
 \item Compilation: Run the Makefile in \verb`$HHLIB`:
 \begin{verbatim}
@@ -144,6 +154,7 @@ A dynamically linked version of the programs can be compiled with:
 $ make all
 \end{verbatim}
 On Mac OS X only dynamic linking is supported.
+\vspace{2mm}
 
 
 \item Installation: Either install in current directory:
@@ -154,12 +165,15 @@ Or set \verb`INSTALL_DIR` to the absolute path of the base directory where you w
 \begin{verbatim}
 $ make install INSTALL_DIR=/usr/local
 \end{verbatim}
+\vspace{2mm}
+
 
 \item Set HHLIB and paths: In your shell, set the environment variable HHLIB to \verb`$INSTALL_DIR/lib/hh`, 
-e.g (for bash, zsh, ksh):
+e.g, for bash, zsh, or ksh,
 \begin{verbatim}
 $ export HHLIB=/usr/local/lib/hh
 \end{verbatim}
+and, for csh or tcsh: \verb`$ setenv HHLIB=/usr/local/lib/hh`. 
 HHsearch and HHblits look for the column state library file \verb`cs219.lib`
 and the context library file \verb`context_data.lib` in \verb`$HHLIB/data/`. The hh-suite
 perl scripts also read HHLIB (via file \verb`HHPaths.pm`) to locate hh-suite binaries and data files.
@@ -169,17 +183,14 @@ Put the location of your hh-suite binaries and scripts into your search path:
 $ export PATH=$PATH:<install_dir/bin>:$HHLIB/scripts
 \end{verbatim}
 
-To spare you from typing these commands every time you open a new shell, you may add the following lines to the \verb`.profile` or \verb`.bashrc` file in your home directory:
+To avoid typing these commands every time you open a new shell, you may add the following lines to the \verb`.bashrc`, \verb`.kshrc`, \verb`.cshrc` or equivalent file in your home directory that is executed every time a shell is started:
 \begin{verbatim}
 export HHLIB=/usr/local/lib/hh
 PATH=$PATH:<install_dir/bin>:$HHLIB/scripts
-alias hhblits='hhblits -d <path/uniprot20 or path/nr20>'
+alias hhblits='hhblits -d <path_to/uniprot20 or path_to/nr20>'
 \end{verbatim}
 The last line defines a default database for hhblits. 
-
-\item Set Perl paths: Specify paths to BLAST, PSIPRED, PDB, DSSP etc. in 
-\verb`hh/scripts/HHPaths.pm`
-These are used by the perl scripts in hh-suite.
+\vspace{2mm}
 
 
 \item If you compiled dynamically, the run-time linker needs to know about the lib subdirectory 
@@ -199,9 +210,10 @@ Under Mac OSX, the equivalent command in bourne shell format is:
 \begin{verbatim}
 $ export DYLD_LIBRARY_PATH=/opt/hh/lib
 \end{verbatim}
+\vspace{2mm}
 
 
-\end{enumerate}
+\end{enum}
 
 \subsubsection*{Installation under x86 64bit Linux with the red hat package manager RPM}
 
@@ -209,14 +221,32 @@ If you use a RPM based distribution like Scientific Linux (SL), Red Hat Enterpri
 Version 6.x, which might also work on Version 5.x and other RPM based distros
 like SuSE.
 
-\begin{enumerate}
-\item Download and install:
+\begin{enum}
+\item Download and install:\\[-6mm]
 \begin{verbatim}
-$ rpm -hvU ftp://toolkit.lmb.uni-muenchen.de/HHblits/hhsuite-latest.x86_64.rpm
+$ cd <path>  # wherever you want to install HH-suite
+$ wget ftp://toolkit.genzentrum.lmu.de/HH-suite/hhsuite-latest.x86_64.rpm
+$ rpm -hvU hhsuite-latest.x86_64.rpm
 \end{verbatim}
-\end{enumerate}
+\vspace{2mm}
 
-Then follow instructions under point 5 and 6 of the first subsection.
+\item Set paths: To allow the HH-suite perl scripts to find the binaries, set the HHLIB variable to your hh directory 
+and put the location of your hh-suite binaries and scripts into your search path:\\[-6mm]
+\begin{verbatim}
+$ export HHLIB=<path>/hhsuite-<version>-linux-x86_64/lib/hh
+$ export PATH=$PATH:<path>/hhsuite-<version>-linux-x86_64/bin:$HHLIB/scripts
+\end{verbatim}
+
+To avoid typing these commands every time you open a new shell, you may add the following lines to the \verb`.bashrc`, \verb`.kshrc`, \verb`.cshrc` or equivalent file in your home directory that is executed every time a shell is started:
+\begin{verbatim}
+export HHLIB=<path>/hhsuite-<version>-linux-x86_64/lib/hh
+PATH=$PATH:<path>/hhsuite-<version>-linux-x86_64/bin:$HHLIB/scripts
+alias hhblits='hhblits -d <path_to/uniprot20 or path_to/nr20>'
+\end{verbatim}
+The last line defines a default database for hhblits. 
+
+\end{enum}
+
 
 \subsubsection*{Installation under x86 64bit Linux with the Debian package manager DPKG}
 
@@ -229,13 +259,10 @@ To follow.
 
 To follow.
 
-%Then follow instructions under point 5 and 6 of the first subsection.
 
 \subsubsection*{Installation under x86 64bit BSD Unix}
 
 To follow.
-
-%Then follow instructions under point 5 and 6 of the first subsection.
 
 
 \subsection{HHblits databases} \label{hhblits_dbs}

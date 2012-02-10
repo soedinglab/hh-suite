@@ -1862,7 +1862,7 @@ void perform_realign(char *dbfiles[], int ndb)
   // Delete array_plist_phits with lists
   for (int index=0; index<N_searched; index++) 
     if (array_plist_phits[index]) delete(array_plist_phits[index]); // delete list to which array[index] points
-  delete(array_plist_phits); 
+  delete[](array_plist_phits); 
 }
 
 
