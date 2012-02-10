@@ -283,7 +283,7 @@ if (!$hhmdir)
 	my @dirs = glob($a3mdir);
 	foreach $dir (@dirs) {
 	    print("\nGenerating hhm files in $tmpdir/ from a3m files in $dir/\n\n");
-	    $command = "$hhbin/hhmake -i \$file -o $tmpdir/\$base.hhm  1>/dev/null 2>>$logfile";
+	    $command = "hhmake -i \$file -o $tmpdir/\$base.hhm  1>/dev/null 2>>$logfile";
 	    &System("$hhscripts/multithread.pl '".$dir."/*.".$a3mext."' '$command' -cpu $cpu");	
 	}
 	$hhmdir = $tmpdir;
@@ -312,7 +312,7 @@ if ($a3mfile ne "") {
     }
     close OUT;
     
-    $command = "$hhbin/ffindex_build -".$a_if_append."s -f $tmpdir/a3m.filelist $a3mfile $a3mfile.index";
+    $command = "ffindex_build -".$a_if_append."s -f $tmpdir/a3m.filelist $a3mfile $a3mfile.index";
     &System($command);
  
     open (OUT, ">$a3mfile.index.sizes");
@@ -336,7 +336,7 @@ if ($hhmfile ne "") {
     }
     close OUT;
 
-    $command = "$hhbin/ffindex_build -".$a_if_append."s -f $tmpdir/hhm.filelist $hhmfile $hhmfile.index";
+    $command = "ffindex_build -".$a_if_append."s -f $tmpdir/hhm.filelist $hhmfile $hhmfile.index";
     &System($command);
  
     open (OUT, ">$hhmfile.index.sizes");
