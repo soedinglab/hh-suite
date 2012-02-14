@@ -1,4 +1,14 @@
+_______________________________________________________________________________
 
+HH-suite 2.0.11  February 2012
+
+* Unbreak hhblitsdb.pl.
+
+* Minor non-visible cleanups and documentation improvements.
+
+* Reorder CHANGES (most recent is at top now) and start documenting minor changes.
+
+_______________________________________________________________________________
 
 HH-suite 2.0.0  January 2012
 
