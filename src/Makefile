@@ -18,17 +18,19 @@ ifdef ICC
   HHSEARCH_LIBS = -lpthread -lrt
   HHBLITS_LIBS = -lpthread -lrt -openmp
   OBJECT_LIBS = -openmp
-else
+else # ifndef ICC
   CXX = g++
   CXXFLAGS = -O3 -Wall -Wno-deprecated -Wno-char-subscripts -fno-strict-aliasing -I$(CS_DIR) $(BITS_FLAG) -I$(FFINDEX_DIR)
   HHSEARCH_LIBS = -lpthread
   HHBLITS_LIBS = -lpthread -fopenmp
   HHALIGN_LIBS = 
   OBJECT_LIBS = -fopenmp
-ifndef NO_SSE3
-  CXXFLAGS += -DHH_SSE3 -march=core2 
-else
+ifndef NO_SSE2
+ifdef NO_SSE3
   CXXFLAGS += -DHH_SSE2
+else
+  CXXFLAGS += -DHH_SSE3 -march=core2 
+endif
 endif
 ifeq ($(OS), Darwin)
   CXXFLAGS+=-DHH_MAC
@@ -38,7 +40,7 @@ ifeq ($(OS), Linux)
   HHBLITS_LIBS+=-lrt
   HHALIGN_LIBS = -DNO_FREETYPE -DHH_PNG -lpng -lz -I/usr/include/ -L/usr/lib
 endif
-endif
+endif # ifndef ICC
 
 CPP = $(CXX) $(CXXFLAGS)
 CPP_VALGRIND = $(CXX) -g $(CXXFLAGS)

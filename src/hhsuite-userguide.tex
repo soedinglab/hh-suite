@@ -110,12 +110,21 @@ The HH-suite source code, executable RPM and DPKG packages for most Linux 64 bit
   ftp://toolkit.genzentrum.lmu.de/HH-suite/
 \end{verbatim}
 
+\subsection{Supported platforms} \label{installation}
+
+HH-suite has been extensively tested on Linux, in particular Debian, Ubuntu, Scientific Linux (SL), and Red Hat. We have done limited testing under BSD, MAX OS X, and CygWin. We plan to offer a Windows version compiled under MinGW in the future.
+
+\subsubsection*{Support for SSE2 instruction set} 
+
+HHblits needs to run on CPUs supporting at least the SSE2 (serial SIMD extension 2) instruction set. (See \url{http://en.wikipedia.org/wiki/SSE2} for an explanation of SSE2.) Starting with the Pentium 4 in 2001, all Intel CPUs support SSE2. AMD introduced SSE2 with their Opteron and Athlon 64 ranges of AMD64 64-bit CPUs in 2003. By default, the HH-suite binaries are compiled using the SSE3 instruction set, which is a minor extension of the SSE2 set. Intel introduced SSE3 in early 2004 with the Prescott revision of their Pentium 4 CPU. AMD introduced SSE3 in revision E (Venice and San Diego) of their Athlon 64 CPUs in April 2005. A simple way to find out if your computer's CPU supports SSE3 is to run the hhblits binary and see if you get an ```Illegal instruction'' error.
+
+If your computer's CPU does support SSE2 but not SSE3, the precompiled standard binaries will not work, but you can build the HH-suite from sources by running \verb`make -D NO_SSE3` with the \verb`NO_SSE3` flag (see next subsection). There will be no disadvantages except for a slightly (1\%-2\%) reduced speed of hhblits and hhsearch.
+
+If your computer does not run on Intel or AMD CPUs it probably does not support SSE2. In that case, you can still run all executables except \verb`hhblits`. Simply build the HH-suite from sources by running \verb`make -D NO_SSE2` with the \verb`NO_SSE2` flag (see next subsection). HHsearch speed will be reduced by around 20\%.
 
 \subsection{Installation} \label{installation}
 
 \subsubsection*{Installation from source code} 
-
-% HHblits needs the path to the two needed libraries (\verb`context_data.lib` and \verb`cs219.lib` in the \verb`libs`-directory of this package)  and the basename of the database (e.g. \verb`databases/uniprot20`). These default parameters for HHblits can be adapted in the configuration file \verb`.hhdefaults` in the binary directory or they have to be specified when calling of HHblits on the command line. All default options can be overridden on the command line.
 
 \newcounter{mycounter}  
 \newenvironment{enum}
