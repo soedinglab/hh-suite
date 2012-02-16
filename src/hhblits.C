@@ -159,6 +159,7 @@ char tmp_file[]="/tmp/hhblitsXXXXXX";  // for runtime secondary structure predic
 // HHblits variables
 const char HHBLITS_REFERENCE[] = "Remmert M., Biegert A., Hauser A., and Soding J.\nHHblits: Lightning-fast iterative protein sequence searching by HMM-HMM alignment.\nNat. Methods, epub Dec 25, doi: 10.1038/NMETH.1818 (2011).\n";
 
+int v1=v;                               // verbose mode
 int num_rounds   = 2;                   // number of iterations
 bool last_round = false;                // set to true in last iteration
 bool already_seen_filter = true;        // Perform filtering of already seen HHMs
@@ -775,7 +776,7 @@ void ReadInputFile()
     }
   fclose(qf);
 
-  int v1=v;
+  v1=v;
   if (v>0 && v<=3) v=1; else v-=2;
 
   // Read input file (HMM or alignment format) without adding pseudocounts
@@ -953,7 +954,7 @@ void search_loop(char *dbfiles[], int ndb, bool alignByWorker=true)
 	  strcpy(hit[bin]->dbfile,dbfiles[idb]); // record db file name from which next HMM is read
 	  
 	  ++N_searched;
-	  if (v>=1 && !((idb+1)%20))
+	  if (v1>=2 && !((idb+1)%20))
 	    {
 	      cout<<".";
 	      if (!((idb+1)%1000)) printf(" %-4i HMMs searched\n",(idb+1));
@@ -1084,7 +1085,7 @@ void search_database(char *dbfiles[], int ndb, int db_size)
 #endif
 
   // Initialize
-  int v1=v;
+  v1=v;
   if (v>0 && v<=3) v=1; else v-=2;
   if (print_elapsed) ElapsedTimeSinceLastCall("(preparing for search)");
 
@@ -1094,7 +1095,7 @@ void search_database(char *dbfiles[], int ndb, int db_size)
   // Start Viterbi search through db HMMs listed in dbfiles
   search_loop(dbfiles,ndb);
 
-  if (v1>=1) cout<<"\n";
+  if (v1>=2) cout<<"\n";
   v=v1;
 
   if (print_elapsed) ElapsedTimeSinceLastCall("(search through database)");
@@ -1139,7 +1140,7 @@ void perform_viterbi_search(int db_size)
 #endif
 
   // Initialize
-  int v1=v;
+  v1=v;
   if (v>0 && v<=3) v=1; else v-=2;
 
   char *dbfiles[db_size+1];
@@ -1202,7 +1203,7 @@ void perform_viterbi_search(int db_size)
   // Start Viterbi search through db HMMs listed in dbfiles
   search_loop(dbfiles,ndb,false);
 
-  if (v1>=1) cout<<"\n";
+  if (v1>=2) cout<<"\n";
   v=v1;
 
   for (int n=0;n<ndb;++n) delete[](dbfiles[n]);
@@ -1368,18 +1369,10 @@ void perform_realign(char *dbfiles[], int ndb)
  
   if (print_elapsed) ElapsedTimeSinceLastCall("(prepare realign)");
 
-  if (v>=1)
-    {
-      int num_realign=0;
-      for (int idb=0; idb<ndb; idb++)
-	{
-	  if (phash_plist_realignhitpos->Contains(dbfiles[idb]))
-	    num_realign++;
-	}
-      printf("Realigning %i HMMs using HMM-HMM Maximum Accuracy algorithm\n",num_realign);
-    }
+  if (v>=2)
+      printf("Realigning %i HMMs using HMM-HMM Maximum Accuracy algorithm\n",phash_plist_realignhitpos->Size());
 
-  int v1=v;
+  v1=v;
   if (v>0 && v<=3) v=1; else v-=2;  // Supress verbose output during iterative realignment and realignment
 
   // Align the first par.premerge templates?
@@ -1489,7 +1482,7 @@ void perform_realign(char *dbfiles[], int ndb)
 	  ///////////////////////////////////////////////////
 	  
 	  N_aligned++;
-	  if (v>=1 && !(N_aligned%10))
+	  if (v1>=2 && !(N_aligned%10))
 	    {
 	      cout<<".";
 	      if (!(N_aligned%500)) printf(" %-4i HMMs aligned\n",N_aligned);
@@ -1721,7 +1714,7 @@ void perform_realign(char *dbfiles[], int ndb)
 	      strcpy(hit[bin]->dbfile,dbfiles[idb]); // record db file name from which next HMM is read
 	      
 	      N_aligned++;
-	      if (v>=1 && !(N_aligned%10))
+	      if (v1>=2 && !(N_aligned%10))
 		{
 		  cout<<".";
 		  if (!(N_aligned%500)) printf(" %-4i HMMs aligned\n",N_aligned);
@@ -1820,7 +1813,7 @@ void perform_realign(char *dbfiles[], int ndb)
 	}
     }
 #endif
-  if (v1>=1) cout<<"\n";
+  if (v1>=2) cout<<"\n";
   v=v1;
   
   // Delete all hitlist entries with too short alignments
@@ -2130,7 +2123,7 @@ int main(int argc, char **argv)
     // Write query HHM file?
     if (*query_hhmfile) 
       {
-	int v1=v;
+	v1=v;
 	if (v>0 && v<=3) v=1; else v-=2;
 	
 	// Add *no* amino acid pseudocounts to query. This is necessary to copy f[i][a] to p[i][a]
@@ -2237,7 +2230,7 @@ int main(int argc, char **argv)
     // Generate alignment for next iteration
     if (round < num_rounds || *par.alnfile || *par.psifile || *par.hhmfile || *alis_basename)
       {
-	int v1=v;
+	v1=v;
 	if (v>0 && v<=3) v=1; else v-=2;
 	
 	// If new hits found, merge hits to query alignment

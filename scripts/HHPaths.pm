@@ -12,7 +12,7 @@ package HHPaths;
 # This block can stay unmodified
 use vars qw(@ISA @EXPORT @EXPORT_OK %EXPORT_TAGS $VERSION);
 use Exporter;
-our $VERSION = "version 2.0.10 (Jan 2012)";
+our $VERSION = "version 2.0.11 (Feb 2012)";
 our @ISA     = qw(Exporter);
 our @EXPORT  = qw($VERSION $hhlib $hhdata $hhbin $hhscripts $execdir $datadir $ncbidir $dummydb $pdbdir $dsspdir $dssp $cs_lib $context_lib);
 
@@ -21,9 +21,9 @@ our @EXPORT  = qw($VERSION $hhlib $hhdata $hhbin $hhscripts $execdir $datadir $n
 #our $execdir = ".../psipred/bin";         # path to PSIPRED V2 binaries
 #our $datadir = ".../psipred/data";        # path to PSIPRED V2 data files
 #our $ncbidir = ".../blast/bin";           # path to NCBI binaries (for PSIPRED in addss.pl)
-our $execdir = "/cluster/bioprogs/psipred/bin";         # Where the PSIPRED V2 programs have been installed
-our $datadir = "/cluster/bioprogs/psipred/data";        # Where the PSIPRED V2 data files have been installed
-our $ncbidir = "/cluster/bioprogs/blast/bin";           # Where the NCBI programs have been installed (for PSIPRED in addss.pl)
+our $execdir = "/cluster/toolkit/production/bioprogs/psipred/bin";  # Where the PSIPRED V2 programs have been installed
+our $datadir = "/cluster/toolkit/production/bioprogs/psipred/data"; # Where the PSIPRED V2 data files have been installed
+our $ncbidir = "/cluster/toolkit/production/bioprogs/blast/bin";    # Where the NCBI programs have been installed (for PSIPRED in addss.pl)
 
 ##############################################################################################
 # PLEASE COMPLETE THE PATHS ... TO YOUR LOCAL PDB FILES, DSSP FILES ETC.

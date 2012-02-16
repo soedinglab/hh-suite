@@ -115,6 +115,7 @@ using std::ofstream;
 const int MAXTHREADS=256; // maximum number of threads (i.e. CPUs) for parallel computation
 const int MAXBINS=384;    // maximum number of bins (positions in thread queue)
 enum bin_states {FREE=0, SUBMITTED=1, RUNNING=2};
+int v1;                   // verbose mode
 int threads=0;            // number of threads (apart from the main thread which reads from the databases file) 0:no multithreading
 int bins;                 // number of bins; jobs gets allocated to a FREE bin were they are waiting for execution by a thread
 char bin_status[MAXBINS]; // The status for each bin is FREE, SUBMITTED, or RUNNING
@@ -721,8 +722,8 @@ void perform_realign(char *dbfiles[], int ndb)
       bin_status[bin] = FREE;
     }
   
-  int v1 = v;
   if (v>=2) printf("Realigning %i database HMMs using HMM-HMM Maximum Accuracy algorithm\n",nhits);
+  v1 = v;
   if (v>0 && v<=3) v=1; else v-=2;  // Supress verbose output during iterative realignment and realignment
   
   /////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -836,7 +837,7 @@ void perform_realign(char *dbfiles[], int ndb)
 	  ///////////////////////////////////////////////////
 	  
 	  N_aligned++;
-	  if (v>=1 && !(N_aligned%10))
+	  if (v1>=2 && !(N_aligned%10))
 	    {
 	      cout<<".";
 	      if (!(N_aligned%500)) printf(" %-4i HMMs aligned\n",N_aligned);
@@ -1028,7 +1029,7 @@ void perform_realign(char *dbfiles[], int ndb)
 	      strcpy(hit[bin]->dbfile,dbfiles[idb]); // record db file name from which next HMM is read
 	      
 	      N_aligned++;
-	      if (v>=1 && !(N_aligned%10))
+	      if (v1>=2 && !(N_aligned%10))
 		{
 		  cout<<".";
 		  if (!(N_aligned%500)) printf(" %-4i HMMs aligned\n",N_aligned);
@@ -1127,7 +1128,9 @@ void perform_realign(char *dbfiles[], int ndb)
 	}
     }
 #endif
+  if (v1>=2) cout<<"\n";
   v=v1;
+
   
   // Print for each HMM: n  score  -log2(Pval)  L  name  (n=5:same name 4:same fam 3:same sf...)
   if (*par.scorefile) {
@@ -1401,7 +1404,7 @@ int main(int argc, char **argv)
 
   // Initialize
   N_searched=0;
-  int v1=v;
+  v1=v;
   if (v>0 && v<=3) v=1; else v-=2;
   if (print_elapsed) ElapsedTimeSinceLastCall("(preparing for search)");
 
@@ -1495,7 +1498,7 @@ int main(int argc, char **argv)
               strcpy(hit[bin]->dbfile,dbfiles[idb]); // record db file name from which next HMM is read
 
               ++N_searched;
-              if (v>=1 && !(N_searched%20))
+              if (v1>=2 && !(N_searched%20))
                 {
                   cout<<".";
                   if (!(N_searched%1000)) printf(" %-4i HMMs searched\n",N_searched);
@@ -1601,7 +1604,7 @@ int main(int argc, char **argv)
 
   hitlist.N_searched=N_searched; //hand over number of HMMs scanned to hitlist (for E-value calculation)
 
-  if (v1>=1) cout<<"\n";
+  if (v1>=2) cout<<"\n";
   v=v1;
 
   if (print_elapsed) ElapsedTimeSinceLastCall("(search through database)");
@@ -1731,7 +1734,7 @@ int main(int argc, char **argv)
       if (v>=2) printf("Merging hits to query alignment %s ...\n",qa3mfile);
       // If query consists of only one sequence:
       //     realign templates to query HMM enforced by sequences from up to the 10 best templates
-      int v1=v--;
+      v1=v--;
 
       // For each template below threshold
       hitlist.Reset();

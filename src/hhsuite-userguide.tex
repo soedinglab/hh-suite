@@ -118,9 +118,9 @@ HH-suite has been extensively tested on Linux, in particular Debian, Ubuntu, Sci
 
 HHblits needs to run on CPUs supporting at least the SSE2 (serial SIMD extension 2) instruction set. (See \url{http://en.wikipedia.org/wiki/SSE2} for an explanation of SSE2.) Starting with the Pentium 4 in 2001, all Intel CPUs support SSE2. AMD introduced SSE2 with their Opteron and Athlon 64 ranges of AMD64 64-bit CPUs in 2003. By default, the HH-suite binaries are compiled using the SSE3 instruction set, which is a minor extension of the SSE2 set. Intel introduced SSE3 in early 2004 with the Prescott revision of their Pentium 4 CPU. AMD introduced SSE3 in revision E (Venice and San Diego) of their Athlon 64 CPUs in April 2005. A simple way to find out if your computer's CPU supports SSE3 is to run the hhblits binary and see if you get an ```Illegal instruction'' error.
 
-If your computer's CPU does support SSE2 but not SSE3, the precompiled standard binaries will not work, but you can build the HH-suite from sources by running \verb`make -D NO_SSE3` with the \verb`NO_SSE3` flag (see next subsection). There will be no disadvantages except for a slightly (1\%-2\%) reduced speed of hhblits and hhsearch.
+If your computer's CPU does support SSE2 but not SSE3, the precompiled standard binaries will not work, but you can build the HH-suite from sources by running \verb`make NO_SSE3=1` with the \verb`NO_SSE3` flag set (see next subsection). There will be no disadvantages except for a slightly (1\%-2\%) reduced speed of hhblits and hhsearch.
 
-If your computer does not run on Intel or AMD CPUs it probably does not support SSE2. In that case, you can still run all executables except \verb`hhblits`. Simply build the HH-suite from sources by running \verb`make -D NO_SSE2` with the \verb`NO_SSE2` flag (see next subsection). HHsearch speed will be reduced by around 20\%.
+If your computer does not run on Intel or AMD CPUs it probably does not support SSE2. In that case, you can still run all executables except \verb`hhblits`. Simply build the HH-suite from sources by running \verb`make NO_SSE2=1` with the \verb`NO_SSE2` flag set (see next subsection). HHsearch speed will be reduced by around 20\%.
 
 \subsection{Installation} \label{installation}
 

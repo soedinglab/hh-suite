@@ -934,6 +934,9 @@ void init_prefilter()
   fclose(dbf);
 }
 
+////////////////////////////////////////////////////////////////////////
+// Prepare query profile for prefitering 
+////////////////////////////////////////////////////////////////////////
 void stripe_query_profile()
 {
   LQ=q_tmp->L;
@@ -1062,9 +1065,33 @@ void stripe_query_profile()
     free(query_profile[i]);
   delete[] query_profile;
 }
+////////////////////////////////////////////////////////////////////////
 
-void prefilter_with_SW_evalue_preprefilter_backtrace()
+
+
+////////////////////////////////////////////////////////////////////////
+// Main prefilter function
+////////////////////////////////////////////////////////////////////////
+void prefilter_db()
 {
+  doubled = new(Hash<char>);
+  doubled->New(16381,0);
+  for (int idb=0; idb<ndb_new; idb++) delete[](dbfiles_new[idb]);
+  for (int idb=0; idb<ndb_old; idb++) delete[](dbfiles_old[idb]);
+  ndb_new = ndb_old = 0;
+  block_count=0;
+  //block = new(int[400]);
+  block = NULL;
+  strcpy(actual_hit,"");
+
+  par.block_shading->Reset();
+  while (!par.block_shading->End())
+    delete[] (par.block_shading->ReadNext()); 
+  par.block_shading->New(16381,NULL);
+  par.block_shading_counter->New(16381,0);
+
+  // Prefilter with SW evalue preprefilter backtrace
+
   stripe_query_profile();
   
   int* prefiltered_hits = new int[par.dbsize+1];
@@ -1105,10 +1132,13 @@ void prefilter_with_SW_evalue_preprefilter_backtrace()
 #pragma omp critical
 	  prefiltered_hits[count_dbs++] = n;
 	}
+      
+      if (v>=2 && !(n%100000)) {cout<<"."; cout.flush();}
+
     }
   if (v>=2)
     {
-      printf("HMMs passed prefilter 1 (gapless profile-profile alignment)  : %6i\n", count_dbs);
+      printf("\nHMMs passed prefilter 1 (gapless profile-profile alignment)  : %6i\n", count_dbs);
       //printf("%6i hits through preprefilter!\n", count_dbs);
     }
   if (print_elapsed) ElapsedTimeSinceLastCall("(ungapped preprefilter)");
@@ -1256,29 +1286,6 @@ void prefilter_with_SW_evalue_preprefilter_backtrace()
   delete[] workspace;
   delete[] prefiltered_hits;
   delete[] backtrace_hits;
-}
-
-// Main prefilter function
-void prefilter_db()
-{
-  doubled = new(Hash<char>);
-  doubled->New(16381,0);
-  for (int idb=0; idb<ndb_new; idb++) delete[](dbfiles_new[idb]);
-  for (int idb=0; idb<ndb_old; idb++) delete[](dbfiles_old[idb]);
-  ndb_new = ndb_old = 0;
-  block_count=0;
-  //block = new(int[400]);
-  block = NULL;
-  strcpy(actual_hit,"");
-
-  par.block_shading->Reset();
-  while (!par.block_shading->End())
-    delete[] (par.block_shading->ReadNext()); 
-  par.block_shading->New(16381,NULL);
-  par.block_shading_counter->New(16381,0);
-
-  // Do prefiltering
-  prefilter_with_SW_evalue_preprefilter_backtrace();
-
   if(doubled) delete doubled;
 }
+////////////////////////////////////////////////////////////////////////
