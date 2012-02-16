@@ -55,7 +55,7 @@
 #define PTHREAD
 #define MAIN
 #define HHBLITS
-// #define DEBUG
+// #define HHDEBUG
 // #define DEBUG_THREADS
 // #define WINDOWS
 

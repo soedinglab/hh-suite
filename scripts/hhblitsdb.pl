@@ -248,13 +248,34 @@ if (!$csdir)
 	}
     }
 
-    # Concatenate columns state sequences into cs database file
-    &System("find $tmpdir -name '*.seq219' -exec cat '{}' + >> $csfile"); # 
-
-} else {
-    # Concatenate columns state sequences into cs database file
-    &System("find $csdir -name '*.seq219' -exec cat '{}' + >> $csfile"); # 
+    $csdir = $tmpdir;
 }
+
+# Write filenames of *.seq219 files as first word into nameline of column state sequences
+foreach my $seq219file (glob($csdir."/*.$csext")) { 
+    open (IN, "<$seq219file");
+    my @lines = <IN>;
+    close(IN);
+    unlink($seq219file);
+    for (my $l=0; $l<@lines; $l++) {
+	if ($lines[$l] =~ /^>(\S*)/) {
+	    my $seqname = $1;
+	    $seq219file =~ /([^\/]*)\.$csext/ or die ("Error: $seq219file does not have the extension $csext!?\n");
+	    my $seq219base = $1;
+	    if ($seq219base ne $seqname) { # base filename is not equal to the sequence name?
+  		$lines[$l] =~ s/^>(.*)/>$seq219base $1/; # insert base of filename as first word in nameline
+	    }  
+	    last;
+	}
+    }
+    # Write cs219 sequence with modified nameline back into file
+    open (OUT, ">$seq219file");
+    printf(OUT @lines);
+    close(OUT);	
+} 
+
+# Concatenate columns state sequences into cs database file
+&System("find $csdir -name '*.seq219' -exec cat '{}' + >> $csfile"); # 
 
 # Count number of sequences and characters in cs database file
 $numcsfiles = 0;

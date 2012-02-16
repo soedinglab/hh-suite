@@ -756,27 +756,6 @@ void init_no_prefiltering()
   // Get DBsize and num_chars
   CountSeqsInFile(db, par.dbsize);  // Get DBsize but not number of chars
   
-  // The following code has been updated and moved to CountSeqsInFile(...) 
-  // char tmp_file[NAMELEN];
-  // strcpy(tmp_file, db);
-  // strcat(tmp_file, ".sizes");
-  // FILE* fin = fopen(tmp_file, "r");
-  // if (!fin)
-  //   {
-  //     FILE *stream;
-  //     // Get DB-size
-  //     string command = "cat " + (string)db + " |grep \">\" |wc -l";
-  //     stream = popen(command.c_str(), "r");
-  //     char* ptr=fgets(line, LINELEN, stream);
-  //     par.dbsize = strint(ptr);
-  //     pclose(stream);
-  //   } 
-  // else 
-  //   {
-  //     char* ptr=fgets(line, LINELEN, fin);
-  //     par.dbsize = strint(ptr);
-  //     fclose(fin);
-  //   }
   
   if (par.dbsize > par.maxnumdb_no_prefilter)
     {cerr<<endl<<"Error in "<<program_name<<": Without prefiltering, the max. number of database HHMs is "<<par.maxnumdb_no_prefilter<<" (actual: "<<par.dbsize<<")\n";
@@ -784,7 +763,7 @@ void init_no_prefiltering()
       exit(4);
     }
 
-  char word[NAMELEN];
+  char word[LINELEN];
   FILE* dbf = NULL;
   dbf = fopen(db,"rb");
   if (!dbf) OpenFileError(db);
@@ -835,35 +814,6 @@ void init_prefilter()
   // Get Prefilter Pvalue (Evalue / Par.Dbsize)
   LDB = CountSeqsInFile(db, par.dbsize);  // Get DBsize but not number of chars
 
-  // The following code has been updated and moved to CountSeqsInFile(...) 
-  // char tmp_file[NAMELEN];
-  // strcpy(tmp_file, db);
-  // strcat(tmp_file, ".sizes");
-  // FILE* fin = fopen(tmp_file, "r");
-  // if (!fin)
-  //   {
-  //     FILE *stream;
-  //     // Get DB-size
-  //     string command = "cat " + (string)db + " |grep \"^>\" |wc -l";
-  //     stream = popen(command.c_str(), "r");
-  //     char* ptr=fgets(line, LINELEN, stream);
-  //     par.dbsize = strint(ptr);
-  //     pclose(stream);
-  //     // Get DB-length
-  //     command = "cat " + (string)db + " |grep -v \"^>\" |wc -c";
-  //     stream = popen(command.c_str(), "r");
-  //     ptr=fgets(line, LINELEN, stream);
-  //     LDB = strint(ptr);
-  //     pclose(stream);
-  //   } 
-  // else 
-  //   {
-  //     char* ptr=fgets(line, LINELEN, fin);
-  //     par.dbsize = strint(ptr);
-  //     LDB = strint(ptr);
-  //     fclose(fin);
-  //   }
-
   if (par.dbsize == 0 || LDB == 0)
     {cerr<<endl<<"Error! Could not determine DB-size of prefilter db ("<<db<<")\n"; exit(4);}
 	    
@@ -872,19 +822,18 @@ void init_prefilter()
   X = (unsigned char*)memalign(16,LDB*sizeof(unsigned char));                     // database string (concatenate all DB-seqs)
   first = (unsigned char**)memalign(16,(2*par.dbsize)*sizeof(unsigned char*));    // first characters of db sequences
   length = (int*)memalign(16,(2*par.dbsize)*sizeof(int));                         // lengths of db sequences
-  dbnames = new char*[par.dbsize*2];                                              // names of db sequences
+  dbnames = new char*[2*par.dbsize];                                              // names of db sequences
 
   /////////////////////////////////////////
   // Read in database
   num_dbs = 0;
   int len = 0;
   int pos = 0;
-  char word[NAMELEN];
+  char word[LINELEN];
   FILE* dbf = NULL;
   dbf = fopen(db,"rb");
   if (!dbf) OpenFileError(db);
 
-//  while(fgetline(line,LINELEN,dbf)) // read prefilter database
   while(fgets(line,LINELEN,dbf)) // read prefilter database
     {
       
@@ -906,10 +855,9 @@ void init_prefilter()
       else
 	{
 	  unsigned char* c = (unsigned char*)line;
-//	  while (*c!='\0')
  	  while (*c!='\n')
 	    {
-#ifdef DEBUG
+#ifdef HHDEBUG
 	      if (cs::AS219::kValidChar[*c])
 	      	{
 		  X[pos++]= (unsigned char)(cs::AS219::kCharToInt[*c]);

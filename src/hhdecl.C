@@ -14,11 +14,11 @@ EXTERN const char VERSION_AND_DATE[]="version 2.0.11 (Feb 2012)";
 EXTERN const char REFERENCE[]="Soding, J. Protein homology detection by HMM-HMM comparison. Bioinformatics 2005, 21, 951-960.\n";
 EXTERN const char COPYRIGHT[]="(C) Johannes Soeding, Michael Remmert, Andreas Biegert, Andreas Hauser\n";
 EXTERN const int MAXSEQ=65535; //max number of sequences in input alignment (must be <~30000 on cluster nodes)
-EXTERN const int LINELEN=262144; //max length of line read in from input files; must be >= MAXCOL
+EXTERN const int LINELEN=524288; //max length of line read in from input files; must be >= MAXCOL
 EXTERN const int MAXSEQDIS=10238;//max number of sequences stored in 'hit' objects and displayed in output alignment
 EXTERN const int IDLEN=255;     //max length of scop hierarchy id and pdb-id
 EXTERN const int DESCLEN=32765;//max length of sequence description (longname)
-EXTERN const int NAMELEN=PATH_MAX;  //max length of file names etc.
+EXTERN const int NAMELEN=PATH_MAX;  //max length of file names etc., defined in ?.h 
 EXTERN const int MAXOPT=127;   //Maximum number of options to be read in from .hhconfig or command line
 EXTERN const int NAA=20;       //number of amino acids (0-19)
 EXTERN const int NTRANS=7;    //number of transitions recorded in HMM (M2M,M2I,M2D,I2M,I2I,D2M,D2D)
