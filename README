@@ -54,10 +54,23 @@ $ make all
 
 On Mac OS X only dynamic linking is supported.
 
+Notes on SSE support.
+
 To compile code for CPUs without SSE3 you can compile with NO_SSE3 set:
 $ make NO_SSE3=1
 To see whether your CPU supports SSE3 you can check the output of:
-$ grep sse3 /prc/cpuinfo)
+$ grep pni /prc/cpuinfo
+
+If your CPU support SSE4.1 you can enable with with WITH_SSE41=1:
+$ make WITH_SSE41=1
+To see whether your CPU supports SSE4.1 you can check the output of:
+$ grep sse4_1 /prc/cpuinfo
+
+If you only use the programs on your local machine or of the exact type
+you can further enable the use of all other instructions supported by
+your CPU with WITH_NATIVE:
+$ make WITH_NATIVE=1
+This is independant of the SSE flags.
 
 
 3. Installation

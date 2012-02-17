@@ -1,4 +1,4 @@
-#ifdef HH_SSE4
+#ifdef HH_SSE41
 #include <tmmintrin.h>   // SSSE3
 #include <smmintrin.h>   // SSE4.1
 #define HH_SSE3
@@ -554,7 +554,7 @@ inline float ScalarProd20(float* qi, float* tj)
   __m128* Qi = (__m128*) qi;
   __m128* Tj = (__m128*) tj;
 
-#ifdef HH_SSE4
+#ifdef HH_SSE41
   R = _mm_dp_ps(*(Qi++),*(Tj++),0xFF); // dot product
   P = _mm_dp_ps(*(Qi++),*(Tj++),0xFF); // dot product
   R = _mm_add_ps(R,P);
@@ -585,7 +585,7 @@ inline float ScalarProd20(float* qi, float* tj)
   R = _mm_shuffle_ps(R,R, _MM_SHUFFLE(3,1,3,1));
   R = _mm_add_ps(R,P);
 #endif // end SSE2 code
-#endif // end ifndef HH_SSE4
+#endif // end ifndef HH_SSE41
   _mm_store_ss(&res, R);
   return res;
 #endif // end ifdef HH_SSE2

@@ -1,8 +1,12 @@
+
 _______________________________________________________________________________
 
 HH-suite 2.0.11  February 2012
 
-* Support compilation without SSE3 (make NO_SSE3=1)
+* Rework SSE flags
+  Support compilation without SSE3 (make NO_SSE3=1), without SSE2 (make NO_SSE2=1)
+  with SSE4.1 (make WITH_SSE41=1) and enable all other instructions avalable on
+  compilation host (make WITH_NATIVE=1).
 
 * Fix some segfaults.
 

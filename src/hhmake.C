@@ -35,7 +35,7 @@
 #include <ctype.h>    // islower, isdigit etc
 #include <cassert>
 
-#ifdef HH_SSE4
+#ifdef HH_SSE41
 #include <tmmintrin.h>   // SSSE3
 #include <smmintrin.h>   // SSE4.1
 #define HH_SSE3
