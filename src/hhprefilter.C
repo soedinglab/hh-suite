@@ -763,7 +763,7 @@ void init_no_prefiltering()
       exit(4);
     }
 
-  char word[LINELEN];
+  char word[NAMELEN];
   FILE* dbf = NULL;
   dbf = fopen(db,"rb");
   if (!dbf) OpenFileError(db);
@@ -820,9 +820,9 @@ void init_prefilter()
   if (v>=3) printf("Number of column-state sequences: %6i\n",par.dbsize);
 
   X = (unsigned char*)memalign(16,LDB*sizeof(unsigned char));                     // database string (concatenate all DB-seqs)
-  first = (unsigned char**)memalign(16,(2*par.dbsize)*sizeof(unsigned char*));    // first characters of db sequences
-  length = (int*)memalign(16,(2*par.dbsize)*sizeof(int));                         // lengths of db sequences
-  dbnames = new char*[2*par.dbsize];                                              // names of db sequences
+  first = (unsigned char**)memalign(16,(par.dbsize+2)*sizeof(unsigned char*));    // first characters of db sequences
+  length = (int*)memalign(16,(par.dbsize+2)*sizeof(int));                         // lengths of db sequences
+  dbnames = new char*[par.dbsize+2];                                              // names of db sequences
 
   /////////////////////////////////////////
   // Read in database

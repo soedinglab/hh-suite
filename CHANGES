@@ -6,7 +6,7 @@ _______________________________________________________________________________
 
 HH-suite 2.0.12  February 2012
 
-* Supports compilation without SSE3 (make NO_SSE3=1)
+* Supports compilation without SSE3 or SSE2 (make NO_SSE3=1; make NO_SSE2)
 
 * Fixed segfault occuring with very long sequence names 
 
