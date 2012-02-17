@@ -25,21 +25,30 @@ else # ifndef ICC
   HHBLITS_LIBS = -lpthread -fopenmp
   HHALIGN_LIBS = 
   OBJECT_LIBS = -fopenmp
-ifndef NO_SSE2
-ifdef NO_SSE3
-  CXXFLAGS += -DHH_SSE2
-else
-  CXXFLAGS += -DHH_SSE3 -march=core2 
-endif
-endif
-ifeq ($(OS), Darwin)
+  ifdef WITH_NATIVE
+    CXXFLAGS += -march=native
+  endif
+  ifdef WITH_SSE41
+    CXXFLAGS += -DHH_SSE41 -msse4.1 -DHH_SSS3 -mssse3
+  else
+    ifndef NO_SSE2
+      ifdef NO_SSE3
+        CXXFLAGS += -DHH_SSE2 -msse2
+      else
+        CXXFLAGS += -DHH_SSE3 -msse3
+      endif
+    endif
+  endif
+  ifeq ($(OS), Darwin)
   CXXFLAGS+=-DHH_MAC
-endif
-ifeq ($(OS), Linux)
+  endif
+  ifeq ($(OS), Linux)
   HHSEARCH_LIBS = -lpthread -lrt
   HHBLITS_LIBS+=-lrt
-  HHALIGN_LIBS = -DNO_FREETYPE -DHH_PNG -lpng -lz -I/usr/include/ -L/usr/lib
-endif
+    ifndef NO_PNG
+      HHALIGN_LIBS = -DNO_FREETYPE -DHH_PNG -lpng -lz
+    endif
+  endif
 endif # ifndef ICC
 
 CPP = $(CXX) $(CXXFLAGS)
