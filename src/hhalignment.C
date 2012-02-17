@@ -276,7 +276,7 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline)
           else if (kfirst<0)
 	    {
 	      char word[NAMELEN];
-	      strwrd(word,line); // Copies first word in ptr to str
+	      strwrd(word,line,NAMELEN); // Copies first word in ptr to str
 	      if (strstr(word,"_consensus"))
 		{display[k]=2; keep[k]=0; n_display++; kfirst=k;}
 	      else 
@@ -2316,7 +2316,7 @@ void Alignment::WriteWithoutInsertsToFile(const char* alnfile)
 void Alignment::WriteToFile(const char* alnfile, const char format[])
 {
   FILE* alnf;
-  char* tmp_name = new(char[50]);
+  char* tmp_name = new(char[NAMELEN]);
   if (!par.append) alnf = fopen(alnfile,"w"); else alnf = fopen(alnfile,"a");
   if (!alnf) OpenFileError(alnfile);
 
@@ -2340,7 +2340,7 @@ void Alignment::WriteToFile(const char* alnfile, const char format[])
       for (int k=0; k<N_in; ++k) // skip sequences before kfirst!!
         if (!(k==kss_pred || k==kss_conf || k==kss_dssp || k==ksa_dssp) && (keep[k] || display[k]==2)) // print if either in profile (keep[k]>0) or display is obligatory (display[k]==2)
           {
-	    strwrd(tmp_name,sname[k]);
+	    strwrd(tmp_name,sname[k],NAMELEN);
             fprintf(alnf,"%-20.20s ",tmp_name);
 //          for (int i=1; i<=L; ++i) fprintf(alnf,"%c",i2aa(X[k][i]));
 //          fprintf(alnf,"\n");

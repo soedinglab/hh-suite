@@ -704,6 +704,23 @@ inline char* strwrd(char* str, char* ptr)
   else return NULL;
 }
 
+// Copies first word in ptr to str. In other words, copies first block of non whitespace characters,
+// beginning at ptr, to str. If a word is found, returns address of second word in ptr or, if no second
+// word is found, returns address to end of word ('\0' character) in ptr string. If no word is found
+// in ptr NULL is returned.
+inline char* strwrd(char* str, char* ptr, int maxlen)
+{
+  ptr=strscn(ptr);    // advance to beginning of next word
+  if (ptr)
+    {
+      while (*ptr!='\0' && *ptr>32 && (maxlen--)>0) *(str++) = *(ptr++);
+      *str='\0';
+      while (*ptr!='\0' && *ptr<=32) ptr++;
+      return ptr;
+    }
+  else return NULL;
+}
+
 // Copies first word ***delimited by char c*** in ptr to str. In other words, copies first block of non-c characters,
 // beginning at ptr, to str. If a word is found, returns address of second word in ptr or, if no second
 // word is found, returns address to end of word ('\0' character) in ptr string. If no word is found

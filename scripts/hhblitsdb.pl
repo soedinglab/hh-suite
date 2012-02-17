@@ -200,7 +200,7 @@ while ($suffix=~s/^\/[^\/]+//) {
     if (!-d $1) {mkdir($1,0777);}
 } 
 unlink glob("$tmpdir/*"); # clean up directory if it already exists
-
+unlink $logfile;
 
 ##############################################################################################
 # Generate column-state database file
@@ -238,12 +238,12 @@ if (!$csdir)
 
 	if ($hhmext eq "hmm") {
 	    print("\nGenerating seq219 files in $tmpdir/ from prf files in $tmpdir/\n\n");
-	    $command = "$hhbin/cstranslate -i \$file -o \$name.seq219 -A $cs_lib 1>/dev/null 2>>$logfile";
+	    $command = "$hhbin/cstranslate -i \$file -o \$name.seq219 -A $cs_lib 1>>$logfile 2>>$logfile";
 	    &System("$hhscripts/multithread.pl '".$tmpdir."/*.prf' '$command' -cpu $cpu");
 	    
 	} else { # $hhmext eq "hhm"
 	    print("\nGenerating seq219 files in $tmpdir/ from prf files in $tmpdir/\n\n");
-	    $command = "$hhbin/cstranslate -i \$file -o \$name.seq219 -A $cs_lib -D $context_lib -x $x -c $c 1>/dev/null 2>>$logfile";
+	    $command = "$hhbin/cstranslate -i \$file -o \$name.seq219 -A $cs_lib -D $context_lib -x $x -c $c 1>>$logfile 2>>$logfile";
 	    &System("$hhscripts/multithread.pl '".$tmpdir."/*.prf' '$command' -cpu $cpu");
 	}
     }
@@ -251,41 +251,28 @@ if (!$csdir)
     $csdir = $tmpdir;
 }
 
-# Write filenames of *.seq219 files as first word into nameline of column state sequences
+
+# Write columns state sequences into cs database file, 
+# replace names in cs sequences with filenames: ">name+description" => ">filename"
+$numcsfiles = 0;
+my $num_chars = 0;
+open (OUT, ">$csfile");
 foreach my $seq219file (glob($csdir."/*.$csext")) { 
     open (IN, "<$seq219file");
     my @lines = <IN>;
     close(IN);
-    open (OUT, ">$seq219file");
+    $seq219file =~ s/.*?([^\/]*)\.$csext\s*/$1/ or die ("Error: $seq219file does not have the extension $csext!?\n");
     foreach my $line (@lines) {
-	if ($line =~ /^>(\S*)/) {
-	    my $seqname = $1;
-	    $seq219file =~ /([^\/]*)\.$csext/ or die ("Error: $seq219file does not have the extension $csext!?\n");
-	    my $seq219base = $1;
-	    if ($seq219base ne $seqname) { # base filename is not equal to the sequence name?
-  		$line =~ s/^>(.*)/>$seq219base $1/; # insert base of filename as first word in nameline
-	    }  
+	if ($line =~ /^>/) {
+	    $line = ">".$seq219file."\n";
+	    $numcsfiles++;
+	} else {
+	    $num_chars += length($line);
 	}
-	printf(OUT $line); 
-	
+	printf(OUT $line); 	
     }
-    close(OUT);	
 } 
-
-# Concatenate columns state sequences into cs database file
-&System("find $csdir -name '*.seq219' -exec cat '{}' + >> $csfile"); # 
-
-# Count number of sequences and characters in cs database file
-$numcsfiles = 0;
-my $num_chars = 0;
-open (IN, "<$csfile");
-while ( <IN>) {
-    if (/^>/) {$numcsfiles++;}
-    else {
-	$num_chars += length;
-    }
-}
-close(IN);
+close(OUT);	
 
 open (OUT, ">$csfile.sizes");
 print OUT "$numcsfiles $num_chars\n";

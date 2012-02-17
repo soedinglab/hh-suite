@@ -122,9 +122,7 @@ If your computer's CPU does support SSE2 but not SSE3, the precompiled standard 
 
 If your computer does not run on Intel or AMD CPUs it probably does not support SSE2. In that case, you can still run all executables except \verb`hhblits`. Simply build the HH-suite from sources by running \verb`make NO_SSE2=1` with the \verb`NO_SSE2` flag set (see next subsection). HHsearch speed will be reduced by around 20\%.
 
-\subsection{Installation} \label{installation}
-
-\subsubsection*{Installation from source code} 
+\subsection{Installation from source code} \label{installation}
 
 \newcounter{mycounter}  
 \newenvironment{enum}
@@ -133,6 +131,7 @@ If your computer does not run on Intel or AMD CPUs it probably does not support 
 
 
 \begin{enum}
+
 \item Download the sources from \url{ftp://toolkit.genzentrum.lmu.de/HH-suite/}, for example
 \begin{verbatim}
 $ mkdir ~/programs/hh/
@@ -170,59 +169,65 @@ On Mac OS X only dynamic linking is supported.
 \begin{verbatim}
 $ make install
 \end{verbatim}
-Or set \verb`INSTALL_DIR` to the absolute path of the base directory where you want to install, for example:
+Or set \verb`INSTALL_DIR` to the absolute path of the base directory where you want install HH-suite.
+(\verb`<install_dir>` in the following). For example, to install into \verb`/usr/local`:
 \begin{verbatim}
 $ make install INSTALL_DIR=/usr/local
 \end{verbatim}
+The HH-suite binaries will then be put into \verb`<install_dir>/bin` and the library files into\\
+\verb`<install_dir>/lib/hh`.
 \vspace{2mm}
 
 
 \item Set HHLIB and paths: In your shell, set the environment variable HHLIB to \verb`$INSTALL_DIR/lib/hh`, 
 e.g, for bash, zsh, or ksh,
 \begin{verbatim}
-$ export HHLIB=/usr/local/lib/hh
+$ export HHLIB=<install_dir>/lib/hh
 \end{verbatim}
-and, for csh or tcsh: \verb`$ setenv HHLIB=/usr/local/lib/hh`. 
+and, for csh or tcsh: \verb`$ setenv HHLIB=<install_dir>/lib/hh`. 
 HHsearch and HHblits look for the column state library file \verb`cs219.lib`
 and the context library file \verb`context_data.lib` in \verb`$HHLIB/data/`. The hh-suite
 perl scripts also read HHLIB (via file \verb`HHPaths.pm`) to locate hh-suite binaries and data files.
 
 Put the location of your hh-suite binaries and scripts into your search path:
 \begin{verbatim}
-$ export PATH=$PATH:<install_dir/bin>:$HHLIB/scripts
+$ export PATH=$PATH:<install_dir>/bin:$HHLIB/scripts
 \end{verbatim}
 
 To avoid typing these commands every time you open a new shell, you may add the following lines to the \verb`.bashrc`, \verb`.kshrc`, \verb`.cshrc` or equivalent file in your home directory that is executed every time a shell is started:
 \begin{verbatim}
 export HHLIB=/usr/local/lib/hh
 PATH=$PATH:<install_dir/bin>:$HHLIB/scripts
-alias hhblits='hhblits -d <path_to/uniprot20 or path_to/nr20>'
+alias hhblits='hhblits -d <path_to/uniprot20 OR path_to/nr20>'
 \end{verbatim}
 The last line defines a default database for hhblits. 
 \vspace{2mm}
 
 
 \item If you compiled dynamically, the run-time linker needs to know about the lib subdirectory 
-of the hh-suite (e.g. \verb`/opt/hh/lib/`.
-You can either add the \verb`hh/lib` library to your shared library search path. 
-Under Linux, for example, these are configured in \verb`/etc/ld.so.conf`. 
-Or the \verb`hh/lib` library must be appended to a system-dependent environment variable 
-containing the additional shared library paths for the run-time linker.
-
-Under Linux, this variable is called \verb`LD_LIBRARY_PATH`. 
-Assuming \verb`INSTALL_DIR` was set to \verb`/opt/hh`, the bourne shell version (bash, zsh etc.) looks like this:
+of the hh-suite in \verb`<install_dir>/lib/`. Otherwise, you will get an error message such as
 \begin{verbatim}
-$ export LD_LIBRARY_PATH=/opt/hh/lib
+ffindex_build: error while loading shared libraries: libffindex.so.0.1: 
+cannot open shared object file: No such file or directory
 \end{verbatim}
-
+You can either add the \verb`<install_dir>/lib` library to your shared library search path. 
+Under Linux, for example, these are configured in \verb`/etc/ld.so.conf`. 
+Or the \verb`<install_dir>/lib/` library must be appended to a system-dependent environment variable 
+containing the additional shared library paths for the run-time linker.
+Under Linux, this variable is called \verb`LD_LIBRARY_PATH` and the bourne shell version (bash, zsh etc.) looks like this:
+\begin{verbatim}
+$ export LD_LIBRARY_PATH=<install_dir>/lib
+\end{verbatim}
 Under Mac OSX, the equivalent command in bourne shell format is:
 \begin{verbatim}
-$ export DYLD_LIBRARY_PATH=/opt/hh/lib
+$ export DYLD_LIBRARY_PATH=<install_dir>/lib
 \end{verbatim}
 \vspace{2mm}
 
 
 \end{enum}
+
+\subsection{Package installation}
 
 \subsubsection*{Installation under x86 64bit Linux with the red hat package manager RPM}
 
@@ -255,7 +260,6 @@ alias hhblits='hhblits -d <path_to/uniprot20 or path_to/nr20>'
 The last line defines a default database for hhblits. 
 
 \end{enum}
-
 
 \subsubsection*{Installation under x86 64bit Linux with the Debian package manager DPKG}
 

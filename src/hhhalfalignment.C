@@ -358,7 +358,7 @@ void HalfAlignment::Print(char* alnfile, char* commentname, const char format[])
   int k;      //counts sequences
   int omitted=0; // counts number of sequences with no residues in match states
   FILE *outf;
-  char* tmp_name = new(char[50]);
+  char* tmp_name = new(char[NAMELEN]);
   if (strcmp(alnfile,"stdout"))
     {
       if (par.append) outf=fopen(alnfile,"a"); else outf=fopen(alnfile,"w");
@@ -399,7 +399,7 @@ void HalfAlignment::Print(char* alnfile, char* commentname, const char format[])
     {
       for (k=0; k<n; k++)
           {
-	    strwrd(tmp_name,sname[k]);
+	    strwrd(tmp_name,sname[k],NAMELEN);
             fprintf(outf,"%-20.20s ",tmp_name);
             char* ptr=s[k];
             for (; *ptr!='\0'; ptr++)

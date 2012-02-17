@@ -772,7 +772,7 @@ void init_no_prefiltering()
     {
       if (line[0]=='>')
 	{
-	  strwrd(word,line+1);
+	  strwrd(word,line+1,NAMELEN);
 
 	  // Add hit to dbfiles
 	  char db_name[NAMELEN];
@@ -829,7 +829,7 @@ void init_prefilter()
   num_dbs = 0;
   int len = 0;
   int pos = 0;
-  char word[LINELEN];
+  char word[NAMELEN];
   FILE* dbf = NULL;
   dbf = fopen(db,"rb");
   if (!dbf) OpenFileError(db);
@@ -843,7 +843,7 @@ void init_prefilter()
 	    length[num_dbs++] = imin(par.maxres,len);
 	  len = 0;
 	      
-	  strwrd(word,line+1);
+	  strwrd(word,line+1,NAMELEN);
 	  /////// TEMP - temporär, wird von alten DBs benötigt, alle DBs ab 2011 sollten auf neuem Stand sein
 	  strcut(word,"_cons");
 
