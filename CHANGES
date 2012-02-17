@@ -1,24 +1,32 @@
+
+Bugs? Ideas? Need for improvement? 
+soeding@genzentrum.lmu.de
+
+_______________________________________________________________________________
+
+HH-suite 2.0.12  February 2012
+
+* Supports compilation without SSE3 (make NO_SSE3=1)
+
+* Fixed segfault occuring with very long sequence names 
+
+* hhblitsdb.pl: The requirement for identical file names and names of master sequences is dropped. Violation of this requirement manifested itself as file-not-found error during Viterbi-stage of hhblits. The code was streamlined.
+
+* Added progress dots ... for prefiltering stage
+
+* Cleaned up output for -v 1 and -v 0 options in hhblits and hhsearch: -v 1 should print out only warnings and errors
+
+* Minor improvements of documentation on installation
+
 _______________________________________________________________________________
 
 HH-suite 2.0.11  February 2012
 
-* Support compilation without SSE3 (make NO_SSE3=1)
+* Corrected wrong paths for calls of ffindex binaries in hhblitsdb.pl
 
-* Fix some segfaults.
+* Elminated rare segfault in realignment step that occurred in particular with repeat proteins as queries
 
-* hhblitsdb.pl: improved. Will generate <db>.cs219 file
-
-* hhblitsdb.pl: A3m and hhm filesnames do not need to be equal to the first
-  word in the name line of the corresponding seq219 sequence anymore.
-_______________________________________________________________________________
-
-HH-suite 2.0.11  February 2012
-
-* Unbreak hhblitsdb.pl.
-
-* Minor non-visible cleanups and documentation improvements.
-
-* Reorder CHANGES (most recent is at top now) and start documenting minor changes.
+* Minor improvements of documentation on installatin, HHblits databases, FAQs etc.
 
 _______________________________________________________________________________
 
@@ -26,31 +34,27 @@ HH-suite 2.0.0  January 2012
 
 * The iterative HMM-HMM search method HHblits has been added and the entire package is now called HH-suite. HHblits brings the power of HMM-HMM comparison to mainstream, general-purpose sequence searching and sequence analysis. 
 
-* The speed of HHsearch was further increase through the use of SSE3 instructions.
-
-* An option \verb`-atab` for writing alignment as a table (with posteriors) to file was introduced
-
-* HHsearch is now able to read HMMER3 profiles (but should not be used due to a loss of sensitivity).
+* The speed of HHsearch was further increased through the use of SSE3 instructions.
 
 * A local amino acid compositional bias correction was introduced. Improvements are slight (<=1%) on a standard SCOP single domain benchmark. However, the improvement for more realistic sequences containing multiple domains, repeats, and regions of strong compositional bias will is probably more pronounced. The score shift parameter has been set to -0.03 bits and the mact parameter to 0.3. 
 
-
-Bugs? Ideas? Need for improvement? 
-soeding@genzentrum.lmu.de
-
 _______________________________________________________________________________
+
+
+
+
 
 HHsearch 1.6.1 April 2011
 
-* Increase speed by using SSE3 instructions in some functions
+* Increased speed by using SSE3 instructions in some functions
 
 * Adding new option "-atab" for writing alignment as a table (with posteriors) to file
 
 * HHsearch is now able to read HMMER3 profiles (but should not be used due to a loss of sensitivity)
 
-* Remove a bug related with "neutralize HIS-tag" option
+* Removed a bug related with "neutralize HIS-tag" option
 
-* Remove a bug related with empty alignments (no match states)
+* Removed a bug related with empty alignments (no match states)
 
 _______________________________________________________________________________
 
