@@ -2,6 +2,18 @@ _______________________________________________________________________________
 
 HH-suite 2.0.11  February 2012
 
+* Support compilation without SSE3 (make NO_SSE3=1)
+
+* Fix some segfaults.
+
+* hhblitsdb.pl: improved. Will generate <db>.cs219 file
+
+* hhblitsdb.pl: A3m and hhm filesnames do not need to be equal to the first
+  word in the name line of the corresponding seq219 sequence anymore.
+_______________________________________________________________________________
+
+HH-suite 2.0.11  February 2012
+
 * Unbreak hhblitsdb.pl.
 
 * Minor non-visible cleanups and documentation improvements.

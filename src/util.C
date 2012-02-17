@@ -20,6 +20,14 @@
 #include <stdint.h>
 #include <string.h>     // strcmp, strstr
 
+#ifdef HH_SSE2
+#ifndef __SUNPRO_C
+#include <emmintrin.h>   // SSE2
+#else
+#include <sunmedia_intrin.h>
+#endif
+#endif
+
 using std::cout;
 using std::cerr;
 using std::endl;
