@@ -1,11 +1,11 @@
 
 Bugs? Ideas? Need for improvement? 
 soeding@genzentrum.lmu.de
-
 _______________________________________________________________________________
 
 HH-suite 2.0.12  February 2012
 
+<<<<<<< HEAD
 * Reworked SSE flags: Support compilation without SSE3 (make NO_SSE3=1), without 
   SSE2 (make NO_SSE2=1) with SSE4.1 (make WITH_SSE41=1) and enable all other 
   instructions avalable on compilation host (make WITH_NATIVE=1).
@@ -29,8 +29,8 @@ HH-suite 2.0.11  February 2012
 
 * Corrected wrong paths for calls of ffindex binaries in hhblitsdb.pl
 
-* Elminated rare segfault in realignment step that occurred in particular with 
-repeat proteins as queries
+* Elminated rare segfault in realignment step that occurred in particular with
+  repeat proteins as queries
 
 * Minor improvements of documentation on installatin, HHblits databases, FAQs 
   etc.
@@ -39,6 +39,7 @@ _______________________________________________________________________________
 
 HH-suite 2.0.0  January 2012
 
+<<<<<<< HEAD
 * The iterative HMM-HMM search method HHblits has been added and the entire 
   package is now called HH-suite. HHblits brings the power of HMM-HMM comparison 
   to mainstream, general-purpose sequence searching and sequence analysis. 

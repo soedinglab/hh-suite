@@ -29,7 +29,7 @@ else # ifndef ICC
     CXXFLAGS += -march=native
   endif
   ifdef WITH_SSE41
-    CXXFLAGS += -DHH_SSE41 -msse4.1 -DHH_SSSE3 -mssse3
+   CXXFLAGS += -DHH_SSE41 -msse4.1 -DHH_SSSE3 -mssse3
   else
     ifndef NO_SSE2
       ifdef NO_SSE3
