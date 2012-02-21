@@ -623,7 +623,7 @@ void ProcessArguments(int argc, char** argv)
       else if (!strcmp(argv[i],"-maxfilt") && (i<argc-1)) par.maxnumdb = par.maxnumdb_no_prefilter = atoi(argv[++i]);
       else if (!strcmp(argv[i],"-shading_mode") && (i<argc-1)) strcpy(par.block_shading_mode,argv[++i]);
       else if (!strcmp(argv[i],"-prepre_smax_thresh") && (i<argc-1)) par.preprefilter_smax_thresh = atoi(argv[++i]);
-      else if (!strcmp(argv[i],"-pre_evalue_thresh) && (i<argc-1)) par.prefilter_evalue_thresh = atof(argv[++i]);
+      else if (!strcmp(argv[i],"-pre_evalue_thresh)" && (i<argc-1)) par.prefilter_evalue_thresh = atof(argv[++i]);
       else if (!strcmp(argv[i],"-pre_bitfactor") && (i<argc-1)) par.prefilter_bit_factor = atoi(argv[++i]);
       else if (!strcmp(argv[i],"-pre_gap_open") && (i<argc-1)) par.prefilter_gap_open = atoi(argv[++i]);
       else if (!strcmp(argv[i],"-pre_gap_extend") && (i<argc-1)) par.prefilter_gap_extend = atoi(argv[++i]);
