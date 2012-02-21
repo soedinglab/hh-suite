@@ -5,24 +5,21 @@ _______________________________________________________________________________
 
 HH-suite 2.0.12  February 2012
 
-* Reworked SSE flags:
-  Support compilation without SSE3 (make NO_SSE3=1), without SSE2 (make NO_SSE2=1)
-  with SSE4.1 (make WITH_SSE41=1) and enable all other instructions avalable on
-  compilation host (make WITH_NATIVE=1).
+<<<<<<< HEAD
+* Reworked SSE flags: Support compilation without SSE3 (make NO_SSE3=1), without 
+  SSE2 (make NO_SSE2=1) with SSE4.1 (make WITH_SSE41=1) and enable all other 
+  instructions avalable on compilation host (make WITH_NATIVE=1).
 
-* Supports compilation without SSE3 (make NO_SSE3=1)
-
-* Fixed segfault occuring with very long sequence names 
-
-* hhblitsdb.pl: The requirement for identical file names and names of master
-  sequences is dropped. Violation of this requirement manifested itself as
-  file-not-found error during Viterbi-stage of hhblits. The code was
-  streamlined.
+* hhblitsdb.pl: The requirement for identical file names and names of master 
+  sequences is dropped. Violation of this requirement manifested itself as 
+  file-not-found error during Viterbi-stage of hhblits. The code was streamlined.
 
 * Added progress dots ... for prefiltering stage
 
-* Cleaned up output for -v 1 and -v 0 options in hhblits and hhsearch: -v 1
+* Cleaned up output for -v 1 and -v 0 options in hhblits and hhsearch: -v 1 
   should print out only warnings and errors
+
+* Fixed segfault occuring with very long sequence names 
 
 * Minor improvements of documentation on installation
 
@@ -35,25 +32,27 @@ HH-suite 2.0.11  February 2012
 * Elminated rare segfault in realignment step that occurred in particular with
   repeat proteins as queries
 
-* Minor improvements of documentation on installatin, HHblits databases, FAQs etc.
+* Minor improvements of documentation on installatin, HHblits databases, FAQs 
+  etc.
 
 _______________________________________________________________________________
 
 HH-suite 2.0.0  January 2012
 
-* The iterative HMM-HMM search method HHblits has been added and the entire
-  package is now called HH-suite. HHblits brings the power of HMM-HMM
-  comparison to mainstream, general-purpose sequence searching and sequence
-  analysis. 
+<<<<<<< HEAD
+* The iterative HMM-HMM search method HHblits has been added and the entire 
+  package is now called HH-suite. HHblits brings the power of HMM-HMM comparison 
+  to mainstream, general-purpose sequence searching and sequence analysis. 
 
-* The speed of HHsearch was further increased through the use of SSE3 instructions.
+* The speed of HHsearch was further increased through the use of SSE3 
+  instructions.
 
-* A local amino acid compositional bias correction was introduced. Improvements
-  are slight (<=1%) on a standard SCOP single domain benchmark. However, the
-  improvement for more realistic sequences containing multiple domains,
-  repeats, and regions of strong compositional bias will is probably more
-  pronounced. The score shift parameter has been set to -0.03 bits and the mact
-  parameter to 0.3. 
+* A local amino acid compositional bias correction was introduced. Improvements 
+  are slight (<=1%) on a standard SCOP single domain benchmark. However, the 
+  improvement for more realistic sequences containing multiple domains, repeats, 
+  and regions of strong compositional bias will is probably more pronounced. 
+  The score shift parameter has been set to -0.03 bits and the mact parameter 
+  to 0.3. 
 
 _______________________________________________________________________________
 

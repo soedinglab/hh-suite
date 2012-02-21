@@ -120,7 +120,7 @@ HHblits needs to run on CPUs supporting at least the SSE2 (serial SIMD extension
 
 If your computer's CPU does support SSE2 but not SSE3, the precompiled standard binaries will not work, but you can build the HH-suite from sources by running \verb`make NO_SSE3=1` with the \verb`NO_SSE3` flag set (see next subsection). There will be no disadvantages except for a slightly (1\%-2\%) reduced speed of hhblits and hhsearch.
 
-If your computer does not run on Intel or AMD CPUs it probably does not support SSE2. In that case, you can still run all executables except \verb`hhblits`. Simply build the HH-suite from sources by running \verb`make NO_SSE2=1` with the \verb`NO_SSE2` flag set (see next subsection). HHsearch speed will be reduced by around 20\%.
+If your computer does not run on Intel or AMD CPUs it probably does not support SSE2. In that case, you can still run all executables except \verb`hhblits`. Simply build the HH-suite from sources by running \verb`make NO_SSE2=1` with the \verb`NO_SSE2` flag set (see next subsection). HHsearch speed will be reduced by around 50\%-70\%.
 
 \subsection{Installation from source code} \label{installation}
 

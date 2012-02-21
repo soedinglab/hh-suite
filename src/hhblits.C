@@ -397,7 +397,8 @@ void help(char all=0)
   printf("                evolving query MSA becomes larger than neffmax (default=%.1f) \n",neffmax); 
   printf(" -scores <file> write scores for all pairwise comparisions to file               \n");
   printf(" -atab   <file> write all alignments in tabular layout to file                   \n");
-  printf(" -maxres <int>  max number of HMM columns, scales linearly with needed memory (def=%5i)\n",par.maxres);
+  printf(" -maxres <int>  max number of HMM columns (def=%5i)             \n",par.maxres);
+  printf(" -maxmem [1,inf[ max available memory in GB (def=%.1f)          \n",par.maxmem);
   } 
 #ifndef PTHREAD
   printf("(The -cpu option is inactive since HHblits was not compiled with POSIX thread support)\n");
@@ -642,7 +643,8 @@ void ProcessArguments(int argc, char** argv)
       else if (!strcmp(argv[i],"-shift") && (i<argc-1)) par.shift=atof(argv[++i]);
       else if ((!strcmp(argv[i],"-mact") || !strcmp(argv[i],"-mapt")) && (i<argc-1)) par.mact=atof(argv[++i]);
       else if (!strcmp(argv[i],"-scwin") && (i<argc-1)) {par.columnscore=5; par.half_window_size_local_aa_bg_freqs = imax(1,atoi(argv[++i]));}
-      else if (!strncmp(argv[i],"-cpu",4) && (i<argc-1)) { threads=atoi(argv[++i]); cpu = threads; }
+      else if (!strncmp(argv[i],"-cpu",4) && (i<argc-1)) { threads=atoi(argv[++i]); cpu = threads;}
+      else if (!strcmp(argv[i],"-maxmem") && (i<argc-1)) {par.maxmem=atof(argv[++i]);}
       else if (!strncmp(argv[i],"-premerge",9) && (i<argc-1)) par.premerge=atoi(argv[++i]);
       else if (!strcmp(argv[i],"-csb") && (i<argc-1)) par.csb=atof(argv[++i]);
       else if (!strcmp(argv[i],"-csw") && (i<argc-1)) par.csw=atof(argv[++i]);
@@ -1230,18 +1232,19 @@ void perform_viterbi_search(int db_size)
 void perform_realign(char *dbfiles[], int ndb)
 {
   q->Log2LinTransitionProbs(1.0); // transform transition freqs to lin space if not already done
-      
+  int nhits=0;
+  int N_aligned=0;
+
+  // Longest allowable length of database HMM (backtrace: 5 chars, fwd: 1 double, bwd: 1 double 
+  int Lmaxmem=(int)((par.maxmem-0.5)*1024*1024)/(2*sizeof(double)+8)/q->L/bins;
+  int Lmax=0;      // length of longest HMM to be realigned
+    
   par.block_shading->Reset();
   while (!par.block_shading->End())
     delete[] (par.block_shading->ReadNext()); 
   par.block_shading->New(16381,NULL);
   par.block_shading_counter->New(16381,0);
-  const float MEMSPACE_DYNPROG = 2.0*1024.0*1024.0*1024.0;
-  int nhits=0;
-  int Lmax=0;      // length of longest HMM to be realigned
-  int Lmaxmem=(int)((float)MEMSPACE_DYNPROG/q->L/6.0/8.0/bins); // longest allowable length of database HMM
-  int N_aligned=0;
-  
+
   // phash_plist_realignhitpos->Show(dbfile) is pointer to list with template indices and their ftell positions.
   // This list can be sorted by ftellpos to access one template after the other efficiently during realignment
   Hash< List<Realign_hitpos>* >* phash_plist_realignhitpos;
@@ -1340,10 +1343,10 @@ void perform_realign(char *dbfiles[], int ndb)
       Lmax=Lmaxmem;
       if (v>=1) 
 	{
-	  cerr<<"WARNING: Realigning sequences only up to length "<<Lmaxmem<<" due to limited memory."<<endl;
-	  cerr<<"This is genarally unproboblematic but may lead to slightly sub-optimal alignments."<<endl;
-//	  cerr<<"You can allow HHblits to use more than "<<par.maxmem<<"GB of memory with option -mem <GB>"<<endl;  // still to be implemented
-	  if (bins>1) cerr<<"Note: you can reduce memory requirement by lowering N in the -cpu N option."<<endl;
+	  cerr<<"WARNING: Realigning sequences only up to length "<<Lmaxmem<<"."<<endl;
+	  cerr<<"This is genarally unproboblematic but may lead to slightly sub-optimal alignments for longer sequences."<<endl;
+ 	  cerr<<"You can increase available memory using the -maxmem <GB> option (currently "<<par.maxmem<<" GB)."<<endl; // still to be implemented
+	  cerr<<"The maximum length realignable is approximately (maxmem-0.5GB)/query_length/(cpus+1)/24B."<<endl;
 	}
     }
   
@@ -2026,6 +2029,7 @@ int main(int argc, char **argv)
   if (par.pre_pca<0.001) par.pre_pca=0.001; // to avoid log(0)
   if (par.b>par.B) par.B=par.b;
   if (par.z>par.Z) par.Z=par.z;
+  if (par.maxmem<1.0) {cerr<<"Warning: setting -maxmem to its minimum allowed value of 1.0\n"; par.maxmem=1.0;}
 
   // Set (global variable) substitution matrix and derived matrices
   SetSubstitutionMatrix();
