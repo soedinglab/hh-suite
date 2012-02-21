@@ -269,7 +269,7 @@ foreach my $seq219file (glob($csdir."/*.$csext")) {
 	} else {
 	    $num_chars += length($line);
 	}
-	printf(OUT $line); 	
+	printf(OUT "%s",$line); 	
     }
 } 
 close(OUT);	

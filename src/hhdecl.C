@@ -190,7 +190,8 @@ public:
   float shift;            // Score offset for match-match states
   float mact;             // Score threshold (negative offset) in MAC alignment
   int realign_max;        // Realign max ... hits
-
+  float maxmem;           // maximum available memory in GB (approximately)
+ 
   char calibrate;         // calibration of query HMM?  0:no, 1:yes (write lamda,mu into query profile)
   char calm;              // derive P-values from: 0:query calibration  1:template calibration  2:both  3:Neural Network prediction
   int opt;                // for optimization: compare only every opt'th negative; 0: mode off
@@ -321,7 +322,7 @@ void Parameters::SetDefaults()
   maxres=15002;            // max number of states in HMM; must be <= LINELEN
   maxnumdb=20000;          // max number of hits allowed past prefilter
   maxnumdb_no_prefilter=20000;// max number of hits without prefiltering
-  
+
   append=0;                // overwrite output file
   outformat=0;             // 0: hhr  1: FASTA  2:A2M   3:A3M
   p=20.0f;                 // minimum threshold for inclusion in hit list and alignment listing
@@ -331,7 +332,8 @@ void Parameters::SetDefaults()
   z=10;                    // min number of lines in hit list
   Z=500;                   // max number of lines in hit list
   e=1e-3f;                 // maximum E-value for inclusion in output alignment, output HMM, and PSI-BLAST checkpoint model
-  realign_max=1000;
+  realign_max=1000;        // Realign max ... hits
+  maxmem = 3.0;            // 3GB
   showcons=1;              // show consensus sequence
   showdssp=1;              // show predicted secondary structure ss_dssp
   showpred=1;              // show predicted secondary structure ss_pred
