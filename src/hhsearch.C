@@ -638,7 +638,7 @@ void perform_realign(char *dbfiles[], int ndb)
   int N_aligned=0;
   
   // Longest allowable length of database HMM (backtrace: 5 chars, fwd: 1 double, bwd: 1 double 
-  int Lmaxmem=(int)((par.maxmem-0.5)*1024*1024)/(2*sizeof(double)+8)/q->L/bins;
+  int Lmaxmem=(int)((par.maxmem-0.5)*1024*1024*1024)/(2*sizeof(double)+8)/q->L/bins;
   int Lmax=0;      // length of longest HMM to be realigned
     
   // phash_plist_realignhitpos->Show(dbfile) is pointer to list with template indices and their ftell positions.
