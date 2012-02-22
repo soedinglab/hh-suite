@@ -1948,11 +1948,20 @@ int main(int argc, char **argv)
   if (fin) {
     fclose(fin);
   } else {
-    dba3m[0] = 0;
+    if(errno == EOVERFLOW)
+    {
+      cerr << endl;
+      cerr <<"ERROR in "<< program_name <<": A3M database too big (>2GB on 32bit system?):";
+      cerr << endl;
+      cerr << dba3m;
+      cerr << endl;
+      exit(errno);
+    }
     if (num_rounds > 1)
       {help(); cerr<<endl<<"Error in "<<program_name<<": A3M database missing (needed for more than 1 search iteration)\n"; exit(4);}
     if (*par.alnfile || *par.psifile || *par.hhmfile || *alis_basename)
       {help(); cerr<<endl<<"Error in "<<program_name<<": A3M database missing (needed for output alignment)\n"; exit(4);}
+    dba3m[0] = 0;
   }
 
   q = new HMM;
