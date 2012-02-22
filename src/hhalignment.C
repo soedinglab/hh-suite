@@ -224,7 +224,7 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline)
           if (k>=MAXSEQ-1)
             {
               if (v>=1 && k>=MAXSEQ)
-                cerr<<endl<<"WARNING: maximum number "<<MAXSEQ<<" of sequences exceded in file "<<infile<<"\n";
+                cerr<<endl<<"WARNING: maximum number "<<MAXSEQ<<" of sequences exceeded in file "<<infile<<"\n";
               break;
             }
           cur_name=line+1;          //beginning of current sequence name
@@ -394,7 +394,7 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline)
             }
           if (v && l>=par.maxcol-1)
             {
-              cerr<<endl<<"WARNING: maximum number of residues "<<par.maxcol-2<<" exceded in sequence "<<sname[k]<<"\n";
+              cerr<<endl<<"WARNING: maximum number of residues "<<par.maxcol-2<<" exceeded in sequence "<<sname[k]<<"\n";
               skip_sequence=1;
             }
           cur_seq[l]='\0';  //Ensure that cur_seq ends with a '\0' character
