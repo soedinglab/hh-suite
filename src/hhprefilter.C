@@ -1086,7 +1086,7 @@ void prefilter_db()
     }
   if (v>=2)
     {
-      printf("\nHMMs passed prefilter 1 (gapless profile-profile alignment)  : %6i\n", count_dbs);
+      printf("\nHMMs passed 1st prefilter (gapless profile-profile alignment)  : %6i\n", count_dbs);
       //printf("%6i hits through preprefilter!\n", count_dbs);
     }
   if (print_elapsed) ElapsedTimeSinceLastCall("(ungapped preprefilter)");
@@ -1166,7 +1166,7 @@ void prefilter_db()
 
       if (count_dbs >= par.maxnumdb) 
 	{
-	  fprintf(stderr,"WARNING: Number of hits passing prefilter 2 reduced from %6i to allowed maximum of %i.\n", (int)hits.size(),par.maxnumdb);
+	  fprintf(stderr,"WARNING: Number of hits passing 2nd prefilter (reduced from %6i to allowed maximum of %i).\n", (int)hits.size(),par.maxnumdb);
 	  fprintf(stderr,"You can increase the allowed maximum using the -maxfilt <max> option.\n\n");
 	  break;
 	}
