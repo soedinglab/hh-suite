@@ -5,7 +5,6 @@ _______________________________________________________________________________
 
 HH-suite 2.0.12  February 2012
 
-<<<<<<< HEAD
 * Reworked SSE flags: Support compilation without SSE3 (make NO_SSE3=1), without 
   SSE2 (make NO_SSE2=1) with SSE4.1 (make WITH_SSE41=1) and enable all other 
   instructions avalable on compilation host (make WITH_NATIVE=1).
@@ -39,7 +38,6 @@ _______________________________________________________________________________
 
 HH-suite 2.0.0  January 2012
 
-<<<<<<< HEAD
 * The iterative HMM-HMM search method HHblits has been added and the entire 
   package is now called HH-suite. HHblits brings the power of HMM-HMM comparison 
   to mainstream, general-purpose sequence searching and sequence analysis. 
@@ -51,8 +49,8 @@ HH-suite 2.0.0  January 2012
   are slight (<=1%) on a standard SCOP single domain benchmark. However, the 
   improvement for more realistic sequences containing multiple domains, repeats, 
   and regions of strong compositional bias will is probably more pronounced. 
-  The score shift parameter has been set to -0.03 bits and the mact parameter 
-  to 0.3. 
+  The score shift parameter was changed from -0.01 to -0.03 bits and the mact 
+  parameter from 0.5 to 0.35. 
 
 _______________________________________________________________________________
 
