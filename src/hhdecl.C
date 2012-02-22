@@ -306,7 +306,10 @@ void Parameters::SetDefaultPaths(char *program_path)
     if (testf) { fclose(testf); return;}
   }
 
-  cerr<<endl<<"Error in "<<argv[0]<<": could not find context_data.lib and cs219.lib.\nPlease set the HHLIB environment variable to the HH-suite directory (Linux bash: export HHLIB=<hh_dir>, csh/tcsh: setenv HHLIB=<hh_dir>).\nThe missing files should be in $HHLIB/data/.\n ";
+  cerr<<endl<<"Error in "<<argv[0]<<": could not find context_data.lib and cs219.lib in '" << hhlib << "'.\n"
+              "Please set the HHLIB environment variable to the HH-suite directory\n"
+              "(Linux bash: export HHLIB=<hh_dir>, csh/tcsh: setenv HHLIB=<hh_dir>).\n"
+              "The missing files should be in $HHLIB/data/.\n ";
   exit(2);
 }
 
