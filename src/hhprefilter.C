@@ -867,7 +867,7 @@ void init_prefilter()
 	      	cerr<<endl<<"WARNING: ignoring invalid symbol with ASCII code "<<int(*c)<<" in "<<pos<<" of sequence "<<dbnames[num_dbs]<<" of file "<<db<<"\n";
 	      c++;
 #else
-	      X[pos++]= (unsigned char)(cs::AS219::kCharToInt[*c++]);
+	      X[pos++]= (unsigned char)(cs::AS219::kCharToInt[*c++]); // map printable characters to range 0-219
 	      ++len;
 #endif
 
