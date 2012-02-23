@@ -10,11 +10,15 @@ HH-suite 2.0.13  February 2012
   on speed and accurarcy. The new formula leads to different defaults and
   therefore different results for longer sequences (>7000).
 
-* more sensible memory size defaults init_prefilter(), fixes a segfault
+* more sensible memory size defaults ininit_prefilter(), fixes a segfault
 
 * small fix in hhblitsdb.pl
 
 * Better error messages if databases are too big (e.g. >2GB on 32bit systems).
+
+* Made code segfault safe(r) when name lengths and other strings exceed usual
+  sizes. Now, all strings should be cut at maximum length E.g., name lengths 
+  of sequences and HMMs at >=512 characters (const int NAMELEN in util.C)
 
 _______________________________________________________________________________
 

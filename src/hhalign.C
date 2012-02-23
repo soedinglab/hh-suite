@@ -456,7 +456,7 @@ void ProcessArguments(int argc, char** argv)
 	{
 	  if (++i>=argc || argv[i][0]=='-') 
 	    {help(); cerr<<endl<<"Error in "<<program_name<<": no query file following -atab\n"; exit(4);}
-	  else strncpy(par.alitabfile,argv[i],NAMELEN);
+	  else strmcpy(par.alitabfile,argv[i],NAMELEN);
 	}
       else if (!strcmp(argv[i],"-index"))
 	{
@@ -882,13 +882,13 @@ int main(int argc, char **argv)
 	if (strscn(line)==NULL) continue;
 	if (!strncmp("#QNAME",line,6)) {
 	  ptr=strscn(line+6);             // advance to first non-white-space character
-	  strncpy(q.name,ptr,NAMELEN-1);    // copy full name to name
+	  strmcpy(q.name,ptr,NAMELEN);    // copy full name to name
 	  strcut(q.name);
 	  continue;
 	} 
 	else if (!strncmp("#TNAME",line,6)) {
 	  ptr=strscn(line+6);             // advance to first non-white-space character
-	  strncpy(t.name,ptr,NAMELEN-1);    // copy full name to name
+	  strmcpy(t.name,ptr,NAMELEN);    // copy full name to name
 	  strcut(t.name); 
 	  continue;
 	} 

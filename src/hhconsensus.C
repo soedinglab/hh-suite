@@ -174,8 +174,8 @@ void ProcessArguments(int argc,char** argv)
       else if (!strcmp(argv[i],"-v0")) v=0;
       else if (!strcmp(argv[i],"-seq") && (i<argc-1))  par.nseqdis=atoi(argv[++i]); 
       else if (!strcmp(argv[i],"-name") && (i<argc-1)) {
-	strncpy(q.name,argv[++i],NAMELEN-1); //copy longname to name...
-	strncpy(q.longname,argv[i],DESCLEN-1);   //copy full name to longname
+	strmcpy(q.name,argv[++i],NAMELEN); //copy longname to name...
+	strmcpy(q.longname,argv[i],DESCLEN);   //copy full name to longname
       }
       else if (!strcmp(argv[i],"-id") && (i<argc-1))   par.max_seqid=atoi(argv[++i]); 
       else if (!strcmp(argv[i],"-qid") && (i<argc-1))  par.qid=atoi(argv[++i]); 

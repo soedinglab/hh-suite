@@ -32,9 +32,9 @@ public:
     char name[NAMELEN];       // HMM name = first word in longname in lower case
     char file[NAMELEN];       // Basename (with path, without extension) of alignment file that was used to construct the HMM
     char fam[NAMELEN];        // family ID (derived from name) (FAM field)
-    char sfam[NAMELEN];       // superfamily ID (derived from name)
-    char fold[NAMELEN];       // fold ID (derived from name)
-    char cl[NAMELEN];         // class ID (derived from name)
+    char sfam[IDLEN];       // superfamily ID (derived from name)
+    char fold[IDLEN];       // fold ID (derived from name)
+    char cl[IDLEN];         // class ID (derived from name)
 
     float lamda, mu;          // coefficients for aa score distribution of HMM using parameters in 'Parameters par'
 

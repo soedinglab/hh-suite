@@ -178,9 +178,9 @@ Alignment& Alignment::operator=(Alignment& ali)
   kfirst = ali.kfirst;
 
   strcpy(longname,ali.longname);
-  strcpy(name,ali.name);
-  strcpy(fam,ali.fam);
-  strcpy(file,ali.file);
+  strmcpy(name,ali.name,NAMELEN);
+  strmcpy(fam,ali.fam,NAMELEN);
+  strmcpy(file,ali.file,NAMELEN);
 
   for (int i=1; i<=L; ++i) l[i]=ali.l[i];
 
@@ -309,7 +309,7 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline)
 //        strcpy(fam,ptr1);    // copy AC number to fam
 //        if (!strncmp(fam,"PF",2)) strcut_(fam,'.'); // if PFAM identifier contains '.' cut it off
 //        strcut_(ptr2);       // cut after first word ...
-          strcpy(name,ptr1);   // ... and copy first word into name
+          strmcpy(name,ptr1,NAMELEN);   // ... and copy first word into name
 	  readCommentLine = '1';
         }
 
@@ -508,8 +508,8 @@ void Alignment::GetSeqsFromHMM(HMM& q)
   N_in = k;
   
   strcpy(longname,q.longname);
-  strcpy(name,q.name);
-  strcpy(fam,q.fam);
+  strmcpy(name,q.name,NAMELEN);
+  strmcpy(fam,q.fam,NAMELEN);
   
   return;
 }

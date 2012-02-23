@@ -193,12 +193,12 @@ HMM& HMM::operator=(HMM& q)
   Neff_HMM=q.Neff_HMM;
 
   strcpy(longname,q.longname);
-  strcpy(name,q.name);
-  strcpy(fam,q.fam);
-  strcpy(sfam,q.sfam);
-  strcpy(fold,q.fold);
-  strcpy(cl,q.cl);
-  strcpy(file,q.file);
+  strmcpy(name,q.name,NAMELEN);
+  strmcpy(file,q.file,NAMELEN);
+  strmcpy(fam,q.fam,NAMELEN);
+  strmcpy(sfam,q.sfam,IDLEN);
+  strmcpy(fold,q.fold,IDLEN);
+  strmcpy(cl,q.cl,IDLEN);
 
   lamda=q.lamda;
   mu=q.mu;
@@ -266,9 +266,8 @@ int HMM::Read(FILE* dbf, char* path)
           ptr=strscn(line+4);              //advance to first non-white-space character
           if (ptr)
             {
-              strncpy(longname,ptr,DESCLEN-1); //copy full name to longname
-              longname[DESCLEN-1]='\0';
-              strncpy(name,ptr,NAMELEN-1);     //copy longname to name...
+              strmcpy(longname,ptr,DESCLEN); //copy full name to longname
+              strmcpy(name,ptr,NAMELEN);     //copy longname to name...
               strcut(name);                    //...cut after first word...
             }
           else
@@ -282,13 +281,13 @@ int HMM::Read(FILE* dbf, char* path)
       else if (!strcmp("FAM",str3))
         {
           ptr=strscn(line+3);              //advance to first non-white-space character
-          if (ptr) strncpy(fam,ptr,IDLEN-1); else strcpy(fam,""); //copy family name to basename
+          if (ptr) strmcpy(fam,ptr,IDLEN); else strcpy(fam,""); //copy family name to basename
           ScopID(cl,fold,sfam,fam);        //get scop classification from basename (e.g. a.1.2.3.4)
         }
 
       else if (!strcmp("FILE",str4))
         {
-          if (path) strncpy(file,path,NAMELEN-1); else *file='\0'; // copy path to file variable
+          if (path) strmcpy(file,path,NAMELEN); else *file='\0'; // copy path to file variable
           ptr=strscn(line+4);              //advance to first non-white-space character
           if (ptr)
             strncat(file,ptr,NAMELEN-1-strlen(file));   // append file name read from file to path
@@ -667,7 +666,7 @@ int HMM::ReadHMMer(FILE* dbf, char* filestr)
       if (!strcmp("NAME",str4) && name[0]=='\0')
         {
           ptr=strscn(line+4);             // advance to first non-white-space character
-          strncpy(name,ptr,NAMELEN-1);    // copy full name to name
+          strmcpy(name,ptr,NAMELEN);      // copy full name to name
           strcut(name);                   // ...cut after first word...
           if (v>=4) cout<<"Reading in HMM "<<name<<":\n";
         }
@@ -675,19 +674,18 @@ int HMM::ReadHMMer(FILE* dbf, char* filestr)
       else if (!strcmp("ACC ",str4))
         {
           ptr=strscn(line+4);              // advance to first non-white-space character
-          strncpy(longname,ptr,DESCLEN-1); // copy Accession id to longname...
+          strmcpy(longname,ptr,DESCLEN);   // copy Accession id to longname...
         }
 
       else if (!strcmp("DESC",str4))
         {
-          ptr=strscn(line+4);             // advance to first non-white-space character
+          ptr=strscn(line+4);              // advance to first non-white-space character
           if (ptr)
             {
-              strncpy(desc,ptr,DESCLEN-1);   // copy description to name...
-              desc[DESCLEN-1]='\0';
-              strcut(ptr);                   // ...cut after first word...
+              strmcpy(desc,ptr,DESCLEN);   // copy description to name...
+              strcut(ptr);                 // ...cut after first word...
             }
-          if (!ptr || ptr[1]!='.' || strchr(ptr+3,'.')==NULL) strcpy(fam,""); else strcpy(fam,ptr); // could not find two '.' in name?
+          if (!ptr || ptr[1]!='.' || strchr(ptr+3,'.')==NULL) strcpy(fam,""); else strmcpy(fam,ptr,NAMELEN); // could not find two '.' in name?
         }
 
       else if (!strcmp("LENG",str4))
@@ -1126,7 +1124,7 @@ int HMM::ReadHMMer3(FILE* dbf, char* filestr)
       if (!strcmp("NAME",str4) && name[0]=='\0')
         {
           ptr=strscn(line+4);             // advance to first non-white-space character
-          strncpy(name,ptr,NAMELEN-1);    // copy full name to name
+          strmcpy(name,ptr,NAMELEN);      // copy full name to name
           strcut(name);                   // ...cut after first word...
           if (v>=4) cout<<"Reading in HMM "<<name<<":\n";
         }
@@ -1134,19 +1132,19 @@ int HMM::ReadHMMer3(FILE* dbf, char* filestr)
       else if (!strcmp("ACC ",str4))
         {
           ptr=strscn(line+4);              // advance to first non-white-space character
-          strncpy(longname,ptr,DESCLEN-1); // copy Accession id to longname...
+          strmcpy(longname,ptr,DESCLEN);   // copy Accession id to longname...
         }
 
       else if (!strcmp("DESC",str4))
         {
-          ptr=strscn(line+4);             // advance to first non-white-space character
+          ptr=strscn(line+4);              // advance to first non-white-space character
           if (ptr)
             {
-              strncpy(desc,ptr,DESCLEN-1);   // copy description to name...
+              strmcpy(desc,ptr,DESCLEN);   // copy description to name...
               desc[DESCLEN-1]='\0';
-              strcut(ptr);                   // ...cut after first word...
+              strcut(ptr);                 // ...cut after first word...
             }
-          if (!ptr || ptr[1]!='.' || strchr(ptr+3,'.')==NULL) strcpy(fam,""); else strcpy(fam,ptr); // could not find two '.' in name?
+          if (!ptr || ptr[1]!='.' || strchr(ptr+3,'.')==NULL) strcpy(fam,""); else strmcpy(fam,ptr,NAMELEN); // could not find two '.' in name?
         }
 
       else if (!strcmp("LENG",str4))

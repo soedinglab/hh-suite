@@ -117,7 +117,7 @@ const int MAXBINS=384;    // maximum number of bins (positions in thread queue)
 enum bin_states {FREE=0, SUBMITTED=1, RUNNING=2};
 int v1;                   // verbose mode
 int threads=0;            // number of threads (apart from the main thread which reads from the databases file) 0:no multithreading
-int bins;                 // number of bins; jobs gets allocated to a FREE bin were they are waiting for execution by a thread
+int bins;                 // number of bins; jobs gets allocated to a FREE bin were they are waiting for exection by a thread
 char bin_status[MAXBINS]; // The status for each bin is FREE, SUBMITTED, or RUNNING
 int jobs_running;         // number of active jobs, i.e. number of bins set to RUNNING
 int jobs_submitted;       // number of submitted jobs, i.e. number of bins set to SUBMITTED
@@ -499,7 +499,7 @@ void ProcessArguments(int argc, char** argv)
 	{
 	  if (++i>=argc || argv[i][0]=='-') 
 	    {help(); cerr<<endl<<"Error in "<<program_name<<": no query file following -atab\n"; exit(4);}
-	  else strncpy(par.alitabfile,argv[i],NAMELEN);
+	  else strmcpy(par.alitabfile,argv[i],NAMELEN);
 	}
       else if (!strcmp(argv[i],"-h")|| !strcmp(argv[i],"-help"))
         {
@@ -1172,7 +1172,7 @@ void perform_realign(char *dbfiles[], int ndb)
   // Delete array_plist_phits with lists
   for (int index=0; index<N_searched; index++) 
     if (array_plist_phits[index]) delete(array_plist_phits[index]); // delete list to which array[index] points
-  delete(array_plist_phits); 
+  delete[](array_plist_phits); 
 }
 
 
