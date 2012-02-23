@@ -3,6 +3,21 @@ Bugs? Ideas? Need for improvement?
 soeding@genzentrum.lmu.de
 _______________________________________________________________________________
 
+HH-suite 2.0.13  February 2012
+
+* implemented -maxmem option specifying maximum memory to use in GB as float.
+  This also affects the maximum number of states to align, thus has an impact
+  on speed and accurarcy. The new formula leads to different defaults and
+  therefore different results for longer sequences (>7000).
+
+* more sensible memory size defaults init_prefilter(), fixes a segfault
+
+* small fix in hhblitsdb.pl
+
+* Better error messages if databases are too big (e.g. >2GB on 32bit systems).
+
+_______________________________________________________________________________
+
 HH-suite 2.0.12  February 2012
 
 * Reworked SSE flags: Support compilation without SSE3 (make NO_SSE3=1), without 

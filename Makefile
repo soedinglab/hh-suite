@@ -15,29 +15,32 @@ INSTALL_LIB_BIN_DIR?=$(INSTALL_LIB_DIR)/bin
 
 dist_name=hhsuite-2.0.12
 
+.PHONY: all_static
 all_static: ffindex_static
-	cd src && make all_static
+	$(MAKE) -C src all_static
 
+.PHONY: all
 all: ffindex
-	cd src && make all
+	$(MAKE) -C src all
 
 doc:
-	cd src && make hhsuite-userguide.pdf
+	$(MAKE) -C src hhsuite-userguide.pdf
 
 hhblits_static: hhblits_static
-	cd src && make hhblits_static
+	$(MAKE) -C src hhblits_static
 
 hhblits: ffindex
-	cd src && make all
+	$(MAKE) -C src all
 
+.PHONY: ffindex
 ffindex:
-	cd lib/ffindex && make
+	$(MAKE) -C lib/ffindex
 
 ffindex_static:
-	cd lib/ffindex && make FFINDEX_STATIC=1
+	$(MAKE) -C lib/ffindex FFINDEX_STATIC=1
 	
 install:
-	cd lib/ffindex && make install INSTALL_DIR=$(INSTALL_DIR)
+	$(MAKE) -C lib/ffindex install INSTALL_DIR=$(INSTALL_DIR)
 	mkdir -p $(INSTALL_DIR)/bin
 	install src/hhblits     $(INSTALL_DIR)/bin/hhblits
 	install src/hhalign     $(INSTALL_DIR)/bin/hhalign
@@ -49,15 +52,15 @@ install:
 	mkdir -p $(INSTALL_LIB_BIN_DIR)
 	install src/cstranslate $(INSTALL_LIB_BIN_DIR)/cstranslate
 	mkdir -p $(INSTALL_DATA_DIR)
-	install data/context_data.lib $(INSTALL_DATA_DIR)/context_data.lib
-	install data/cs219.lib        $(INSTALL_DATA_DIR)/cs219.lib
-	install data/do_not_delete    $(INSTALL_DATA_DIR)/do_not_delete
-	install data/do_not_delete.phr $(INSTALL_DATA_DIR)/do_not_delete.phr
-	install data/do_not_delete.pin $(INSTALL_DATA_DIR)/do_not_delete.pin
-	install data/do_not_delete.psq $(INSTALL_DATA_DIR)/do_not_delete.psq
+	install --mode=0644 data/context_data.lib $(INSTALL_DATA_DIR)/context_data.lib
+	install --mode=0644 data/cs219.lib        $(INSTALL_DATA_DIR)/cs219.lib
+	install --mode=0644 data/do_not_delete    $(INSTALL_DATA_DIR)/do_not_delete
+	install --mode=0644 data/do_not_delete.phr $(INSTALL_DATA_DIR)/do_not_delete.phr
+	install --mode=0644 data/do_not_delete.pin $(INSTALL_DATA_DIR)/do_not_delete.pin
+	install --mode=0644 data/do_not_delete.psq $(INSTALL_DATA_DIR)/do_not_delete.psq
 	mkdir -p $(INSTALL_SCRIPTS_DIR)
-	install scripts/Align.pm        $(INSTALL_SCRIPTS_DIR)/Align.pm
-	install scripts/HHPaths.pm      $(INSTALL_SCRIPTS_DIR)/HHPaths.pm
+	install --mode=0644 scripts/Align.pm        $(INSTALL_SCRIPTS_DIR)/Align.pm
+	install --mode=0644 scripts/HHPaths.pm      $(INSTALL_SCRIPTS_DIR)/HHPaths.pm
 	install scripts/addss.pl        $(INSTALL_SCRIPTS_DIR)/addss.pl
 	install scripts/create_profile_from_hhm.pl   $(INSTALL_SCRIPTS_DIR)/create_profile_from_hhm.pl
 	install scripts/create_profile_from_hmmer.pl $(INSTALL_SCRIPTS_DIR)/create_profile_from_hmmer.pl
@@ -67,7 +70,7 @@ install:
 	install scripts/hhblitsdb.pl    $(INSTALL_SCRIPTS_DIR)/hhblitsdb.pl
 
 deinstall:
-	cd lib/ffindex && make deinstall INSTALL_DIR=$(INSTALL_DIR)
+	$(MAKE) -C lib/ffindex deinstall INSTALL_DIR=$(INSTALL_DIR)
 	rm -f $(INSTALL_DIR)/bin/hhblits $(INSTALL_DIR)/bin/hhalign \
 		$(INSTALL_DIR)/bin/hhconsensus $(INSTALL_DIR)/bin/hhfilter $(INSTALL_DIR)/bin/hhmake $(INSTALL_DIR)/bin/hhsearch
 	rm -f $(INSTALL_DATA_DIR)/context_data.lib $(INSTALL_DATA_DIR)/cs219.lib $(INSTALL_DATA_DIR)/do_not_delete \
@@ -83,9 +86,10 @@ deinstall:
 	rmdir $(INSTALL_SCRIPTS_DIR) || true
 	rmdir $(INSTALL_LIB_DIR) || true
 
+.PHONY: clean
 clean:
-	cd lib/ffindex && make clean
-	cd src && make clean
+	cd lib/ffindex && $(MAKE) clean
+	$(MAKE) -C src clean
 
 dist/$(dist_name).tar.gz:
 	make clean

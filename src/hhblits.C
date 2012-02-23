@@ -330,7 +330,7 @@ void help(char all=0)
   printf(" -noaddfilter   disable all filter steps (except for fast prefiltering)         \n");
   printf(" -nodbfilter    disable additional filtering of prefiltered HMMs                \n");
   printf(" -noblockfilter search complete matrix in Viterbi                               \n");
-  printf(" -maxfilt       max number of hits allowed to pass prefilter 2 (default=%i)  \n",par.maxnumdb);
+  printf(" -maxfilt       max number of hits allowed to pass 2nd prefilter (default=%i)  \n",par.maxnumdb);
   printf("\n");
   printf("Filter result alignment (options can be combined):                              \n");
   printf(" -id   [0,100]  maximum pairwise sequence identity (%%) (def=%i)                \n",par.max_seqid);
@@ -1236,8 +1236,8 @@ void perform_realign(char *dbfiles[], int ndb)
   int N_aligned=0;
 
   // Longest allowable length of database HMM (backtrace: 5 chars, fwd: 1 double, bwd: 1 double 
-  int Lmaxmem=(int)((par.maxmem-0.5)*1024*1024*1024)/(2*sizeof(double)+8)/q->L/bins;
-  int Lmax=0;      // length of longest HMM to be realigned
+  long int Lmaxmem=((par.maxmem-0.5)*1024*1024*1024)/(2*sizeof(double)+8)/q->L/bins;
+  long int Lmax=0;      // length of longest HMM to be realigned
     
   par.block_shading->Reset();
   while (!par.block_shading->End())
@@ -1948,11 +1948,20 @@ int main(int argc, char **argv)
   if (fin) {
     fclose(fin);
   } else {
-    dba3m[0] = 0;
+    if(errno == EOVERFLOW)
+    {
+      cerr << endl;
+      cerr <<"ERROR in "<< program_name <<": A3M database too big (>2GB on 32bit system?):";
+      cerr << endl;
+      cerr << dba3m;
+      cerr << endl;
+      exit(errno);
+    }
     if (num_rounds > 1)
       {help(); cerr<<endl<<"Error in "<<program_name<<": A3M database missing (needed for more than 1 search iteration)\n"; exit(4);}
     if (*par.alnfile || *par.psifile || *par.hhmfile || *alis_basename)
       {help(); cerr<<endl<<"Error in "<<program_name<<": A3M database missing (needed for output alignment)\n"; exit(4);}
+    dba3m[0] = 0;
   }
 
   q = new HMM;
@@ -2183,8 +2192,8 @@ int main(int argc, char **argv)
 
     // Search datbases
     if (v>=2) {
-      printf("HMMs passed prefilter 2 (gapped profile-profile alignment)   : %6i\n", (ndb_new+ndb_old));
-      printf("HMMs passed prefilter 2 and not found in previous iterations : %6i\n", ndb_new);
+      printf("HMMs passed 2nd prefilter (gapped profile-profile alignment)   : %6i\n", (ndb_new+ndb_old));
+      printf("HMMs passed 2nd prefilter and not found in previous iterations : %6i\n", ndb_new);
       printf("Scoring %i HMMs using HMM-HMM Viterbi alignment\n", ndb_new);
     }
 
