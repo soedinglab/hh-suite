@@ -120,6 +120,11 @@ void CalculateSS(HMM& q)
 }
 
 
+//????????????????????????????????????????????????????????????????????????????????????????????????????????????
+// The code in ReadInput() seems to be contained in the code ReadAndPrepare()
+// Suggestion: 
+// Rename this function ReadQueryFile(), see suggestion below in front of ReadAndPrepare()
+
 // Read input file (HMM, HHM, or alignment format), and add pseudocounts etc.
 void ReadInput(char* infile, HMM& q, Alignment* qali=NULL)
 {
@@ -147,7 +152,7 @@ void ReadInput(char* infile, HMM& q, Alignment* qali=NULL)
     if (!strncmp(line,"HMMER3",6))
     {
         if (v>=2) cout<<"Query file is in HMMER3 format\n";
-	cerr<<"WARNING: Use of HMMER3 format as input results in dramatically loss of sensitivity!\n";
+	cerr<<"WARNING: Use of HMMER3 format as input will result in severe loss of sensitivity!\n";
 
         // Read 'query HMMER file
         rewind(inf);
@@ -158,7 +163,7 @@ void ReadInput(char* infile, HMM& q, Alignment* qali=NULL)
     else if (!strncmp(line,"HMMER",5))
     {
         if (v>=2) cout<<"Query file is in HMMER format\n";
-	cerr<<"WARNING: Use of HMMER format as input results in dramatically loss of sensitivity!\n";
+	cerr<<"WARNING: Use of HMMER format as input will result in severe loss of sensitivity!\n";
 
         // Read 'query HMMER file
         rewind(inf);
@@ -217,6 +222,12 @@ void ReadInput(char* infile, HMM& q, Alignment* qali=NULL)
 
     return;
 }
+
+//????????????????????????????????????????????????????????????????????????????????????????????????????????????
+// This code seems to contain the code in ReadInput()!
+// Suggestion:
+// Rename this function as PrepareQuery(), throw out the duplicated code from it, 
+// and replace the old calls to ReadAndPrepare() by { ReadQueryFile(); PrepareQuery(); }
 
 // Read input file (HMM, HHM, or alignment format), and add pseudocounts etc.
 void ReadAndPrepare(char* infile, HMM& q, Alignment* qali=NULL)
@@ -322,9 +333,9 @@ void ReadAndPrepare(char* infile, HMM& q, Alignment* qali=NULL)
     } else if (!strncmp(line,"HMMER",5)) {
 
         ///////////////////////////////////////////////////////////////////////////////////////
-        // Don't allow HMMER format as input due to the dramatically loss of sensitivity!!!! (only allowed in HHmake)
+        // Don't allow HMMER format as input due to the severe loss of sensitivity!!!! (only allowed in HHmake)
         if (strncmp(program_name,"hhmake",6)) {
-	  cerr<<endl<<"Error in "<<program_name<<": HMMER format not allowed as input due to the dramatically loss of sensitivity!\n";
+	  cerr<<endl<<"Error in "<<program_name<<": HMMER format not allowed as input due to the severe loss of sensitivity!\n";
 	  exit(1);
         }
       
@@ -352,18 +363,6 @@ void ReadAndPrepare(char* infile, HMM& q, Alignment* qali=NULL)
 	    rewind(inf);
 	    q.ReadHMMer(inf,path);
 	    
-	    // Don't add transition pseudocounts to query!!
-	    
-	    // NEEDED?????
-	    
-	    // if (!*par.clusterfile) { //compute context-specific pseudocounts?
-	    //     // Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
-	    //     q.PreparePseudocounts();
-	    // } else {
-	    //     // Generate an amino acid frequency matrix from f[i][a] with full context specific pseudocount admixture (tau=1) -> g[i][a]
-	    //     q.PrepareContextSpecificPseudocounts();
-	    // }
-	    
 	    // DON'T ADD amino acid pseudocounts to query: pcm=0!  q.p[i][a] = f[i][a]
 	    q.AddAminoAcidPseudocounts(0, par.pca, par.pcb, par.pcc);
 	    q.CalculateAminoAcidBackground();
@@ -384,6 +383,9 @@ void ReadAndPrepare(char* infile, HMM& q, Alignment* qali=NULL)
     if (par.forward>=1) q.Log2LinTransitionProbs(1.0);
     return;
 }
+//????????????????????????????????????????????????????????????????????????????????????????????????????????????
+
+
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Do precalculations for q and t to prepare comparison
@@ -425,6 +427,8 @@ void PrepareTemplate(HMM& q, HMM& t, int format)
 
     return;
 }
+
+
 
 void WriteToAlifile(FILE* alitabf, Hit* hit)
     {

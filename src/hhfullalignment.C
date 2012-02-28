@@ -199,7 +199,7 @@ void FullAlignment::Build(HMM& q, Hit& hit)
 	} 
       else if (symbol[hh]=='T') 
 	{
-	  // Gap in target (MI or DG state)
+	  // Gap in template (MI or DG state)
 	  symbol[hh]=' ';
 	  for (k=0; k<ta->n; k++) if (ta->s[k][hh]=='.') ta->s[k][hh]='-';
 	}

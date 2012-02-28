@@ -2565,7 +2565,7 @@ void Alignment::MergeMasterSlave(Hit& hit, char ta3mfile[], FILE* ta3mf, bool fi
 /////////////////////////////////////////////////////////////////////////////////////
 void Alignment::AddSequence(char Xk[], int Ik[])
 {
-  int i;    // position in query and target
+  int i;    // position in query and template
   if (L<=0) InternalError("L is not set in AddSequence()");
   X[N_in]=new(char[L+2]);
   for (i=0; i<=L+1; ++i) X[N_in][i]=Xk[i];

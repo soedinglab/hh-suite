@@ -1,0 +1,10 @@
+ 
+
+ * Change hhblits database format: package cs sequences with ffindex for parallel reading
+   
+ * Put all hhblits database files into a single one? 
+   - advantages: elegant; ?
+   - disadvantages: file gets very big; hhsearch could not used hhm file from hhblits database
+
+ * Parallelize merging of alignments in Qa3m after search
+
