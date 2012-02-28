@@ -1,4 +1,4 @@
- 
+ * Clean up mess with ReadInput(), ReadInputFile(), ReadAndPrepare() in hhblits.C and hhfunc.C
 
  * Change hhblits database format: package cs sequences with ffindex for parallel reading
    
@@ -8,3 +8,4 @@
 
  * Parallelize merging of alignments in Qa3m after search
 
+  

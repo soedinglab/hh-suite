@@ -4,7 +4,6 @@ soeding@genzentrum.lmu.de
 
 
 
-
 _______________________________________________________________________________
 
 HH-suite 2.0.13  February 2012
@@ -18,7 +17,9 @@ HH-suite 2.0.13  February 2012
   on speed and accurarcy. The new formula leads to different defaults and
   therefore different results for longer sequences (>7000).
 
-* More sensible memory size defaults ininit_prefilter(), fixes a segfault
+* more sensible memory size defaults in init_prefilter(), fixes a segfault
+
+* Merge some Makefile changes for Debian from Laszlo Kajan
 
 * Small fix in hhblitsdb.pl
 
