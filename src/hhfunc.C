@@ -232,7 +232,6 @@ void ReadInput(char* infile, HMM& q, Alignment* qali=NULL)
 // "In hhfunc.C spricht glaube ich nichts dagegen, die beiden Funktionen 
 // zu vereinfachen, der Code ist an dieser Stelle wirklich doppelt."
 
-(if (num_seqs == 1 && par.M == 1) par.M=3; // if only single sequence in input file, use par.M=3 (match states by first seq))
 // Read input file (HMM, HHM, or alignment format), and add pseudocounts etc.
 void ReadAndPrepare(char* infile, HMM& q, Alignment* qali=NULL)
 {

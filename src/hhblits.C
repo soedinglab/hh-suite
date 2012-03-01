@@ -743,7 +743,9 @@ void PerformViterbiByWorker(int bin)
 // und das dann entsprechend ausgegeben.
 // Zum anderen habe ich, wenn der Input aus nur einer Sequenz besteht, den Parameter par.M auf 3 gesetzt, 
 // was hat den Vorteil, dass es bei einer einzelnen Sequenz, die nur aus Kleinbuchstaben besteht, 
-// HHblits einfach alle Buchstaben der Sequenz als Match-States annimmt"
+// HHblits einfach alle Buchstaben der Sequenz als Match-States annimmt:
+// if (num_seqs == 1 && par.M == 1) par.M=3; // if only single sequence in input file,  
+//                                            //use par.M=3 (match states by first seq)"
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Read input file
