@@ -4,7 +4,7 @@
 # Creates HHblits database files from A3M and HHM/HMMER-formatted files 
 # Usage: Usage: perl hhblitsdb.pl -o <db_name> [-ia3m <a3m_dir>] [-ihhm <hhm_dir>] [-ics <cs_dir>] [more_options]
 #
-#     HHsuite version 2.0.3 (January 2012)
+#     HHsuite version 2.0.13 (February 2012)
 #
 #     Reference: 
 #     Remmert M., Biegert A., Hauser A., and Soding J.
@@ -85,9 +85,9 @@ Options:
  -csext          extension of column state sequences (default: $csext)
  -a3mext         extension of A3M-formatted files (default: $a3mext)
  -hhmext         extension of HHM- or HMMER-formatted files (default: $hhmext)
- -append         if the packed db files exists, append input A3M/HHM files (def: overwrite)
+ -append         append A3M/HHM files to packed db files if they exist (default: overwrite)
  -v [1-3]        verbose mode (default: $v)
- -cpu <int>      numbers of threads for generating cs219 and hhm files (default = $cpu)
+ -cpu <int>      number of threads to generate cs219 and hhm files (default = $cpu)
 
  
 Example 1: only -ia3m given; cs sequences and hhm files are generated from a3m files

@@ -178,7 +178,7 @@ void FullAlignment::Build(HMM& q, Hit& hit)
       {
 	char qc=qa->seq[  q.nfirst][ qa->m[  q.nfirst][hit.i[step]] ];
 	char tc=ta->seq[hit.nfirst][ ta->m[hit.nfirst][hit.j[step]] ];
-	if (qc==tc) identities++;  // count identical amino acids
+	if (qc==tc && qc!='-') identities++;  // count identical amino acids
 	score_sim += S[(int)aa2i(qc)][(int)aa2i(tc)];
  	//fprintf(stderr,"%3i %3i  %3i %3i  %3i %1c %1c %6.2f %6.2f %6.2f %6.2f  \n",step,hit.nsteps,hit.i[step],hit.j[step],int(state),qc,tc,S[(int)aa2i(qc)][(int)aa2i(tc)],score_sim,hit.P_posterior[step],hit.sum_of_probs); //DEBUG (P_posterior not defined for Viterbi!)
       }    

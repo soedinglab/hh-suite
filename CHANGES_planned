@@ -8,4 +8,8 @@
 
  * Parallelize merging of alignments in Qa3m after search
 
+ * Add scripts mergealis.pl, pdbfilter.pl, pdb2fasta.pl, makepdbfile.pl
+
+
+
   

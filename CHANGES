@@ -19,15 +19,23 @@ HH-suite 2.0.13  February 2012
 
 * more sensible memory size defaults in init_prefilter(), fixes a segfault
 
-* Merge some Makefile changes for Debian from Laszlo Kajan
-
-* Small fix in hhblitsdb.pl
-
 * Better error messages if databases are too big (e.g. >2GB on 32bit systems).
 
 * Made code segfault-safe when name lengths and other strings exceed usual
   sizes. Now, all strings should be cut at maximum length. E.g., name lengths 
   of sequences and HMMs at >=512 characters (const int NAMELEN in util.C)
+
+* Merge some Makefile changes for Debian from Laszlo Kajan
+
+* Corrected calculation of "Identities" for pairwise query-template alignments. 
+  Now, gaps '-' in aligned match states of query and template master sequences 
+  are not counted as identical residue anymore. (hhfullalignment.C, line 182)
+
+* Added detailed description in user guide of how Identities, Similarity, 
+  and Sum_probs are calculated
+
+* Small fix in hhblitsdb.pl
+
 
 _______________________________________________________________________________
 
@@ -79,6 +87,13 @@ HH-suite 2.0.0  January 2012
   and regions of strong compositional bias will is probably more pronounced. 
   The score shift parameter was changed from -0.01 to -0.03 bits and the mact 
   parameter from 0.5 to 0.35. 
+
+* The memory requirement for HMM-HMM alignmet in hhsearch, hhblits, and hhalign
+  was reduced by a factor of ~2 by a better implementation of the Forward-
+  Backward algorithm
+
+* Removed hhalign's -sto option for generating stochastic alignments. Sorry!
+  A better, deterministic replacement is planned for the future.
 
 _______________________________________________________________________________
 

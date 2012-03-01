@@ -737,6 +737,13 @@ void PerformViterbiByWorker(int bin)
 // Rename this function as PrepareQa3mFile() and rename ReadInput() as ReadQueryFile(). 
 // Throw out the framed code below, including the ReadInput() call,
 // and replace the old call to ReadInputFile() in hhblits.C by { ReadQueryFile(); PrepareQa3mFile();} .
+// Comment Michael Remmert: 
+// "In hhblits.C gab es glaube ich 2 Gründe, warum ich den Filetype schon vorher checke:
+// Zum einen habe ich da abgefangen, ob der Input im HMMER-Format ist (input_format == 1 && par.hmmer_used = true) 
+// und das dann entsprechend ausgegeben.
+// Zum anderen habe ich, wenn der Input aus nur einer Sequenz besteht, den Parameter par.M auf 3 gesetzt, 
+// was hat den Vorteil, dass es bei einer einzelnen Sequenz, die nur aus Kleinbuchstaben besteht, 
+// HHblits einfach alle Buchstaben der Sequenz als Match-States annimmt"
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Read input file
