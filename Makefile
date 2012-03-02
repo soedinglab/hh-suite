@@ -66,6 +66,7 @@ install:
 	install scripts/create_profile_from_hmmer.pl $(INSTALL_SCRIPTS_DIR)/create_profile_from_hmmer.pl
 	install scripts/hhmakemodel.pl $(INSTALL_SCRIPTS_DIR)/hhmakemodel.pl
 	install scripts/reformat.pl    $(INSTALL_SCRIPTS_DIR)/reformat.pl
+	install scripts/splitfasta.pl    $(INSTALL_SCRIPTS_DIR)/splitfasta.pl
 	install scripts/multithread.pl    $(INSTALL_SCRIPTS_DIR)/multithread.pl
 	install scripts/hhblitsdb.pl    $(INSTALL_SCRIPTS_DIR)/hhblitsdb.pl
 
@@ -75,7 +76,7 @@ deinstall:
 		$(INSTALL_DIR)/bin/hhconsensus $(INSTALL_DIR)/bin/hhfilter $(INSTALL_DIR)/bin/hhmake $(INSTALL_DIR)/bin/hhsearch
 	rm -f $(INSTALL_DATA_DIR)/context_data.lib $(INSTALL_DATA_DIR)/cs219.lib $(INSTALL_DATA_DIR)/do_not_delete \
 		$(INSTALL_DATA_DIR)/do_not_delete.phr $(INSTALL_DATA_DIR)/do_not_delete.pin $(INSTALL_DATA_DIR)/do_not_delete.psq
-	rm -f $(INSTALL_SCRIPTS_DIR)/Align.pm $(INSTALL_SCRIPTS_DIR)/HHPaths.pm \
+	rm -f $(INSTALL_SCRIPTS_DIR)/Align.pm $(INSTALL_SCRIPTS_DIR)/HHPaths.pm $(INSTALL_SCRIPTS_DIR)/splitfasta.pl \
 		$(INSTALL_SCRIPTS_DIR)/addss.pl $(INSTALL_SCRIPTS_DIR)/create_profile_from_hhm.pl \
 		$(INSTALL_SCRIPTS_DIR)/create_profile_from_hmmer.pl $(INSTALL_SCRIPTS_DIR)/hhmakemodel.pl \
 		$(INSTALL_SCRIPTS_DIR)/reformat.pl $(INSTALL_SCRIPTS_DIR)/multithread.pl $(INSTALL_SCRIPTS_DIR)/hhblitsdb.pl

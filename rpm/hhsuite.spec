@@ -49,6 +49,7 @@ make install INSTALL_DIR="$RPM_BUILD_ROOT/usr"
 /usr/lib/hh/scripts/create_profile_from_hhm.pl
 /usr/lib/hh/scripts/HHPaths.pm
 /usr/lib/hh/scripts/reformat.pl
+/usr/lib/hh/scripts/splitfasta.pl
 /usr/lib/hh/scripts/addss.pl
 /usr/lib/hh/data/do_not_delete
 /usr/lib/hh/data/do_not_delete.phr
