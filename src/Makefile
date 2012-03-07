@@ -76,10 +76,10 @@ all_valgrind: $(TARGETS_VALGRIND)
 $(CS_OBJECTS): $(CS_DIR)/%.o: $(CS_DIR)/%.cc
 	$(CPP) $(OBJECT_LIBS) -c $< -o $@
 
-cstranslate: $(CS_DIR)/cstranslate_app.cc $(CS_OBJECTS)
+cstranslate: $(CS_DIR)/cstranslate_app.cc $(CS_DIR)/*.cc $(CS_DIR)/*.h $(CS_OBJECTS)
 	$(CPP) -lm -o cstranslate $(CS_DIR)/cstranslate_app.cc $(CS_OBJECTS)
 
-cstranslate_static: $(CS_DIR)/cstranslate_app.cc $(CS_OBJECTS)
+cstranslate_static: $(CS_DIR)/cstranslate_app.cc $(CS_DIR)/*.cc $(CS_DIR)/*.h $(CS_OBJECTS)
 	$(CPP) -static -lm -o cstranslate $(CS_DIR)/cstranslate_app.cc $(CS_OBJECTS)
 
 hhsearch: hhsearch.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)

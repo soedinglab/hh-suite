@@ -660,18 +660,18 @@ void ReadAll(FILE* fin, AlignmentFormat format, std::vector< Alignment<Abc> >& v
 
 // Returns the alignment format corresponding to provided filename extension
 inline AlignmentFormat AlignmentFormatFromString(const std::string& s) {
-    if (s == "fas" || s == "mfa")
+  if (s.substr(0,2) == "fa" || s.substr(0,2) == "FA"|| s.substr(0,2) == "Fa")
         return FASTA_ALIGNMENT;
-    else if (s == "a2m")
+    else if (s == "a2m" || s == "A2M")
         return A2M_ALIGNMENT;
-    else if (s == "a3m")
+    else if (s == "a3m" || s == "A3M")
         return A3M_ALIGNMENT;
-    else if (s == "clu")
+    else if (s.substr(0,2) == "cl" || s.substr(0,2) == "CL" || s.substr(0,2) == "Cl")
         return CLUSTAL_ALIGNMENT;
-    else if (s == "psi")
+    else if (s.substr(0,2) == "ps" || s.substr(0,2) == "PS" || s.substr(0,2) == "Ps")
         return PSI_ALIGNMENT;
     else
-        throw Exception("Unknown alignment format extension '%s'!", s.c_str());
+        throw Exception("Unknown alignment format extension '%s'! \nAllowed extensions: fa* (FASTA); a2m, A2M (A2M); a3m, A3M (A3M); cl* (CLUSTAL); ps* (PSI-BLAST checkpoints format)\n ", s.c_str());
 }
 
 template<class Abc>

@@ -4,6 +4,21 @@ soeding@genzentrum.lmu.de
 
 
 
+
+
+
+_______________________________________________________________________________
+
+HH-suite 2.0.14  February 2012
+
+* Added more flexible format recognition in cstranslate binary which is called
+  in hhblistdb.pl
+
+* 
+
+
+
+
 _______________________________________________________________________________
 
 HH-suite 2.0.13  February 2012
