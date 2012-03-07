@@ -149,13 +149,19 @@ This will unpack the sources to \verb`hhsuite-<VERSION>`.
 \vspace{2mm}
 
 
-\item Compilation: Run the Makefile in \verb`$HHLIB`:
+\item Compilation: Run make in the source directory:
 \begin{verbatim}
 $ cd hhsuite-<VERSION>/
 $ make
 \end{verbatim}
 This compiles all programs and creates the binaries in \verb`src/`. Binaries are by default static. If you encounter
-missing library errors, also make sure you have installed the static versions of zlib, libpng, and glibc, e.g. zlib-static, libpng-static, and glibc-static. (You only need zlib and libpng if you want to generate dotplots with hhbalign. If you don't need this, you can remove the \verb`HH_LIB` compilation flag for compiling hhalign in \verb`hh/src/Makefile`.)
+missing library errors, also make sure you have installed the static versions of zlib, libpng, and glibc, e.g. zlib-static, libpng-static, and glibc-static.
+If you don't need to generate dotplots with hhalign, zlib and libpng are not
+needed and you can compile without them:
+\begin{verbatim}
+$ make NO_PNG=1
+\end{verbatim}
+
 
 A dynamically linked version of the programs can be compiled with:
 \begin{verbatim}

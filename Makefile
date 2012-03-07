@@ -52,20 +52,21 @@ install:
 	mkdir -p $(INSTALL_LIB_BIN_DIR)
 	install src/cstranslate $(INSTALL_LIB_BIN_DIR)/cstranslate
 	mkdir -p $(INSTALL_DATA_DIR)
-	install --mode=0644 data/context_data.lib $(INSTALL_DATA_DIR)/context_data.lib
-	install --mode=0644 data/cs219.lib        $(INSTALL_DATA_DIR)/cs219.lib
-	install --mode=0644 data/do_not_delete    $(INSTALL_DATA_DIR)/do_not_delete
-	install --mode=0644 data/do_not_delete.phr $(INSTALL_DATA_DIR)/do_not_delete.phr
-	install --mode=0644 data/do_not_delete.pin $(INSTALL_DATA_DIR)/do_not_delete.pin
-	install --mode=0644 data/do_not_delete.psq $(INSTALL_DATA_DIR)/do_not_delete.psq
+	install -m 0644 data/context_data.lib $(INSTALL_DATA_DIR)/context_data.lib
+	install -m 0644 data/cs219.lib        $(INSTALL_DATA_DIR)/cs219.lib
+	install -m 0644 data/do_not_delete    $(INSTALL_DATA_DIR)/do_not_delete
+	install -m 0644 data/do_not_delete.phr $(INSTALL_DATA_DIR)/do_not_delete.phr
+	install -m 0644 data/do_not_delete.pin $(INSTALL_DATA_DIR)/do_not_delete.pin
+	install -m 0644 data/do_not_delete.psq $(INSTALL_DATA_DIR)/do_not_delete.psq
 	mkdir -p $(INSTALL_SCRIPTS_DIR)
-	install --mode=0644 scripts/Align.pm        $(INSTALL_SCRIPTS_DIR)/Align.pm
-	install --mode=0644 scripts/HHPaths.pm      $(INSTALL_SCRIPTS_DIR)/HHPaths.pm
+	install -m 0644 scripts/Align.pm        $(INSTALL_SCRIPTS_DIR)/Align.pm
+	install -m 0644 scripts/HHPaths.pm      $(INSTALL_SCRIPTS_DIR)/HHPaths.pm
 	install scripts/addss.pl        $(INSTALL_SCRIPTS_DIR)/addss.pl
 	install scripts/create_profile_from_hhm.pl   $(INSTALL_SCRIPTS_DIR)/create_profile_from_hhm.pl
 	install scripts/create_profile_from_hmmer.pl $(INSTALL_SCRIPTS_DIR)/create_profile_from_hmmer.pl
 	install scripts/hhmakemodel.pl $(INSTALL_SCRIPTS_DIR)/hhmakemodel.pl
 	install scripts/reformat.pl    $(INSTALL_SCRIPTS_DIR)/reformat.pl
+	install scripts/splitfasta.pl    $(INSTALL_SCRIPTS_DIR)/splitfasta.pl
 	install scripts/multithread.pl    $(INSTALL_SCRIPTS_DIR)/multithread.pl
 	install scripts/hhblitsdb.pl    $(INSTALL_SCRIPTS_DIR)/hhblitsdb.pl
 
@@ -75,7 +76,7 @@ deinstall:
 		$(INSTALL_DIR)/bin/hhconsensus $(INSTALL_DIR)/bin/hhfilter $(INSTALL_DIR)/bin/hhmake $(INSTALL_DIR)/bin/hhsearch
 	rm -f $(INSTALL_DATA_DIR)/context_data.lib $(INSTALL_DATA_DIR)/cs219.lib $(INSTALL_DATA_DIR)/do_not_delete \
 		$(INSTALL_DATA_DIR)/do_not_delete.phr $(INSTALL_DATA_DIR)/do_not_delete.pin $(INSTALL_DATA_DIR)/do_not_delete.psq
-	rm -f $(INSTALL_SCRIPTS_DIR)/Align.pm $(INSTALL_SCRIPTS_DIR)/HHPaths.pm \
+	rm -f $(INSTALL_SCRIPTS_DIR)/Align.pm $(INSTALL_SCRIPTS_DIR)/HHPaths.pm $(INSTALL_SCRIPTS_DIR)/splitfasta.pl \
 		$(INSTALL_SCRIPTS_DIR)/addss.pl $(INSTALL_SCRIPTS_DIR)/create_profile_from_hhm.pl \
 		$(INSTALL_SCRIPTS_DIR)/create_profile_from_hmmer.pl $(INSTALL_SCRIPTS_DIR)/hhmakemodel.pl \
 		$(INSTALL_SCRIPTS_DIR)/reformat.pl $(INSTALL_SCRIPTS_DIR)/multithread.pl $(INSTALL_SCRIPTS_DIR)/hhblitsdb.pl
