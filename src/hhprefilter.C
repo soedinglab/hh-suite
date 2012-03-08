@@ -1142,9 +1142,6 @@ void prefilter_db()
        else // other database
       	{
       	  strcpy(db_name,tmp_name);
-// What was the reasone to have this code? Michael does not remember...
-// 	  strtr(db_name,"|", "_");
-// 	  strtr(db_name,".", "_");
       	  strcat(db_name,".");
       	  strcat(db_name,db_ext);
       	}
