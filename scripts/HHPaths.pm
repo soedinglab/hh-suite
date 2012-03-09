@@ -12,7 +12,7 @@ package HHPaths;
 # This block can stay unmodified
 use vars qw(@ISA @EXPORT @EXPORT_OK %EXPORT_TAGS $VERSION);
 use Exporter;
-our $VERSION = "version 2.0.12 (Feb 2012)";
+our $VERSION = "version 2.0.14 (Mar 2012)";
 our @ISA     = qw(Exporter);
 our @EXPORT  = qw($VERSION $hhlib $hhdata $hhbin $hhscripts $execdir $datadir $ncbidir $dummydb $pdbdir $dsspdir $dssp $cs_lib $context_lib);
 

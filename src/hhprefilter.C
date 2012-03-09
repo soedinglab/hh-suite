@@ -790,9 +790,14 @@ void init_no_prefiltering()
 	  else // other database
 	    {
 	      strcpy(db_name,word);
-// What was the reason to have this code? Michael does not remember...
-	      // strtr(db_name,"|", "_");
-	      // strtr(db_name,".", "_");
+
+	      // Reactivate this replacement until it's clear where it was used and whether
+	      // some DBs with this are still in use.
+	      strtr(db_name,"|", "_");
+
+	      // Older cs db builds have a "." instead od "_".
+	      strtr(db_name,".", "_");
+
 	      strcat(db_name,".");
 	      strcat(db_name,db_ext);
 	    }
@@ -1137,9 +1142,6 @@ void prefilter_db()
        else // other database
       	{
       	  strcpy(db_name,tmp_name);
-// What was the reasone to have this code? Michael does not remember...
-// 	  strtr(db_name,"|", "_");
-// 	  strtr(db_name,".", "_");
       	  strcat(db_name,".");
       	  strcat(db_name,db_ext);
       	}
