@@ -2430,12 +2430,20 @@ int main(int argc, char **argv)
     while (!hitlist.End())
       {
 	hit_cur = hitlist.ReadNext();
-	stringstream ss_tmp;
-	ss_tmp << hit_cur.name << "__" << hit_cur.irep;
-	if (!already_seen_filter || hit_cur.Eval > par.e || previous_hits->Contains((char*)ss_tmp.str().c_str()))
+	char strtmp[NAMELEN+6];
+	sprintf(strtmp,"%s__%i",hit_cur.name,hit_cur.irep);
+	if (!already_seen_filter || hit_cur.Eval > par.e || previous_hits->Contains(strtmp))
 	  hit_cur.Delete(); // Delete hit object (deep delete with Hit::Delete())
 	else
-	  previous_hits->Add((char*)ss_tmp.str().c_str(), hit_cur);
+	  previous_hits->Add(strtmp,hit_cur);
+	
+	// Old version by Michael => Delete
+	// stringstream ss_tmp;
+	// ss_tmp << hit_cur.name << "__" << hit_cur.irep;
+	// if (!already_seen_filter || hit_cur.Eval > par.e || previous_hits->Contains((char*)ss_tmp.str().c_str()))
+	//   hit_cur.Delete(); // Delete hit object (deep delete with Hit::Delete())
+	// else
+	//   previous_hits->Add((char*)ss_tmp.str().c_str(), hit_cur);
 
 	hitlist.Delete(); // Delete list record (flat delete)
 

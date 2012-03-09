@@ -763,7 +763,6 @@ void init_no_prefiltering()
       exit(4);
     }
 
-  char word[NAMELEN];
   FILE* dbf = NULL;
   dbf = fopen(db,"rb");
   if (!dbf) OpenFileError(db);
@@ -772,35 +771,50 @@ void init_no_prefiltering()
     {
       if (line[0]=='>')
 	{
-	  strwrd(word,line+1,NAMELEN);
 
 	  // Add hit to dbfiles
+	  char tmp_name[NAMELEN];
 	  char db_name[NAMELEN];
+	  strwrd(tmp_name,line+1,NAMELEN);
+	  char* first = strchr(tmp_name,'|');
 	  
-	  if (!strncmp(word,"cl|",3))   // kClust formatted database (NR20, ...)
+	  if (first) // found '|' in sequence id?
 	    {
-	      substr(db_name,word,3,11);
-	      strcat(db_name,".hhm");
+	      char* second = strchr(++first,'|');
+	      if (second) *second = '\0'; // set end of string at second '|'
 	    }
-	  else if (!strncmp(word,"UP20|",5) || !strncmp(word,"NR20|",5)) // kClust formatted database (NR20, ...)
-	    {
-	      substr(db_name,word,5,13);
-	      strcat(db_name,".hhm");
-	    }
-	  else // other database
-	    {
-	      strcpy(db_name,word);
+	  else 
+	    first = tmp_name;
+	  
+	  strcpy(db_name,first);
+	  strcat(db_name,".");
+	  strcat(db_name,db_ext);
 
-	      // Reactivate this replacement until it's clear where it was used and whether
-	      // some DBs with this are still in use.
-	      strtr(db_name,"|", "_");
+	  // Old version by Michael => Delete
+	  // if (!strncmp(word,"cl|",3))   // kClust formatted database (NR20, ...)
+	  //   {
+	  //     substr(db_name,word,3,11);
+	  //     strcat(db_name,".hhm");
+	  //   }
+	  // else if (!strncmp(word,"UP20|",5) || !strncmp(word,"NR20|",5)) // kClust formatted database (NR20, ...)
+	  //   {
+	  //     substr(db_name,word,5,13);
+	  //     strcat(db_name,".hhm");
+	  //   }
+	  // else // other database
+	  //   {
+	  //     strcpy(db_name,word);
 
-	      // Older cs db builds have a "." instead od "_".
-	      strtr(db_name,".", "_");
+	  //     // Reactivate this replacement until it's clear where it was used and whether
+	  //     // some DBs with this are still in use.
+	  //     strtr(db_name,"|", "_");
 
-	      strcat(db_name,".");
-	      strcat(db_name,db_ext);
-	    }
+	  //     // Older cs db builds have a "." instead od "_".
+	  //     strtr(db_name,".", "_");
+
+	  //     strcat(db_name,".");
+	  //     strcat(db_name,db_ext);
+	  //   }
 	  
 	  dbfiles_new[ndb_new]=new(char[strlen(db_name)+1]);
 	  strcpy(dbfiles_new[ndb_new],db_name);
@@ -1128,23 +1142,37 @@ void prefilter_db()
       char tmp_name[NAMELEN];
       char db_name[NAMELEN];
       strwrd(tmp_name,dbnames[(*it).second]);
+      char* first = strchr(tmp_name,'|');
       
-      if (!strncmp(tmp_name,"cl|",3))   // kClust formatted database (NR20, NR30, UNIPROT20)
+      if (first) // found '|' in sequence id?
 	{
-	  substr(db_name,tmp_name,3,11);
-	  strcat(db_name,".hhm");
+	  char* second = strchr(++first,'|');
+	  if (second) *second = '\0'; // set end of string at second '|'
 	}
-      else if (!strncmp(tmp_name,"UP20|",5) || !strncmp(tmp_name,"NR20|",5)) // kClust formatted database (NR20, ...)
-	{
-	  substr(db_name,tmp_name,5,13);
-	  strcat(db_name,".hhm");
-	}
-       else // other database
-      	{
-      	  strcpy(db_name,tmp_name);
-      	  strcat(db_name,".");
-      	  strcat(db_name,db_ext);
-      	}
+      else 
+	first = tmp_name;
+      
+      strcpy(db_name,first);
+      strcat(db_name,".");
+      strcat(db_name,db_ext);
+
+      // Old version by Michael => Delete
+      // if (!strncmp(tmp_name,"cl|",3))   // kClust formatted database (NR20, NR30, UNIPROT20)
+      // 	{
+      // 	  substr(db_name,tmp_name,3,11);
+      // 	  strcat(db_name,".hhm");
+      // 	}
+      // else if (!strncmp(tmp_name,"UP20|",5) || !strncmp(tmp_name,"NR20|",5)) // kClust formatted database (NR20, ...)
+      // 	{
+      // 	  substr(db_name,tmp_name,5,13);
+      // 	  strcat(db_name,".hhm");
+      // 	}
+      //  else // other database
+      // 	{
+      // 	  strcpy(db_name,tmp_name);
+      // 	  strcat(db_name,".");
+      // 	  strcat(db_name,db_ext);
+      // 	}
 	        
       if (! doubled->Contains(db_name))
 	{
