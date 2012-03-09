@@ -219,8 +219,8 @@ int main(int argc, char **argv)
   ProcessArguments(argc,argv);
 
   // Check command line input and default values
-  if (!*par.infile) {help(); cerr<<"Error: input file missing\n"; exit(4);}   
-  if (!*par.outfile) {help(); cerr<<"Error: output file missing\n"; exit(4);}   
+  if (!*par.infile) {help(); cerr<<"Error in "<<par.argv[0]<<": input file missing\n"; exit(4);}   
+  if (!*par.outfile) {help(); cerr<<"Error in "<<par.argv[0]<<": output file missing\n"; exit(4);}   
  
   if (v>=2) 
     {

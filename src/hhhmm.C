@@ -1558,8 +1558,8 @@ void HMM::AddTransitionPseudocounts(float gapd, float gape, float gapf, float ga
   float pM2M, pM2I, pM2D, pI2I, pI2M, pD2D, pD2M;
   float p0,p1,p2;
   if (par.gapb<=0) return;
-  if (trans_lin==1) {fprintf(stderr,"Error: Adding transition pseudocounts to linear representation of %s not allowed. Please report this error to the HHsearch developers.\n",name); exit(6);}
-  if (trans_lin==2) {fprintf(stderr,"Error: Adding transition pseudocounts twice is %s not allowed. Please report this error to the HHsearch developers.\n",name); exit(6);}
+  if (trans_lin==1) {fprintf(stderr,"Error in %s: Adding transition pseudocounts to linear representation of %s not allowed. Please report this error to the HHsearch developers.\n",par.argv[0],name); exit(6);}
+  if (trans_lin==2) {fprintf(stderr,"Error in %s: Adding transition pseudocounts twice is %s not allowed. Please report this error to the HHsearch developers.\n",par.argv[0],name); exit(6);}
   trans_lin=2;
 
   // Calculate pseudocount transition probabilities

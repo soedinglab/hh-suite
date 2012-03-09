@@ -306,13 +306,15 @@ void help(char all=0)
   printf(" -o <file>      write results in standard format to file (default=<infile.hhr>)\n");
   printf(" -oa3m <file>   write multiple alignment of significant matches in a3m format\n");
   if (!all) {
-  printf("                Analogous for a2m, a3m, fas, psi, hhm format (e.g. -ohhm, -Oa3m)\n");
-  printf(" -oalis <name>  write MSAs in A3M format after each iteration\n");
-  } else {
+  printf("                Analogous for a2m, fas, psi, hhm format (e.g. -ohhm, -ofas)\n");
+  }
+  if (all) {
   printf(" -ofas <file>   write MSA of significant matches in FASTA format\n");
   printf(" -opsi <file>   write MSA of significant matches in PSI format\n");
   printf(" -ohhm <file>   write HHM file for MSA of significant matches\n");
+  }
   printf(" -oalis <name>  write MSAs in A3M format after each iteration\n");
+  if (all) {
   printf(" -Ofas <file>   write pairwise alignments of significant matches in FASTA format\n");
   printf(" -qhhm <file>   write query input HHM file of last iteration (default=off)      \n");
   printf(" -seq <int>     max. number of query/template sequences displayed (default=%i)  \n",par.nseqdis);
@@ -332,6 +334,7 @@ void help(char all=0)
   printf(" -noblockfilter search complete matrix in Viterbi                               \n");
   printf(" -maxfilt       max number of hits allowed to pass 2nd prefilter (default=%i)  \n",par.maxnumdb);
   printf("\n");
+  }
   printf("Filter result alignment (options can be combined):                              \n");
   printf(" -id   [0,100]  maximum pairwise sequence identity (%%) (def=%i)                \n",par.max_seqid);
   printf(" -diff [0,inf[  filter query and db MSAs by selecting most diverse set of sequences,\n");
@@ -341,8 +344,6 @@ void help(char all=0)
   printf(" -qid  [0,100]  minimum sequence identity with query (%%) (def=%i)              \n",par.qid);
   printf(" -neff [1,inf]  target diversity of alignment (default=off)                     \n");
   printf(" -qsc  [0,100]  minimum score per column with query  (def=%.1f)                 \n",par.qsc);
-  printf("\n");
-  }
   printf("\n");
   printf("HMM-HMM alignment options:                                                       \n");
   printf(" -norealign     do NOT realign displayed hits with MAC algorithm (def=realign)   \n");
@@ -900,7 +901,18 @@ void search_loop(char *dbfiles[], int ndb, bool alignByWorker=true)
 	  dbf = ffindex_fopen(dba3m_data, dba3m_index, filename);
 	} else {
 	  cerr<<endl<<"Error opening "<<dbfiles[idb]<<": A3M database missing\n"; exit(4);
-	}
+	}	
+	if (dbf == NULL) 
+	  {
+	    RemoveExtension(filename, dbfiles[idb]);
+	    strcat(filename,".hmm");
+	    if(dbhhm_index_file!=NULL) {
+	      dbf = ffindex_fopen(dbhhm_data, dbhhm_index, filename);
+	    } else {
+	      cerr<<endl<<"Error opening "<<dbfiles[idb]<<": HHM database missing\n"; exit(4);
+	    }
+	    dbf = ffindex_fopen(dbhhm_data, dbhhm_index, dbfiles[idb]);
+	  }
       }
       if (dbf == NULL) OpenFileError(dbfiles[idb]);
       
@@ -1451,7 +1463,7 @@ void perform_realign(char *dbfiles[], int ndb)
 	  
 	  ///////////////////////////////////////////////////
 	  // Read next HMM from database file
-	  if (!fgetline(line,LINELEN,dbf)) {fprintf(stderr,"Error: end of file %s reached prematurely!\n",hit_cur.dbfile); exit(1);}
+	  if (!fgetline(line,LINELEN,dbf)) {fprintf(stderr,"Error in %s: end of file %s reached prematurely!\n",par.argv[0],hit_cur.dbfile); exit(1);}
 	  while (strscn(line)==NULL && fgetline(line,LINELEN,dbf)) {} // skip lines that contain only white space
 
 	  if (!strncmp(line,"HMMER3",5))      // read HMMER3 format
@@ -1499,8 +1511,8 @@ void perform_realign(char *dbfiles[], int ndb)
 	  
 	  if (read_from_db!=1)
 	    {
-	      fprintf(stderr,"Error: illegal format in %s while reading HMM %s\n",hit_cur.dbfile,hit_cur.name);
-	      continue;
+	      cerr<<"Error in "<<par.argv[0]<<": wrong format while reading \'"<<hit_cur.dbfile<<". Reached end of file while reading HMM "<<hit_cur.name<<" \n";
+	      exit(1);
 	    }
 
 	  if (v>=2) fprintf(stderr,"Realigning with %s ***** \n",t[bin]->name);
@@ -1685,7 +1697,7 @@ void perform_realign(char *dbfiles[], int ndb)
 	      
 	      ///////////////////////////////////////////////////
 	      // Read next HMM from database file
-	      if (!fgetline(line,LINELEN,dbf)) {fprintf(stderr,"Error: end of file %s reached prematurely!\n",dbfiles[idb]); exit(1);}
+	      if (!fgetline(line,LINELEN,dbf)) {fprintf(stderr,"Error in %s: end of file %s reached prematurely!\n",par.argv[0],dbfiles[idb]); exit(1);}
 	      while (strscn(line)==NULL && fgetline(line,LINELEN,dbf)) {} // skip lines that contain only white space
 
 	      if (!strncmp(line,"HMMER3",5))      // read HMMER3 format
@@ -2013,7 +2025,8 @@ int main(int argc, char **argv)
 
   dbhhm_index = ffindex_index_parse(dbhhm_index_file, filesize);
   if (dbhhm_index==NULL) {
-    NoMemoryError("index-file parsing by ffindex");
+    cerr<<"Error in "<<par.argv[0]<<": could not read index file"<<filename<<". Is the file empty or corrupted?\n";
+    exit(1);
   }
   dbhhm_data = ffindex_mmap_data(dbhhm_data_file, &data_size);
 
@@ -2035,7 +2048,8 @@ int main(int argc, char **argv)
 
     dba3m_index = ffindex_index_parse(dba3m_index_file,filesize);
     if (dba3m_index==NULL) {
-      NoMemoryError("index-file parsing by ffindex");
+      cerr<<"Error in "<<par.argv[0]<<": could not read index file"<<filename<<". Is the file empty or corrupted?\n";
+      exit(1);
     }
     dba3m_data = ffindex_mmap_data(dba3m_data_file, &data_size);
   }
@@ -2061,7 +2075,7 @@ int main(int argc, char **argv)
   if (par.pre_pca<0.001) par.pre_pca=0.001; // to avoid log(0)
   if (par.b>par.B) par.B=par.b;
   if (par.z>par.Z) par.Z=par.z;
-  if (par.maxmem<1.0) {cerr<<"Warning: setting -maxmem to its minimum allowed value of 1.0\n"; par.maxmem=1.0;}
+  if (par.maxmem<1.0) {cerr<<"WARNING: setting -maxmem to its minimum allowed value of 1.0\n"; par.maxmem=1.0;}
 
   // Set (global variable) substitution matrix and derived matrices
   SetSubstitutionMatrix();

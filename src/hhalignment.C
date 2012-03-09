@@ -232,7 +232,7 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline)
             {
               if (strlen(cur_seq)<=1)  // 1, because the sequence in cur_seq starts at position 1 => no residues = length 1 
                 {
-                  cerr<<endl<<"Error: sequence "<<sname[k]<<" contains no residues."<<endl;
+                  cerr<<endl<<"Error in "<<par.argv[0]<<": sequence "<<sname[k]<<" contains no residues."<<endl;
                   exit(1);
                 }
 
@@ -415,7 +415,7 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline)
       strcpy(seq[k],cur_seq);
     }
   else
-    {cerr<<endl<<"Error: no sequences found in file "<<infile<<"\n"; exit(1);}
+    {cerr<<endl<<"Error in "<<par.argv[0]<<": no sequences found in file "<<infile<<"\n"; exit(1);}
 
   N_in = k+1;
 
@@ -637,7 +637,7 @@ void Alignment::Compress(const char infile[])
       for (i=1; i<=L; ++i) this->l[i]=i; //assign column indices to match states
       if (L<=0)
         {
-          cout<<"\nError: Alignment in "<<infile<<" contains no match states. Consider using -M first or -M <int> option"<<endl;
+          cerr<<"\nError in "<<par.argv[0]<<": Alignment in "<<infile<<" contains no match states. Consider using -M first or -M <int> option"<<endl;
           exit(1);
         }
 
@@ -862,14 +862,14 @@ void Alignment::Compress(const char infile[])
   if (unequal_lengths)
     {
       strcut(sname[unequal_lengths]);
-      cerr<<endl<<"Error: sequences in "<<infile<<" do not all have the same number of columns, \ne.g. first sequence and sequence "<<sname[unequal_lengths]<<".\n";
+      cerr<<endl<<"Error in "<<par.argv[0]<<": sequences in "<<infile<<" do not all have the same number of columns, \ne.g. first sequence and sequence "<<sname[unequal_lengths]<<".\n";
       if(par.M==1) cerr<<".\nCheck input format for '-M a2m' option and consider using '-M first' or '-M 50'\n";
       exit(1);
     }
 
   if (L == 0)
     {
-      cerr<<endl<<"Error: no match states found in "<<infile<<"!\n";
+      cerr<<endl<<"Error in "<<par.argv[0]<<": no match states found in "<<infile<<"!\n";
       cerr<<"Better use '-M first' option or reduce gap percentage threshold for match states\n";
       exit(1);
     }
@@ -1757,7 +1757,7 @@ void Alignment::Amino_acid_frequencies_and_transitions_from_M_state(HMM& q, char
                     {
                       if (in[k] && X[k][i]<ANY && X[k][j]<ANY)
                         {
-			  //if (!n[j][ (int)X[k][j]]) {fprintf(stderr,"Error: Mi=%i: n[%i][X[%i]]=0! (X[%i]=%i)\n",i,j,k,k,X[k][j]);}
+			  //if (!n[j][ (int)X[k][j]]) {fprintf(stderr,"Error in "<<par.argv[0]<<": Mi=%i: n[%i][X[%i]]=0! (X[%i]=%i)\n",i,j,k,k,X[k][j]);}
                           wi[k]+=1.0/float(n[j][ (int)X[k][j] ]*naa);
                         }
                     }
@@ -1978,7 +1978,7 @@ void Alignment::Transitions_from_I_state(HMM& q, char* in)
                     {
                       if (in[k] && I[k][i]>0 && X[k][j]<ANY)
                         {
-                          if (!n[j][ (int)X[k][j]]) {fprintf(stderr,"Error: Ii=%i: n[%i][X[%i]]=0! (X[%i]=%i)\n",i,j,k,k,X[k][j]);}
+                          if (!n[j][ (int)X[k][j]]) {fprintf(stderr,"Error in %s: Ii=%i: n[%i][X[%i]]=0! (X[%i]=%i)\n",par.argv[0],i,j,k,k,X[k][j]);}
 			  wi[k]+=1.0/float(n[j][ (int)X[k][j] ]*naa);
                         }
                     }
@@ -2174,7 +2174,7 @@ void Alignment::Transitions_from_D_state(HMM& q, char* in)
                     {
                       if (in[k] && X[k][i]==GAP && X[k][j]<ANY)
                         {
-                          if (!n[j][ (int)X[k][j]]) {fprintf(stderr,"Error: Di=%i: n[%i][X[%i]]=0! (X[%i]=%i)\n",i,j,k,k,X[k][j]);}
+                          if (!n[j][ (int)X[k][j]]) {fprintf(stderr,"Error in %s: Di=%i: n[%i][X[%i]]=0! (X[%i]=%i)\n",par.argv[0],i,j,k,k,X[k][j]);}
                           wi[k]+=1.0/float(n[j][ (int)X[k][j] ]*naa);
                         }
                     }
@@ -2418,7 +2418,7 @@ void Alignment::MergeMasterSlave(Hit& hit, char ta3mfile[], FILE* ta3mf, bool fi
           if ((++j)==hit.j1) break;       // yes: increment j. Reached hit,j1? yes: break
 
       if (j<hit.j1)
-        {printf("Error: did not find %i match states in sequence %i of %s. Sequence:\n%s\n",hit.j1,k,Tali.name,Tali.seq[k]); exit(1);}
+        {fprintf(stderr,"Error in %s: did not find %i match states in sequence %i of %s. Sequence:\n%s\n",par.argv[0],hit.j1,k,Tali.name,Tali.seq[k]); exit(1);}
 
       // Write first match state to cur_seq
       int iprev=hit.i1; // index of previous query match state
@@ -2733,7 +2733,7 @@ void Alignment::GetPositionSpecificWeights(float* w[])
                     {
                       if (in[k] && X[k][i]<ANY && X[k][j]<ANY)
                         {
-//                        if (!n[j][ (int)X[k][j]]) {fprintf(stderr,"Error: Mi=%i: n[%i][X[%i]]=0! (X[%i]=%i)\n",i,j,k,k,X[k][j]);}
+//                        if (!n[j][ (int)X[k][j]]) {fprintf(stderr,"Error in "<<par.argv[0]<<": Mi=%i: n[%i][X[%i]]=0! (X[%i]=%i)\n",i,j,k,k,X[k][j]);}
                           w[k][i]+=1.0/float(n[j][ (int)X[k][j] ]*naa);
                         }
                     }

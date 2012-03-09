@@ -287,6 +287,7 @@ void Parameters::SetDefaultPaths(char *program_path)
 
   testf = fopen(clusterfile, "r");
   if (testf) { fclose(testf); return;}
+  cerr<<"Could not open "<<clusterfile<<"\n";
 
   /* we did not find HHLIB, if called with full path or in dist dir, we can try relative to program path */
   if(program_path != NULL)
@@ -297,6 +298,7 @@ void Parameters::SetDefaultPaths(char *program_path)
     strcat(strcpy(cs_library, hhdata), "/cs219.lib");
     testf = fopen(clusterfile, "r");
     if (testf) { fclose(testf); return;}
+    cerr<<"Could not open "<<clusterfile<<"\n";
 
     strcat(strcpy(hhlib, program_path), "..");
     strcat(strcpy(hhdata, hhlib), "/data");
@@ -304,6 +306,7 @@ void Parameters::SetDefaultPaths(char *program_path)
     strcat(strcpy(cs_library, hhdata), "/cs219.lib");	  
     testf = fopen(clusterfile, "r");
     if (testf) { fclose(testf); return;}
+    cerr<<"Could not open "<<clusterfile<<"\n";
   }
 
   cerr<<endl<<"Error in "<<argv[0]<<": could not find context_data.lib and cs219.lib in '" << hhlib << "'.\n"

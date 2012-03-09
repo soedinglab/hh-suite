@@ -157,11 +157,9 @@ void Hit::AllocateBacktraceMatrix(int Nq, int Nt)
       cell_off[i]=new(char[Nt]);
       if (!bMM[i] || !bMI[i] || !bIM[i] || !bGD[i] || !bDG[i] || !cell_off[i]) 
 	{
-	  fprintf(stderr,"Error: out of memory while allocating row %i (out of %i) for dynamic programming matrices \n",i+1,Nq);
-	  fprintf(stderr,"Suggestions:\n");
-	  fprintf(stderr,"1. Cut query sequence into shorter segments\n");
-	  fprintf(stderr,"2. Check stack size limit (Linux: ulimit -a)\n");
-	  fprintf(stderr,"3. Run on a computer with bigger memory\n");
+	  fprintf(stderr,"Error in %s: out of memory while allocating row %i (out of %i) for dynamic programming matrices \n",par.argv[0],i+1,Nq);
+	  fprintf(stderr,"Please decrease your memory requirements to the available memory using option -maxmem <GBs>\n");
+	  fprintf(stderr,"You may want to check and increase your stack size limit (Linux: ulimit -a)\n");
 	  exit(3);
 	} 
     }
@@ -213,11 +211,9 @@ void Hit::AllocateForwardMatrix(int Nq, int Nt)
       */
       if (!F_MM[i] /* || !F_MI[i] || !F_IM[i] || !F_GD[i] || !F_DG[i]*/) 
 	{
-	  fprintf(stderr,"Error: out of memory while allocating row %i (out of %i) for dynamic programming matrices \n",i+1,Nq);
-	  fprintf(stderr,"Suggestions:\n");
-	  fprintf(stderr,"1. Cut query sequence into shorter segments\n");
-	  fprintf(stderr,"2. Check stack size limit (Linux: ulimit -a)\n");
-	  fprintf(stderr,"3. Run on a computer with bigger memory\n");
+	  fprintf(stderr,"Error in %s: out of memory while allocating row %i (out of %i) for dynamic programming matrices \n",par.argv[0],i+1,Nq);
+	  fprintf(stderr,"Please decrease your memory requirements to the available memory using option -maxmem <GBs>\n");
+	  fprintf(stderr,"You may want to check and increase your stack size limit (Linux: ulimit -a)\n");
 	  exit(3);
 	} 
       for (int j=0; j<Nt; ++j) 
@@ -268,11 +264,9 @@ void Hit::AllocateBackwardMatrix(int Nq, int Nt)
       B_MM[i] = new(double[Nt]);
       if (!B_MM[i]) 
 	{
-	  fprintf(stderr,"Error: out of memory while allocating row %i (out of %i) for dynamic programming matrices \n",i+1,Nq);
-	  fprintf(stderr,"Suggestions:\n");
-	  fprintf(stderr,"1. Cut query sequence into shorter segments\n");
-	  fprintf(stderr,"2. Check stack size limit (Linux: ulimit -a)\n");
-	  fprintf(stderr,"3. Run on a computer with bigger memory\n");
+	  fprintf(stderr,"Error in %s: out of memory while allocating row %i (out of %i) for dynamic programming matrices \n",par.argv[0],i+1,Nq);
+	  fprintf(stderr,"Please decrease your memory requirements to the available memory using option -maxmem <GBs>\n");
+	  fprintf(stderr,"You may want to check and increase your stack size limit (Linux: ulimit -a)\n");
 	  exit(3);
 	} 
       for (int j=0; j<Nt; ++j) 
@@ -1140,7 +1134,7 @@ void Hit::Backtrace(HMM& q, HMM& t)
 	    }                               // default: previous state is same state (MI)
 	  break;
 	default:
-	  fprintf(stderr,"Error: unallowed state value %i occurred during backtracing at step %i, (i,j)=(%i,%i)\n",state,step,i,j);
+	  fprintf(stderr,"Error in %s: unallowed state value %i occurred during backtracing at step %i, (i,j)=(%i,%i)\n",par.argv[0],state,step,i,j);
 	  state=0;
 	  v=4;
 	  break;
@@ -1466,7 +1460,7 @@ void Hit::BacktraceMAC(HMM& q, HMM& t)
   step=0;         // steps through the matrix correspond to alignment columns (from 1 to nsteps)
   i=i2; j=j2;     // last aligned pair is (i2,j2)
   if (b[i][j] != MM) {
-    if (v>3) fprintf(stderr,"Error: backtrace start not in match-match state, but in state %i, (i,j)=(%i,%i)\n",b[i][j],i,j);
+    if (v>3) fprintf(stderr,"Error in %s: backtrace does not start in match-match state, but in state %i, (i,j)=(%i,%i)\n",par.argv[0],b[i][j],i,j);
     step = 1;
     this->i[step] = i;
     this->j[step] = j;
@@ -1496,7 +1490,7 @@ void Hit::BacktraceMAC(HMM& q, HMM& t)
 	  case MI: i--; break;
 	  case STOP: break;
 	  default:
-	    fprintf(stderr,"Error: unallowed state value %i occurred during backtracing at step %i, (i,j)=(%i,%i)\n",state,step,i,j);
+	    fprintf(stderr,"Errorin %s: unallowed state value %i occurred during backtracing at step %i, (i,j)=(%i,%i)\n",par.argv[0],state,step,i,j);
 	    state=0;
 	    v=4;
 	    break;

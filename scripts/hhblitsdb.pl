@@ -37,7 +37,6 @@ $|= 1; # Activate autoflushing on STDOUT
 # Default values:
 our $v=2;             # verbose mode
 my $a_if_append = ""; # do not append by default
-my $a3mext = "a3m";   # default A3M-file extension
 my $hhmext = "hhm";   # default HHM-file extension
 my $csext = "seq219";   # default HHM-file extension
 my $cpu = 8;
@@ -77,14 +76,15 @@ Depending on the input directories, the following HHblits database files are gen
 Options:
  -o <db_name>    name of database
  -ia3m <a3m_dir> input directory (or glob of directories) with A3M-formatted files
+                 These files MUST have extension 'a3m'.
  -ihhm <hhm_dir> input directory (or glob of directories) with HHM (or HMMER) files 
-                 (WARNING! HMMER format results in decreased performance over HHM format)
+                 These files MUST have extension 'hhm' (HHsuite) or 'hmm' (HMMER3). 
  -ics  <cs_dir>  input directory (or glob of directories) with column state sequences
  -log <logfile>  log file recording stderr stream of cstranslate and hhmake commands
 
- -csext          extension of column state sequences (default: $csext)
- -a3mext         extension of A3M-formatted files (default: $a3mext)
- -hhmext         extension of HHM- or HMMER-formatted files (default: $hhmext)
+ -csext <ext>    extension of column state sequences (default: $csext)
+ -hmm            use HMMER-formatted files. These MUST have extension hmm
+                 (WARNING! HMMER format results in decreased performance over HHM format)
  -append         append A3M/HHM files to packed db files if they exist (default: overwrite)
  -v [1-3]        verbose mode (default: $v)
  -cpu <int>      number of threads to generate cs219 and hhm files (default = $cpu)
@@ -151,18 +151,9 @@ for (my $i=0; $i<@ARGV; $i++) {
 	} else {
 	    die ("$help\n\nERROR! Missing extension after -csext option!\n");
 	}
-    } elsif ($ARGV[$i] eq "-a3mext") {
-	if (++$i<@ARGV) {
-	    $a3mext=$ARGV[$i];
-	} else {
-	    die ("$help\n\nERROR! Missing extension after -a3mext option!\n");
-	}
-    } elsif ($ARGV[$i] eq "-hhmext") {
-	if (++$i<@ARGV) {
-	    $hhmext=$ARGV[$i];
-	} else {
-	    die ("$help\n\nERROR! Missing extension after -hhmext option!\n");
-	}
+    } elsif ($ARGV[$i] eq "-hmm") {
+	$hhmext="hmm";
+	print("\nWARNING! HMMER format results in decreased performance over HHM format. We recommend to generate hhm files directly from multiple sequence alignments using hmake.\n");
     } elsif ($ARGV[$i] eq "-v") {
 	if (++$i<@ARGV) {
 	    $v=$ARGV[$i];
@@ -217,7 +208,7 @@ if (!$csdir)
 	foreach $dir (@dirs) {
 	    print("\nGenerating seq219 files in $tmpdir/ from a3m files in $dir/\n\n");
 	    $command = "$hhbin/cstranslate -i \$file -o $tmpdir/\$base.seq219 -D $context_lib -A $cs_lib -x $x -c $c 1>>$logfile 2>>$logfile";
-	    &System("$hhscripts/multithread.pl '".$dir."/*.".$a3mext."' '$command' -cpu $cpu");
+	    &System("$hhscripts/multithread.pl '".$dir."/*.a3m' '$command' -cpu $cpu");
 	    $numa3mfiles += scalar(glob("$dir/*.a3m"));
 	}
 	
@@ -290,7 +281,7 @@ if (!$hhmdir)
 	foreach $dir (@dirs) {
 	    print("\nGenerating hhm files in $tmpdir/ from a3m files in $dir/\n\n");
 	    $command = "hhmake -i \$file -o $tmpdir/\$base.hhm  1>/dev/null 2>>$logfile";
-	    &System("$hhscripts/multithread.pl '".$dir."/*.".$a3mext."' '$command' -cpu $cpu");	
+	    &System("$hhscripts/multithread.pl '".$dir."/*.a3m' '$command' -cpu $cpu");	
 	}
 	$hhmdir = $tmpdir;
 	$numhhmfiles = scalar(glob("$tmpdir/*.hhm"));
@@ -310,7 +301,7 @@ if ($a3mfile ne "") {
     $numa3mfiles = 0;
     my @dirs = glob($a3mdir);
     foreach $dir (@dirs) {
-	my @files = glob("$dir/*.$a3mext");
+	my @files = glob("$dir/*.a3m");
 	$numa3mfiles += scalar(@files);
 	foreach $file (@files) {
 	    print OUT "$file\n";
@@ -351,14 +342,14 @@ if ($hhmfile ne "") {
 }
 
 print("\n");
-printf("Number of $a3mext files:    %i\n",$numa3mfiles);
+printf("Number of a3m files:    %i\n",$numa3mfiles);
 printf("Number of $hhmext files:    %i\n",$numhhmfiles);
 printf("Number of $csext files: %i\n\n",$numcsfiles);
 
 my $err=0;
 if ($numa3mfiles && $numhhmfiles && $numa3mfiles != $numhhmfiles) {
     print("**************************************************************************
-WARNING: Number of $a3mext files not equal to number of $hhmext files
+WARNING: Number of a3m files not equal to number of $hhmext files
 **************************************************************************\n"); $err=1;
 }
 if ($numcsfiles && $numhhmfiles && $numcsfiles != $numhhmfiles) {
@@ -368,7 +359,7 @@ WARNING: Number of $csext files not equal to number of $hhmext files
 }
 if ($numcsfiles && $numa3mfiles && $numcsfiles != $numa3mfiles) {
     print("**************************************************************************
-WARNING: Number of $csext files not equal to number of $a3mext files
+WARNING: Number of $csext files not equal to number of a3m files
 **************************************************************************\n"); $err=1;
 }
 
@@ -387,5 +378,16 @@ exit;
 sub System()
 {
     if ($v>=2) {printf("\$ %s\n",$_[0]);} 
-    system($_[0]); # ==0 or print(STDERR "ERROR: command $_[0] failed with error code $?\n");
+    system($_[0]);
+    if ($? == -1) {
+	die("\nError: failed to execute '$_[0]': $!\n\n");
+	
+    }
+    elsif ($? & 127) {
+	printf "\nError when executing '$_[0]': child died with signal %d, %s coredump\n\n",
+	($? & 127), ($? & 128) ? 'with' : 'without';
+    }
+    else {
+	printf "\nError when executing '$_[0]': child exited with value %d\n\n", $? >> 8;
+    }    
 }

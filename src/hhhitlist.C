@@ -907,7 +907,7 @@ void HitList::GetPvalsFromCalibration(HMM& q)
 	  hit.logPval = logPvalue(hit.score,q.lamda,q.mu);
 	  hit.Pval    = Pvalue(hit.score,q.lamda,q.mu);
 	  if (par.calm>0 && warn++<1 && v>=1) 
-	    printf("Warning: some template HMM (e.g. %s) are not calibrated. Using query calibration.\n",hit.name);
+	    printf("WARNING: some template HMM (e.g. %s) are not calibrated. Using query calibration.\n",hit.name);
 	} 
       else if (par.calm==1) 
 	{

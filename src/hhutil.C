@@ -323,7 +323,7 @@ int OpenFileError(const char outfile[])
 
 int MemoryError(const char arrayname[])
 {
-  cerr<<"Error in "<<par.argv[0]<<": Memory overflow while creating \'"<<arrayname<<"\'. Please report this bug to developers\n";
+  cerr<<"Error in "<<par.argv[0]<<": Memory overflow while creating \'"<<arrayname<<"\'. Please report this bug to the developers\n";
   exit(3);
 }
 
@@ -341,8 +341,39 @@ int SyntaxError(const char details[]="")
 
 int InternalError(const char errstr[])
 {
-  cerr<<"Error in "<<par.argv[0]<<":  "<<errstr<<". Please report this bug to developers\n";
+  cerr<<"Error in "<<par.argv[0]<<":  "<<errstr<<". Please report this bug to the developers\n";
   exit(6);
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+//// Replace memalign by posix_memalign (Why? [JS]
+/////////////////////////////////////////////////////////////////////////////////////
+void *memalign(size_t boundary, size_t size)
+{
+  void *pointer;
+  if (posix_memalign(&pointer,boundary,size) != 0)
+    {
+      cerr<<"Error in "<<par.argv[0]<<": Could not allocate memory by memalign. Please report this bug to developers\n";
+      exit(3);
+    }
+  return pointer;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////
+//// Execute system command
+/////////////////////////////////////////////////////////////////////////////////////
+void runSystem(std::string cmd, int v = 2)
+{
+  if (v>2)
+    cout << "Command: " << cmd << "!\n";
+  int res = system(cmd.c_str());
+  if (res!=0) 
+    {
+      cerr << endl << "Error in "<<par.argv[0]<<": Could not execute '" << cmd << "\n";
+      exit(1);
+    }
+    
 }
 
 

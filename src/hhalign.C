@@ -701,7 +701,7 @@ void RealignByWorker(Hit& hit)
   if (hit.irep==1)
     {
       fprintf(stderr,"*************************************************\n");
-      fprintf(stderr,"\nError: could not find template %s in hit list \n\n",hit.name);
+      fprintf(stderr,"\nError in %s: could not find template %s in hit list \n\n",par.argv[0],hit.name);
       fprintf(stderr,"*************************************************\n");
     }
 
@@ -906,7 +906,7 @@ int main(int argc, char **argv)
 
     printf("\nAligned %s with %s: Score = %-7.2f \n",q.name,t.name,hit.score);
 
-    if (par.outfile && v>=1) fprintf(stderr,"\nWarning: no output file is written when -index option is used.\n");
+    if (par.outfile && v>=1) fprintf(stderr,"\nWARNING: no output file is written when -index option is used.\n");
     hit.DeleteIndices();
 
     exit(0);
@@ -955,7 +955,7 @@ int main(int argc, char **argv)
 	      float f;
 	      if (fscanf(strucf,"%f",&f) <=0 )
 	      {
-		fprintf(stderr,"Error: too few numbers in file %s while reading line %i, column %i\n",strucfile,i,j);
+		fprintf(stderr,"Error in %s: too few numbers in file %s while reading line %i, column %i\n",par.argv[0],strucfile,i,j);
 		exit(1);
 	      } 
 	      if (par.wstruc==1)
@@ -1080,7 +1080,7 @@ int main(int argc, char **argv)
 	hitlist.GetPvalsFromCalibration(q);
     }
   else 
-    printf("Warning: E-values and Probabilities can only be calculated when the default Viterbi algorithm is used (with or without -norealign option)\n");
+    printf("WARNING: E-values and Probabilities can only be calculated when the default Viterbi algorithm is used (with or without -norealign option)\n");
 
   // Do Stochastic backtracing?
   if (par.forward==1)

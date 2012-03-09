@@ -1,5 +1,7 @@
  * Clean up mess with ReadInput(), ReadInputFile(), ReadAndPrepare() in hhblits.C and hhfunc.C
 
+ * Add option -novlap: no overlap between database matches, chose best and optimize boundaries.
+
  * Change hhblits database format: package cs sequences with ffindex for parallel reading
    
  * Put all hhblits database files into a single one? 

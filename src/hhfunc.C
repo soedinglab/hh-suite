@@ -288,8 +288,8 @@ void ReadAndPrepare(char* infile, HMM& q, Alignment* qali=NULL)
         Alignment* pali;
         if (qali==NULL) pali=new(Alignment); else pali=qali;
         if (par.calibrate) {
-            printf("\nError in %s: only HHM files can be calibrated.\n",program_name);
-            printf("Build an HHM file from your alignment with 'hhmake -i %s' and rerun hhsearch with the hhm file\n\n",infile);
+	  fprintf(stderr,"\nError in %s: only HHM files can be calibrated.\n",program_name);
+	  fprintf(stderr,"Build an HHM file from your alignment with 'hhmake -i %s' and rerun hhsearch with the hhm file\n\n",infile);
             exit(1);
         }
 

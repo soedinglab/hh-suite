@@ -1007,34 +1007,3 @@ void QSortFloat(float v[], int k[], int left, int right, int up=+1)
 //Return random number in the range [0,1]
 inline float frand() { return rand()/(RAND_MAX+1.0); }
 
-
-/////////////////////////////////////////////////////////////////////////////////////
-//// Replace memalign by posix_memalign
-/////////////////////////////////////////////////////////////////////////////////////
-void *memalign(size_t boundary, size_t size)
-{
-  void *pointer;
-  if (posix_memalign(&pointer,boundary,size) != 0)
-    {
-      cerr<<"Error: Could not allocate memory by memalign. Please report this bug to developers\n";
-      exit(3);
-    }
-  return pointer;
-}
-
-/////////////////////////////////////////////////////////////////////////////////////
-//// Execute system command
-/////////////////////////////////////////////////////////////////////////////////////
-void runSystem(std::string cmd, int v = 2)
-{
-  if (v>2)
-    cout << "Command: " << cmd << "!\n";
-  int res = system(cmd.c_str());
-  if (res!=0) 
-    {
-      cerr << endl << "ERROR when executing: " << cmd << "!\n";
-      exit(1);
-    }
-    
-}
-

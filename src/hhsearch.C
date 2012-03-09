@@ -784,7 +784,7 @@ void perform_realign(char *dbfiles[], int ndb)
 	  
 	  ///////////////////////////////////////////////////
 	  // Read next HMM from database file
-	  if (!fgetline(line,LINELEN,dbf)) {fprintf(stderr,"Error: end of file %s reached prematurely!\n",hit_cur.dbfile); exit(1);}
+	  if (!fgetline(line,LINELEN,dbf)) {fprintf(stderr,"Error in %s: end of file %s reached prematurely!\n",par.argv[0],hit_cur.dbfile); exit(1);}
 	  while (strscn(line)==NULL && fgetline(line,LINELEN,dbf)) {} // skip lines that contain only white space
 
 	  if (!strncmp(line,"HMMER3",6))      // read HMMER3 format
@@ -832,7 +832,7 @@ void perform_realign(char *dbfiles[], int ndb)
 	  
 	  if (read_from_db!=1)
 	    {
-	      fprintf(stderr,"Error: illegal format in %s while reading HMM %s\n",hit_cur.dbfile,hit_cur.name);
+	      fprintf(stderr,"Error in %s: illegal format in %s while reading HMM %s\n",par.argv[0],hit_cur.dbfile,hit_cur.name);
 	      continue;
 	    }
 	  if (v>=2) fprintf(stderr,"Realigning with %s ***** \n",t[bin]->name);
@@ -975,7 +975,7 @@ void perform_realign(char *dbfiles[], int ndb)
 	      ///////////////////////////////////////////////////
 	      // Read next HMM from database file
 	      if (!fgetline(line,LINELEN,dbf)) 
-		{fprintf(stderr,"Error: end of file %s reached prematurely!\n",dbfiles[idb]); exit(1);}
+		{fprintf(stderr,"Error in %s: end of file %s reached prematurely!\n",par.argv[0],dbfiles[idb]); exit(1);}
 	      while (strscn(line)==NULL && fgetline(line,LINELEN,dbf)) {} // skip lines that contain only white space
 
 	      if (!strncmp(line,"HMMER3",6))      // read HMMER3 format
