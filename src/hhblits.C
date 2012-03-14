@@ -22,7 +22,7 @@
 //     Reference: 
 //     Remmert M., Biegert A., Hauser A., and Soding J.
 //     HHblits: Lightning-fast iterative protein sequence searching by HMM-HMM alignment.
-//     Nat. Methods, epub Dec 25, doi: 10.1038/NMETH.1818 (2011).
+//     Nat. Methods 9:173-175 (2011); epub Dec 25, doi: 10.1038/NMETH.1818 (2011).
 
 //////////////////////////////////////////////////////////////////////////////////////////
 //     This program contains, in file hhprefilter.C, code adapted from Michael Farrar
@@ -157,7 +157,7 @@ const char print_elapsed=0;    // debug output for runtimes
 char tmp_file[]="/tmp/hhblitsXXXXXX";  // for runtime secondary structure prediction (only with -addss option)
 
 // HHblits variables
-const char HHBLITS_REFERENCE[] = "Remmert M., Biegert A., Hauser A., and Soding J.\nHHblits: Lightning-fast iterative protein sequence searching by HMM-HMM alignment.\nNat. Methods, epub Dec 25, doi: 10.1038/NMETH.1818 (2011).\n";
+const char HHBLITS_REFERENCE[] = "Remmert M., Biegert A., Hauser A., and Soding J.\nHHblits: Lightning-fast iterative protein sequence searching by HMM-HMM alignment.\nNat. Methods 9:173-175 (2011)\n";
 
 int v1=v;                               // verbose mode
 int num_rounds   = 2;                   // number of iterations
@@ -2438,6 +2438,7 @@ int main(int argc, char **argv)
 	  previous_hits->Add(strtmp,hit_cur);
 	
 	// Old version by Michael => Delete
+	// hit_cur = hitlist.ReadNext();
 	// stringstream ss_tmp;
 	// ss_tmp << hit_cur.name << "__" << hit_cur.irep;
 	// if (!already_seen_filter || hit_cur.Eval > par.e || previous_hits->Contains((char*)ss_tmp.str().c_str()))

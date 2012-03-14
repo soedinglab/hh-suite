@@ -61,6 +61,10 @@ public:
   // HHblits: read PSI-BLAST E-values to determine correlation
   void ReadBlastFile(HMM& q);
 
+  // Generate new, very short hit list with only non-overlapping match alignments
+  void HitList::GetPvalsFromCalibration(Hitlist &novlap_hitlist);
+
+
   // Print first 20 hits of hitlist
   void Debug() 
     {

@@ -24,7 +24,8 @@
 //     Reference: 
 //     Remmert M., Biegert A., Hauser A., and Soding J.
 //     HHblits: Lightning-fast iterative protein sequence searching by HMM-HMM alignment.
-//     Nat. Methods, epub Dec 25, doi: 10.1038/NMETH.1818 (2011).
+//     Nat. Methods 9:173-175 (2011); epub Dec 25, doi: 10.1038/NMETH.1818
+
 
 ////#define WINDOWS
 #define PTHREAD
@@ -112,6 +113,7 @@ using std::ofstream;
 // Global variables
 ////////////////////////////////////////////////////////////////////////////////////
 
+const char HHSEARCH_REFERENCE[]="Soding, J. Protein homology detection by HMM-HMM comparison. Bioinformatics 21:951-960 (2005).\n";
 const int MAXTHREADS=256; // maximum number of threads (i.e. CPUs) for parallel computation
 const int MAXBINS=384;    // maximum number of bins (positions in thread queue)
 enum bin_states {FREE=0, SUBMITTED=1, RUNNING=2};
@@ -185,7 +187,7 @@ void help()
   printf("HHsearch %s\n",VERSION_AND_DATE);
   printf("Search a database of HMMs with a query alignment or query HMM\n");
   printf("%s",COPYRIGHT);
-  printf("%s",REFERENCE);
+  printf("%s",HHSEARCH_REFERENCE);
   printf("\n");
   printf("Usage: %s -i query -d database [options]                       \n",program_name);
   printf(" -i <file>     input query alignment (A2M, A3M, FASTA) or HMM\n");

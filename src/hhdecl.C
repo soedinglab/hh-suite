@@ -11,7 +11,7 @@
 /////////////////////////////////////////////////////////////////////////////////////
 
 EXTERN const char VERSION_AND_DATE[]="version 2.0.14 (March 2012)";
-EXTERN const char REFERENCE[]="Soding, J. Protein homology detection by HMM-HMM comparison. Bioinformatics 2005, 21, 951-960.\n";
+EXTERN const char REFERENCE[]="Remmert M, Biegert A, Hauser A, and Soding J.\nHHblits: Lightning-fast iterative protein sequence searching by HMM-HMM alignment.\nNat. Methods 9:173-175 (2011).\n";
 EXTERN const char COPYRIGHT[]="(C) Johannes Soeding, Michael Remmert, Andreas Biegert, Andreas Hauser\n";
 EXTERN const int MAXSEQ=65535; //max number of sequences in input alignment (must be <~30000 on cluster nodes)
 EXTERN const int LINELEN=524288; //max length of line read in from input files; must be >= MAXCOL

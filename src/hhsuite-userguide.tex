@@ -582,6 +582,15 @@ $ find $tmpdir -name '*.seq219' -exec cat '{}' + >> scop70_1.75_hhm
 
 \section{Frequently asked questions}
 
+\subsection{How do I report a bug?}
+If you find a bug, PLEASE tell us about it. But first, make sure the problem is not due to wrong usage or wrong file formats. This requires having read the relevant sections of the user guide. (Sorry!) Check for possible warnings. Rerun the command with verbose option \verb`-v 3` or \verb`-v 4` to see if you can find where things go awry. If the problem persists, we will need everything to reproduce the bug on our machines. Please send us (1) the input file, (2) the database name and version, or, if it is not a standard database, the link to your ftp server to download the database files, (3) the output files, (4) the command and its screen output, (5) the operating system and CPU on which the bug occurred. Under Linux, please send us the output of 
+\small
+\begin{verbatim}
+$ echo $HHLIB $PATH; uname -a; lsb_release -a; head -n 25 /proc/cpuinfo; ulimit -a; free
+\end{verbatim}
+\normalsize
+Thanks a lot!
+
 \subsection{What is HMM-HMM comparison and why is it so powerful?}
 When searching for remote homologs, it is wise to make use of as much information about the query and database proteins as possible in order to better distinguish true from false positives and to produce optimal alignments. This is the reason why sequence-sequence comparison is inferior to profile-sequence comparison. Sequence profiles contain for each column of a multiple alignment the frequencies of the 20 amino acids. They therefore contain detailed information about the conservation of each residue position, i.e. how important each position is for defining other members of the protein family, and about the preferred amino acids. Profile Hidden Markov Models (HMMs) are similar to simple sequence profiles, but in addition to the amino acid frequencies in the columns of a multiple sequence alignment they contain information about the frequency of inserts and deletions at each column. Using profile HMMs in place of simple sequence profiles should therefore further improve sensitivity. Using HMMs both on the query and the database side greatly enhances the sensitivity/selectivity and alignment quality over sequence-profile based methods such as PSI-BLAST. HHsearch is the first software to employ HMM-HMM comparison and HHblits is the first profile-profile comparison method that is fast enough to do iterative searches to build MSAs. 
 
@@ -821,7 +830,7 @@ values are used in the scoring, low confidences getting less statistical weight.
 
 \item{\verb`Cols`}: the number of aligned Match columns in the HMM-HMM alignment.
 
-\item{\verb`Query HMM`}: the range of aligned match states from query HMM.
+\item{\verb`Query HMM`}: the range of aligned match states from the query HMM.
 
 \item{\verb`Template HMM`}: the range of aligned match states from the database/template HMM and, 
 in parenthesis, the number of match states in the database HMM.

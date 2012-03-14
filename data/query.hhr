@@ -3,7 +3,7 @@ Match_columns 431
 No_of_seqs    59 out of 70
 Neff          4.3 
 Searched_HMMs 1618
-Date          Fri Mar  9 16:27:31 2012
+Date          Fri Mar  9 17:49:29 2012
 Command       hhblits -i /home/soeding/hh/data/query.seq -d /data/hhblits_dbs/uniprot20_02Sep11 -oa3m test.a3m -cpu 2 
 
  No Hit                             Prob E-value P-value  Score    SS Cols Query HMM  Template HMM

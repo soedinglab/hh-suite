@@ -777,7 +777,6 @@ void init_no_prefiltering()
 	  char db_name[NAMELEN];
 	  strwrd(tmp_name,line+1,NAMELEN);
 	  char* first = strchr(tmp_name,'|');
-	  
 	  if (first) // found '|' in sequence id?
 	    {
 	      char* second = strchr(++first,'|');
@@ -791,6 +790,10 @@ void init_no_prefiltering()
 	  strcat(db_name,db_ext);
 
 	  // Old version by Michael => Delete
+	  // // Add hit to dbfiles
+	  // char tmp_name[NAMELEN];
+	  // char db_name[NAMELEN];
+	  // strwrd(tmp_name,line+1,NAMELEN);
 	  // if (!strncmp(word,"cl|",3))   // kClust formatted database (NR20, ...)
 	  //   {
 	  //     substr(db_name,word,3,11);
@@ -1143,7 +1146,6 @@ void prefilter_db()
       char db_name[NAMELEN];
       strwrd(tmp_name,dbnames[(*it).second]);
       char* first = strchr(tmp_name,'|');
-      
       if (first) // found '|' in sequence id?
 	{
 	  char* second = strchr(++first,'|');
@@ -1157,6 +1159,10 @@ void prefilter_db()
       strcat(db_name,db_ext);
 
       // Old version by Michael => Delete
+      // // Add hit to dbfiles
+      // char tmp_name[NAMELEN];
+      // char db_name[NAMELEN];
+      // strwrd(tmp_name,line+1,NAMELEN);
       // if (!strncmp(tmp_name,"cl|",3))   // kClust formatted database (NR20, NR30, UNIPROT20)
       // 	{
       // 	  substr(db_name,tmp_name,3,11);
