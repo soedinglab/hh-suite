@@ -20,19 +20,19 @@ public:
   ~HitList() {if (blast_logPvals) delete blast_logPvals;}
 
   // Print summary listing of hits
-  void PrintHitList(HMM& q, char* outfile);
+  void PrintHitList(HMM* q, char* outfile);
 
   // Print alignments of query sequences against hit sequences 
-  void PrintAlignments(HMM& q, char* outfile, char outformat=0);
+  void PrintAlignments(HMM* q, char* outfile, char outformat=0);
 
   // Return a figure of merit for distinction of the score with positive from the scores with negatives
-  void Optimize(HMM& q, char* buffer);
+  void Optimize(HMM* q, char* buffer);
 
   // Print score distribution into file score_dist
-  void PrintScoreFile(HMM& q);
+  void PrintScoreFile(HMM* q);
   
   // Write alignments in tabular output
-  void WriteToAlifile(HMM& q, bool scop_only=false);
+  void WriteToAlifile(HMM* q, bool scop_only=false);
 
   // Log likelihood for fitting the EVD to the score distribution
   double LogLikelihoodEVD(double* v);
@@ -47,23 +47,19 @@ public:
   float FindMin(int ndim, double* p, double* y, double tol, int& nfunc, double (*Func)(void* pt2hitlist, double* v));
   
   // Do a maximum likelihood fit of the scores with an EV distribution with parameters lamda and mu 
-  void MaxLikelihoodEVD(HMM& q, int nbest);
+  void MaxLikelihoodEVD(HMM* q, int nbest);
   
   // Calculate HHblits composite E-values 
-  void CalculateHHblitsEvalues(HMM& q);
+  void CalculateHHblitsEvalues(HMM* q);
 
   // Calculate Pvalues as a function of query and template lengths and diversities
-  void CalculatePvalues(HMM& q);
+  void CalculatePvalues(HMM* q);
 
-  // Set P-values, E-values and scores according to q.lamda and q.mu (if calibration from database scan is impossible)  
-  void GetPvalsFromCalibration(HMM& q);
+  // Set P-values, E-values and scores according to q->lamda and q->mu (if calibration from database scan is impossible)  
+  void GetPvalsFromCalibration(HMM* q);
 
   // HHblits: read PSI-BLAST E-values to determine correlation
-  void ReadBlastFile(HMM& q);
-
-  // Generate new, very short hit list with only non-overlapping match alignments
-  void HitList::GetPvalsFromCalibration(Hitlist &novlap_hitlist);
-
+  void ReadBlastFile(HMM* q);
 
   // Print first 20 hits of hitlist
   void Debug() 

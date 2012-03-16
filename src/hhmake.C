@@ -85,8 +85,7 @@ using std::ofstream;
 /////////////////////////////////////////////////////////////////////////////////////
 // Global variables
 /////////////////////////////////////////////////////////////////////////////////////
-Alignment qali;              //Create an alignment
-HMM q;                       //Create a HMM with maximum of par.maxres match states
+HMM* q = new HMM;            //Create a HMM with maximum of par.maxres match states
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Help functions
@@ -194,8 +193,8 @@ void ProcessArguments(int argc,char** argv)
       else if (!strncmp(argv[i],"-cons",5)) par.cons=1;
       else if (!strncmp(argv[i],"-mark",5)) par.mark=1;
       else if (!strcmp(argv[i],"-name") && (i<argc-1)) {
-        strmcpy(q.name,argv[++i],NAMELEN); //copy longname to name...
-        strmcpy(q.longname,argv[i],DESCLEN);   //copy full name to longname
+        strmcpy(q->name,argv[++i],NAMELEN-1); //copy longname to name...
+        strmcpy(q->longname,argv[i],DESCLEN-1);   //copy full name to longname
       }
       else if (!strcmp(argv[i],"-id") && (i<argc-1))   par.max_seqid=atoi(argv[++i]);
       else if (!strcmp(argv[i],"-qid") && (i<argc-1))  par.qid=atoi(argv[++i]);
@@ -308,7 +307,7 @@ int main(int argc, char **argv)
   if (par.nseqdis>MAXSEQDIS-3) par.nseqdis=MAXSEQDIS-3; //3 reserve for secondary structure
 
   // Get basename
-  RemoveExtension(q.file,par.infile);  //Get basename of infile (w/o extension):
+  RemoveExtension(q->file,par.infile);  //Get basename of infile (w/o extension):
 
   // Outfile not given? Name it basename.hhm
   if (!*par.outfile)
@@ -332,10 +331,12 @@ int main(int argc, char **argv)
   SetSubstitutionMatrix();
 
   // Read input file (HMM, HHM, or alignment format), and add pseudocounts etc.
-  ReadAndPrepare(par.infile, q);
+  char input_format=0;
+  ReadQueryFile(par.infile,input_format,q); 
+  PrepareQueryHMM(par.infile,input_format,q);
 
   // Write HMM to output file in HHsearch format
-  q.WriteToFile(par.outfile);
+  q->WriteToFile(par.outfile);
 
   if (v>=3) WriteToScreen(par.outfile,1000); // (max 1000 lines)
 
@@ -358,6 +359,7 @@ int main(int argc, char **argv)
     delete context_lib;
     delete lib_pc;
   }
+  delete q;
 
   exit(0);
 } //end main

@@ -73,8 +73,7 @@ using std::ofstream;
 /////////////////////////////////////////////////////////////////////////////////////
 // Global variables 
 /////////////////////////////////////////////////////////////////////////////////////
-Alignment qali;              //Create an alignment 
-HMM q;                       //Create a HMM with maximum of par.maxres match states
+HMM* q = new HMM;        //Create a HMM with maximum of par.maxres match states
  
 /////////////////////////////////////////////////////////////////////////////////////
 // Help functions
@@ -174,8 +173,8 @@ void ProcessArguments(int argc,char** argv)
       else if (!strcmp(argv[i],"-v0")) v=0;
       else if (!strcmp(argv[i],"-seq") && (i<argc-1))  par.nseqdis=atoi(argv[++i]); 
       else if (!strcmp(argv[i],"-name") && (i<argc-1)) {
-	strmcpy(q.name,argv[++i],NAMELEN); //copy longname to name...
-	strmcpy(q.longname,argv[i],DESCLEN);   //copy full name to longname
+	strmcpy(q->name,argv[++i],NAMELEN-1); //copy longname to name...
+	strmcpy(q->longname,argv[i],DESCLEN-1);   //copy full name to longname
       }
       else if (!strcmp(argv[i],"-id") && (i<argc-1))   par.max_seqid=atoi(argv[++i]); 
       else if (!strcmp(argv[i],"-qid") && (i<argc-1))  par.qid=atoi(argv[++i]); 
@@ -231,6 +230,7 @@ int main(int argc, char **argv)
 {  
   char* argv_conf[MAXOPT];     // Input arguments from .hhdefaults file (first=1: argv_conf[0] is not used)
   int argc_conf;               // Number of arguments in argv_conf 
+  Alignment* qali=new(Alignment);
 
   strcpy(par.infile,"");
   strcpy(par.outfile,"");
@@ -278,7 +278,7 @@ int main(int argc, char **argv)
   if (!*par.infile) {help(); cerr<<endl<<"Error in "<<program_name<<": input file missing\n"; exit(4);}    
 
   // Get basename
-  RemoveExtension(q.file,par.infile);  //Get basename of infile (w/o extension):
+  RemoveExtension(q->file,par.infile);  //Get basename of infile (w/o extension):
 
   // Outfile not given? Name it basename.hhm
   if (!*par.outfile && !*par.alnfile)
@@ -301,8 +301,9 @@ int main(int argc, char **argv)
   SetSubstitutionMatrix();
 
   // Read input file (HMM, HHM, or alignment format), and add pseudocounts etc.
-  Alignment* qali=new(Alignment);
-  ReadAndPrepare(par.infile, q, qali);
+  char input_format=0;
+  ReadQueryFile(par.infile,input_format,q,qali); 
+  PrepareQueryHMM(par.infile,input_format,q,qali);
 
   // Write consensus sequence to sequence file
   // Consensus sequence is calculated in hhalignment.C, Alignment::FrequenciesAndTransitions()
@@ -318,10 +319,10 @@ int main(int argc, char **argv)
 	outf = stdout;
       // OLD
       //// ">name_consensus" -> ">name consensus"
-      //strsubst(q.sname[q.nfirst],"_consensus"," consensus");
-      //fprintf(outf,">%s\n%s\n",q.sname[q.nfirst],q.seq[q.nfirst]+1); 
+      //strsubst(q->sname[q->nfirst],"_consensus"," consensus");
+      //fprintf(outf,">%s\n%s\n",q->sname[q->nfirst],q->seq[q->nfirst]+1); 
       // NEW (long header needed for NR30cons database)
-      fprintf(outf,">%s\n%s\n",q.longname,q.seq[q.nfirst]+1);
+      fprintf(outf,">%s\n%s\n",q->longname,q->seq[q->nfirst]+1);
       fclose(outf);
     }
 
@@ -329,8 +330,8 @@ int main(int argc, char **argv)
   if (*par.alnfile) 
     {
       HalfAlignment qa;
-      int n = imin(q.n_display,par.nseqdis+(q.nss_dssp>=0)+(q.nss_pred>=0)+(q.nss_conf>=0)+(q.ncons>=0));
-      qa.Set(q.name,q.seq,q.sname,n,q.L,q.nss_dssp,q.nss_pred,q.nss_conf,q.nsa_dssp,q.ncons);
+      int n = imin(q->n_display,par.nseqdis+(q->nss_dssp>=0)+(q->nss_pred>=0)+(q->nss_conf>=0)+(q->ncons>=0));
+      qa.Set(q->name,q->seq,q->sname,n,q->L,q->nss_dssp,q->nss_pred,q->nss_conf,q->nsa_dssp,q->ncons);
 
       if      (par.outformat==1) qa.BuildFASTA();
       else if (par.outformat==2) qa.BuildA2M();
@@ -341,7 +342,8 @@ int main(int argc, char **argv)
 	qa.Print(par.alnfile);   // print alignment to outfile
     }
 
-  delete(qali);
+  delete qali;
+  delete q;
 
   // Print 'Done!'
   printf("Done!\n");

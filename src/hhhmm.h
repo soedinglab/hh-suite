@@ -39,7 +39,7 @@ public:
     float lamda, mu;          // coefficients for aa score distribution of HMM using parameters in 'Parameters par'
 
    // Make a flat copy of q
-    void FlatCopyTo(HMM& t);
+    void FlatCopyTo(HMM* t);
 
     // Read an HMM from a HHsearch .hhm file and return 0 at end of file
     int Read(FILE* dbf, char* path=NULL);
@@ -75,7 +75,7 @@ public:
     void DivideBySqrtOfLocalBackgroundFreqs(int D);
 
     // Factor Null model into HMM t
-    void IncludeNullModelInHMM(HMM& q, HMM& t, int columnscore=par.columnscore);
+    void IncludeNullModelInHMM(HMM* q, HMM* t, int columnscore=par.columnscore);
 
     // Write HMM to output file
     void WriteToFile(char* outfile);
@@ -96,7 +96,7 @@ public:
     void AddSSPrediction(char seq_pred[], char seq_conf[]);
 
     // Initialize f[i][a] with query HMM
-    void MergeQueryHMM(HMM& q, float wk[]);
+    void MergeQueryHMM(HMM* q, float wk[]);
 
     // Rescale rate matrices P[a][b], R[a][b] according to HMM av. aa composition in pav[a]
     void RescaleMatrix();

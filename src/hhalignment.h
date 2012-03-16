@@ -1,4 +1,4 @@
-// hhalignment.h
+// hhalignment.hHMM&
 
 class Alignment
 {
@@ -34,7 +34,7 @@ public:
   void Read(FILE* inf, char infile[NAMELEN], char* line=NULL);
 
   // Read sequences from HHM-file into X (uncompressed) in ASCII characters
-  void GetSeqsFromHMM(HMM& q);
+  void GetSeqsFromHMM(HMM* q);
   
   // Convert ASCII to numbers between 0 and 20, throw out all insert states, 
   // record their number in I[k][i] and store sequences to be displayed in sname[k] and seq[k]
@@ -49,16 +49,16 @@ public:
   float filter_by_qsc(float qsc, char* dummy);
 
   // Calculate AA frequencies q.p[i][a] and transition probabilities q.tr[i][a] from alignment
-  void FrequenciesAndTransitions(HMM& q, char* in=NULL, bool time=false);
+  void FrequenciesAndTransitions(HMM* q, char* in=NULL, bool time=false);
 
   // Calculate freqs q.f[i][a] and transitions q.tr[i][a] (a=MM,MI,MD) with pos-specific subalignments
-  void Amino_acid_frequencies_and_transitions_from_M_state(HMM& q, char* in);
+  void Amino_acid_frequencies_and_transitions_from_M_state(HMM* q, char* in);
 
   // Calculate transitions q.tr[i][a] (a=DM,DD) with pos-specific subalignments
-  void Transitions_from_D_state(HMM& q, char* in);
+  void Transitions_from_D_state(HMM* q, char* in);
 
   // Calculate transitions q.tr[i][a] (a=DM,DD) with pos-specific subalignments
-  void Transitions_from_I_state(HMM& q, char* in);
+  void Transitions_from_I_state(HMM* q, char* in);
   
   // Write alignment without insert states to alignment file
   void WriteWithoutInsertsToFile(const char* alnfile);
@@ -93,6 +93,6 @@ private:
   int* first;             // first residue in sequence k
   int* last;              // last  residue in sequence k
   int* ksort;             // index for sorting sequences: X[ksort[k]]
-  int FilterWithCoreHMM(char in[], float coresc, HMM& qcore);
+  int FilterWithCoreHMM(char in[], float coresc, HMM* qcore);
   
 };

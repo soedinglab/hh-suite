@@ -1,4 +1,4 @@
-// hhhitlist.C
+// hhhitlist.hit.C
 
 #ifndef MAIN
 #define MAIN
@@ -42,7 +42,7 @@ using std::endl;
 /////////////////////////////////////////////////////////////////////////////////////
 // Print summary listing of hits
 /////////////////////////////////////////////////////////////////////////////////////
-void HitList::PrintHitList(HMM& q, char* outfile)
+void HitList::PrintHitList(HMM* q, char* outfile)
 {
   Hit hit;
   int nhits=0;
@@ -57,11 +57,11 @@ void HitList::PrintHitList(HMM& q, char* outfile)
     outf = stdout;
 
 
-  fprintf(outf,"Query         %s\n",q.longname); 
-//  fprintf(outf,"Family        %s\n",q.fam); 
-  fprintf(outf,"Match_columns %i\n",q.L);
-  fprintf(outf,"No_of_seqs    %i out of %i\n",q.N_filtered,q.N_in);
-  fprintf(outf,"Neff          %-4.1f\n",q.Neff_HMM);
+  fprintf(outf,"Query         %s\n",q->longname); 
+//  fprintf(outf,"Family        %s\n",q->fam); 
+  fprintf(outf,"Match_columns %i\n",q->L);
+  fprintf(outf,"No_of_seqs    %i out of %i\n",q->N_filtered,q->N_in);
+  fprintf(outf,"Neff          %-4.1f\n",q->Neff_HMM);
   fprintf(outf,"Searched_HMMs %i\n",N_searched);
   
   // Print date stamp
@@ -130,7 +130,7 @@ void HitList::PrintHitList(HMM& q, char* outfile)
 /////////////////////////////////////////////////////////////////////////////////////
 // Print alignments of query sequences against hit sequences 
 /////////////////////////////////////////////////////////////////////////////////////
-void HitList::PrintAlignments(HMM& q, char* outfile, char outformat)
+void HitList::PrintAlignments(HMM* q, char* outfile, char outformat)
 {
   Hit hit;
   FullAlignment qt_ali(par.nseqdis+10); // maximum 10 annotation (pseudo) sequences (ss_dssp, sa_dssp, ss_pred, ss_conf, consens,...)
@@ -197,7 +197,7 @@ void HitList::PrintAlignments(HMM& q, char* outfile, char outformat)
 /////////////////////////////////////////////////////////////////////////////////////
 // Return the ROC_5 score for optimization (changed 28.3.08 by Michael & Johannes)
 /////////////////////////////////////////////////////////////////////////////////////
-void HitList::Optimize(HMM& q, char* buffer)
+void HitList::Optimize(HMM* q, char* buffer)
 {
   const int NFAM =5;   // calculate ROC_5 score 
   const int NSFAM=5;   // calculate ROC_5 score 
@@ -213,19 +213,19 @@ void HitList::Optimize(HMM& q, char* buffer)
   while (!End()) 
     {
       hit = ReadNext();
-      if (!strcmp(hit.fam,q.fam)) fam++;       // query and template from same superfamily? => positive
+      if (!strcmp(hit.fam,q->fam)) fam++;       // query and template from same superfamily? => positive
       else if (not_fam<NFAM) // query and template from different family? => negative
 	{
 	  not_fam++;
 	  roc += fam;
 	}
-      if (!strcmp(hit.sfam,q.sfam)) sfam++;       // query and template from same superfamily? => positive
+      if (!strcmp(hit.sfam,q->sfam)) sfam++;       // query and template from same superfamily? => positive
       else if (not_sfam<NSFAM) // query and template from different superfamily?   => negative
 	{
 	  not_sfam++;
 	  roc += sfam;
 	}
-//       printf("qfam=%s tfam=%s qsfam=%s tsfam=%s  fam=%-2i  not_fam=%3i  sfam=%-3i  not_sfam=%-5i  roc=%-3i\n",q.fam,hit.fam,q.sfam,hit.sfam,fam,not_fam,sfam,not_sfam,roc);
+//       printf("qfam=%s tfam=%s qsfam=%s tsfam=%s  fam=%-2i  not_fam=%3i  sfam=%-3i  not_sfam=%-5i  roc=%-3i\n",q->fam,hit.fam,q->sfam,hit.sfam,fam,not_fam,sfam,not_sfam,roc);
     }
 
   // Write ROC score to file or stdout
@@ -248,7 +248,7 @@ void HitList::Optimize(HMM& q, char* buffer)
 /////////////////////////////////////////////////////////////////////////////////////
 // Print score distribution into file score_dist
 /////////////////////////////////////////////////////////////////////////////////////
-void HitList::PrintScoreFile(HMM& q)
+void HitList::PrintScoreFile(HMM* q)
 {
   int i=0, n;
   FILE* scoref=NULL;
@@ -265,10 +265,10 @@ void HitList::PrintScoreFile(HMM& q)
   else
     scoref = stdout;
   Reset();
-  fprintf(scoref,"NAME  %s\n",q.longname);
-  fprintf(scoref,"FAM   %s\n",q.fam);
-  fprintf(scoref,"FILE  %s\n",q.file);
-  fprintf(scoref,"LENG  %i\n",q.L);
+  fprintf(scoref,"NAME  %s\n",q->longname);
+  fprintf(scoref,"FAM   %s\n",q->fam);
+  fprintf(scoref,"FILE  %s\n",q->file);
+  fprintf(scoref,"LENG  %i\n",q->L);
   fprintf(scoref,"\n");
 //fprintf(scoref,"TARGET      REL LEN COL LOG-PVA   S-TOT     MS NALI\n");
 
@@ -284,18 +284,18 @@ void HitList::PrintScoreFile(HMM& q)
       if (twice[hit.name]==1) continue; // better hit with same HMM has been listed already
       twice.Add(hit.name,1);
      //if template and query are from the same superfamily
-      if (!strcmp(hit.name,q.name)) n=5;
-      else if (!strcmp(hit.fam,q.fam)) n=4;
-      else if (!strcmp(hit.sfam,q.sfam)) n=3;
-      else if (!strcmp(hit.fold,q.fold)) n=2;
-      else if (!strcmp(hit.cl,q.cl)) n=1;
+      if (!strcmp(hit.name,q->name)) n=5;
+      else if (!strcmp(hit.fam,q->fam)) n=4;
+      else if (!strcmp(hit.sfam,q->sfam)) n=3;
+      else if (!strcmp(hit.fold,q->fold)) n=2;
+      else if (!strcmp(hit.cl,q->cl)) n=1;
       else n=0;
       fprintf(scoref,"%-20s %-10s %1i %5i %3i %8.3f %7.2f %6.2f %7.2f %8.3f\n",hit.name,hit.fam,n,hit.L,hit.matched_cols,-1.443*hit.logPval,-hit.score_aass,hit.Probab,hit.score,-1.443*hit.logEval);
     }      
   fclose(scoref);
 }
 
-void HitList::WriteToAlifile(HMM& q, bool scop_only)
+void HitList::WriteToAlifile(HMM* q, bool scop_only)
 {
   Hit hit;
   int i=0, n;
@@ -305,10 +305,10 @@ void HitList::WriteToAlifile(HMM& q, bool scop_only)
   if (strcmp(par.alitabfile,"stdout")) alitabf = fopen(par.alitabfile, "w"); else alitabf = stdout;
   if (!alitabf) OpenFileError(par.alitabfile);
 
-  fprintf(alitabf,"NAME  %s\n",q.longname);
-  fprintf(alitabf,"FAM   %s\n",q.fam);
-  fprintf(alitabf,"FILE  %s\n",q.file);
-  fprintf(alitabf,"LENG  %i\n",q.L);
+  fprintf(alitabf,"NAME  %s\n",q->longname);
+  fprintf(alitabf,"FAM   %s\n",q->fam);
+  fprintf(alitabf,"FILE  %s\n",q->file);
+  fprintf(alitabf,"LENG  %i\n",q->L);
   fprintf(alitabf,"\n");
 
   Reset();
@@ -320,11 +320,11 @@ void HitList::WriteToAlifile(HMM& q, bool scop_only)
       if (twice[hit.name]==1) continue; // better hit with same HMM has been listed already
       twice.Add(hit.name,1);
       //if template and query are from the same superfamily
-      if (!strcmp(hit.name,q.name)) n=5;
-      else if (!strcmp(hit.fam,q.fam)) n=4;
-      else if (!strcmp(hit.sfam,q.sfam)) n=3;
-      else if (!strcmp(hit.fold,q.fold)) n=2;
-      else if (!strcmp(hit.cl,q.cl)) n=1;
+      if (!strcmp(hit.name,q->name)) n=5;
+      else if (!strcmp(hit.fam,q->fam)) n=4;
+      else if (!strcmp(hit.sfam,q->sfam)) n=3;
+      else if (!strcmp(hit.fold,q->fold)) n=2;
+      else if (!strcmp(hit.cl,q->cl)) n=1;
       else n=0;
 
       if (hit.P_posterior != NULL) {
@@ -509,7 +509,7 @@ float HitList::FindMin(const int ndim, double* p, double* y, double tol, int& nf
 /////////////////////////////////////////////////////////////////////////////////////
 //// Do a maximum likelihod fit of the scores with an EV distribution with parameters lamda and mu 
 /////////////////////////////////////////////////////////////////////////////////////
-void HitList::MaxLikelihoodEVD(HMM& q, int nbest)
+void HitList::MaxLikelihoodEVD(HMM* q, int nbest)
 {  
   double tol=1E-6;                 // Maximum relative tolerance when minimizing -log(P)/N (~likelihood)
   static char first_call=1;
@@ -549,10 +549,10 @@ void HitList::MaxLikelihoodEVD(HMM& q, int nbest)
     }
 
   // Query has SCOP family identifier?
-  if (q.fam && q.fam[0]>='a' && q.fam[0]<='k' && q.fam[1]=='.')
+  if (q->fam && q->fam[0]>='a' && q->fam[0]<='k' && q->fam[1]=='.')
     { 
       char sfamid[NAMELEN];
-      char* ptr_in_fam=q.fam;
+      char* ptr_in_fam=q->fam;
       while ((ptr_in_fam=strwrd(sfamid,ptr_in_fam,'-')))
 	{
 	  char* ptr=strrchr(sfamid,'.');
@@ -646,7 +646,7 @@ void HitList::MaxLikelihoodEVD(HMM& q, int nbest)
       Func = HitList::LogLikelihoodEVD_static;
 
       if (nbest>0) {vertex[0]=LAMDA;   vertex[1]=mu;}  /////////////////////////////////////////// DEBUG
-      else         {vertex[0]=q.lamda; vertex[1]=mu;}
+      else         {vertex[0]=q->lamda; vertex[1]=mu;}
       vertex[2]=vertex[0]+0.1; vertex[3]=vertex[1]; 
       vertex[4]=vertex[0];     vertex[5]=vertex[1]+0.2; 
       yvertex[0]=Func(this,vertex  );
@@ -665,8 +665,8 @@ void HitList::MaxLikelihoodEVD(HMM& q, int nbest)
     }
   
   // Set lamda and mu of profile
-  q.lamda = vertex[0]; 
-  q.mu = vertex[1];
+  q->lamda = vertex[0]; 
+  q->mu = vertex[1];
 
   // Set P-values and E-values
   // CHECK UPDATE FROM score=-logpval to score=-logpval+SSSCORE2NATLOG*score_ss !!!!
@@ -681,7 +681,7 @@ void HitList::MaxLikelihoodEVD(HMM& q, int nbest)
       hit.Eval=exp(hit.logPval+log(N_searched));
       hit.logEval = hit.logPval+log(N_searched);
 //    hit.score_aass = hit.logPval/0.45-3.0 - hit.score_ss;  // median(lamda)~0.45, median(mu)~4.0 in EVDs for scop20.1.63 HMMs
-      hit.score_aass = -q.lamda*(hit.score-q.mu)/0.45-3.0 - fmin(hit.score_ss,fmax(0.0,0.5*hit.score-5.0)); // median(lamda)~0.45, median(mu)~3.0 in EVDs for scop20.1.63 HMMs
+      hit.score_aass = -q->lamda*(hit.score-q->mu)/0.45-3.0 - fmin(hit.score_ss,fmax(0.0,0.5*hit.score-5.0)); // median(lamda)~0.45, median(mu)~3.0 in EVDs for scop20.1.63 HMMs
       hit.Probab = Probab(hit);
       hit.score_sort = hit.score_aass;
       Overwrite(hit);                     // copy hit object into current position of hitlist
@@ -797,7 +797,7 @@ inline float beta_NN(float Lqnorm, float Ltnorm, float Nqnorm, float Ntnorm)
 /////////////////////////////////////////////////////////////////////////////////////
 //// Calculate HHblits composite E-values 
 /////////////////////////////////////////////////////////////////////////////////////
-void HitList::CalculateHHblitsEvalues(HMM& q)
+void HitList::CalculateHHblitsEvalues(HMM* q)
 {
   Hit hit; 
   // OLD!!!
@@ -818,13 +818,13 @@ void HitList::CalculateHHblitsEvalues(HMM& q)
       // if (nhits++<50) 
       // 	printf("before correction  Eval: %7.4g    logEval: %7.4f\n",hit.Eval, hit.logEval);
 
-      alpha = par.alphaa + par.alphab * (hit.Neff_HMM - 1) * (1 - par.alphac * (q.Neff_HMM - 1));
+      alpha = par.alphaa + par.alphab * (hit.Neff_HMM - 1) * (1 - par.alphac * (q->Neff_HMM - 1));
       
       hit.Eval = exp(hit.logPval + log_dbsize + (alpha * log_Pcut)); 
       hit.logEval = hit.logPval + log_dbsize + (alpha * log_Pcut); 
 
       // if (nhits++<50) 
-      // 	printf("                   Eval: %7.4g    logEval: %7.4f   alpha: %7.4f   Neff_T: %5.2f  Neff_Q: %5.2f\n",hit.Eval, hit.logEval, alpha, hit.Neff_HMM, q.Neff_HMM);
+      // 	printf("                   Eval: %7.4g    logEval: %7.4f   alpha: %7.4f   Neff_T: %5.2f  Neff_Q: %5.2f\n",hit.Eval, hit.logEval, alpha, hit.Neff_HMM, q->Neff_HMM);
 
       Overwrite(hit);   // copy hit object into current position of hitlist
     }
@@ -836,7 +836,7 @@ void HitList::CalculateHHblitsEvalues(HMM& q)
 /////////////////////////////////////////////////////////////////////////////////////
 //// Calculate Pvalues as a function of query and template lengths and diversities
 /////////////////////////////////////////////////////////////////////////////////////
-void HitList::CalculatePvalues(HMM& q)
+void HitList::CalculatePvalues(HMM* q)
 {  
   Hit hit; 
   float lamda=LAMDA_GLOB, mu=3.0;   // init for global search 
@@ -852,10 +852,10 @@ void HitList::CalculatePvalues(HMM& q)
 
       if (par.loc)
 	{
-	  lamda = lamda_NN( log(q.L)/log1000, log(hit.L)/log1000, q.Neff_HMM/10.0, hit.Neff_HMM/10.0 ); 
-	  mu    =    mu_NN( log(q.L)/log1000, log(hit.L)/log1000, q.Neff_HMM/10.0, hit.Neff_HMM/10.0 ); 
+	  lamda = lamda_NN( log(q->L)/log1000, log(hit.L)/log1000, q->Neff_HMM/10.0, hit.Neff_HMM/10.0 ); 
+	  mu    =    mu_NN( log(q->L)/log1000, log(hit.L)/log1000, q->Neff_HMM/10.0, hit.Neff_HMM/10.0 ); 
 // 	  if (v>=3 && nhits++<20) 
-// 	     printf("hit=%-10.10s Lq=%-4i  Lt=%-4i  Nq=%5.2f  Nt=%5.2f  =>  lamda=%-6.3f  mu=%-6.3f\n",hit.name,q.L,hit.L,q.Neff_HMM,hit.Neff_HMM,lamda,mu);
+// 	     printf("hit=%-10.10s Lq=%-4i  Lt=%-4i  Nq=%5.2f  Nt=%5.2f  =>  lamda=%-6.3f  mu=%-6.3f\n",hit.name,q->L,hit.L,q->Neff_HMM,hit.Neff_HMM,lamda,mu);
 	}
       hit.logPval = logPvalue(hit.score,lamda,mu);
       hit.Pval    = Pvalue(hit.score,lamda,mu);
@@ -876,7 +876,7 @@ void HitList::CalculatePvalues(HMM& q)
 /////////////////////////////////////////////////////////////////////////////////////
 //// Calculate Pvalues from calibration of  0: query HMM, 1:template HMMs, 2: both
 /////////////////////////////////////////////////////////////////////////////////////
-void HitList::GetPvalsFromCalibration(HMM& q)
+void HitList::GetPvalsFromCalibration(HMM* q)
 {  
   Hit hit; 
   char warn=0;
@@ -886,7 +886,7 @@ void HitList::GetPvalsFromCalibration(HMM& q)
       switch (par.calm) 
 	{
 	case 0: 
-	  printf("Using lamda=%-5.3f and mu=%-5.2f from calibrated query HMM %s. \n",q.lamda,q.mu,q.name);
+	  printf("Using lamda=%-5.3f and mu=%-5.2f from calibrated query HMM %s. \n",q->lamda,q->mu,q->name);
 	  printf("Note that HMMs need to be recalibrated when changing HMM-HMM alignment options.\n");
 	  break;
 	case 1:
@@ -904,8 +904,8 @@ void HitList::GetPvalsFromCalibration(HMM& q)
       hit = ReadNext();
       if (par.calm==0 || (hit.logPvalt==0) )
 	{
-	  hit.logPval = logPvalue(hit.score,q.lamda,q.mu);
-	  hit.Pval    = Pvalue(hit.score,q.lamda,q.mu);
+	  hit.logPval = logPvalue(hit.score,q->lamda,q->mu);
+	  hit.Pval    = Pvalue(hit.score,q->lamda,q->mu);
 	  if (par.calm>0 && warn++<1 && v>=1) 
 	    printf("WARNING: some template HMM (e.g. %s) are not calibrated. Using query calibration.\n",hit.name);
 	} 
@@ -916,9 +916,9 @@ void HitList::GetPvalsFromCalibration(HMM& q)
 	}
       else if (par.calm==2) 
 	{
-	  hit.logPval = 0.5*( logPvalue(hit.score,q.lamda,q.mu) + hit.logPvalt);
-	  hit.Pval    = sqrt( Pvalue(hit.score,q.lamda,q.mu) * hit.Pvalt);
-	  if (v>=5) printf("Score: %7.1f  lamda: %7.1f  mu: %7.1f  P-values:  query-calibrated: %8.2G   template-calibrated: %8.2G   geometric mean: %8.2G\n",hit.score,q.lamda,q.mu,Pvalue(hit.score,q.lamda,q.mu),hit.Pvalt,hit.Pval);
+	  hit.logPval = 0.5*( logPvalue(hit.score,q->lamda,q->mu) + hit.logPvalt);
+	  hit.Pval    = sqrt( Pvalue(hit.score,q->lamda,q->mu) * hit.Pvalt);
+	  if (v>=5) printf("Score: %7.1f  lamda: %7.1f  mu: %7.1f  P-values:  query-calibrated: %8.2G   template-calibrated: %8.2G   geometric mean: %8.2G\n",hit.score,q->lamda,q->mu,Pvalue(hit.score,q->lamda,q->mu),hit.Pvalt,hit.Pval);
 	}
 
       hit.Eval=exp(hit.logPval+log(N_searched));
@@ -939,8 +939,8 @@ void HitList::GetPvalsFromCalibration(HMM& q)
 /////////////////////////////////////////////////////////////////////////////////////
 //// Generate new, very short hit list with only non-overlapping match alignments
 /////////////////////////////////////////////////////////////////////////////////////
-void HitList::GetPvalsFromCalibration(Hitlist &novlap_hitlist)
-{
+// void HitList::GetPvalsFromCalibration(Hitlist &novlap_hitlist)
+// {
 
 
 
@@ -948,4 +948,4 @@ void HitList::GetPvalsFromCalibration(Hitlist &novlap_hitlist)
 
 
 
-}
+// }

@@ -143,7 +143,7 @@ void FullAlignment::AddGaps()
 /////////////////////////////////////////////////////////////////////////////////////
 // Build full alignment -> qa->s[k][h] and ta->s[k][h]
 /////////////////////////////////////////////////////////////////////////////////////
-void FullAlignment::Build(HMM& q, Hit& hit)
+void FullAlignment::Build(HMM* q, Hit& hit)
 {
   int step;
   char prev_state=MM, state=MM;  
@@ -157,8 +157,8 @@ void FullAlignment::Build(HMM& q, Hit& hit)
   
   // Set up half-alignments 
   // n is the sequence index up to which sequences are prepared for display
-  n = imin(  q.n_display,par.nseqdis+(  q.nss_dssp>=0)+(  q.nsa_dssp>=0)+(  q.nss_pred>=0)+(  q.nss_conf>=0)+(  q.ncons>=0));
-  qa->Set(  q.name,  q.seq,  q.sname, n,  q.L,  q.nss_dssp , q.nss_pred , q.nss_conf,  q.nsa_dssp, q.ncons);
+  n = imin(  q->n_display,par.nseqdis+(  q->nss_dssp>=0)+(  q->nsa_dssp>=0)+(  q->nss_pred>=0)+(  q->nss_conf>=0)+(  q->ncons>=0));
+  qa->Set(  q->name,  q->seq,  q->sname, n,  q->L,  q->nss_dssp , q->nss_pred , q->nss_conf,  q->nsa_dssp, q->ncons);
   n = imin(hit.n_display,par.nseqdis+(hit.nss_dssp>=0)+(hit.nsa_dssp>=0)+(hit.nss_pred>=0)+(hit.nss_conf>=0)+(hit.ncons>=0));
   ta->Set(hit.name,hit.seq,hit.sname, n,hit.L,hit.nss_dssp,hit.nss_pred,hit.nss_conf,hit.nsa_dssp, hit.ncons);
 
@@ -176,7 +176,7 @@ void FullAlignment::Build(HMM& q, Hit& hit)
       AddColumns(hit.i[step],hit.j[step],prev_state,state,hit.S[step],0.0);
     if (state==MM) 
       {
-	char qc=qa->seq[  q.nfirst][ qa->m[  q.nfirst][hit.i[step]] ];
+	char qc=qa->seq[  q->nfirst][ qa->m[  q->nfirst][hit.i[step]] ];
 	char tc=ta->seq[hit.nfirst][ ta->m[hit.nfirst][hit.j[step]] ];
 	if (qc==tc && qc!='-') identities++;  // count identical amino acids
 	score_sim += S[(int)aa2i(qc)][(int)aa2i(tc)];
@@ -214,7 +214,7 @@ void FullAlignment::Build(HMM& q, Hit& hit)
 /////////////////////////////////////////////////////////////////////////////////////
 // Print out header before full alignment 
 /////////////////////////////////////////////////////////////////////////////////////
-void FullAlignment::PrintHeader(FILE* outf, HMM& q, Hit& hit)
+void FullAlignment::PrintHeader(FILE* outf, HMM* q, Hit& hit)
 {
   fprintf(outf,">%s\n",hit.longname); 
   fprintf(outf,"Probab=%-.2f  E-value=%-.2g  Score=%-.2f  Aligned_cols=%i  Identities=%i%%  Similarity=%-.3f  Sum_probs=%.1f\n\n",
@@ -249,7 +249,7 @@ void FullAlignment::PrintHHR(FILE* outf, Hit& hit)
 	  if (k==qa->nss_dssp && !par.showdssp) continue;
 	  if ((k==qa->nss_pred || k==qa->nss_conf) && !par.showpred) continue;
 	  if (k==qa->nss_conf && !par.showconf) continue;
-	  strmcpy(namestr,qa->sname[k],NAMELEN);
+	  strmcpy(namestr,qa->sname[k],NAMELEN-1);
 	  strcut(namestr);
 	  fprintf(outf,"Q %-*.*s      ",NLEN,NLEN,namestr);
 	  if (k==qa->nss_pred && qa->nss_conf>=0)
@@ -263,7 +263,7 @@ void FullAlignment::PrintHHR(FILE* outf, Hit& hit)
       for (k=0; k<qa->n; k++)
 	{
  	  if (k==qa->nss_dssp || k==qa->nsa_dssp || k==qa->nss_pred || k==qa->nss_conf || k==qa->ncons) continue;
-	  strmcpy(namestr,qa->sname[k],NAMELEN);
+	  strmcpy(namestr,qa->sname[k],NAMELEN-1);
 	  strcut(namestr);
 	  fprintf(outf,"Q %-*.*s %4i ",NLEN,NLEN,namestr,lq[k]);
 	  for (h=hh; h<imin(hh+par.aliwidth,qa->pos-1); h++) 
@@ -275,7 +275,7 @@ void FullAlignment::PrintHHR(FILE* outf, Hit& hit)
       if (par.showcons && qa->ncons>=0)
 	{
 	  k=qa->ncons; 
-	  strmcpy(namestr,qa->sname[k],NAMELEN);
+	  strmcpy(namestr,qa->sname[k],NAMELEN-1);
 	  strcut(namestr);
 	  fprintf(outf,"Q %-*.*s %4i ",NLEN,NLEN,namestr,iq);
 	  for (h=hh; h<imin(hh+par.aliwidth,qa->pos-1); h++) 
@@ -297,7 +297,7 @@ void FullAlignment::PrintHHR(FILE* outf, Hit& hit)
       if (par.showcons && ta->ncons>=0)
 	{
 	  k=ta->ncons; 
-	  strmcpy(namestr,ta->sname[k],NAMELEN);
+	  strmcpy(namestr,ta->sname[k],NAMELEN-1);
 	  strcut(namestr);
 	  fprintf(outf,"T %-*.*s %4i ",NLEN,NLEN,namestr,jt);
 	  for (h=hh; h<imin(hh+par.aliwidth,ta->pos-1); h++) 
@@ -312,7 +312,7 @@ void FullAlignment::PrintHHR(FILE* outf, Hit& hit)
       for (k=0; k<ta->n; k++)
 	{
 	  if (k==ta->nss_dssp || k==ta->nsa_dssp || k==ta->nss_pred || k==ta->nss_conf || k==ta->ncons) continue;
-	  strmcpy(namestr,ta->sname[k],NAMELEN);
+	  strmcpy(namestr,ta->sname[k],NAMELEN-1);
 	  strcut(namestr);
 	  fprintf(outf,"T %-*.*s %4i ",NLEN,NLEN,namestr,lt[k]);
 	  for (h=hh; h<imin(hh+par.aliwidth,ta->pos-1); h++) 
@@ -328,7 +328,7 @@ void FullAlignment::PrintHHR(FILE* outf, Hit& hit)
 	  if (k==ta->nss_dssp && !par.showdssp) continue;
 	  if ((k==ta->nss_pred || k==ta->nss_conf)&& !par.showpred) continue;
 	  if (k==ta->nss_conf && !par.showconf) continue;
-	  strmcpy(namestr,ta->sname[k],NAMELEN);
+	  strmcpy(namestr,ta->sname[k],NAMELEN-1);
 	  strcut(namestr);
 	  fprintf(outf,"T %-*.*s      ",NLEN,NLEN,namestr);
 	  if (k==ta->nss_pred && ta->nss_conf>=0)

@@ -108,8 +108,8 @@ using std::ofstream;
 /////////////////////////////////////////////////////////////////////////////////////
 // Global variables 
 /////////////////////////////////////////////////////////////////////////////////////
-HMM q;                       // Create query  HMM with maximum of MAXRES match states
-HMM t;                       // Create template HMM with maximum of MAXRES match states 
+HMM* q = new HMM;            //Create a HMM with maximum of par.maxres match states
+HMM* t;                      // Create template HMM with maximum of MAXRES match states 
 Alignment qali;              // (query alignment might be needed outside of hhfunc.C for -a option)
 Hit hit;                     // Ceate new hit object pointed at by hit
 HitList hitlist;             // list of hits with one Hit object for each pairwise comparison done
@@ -456,7 +456,7 @@ void ProcessArguments(int argc, char** argv)
 	{
 	  if (++i>=argc || argv[i][0]=='-') 
 	    {help(); cerr<<endl<<"Error in "<<program_name<<": no query file following -atab\n"; exit(4);}
-	  else strmcpy(par.alitabfile,argv[i],NAMELEN);
+	  else strmcpy(par.alitabfile,argv[i],NAMELEN-1);
 	}
       else if (!strcmp(argv[i],"-index"))
 	{
@@ -624,14 +624,14 @@ void RealignByWorker(Hit& hit)
   hit.irep=1;
 
   // Prepare MAC comparison(s)
-  q.Log2LinTransitionProbs(1.0);
-  t.Log2LinTransitionProbs(1.0);
+  q->Log2LinTransitionProbs(1.0);
+  t->Log2LinTransitionProbs(1.0);
 
   // Allocate space
   if (par.forward==0)
-    hit.AllocateForwardMatrix(q.L+2,t.L+2);
+    hit.AllocateForwardMatrix(q->L+2,t->L+2);
   if (par.forward<=1)
-    hit.AllocateBackwardMatrix(q.L+2,t.L+2);
+    hit.AllocateBackwardMatrix(q->L+2,t->L+2);
   
   // Search positions in hitlist with correct index of template
   hitlist.Reset();
@@ -649,7 +649,7 @@ void RealignByWorker(Hit& hit)
       hit.j = hit_cur.j;
       hit.realign_around_viterbi=true;
 
-      //fprintf(stderr,"  t->name=%s   hit_cur.irep=%i  hit.irep=%i  nhits=%i\n",t.name,hit_cur.irep,hit.irep,nhits);
+      //fprintf(stderr,"  t->name=%s   hit_cur.irep=%i  hit.irep=%i  nhits=%i\n",t->name,hit_cur.irep,hit.irep,nhits);
       // Align q to template in *hit[bin]
       hit.Forward(q,t);
       hit.Backward(q,t);
@@ -780,8 +780,8 @@ int main(int argc, char **argv)
     }
 
   // Get rootname (no directory path, no extension) and extension of infile
-  RemoveExtension(q.file,par.infile);
-  RemoveExtension(t.file,par.tfile);
+  RemoveExtension(q->file,par.infile);
+  RemoveExtension(t->file,par.tfile);
   Extension(inext,par.infile); 
   Extension(text,par.tfile); 
 
@@ -820,10 +820,12 @@ int main(int argc, char **argv)
   SetSecStrucSubstitutionMatrix();
 
   // Read input file (HMM, HHM, or alignment format), and add pseudocounts etc.
-  ReadAndPrepare(par.infile,q,&qali);
+  char input_format=0;
+  ReadQueryFile(par.infile,input_format,q,&qali); 
+  PrepareQueryHMM(par.infile,input_format,q,&qali);
 
   // Set query columns in His-tags etc to Null model distribution
-  if (par.notags) q.NeutralizeTags();
+  if (par.notags) q->NeutralizeTags();
 
   // Do self-comparison?
   if (!*par.tfile) 
@@ -838,16 +840,19 @@ int main(int argc, char **argv)
       
       // Find overlapping alternative alignments
       hit.self=1;
+
+      // Factor Null model into HMM t
+      t->IncludeNullModelInHMM(q,t); 
     } 
   // Read template alignment/HMM t and add pseudocounts
   else 
     {
       // Read input file (HMM, HHM, or alignment format), and add pseudocounts etc.
-      ReadAndPrepare(par.tfile,t);
+      char input_format=0;
+      ReadQueryFile(par.tfile,input_format,t); 
+      PrepareTemplateHMM(q,t,input_format);
     }
   
-  // Factor Null model into HMM t
-  t.IncludeNullModelInHMM(q,t); 
   
 
   //////////////////////////////////////////////////////////////
@@ -882,14 +887,14 @@ int main(int argc, char **argv)
 	if (strscn(line)==NULL) continue;
 	if (!strncmp("#QNAME",line,6)) {
 	  ptr=strscn(line+6);             // advance to first non-white-space character
-	  strmcpy(q.name,ptr,NAMELEN);    // copy full name to name
-	  strcut(q.name);
+	  strmcpy(q->name,ptr,NAMELEN-1);    // copy full name to name
+	  strcut(q->name);
 	  continue;
 	} 
 	else if (!strncmp("#TNAME",line,6)) {
 	  ptr=strscn(line+6);             // advance to first non-white-space character
-	  strmcpy(t.name,ptr,NAMELEN);    // copy full name to name
-	  strcut(t.name); 
+	  strmcpy(t->name,ptr,NAMELEN-1);    // copy full name to name
+	  strcut(t->name); 
 	  continue;
 	} 
 	else if (line[0] == '#') continue;
@@ -904,7 +909,7 @@ int main(int argc, char **argv)
     // calculate score for each pair of aligned residues
     hit.ScoreAlignment(q,t,step);
 
-    printf("\nAligned %s with %s: Score = %-7.2f \n",q.name,t.name,hit.score);
+    printf("\nAligned %s with %s: Score = %-7.2f \n",q->name,t->name,hit.score);
 
     if (par.outfile && v>=1) fprintf(stderr,"\nWARNING: no output file is written when -index option is used.\n");
     hit.DeleteIndices();
@@ -916,27 +921,27 @@ int main(int argc, char **argv)
 
   // Allocate memory for dynamic programming matrix
   const float MEMSPACE_DYNPROG = 512*1024*1024;
-  int Lmaxmem=(int)((float)MEMSPACE_DYNPROG/q.L/6/8); // longest allowable length of database HMM
-  if (par.forward==2 && t.L+2>=Lmaxmem) 
+  int Lmaxmem=(int)((float)MEMSPACE_DYNPROG/q->L/6/8); // longest allowable length of database HMM
+  if (par.forward==2 && t->L+2>=Lmaxmem) 
     {
       if (v>=1)
 	cerr<<"WARNING: Not sufficient memory to realign with MAC algorithm. Using Viterbi algorithm."<<endl;
       par.forward=0;
     }
-  hit.AllocateBacktraceMatrix(q.L+2,t.L+2); // ...with a separate dynamic programming matrix (memory!!)
+  hit.AllocateBacktraceMatrix(q->L+2,t->L+2); // ...with a separate dynamic programming matrix (memory!!)
   if (par.forward>=1 || Nstochali) 
-    hit.AllocateForwardMatrix(q.L+2,t.L+2);
+    hit.AllocateForwardMatrix(q->L+2,t->L+2);
   if (par.forward==2)     
-    hit.AllocateBackwardMatrix(q.L+2,t.L+2);
+    hit.AllocateBackwardMatrix(q->L+2,t->L+2);
 
   // Read structure file for Forward() function?
   if (strucfile && par.wstruc>0) 
     {
       float PMIN=1E-20;
-      Pstruc = new(float*[q.L+2]);
-      for (int i=0; i<q.L+2; i++) Pstruc[i] = new(float[t.L+2]);
-      Sstruc = new(float*[q.L+2]);
-      for (int i=0; i<q.L+2; i++) Sstruc[i] = new(float[t.L+2]);
+      Pstruc = new(float*[q->L+2]);
+      for (int i=0; i<q->L+2; i++) Pstruc[i] = new(float[t->L+2]);
+      Sstruc = new(float*[q->L+2]);
+      for (int i=0; i<q->L+2; i++) Sstruc[i] = new(float[t->L+2]);
       FILE* strucf=NULL;
       if (strcmp(strucfile,"stdin"))
 	{
@@ -948,9 +953,9 @@ int main(int argc, char **argv)
 	  strucf = stdin;
 	  if (v>=2) printf("Reading structure matrix from standard input ... (for UNIX use ^D for 'end-of-file')\n");
 	}
-      for (int i=1; i<=q.L; i++)
+      for (int i=1; i<=q->L; i++)
 	{
-	  for (int j=1; j<=t.L; j++)
+	  for (int j=1; j<=t->L; j++)
 	    {
 	      float f;
 	      if (fscanf(strucf,"%f",&f) <=0 )
@@ -1034,11 +1039,11 @@ int main(int argc, char **argv)
       if (!tcf) OpenFileError(tcfile);
       fprintf(tcf,"! TC_LIB_FORMAT_01\n");
       fprintf(tcf,"%i\n",2); // two sequences in library file
-      fprintf(tcf,"%s %i %s\n",q.name,q.L,q.seq[q.nfirst]+1);
+      fprintf(tcf,"%s %i %s\n",q->name,q->L,q->seq[q->nfirst]+1);
       fprintf(tcf,"%s %i %s\n",hit.name,hit.L,hit.seq[hit.nfirst]+1);
       fprintf(tcf,"#1 2\n");
-      for (i=1; i<=q.L; i++)  // print all pairs (i,j) with probability above PROBTCMIN
-	for (j=1; j<=t.L; j++)
+      for (i=1; i<=q->L; i++)  // print all pairs (i,j) with probability above PROBTCMIN
+	for (j=1; j<=t->L; j++)
 	  if (hit.B_MM[i][j]>probmin_tc) 
 	    fprintf(tcf,"%5i %5i %5i\n",i,j,iround(100.0*hit.B_MM[i][j]));
       for (int step=hit.nsteps; step>=1; step--)  // print all pairs on MAC alignment which were not yet printed
@@ -1052,10 +1057,10 @@ int main(int argc, char **argv)
 
       fprintf(tcf,"! SEQ_1_TO_N\n");
       fclose(tcf);
-//       for (i=1; i<=q.L; i++)
+//       for (i=1; i<=q->L; i++)
 //        	{
 //        	  double sum=0.0;
-//        	  for (j=1; j<=t.L; j++) sum+=hit.B_MM[i][j];
+//        	  for (j=1; j<=t->L; j++) sum+=hit.B_MM[i][j];
 // 	  printf("i=%-3i sum=%7.4f\n",i,sum);
 //        	}
 //        printf("\n");
@@ -1166,14 +1171,14 @@ int main(int argc, char **argv)
       float sum;
       float r,g,b;
       int i,j,l;
-      float** s=new(float*[q.L+2]);
-      for (i=0; i<q.L+2; i++) 
-	if(!(s[i]=new(float[t.L+2]))) MemoryError("image map");
-      for(i=1; i<=q.L; i++)
-	for (j=1; j<=t.L; j++) // Loop through template positions j
+      float** s=new(float*[q->L+2]);
+      for (i=0; i<q->L+2; i++) 
+	if(!(s[i]=new(float[t->L+2]))) MemoryError("image map");
+      for(i=1; i<=q->L; i++)
+	for (j=1; j<=t->L; j++) // Loop through template positions j
 	  {
-	    s[i][j]=hit.Score(q.p[i],t.p[j]) + hit.ScoreSS(q,t,i,j) + par.shift;	  }
- 	    //printf("%-3i %-3i %7.3f %7.3f\n",i,j,s[i][j],hit.Score(q.p[i],t.p[j]));
+	    s[i][j]=hit.Score(q->p[i],t->p[j]) + hit.ScoreSS(q,t,i,j) + par.shift;	  }
+ 	    //printf("%-3i %-3i %7.3f %7.3f\n",i,j,s[i][j],hit.Score(q->p[i],t->p[j]));
       
       // if (0) 
       // 	{
@@ -1181,9 +1186,9 @@ int main(int argc, char **argv)
       // 	  FILE* asf = fopen("as.scores","w");
       // 	  if (aaf) OpenFileError("aa.scores");
       // 	  if (asf) OpenFileError("as.scores");
-      // 	  for(i=1; i<=q.L; i++)
+      // 	  for(i=1; i<=q->L; i++)
       // 	    {
-      // 	      for (j=1; j<=t.L; j++) // Loop through template positions j
+      // 	      for (j=1; j<=t->L; j++) // Loop through template positions j
       // 		{
       // 		  fprintf(aaf,"%9.2E ",s[i][j]);
       // 		  fprintf(asf,"%9.2E ",s[i][j]+Sstruc[i][j]);
@@ -1197,27 +1202,27 @@ int main(int argc, char **argv)
       
       // Choose scale automatically
       if (dotscale>20) 
-	dotscale=imin(5,imax(1,dotscale/imax(q.L,t.L)));
+	dotscale=imin(5,imax(1,dotscale/imax(q->L,t->L)));
       
       // Set alignment matrix
       if (dotali || Nstochali) 
 	{
 	  if (dotali) 
 	    {
-	      ali = new(int*[q.L+2]);
-	      for(i=0; i<q.L+2; i++)
+	      ali = new(int*[q->L+2]);
+	      for(i=0; i<q->L+2; i++)
 		{
-		  ali[i] = new(int[t.L+2]);
-		  for(j=1; j<=t.L; j++) ali[i][j]=0;
+		  ali[i] = new(int[t->L+2]);
+		  for(j=1; j<=t->L; j++) ali[i][j]=0;
 		}
 	    } 
 	  if (Nstochali) 
 	    {
-	      alisto = new(int*[q.L+2]);
-	      for(i=0; i<q.L+2; i++)
+	      alisto = new(int*[q->L+2]);
+	      for(i=0; i<q->L+2; i++)
 		{
-		  alisto[i] = new(int[t.L+2]);
-		  for(j=1; j<=t.L; j++) alisto[i][j]=0;
+		  alisto[i] = new(int[t->L+2]);
+		  for(j=1; j<=t->L; j++) alisto[i][j]=0;
 		}
 	    }
 
@@ -1284,7 +1289,7 @@ int main(int argc, char **argv)
 		  while (step>=1 && hit.states[step]==MM) step--;
 		  i1=hit.i[step+1];
 		  j1=hit.j[step+1];
-		  if (i1+W>q.L) {j1+=-i1+W+q.L; i1+=-i1-W+q.L;} // avoid overflow
+		  if (i1+W>q->L) {j1+=-i1+W+q->L; i1+=-i1-W+q->L;} // avoid overflow
 		  fprintf(dmapf,"%i COORDS=\"%i,%i,%i,%i,%i,%i,%i,%i\"\n", nhits,
 			  d*(j0-1)+1, d*(i0-1-W)+1, d*(j0-1)+1, d*(i0-1+W)+1,
 			  d*j1,       d*(i1+W),     d*j1,       d*(i1-W) );
@@ -1298,19 +1303,19 @@ int main(int argc, char **argv)
 	}
 
       // Print out dot plot for scores averaged over window of length W
-//      printf("x=%i   y=%i,  %s\n",dotscale*t.L,dotscale*q.L,par.pngfile);
+//      printf("x=%i   y=%i,  %s\n",dotscale * t->L,dotscale * q->L,par.pngfile);
 
-      pngwriter png(dotscale*t.L,dotscale*q.L,1,pngfile);
+      pngwriter png(dotscale * t->L, dotscale * q->L , 1 ,pngfile);
       if (v>=2) cout<<"Writing dot plot to "<<pngfile<<"\n";
-      for(i=1; i<=q.L; i++)
-	for (j=1; j<=t.L; j++) // Loop through template positions j
+      for(i=1; i<=q->L; i++)
+	for (j=1; j<=t->L; j++) // Loop through template positions j
 	  {
 	    float dotval=0.0;
 	    sum=0; l=0;
 	    if (par.forward<=1 && !par.realign) 
 	      {
 		for (int w=-dotW; w<=dotW; w++) 
-		  if (i+w>=1 && i+w<=q.L && j+w>=1 && j+w<=t.L) 
+		  if (i+w>=1 && i+w<=q->L && j+w>=1 && j+w<=t->L) 
 		    {	
 		      sum+=s[i+w][j+w];
 		      l++;
@@ -1346,7 +1351,7 @@ int main(int argc, char **argv)
 	      }
 
 // 	    sum = sum/float(l)*dotthr;
-	    for (int ii=dotscale*(q.L-i)+1; ii<=dotscale*(q.L-i+1); ii++)
+	    for (int ii=dotscale*(q->L-i)+1; ii<=dotscale*(q->L-i+1); ii++)
 	      for (int jj=dotscale*(j-1)+1; jj<=dotscale*j; jj++)
 		{
 		  png.plot(jj,ii,r,g,b);
@@ -1354,18 +1359,18 @@ int main(int argc, char **argv)
 	  }
 
       png.close();
-      for (i=0; i<q.L+2; i++) delete[] s[i];
+      for (i=0; i<q->L+2; i++) delete[] s[i];
       delete[] s;
 
       // Delete alignment matrix?
       if (dotali) 
 	{
-	  for(i=0; i<q.L+2; i++) delete[] ali[i];
+	  for(i=0; i<q->L+2; i++) delete[] ali[i];
 	  delete[] ali;
 	}
       if (Nstochali)
       {
-	  for(i=0; i<q.L+2; i++) delete[] alisto[i];
+	  for(i=0; i<q->L+2; i++) delete[] alisto[i];
 	  delete[] alisto;
       }
 
@@ -1377,26 +1382,26 @@ int main(int argc, char **argv)
 //     {
 //       log2Pvalue=hit.logPval/0.693147181+0.45*(4.0*par.ssw/0.15-hit.score_ss);
 //       if (v>=2) 
-// 	printf("Aligned %s with %s:\nApproximate P-value INCLUDING SS SCORE = %7.2g\n",q.name,t.name,pow(2.0,log2Pvalue));
+// 	printf("Aligned %s with %s:\nApproximate P-value INCLUDING SS SCORE = %7.2g\n",q->name,t->name,pow(2.0,log2Pvalue));
 //     } else {
 //       if (v>=2) 
-// 	printf("Aligned %s with %s:\nApproximate P-value (without SS score) = %7.2g\n",q.name,t.name,hit.Pval);
+// 	printf("Aligned %s with %s:\nApproximate P-value (without SS score) = %7.2g\n",q->name,t->name,hit.Pval);
 //    }
 
   if (v>=2) 
     {
-      if (par.hitrank==0) printf("Aligned %s with %s: Score = %-7.2f  P-value = %-7.2g\n",q.name,t.name,hit.score,hit.Pval);
-      else printf("Aligned %s with %s (rank %i): Score = %-7.2f  P-value = %-7.2g\n",q.name,t.name,par.hitrank,hit.score,hit.Pval);
+      if (par.hitrank==0) printf("Aligned %s with %s: Score = %-7.2f  P-value = %-7.2g\n",q->name,t->name,hit.score,hit.Pval);
+      else printf("Aligned %s with %s (rank %i): Score = %-7.2f  P-value = %-7.2g\n",q->name,t->name,par.hitrank,hit.score,hit.Pval);
     }
 
 
   // Delete memory for dynamic programming matrix
-  hit.DeleteBacktraceMatrix(q.L+2);
+  hit.DeleteBacktraceMatrix(q->L+2);
   if (par.forward>=1 || Nstochali || par.realign) 
-    hit.DeleteForwardMatrix(q.L+2);
+    hit.DeleteForwardMatrix(q->L+2);
   if (par.forward==2 || par.realign) 
-    hit.DeleteBackwardMatrix(q.L+2);
-//   if (Pstruc) { for (int i=0; i<q.L+2; i++) delete[](Pstruc[i]); delete[](Pstruc);}
+    hit.DeleteBackwardMatrix(q->L+2);
+//   if (Pstruc) { for (int i=0; i<q->L+2; i++) delete[](Pstruc[i]); delete[](Pstruc);}
 
   if (*par.clusterfile) {
     delete context_lib;
@@ -1408,11 +1413,13 @@ int main(int argc, char **argv)
   while (!hitlist.End()) 
     hitlist.ReadNext().Delete(); // Delete content of hit object
 
+  delete q;
+
   if (strucfile && par.wstruc>0) 
     {
-      for (int i=0; i<q.L+2; i++) delete[] Pstruc[i];
+      for (int i=0; i<q->L+2; i++) delete[] Pstruc[i];
       delete[] Pstruc;
-      for (int i=0; i<q.L+2; i++) delete[] Sstruc[i];
+      for (int i=0; i<q->L+2; i++) delete[] Sstruc[i];
       delete[] Sstruc;
       delete[] strucfile;
     }
@@ -1434,8 +1441,8 @@ int main(int argc, char **argv)
 	}
       if (v>=2) printf("Done\n");
     }
-  
   exit(0);
+
 } //end main
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -126,7 +126,7 @@ int jobs_submitted;       // number of submitted jobs, i.e. number of bins set t
 char reading_dbs;         // 1: still HMMs to read in a database;  0: finshed reading all HMMs, no db left
 const char DEBUG_THREADS=0; // Debugging flag
 
-HMM* q;                   // Create query  HMM with maximum of par.maxres match states
+HMM* q = new HMM;         // Create query HMM with maximum of par.maxres match states
 HMM* t[MAXBINS];          // Each bin has a template HMM allocated that was read from the database file
 Hit* hit[MAXBINS];        // Each bin has an object of type Hit allocated with a separate dynamic programming matrix (memory!!)
 HitList hitlist;          // list of hits with one Hit object for each pairwise comparison done
@@ -501,7 +501,7 @@ void ProcessArguments(int argc, char** argv)
 	{
 	  if (++i>=argc || argv[i][0]=='-') 
 	    {help(); cerr<<endl<<"Error in "<<program_name<<": no query file following -atab\n"; exit(4);}
-	  else strmcpy(par.alitabfile,argv[i],NAMELEN);
+	  else strmcpy(par.alitabfile,argv[i],NAMELEN-1);
 	}
       else if (!strcmp(argv[i],"-h")|| !strcmp(argv[i],"-help"))
         {
@@ -820,7 +820,7 @@ void perform_realign(char *dbfiles[], int ndb)
 //            qali.FilterForDisplay(par.max_seqid,par.coverage,par.qid,par.qsc,par.nseqdis);
 	      tali.N_filtered = tali.Filter(par.max_seqid_db,par.coverage_db,par.qid_db,par.qsc_db,par.Ndiff_db);
 	      t[bin]->name[0]=t[bin]->longname[0]=t[bin]->fam[0]='\0';
-	      tali.FrequenciesAndTransitions(*(t[bin]));
+	      tali.FrequenciesAndTransitions(t[bin]);
 	      format[bin] = 0;
 	    }
 	  else {
@@ -849,14 +849,14 @@ void perform_realign(char *dbfiles[], int ndb)
 	    }
 	  
 	  // Prepare MAC comparison(s)
-	  PrepareTemplate(*q,*(t[bin]),format[bin]);
+	  PrepareTemplateHMM(q,t[bin],format[bin]);
 	  t[bin]->Log2LinTransitionProbs(1.0);
 	  
 	  // Align q to template in *hit[bin]
-	  hit[bin]->Forward(*q,*(t[bin]));
-	  hit[bin]->Backward(*q,*(t[bin]));
-	  hit[bin]->MACAlignment(*q,*(t[bin]));
-	  hit[bin]->BacktraceMAC(*q,*(t[bin]));
+	  hit[bin]->Forward(q,t[bin]);
+	  hit[bin]->Backward(q,t[bin]);
+	  hit[bin]->MACAlignment(q,t[bin]);
+	  hit[bin]->BacktraceMAC(q,t[bin]);
 	  
 	  // Overwrite *hit[bin] with Viterbi scores, Probabilities etc. of hit_cur
 	  hit[bin]->score      = hit_cur.score;
@@ -891,7 +891,7 @@ void perform_realign(char *dbfiles[], int ndb)
 	  Qali.N_filtered = Qali.Filter(par.max_seqid,par.coverage,par.qid,par.qsc,par.Ndiff);
 	  
 	  // Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
-	  Qali.FrequenciesAndTransitions(*q);
+	  Qali.FrequenciesAndTransitions(q);
 	  
 	  if (!*par.clusterfile) { //compute context-specific pseudocounts?
 	    // Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
@@ -1011,7 +1011,7 @@ void perform_realign(char *dbfiles[], int ndb)
 		  // qali.FilterForDisplay(par.max_seqid,par.coverage,par.qid,par.qsc,par.nseqdis);
 		  tali.N_filtered = tali.Filter(par.max_seqid_db,par.coverage_db,par.qid_db,par.qsc_db,par.Ndiff_db);
 		  t[bin]->name[0]=t[bin]->longname[0]=t[bin]->fam[0]='\0';
-		  tali.FrequenciesAndTransitions(*(t[bin]));
+		  tali.FrequenciesAndTransitions(t[bin]);
 		  format[bin] = 0;
 		}
 	      else {
@@ -1139,7 +1139,7 @@ void perform_realign(char *dbfiles[], int ndb)
   // Print for each HMM: n  score  -log2(Pval)  L  name  (n=5:same name 4:same fam 3:same sf...)
   if (*par.scorefile) {
     if (v>=3) printf("Printing scores file ...\n");
-    hitlist.PrintScoreFile(*q);
+    hitlist.PrintScoreFile(q);
   }
   
   
@@ -1223,8 +1223,6 @@ int main(int argc, char **argv)
   // Process command line options (they override defaults from .hhdefaults file)
   ProcessArguments(argc,argv);
 
-  q = new HMM;
-
   // Check command line input and default values
   if (!*par.infile) // string empty?
     {help(); cerr<<endl<<"Error in "<<program_name<<": no query alignment file given (-i file)\n"; exit(4);}
@@ -1279,7 +1277,9 @@ int main(int argc, char **argv)
   SetSubstitutionMatrix();
 
   // Read input file (HMM, HHM, or alignment format), and add pseudocounts etc.
-  ReadAndPrepare(par.infile, *q);
+  char input_format=0;
+  ReadQueryFile(par.infile,input_format,q); 
+  PrepareQueryHMM(par.infile,input_format,q);
 
 //  // Rescale matrix according to query aa composition? (Two iterations are sufficient)
 //   if (par.pcm==4)
@@ -1482,7 +1482,7 @@ int main(int argc, char **argv)
                   tali.N_filtered = tali.Filter(par.max_seqid_db,par.coverage_db,par.qid_db,par.qsc_db,par.Ndiff_db);
                   char wg=par.wg; par.wg=1; // use global weights
                   t[bin]->name[0]=t[bin]->longname[0]=t[bin]->fam[0]='\0';
-                  tali.FrequenciesAndTransitions(*(t[bin]));
+                  tali.FrequenciesAndTransitions(t[bin]);
                   par.wg=wg; //reset global weights
                   format[bin] = 0;
                 }
@@ -1621,12 +1621,12 @@ int main(int argc, char **argv)
   // Fit EVD (with lamda, mu) to score distribution?
   if (par.calm==3)
     {
-      hitlist.CalculatePvalues(*q);  // Use NN prediction of lamda and mu
+      hitlist.CalculatePvalues(q);  // Use NN prediction of lamda and mu
     }
   else if ((par.calm!=1 && q->lamda==0) || par.calibrate>0)
     {
       if (v>=2 && par.loc) printf("Fitting scores with EVD (first round) ...\n");
-      hitlist.MaxLikelihoodEVD(*q,3); // first ML fit: exclude 3 best superfamilies from fit
+      hitlist.MaxLikelihoodEVD(q,3); // first ML fit: exclude 3 best superfamilies from fit
 
       if (v>=3) printf("Number of families present in database: %i\n",hitlist.fams); // DEBUG
       if (hitlist.fams>=100)
@@ -1634,7 +1634,7 @@ int main(int argc, char **argv)
           if (par.loc)
             {
               if (v>=2) printf("Fitting scores with EVD (second round) ...\n");
-              hitlist.MaxLikelihoodEVD(*q,0); // second ML fit: exclude superfamilies with E-value<MINEVALEXCL
+              hitlist.MaxLikelihoodEVD(q,0); // second ML fit: exclude superfamilies with E-value<MINEVALEXCL
               hitlist.ResortList();
             }
           else
@@ -1661,13 +1661,13 @@ int main(int argc, char **argv)
               fprintf(stderr,"   But note that HMMs contained in cal.hmm will pop up among your hits.\n");
             }
         }
-      if (par.calm==2) hitlist.GetPvalsFromCalibration(*q);
+      if (par.calm==2) hitlist.GetPvalsFromCalibration(q);
     }
   else
-    hitlist.GetPvalsFromCalibration(*q);
+    hitlist.GetPvalsFromCalibration(q);
 
   // Optimization mode?
-  if (par.opt) {hitlist.Optimize(*q,par.buffer);}
+  if (par.opt) {hitlist.Optimize(q,par.buffer);}
 
   // Set new ss weight for realign
   par.ssw = par.ssw_realign;
@@ -1694,7 +1694,7 @@ int main(int argc, char **argv)
   // Print FASTA or A2M alignments?
   if (*par.pairwisealisfile) {
     if (v>=2) cout<<"Printing alignments in "<<(par.outformat==1? "FASTA" : par.outformat==2?"A2M" :"A3M")<<" format to "<<par.pairwisealisfile<<"\n";
-    hitlist.PrintAlignments(*q,par.pairwisealisfile,par.outformat);
+    hitlist.PrintAlignments(q,par.pairwisealisfile,par.outformat);
   }
   
   // Warn, if HMMER files were used
@@ -1703,13 +1703,13 @@ int main(int argc, char **argv)
 
   // Print summary listing of hits
   if (v>=3) printf("Printing hit list ...\n");
-  hitlist.PrintHitList(*q,par.outfile);
+  hitlist.PrintHitList(q,par.outfile);
 
   // Write only hit list to screen?
   if (v==2 && strcmp(par.outfile,"stdout")) WriteToScreen(par.outfile,1009); // write only hit list to screen
 
   // Print alignments of query sequences against hit sequences
-  hitlist.PrintAlignments(*q,par.outfile);
+  hitlist.PrintAlignments(q,par.outfile);
 
   // Write whole output file to screen? (max 10000 lines)
   if (v>=3 && strcmp(par.outfile,"stdout")) WriteToScreen(par.outfile,10009);
@@ -1722,8 +1722,7 @@ int main(int argc, char **argv)
   // Generate output alignment or HMM file?
   if (*par.alnfile || *par.psifile || *par.hhmfile)
     {
-      Alignment Qali;  // output A3M generated by merging A3M alignments for significant hits to the query alignment
-      HMM Q;           // output HMM: generated from Qali
+      Alignment Qali;   // output A3M generated by merging A3M alignments for significant hits to the query alignment
       Hit hit;
       int nhits=0;
 
@@ -1782,14 +1781,16 @@ int main(int argc, char **argv)
           RemovePathAndExtension(Qali.file,par.hhmfile);
 
           // Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
+	  HMM* Q = new HMM; // output HMM: generated from Qali
           Qali.FrequenciesAndTransitions(Q);
 
           // Add *no* amino acid pseudocounts to query. This is necessary to copy f[i][a] to p[i][a]
-          Q.AddAminoAcidPseudocounts(0, 0.0, 0.0, 1.0);
-          Q.CalculateAminoAcidBackground();
+          Q->AddAminoAcidPseudocounts(0, 0.0, 0.0, 1.0);
+          Q->CalculateAminoAcidBackground();
 
           // Write HMM to output file in HHsearch format?
-          Q.WriteToFile(par.hhmfile);
+          Q->WriteToFile(par.hhmfile);
+	  delete Q;
         }
 
       // Write output A3M alignment?
@@ -1797,6 +1798,7 @@ int main(int argc, char **argv)
 
       // Write output PSI-BLAST-formatted alignment?
       if (*par.psifile) Qali.WriteToFile(par.psifile,"psi");
+
    }
 
 

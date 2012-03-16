@@ -307,7 +307,7 @@ void Hit::DeleteIndices()
 // The function is called with q and t
 // If q and t are equal (self==1), only the upper right part of the matrix is calculated: j>=i+3
 /////////////////////////////////////////////////////////////////////////////////////
-void Hit::Viterbi(HMM& q, HMM& t, float** Sstruc)
+void Hit::Viterbi(HMM* q, HMM* t, float** Sstruc)
 {
   
   // Linear topology of query (and template) HMM:
@@ -326,9 +326,9 @@ void Hit::Viterbi(HMM& q, HMM& t, float** Sstruc)
   // 2. Transitions are allowed only between the MM-state and each of the four other states.
   
   // Saving space:
-  // The best score ending in pair state XY sXY[i][j] is calculated from left to right (j=1->t.L) 
-  // and top to bottom (i=1->q.L). To save space, only the last row of scores calculated is kept in memory.
-  // (The backtracing matrices are kept entirely in memory [O(t.L*q.L)]).
+  // The best score ending in pair state XY sXY[i][j] is calculated from left to right (j=1->t->L) 
+  // and top to bottom (i=1->q->L). To save space, only the last row of scores calculated is kept in memory.
+  // (The backtracing matrices are kept entirely in memory [O(t->L*q->L)]).
   // When the calculation has proceeded up to the point where the scores for cell (i,j) are caculated,
   //    sXY[i-1][j'] = sXY[j']   for j'>=j (A below)  
   //    sXY[i][j']   = sXY[j']   for j'<j  (B below)
@@ -357,7 +357,7 @@ void Hit::Viterbi(HMM& q, HMM& t, float** Sstruc)
   if(irep==1) InitializeForAlignment(q,t);
 
   // Initialization of top row, i.e. cells (0,j)
-  for (j=0; j<=t.L; ++j) 
+  for (j=0; j<=t->L; ++j) 
     {
       sMM[j] = (self? 0 : -j*par.egt);
       sIM[j] = sMI[j] = sDG[j] = sGD[j] = -FLT_MAX; 
@@ -365,7 +365,7 @@ void Hit::Viterbi(HMM& q, HMM& t, float** Sstruc)
   score=-INT_MAX; i2=j2=0; bMM[0][0]=STOP;
 
   // Viterbi algorithm
-  for (i=1; i<=q.L; ++i) // Loop through query positions i
+  for (i=1; i<=q->L; ++i) // Loop through query positions i
     {
       //       if (v>=5) printf("\n");
 
@@ -374,14 +374,14 @@ void Hit::Viterbi(HMM& q, HMM& t, float** Sstruc)
 	{
 	  // If q is compared to itself, ignore cells below diagonal+SELFEXCL
 	  jmin = i+SELFEXCL; 
-	  jmax = t.L;
+	  jmax = t->L;
 	  if (jmin>jmax) continue;
 	}
       else
 	{
 	  // If q is compared to t, exclude regions where overlap of q with t < min_overlap residues
-	  jmin=imax( 1, i+min_overlap-q.L);  // Lq-i+j>=Ovlap => j>=i+Ovlap-Lq => jmin=max{1, i+Ovlap-Lq} 
-	  jmax=imin(t.L,i-min_overlap+t.L);  // Lt-j+i>=Ovlap => j<=i-Ovlap+Lt => jmax=min{Lt,i-Ovlap+Lt} 
+	  jmin=imax( 1, i+min_overlap-q->L);  // Lq-i+j>=Ovlap => j>=i+Ovlap-Lq => jmin=max{1, i+Ovlap-Lq} 
+	  jmax=imin(t->L,i-min_overlap+t->L);  // Lt-j+i>=Ovlap => j<=i-Ovlap+Lt => jmax=min{Lt,i-Ovlap+Lt} 
 	}      
 
       // Initialize cells
@@ -401,20 +401,20 @@ void Hit::Viterbi(HMM& q, HMM& t, float** Sstruc)
 	  sGD_i_1_j_1 = sGD[jmin-1];     // initialize at (i-1,jmin-1)
 	  sMM[jmin-1] = -FLT_MAX;        // initialize at (i,jmin-1)
 	}
-      if (jmax<t.L) // initialize at (i-1,jmmax) if upper right triagonal is excluded due to min overlap
+      if (jmax<t->L) // initialize at (i-1,jmmax) if upper right triagonal is excluded due to min overlap
 	sMM[jmax] = sIM[jmax] = sMI[jmax] = sDG[jmax] = sGD[jmax] = -FLT_MAX; 
       sIM[jmin-1] = sMI[jmin-1] = sDG[jmin-1] = sGD[jmin-1] = -FLT_MAX; // initialize at (i,jmin-1)
 
       // Precalculate amino acid profile-profile scores
 #ifdef HH_SSE2
       for (j=jmin; j<=jmax; ++j) 
-	Si[j] = ProbFwd(q.p[i],t.p[j]);
+	Si[j] = ProbFwd(q->p[i],t->p[j]);
       __m128* sij = (__m128*)(Si+(jmin/4)*4);
       for (j=jmin/4; j<=jmax/4; ++j, ++sij) 
 	_mm_store_ps((float*)(sij),_mm_flog2_ps(*sij));	  
 #else
       for (j=jmin; j<=jmax; ++j) 
-	Si[j] = Score(q.p[i],t.p[j]);      
+	Si[j] = Score(q->p[i],t->p[j]);      
 #endif
 
       for (j=jmin; j<=jmax; ++j) // Loop through template positions j
@@ -432,15 +432,15 @@ void Hit::Viterbi(HMM& q, HMM& t, float** Sstruc)
 	  else 
 	    {
 	      // Recursion relations
-	      // 	      printf("S[%i][%i]=%4.1f  ",i,j,Score(q.p[i],t.p[j])); // DEBUG!!
+	      // 	      printf("S[%i][%i]=%4.1f  ",i,j,Score(q->p[i],t->p[j])); // DEBUG!!
 
 	      CALCULATE_MAX6( sMM_i_j,
 			      smin,
-			      sMM_i_1_j_1 + q.tr[i-1][M2M] + t.tr[j-1][M2M], 
-			      sGD_i_1_j_1 + q.tr[i-1][M2M] + t.tr[j-1][D2M],
-			      sIM_i_1_j_1 + q.tr[i-1][I2M] + t.tr[j-1][M2M],
-			      sDG_i_1_j_1 + q.tr[i-1][D2M] + t.tr[j-1][M2M],
-			      sMI_i_1_j_1 + q.tr[i-1][M2M] + t.tr[j-1][I2M],
+			      sMM_i_1_j_1 + q->tr[i-1][M2M] + t->tr[j-1][M2M], 
+			      sGD_i_1_j_1 + q->tr[i-1][M2M] + t->tr[j-1][D2M],
+			      sIM_i_1_j_1 + q->tr[i-1][I2M] + t->tr[j-1][M2M],
+			      sDG_i_1_j_1 + q->tr[i-1][D2M] + t->tr[j-1][M2M],
+			      sMI_i_1_j_1 + q->tr[i-1][M2M] + t->tr[j-1][I2M],
 			      bMM[i][j]
 			      );
 
@@ -449,26 +449,26 @@ void Hit::Viterbi(HMM& q, HMM& t, float** Sstruc)
 
 	      sGD_i_j = max2
 		(
-		 sMM[j-1] + t.tr[j-1][M2D], // MM->GD gap opening in query 
-		 sGD[j-1] + t.tr[j-1][D2D], // GD->GD gap extension in query 
+		 sMM[j-1] + t->tr[j-1][M2D], // MM->GD gap opening in query 
+		 sGD[j-1] + t->tr[j-1][D2D], // GD->GD gap extension in query 
 		 bGD[i][j]
 		 );
 	      sIM_i_j = max2
 		(
-		 sMM[j-1] + q.tr[i][M2I] + t.tr[j-1][M2M] ,
-		 sIM[j-1] + q.tr[i][I2I] + t.tr[j-1][M2M], // IM->IM gap extension in query 
+		 sMM[j-1] + q->tr[i][M2I] + t->tr[j-1][M2M] ,
+		 sIM[j-1] + q->tr[i][I2I] + t->tr[j-1][M2M], // IM->IM gap extension in query 
 		 bIM[i][j]
 		 );
 	      sDG_i_j = max2
 		(
-		 sMM[j] + q.tr[i-1][M2D],
-		 sDG[j] + q.tr[i-1][D2D], //gap extension (DD) in query
+		 sMM[j] + q->tr[i-1][M2D],
+		 sDG[j] + q->tr[i-1][D2D], //gap extension (DD) in query
 		 bDG[i][j]
 		 );
 	      sMI_i_j = max2
 		(
-		 sMM[j] + q.tr[i-1][M2M] + t.tr[j][M2I], // MM->MI gap opening M2I in template 
-		 sMI[j] + q.tr[i-1][M2M] + t.tr[j][I2I], // MI->MI gap extension I2I in template 
+		 sMM[j] + q->tr[i-1][M2M] + t->tr[j][M2I], // MM->MI gap opening M2I in template 
+		 sMI[j] + q->tr[i-1][M2M] + t->tr[j][I2I], // MI->MI gap extension I2I in template 
 		 bMI[i][j]
 		 );
 
@@ -484,7 +484,7 @@ void Hit::Viterbi(HMM& q, HMM& t, float** Sstruc)
 	      sMI[j] = sMI_i_j;
 	      
 	      // Find maximum score; global alignment: maxize only over last row and last column
-	      if(sMM_i_j>score && (par.loc || i==q.L)) { i2=i; j2=j; score=sMM_i_j; }
+	      if(sMM_i_j>score && (par.loc || i==q->L)) { i2=i; j2=j; score=sMM_i_j; }
 
 	    } // end if 
 
@@ -497,7 +497,7 @@ void Hit::Viterbi(HMM& q, HMM& t, float** Sstruc)
 
   state=MM; // state with maximum score is MM state
 
-  //   printf("Template=%-12.12s  i=%-4i j=%-4i score=%6.3f\n",t.name,i2,j2,score);
+  //   printf("Template=%-12.12s  i=%-4i j=%-4i score=%6.3f\n",t->name,i2,j2,score);
 
   return;
 }
@@ -508,7 +508,7 @@ void Hit::Viterbi(HMM& q, HMM& t, float** Sstruc)
 // Compare two HMMs with Forward Algorithm in lin-space (~ 2x faster than in log-space)
 /////////////////////////////////////////////////////////////////////////////////////
 
-void Hit::Forward(HMM& q, HMM& t, float** Pstruc)
+void Hit::Forward(HMM* q, HMM* t, float** Pstruc)
 {
 
   // Variable declarations
@@ -519,38 +519,38 @@ void Hit::Forward(HMM& q, HMM& t, float** Pstruc)
   double scale_prod=1.0;                // Prod_i=1^i (scale[i])
   int jmin; 
 
-  double F_MM_prev[t.L + 1];
-  double F_GD_prev[t.L + 1];
-  double F_DG_prev[t.L + 1];
-  double F_IM_prev[t.L + 1];
-  double F_MI_prev[t.L + 1];
+  double F_MM_prev[t->L + 1];
+  double F_GD_prev[t->L + 1];
+  double F_DG_prev[t->L + 1];
+  double F_IM_prev[t->L + 1];
+  double F_MI_prev[t->L + 1];
 
-  double F_MM_curr[t.L + 1];
-  double F_GD_curr[t.L + 1];
-  double F_DG_curr[t.L + 1];
-  double F_IM_curr[t.L + 1];
-  double F_MI_curr[t.L + 1];
+  double F_MM_curr[t->L + 1];
+  double F_GD_curr[t->L + 1];
+  double F_DG_curr[t->L + 1];
+  double F_IM_curr[t->L + 1];
+  double F_MI_curr[t->L + 1];
 
   // First alignment of this pair of HMMs?
   if(irep==1) 
     {
-      q.tr[0][M2D] = q.tr[0][M2I] = 0.0;
-      q.tr[0][I2M] = q.tr[0][I2I] = 0.0;
-      q.tr[0][D2M] = q.tr[0][D2D] = 0.0;
-      t.tr[0][M2M] = 1.0;
-      t.tr[0][M2D] = t.tr[0][M2I] = 0.0;
-      t.tr[0][I2M] = t.tr[0][I2I] = 0.0;
-      t.tr[0][D2M] = t.tr[0][D2D] = 0.0;
-      q.tr[q.L][M2M] = 1.0;
-      q.tr[q.L][M2D] = q.tr[q.L][M2I] = 0.0;
-      q.tr[q.L][I2M] = q.tr[q.L][I2I] = 0.0;
-      q.tr[q.L][D2M] = 1.0;
-      q.tr[q.L][D2D] = 0.0;
-      t.tr[t.L][M2M] = 1.0;
-      t.tr[t.L][M2D] = t.tr[t.L][M2I] = 0.0;
-      t.tr[t.L][I2M] = t.tr[t.L][I2I] = 0.0;
-      t.tr[t.L][D2M] = 1.0;
-      t.tr[t.L][D2D] = 0.0;
+      q->tr[0][M2D] = q->tr[0][M2I] = 0.0;
+      q->tr[0][I2M] = q->tr[0][I2I] = 0.0;
+      q->tr[0][D2M] = q->tr[0][D2D] = 0.0;
+      t->tr[0][M2M] = 1.0;
+      t->tr[0][M2D] = t->tr[0][M2I] = 0.0;
+      t->tr[0][I2M] = t->tr[0][I2I] = 0.0;
+      t->tr[0][D2M] = t->tr[0][D2D] = 0.0;
+      q->tr[q->L][M2M] = 1.0;
+      q->tr[q->L][M2D] = q->tr[q->L][M2I] = 0.0;
+      q->tr[q->L][I2M] = q->tr[q->L][I2I] = 0.0;
+      q->tr[q->L][D2M] = 1.0;
+      q->tr[q->L][D2D] = 0.0;
+      t->tr[t->L][M2M] = 1.0;
+      t->tr[t->L][M2D] = t->tr[t->L][M2I] = 0.0;
+      t->tr[t->L][I2M] = t->tr[t->L][I2I] = 0.0;
+      t->tr[t->L][D2M] = 1.0;
+      t->tr[t->L][D2D] = 0.0;
       InitializeForAlignment(q,t,false);
     }	
 
@@ -566,8 +566,8 @@ void Hit::Forward(HMM& q, HMM& t, float** Pstruc)
       // 	fprintf(stderr,"%4i  %4i %4i\n",step,this->i[step],this->j[step]);
       
       // Cross out regions
-      for (i=1; i<=q.L; ++i) 
-	for (j=1; j<=t.L; ++j) 
+      for (i=1; i<=q->L; ++i) 
+	for (j=1; j<=t->L; ++j) 
 	  if (!((i < i1 && j < j1) || (i > i2 && j > j2)))
 	    cell_off[i][j]=1;   
       
@@ -575,9 +575,9 @@ void Hit::Forward(HMM& q, HMM& t, float** Pstruc)
       for (step=nsteps; step>=1; step--)
 	{
 	  int path_width=40;
-	  for (i=imax(1,this->i[step]-path_width); i <= imin(q.L,this->i[step]+path_width); ++i)
+	  for (i=imax(1,this->i[step]-path_width); i <= imin(q->L,this->i[step]+path_width); ++i)
 	    cell_off[i][this->j[step]]=0;
-	  for (j=imax(1,this->j[step]-path_width); j <= imin(t.L,this->j[step]+path_width); ++j)
+	  for (j=imax(1,this->j[step]-path_width); j <= imin(t->L,this->j[step]+path_width); ++j)
 	    cell_off[this->i[step]][j]=0;
 	}
 
@@ -591,9 +591,9 @@ void Hit::Forward(HMM& q, HMM& t, float** Pstruc)
 	      i=alt_i->ReadNext();
 	      j=alt_j->ReadNext();
 	      
-	      for (int ii=imax(i-2,1); ii<=imin(i+2,q.L); ++ii)
+	      for (int ii=imax(i-2,1); ii<=imin(i+2,q->L); ++ii)
 		cell_off[ii][j]=1;     
-	      for (int jj=imax(j-2,1); jj<=imin(j+2,t.L); ++jj)
+	      for (int jj=imax(j-2,1); jj<=imin(j+2,t->L); ++jj)
 		cell_off[i][jj]=1;
 	    }
 	}
@@ -604,35 +604,35 @@ void Hit::Forward(HMM& q, HMM& t, float** Pstruc)
       // fprintf(stdout, "---+----|----+----|----+----|----+----|----+---150---+----|----+----|----+----|----+----|----+---200");
       // fprintf(stdout, "---+----|----+----|----+----|----+----|----+---250---+----|----+----|----+----|----+----|----+---300");
       // fprintf(stdout, "---+----|----+----|----+----|----+---340\n");
-      // for (j=1; j<=t.L; ++j)
+      // for (j=1; j<=t->L; ++j)
       // 	{
-      // 	  for (i=1; i<=q.L; ++i)
+      // 	  for (i=1; i<=q->L; ++i)
       // 	    fprintf(stderr,"%1i", cell_off[i][j]);
       // 	  fprintf(stderr,"\n");
       // 	}
     }
 
 
-  for (j=1; j<=t.L; ++j) 
+  for (j=1; j<=t->L; ++j) 
     F_MM_curr[j] = 0.0;
 
   F_MM_curr[0] = 0.0;
   F_IM_curr[0] = 0.0;
   F_GD_curr[0] = 0.0;
-  for (j=1; j<=t.L; ++j)
+  for (j=1; j<=t->L; ++j)
   {
     if (cell_off[1][j])
       F_MM_curr[j] = F_MI_curr[j] = F_DG_curr[j] = F_IM_curr[j] = F_GD_curr[j] = 0.0;
     else
     {
-      F_MM_curr[j] = ProbFwd(q.p[1],t.p[j]) * fpow2(ScoreSS(q,t,1,j)) * Cshift * (Pstruc==NULL? 1: Pstruc[1][j]) ;
+      F_MM_curr[j] = ProbFwd(q->p[1],t->p[j]) * fpow2(ScoreSS(q,t,1,j)) * Cshift * (Pstruc==NULL? 1: Pstruc[1][j]) ;
       F_MI_curr[j] = F_DG_curr[j] = 0.0;
-      F_IM_curr[j] = F_MM_curr[j-1] * q.tr[1][M2I] * t.tr[j-1][M2M] + F_IM_curr[j-1] * q.tr[1][I2I] * t.tr[j-1][M2M];
-      F_GD_curr[j] = F_MM_curr[j-1] * t.tr[j-1][M2D]                + F_GD_curr[j-1] * t.tr[j-1][D2D];
+      F_IM_curr[j] = F_MM_curr[j-1] * q->tr[1][M2I] * t->tr[j-1][M2M] + F_IM_curr[j-1] * q->tr[1][I2I] * t->tr[j-1][M2M];
+      F_GD_curr[j] = F_MM_curr[j-1] * t->tr[j-1][M2D]                + F_GD_curr[j-1] * t->tr[j-1][D2D];
     }
   }
 
-  for (int j = 0; j <= t.L; j++)
+  for (int j = 0; j <= t->L; j++)
   {
     F_MM[0][j] = F_MM_prev[j];
     F_MM[1][j] = F_MM_curr[j];
@@ -648,9 +648,9 @@ void Hit::Forward(HMM& q, HMM& t, float** Pstruc)
   scale[0]=scale[1]=scale[2]=1.0;
 
   // Forward algorithm
-  for (i=2; i<=q.L; ++i) // Loop through query positions i
+  for (i=2; i<=q->L; ++i) // Loop through query positions i
     {
-      if (self) jmin = imin(i+SELFEXCL+1,t.L); else jmin=1;
+      if (self) jmin = imin(i+SELFEXCL+1,t->L); else jmin=1;
 
       if (scale_prod<DBL_MIN*100) scale_prod = 0.0; else scale_prod *= scale[i];
 
@@ -659,10 +659,10 @@ void Hit::Forward(HMM& q, HMM& t, float** Pstruc)
 	F_MM_curr[jmin] = F_MI_curr[jmin] = F_DG_curr[jmin] = F_IM_curr[jmin] = F_GD_curr[jmin] = 0.0;
       else 
       {
-	F_MM_curr[jmin] = scale_prod * ProbFwd(q.p[i],t.p[jmin]) * fpow2(ScoreSS(q,t,i,jmin)) * Cshift * (Pstruc==NULL? 1: Pstruc[i][jmin]);
+	F_MM_curr[jmin] = scale_prod * ProbFwd(q->p[i],t->p[jmin]) * fpow2(ScoreSS(q,t,i,jmin)) * Cshift * (Pstruc==NULL? 1: Pstruc[i][jmin]);
 	F_IM_curr[jmin] = F_GD_curr[jmin] = 0.0; 
-	F_MI_curr[jmin] = scale[i] * (F_MM_prev[jmin] * q.tr[i-1][M2M] * t.tr[jmin][M2I] + F_MI_prev[jmin] * q.tr[i-1][M2M] * t.tr[jmin][I2I]);
-	F_DG_curr[jmin] = scale[i] * (F_MM_prev[jmin] * q.tr[i-1][M2D]                   + F_DG_prev[jmin] * q.tr[i-1][D2D]);
+	F_MI_curr[jmin] = scale[i] * (F_MM_prev[jmin] * q->tr[i-1][M2M] * t->tr[jmin][M2I] + F_MI_prev[jmin] * q->tr[i-1][M2M] * t->tr[jmin][I2I]);
+	F_DG_curr[jmin] = scale[i] * (F_MM_prev[jmin] * q->tr[i-1][M2D]                   + F_DG_prev[jmin] * q->tr[i-1][D2D]);
       }
 
       /* copy back */
@@ -670,7 +670,7 @@ void Hit::Forward(HMM& q, HMM& t, float** Pstruc)
 
       Pmax_i=0;
  
-      for (j=jmin+1; j<=t.L; ++j) // Loop through template positions j
+      for (j=jmin+1; j<=t->L; ++j) // Loop through template positions j
       {
 	// Recursion relations
 
@@ -678,31 +678,31 @@ void Hit::Forward(HMM& q, HMM& t, float** Pstruc)
 	  F_MM_curr[j] = F_MI_curr[j] = F_DG_curr[j] = F_IM_curr[j] = F_GD_curr[j] = 0.0;
 	else
 	{
-	  F_MM_curr[j] = ProbFwd(q.p[i],t.p[j]) * fpow2(ScoreSS(q,t,i,j)) * Cshift * (Pstruc==NULL? 1: Pstruc[i][j]) * scale[i] *
+	  F_MM_curr[j] = ProbFwd(q->p[i],t->p[j]) * fpow2(ScoreSS(q,t,i,j)) * Cshift * (Pstruc==NULL? 1: Pstruc[i][j]) * scale[i] *
 	    ( pmin
-	      + F_MM_prev[j-1] * q.tr[i-1][M2M] * t.tr[j-1][M2M] // BB -> MM (BB = Begin/Begin, for local alignment)
-	      + F_GD_prev[j-1] * q.tr[i-1][M2M] * t.tr[j-1][D2M] // GD -> MM
-	      + F_IM_prev[j-1] * q.tr[i-1][I2M] * t.tr[j-1][M2M] // IM -> MM
-	      + F_DG_prev[j-1] * q.tr[i-1][D2M] * t.tr[j-1][M2M] // DG -> MM
-	      + F_MI_prev[j-1] * q.tr[i-1][M2M] * t.tr[j-1][I2M] // MI -> MM
+	      + F_MM_prev[j-1] * q->tr[i-1][M2M] * t->tr[j-1][M2M] // BB -> MM (BB = Begin/Begin, for local alignment)
+	      + F_GD_prev[j-1] * q->tr[i-1][M2M] * t->tr[j-1][D2M] // GD -> MM
+	      + F_IM_prev[j-1] * q->tr[i-1][I2M] * t->tr[j-1][M2M] // IM -> MM
+	      + F_DG_prev[j-1] * q->tr[i-1][D2M] * t->tr[j-1][M2M] // DG -> MM
+	      + F_MI_prev[j-1] * q->tr[i-1][M2M] * t->tr[j-1][I2M] // MI -> MM
 	    );
 	  F_GD_curr[j] = 
-	    (   F_MM_curr[j-1] * t.tr[j-1][M2D]                    // GD -> MM
-	      + F_GD_curr[j-1] * t.tr[j-1][D2D]                    // GD -> GD
-	      + (Pstruc==NULL? 0 : F_DG_curr[j-1] * t.tr[j-1][M2D] * q.tr[i][D2M] ) // DG -> GD (only when structure scores given)
+	    (   F_MM_curr[j-1] * t->tr[j-1][M2D]                    // GD -> MM
+	      + F_GD_curr[j-1] * t->tr[j-1][D2D]                    // GD -> GD
+	      + (Pstruc==NULL? 0 : F_DG_curr[j-1] * t->tr[j-1][M2D] * q->tr[i][D2M] ) // DG -> GD (only when structure scores given)
 	    );
 	  F_IM_curr[j] = 
-	    (   F_MM_curr[j-1] * q.tr[i][M2I] * t.tr[j-1][M2M]     // MM -> IM
-	      + F_IM_curr[j-1] * q.tr[i][I2I] * t.tr[j-1][M2M]     // IM -> IM
-	      + (Pstruc==NULL? 0 : F_MI_curr[j-1] * q.tr[i][M2I] * t.tr[j-1][I2M] ) // MI -> IM (only when structure scores given)
+	    (   F_MM_curr[j-1] * q->tr[i][M2I] * t->tr[j-1][M2M]     // MM -> IM
+	      + F_IM_curr[j-1] * q->tr[i][I2I] * t->tr[j-1][M2M]     // IM -> IM
+	      + (Pstruc==NULL? 0 : F_MI_curr[j-1] * q->tr[i][M2I] * t->tr[j-1][I2M] ) // MI -> IM (only when structure scores given)
 	    );
 	  F_DG_curr[j] = scale[i] * 
-	    (   F_MM_prev[j] * q.tr[i-1][M2D]                    // DG -> MM
-	      + F_DG_prev[j] * q.tr[i-1][D2D]                    // DG -> DG
+	    (   F_MM_prev[j] * q->tr[i-1][M2D]                    // DG -> MM
+	      + F_DG_prev[j] * q->tr[i-1][D2D]                    // DG -> DG
 	    ) ;
 	  F_MI_curr[j] = scale[i] * 
-	    (   F_MM_prev[j] * q.tr[i-1][M2M] * t.tr[j][M2I]     // MI -> MM 
-	      + F_MI_prev[j] * q.tr[i-1][M2M] * t.tr[j][I2I]     // MI -> MI
+	    (   F_MM_prev[j] * q->tr[i-1][M2M] * t->tr[j][M2I]     // MI -> MM 
+	      + F_MI_prev[j] * q->tr[i-1][M2M] * t->tr[j][I2I]     // MI -> MI
 	    );
 
 	  if(F_MM_curr[j]>Pmax_i)
@@ -713,7 +713,7 @@ void Hit::Forward(HMM& q, HMM& t, float** Pstruc)
       } //end for j
 
       /* F_MM_prev = F_MM_curr */
-      for (int jj = 0; jj <= t.L; jj++)
+      for (int jj = 0; jj <= t->L; jj++)
       {
 	F_MM_prev[jj] = F_MM_curr[jj];
 	F_MI_prev[jj] = F_MI_curr[jj];
@@ -737,10 +737,10 @@ void Hit::Forward(HMM& q, HMM& t, float** Pstruc)
   if (par.loc) 
     {
       Pforward = 1.0; // alignment contains no residues (see Mueckstein, Stadler et al.)
-      for (i=1; i<=q.L; ++i) // Loop through query positions i
+      for (i=1; i<=q->L; ++i) // Loop through query positions i
 	{
-	  if (self) jmin = imin(i+SELFEXCL+1,t.L); else jmin=1;
-	  for (j=jmin; j<=t.L; ++j) // Loop through template positions j
+	  if (self) jmin = imin(i+SELFEXCL+1,t->L); else jmin=1;
+	  for (j=jmin; j<=t->L; ++j) // Loop through template positions j
 	    Pforward += F_MM[i][j];
 	  Pforward *= scale[i+1];
 	}
@@ -748,30 +748,30 @@ void Hit::Forward(HMM& q, HMM& t, float** Pstruc)
   else  // global alignment
     {
       Pforward = 0.0;
-      for (i=1; i<q.L; ++i) Pforward = (Pforward + F_MM[i][t.L]) * scale[i+1];
-      for (j=1; j<=t.L; ++j) Pforward += F_MM[q.L][j];
-      Pforward *= scale[q.L+1];
+      for (i=1; i<q->L; ++i) Pforward = (Pforward + F_MM[i][t->L]) * scale[i+1];
+      for (j=1; j<=t->L; ++j) Pforward += F_MM[q->L][j];
+      Pforward *= scale[q->L+1];
     }
 
   // Calculate log2(P_forward)
   score = log2(Pforward)-10.0f;
-  for (i=1; i<=q.L+1; ++i) score -= log2(scale[i]);
+  for (i=1; i<=q->L+1; ++i) score -= log2(scale[i]);
   //   state = MM;
   
   if (par.loc) 
     {
       if (self)
-	score=score-log(0.5*t.L*q.L)/LAMDA+14.; // +14.0 to get approx same mean as for -global
+	score=score-log(0.5*t->L*q->L)/LAMDA+14.; // +14.0 to get approx same mean as for -global
       else 
-	score=score-log(t.L*q.L)/LAMDA+14.; // +14.0 to get approx same mean as for -global
+	score=score-log(t->L*q->L)/LAMDA+14.; // +14.0 to get approx same mean as for -global
     }
   
   // Debugging output
   /*
   if (v>=4)
     {
-      const int i0=0, i1=q.L;
-      const int j0=0, j1=t.L;
+      const int i0=0, i1=q->L;
+      const int j0=0, j1=t->L;
       scale_prod=1;
       fprintf(stderr,"\nFwd      scale     ");
       for (j=j0; j<=j1; ++j) fprintf(stderr,"%3i     ",j);
@@ -788,7 +788,7 @@ void Hit::Forward(HMM& q, HMM& t, float** Pstruc)
 	  // 	    printf("%7.4f ",F_MM[i][j]);
 	  // 	  printf("\n");
 	}
-      fprintf(stderr,"Template=%-12.12s  score=%6.3f i2=%i  j2=%i \n",t.name,score,i2,j2);
+      fprintf(stderr,"Template=%-12.12s  score=%6.3f i2=%i  j2=%i \n",t->name,score,i2,j2);
       fprintf(stderr,"\nForward total probability ratio: %8.3G\n",Pforward);
     }
     */
@@ -800,95 +800,95 @@ void Hit::Forward(HMM& q, HMM& t, float** Pstruc)
 /////////////////////////////////////////////////////////////////////////////////////
 // Compare two HMMs with Backward Algorithm (in lin-space, 2x faster), for use in MAC alignment 
 /////////////////////////////////////////////////////////////////////////////////////
-void Hit::Backward(HMM& q, HMM& t)
+void Hit::Backward(HMM* q, HMM* t)
 {
 
   // Variable declarations
   int i,j;      // query and template match state indices
   double pmin;  // this is the scaled 1 in the SW algorithm that represents a starting alignment         
   double Cshift = pow(2.0,par.shift);   // score offset transformed into factor in lin-space
-  double scale_prod=scale[q.L+1];
+  double scale_prod=scale[q->L+1];
   int jmin;
   
-  double B_MM_prev[t.L + 1];
-  double B_DG_prev[t.L + 1];
-  double B_MI_prev[t.L + 1];
+  double B_MM_prev[t->L + 1];
+  double B_DG_prev[t->L + 1];
+  double B_MI_prev[t->L + 1];
 
-  double B_MM_curr[t.L + 1];
-  double B_GD_curr[t.L + 1];
-  double B_DG_curr[t.L + 1];
-  double B_IM_curr[t.L + 1];
-  double B_MI_curr[t.L + 1];
+  double B_MM_curr[t->L + 1];
+  double B_GD_curr[t->L + 1];
+  double B_DG_curr[t->L + 1];
+  double B_IM_curr[t->L + 1];
+  double B_MI_curr[t->L + 1];
 
   // Initialization of top row, i.e. cells (0,j)
-  for (int j=t.L; j>=1; j--) 
+  for (int j=t->L; j>=1; j--) 
   {
-    if (cell_off[q.L][j]) 
-      B_MM[q.L][j] = B_MM_prev[j] = 0.0;
+    if (cell_off[q->L][j]) 
+      B_MM[q->L][j] = B_MM_prev[j] = 0.0;
     else 
-      B_MM[q.L][j] = B_MM_prev[j] = scale[q.L+1];
+      B_MM[q->L][j] = B_MM_prev[j] = scale[q->L+1];
     B_MI_prev[j] = B_DG_prev[j] = 0.0;
   }
-  if (par.loc) pmin = scale[q.L+1]; else pmin = 0.0; // transform pmin (for local alignment) to scale of present (i'th) row 
+  if (par.loc) pmin = scale[q->L+1]; else pmin = 0.0; // transform pmin (for local alignment) to scale of present (i'th) row 
 
   // Backward algorithm
-  for (i=q.L-1; i>=1; i--) // Loop through query positions i
+  for (i=q->L-1; i>=1; i--) // Loop through query positions i
     {
       //       if (v>=5) printf("\n");
       
-      if (self) jmin = imin(i+SELFEXCL,t.L); else jmin=1; // jmin = i+SELFEXCL and not (i+SELFEXCL+1) to set matrix element at boundary to zero
+      if (self) jmin = imin(i+SELFEXCL,t->L); else jmin=1; // jmin = i+SELFEXCL and not (i+SELFEXCL+1) to set matrix element at boundary to zero
 
-      // Initialize cells at (i,t.L+1)
+      // Initialize cells at (i,t->L+1)
       scale_prod *= scale[i+1];
       if (scale_prod<DBL_MIN*100) scale_prod = 0.0;
-      if (cell_off[i][t.L]) 
-	B_MM[i][t.L] = B_MM_curr[t.L] = 0.0;  
+      if (cell_off[i][t->L]) 
+	B_MM[i][t->L] = B_MM_curr[t->L] = 0.0;  
       else 
-	B_MM[i][t.L] = B_MM_curr[t.L] = scale_prod;
-      B_IM_curr[t.L] = B_MI_curr[t.L] = B_DG_curr[t.L] = B_GD_curr[t.L] = 0.0; 
+	B_MM[i][t->L] = B_MM_curr[t->L] = scale_prod;
+      B_IM_curr[t->L] = B_MI_curr[t->L] = B_DG_curr[t->L] = B_GD_curr[t->L] = 0.0; 
       pmin *= scale[i+1]; // transform pmin (for local alignment) to scale of present (i'th) row 
       if (pmin<DBL_MIN*100) pmin = 0.0;
  
-      for (j=t.L-1; j>=jmin; j--) // Loop through template positions j
+      for (j=t->L-1; j>=jmin; j--) // Loop through template positions j
 	{
 	  // Recursion relations
-	  //	      printf("S[%i][%i]=%4.1f  ",i,j,Score(q.p[i],t.p[j]));
+	  //	      printf("S[%i][%i]=%4.1f  ",i,j,Score(q->p[i],t->p[j]));
 
 	  if (cell_off[i][j]) 
 	    B_MM_curr[j] = B_GD_curr[j] = B_IM_curr[j] = B_DG_curr[j] = B_MI_curr[j] = 0.0;  
 	  else 
 	    {
-	      double pmatch = B_MM_prev[j+1] * ProbFwd(q.p[i+1],t.p[j+1]) * fpow2(ScoreSS(q,t,i+1,j+1)) * Cshift * scale[i+1];
+	      double pmatch = B_MM_prev[j+1] * ProbFwd(q->p[i+1],t->p[j+1]) * fpow2(ScoreSS(q,t,i+1,j+1)) * Cshift * scale[i+1];
 	      B_MM_curr[j] =  
 		(
 		 + pmin                                                    // MM -> EE (End/End, for local alignment)
-		 + pmatch       * q.tr[i][M2M] * t.tr[j][M2M]              // MM -> MM
-		 + B_GD_curr[j+1]                * t.tr[j][M2D]              // MM -> GD (q.tr[i][M2M] is already contained in GD->MM)
-		 + B_IM_curr[j+1] * q.tr[i][M2I] * t.tr[j][M2M]              // MM -> IM
-		 + B_DG_prev[j] * q.tr[i][M2D]                * scale[i+1] // MM -> DG (t.tr[j][M2M] is already contained in DG->MM)
-		 + B_MI_prev[j] * q.tr[i][M2M] * t.tr[j][M2I] * scale[i+1] // MM -> MI
+		 + pmatch       * q->tr[i][M2M] * t->tr[j][M2M]              // MM -> MM
+		 + B_GD_curr[j+1]                * t->tr[j][M2D]              // MM -> GD (q->tr[i][M2M] is already contained in GD->MM)
+		 + B_IM_curr[j+1] * q->tr[i][M2I] * t->tr[j][M2M]              // MM -> IM
+		 + B_DG_prev[j] * q->tr[i][M2D]                * scale[i+1] // MM -> DG (t->tr[j][M2M] is already contained in DG->MM)
+		 + B_MI_prev[j] * q->tr[i][M2M] * t->tr[j][M2I] * scale[i+1] // MM -> MI
 		 );
 	      B_GD_curr[j] = 
 		(
-		 + pmatch       * q.tr[i][M2M] * t.tr[j][D2M]              // GD -> MM 
-		 + B_GD_curr[j+1]                * t.tr[j][D2D]              // DG -> DG   
+		 + pmatch       * q->tr[i][M2M] * t->tr[j][D2M]              // GD -> MM 
+		 + B_GD_curr[j+1]                * t->tr[j][D2D]              // DG -> DG   
 		 );
 	      B_IM_curr[j] = 
 		(
-		 + pmatch       * q.tr[i][I2M] * t.tr[j][M2M]              // IM -> MM
-		 + B_IM_curr[j+1] * q.tr[i][I2I] * t.tr[j][M2M]              // IM -> IM
+		 + pmatch       * q->tr[i][I2M] * t->tr[j][M2M]              // IM -> MM
+		 + B_IM_curr[j+1] * q->tr[i][I2I] * t->tr[j][M2M]              // IM -> IM
 		 );
 	      B_DG_curr[j] =  
 		(
-		 + pmatch       * q.tr[i][D2M] * t.tr[j][M2M]              // DG -> MM
-		 + B_DG_prev[j] * q.tr[i][D2D]                * scale[i+1] // DG -> DG
-		 //   	         + B_GD[i][j+1] * q.tr[i][D2M] * t.tr[j][M2D]              // DG -> GD
+		 + pmatch       * q->tr[i][D2M] * t->tr[j][M2M]              // DG -> MM
+		 + B_DG_prev[j] * q->tr[i][D2D]                * scale[i+1] // DG -> DG
+		 //   	         + B_GD[i][j+1] * q->tr[i][D2M] * t->tr[j][M2D]              // DG -> GD
 		 );
 	      B_MI_curr[j] = 
 		(
-		 + pmatch       * q.tr[i][M2M] * t.tr[j][I2M]              // MI -> MM       
-		 + B_MI_prev[j] * q.tr[i][M2M] * t.tr[j][I2I] * scale[i+1] // MI -> MI
-		 // 	         + B_IM[i][j+1] * q.tr[i][M2I] * t.tr[j][I2M]              // MI -> IM    
+		 + pmatch       * q->tr[i][M2M] * t->tr[j][I2M]              // MI -> MM       
+		 + B_MI_prev[j] * q->tr[i][M2M] * t->tr[j][I2I] * scale[i+1] // MI -> MI
+		 // 	         + B_IM[i][j+1] * q->tr[i][M2I] * t->tr[j][I2M]              // MI -> IM    
 		 );
 
 	    } // end else	      
@@ -897,7 +897,7 @@ void Hit::Backward(HMM& q, HMM& t)
 	  B_MM[i][j] = B_MM_curr[j];
 	} //end for j
 
-      for(int jj = 0; jj <= t.L; jj++)
+      for(int jj = 0; jj <= t->L; jj++)
       {
 	B_MM_prev[jj] = B_MM_curr[jj];
 	B_DG_prev[jj] = B_DG_curr[jj];
@@ -909,11 +909,11 @@ void Hit::Backward(HMM& q, HMM& t)
   // Debugging output
   if (v>=6)
     {
-      const int i0=0, i1=q.L;
-      const int j0=0, j1=t.L;
-      double scale_prod[q.L+2];
-      scale_prod[q.L] = scale[q.L+1];
-      for (i=q.L-1; i>=1; i--) scale_prod[i] = scale_prod[i+1] * scale[i+1];
+      const int i0=0, i1=q->L;
+      const int j0=0, j1=t->L;
+      double scale_prod[q->L+2];
+      scale_prod[q->L] = scale[q->L+1];
+      for (i=q->L-1; i>=1; i--) scale_prod[i] = scale_prod[i+1] * scale[i+1];
  
       printf("\nBwd      scale     ");
       for (j=j0; j<=j1; ++j) printf("%3i     ",j);
@@ -922,12 +922,12 @@ void Hit::Backward(HMM& q, HMM& t)
 	{
 	  printf("%3i: %9.3G ",i,1/scale_prod[i]);
 	  for (j=j0; j<=j1; ++j)
- 	    printf("%7.4f ",(B_MM[i][j]+B_MI[i][j]+B_IM[i][j]+B_DG[i][j]+B_GD[i][j]) * (ProbFwd(q.p[i],t.p[j])*fpow2(ScoreSS(q,t,i,j)) * Cshift));
+ 	    printf("%7.4f ",(B_MM[i][j]+B_MI[i][j]+B_IM[i][j]+B_DG[i][j]+B_GD[i][j]) * (ProbFwd(q->p[i],t->p[j])*fpow2(ScoreSS(q,t,i,j)) * Cshift));
 	  printf("\n");
 
 	  // 	  printf("MM   %9.5f ",1/scale[i]);
 	  // 	  for (j=j0; j<=j1; ++j)
-	  // 	    printf("%7.4f ",B_MM[i][j] * (ProbFwd(q.p[i],t.p[j])*fpow2(ScoreSS(q,t,i,j)) * Cshift));
+	  // 	    printf("%7.4f ",B_MM[i][j] * (ProbFwd(q->p[i],t->p[j])*fpow2(ScoreSS(q,t,i,j)) * Cshift));
 	  // 	  printf("\n");
 	}
       printf("\nPost     scale     ");
@@ -947,8 +947,8 @@ void Hit::Backward(HMM& q, HMM& t)
   */
 
   // Calculate Posterior matrix and overwrite Backward matrix with it
-  for (i=1; i<=q.L; ++i) 
-    for (j=1; j<=t.L; ++j) 
+  for (i=1; i<=q->L; ++i) 
+    for (j=1; j<=t->L; ++j) 
       B_MM[i][j] *= F_MM[i][j]/Pforward;
 
   return;
@@ -959,7 +959,7 @@ void Hit::Backward(HMM& q, HMM& t)
 /////////////////////////////////////////////////////////////////////////////////////
 // Maximum Accuracy alignment 
 /////////////////////////////////////////////////////////////////////////////////////
-void Hit::MACAlignment(HMM& q, HMM& t)
+void Hit::MACAlignment(HMM* q, HMM* t)
 {
   // Use Forward and Backward matrices to find that alignment which 
   // maximizes the expected number of correctly aligned pairs of residues (mact=0)
@@ -970,36 +970,36 @@ void Hit::MACAlignment(HMM& q, HMM& t)
 
   int i,j;           // query and template match state indices
   int jmin,jmax;     // range of dynamic programming for j
-  double S_prev[t.L + 1];    // scores
-  double S_curr[t.L + 1];    // scores
+  double S_prev[t->L + 1];    // scores
+  double S_curr[t->L + 1];    // scores
   double score_MAC;   // score of the best MAC alignment
 
   // Initialization of top row, i.e. cells (0,j)
-  for (j=0; j<=t.L; ++j)
+  for (j=0; j<=t->L; ++j)
     S_prev[j] = 0.0;
   score_MAC=-INT_MAX; i2=j2=0; bMM[0][0]=STOP;
 
   // Dynamic programming 
-  for (i=1; i<=q.L; ++i) // Loop through query positions i
+  for (i=1; i<=q->L; ++i) // Loop through query positions i
     {
       
       if (self) 
 	{
 	  // If q is compared to itself, ignore cells below diagonal+SELFEXCL
 	  jmin = i+SELFEXCL; 
-	  jmax = t.L;
+	  jmax = t->L;
 	  if (jmin>jmax) continue;
 	}
       else
 	{
 	  // If q is compared to t, exclude regions where overlap of q with t < min_overlap residues
-	  jmin=imax( 1, i+min_overlap-q.L);  // Lq-i+j>=Ovlap => j>=i+Ovlap-Lq => jmin=max{1, i+Ovlap-Lq} 
-	  jmax=imin(t.L,i-min_overlap+t.L);  // Lt-j+i>=Ovlap => j<=i-Ovlap+Lt => jmax=min{Lt,i-Ovlap+Lt} 
+	  jmin=imax( 1, i+min_overlap-q->L);  // Lq-i+j>=Ovlap => j>=i+Ovlap-Lq => jmin=max{1, i+Ovlap-Lq} 
+	  jmax=imin(t->L,i-min_overlap+t->L);  // Lt-j+i>=Ovlap => j<=i-Ovlap+Lt => jmax=min{Lt,i-Ovlap+Lt} 
 	}      
 
       // Initialize cells
       S_curr[jmin-1] = 0.0;
-      if (jmax<t.L) S_prev[jmax] = 0.0; // initialize at (i-1,jmax) if upper right triagonal is excluded due to min overlap
+      if (jmax<t->L) S_prev[jmax] = 0.0; // initialize at (i-1,jmax) if upper right triagonal is excluded due to min overlap
       
       for (j=jmin; j<=jmax; ++j) // Loop through template positions j
 	{
@@ -1029,7 +1029,7 @@ void Hit::MACAlignment(HMM& q, HMM& t)
 	      //printf("i=%i  j=%i  S[i][j]=%8.3f  MM:%7.3f  MI:%7.3f  IM:%7.3f  b:%i\n",i,j,S[i][j],S[i-1][j-1]+B_MM[i][j]-par.mact,S[i-1][j],S[i][j-1],bMM[i][j]);
 	      
 	      // Find maximum score; global alignment: maximize only over last row and last column
-	      if(S_curr[j]>score_MAC && (par.loc || i==q.L)) { i2=i; j2=j; score_MAC=S_curr[j]; }	      
+	      if(S_curr[j]>score_MAC && (par.loc || i==q->L)) { i2=i; j2=j; score_MAC=S_curr[j]; }	      
 	      
 	    } // end if 
 	  
@@ -1038,7 +1038,7 @@ void Hit::MACAlignment(HMM& q, HMM& t)
 	  // if global alignment: look for best cell in last column
       if (!par.loc && S_curr[jmax]>score_MAC) { i2=i; j2=jmax; score_MAC=S_curr[jmax]; }
       
-      for (j=0; j<=t.L; ++j)
+      for (j=0; j<=t->L; ++j)
 	S_prev[j] = S_curr[j];
     } // end for i
   
@@ -1047,17 +1047,17 @@ void Hit::MACAlignment(HMM& q, HMM& t)
   if (v>=5) 
     {
       printf("\nScore  ");
-      for (j=0; j<=t.L; ++j) printf("%3i   ",j);
+      for (j=0; j<=t->L; ++j) printf("%3i   ",j);
       printf("\n");
-      for (i=0; i<=q.L; ++i) 
+      for (i=0; i<=q->L; ++i) 
 	{
 	  printf("%2i:    ",i);
- 	  for (j=0; j<=t.L; ++j) 
+ 	  for (j=0; j<=t->L; ++j) 
 	    printf("%5.2f ",S[i][j]);
 	  printf("\n");
 	}
       printf("\n");
-      printf("Template=%-12.12s  i=%-4i j=%-4i score=%6.3f\n",t.name,i2,j2,score_MAC);
+      printf("Template=%-12.12s  i=%-4i j=%-4i score=%6.3f\n",t->name,i2,j2,score_MAC);
     }
     */
 
@@ -1068,7 +1068,7 @@ void Hit::MACAlignment(HMM& q, HMM& t)
 /////////////////////////////////////////////////////////////////////////////////////
 // Trace back Viterbi alignment of two profiles based on matrices bXX[][]
 /////////////////////////////////////////////////////////////////////////////////////
-void Hit::Backtrace(HMM& q, HMM& t)
+void Hit::Backtrace(HMM* q, HMM* t)
 {
   // Trace back trough the matrices bXY[i][j] until first match state is found (STOP-state)
 
@@ -1078,8 +1078,8 @@ void Hit::Backtrace(HMM& q, HMM& t)
   InitializeBacktrace(q,t);
   
   // Make sure that backtracing stops when t:M1 or q:M1 is reached (Start state), e.g. sMM[i][1], or sIM[i][1] (M:MM, B:IM)
-  for (i=0; i<=q.L; ++i) bMM[i][1]=bGD[i][1]=bIM[i][1] = STOP;
-  for (j=1; j<=t.L; ++j) bMM[1][j]=bDG[1][j]=bMI[1][j] = STOP;
+  for (i=0; i<=q->L; ++i) bMM[i][1]=bGD[i][1]=bIM[i][1] = STOP;
+  for (j=1; j<=t->L; ++j) bMM[1][j]=bDG[1][j]=bMI[1][j] = STOP;
   
 
   // Back-tracing loop
@@ -1094,9 +1094,9 @@ void Hit::Backtrace(HMM& q, HMM& t)
       this->i[step] = i;
       this->j[step] = j;
       // Exclude cells in direct neighbourhood from all further alignments
-      for (int ii=imax(i-2,1); ii<=imin(i+2,q.L); ++ii)
+      for (int ii=imax(i-2,1); ii<=imin(i+2,q->L); ++ii)
 	cell_off[ii][j]=1;     
-      for (int jj=imax(j-2,1); jj<=imin(j+2,t.L); ++jj)
+      for (int jj=imax(j-2,1); jj<=imin(j+2,t->L); ++jj)
 	cell_off[i][jj]=1;     
       
       switch (state)
@@ -1147,7 +1147,7 @@ void Hit::Backtrace(HMM& q, HMM& t)
   nsteps=step; 
   
   // Allocate new space for alignment scores
-  if (t.Xcons) Xcons = new( char[q.L+2]); // for template consensus sequence aligned to query
+  if (t->Xcons) Xcons = new( char[q->L+2]); // for template consensus sequence aligned to query
   S    = new( float[nsteps+1]);
   S_ss = new( float[nsteps+1]);
   if (!S_ss) MemoryError("space for HMM-HMM alignments");
@@ -1163,10 +1163,10 @@ void Hit::Backtrace(HMM& q, HMM& t)
 	case MM: 
 	  i = this->i[step];
 	  j = this->j[step];
-	  S[step] = Score(q.p[i],t.p[j]);
+	  S[step] = Score(q->p[i],t->p[j]);
 	  S_ss[step] = ScoreSS(q,t,i,j,ssm);
 	  score_ss += S_ss[step];
-	  if (Xcons) Xcons[i]=t.Xcons[j]; //record database consensus sequence
+	  if (Xcons) Xcons[i]=t->Xcons[j]; //record database consensus sequence
 	  break;
 	case MI: //if gap in template  
 	case DG:   
@@ -1180,7 +1180,7 @@ void Hit::Backtrace(HMM& q, HMM& t)
   if (Xcons) 
     {
       for (i=0; i<i1; ++i) Xcons[i]=ENDGAP; // set end gap code at beginning and end of template consensus sequence
-      for (i=i2+1; i<=q.L+1; ++i) Xcons[i]=ENDGAP;
+      for (i=i2+1; i<=q->L+1; ++i) Xcons[i]=ENDGAP;
     }
   
   // Add contribution from correlation of neighboring columns to score
@@ -1197,13 +1197,13 @@ void Hit::Backtrace(HMM& q, HMM& t)
   // Set score, P-value etc.
   score_sort = score_aass = -score;
   logPval=0; Pval=1;
-  if (t.mu)
+  if (t->mu)
     {
-      logPvalt=logPvalue(score,t.lamda,t.mu); 
-      Pvalt=Pvalue(score,t.lamda,t.mu); 
+      logPvalt=logPvalue(score,t->lamda,t->mu); 
+      Pvalt=Pvalue(score,t->lamda,t->mu); 
     }
   else { logPvalt=0; Pvalt=1;}
-  //   printf("%-10.10s lamda=%-9f  score=%-9f  logPval=%-9g\n",name,t.lamda,score,logPvalt);
+  //   printf("%-10.10s lamda=%-9f  score=%-9f  logPval=%-9g\n",name,t->lamda,score,logPvalt);
   
 
   //DEBUG: Print out Viterbi path
@@ -1216,7 +1216,7 @@ void Hit::Backtrace(HMM& q, HMM& t)
 	  switch(states[step])
 	    {
 	    case MM: 
-	      printf("%4i  %1c %1c ",step,q.seq[q.nfirst][this->i[step]],seq[nfirst][this->j[step]]); 
+	      printf("%4i  %1c %1c ",step,q->seq[q->nfirst][this->i[step]],seq[nfirst][this->j[step]]); 
 	      break;
 	    case GD: 
 	    case IM: 
@@ -1224,11 +1224,11 @@ void Hit::Backtrace(HMM& q, HMM& t)
 	      break;
 	    case DG:
 	    case MI: 
-	      printf("%4i  %1c - ",step,q.seq[q.nfirst][this->i[step]]); 
+	      printf("%4i  %1c - ",step,q->seq[q->nfirst][this->i[step]]); 
 	      break;
 	    }
 	  printf("%4i %4i     %2i %7.2f    ",this->i[step],this->j[step],(int)states[step],S[step]); 
-	  printf("%c %c %1i %7.2f\n",i2ss(t.ss_dssp[this->j[step]]),i2ss(q.ss_pred[this->i[step]]),q.ss_conf[this->i[step]]-1,S_ss[step]); 
+	  printf("%c %c %1i %7.2f\n",i2ss(t->ss_dssp[this->j[step]]),i2ss(q->ss_pred[this->i[step]]),q->ss_conf[this->i[step]]-1,S_ss[step]); 
 	}
     }
 
@@ -1240,40 +1240,40 @@ void Hit::Backtrace(HMM& q, HMM& t)
 /////////////////////////////////////////////////////////////////////////////////////
 // GLOBAL stochastic trace back through the forward matrix of probability ratios
 /////////////////////////////////////////////////////////////////////////////////////
-void Hit::StochasticBacktrace(HMM& q, HMM& t, char maximize)
+void Hit::StochasticBacktrace(HMM* q, HMM* t, char maximize)
 {
   /*
   int step;        // counts steps in path through 5-layered dynamic programming matrix
   int i,j;         // query and template match state indices
   //  float pmin=(par.loc? 1.0: 0.0);    // used to distinguish between SW and NW algorithms in maximization         
   const float pmin=0;
-  double* scale_cum = new(double[q.L+2]);
+  double* scale_cum = new(double[q->L+2]);
   
 
   scale_cum[0]=1;
-  for (i=1; i<=q.L+1; ++i) scale_cum[i] = scale_cum[i-1]*scale[i];
+  for (i=1; i<=q->L+1; ++i) scale_cum[i] = scale_cum[i-1]*scale[i];
 
   // Select start cell for GLOBAL alignment
   // (Implementing this in a local version would make this method work for local backtracing as well)
   if (maximize) 
     {
       double F_max=0;
-      for (i=q.L-1; i>=1; i--) 
-	if (F_MM[i][t.L]/scale_cum[i]>F_max) {i2=i; j2=t.L; F_max=F_MM[i][t.L]/scale_cum[i];}
-      for (j=t.L; j>=1; j--) 
-	if (F_MM[q.L][j]/scale_cum[q.L]>F_max) {i2=q.L; j2=j; F_max=F_MM[q.L][j]/scale_cum[q.L];}
+      for (i=q->L-1; i>=1; i--) 
+	if (F_MM[i][t->L]/scale_cum[i]>F_max) {i2=i; j2=t->L; F_max=F_MM[i][t->L]/scale_cum[i];}
+      for (j=t->L; j>=1; j--) 
+	if (F_MM[q->L][j]/scale_cum[q->L]>F_max) {i2=q->L; j2=j; F_max=F_MM[q->L][j]/scale_cum[q->L];}
     }
   else 
     {
-      //      float sumF[q.L+t.L];
-      double* sumF=new(double[q.L+t.L]);
+      //      float sumF[q->L+t->L];
+      double* sumF=new(double[q->L+t->L]);
       sumF[0]=0.0;
-      for (j=1; j<=t.L; ++j)        sumF[j] = sumF[j-1] + F_MM[q.L][j]/scale_cum[q.L];;
-      for (j=t.L+1; j<t.L+q.L; ++j) sumF[j] = sumF[j-1] + F_MM[j-t.L][t.L]/scale_cum[j-t.L];;
-      float x = sumF[t.L+q.L-1]*frand(); // generate random number between 0 and sumF[t.L+q.L-1]
-      for (j=1; j<t.L+q.L; ++j) 
+      for (j=1; j<=t->L; ++j)        sumF[j] = sumF[j-1] + F_MM[q->L][j]/scale_cum[q->L];;
+      for (j=t->L+1; j<t->L+q->L; ++j) sumF[j] = sumF[j-1] + F_MM[j-t->L][t->L]/scale_cum[j-t->L];;
+      float x = sumF[t->L+q->L-1]*frand(); // generate random number between 0 and sumF[t->L+q->L-1]
+      for (j=1; j<t->L+q->L; ++j) 
 	if (x<sumF[j]) break;
-      if (j<=t.L) {i2=q.L; j2=j;} else {i2=j-t.L; j2=t.L;}
+      if (j<=t->L) {i2=q->L; j2=j;} else {i2=j-t->L; j2=t->L;}
       delete[] sumF;
     }
 
@@ -1314,66 +1314,66 @@ void Hit::StochasticBacktrace(HMM& q, HMM& t, char maximize)
 	{
 	  
 	case MM: // current state is MM, previous state is state
-	  // 	  fprintf(stderr,"%4i  %1c %1c %4i %4i     MM %7.2f\n",step,q.seq[q.nfirst][i],seq[nfirst][j],i,j,Score(q.p[i],t.p[j])); 
+	  // 	  fprintf(stderr,"%4i  %1c %1c %4i %4i     MM %7.2f\n",step,q->seq[q->nfirst][i],seq[nfirst][j],i,j,Score(q->p[i],t->p[j])); 
 	  // 	  printf("0:%7.3f   MM:%7.3f   GD:%7.3f   IM:%7.3f   DG:%7.3f   MI:%7.3f \n",
 	  // 		        pmin*scale_cum[i-1],
-	  // 		        F_MM[i-1][j-1] * q.tr[i-1][M2M] * t.tr[j-1][M2M], 
-	  // 			F_GD[i-1][j-1] * q.tr[i-1][M2M] * t.tr[j-1][D2M],
-	  // 			F_IM[i-1][j-1] * q.tr[i-1][I2M] * t.tr[j-1][M2M],
-	  // 			F_DG[i-1][j-1] * q.tr[i-1][D2M] * t.tr[j-1][M2M],
-	  // 		        F_MI[i-1][j-1] * q.tr[i-1][M2M] * t.tr[j-1][I2M]);
+	  // 		        F_MM[i-1][j-1] * q->tr[i-1][M2M] * t->tr[j-1][M2M], 
+	  // 			F_GD[i-1][j-1] * q->tr[i-1][M2M] * t->tr[j-1][D2M],
+	  // 			F_IM[i-1][j-1] * q->tr[i-1][I2M] * t->tr[j-1][M2M],
+	  // 			F_DG[i-1][j-1] * q->tr[i-1][D2M] * t->tr[j-1][M2M],
+	  // 		        F_MI[i-1][j-1] * q->tr[i-1][M2M] * t->tr[j-1][I2M]);
 	  matched_cols++; 
 	  if (j>1 && i>1)
 	    state = (*pick6)( 
 			     pmin*scale_cum[i-1],
-			     F_MM[i-1][j-1] * q.tr[i-1][M2M] * t.tr[j-1][M2M], 
-			     F_GD[i-1][j-1] * q.tr[i-1][M2M] * t.tr[j-1][D2M],
-			     F_IM[i-1][j-1] * q.tr[i-1][I2M] * t.tr[j-1][M2M],
-			     F_DG[i-1][j-1] * q.tr[i-1][D2M] * t.tr[j-1][M2M],
-			     F_MI[i-1][j-1] * q.tr[i-1][M2M] * t.tr[j-1][I2M]
+			     F_MM[i-1][j-1] * q->tr[i-1][M2M] * t->tr[j-1][M2M], 
+			     F_GD[i-1][j-1] * q->tr[i-1][M2M] * t->tr[j-1][D2M],
+			     F_IM[i-1][j-1] * q->tr[i-1][I2M] * t->tr[j-1][M2M],
+			     F_DG[i-1][j-1] * q->tr[i-1][D2M] * t->tr[j-1][M2M],
+			     F_MI[i-1][j-1] * q->tr[i-1][M2M] * t->tr[j-1][I2M]
 			      );
 	  else state=0;	  
 	  i--; j--;
 	  break;	      
 	case GD: // current state is GD
-	  // 	  fprintf(stderr,"%4i  - %1c %4i %4i     GD %7.2f\n",step,q.seq[q.nfirst][j],i,j,Score(q.p[i],t.p[j])); 
+	  // 	  fprintf(stderr,"%4i  - %1c %4i %4i     GD %7.2f\n",step,q->seq[q->nfirst][j],i,j,Score(q->p[i],t->p[j])); 
 	  if (j>1) 
 	    state = (*pick3_GD)(
-				F_MM[i][j-1] * t.tr[j-1][M2D],
-				F_DG[i][j-1] * t.tr[j-1][M2D] * q.tr[i][D2M],   // DG -> GD
-				F_GD[i][j-1] * t.tr[j-1][D2D]                   // gap extension (DD) in template
+				F_MM[i][j-1] * t->tr[j-1][M2D],
+				F_DG[i][j-1] * t->tr[j-1][M2D] * q->tr[i][D2M],   // DG -> GD
+				F_GD[i][j-1] * t->tr[j-1][D2D]                   // gap extension (DD) in template
 				);
 	  else state=0;	  
 	  j--;
 	  break;	      
 	case IM: 
-	  // 	  fprintf(stderr,"%4i  - %1c %4i %4i     IM %7.2f\n",step,q.seq[q.nfirst][j],i,j,Score(q.p[i],t.p[j])); 
+	  // 	  fprintf(stderr,"%4i  - %1c %4i %4i     IM %7.2f\n",step,q->seq[q->nfirst][j],i,j,Score(q->p[i],t->p[j])); 
 	  if (j>1) 
 	    state = (*pick3_IM)(
-				F_MM[i][j-1] * q.tr[i][M2I] * t.tr[j-1][M2M],
-				F_MI[i][j-1] * q.tr[i][M2I] * t.tr[j-1][I2M],  // MI -> IM
-				F_IM[i][j-1] * q.tr[i][I2I] * t.tr[j-1][M2M]   // gap extension (II) in query
+				F_MM[i][j-1] * q->tr[i][M2I] * t->tr[j-1][M2M],
+				F_MI[i][j-1] * q->tr[i][M2I] * t->tr[j-1][I2M],  // MI -> IM
+				F_IM[i][j-1] * q->tr[i][I2I] * t->tr[j-1][M2M]   // gap extension (II) in query
 				); 
 	  else state=0;	  
 	  j--;
 	  break;	      
 	case DG:
-	  // 	  fprintf(stderr,"%4i  %1c - %4i %4i     DG %7.2f\n",step,q.seq[q.nfirst][i],i,j,Score(q.p[i],t.p[j])); 
+	  // 	  fprintf(stderr,"%4i  %1c - %4i %4i     DG %7.2f\n",step,q->seq[q->nfirst][i],i,j,Score(q->p[i],t->p[j])); 
 	  if (i>1) 
 	    state = (*pick2)(
-			     F_MM[i-1][j] * q.tr[i-1][M2D],
-			     F_DG[i-1][j] * q.tr[i-1][D2D], //gap extension (DD) in query
+			     F_MM[i-1][j] * q->tr[i-1][M2D],
+			     F_DG[i-1][j] * q->tr[i-1][D2D], //gap extension (DD) in query
 			     DG
 			     );
 	  else state=0;	  
 	  i--; 
 	  break;	      
 	case MI:
-	  // 	  fprintf(stderr,"%4i  %1c - %4i %4i     MI %7.2f\n",step,q.seq[q.nfirst][i],i,j,Score(q.p[i],t.p[j])); 
+	  // 	  fprintf(stderr,"%4i  %1c - %4i %4i     MI %7.2f\n",step,q->seq[q->nfirst][i],i,j,Score(q->p[i],t->p[j])); 
 	  if (i>1) 
 	    state = (*pick2)(
-			     F_MM[i-1][j] * q.tr[i-1][M2M] * t.tr[j][M2I],
-			     F_MI[i-1][j] * q.tr[i-1][M2M] * t.tr[j][I2I], //gap extension (II) in template
+			     F_MM[i-1][j] * q->tr[i-1][M2M] * t->tr[j][M2I],
+			     F_MI[i-1][j] * q->tr[i-1][M2M] * t->tr[j][I2I], //gap extension (II) in template
 			     MI
 			     );
 	  else state=0;
@@ -1390,7 +1390,7 @@ void Hit::StochasticBacktrace(HMM& q, HMM& t, char maximize)
   nsteps=step; 
 
   // Allocate new space for alignment scores
-  if (t.Xcons) Xcons = new( char[q.L+2]); // for template consensus sequence aligned to query
+  if (t->Xcons) Xcons = new( char[q->L+2]); // for template consensus sequence aligned to query
   S    = new( float[nsteps+1]);
   S_ss = new( float[nsteps+1]);
   if (!S_ss) MemoryError("space for HMM-HMM alignments");
@@ -1406,10 +1406,10 @@ void Hit::StochasticBacktrace(HMM& q, HMM& t, char maximize)
 	case MM: 
 	  i = this->i[step];
 	  j = this->j[step];
-	  S[step] = Score(q.p[i],t.p[j]);
+	  S[step] = Score(q->p[i],t->p[j]);
 	  S_ss[step] = ScoreSS(q,t,i,j,ssm);
 	  score_ss += S_ss[step];
-	  if (Xcons) Xcons[i]=t.Xcons[j]; //record database consensus sequence
+	  if (Xcons) Xcons[i]=t->Xcons[j]; //record database consensus sequence
 	  break;
 	case MI: //if gap in template  
 	case DG:   
@@ -1423,7 +1423,7 @@ void Hit::StochasticBacktrace(HMM& q, HMM& t, char maximize)
   if (Xcons) 
     {
       for (i=0; i<i1; ++i) Xcons[i]=ENDGAP; // set end gap code at beginning and end of template consensus sequence
-      for (i=i2+1; i<=q.L+1; ++i) Xcons[i]=ENDGAP;
+      for (i=i2+1; i<=q->L+1; ++i) Xcons[i]=ENDGAP;
     }
 
   delete[] scale_cum;
@@ -1439,7 +1439,7 @@ void Hit::StochasticBacktrace(HMM& q, HMM& t, char maximize)
 /////////////////////////////////////////////////////////////////////////////////////
 // Trace back alignment of two profiles based on matrices bXX[][]
 /////////////////////////////////////////////////////////////////////////////////////
-void Hit::BacktraceMAC(HMM& q, HMM& t)
+void Hit::BacktraceMAC(HMM* q, HMM* t)
 {
   // Trace back trough the matrix b[i][j] until STOP state is found
 
@@ -1450,8 +1450,8 @@ void Hit::BacktraceMAC(HMM& q, HMM& t)
   InitializeBacktrace(q,t);
   
   // Make sure that backtracing stops when t:M1 or q:M1 is reached (Start state), e.g. sMM[i][1], or sIM[i][1] (M:MM, B:IM)
-  for (i=0; i<=q.L; ++i) b[i][1] = STOP;
-  for (j=1; j<=t.L; ++j) b[1][j] = STOP;
+  for (i=0; i<=q->L; ++i) b[i][1] = STOP;
+  for (j=1; j<=t->L; ++j) b[1][j] = STOP;
   
   // Back-tracing loop
   // In contrast to the Viterbi-Backtracing, STOP signifies the first Match-Match state, NOT the state before the first MM state
@@ -1477,9 +1477,9 @@ void Hit::BacktraceMAC(HMM& q, HMM& t)
 	alt_i->Push(i);
 	alt_j->Push(j);
 	// Exclude cells in direct neighbourhood from all further alignments
-	for (int ii=imax(i-2,1); ii<=imin(i+2,q.L); ++ii)
+	for (int ii=imax(i-2,1); ii<=imin(i+2,q->L); ++ii)
 	  cell_off[ii][j]=1;     
-	for (int jj=imax(j-2,1); jj<=imin(j+2,t.L); ++jj)
+	for (int jj=imax(j-2,1); jj<=imin(j+2,t->L); ++jj)
 	  cell_off[i][jj]=1;     
 	if (state==MM) matched_cols++; 
 	
@@ -1503,7 +1503,7 @@ void Hit::BacktraceMAC(HMM& q, HMM& t)
   nsteps=step; 
     
   // Allocate new space for alignment scores
-  if (t.Xcons) Xcons = new( char[q.L+2]); // for template consensus sequence aligned to query
+  if (t->Xcons) Xcons = new( char[q->L+2]); // for template consensus sequence aligned to query
   S    = new( float[nsteps+1]);
   S_ss = new( float[nsteps+1]);
   P_posterior = new( float[nsteps+1]);
@@ -1522,14 +1522,14 @@ void Hit::BacktraceMAC(HMM& q, HMM& t)
 	case MM: 
 	  i = this->i[step];
 	  j = this->j[step];
-	  S[step] = Score(q.p[i],t.p[j]);
+	  S[step] = Score(q->p[i],t->p[j]);
 	  S_ss[step] = ScoreSS(q,t,i,j,ssm);
 	  score_ss += S_ss[step];
 	  P_posterior[step] = B_MM[this->i[step]][this->j[step]];
 	  // Add probability to sum of probs if no dssp states given or dssp states exist and state is resolved in 3D structure
-	  if (t.nss_dssp<0 || t.ss_dssp[j]>0) sum_of_probs += P_posterior[step]; 
-	  // 	  printf("j=%-3i  dssp=%1i  P=%4.2f  sum=%6.2f\n",j,t.ss_dssp[j],P_posterior[step],sum_of_probs); //////////////////////////
-	  if (Xcons) Xcons[i]=t.Xcons[j]; //record database consensus sequence
+	  if (t->nss_dssp<0 || t->ss_dssp[j]>0) sum_of_probs += P_posterior[step]; 
+	  // 	  printf("j=%-3i  dssp=%1i  P=%4.2f  sum=%6.2f\n",j,t->ss_dssp[j],P_posterior[step],sum_of_probs); //////////////////////////
+	  if (Xcons) Xcons[i]=t->Xcons[j]; //record database consensus sequence
 	  break;
 	case MI: //if gap in template  
 	case DG:   
@@ -1544,7 +1544,7 @@ void Hit::BacktraceMAC(HMM& q, HMM& t)
   if (Xcons) 
     {
       for (i=0; i<i1; ++i) Xcons[i]=ENDGAP; // set end gap code at beginning and end of template consensus sequence
-      for (i=i2+1; i<=q.L+1; ++i) Xcons[i]=ENDGAP;
+      for (i=i2+1; i<=q->L+1; ++i) Xcons[i]=ENDGAP;
     }
 
   // Add contribution from correlation of neighboring columns to score
@@ -1561,13 +1561,13 @@ void Hit::BacktraceMAC(HMM& q, HMM& t)
   // Set score, P-value etc.
   score_sort = score_aass = -score;
   logPval=0; Pval=1;
-  if (t.mu)
+  if (t->mu)
     {
-      logPvalt=logPvalue(score,t.lamda,t.mu); 
-      Pvalt=Pvalue(score,t.lamda,t.mu); 
+      logPvalt=logPvalue(score,t->lamda,t->mu); 
+      Pvalt=Pvalue(score,t->lamda,t->mu); 
     }
   else { logPvalt=0; Pvalt=1;}
-  //   printf("%-10.10s lamda=%-9f  score=%-9f  logPval=%-9g\n",name,t.lamda,score,logPvalt);
+  //   printf("%-10.10s lamda=%-9f  score=%-9f  logPval=%-9g\n",name,t->lamda,score,logPvalt);
 
   //DEBUG: Print out MAC alignment path
   if (v>=4) 
@@ -1581,17 +1581,17 @@ void Hit::BacktraceMAC(HMM& q, HMM& t)
 	    {
 	    case MM: 
 	      sum_post+=P_posterior[step];
-	      printf("%4i  %1c %1c ",step,q.seq[q.nfirst][this->i[step]],seq[nfirst][this->j[step]]); 
+	      printf("%4i  %1c %1c ",step,q->seq[q->nfirst][this->i[step]],seq[nfirst][this->j[step]]); 
 	      break;
 	    case IM: 
 	      printf("%4i  - %1c ",step,seq[nfirst][this->j[step]]); 
 	      break;
 	    case MI: 
-	      printf("%4i  %1c - ",step,q.seq[q.nfirst][this->i[step]]); 
+	      printf("%4i  %1c - ",step,q->seq[q->nfirst][this->i[step]]); 
 	      break;
 	    }
 	  printf("%4i %4i     %2i %7.1f    ",this->i[step],this->j[step],(int)states[step],S[step]); 
-	  printf("%c %c  %1i  %7.1f  ",i2ss(t.ss_dssp[this->j[step]]),i2ss(q.ss_pred[this->i[step]]),q.ss_conf[this->i[step]]-1,S_ss[step]); 
+	  printf("%c %c  %1i  %7.1f  ",i2ss(t->ss_dssp[this->j[step]]),i2ss(q->ss_pred[this->i[step]]),q->ss_conf[this->i[step]]-1,S_ss[step]); 
 	  printf("%7.5f  %7.2f\n",P_posterior[step],sum_post); 
 	}
     }
@@ -1604,7 +1604,7 @@ void Hit::BacktraceMAC(HMM& q, HMM& t)
 /////////////////////////////////////////////////////////////////////////////////////
 //// Functions that calculate probabilities
 /////////////////////////////////////////////////////////////////////////////////////
-void Hit::InitializeForAlignment(HMM& q, HMM& t, bool vit)
+void Hit::InitializeForAlignment(HMM* q, HMM* t, bool vit)
 {
   int i,j;
 
@@ -1628,61 +1628,61 @@ void Hit::InitializeForAlignment(HMM& q, HMM& t, bool vit)
       break;
     case 1:
       ssm2=0;  // SS scoring after alignment
-      if (t.nss_dssp>=0 && q.nss_pred>=0) ssm1=1;
-      else if (q.nss_dssp>=0 && t.nss_pred>=0) ssm1=2;    
-      else if (q.nss_pred>=0 && t.nss_pred>=0) ssm1=3;
+      if (t->nss_dssp>=0 && q->nss_pred>=0) ssm1=1;
+      else if (q->nss_dssp>=0 && t->nss_pred>=0) ssm1=2;    
+      else if (q->nss_pred>=0 && t->nss_pred>=0) ssm1=3;
       else ssm1=0;
       break;
     case 2:
       ssm1=0;  // SS scoring during alignment
-      if (t.nss_dssp>=0 && q.nss_pred>=0) ssm2=1;
-      else if (q.nss_dssp>=0 && t.nss_pred>=0) ssm2=2;   
-      else if (q.nss_pred>=0 && t.nss_pred>=0) ssm2=3;
+      if (t->nss_dssp>=0 && q->nss_pred>=0) ssm2=1;
+      else if (q->nss_dssp>=0 && t->nss_pred>=0) ssm2=2;   
+      else if (q->nss_pred>=0 && t->nss_pred>=0) ssm2=3;
       else ssm2=0;
       break;
     case 3:
       ssm2=0;  // SS scoring after alignment
-      if (q.nss_pred>=0 && t.nss_pred>=0) ssm1=3; else ssm1=0;  
+      if (q->nss_pred>=0 && t->nss_pred>=0) ssm1=3; else ssm1=0;  
       break;
     case 4:
       ssm1=0;  // SS scoring during alignment
-      if (q.nss_pred>=0 && t.nss_pred>=0) ssm2=3; else ssm2=0;
+      if (q->nss_pred>=0 && t->nss_pred>=0) ssm2=3; else ssm2=0;
       break;
       //     case 5:
       //       ssm2=0;  // SS scoring after alignment
-      //       if (q.nss_dssp>=0 && t.nss_dssp>=0) ssm1=4; else ssm1=0;  
+      //       if (q->nss_dssp>=0 && t->nss_dssp>=0) ssm1=4; else ssm1=0;  
       //       break;
       //     case 6:
       //       ssm1=0;  // SS scoring during alignment
-      //       if (q.nss_dssp>=0 && t.nss_dssp>=0) ssm2=4; else ssm2=0;
+      //       if (q->nss_dssp>=0 && t->nss_dssp>=0) ssm2=4; else ssm2=0;
       //       break;
     }
 
   if (self)  
     {
       // Cross out cells in lower diagonal for self-comparison?
-      for (i=1; i<=q.L; ++i) 
+      for (i=1; i<=q->L; ++i) 
 	{
-	  int jmax = imin(i+SELFEXCL,t.L);
+	  int jmax = imin(i+SELFEXCL,t->L);
 	  for (j=1; j<=jmax; ++j) 
 	    cell_off[i][j]=1;   // cross out cell near diagonal
-	  for (j=jmax+1; j<=t.L+1; ++j)  
+	  for (j=jmax+1; j<=t->L+1; ++j)  
 	    cell_off[i][j]=0;   // no other cells crossed out yet
 	}
     }
   else
     {
-      if (par.block_shading && !strcmp(par.block_shading_mode,"tube") && par.block_shading->Contains(t.name))
+      if (par.block_shading && !strcmp(par.block_shading_mode,"tube") && par.block_shading->Contains(t->name))
 	{
 	  // Deactivate all cells in dynamic programming matrix
-	  for (i=1; i<=q.L; ++i) 
-	    for (j=1; j<=t.L; ++j) 
+	  for (i=1; i<=q->L; ++i) 
+	    for (j=1; j<=t->L; ++j) 
 	      cell_off[i][j]=1;   
 
-	  int* tmp = par.block_shading->Show(t.name);
-	  int counter = par.block_shading_counter->Show(t.name);
+	  int* tmp = par.block_shading->Show(t->name);
+	  int counter = par.block_shading_counter->Show(t->name);
 
-	  //printf("Hit %s:\n",t.name);
+	  //printf("Hit %s:\n",t->name);
 	  
 	  int m = 0;
 	  while (m < counter)
@@ -1698,9 +1698,9 @@ void Hit::InitializeForAlignment(HMM& q, HMM& t, bool vit)
 	      //printf("query: %i-%i   template: %i-%i    d1: %i  d2: %i\n",i0,i1,j0,j1,d1,d2);
 
 	      int istart = imax(1,i0-par.block_shading_space);
-	      int istop = imin(q.L,i1+par.block_shading_space);
+	      int istop = imin(q->L,i1+par.block_shading_space);
 	      int jstart = imax(1,j0-par.block_shading_space);
-	      int jstop = imin(t.L,j1+par.block_shading_space);
+	      int jstop = imin(t->L,j1+par.block_shading_space);
 	      for (i = istart; i <= istop; ++i)
 		for (j = jstart; j <= jstop; ++j)
 		  if ((i-j) > d1 && (i-j) < d2)
@@ -1708,29 +1708,29 @@ void Hit::InitializeForAlignment(HMM& q, HMM& t, bool vit)
 	    }
 
 	  // int after = 0;
-	  // for (i=1; i<=q.L; ++i) 
-	  //   for (j=1; j<=t.L; ++j) 
+	  // for (i=1; i<=q->L; ++i) 
+	  //   for (j=1; j<=t->L; ++j) 
 	  //     {
 	  // 	if (cell_off[i][j]==1)
 	  // 	  after++;
 	  //     }
 	  // printf("cells cross out : %i\n",after);
-	  // printf("cells total     : %i\n",q.L*t.L);
-	  // printf("Ersparnis       : %4.2f %%\n",(double)after/(double)(q.L*t.L)*100.0);
+	  // printf("cells total     : %i\n",q->L*t->L);
+	  // printf("Ersparnis       : %4.2f %%\n",(double)after/(double)(q->L*t->L)*100.0);
 
 	  min_overlap = 0;
 
 	  // Cross out cells that are excluded by the minimum-overlap criterion
 	  // if (par.min_overlap==0) 
-	  //   min_overlap = imin(60, (int)(0.333f*imin(q.L,t.L))+1); // automatic minimum overlap
+	  //   min_overlap = imin(60, (int)(0.333f*imin(q->L,t->L))+1); // automatic minimum overlap
 	  // else 
-	  //   min_overlap = imin(par.min_overlap, (int)(0.8f*imin(q.L,t.L)));
+	  //   min_overlap = imin(par.min_overlap, (int)(0.8f*imin(q->L,t->L)));
 
 	  // for (i=0; i<min_overlap; ++i) 
-	  //   for (j=i-min_overlap+t.L+1; j<=t.L; ++j) // Lt-j+i>=Ovlap => j<=i-Ovlap+Lt => jmax=min{Lt,i-Ovlap+Lt} 
+	  //   for (j=i-min_overlap+t->L+1; j<=t->L; ++j) // Lt-j+i>=Ovlap => j<=i-Ovlap+Lt => jmax=min{Lt,i-Ovlap+Lt} 
 	  //     cell_off[i][j]=1;
-	  // for (i=q.L-min_overlap+1; i<=q.L; ++i) 
-	  //   for (j=1; j<i+min_overlap-q.L; ++j)      // Lq-i+j>=Ovlap => j>=i+Ovlap-Lq => jmin=max{1, i+Ovlap-Lq} 
+	  // for (i=q->L-min_overlap+1; i<=q->L; ++i) 
+	  //   for (j=1; j<i+min_overlap-q->L; ++j)      // Lq-i+j>=Ovlap => j>=i+Ovlap-Lq => jmin=max{1, i+Ovlap-Lq} 
 	  //     cell_off[i][j]=1;
 
 	}
@@ -1738,21 +1738,21 @@ void Hit::InitializeForAlignment(HMM& q, HMM& t, bool vit)
 	// Compare two different HMMs Q and T
 	{
 	  // Activate all cells in dynamic programming matrix
-	  for (i=1; i<=q.L; ++i) 
-	    for (j=1; j<=t.L; ++j) 
+	  for (i=1; i<=q->L; ++i) 
+	    for (j=1; j<=t->L; ++j) 
 	      cell_off[i][j]=0;   // no other cells crossed out yet
 	    
 	  // Cross out cells that are excluded by the minimum-overlap criterion
 	  if (par.min_overlap==0) 
-	    min_overlap = imin(60, (int)(0.333f*imin(q.L,t.L))+1); // automatic minimum overlap
+	    min_overlap = imin(60, (int)(0.333f*imin(q->L,t->L))+1); // automatic minimum overlap
 	  else 
-	    min_overlap = imin(par.min_overlap, (int)(0.8f*imin(q.L,t.L)));
+	    min_overlap = imin(par.min_overlap, (int)(0.8f*imin(q->L,t->L)));
 	  
 	  for (i=0; i<min_overlap; ++i) 
-	    for (j=i-min_overlap+t.L+1; j<=t.L; ++j) // Lt-j+i>=Ovlap => j<=i-Ovlap+Lt => jmax=min{Lt,i-Ovlap+Lt} 
+	    for (j=i-min_overlap+t->L+1; j<=t->L; ++j) // Lt-j+i>=Ovlap => j<=i-Ovlap+Lt => jmax=min{Lt,i-Ovlap+Lt} 
 	      cell_off[i][j]=1;
-	  for (i=q.L-min_overlap+1; i<=q.L; ++i) 
-	    for (j=1; j<i+min_overlap-q.L; ++j)      // Lq-i+j>=Ovlap => j>=i+Ovlap-Lq => jmin=max{1, i+Ovlap-Lq} 
+	  for (i=q->L-min_overlap+1; i<=q->L; ++i) 
+	    for (j=1; j<i+min_overlap-q->L; ++j)      // Lq-i+j>=Ovlap => j>=i+Ovlap-Lq => jmin=max{1, i+Ovlap-Lq} 
 	      cell_off[i][j]=1;
 
 	  // Cross out rows which are contained in range given by exclstr ("3-57,238-314")
@@ -1765,17 +1765,17 @@ void Hit::InitializeForAlignment(HMM& q, HMM& t, bool vit)
 		  i0 = abs(strint(ptr));
 		  i1 = abs(strint(ptr));
 		  if (!ptr) break;
-		  for (i=i0; i<=imin(i1,q.L); ++i) 
-		    for (j=1; j<=t.L; ++j) 
+		  for (i=i0; i<=imin(i1,q->L); ++i) 
+		    for (j=1; j<=t->L; ++j) 
 		      cell_off[i][j]=1; 
 		}
 	    }
 
 	  // Cross out cells not contained in the range of the prefiltering in HHblits
-	  if (par.block_shading && par.block_shading->Contains(t.name))
+	  if (par.block_shading && par.block_shading->Contains(t->name))
 	    {
-	      int* tmp = par.block_shading->Show(t.name);
-	      int counter = par.block_shading_counter->Show(t.name);
+	      int* tmp = par.block_shading->Show(t->name);
+	      int counter = par.block_shading_counter->Show(t->name);
 	      
 	      int i0, i1, j0, j1;
 	      i0 = j0 = 1000000;
@@ -1790,23 +1790,23 @@ void Hit::InitializeForAlignment(HMM& q, HMM& t, bool vit)
 		  j1 = imax(tmp[m++]+par.block_shading_space,j1);
 		}
 	      
-	      //printf("Hit: %40s query: %i-%i   template: %i-%i \n",t.name,i0,i1,j0,j1);
+	      //printf("Hit: %40s query: %i-%i   template: %i-%i \n",t->name,i0,i1,j0,j1);
 	      
 	      //printf("cell_off in query: 1-%i\n",i0);
 	      for (i=1; i<i0; ++i) 
-		for (j=1; j<=t.L; ++j) 
+		for (j=1; j<=t->L; ++j) 
 		  cell_off[i][j]=1; 
-	      //printf("cell_off in query: %i-%i\n",i1+1,q.L);
-	      for (i=i1+1; i<=q.L; ++i)
-		for (j=1; j<=t.L; ++j) 
+	      //printf("cell_off in query: %i-%i\n",i1+1,q->L);
+	      for (i=i1+1; i<=q->L; ++i)
+		for (j=1; j<=t->L; ++j) 
 		  cell_off[i][j]=1; 
 	      //printf("cell_off in template: 1-%i\n",j0);
 	      for (j=1; j<j0; ++j) 
-		for (i=1; i<=q.L; ++i) 
+		for (i=1; i<=q->L; ++i) 
 		  cell_off[i][j]=1; 
-	      //printf("cell_off in template: %i-%i\n",j1+1,t.L);
-	      for (j=j1+1; j<=t.L; ++j)
-		for (i=1; i<=q.L; ++i) 
+	      //printf("cell_off in template: %i-%i\n",j1+1,t->L);
+	      for (j=j1+1; j<=t->L; ++j)
+		for (i=1; i<=q->L; ++i) 
 		  cell_off[i][j]=1; 
 	    }
 	}
@@ -1816,20 +1816,20 @@ void Hit::InitializeForAlignment(HMM& q, HMM& t, bool vit)
 /////////////////////////////////////////////////////////////////////////////////////
 // Allocate memory for data of new alignment (sequence names, alignment, scores,...)
 /////////////////////////////////////////////////////////////////////////////////////
-void Hit::InitializeBacktrace(HMM& q, HMM& t)
+void Hit::InitializeBacktrace(HMM* q, HMM* t)
 {
   //Copy information about template profile to hit and reset template pointers to avoid destruction
-  longname=new(char[strlen(t.longname)+1]);
-  name    =new(char[strlen(t.name)+1]);
-  file    =new(char[strlen(t.file)+1]);
+  longname=new(char[strlen(t->longname)+1]);
+  name    =new(char[strlen(t->name)+1]);
+  file    =new(char[strlen(t->file)+1]);
   if (!file) MemoryError("space for alignments with database HMMs. \nNote that all alignments have to be kept in memory");
-  strcpy(longname,t.longname);
-  strcpy(name,t.name);
-  strcpy(fam ,t.fam);
-  strcpy(sfam ,t.sfam);
-  strcpy(fold ,t.fold);
-  strcpy(cl ,t.cl);
-  strcpy(file,t.file);
+  strcpy(longname,t->longname);
+  strcpy(name,t->name);
+  strcpy(fam ,t->fam);
+  strcpy(sfam ,t->sfam);
+  strcpy(fold ,t->fold);
+  strcpy(cl ,t->cl);
+  strcpy(file,t->file);
 
   // Allocate new space
   this->i = new( int[i2+j2+2]);
@@ -1838,30 +1838,30 @@ void Hit::InitializeBacktrace(HMM& q, HMM& t)
   S = S_ss = P_posterior = NULL; 
   Xcons = NULL;
 
-  sname=new(char*[t.n_display]);   
-  seq  =new(char*[t.n_display]);   
+  sname=new(char*[t->n_display]);   
+  seq  =new(char*[t->n_display]);   
   if (!sname || !seq) 
     MemoryError("space for alignments with database HMMs.\nNote that all sequences for display have to be kept in memory");
   
   if (irep==1)
     {
       // Make flat copy for first alignment of template seqs to save speed
-      for (int k=0; k<t.n_display; k++)
+      for (int k=0; k<t->n_display; k++)
 	{
-	  sname[k]=t.sname[k];
-	  seq[k]  =t.seq[k];
+	  sname[k]=t->sname[k];
+	  seq[k]  =t->seq[k];
 	}
-      t.dont_delete_seqs=1;
+      t->dont_delete_seqs=1;
     }
   else 
     {
       // Make deep copy for all further alignments
-      for (int k=0; k<t.n_display; k++)
+      for (int k=0; k<t->n_display; k++)
 	{
-	  sname[k] = new(char[strlen(t.sname[k])+1]);
-	  seq[k]   = new(char[strlen(t.seq[k])+1]);
-	  strcpy(sname[k],t.sname[k]);
-	  strcpy(seq[k],t.seq[k]);
+	  sname[k] = new(char[strlen(t->sname[k])+1]);
+	  seq[k]   = new(char[strlen(t->seq[k])+1]);
+	  strcpy(sname[k],t->sname[k]);
+	  strcpy(seq[k],t->seq[k]);
 	}
       if (dbfile) {
 	char* ptr = dbfile;
@@ -1870,15 +1870,15 @@ void Hit::InitializeBacktrace(HMM& q, HMM& t)
       }
     }
 
-  n_display=t.n_display; 
-  ncons  = t.ncons;
-  nfirst = t.nfirst;
-  nss_dssp = t.nss_dssp;
-  nsa_dssp = t.nsa_dssp;
-  nss_pred = t.nss_pred;
-  nss_conf = t.nss_conf;
-  L = t.L;
-  Neff_HMM = t.Neff_HMM;
+  n_display=t->n_display; 
+  ncons  = t->ncons;
+  nfirst = t->nfirst;
+  nss_dssp = t->nss_dssp;
+  nsa_dssp = t->nsa_dssp;
+  nss_pred = t->nss_pred;
+  nss_conf = t->nss_conf;
+  L = t->L;
+  Neff_HMM = t->Neff_HMM;
   Eval   = 1.0;
   logEval= 0.0;
   Pval   = 1.0;
@@ -1893,15 +1893,15 @@ void Hit::InitializeBacktrace(HMM& q, HMM& t)
 /////////////////////////////////////////////////////////////////////////////////////
 
 // Calculate score for a given alignment
-void Hit::ScoreAlignment(HMM& q, HMM& t, int steps) 
+void Hit::ScoreAlignment(HMM* q, HMM* t, int steps) 
 {
   score = 0;
   for (int step = 0; step < steps; step++) {
     if (v > 2) {
       cout << "Score at step " << step << "!\n";
-      cout << "i: " << i[step] << "  j: " << j[step] << "   score: " << Score(q.p[i[step]], t.p[j[step]]) << "\n";
+      cout << "i: " << i[step] << "  j: " << j[step] << "   score: " << Score(q->p[i[step]], t->p[j[step]]) << "\n";
     }
-    score += Score(q.p[i[step]], t.p[j[step]]);
+    score += Score(q->p[i[step]], t->p[j[step]]);
   }
 }
 
@@ -1920,27 +1920,27 @@ inline float Hit::ProbFwd(float* qi, float* tj)
 
 
 // Calculate secondary structure score between columns i and j of two HMMs (query and template)
-inline float Hit::ScoreSS(HMM& q, HMM& t, int i, int j, int ssm)
+inline float Hit::ScoreSS(HMM* q, HMM* t, int i, int j, int ssm)
 {
   switch (ssm) //SS scoring during alignment 
     {
     case 0: // no SS scoring during alignment 
       return 0.0;
     case 1: // t has dssp information, q has psipred information 
-      return par.ssw * S73[ (int)t.ss_dssp[j]][ (int)q.ss_pred[i]][ (int)q.ss_conf[i]];
+      return par.ssw * S73[ (int)t->ss_dssp[j]][ (int)q->ss_pred[i]][ (int)q->ss_conf[i]];
     case 2: // q has dssp information, t has psipred information 
-      return par.ssw * S73[ (int)q.ss_dssp[i]][ (int)t.ss_pred[j]][ (int)t.ss_conf[j]];
+      return par.ssw * S73[ (int)q->ss_dssp[i]][ (int)t->ss_pred[j]][ (int)t->ss_conf[j]];
     case 3: // q has dssp information, t has psipred information 
-      return par.ssw * S33[ (int)q.ss_pred[i]][ (int)q.ss_conf[i]][ (int)t.ss_pred[j]][ (int)t.ss_conf[j]];
+      return par.ssw * S33[ (int)q->ss_pred[i]][ (int)q->ss_conf[i]][ (int)t->ss_pred[j]][ (int)t->ss_conf[j]];
       //     case 4: // q has dssp information, t has dssp information 
-      //       return par.ssw*S77[ (int)t.ss_dssp[j]][ (int)t.ss_conf[j]];
+      //       return par.ssw*S77[ (int)t->ss_dssp[j]][ (int)t->ss_conf[j]];
     }
   return 0.0;
 }
 
 
 // Calculate secondary structure score between columns i and j of two HMMs (query and template)
-inline float Hit::ScoreSS(HMM& q, HMM& t, int i, int j)
+inline float Hit::ScoreSS(HMM* q, HMM* t, int i, int j)
 {
   return ScoreSS(q,t,i,j,ssm2);
 }

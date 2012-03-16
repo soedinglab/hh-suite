@@ -193,12 +193,12 @@ HMM& HMM::operator=(HMM& q)
   Neff_HMM=q.Neff_HMM;
 
   strcpy(longname,q.longname);
-  strmcpy(name,q.name,NAMELEN);
-  strmcpy(file,q.file,NAMELEN);
-  strmcpy(fam,q.fam,NAMELEN);
-  strmcpy(sfam,q.sfam,IDLEN);
-  strmcpy(fold,q.fold,IDLEN);
-  strmcpy(cl,q.cl,IDLEN);
+  strmcpy(name,q.name,NAMELEN-1);
+  strmcpy(file,q.file,NAMELEN-1);
+  strmcpy(fam,q.fam,NAMELEN-1);
+  strmcpy(sfam,q.sfam,IDLEN-1);
+  strmcpy(fold,q.fold,IDLEN-1);
+  strmcpy(cl,q.cl,IDLEN-1);
 
   lamda=q.lamda;
   mu=q.mu;
@@ -266,8 +266,8 @@ int HMM::Read(FILE* dbf, char* path)
           ptr=strscn(line+4);              //advance to first non-white-space character
           if (ptr)
             {
-              strmcpy(longname,ptr,DESCLEN); //copy full name to longname
-              strmcpy(name,ptr,NAMELEN);     //copy longname to name...
+              strmcpy(longname,ptr,DESCLEN-1); //copy full name to longname
+              strmcpy(name,ptr,NAMELEN-1);     //copy longname to name...
               strcut(name);                    //...cut after first word...
             }
           else
@@ -281,13 +281,13 @@ int HMM::Read(FILE* dbf, char* path)
       else if (!strcmp("FAM",str3))
         {
           ptr=strscn(line+3);              //advance to first non-white-space character
-          if (ptr) strmcpy(fam,ptr,IDLEN); else strcpy(fam,""); //copy family name to basename
+          if (ptr) strmcpy(fam,ptr,IDLEN-1); else strcpy(fam,""); //copy family name to basename
           ScopID(cl,fold,sfam,fam);        //get scop classification from basename (e.g. a.1.2.3.4)
         }
 
       else if (!strcmp("FILE",str4))
         {
-          if (path) strmcpy(file,path,NAMELEN); else *file='\0'; // copy path to file variable
+          if (path) strmcpy(file,path,NAMELEN-1); else *file='\0'; // copy path to file variable
           ptr=strscn(line+4);              //advance to first non-white-space character
           if (ptr)
             strncat(file,ptr,NAMELEN-1-strlen(file));   // append file name read from file to path
@@ -666,7 +666,7 @@ int HMM::ReadHMMer(FILE* dbf, char* filestr)
       if (!strcmp("NAME",str4) && name[0]=='\0')
         {
           ptr=strscn(line+4);             // advance to first non-white-space character
-          strmcpy(name,ptr,NAMELEN);      // copy full name to name
+          strmcpy(name,ptr,NAMELEN-1);    // copy full name to name
           strcut(name);                   // ...cut after first word...
           if (v>=4) cout<<"Reading in HMM "<<name<<":\n";
         }
@@ -674,7 +674,7 @@ int HMM::ReadHMMer(FILE* dbf, char* filestr)
       else if (!strcmp("ACC ",str4))
         {
           ptr=strscn(line+4);              // advance to first non-white-space character
-          strmcpy(longname,ptr,DESCLEN);   // copy Accession id to longname...
+          strmcpy(longname,ptr,DESCLEN-1); // copy Accession id to longname...
         }
 
       else if (!strcmp("DESC",str4))
@@ -682,10 +682,11 @@ int HMM::ReadHMMer(FILE* dbf, char* filestr)
           ptr=strscn(line+4);              // advance to first non-white-space character
           if (ptr)
             {
-              strmcpy(desc,ptr,DESCLEN);   // copy description to name...
+              strmcpy(desc,ptr,DESCLEN-1); // copy description to name...
               strcut(ptr);                 // ...cut after first word...
             }
-          if (!ptr || ptr[1]!='.' || strchr(ptr+3,'.')==NULL) strcpy(fam,""); else strmcpy(fam,ptr,NAMELEN); // could not find two '.' in name?
+          if (!ptr || ptr[1]!='.' || strchr(ptr+3,'.')==NULL) strcpy(fam,""); 
+	  else strmcpy(fam,ptr,NAMELEN-1); // could not find two '.' in name?
         }
 
       else if (!strcmp("LENG",str4))
@@ -1124,7 +1125,7 @@ int HMM::ReadHMMer3(FILE* dbf, char* filestr)
       if (!strcmp("NAME",str4) && name[0]=='\0')
         {
           ptr=strscn(line+4);             // advance to first non-white-space character
-          strmcpy(name,ptr,NAMELEN);      // copy full name to name
+          strmcpy(name,ptr,NAMELEN-1);      // copy full name to name
           strcut(name);                   // ...cut after first word...
           if (v>=4) cout<<"Reading in HMM "<<name<<":\n";
         }
@@ -1132,7 +1133,7 @@ int HMM::ReadHMMer3(FILE* dbf, char* filestr)
       else if (!strcmp("ACC ",str4))
         {
           ptr=strscn(line+4);              // advance to first non-white-space character
-          strmcpy(longname,ptr,DESCLEN);   // copy Accession id to longname...
+          strmcpy(longname,ptr,DESCLEN-1);   // copy Accession id to longname...
         }
 
       else if (!strcmp("DESC",str4))
@@ -1140,11 +1141,12 @@ int HMM::ReadHMMer3(FILE* dbf, char* filestr)
           ptr=strscn(line+4);              // advance to first non-white-space character
           if (ptr)
             {
-              strmcpy(desc,ptr,DESCLEN);   // copy description to name...
+              strmcpy(desc,ptr,DESCLEN-1);   // copy description to name...
               desc[DESCLEN-1]='\0';
               strcut(ptr);                 // ...cut after first word...
             }
-          if (!ptr || ptr[1]!='.' || strchr(ptr+3,'.')==NULL) strcpy(fam,""); else strmcpy(fam,ptr,NAMELEN); // could not find two '.' in name?
+          if (!ptr || ptr[1]!='.' || strchr(ptr+3,'.')==NULL) strcpy(fam,""); 
+	  else strmcpy(fam,ptr,NAMELEN-1); // could not find two '.' in name?
         }
 
       else if (!strcmp("LENG",str4))
@@ -1772,7 +1774,7 @@ void HMM::CalculateAminoAcidBackground()
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Add amino acid pseudocounts to HMM and calculate average protein aa probabilities pav[a]
-// Pseudocounts: t.p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
+// Pseudocounts: p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
 /////////////////////////////////////////////////////////////////////////////////////
 void HMM::AddAminoAcidPseudocounts(char pcm, float pca, float pcb, float pcc)
 {
@@ -1962,9 +1964,9 @@ void HMM::DivideBySqrtOfLocalBackgroundFreqs(int D) // 2*D+1 is window size
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Factor Null model into HMM t
-// !!!!! ATTENTION!!!!!!!  after this t.p is not the same as after adding pseudocounts !!!
+// !!!!! ATTENTION!!!!!!!  after this t->p is not the same as after adding pseudocounts !!!
 /////////////////////////////////////////////////////////////////////////////////////
-void HMM::IncludeNullModelInHMM(HMM& q, HMM& t, int columnscore )
+void HMM::IncludeNullModelInHMM(HMM* q, HMM* t, int columnscore )
 {
 
   int i,j;         //query and template match state indices
@@ -1975,51 +1977,51 @@ void HMM::IncludeNullModelInHMM(HMM& q, HMM& t, int columnscore )
     {
     default:
     case 0: // Null model with background prob. from database
-      for (j=0; j<=t.L+1; ++j)
+      for (j=0; j<=t->L+1; ++j)
 	for (a=0; a<20; ++a)
-	  t.p[j][a] /= pb[a];
+	  t->p[j][a] /= pb[a];
       break;
 
     case 1: // Null model with background prob. equal average from query and template
       float pnul[NAA]; // null model probabilities used in comparison (only set in template/db HMMs)
-      for (a=0; a<20; ++a) pnul[a] = 0.5*(q.pav[a]+t.pav[a]);
-      for (j=0; j<=t.L+1; ++j)
+      for (a=0; a<20; ++a) pnul[a] = 0.5*(q->pav[a]+t->pav[a]);
+      for (j=0; j<=t->L+1; ++j)
 	for (a=0; a<20; ++a)
-	  t.p[j][a] /= pnul[a];
+	  t->p[j][a] /= pnul[a];
       break;
 
     case 2: // Null model with background prob. from template protein
-      for (j=0; j<=t.L+1; ++j)
+      for (j=0; j<=t->L+1; ++j)
 	for (a=0; a<20; ++a)
-	  t.p[j][a] /= t.pav[a];
+	  t->p[j][a] /= t->pav[a];
       break;
 
     case 3: // Null model with background prob. from query protein
-      for (j=0; j<=t.L+1; ++j)
+      for (j=0; j<=t->L+1; ++j)
 	for (a=0; a<20; ++a)
-	  t.p[j][a] /= q.pav[a];
+	  t->p[j][a] /= q->pav[a];
       break;
 
     case 5: // Null model with local background prob. from template and query protein
-      //      if (!q.divided_by_local_bg_freqs) q.DivideBySqrtOfLocalBackgroundFreqs(par.half_window_size_local_aa_bg_freqs);
-      if (!q.divided_by_local_bg_freqs) InternalError("No local amino acid bias correction on query HMM!");
-      if (!t.divided_by_local_bg_freqs) t.DivideBySqrtOfLocalBackgroundFreqs(par.half_window_size_local_aa_bg_freqs);
+      //      if (!q->divided_by_local_bg_freqs) q->DivideBySqrtOfLocalBackgroundFreqs(par.half_window_size_local_aa_bg_freqs);
+      if (!q->divided_by_local_bg_freqs) InternalError("No local amino acid bias correction on query HMM!");
+      if (!t->divided_by_local_bg_freqs) t->DivideBySqrtOfLocalBackgroundFreqs(par.half_window_size_local_aa_bg_freqs);
       break;
 
     case 10: // Separated column scoring for Stochastic Backtracing (STILL USED??)
-      for (i=0; i<=q.L+1; ++i)
+      for (i=0; i<=q->L+1; ++i)
         {
           float sum = 0.0;
-          for (a=0; a<20; ++a) sum += pb[a]*q.p[i][a];
+          for (a=0; a<20; ++a) sum += pb[a]*q->p[i][a];
           sum = 1.0/sqrt(sum);
-          for (a=0; a<20; ++a) q.p[i][a]*=sum;
+          for (a=0; a<20; ++a) q->p[i][a]*=sum;
         }
-      for (j=0; j<=t.L+1; j++)
+      for (j=0; j<=t->L+1; j++)
         {
           float sum = 0.0;
-          for (a=0; a<20; ++a) sum += pb[a]*t.p[j][a];
+          for (a=0; a<20; ++a) sum += pb[a]*t->p[j][a];
           sum = 1.0/sqrt(sum);
-          for (a=0; a<20; ++a) t.p[j][a]*=sum;
+          for (a=0; a<20; ++a) t->p[j][a]*=sum;
         }
       break;
 
@@ -2034,9 +2036,9 @@ void HMM::IncludeNullModelInHMM(HMM& q, HMM& t, int columnscore )
       cout<<"\nAverage amino acid frequencies\n";
       cout<<"         A    R    N    D    C    Q    E    G    H    I    L    K    M    F    P    S    T    W    Y    V\n";
       cout<<"Q:    ";
-      for (a=0; a<20; ++a) printf("%4.1f ",100*q.pav[a]);
+      for (a=0; a<20; ++a) printf("%4.1f ",100*q->pav[a]);
       cout<<"\nT:    ";
-      for (a=0; a<20; ++a) printf("%4.1f ",100*t.pav[a]);
+      for (a=0; a<20; ++a) printf("%4.1f ",100*t->pav[a]);
       cout<<"\npb:   ";
       for (a=0; a<20; ++a) printf("%4.1f ",100*pb[a]);
     }
@@ -2048,8 +2050,8 @@ void HMM::IncludeNullModelInHMM(HMM& q, HMM& t, int columnscore )
   //     float sum=0;
   //     for (a=0; a<20; ++a)
   // 	{
-  // 	  sum+=t.p[i][a];
-  // 	  printf("%4.1f ",100*t.p[i][a]);
+  // 	  sum+=t->p[i][a];
+  // 	  printf("%4.1f ",100*t->t->p[i][a]);
   // 	}
   //     printf("  sum=%5.3f\n",sum);
   //   }

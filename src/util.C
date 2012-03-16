@@ -397,13 +397,14 @@ inline char* sprintg(float val, int w)
 // String utilities
 /////////////////////////////////////////////////////////////////////////////////////
 
-// Safe strcpy command that limits copy to a maximum of maxlen characters 
+// Safe strcpy command that limits copy to a maximum of maxlen+1 characters 
+// including the '\0' character.
 // (Different from standard strncpy, which pads with \0 characters)
 // Returns maxlen minus the number of non-\0 characters copied
 // If the string is cut prematurely it will return 0! 
 inline int strmcpy(char* dest, const char* source, size_t maxlen)
 {
-  while (*source && (--maxlen)>0) *dest++ = *source++; 
+  while (*source && (maxlen--)>0) *dest++ = *source++; 
   *dest = '\0';
   return maxlen;
 }
@@ -808,6 +809,19 @@ int strtrd(char* str, char char1, char char2)
     }
   *ptr0=*ptr1;
   return ptr1-ptr0;
+}
+
+// Counts the number of characters in str that are in range between char1 and char2
+int strcount(char* str, char char1, char char2)
+{
+  char* ptr=str;
+  int count=0;
+  while (*ptr!='\0')
+    {
+      if (*ptr>=char1 && *ptr<=char2) count++;
+      ptr++;
+    }
+  return count;
 }
 
 // transforms str into an all uppercase string

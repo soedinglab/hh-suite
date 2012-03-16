@@ -773,52 +773,22 @@ void init_no_prefiltering()
 	{
 
 	  // Add hit to dbfiles
-	  char tmp_name[NAMELEN];
+	  char name[NAMELEN];
 	  char db_name[NAMELEN];
-	  strwrd(tmp_name,line+1,NAMELEN);
-	  char* first = strchr(tmp_name,'|');
-	  if (first) // found '|' in sequence id?
+	  strwrd(name,line+1,NAMELEN);
+	  char* ptr1 = strchr(name,'|');
+	  if (ptr1) // found '|' in sequence id?
 	    {
-	      char* second = strchr(++first,'|');
-	      if (second) *second = '\0'; // set end of string at second '|'
+	      char* ptr2 = strchr(++ptr1,'|');
+	      if (ptr2) strmcpy(db_name,ptr1,ptr2-ptr1);
+	      else strcpy(db_name,ptr1);
 	    }
 	  else 
-	    first = tmp_name;
+	    strcpy(db_name,name);
 	  
-	  strcpy(db_name,first);
 	  strcat(db_name,".");
 	  strcat(db_name,db_ext);
 
-	  // Old version by Michael => Delete
-	  // // Add hit to dbfiles
-	  // char tmp_name[NAMELEN];
-	  // char db_name[NAMELEN];
-	  // strwrd(tmp_name,line+1,NAMELEN);
-	  // if (!strncmp(word,"cl|",3))   // kClust formatted database (NR20, ...)
-	  //   {
-	  //     substr(db_name,word,3,11);
-	  //     strcat(db_name,".hhm");
-	  //   }
-	  // else if (!strncmp(word,"UP20|",5) || !strncmp(word,"NR20|",5)) // kClust formatted database (NR20, ...)
-	  //   {
-	  //     substr(db_name,word,5,13);
-	  //     strcat(db_name,".hhm");
-	  //   }
-	  // else // other database
-	  //   {
-	  //     strcpy(db_name,word);
-
-	  //     // Reactivate this replacement until it's clear where it was used and whether
-	  //     // some DBs with this are still in use.
-	  //     strtr(db_name,"|", "_");
-
-	  //     // Older cs db builds have a "." instead od "_".
-	  //     strtr(db_name,".", "_");
-
-	  //     strcat(db_name,".");
-	  //     strcat(db_name,db_ext);
-	  //   }
-	  
 	  dbfiles_new[ndb_new]=new(char[strlen(db_name)+1]);
 	  strcpy(dbfiles_new[ndb_new],db_name);
 	  ndb_new++;
@@ -1142,51 +1112,29 @@ void prefilter_db()
       backtrace_hits[count_dbs++] = (*it).second;
 
       // Add hit to dbfiles
-      char tmp_name[NAMELEN];
+      char name[NAMELEN];
       char db_name[NAMELEN];
-      strwrd(tmp_name,dbnames[(*it).second]);
-      char* first = strchr(tmp_name,'|');
-      if (first) // found '|' in sequence id?
-	{
-	  char* second = strchr(++first,'|');
-	  if (second) *second = '\0'; // set end of string at second '|'
-	}
+      strwrd(name,dbnames[(*it).second]);
+      char* ptr1 = strchr(name,'|');
+      if (ptr1) // found '|' in sequence id?
+      	{
+      	  char* ptr2 = strchr(++ptr1,'|');
+      	  if (ptr2) strmcpy(db_name,ptr1,ptr2-ptr1);
+	  else strcpy(db_name,ptr1);
+      	}
       else 
-	first = tmp_name;
+      	strcpy(db_name,name);
       
-      strcpy(db_name,first);
       strcat(db_name,".");
       strcat(db_name,db_ext);
 
-      // Old version by Michael => Delete
-      // // Add hit to dbfiles
-      // char tmp_name[NAMELEN];
-      // char db_name[NAMELEN];
-      // strwrd(tmp_name,line+1,NAMELEN);
-      // if (!strncmp(tmp_name,"cl|",3))   // kClust formatted database (NR20, NR30, UNIPROT20)
-      // 	{
-      // 	  substr(db_name,tmp_name,3,11);
-      // 	  strcat(db_name,".hhm");
-      // 	}
-      // else if (!strncmp(tmp_name,"UP20|",5) || !strncmp(tmp_name,"NR20|",5)) // kClust formatted database (NR20, ...)
-      // 	{
-      // 	  substr(db_name,tmp_name,5,13);
-      // 	  strcat(db_name,".hhm");
-      // 	}
-      //  else // other database
-      // 	{
-      // 	  strcpy(db_name,tmp_name);
-      // 	  strcat(db_name,".");
-      // 	  strcat(db_name,db_ext);
-      // 	}
-	        
       if (! doubled->Contains(db_name))
 	{
 	  doubled->Add(db_name);
 	  // check, if DB was searched in previous rounds 
-	  strcat(tmp_name,"__1");  // irep=1
+	  strcat(name,"__1");  // irep=1
 
-	  if (previous_hits->Contains(tmp_name))
+	  if (previous_hits->Contains(name))
 	    {
 	      dbfiles_old[ndb_old]=new(char[strlen(db_name)+1]);
 	      strcpy(dbfiles_old[ndb_old],db_name);
@@ -1236,8 +1184,8 @@ void prefilter_db()
 	      
 	      if (num_res > 0) 
 		{
-		  char tmp_name[NAMELEN];
-		  strwrd(tmp_name,dbnames[backtrace_hits[n]]);
+		  char name[NAMELEN];
+		  strwrd(name,dbnames[backtrace_hits[n]]);
 		  block = new(int[400]);
 		  block_count = 0;
 		  for (int a = 0; a < num_res; a++) 
@@ -1251,8 +1199,8 @@ void prefilter_db()
 		    }
 #pragma omp critical
 		  {
-		    par.block_shading->Add(tmp_name,block);
-		    par.block_shading_counter->Add(tmp_name,block_count);
+		    par.block_shading->Add(name,block);
+		    par.block_shading_counter->Add(name,block_count);
 		  }
 		}
 	      delete[] res;

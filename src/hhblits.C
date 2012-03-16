@@ -175,8 +175,7 @@ int cpu = 2;                            // default: use 2 cores
 char config_file[NAMELEN];
 char infile[NAMELEN];
 char alis_basename[NAMELEN];
-char base_filename[NAMELEN];
-char query_hhmfile[NAMELEN];
+char query_hhmfile[NAMELEN];             // -qhmm output file
 
 bool alitab_scop = false;                // Write only SCOP alignments in alitabfile
 
@@ -293,14 +292,6 @@ void help(char all=0)
   printf("               ' -' = Delete; '.' = gaps aligned to inserts (may be omitted)   \n");
   printf(" -M first       use FASTA: columns with residue in 1st sequence are match states\n");
   printf(" -M [0,100]     use FASTA: columns with fewer than X%% gaps are match states   \n");
-  if (all) { 
-  printf("Directory paths \n");
-  printf(" -contxt <file> context file for computing context-specific pseudocounts (default=%s)\n",par.clusterfile);
-  printf(" -cslib  <file> column state file for fast database prefiltering (default=%s)\n",par.cs_library);
-  printf(" -psipred      <dir>  directory with PSIPRED executables (default=%s)  \n",par.psipred);
-  printf(" -psipred_data <dir>  directory with PSIPRED data (default=%s) \n",par.psipred_data);
-  printf("\n");
-  }
   printf("\n");
   printf("Output options: \n");
   printf(" -o <file>      write results in standard format to file (default=<infile.hhr>)\n");
@@ -387,15 +378,21 @@ void help(char all=0)
   printf(" -egq  [0,inf[  penalty (bits) for end gaps aligned to query residues (def=%-.2f) \n",par.egq);
   printf(" -egt  [0,inf[  penalty (bits) for end gaps aligned to template residues (def=%-.2f)\n",par.egt);
   printf("\n");
+  printf("Directory paths \n");
+  printf(" -contxt <file> context file for computing context-specific pseudocounts (default=%s)\n",par.clusterfile);
+  printf(" -cslib  <file> column state file for fast database prefiltering (default=%s)\n",par.cs_library);
+  printf(" -psipred <dir> directory with PSIPRED executables (default=%s)  \n",par.psipred);
+  printf(" -psipred_data <dir>  directory with PSIPRED data (default=%s) \n",par.psipred_data);
+  printf("\n");
   }
   printf("Other options:                                                                   \n");
   printf(" -v <int>       verbose mode: 0:no screen output  1:only warings  2: verbose (def=%i)\n",v);
+  printf(" -neffmax ]1,20] skip further search iterations when diversity Neff of query MSA \n");
+  printf("                becomes larger than neffmax (default=%.1f)\n",neffmax); 
 #ifdef PTHREAD
   printf(" -cpu <int>     number of CPUs to use (for shared memory SMPs) (default=%i)      \n",cpu);
 #endif
   if (all) {
-  printf(" -neffmax ]1,20] stop iterative search when number of effective sequences Neff in \n");
-  printf("                evolving query MSA becomes larger than neffmax (default=%.1f) \n",neffmax); 
   printf(" -scores <file> write scores for all pairwise comparisions to file               \n");
   printf(" -atab   <file> write all alignments in tabular layout to file                   \n");
   printf(" -maxres <int>  max number of HMM columns (def=%5i)             \n",par.maxres);
@@ -664,7 +661,7 @@ inline int PickBin(char status)
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////
-//// Do the pairwise comparison of q and *(t[bin]) for the database search
+//// Do the pairwise comparison of q and t[bin] for the database search
 //// Combination of RealignByWorker and AlignByWorker: 
 //// Picks hits found in previous iterations and recalculates Viterbi scores using 
 //// query profile from last iteration while KEEPING original (MAC) alignment.
@@ -672,15 +669,15 @@ inline int PickBin(char status)
 void PerformViterbiByWorker(int bin)
 {
   // Prepare q ant t and compare
-  PrepareTemplate(*q,*(t[bin]),format[bin]);
+  PrepareTemplateHMM(q,t[bin],format[bin]);
 
   // Do HMM-HMM comparison
-  for (hit[bin]->irep=1; hit[bin]->irep<=par.altali; hit[bin]->irep++)
+  for (hit[bin]->irep=1; hit[bin]->irep <= par.altali; hit[bin]->irep++)
     {
       // Break, if no previous_hit with irep is found
-      hit[bin]->Viterbi(*q,*(t[bin]));
+      hit[bin]->Viterbi(q,t[bin]);
       if (hit[bin]->irep>1 && hit[bin]->score <= SMIN) break;
-      hit[bin]->Backtrace(*q,*(t[bin]));
+      hit[bin]->Backtrace(q,t[bin]);
       
       hit[bin]->score_sort = hit[bin]->score_aass;
       //printf("PerformViterbiByWorker:   %-12.12s  %-12.12s   irep=%-2i  score=%6.2f\n",hit[bin]->name,hit[bin]->fam,hit[bin]->irep,hit[bin]->score);
@@ -732,141 +729,58 @@ void PerformViterbiByWorker(int bin)
   return;
 }
 
-//????????????????????????????????????????????????????????????????????????????????????????????????????????????
-// Why is the framed code below needed?? Filetype will be checked in ReadInput()!
-// Suggestion: 
-// Rename this function as PrepareQa3mFile() and rename ReadInput() as ReadQueryFile(). 
-// Throw out the framed code below, including the ReadInput() call,
-// and replace the old call to ReadInputFile() in hhblits.C by { ReadQueryFile(); PrepareQa3mFile();} .
-// Comment Michael Remmert: 
-// "In hhblits.C gab es glaube ich 2 Gründe, warum ich den Filetype schon vorher checke:
-// Zum einen habe ich da abgefangen, ob der Input im HMMER-Format ist (input_format == 1 && par.hmmer_used = true) 
-// und das dann entsprechend ausgegeben.
-// Zum anderen habe ich, wenn der Input aus nur einer Sequenz besteht, den Parameter par.M auf 3 gesetzt, 
-// was hat den Vorteil, dass es bei einer einzelnen Sequenz, die nur aus Kleinbuchstaben besteht, 
-// HHblits einfach alle Buchstaben der Sequenz als Match-States annimmt:
-// if (num_seqs == 1 && par.M == 1) par.M=3; // if only single sequence in input file,  
-//                                            //use par.M=3 (match states by first seq)"
-
 /////////////////////////////////////////////////////////////////////////////////////
 // Read input file
 /////////////////////////////////////////////////////////////////////////////////////
-void ReadInputFile()
+void ReadQueryA3MFile()
 {
-  int num_seqs = 0;
 
-
-  //????????????????????????????????????????????????????????????????????????????????????????????????????????????
-  // Remove framed code?
-
-  FILE* qf=fopen(par.infile,"rb");
-  if (!qf) OpenFileError(par.infile);
-
+  // Open query a3m MSA
   char qa3mfile[NAMELEN];
   RemoveExtension(qa3mfile,par.infile);
   strcat(qa3mfile,".a3m");
-
-  if (!fgetline(line,LINELEN,qf)) {help(); cerr<<endl<<"Error in "<<program_name<<": cannot read input file!\n"; exit(4);}
-  if (!strncmp(line,"HMMER3",6) || !strncmp(line,"HMMER",5))  // HMMER/HMMER3 format
-    {
-      input_format = 1;
-      par.hmmer_used = true;
-      cerr<<endl<<"Error in "<<program_name<<": HMMER format as input not supported!\n";
-      exit(1);
-    }
-  else if (!strncmp(line,"HH",2))     // HHM format
-    {
-      input_format = 0;
-    }
-  else if (line[0]=='#' || line[0]=='>')             // read sequence/alignment 
-    {
-      input_format = 0;
-      strcpy(qa3mfile, par.infile);
-      FILE* inf=fopen(par.infile,"r");
-      while (fgetline(line,LINELEN,inf))
-      	  if (line[0] == '>')
-      	      num_seqs++;
-      if (num_seqs == 1 && par.M == 1) par.M=3; // if only single sequence in input file, use par.M=3 (match states by first seq)
-      fclose(inf);
-    }
-  else
-    {
-      cerr<<endl<<"Error in "<<program_name<<": unrecognized HMM file format in \'"<<par.infile<<"\'. \n";
-      cerr<<"Context:\n'"<<line<<"\n";
-      fgetline(line,LINELEN,qf); cerr<<line<<"\n";
-      fgetline(line,LINELEN,qf); cerr<<line<<"'\n";
-      exit(1);
-    }
-  fclose(qf);
-
-
-  v1=v;
-  if (v>0 && v<=3) v=1; else v-=2;
-
-  // Read input file (HMM or alignment format) without adding pseudocounts
-  ReadInput(par.infile, *q);
-
-  //????????????????????????????????????????????????????????????????????????????????????????????????????????????
-
-  // Read in query alignment
   FILE* qa3mf=fopen(qa3mfile,"r");
+  
   if (!qa3mf) 
     {
       // Read query alignment from HHM	
-      Qali.GetSeqsFromHMM(*q);
+      Qali.GetSeqsFromHMM(q);
       Qali.Compress("compress Qali");
-
+      
       if (num_rounds > 1 || *par.alnfile || *par.psifile || *par.hhmfile || *alis_basename)
 	{
 	  if (input_format == 0 && v>=1)   // HHM format
-	    cerr<<"WARNING: No alignment-file found, use only representative seqs from HHM-file as base alignment for evolving alignment!\n";
+	    cerr<<"WARNING: No alignment file found! Using only representative sequences in HHM-file as starting MSA.\n";
 	  else if (input_format == 1 && v>=1)
-	    cerr<<"WARNING: No alignment-file found, use only consensus sequence from HMMER-file as base alignment for evolving alignment!\n";
+	    cerr<<"WARNING: No alignment file found! Using only consensus sequence from HMMER-file as starting MSA.\n";
 	}
     } 
   else 
     {
-      if (num_seqs != 1) 
-      	par.premerge=0;
-      
+      // A3M query file exists => read it into Qali
       Qali.Read(qa3mf,qa3mfile);
-
-      // Warn, if there are gaps in a single sequence
-      if (num_seqs == 1 && par.M != 2) {
-	int num_gaps = strtr(Qali.seq[0], "-", "-");
-	if (num_gaps > 1 && v>=1) {  // 1 gap is always given at array pos 0
-	  fprintf(stderr, "WARNING: Your input sequence contains gaps. These gaps will be ignored in this search!\nIf you wan't to make HHblits treat these as match states, you could start HHblits with the '-M 100' option.\n");
-	}
-      }
-
       Qali.Compress("compress Qali");
-      fclose(qa3mf);
-
+     
+      // Copy names from query HMM (don't use name of master sequence of MSA)
       delete[] Qali.longname;
       Qali.longname = new(char[strlen(q->longname)+1]);
       strcpy(Qali.longname,q->longname);
       strcpy(Qali.name,q->name);
       strcpy(Qali.fam,q->fam);
-    }
+      if (Qali.L != q->L) {
+	printf("Error in %s: query hhm %s has %i match states whereas query a3m %s has %i!\n",par.argv[0],qa3mfile,Qali.L,par.infile,q->L);
+	exit(4);
+      }
 
-  // Get basename
-  RemoveExtension(base_filename,par.infile);
-  if (!*par.outfile)      // outfile not given? Name it basename.hhm
-    {
-      strcpy(par.outfile,base_filename);
-      strcat(par.outfile,".hhr");
-      if (v>=2) cout<<"Search results will be written to "<<par.outfile<<"\n";
     }
-
-  par.M=1;
-  v=v1;
-}
+  fclose(qa3mf);
+ }
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Perform Viterbi HMM-HMM search on all db HMM names in dbfiles
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void search_loop(char *dbfiles[], int ndb, bool alignByWorker=true)
+void DoViterbiSearch(char *dbfiles[], int ndb, bool alignByWorker=true)
 {
   // Search databases
   for (bin=0; bin<bins; bin++) {hit[bin]->realign_around_viterbi=false;}
@@ -889,32 +803,28 @@ void search_loop(char *dbfiles[], int ndb, bool alignByWorker=true)
 	}
       
       // Open HMM database
-      //cerr<<"\nReading db file "<<idb<<" dbfiles[idb]="<<dbfiles[idb]<<"\n";
-      //FILE* dbf=fopen(dbfiles[idb],"rb");
       FILE* dbf;
+      char filename[NAMELEN];
+      strcpy(filename,dbfiles[idb]);
       dbf = ffindex_fopen(dbhhm_data, dbhhm_index, dbfiles[idb]);
       if (dbf == NULL) {
-	char filename[NAMELEN];
 	RemoveExtension(filename, dbfiles[idb]);
 	strcat(filename,".a3m");
-	if(dba3m_index_file!=NULL) {
-	  dbf = ffindex_fopen(dba3m_data, dba3m_index, filename);
-	} else {
-	  cerr<<endl<<"Error opening "<<dbfiles[idb]<<": A3M database missing\n"; exit(4);
+	if(dba3m_index_file==NULL) {
+	  cerr<<endl<<"Error opening "<<filename<<": A3M database missing\n"; exit(4);
 	}	
+	dbf = ffindex_fopen(dba3m_data, dba3m_index, filename);
 	if (dbf == NULL) 
 	  {
 	    RemoveExtension(filename, dbfiles[idb]);
 	    strcat(filename,".hmm");
-	    if(dbhhm_index_file!=NULL) {
-	      dbf = ffindex_fopen(dbhhm_data, dbhhm_index, filename);
-	    } else {
+	    if(dbhhm_index_file==NULL) {
 	      cerr<<endl<<"Error opening "<<dbfiles[idb]<<": HHM database missing\n"; exit(4);
 	    }
-	    dbf = ffindex_fopen(dbhhm_data, dbhhm_index, dbfiles[idb]);
+	    dbf = ffindex_fopen(dbhhm_data, dbhhm_index, filename);
+	    if (dbf == NULL) OpenFileError(dbfiles[idb]);
 	  }
       }
-      if (dbf == NULL) OpenFileError(dbfiles[idb]);
       
       // Submit jobs if bin is free
       if (jobs_submitted+jobs_running<bins)
@@ -938,18 +848,18 @@ void search_loop(char *dbfiles[], int ndb, bool alignByWorker=true)
 	  ///////////////////////////////////////////////////
 	  // Read next HMM from database file
 	  if (!fgetline(line,LINELEN,dbf)) {continue;}
-	  while (strscn(line)==NULL && fgetline(line,LINELEN,dbf)) {} // skip lines that contain only white space
+	  while (strscn(line)==NULL) fgetline(line,LINELEN,dbf); // skip lines that contain only white space
 
 	  if (!strncmp(line,"HMMER3",6))      // read HMMER3 format
 	    {
 	      format[bin] = 1;
-	      t[bin]->ReadHMMer3(dbf,dbfiles[idb]);
+	      t[bin]->ReadHMMer3(dbf,filename);
 	      par.hmmer_used = true;
 	    }
 	  else if (!strncmp(line,"HMMER",5))      // read HMMER format
 	    {
 	      format[bin] = 1;
-	      t[bin]->ReadHMMer(dbf,dbfiles[idb]);
+	      t[bin]->ReadHMMer(dbf,filename);
 	      par.hmmer_used = true;
 	    }
 	  else if (!strncmp(line,"HH",2))    // read HHM format
@@ -966,13 +876,13 @@ void search_loop(char *dbfiles[], int ndb, bool alignByWorker=true)
 	  else if (line[0]=='#' || line[0]=='>')             // read a3m alignment
 	    {
 	      Alignment tali;
-	      tali.Read(dbf,dbfiles[idb],line);
-	      tali.Compress(dbfiles[idb]);
+	      tali.Read(dbf,filename,line);
+	      tali.Compress(filename);
 	      //              qali.FilterForDisplay(par.max_seqid,par.coverage,par.qid,par.qsc,par.nseqdis);
 	      tali.N_filtered = tali.Filter(par.max_seqid_db,par.coverage_db,par.qid_db,par.qsc_db,par.Ndiff_db);
 	      char wg=par.wg; par.wg=1; // use global weights
 	      t[bin]->name[0]=t[bin]->longname[0]=t[bin]->fam[0]='\0';
-	      tali.FrequenciesAndTransitions(*(t[bin]));
+	      tali.FrequenciesAndTransitions(t[bin]);
 	      par.wg=wg; //reset global weights
 	      format[bin] = 0;
 	    }
@@ -1092,15 +1002,15 @@ void search_loop(char *dbfiles[], int ndb, bool alignByWorker=true)
     }
 #endif
 }
-// End search_loop() of Viterbi HMM-HMM seach of database
+// End DoViterbiSearch() of Viterbi HMM-HMM seach of database
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Wrapper around default Viterbi HMM-HMM search (function search_loop)
+// Wrapper around default Viterbi HMM-HMM search (function DoViterbiSearch)
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void search_database(char *dbfiles[], int ndb, int db_size)
+void ViterbiSearch(char *dbfiles[], int ndb, int db_size)
 {
   // Initialize and allocate space for dynamic programming
   jobs_running = 0;
@@ -1130,32 +1040,30 @@ void search_database(char *dbfiles[], int ndb, int db_size)
 
   //////////////////////////////////////////////////////////
   // Start Viterbi search through db HMMs listed in dbfiles
-  search_loop(dbfiles,ndb);
+  DoViterbiSearch(dbfiles,ndb);
 
   if (v1>=2) cout<<"\n";
   v=v1;
-
-  if (print_elapsed) ElapsedTimeSinceLastCall("(search through database)");
 
   // Sort list according to sortscore
   if (v>=3) printf("Sorting hit list ...\n");
   hitlist.SortList();
 
   // Use NN prediction of lamda and mu
-  hitlist.CalculatePvalues(*q);  
+  hitlist.CalculatePvalues(q);  
 
   // Calculate E-values as combination of P-value for Viterbi HMM-HMM comparison and prefilter E-value: E = Ndb P (Epre/Ndb)^alpha
   if (par.prefilter)
-    hitlist.CalculateHHblitsEvalues(*q);
+    hitlist.CalculateHHblitsEvalues(q);
 
 }
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Variant of search_database() function:
+// Variant of ViterbiSearch() function for rescoring previously found HMMs with Viterbi algorithm.
 // Perform Viterbi search on each hit object in global hash previous_hits, but keep old alignment
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void perform_viterbi_search(int db_size)
+void RescoreWithViterbiKeepAlignment(int db_size)
 {
   // Initialize and allocate space for dynamic programming
   jobs_running = 0;
@@ -1200,7 +1108,7 @@ void perform_viterbi_search(int db_size)
 	  ++ndb;
 	}
 
-      // Seach only around previous HMM-HMM alignment (not the prefilter alignment as in search_database())
+      // Seach only around previous HMM-HMM alignment (not the prefilter alignment as in ViterbiSearch())
       if (block_filter)
 	{
 	  // Hash par.block_shading contains pointer to int array which is here called block.
@@ -1238,23 +1146,21 @@ void perform_viterbi_search(int db_size)
 
   //////////////////////////////////////////////////////////
   // Start Viterbi search through db HMMs listed in dbfiles
-  search_loop(dbfiles,ndb,false);
+  DoViterbiSearch(dbfiles,ndb,false);
 
   if (v1>=2) cout<<"\n";
   v=v1;
 
   for (int n=0;n<ndb;++n) delete[](dbfiles[n]);
 
-  if (print_elapsed) ElapsedTimeSinceLastCall("(search through database)");
-
   // Sort list according to sortscore
   if (v>=3) printf("Sorting hit list ...\n");
   hitlist.SortList();
 
-  hitlist.CalculatePvalues(*q);  // Use NN prediction of lamda and mu
+  hitlist.CalculatePvalues(q);  // Use NN prediction of lamda and mu
   
   if (par.prefilter)
-    hitlist.CalculateHHblitsEvalues(*q);
+    hitlist.CalculateHHblitsEvalues(q);
   
 }
 
@@ -1497,7 +1403,7 @@ void perform_realign(char *dbfiles[], int ndb)
 	      //              qali.FilterForDisplay(par.max_seqid,par.coverage,par.qid,par.qsc,par.nseqdis);
 	      tali.N_filtered = tali.Filter(par.max_seqid_db,par.coverage_db,par.qid_db,par.qsc_db,par.Ndiff_db);
 	      t[bin]->name[0]=t[bin]->longname[0]=t[bin]->fam[0]='\0';
-	      tali.FrequenciesAndTransitions(*(t[bin]));
+	      tali.FrequenciesAndTransitions(t[bin]);
 	      format[bin] = 0;
 	    }
 	  else {
@@ -1528,7 +1434,7 @@ void perform_realign(char *dbfiles[], int ndb)
 	    }
 
 	  // Prepare MAC comparison(s)
-	  PrepareTemplate(*q,*(t[bin]),format[bin]);
+	  PrepareTemplateHMM(q,t[bin],format[bin]);
 	  t[bin]->Log2LinTransitionProbs(1.0);
 
 	  // Realign only around previous Viterbi hit
@@ -1542,10 +1448,10 @@ void perform_realign(char *dbfiles[], int ndb)
 	  hit[bin]->realign_around_viterbi=true;
 
 	  // Align q to template in *hit[bin]
-	  hit[bin]->Forward(*q,*(t[bin]));
-	  hit[bin]->Backward(*q,*(t[bin]));
-	  hit[bin]->MACAlignment(*q,*(t[bin]));
-	  hit[bin]->BacktraceMAC(*q,*(t[bin]));
+	  hit[bin]->Forward(q,t[bin]);
+	  hit[bin]->Backward(q,t[bin]);
+	  hit[bin]->MACAlignment(q,t[bin]);
+	  hit[bin]->BacktraceMAC(q,t[bin]);
 	  
 	  // Overwrite *hit[bin] with Viterbi scores, Probabilities etc. of hit_cur
 	  hit[bin]->score      = hit_cur.score;
@@ -1595,7 +1501,7 @@ void perform_realign(char *dbfiles[], int ndb)
 	  Qali.N_filtered = Qali.Filter(par.max_seqid,par.coverage,par.qid,par.qsc,par.Ndiff);
 
 	  // Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
-	  Qali.FrequenciesAndTransitions(*q);
+	  Qali.FrequenciesAndTransitions(q);
 
 	  stringstream ss_tmp;
 	  ss_tmp << hit[bin]->name << "__" << hit[bin]->irep;
@@ -1731,7 +1637,7 @@ void perform_realign(char *dbfiles[], int ndb)
 		  // qali.FilterForDisplay(par.max_seqid,par.coverage,par.qid,par.qsc,par.nseqdis);
 		  tali.N_filtered = tali.Filter(par.max_seqid_db,par.coverage_db,par.qid_db,par.qsc_db,par.Ndiff_db);
 		  t[bin]->name[0]=t[bin]->longname[0]=t[bin]->fam[0]='\0';
-		  tali.FrequenciesAndTransitions(*(t[bin]));
+		  tali.FrequenciesAndTransitions(t[bin]);
 		  format[bin] = 0;
 		}
 	      else {
@@ -1961,13 +1867,20 @@ int main(int argc, char **argv)
   if (!strcmp(par.cs_library,""))
     {help(); cerr<<endl<<"Error in "<<program_name<<": column state library (see -cslib)\n"; exit(4);}
   if (par.loc==0 && num_rounds>=2 && v>=1) cerr<<"WARNING: using -global alignment for iterative searches is deprecated since non-homologous sequence segments can easily enter the MSA and corrupt it.\n";
-    if (num_rounds < 1) num_rounds=1; 
-    else if (num_rounds > 8) 
-      {
-	if (v>=1) cerr<<"WARNING: Number of iterations ("<<num_rounds<<") to large => Set to 8 iterations\n";
-	num_rounds=8; 
-      }
-
+  if (num_rounds < 1) num_rounds=1; 
+  else if (num_rounds > 8) 
+    {
+      if (v>=1) cerr<<"WARNING: Number of iterations ("<<num_rounds<<") to large => Set to 8 iterations\n";
+      num_rounds=8; 
+    }
+  
+  // No outfile not given? Name it basename.hhm
+  if (!*par.outfile)      // outfile not given? Name it basename.hhm
+    {
+      RemoveExtension(par.outfile,par.infile);
+      strcat(par.outfile,".hhr");
+      if (v>=2) cout<<"Search results will be written to "<<par.outfile<<"\n";
+    }
 
   // Set databases
   strcpy(db,db_base);
@@ -2080,7 +1993,7 @@ int main(int argc, char **argv)
   // Set (global variable) substitution matrix and derived matrices
   SetSubstitutionMatrix();
 
-// Set secondary structure substitution matrix
+  // Set secondary structure substitution matrix
   if (par.ssm) SetSecStrucSubstitutionMatrix();
 
   // Prepare context state pseudocounts lib
@@ -2103,8 +2016,18 @@ int main(int argc, char **argv)
   
   if (print_elapsed) ElapsedTimeSinceLastCall("(prepare CS pseudocounts)"); 
 
-  // Read input file
-  ReadInputFile();
+
+  v1=v;
+  if (v>0 && v<=2) v=1; else v--; 
+
+  // Read query input file (HHM, HMMER, or alignment format) without adding pseudocounts
+  Qali.N_in=0;
+  ReadQueryFile(par.infile,input_format,q,&Qali); //????????
+  if (Qali.N_in==0) ReadQueryA3MFile();
+  if (Qali.N_in - Qali.N_ss > 1) par.premerge=0;
+  par.M=1; // all database MSAs must be in A3M format
+
+  v=v1;
 
   if (print_elapsed) ElapsedTimeSinceLastCall("(initialize)");
   
@@ -2139,7 +2062,7 @@ int main(int argc, char **argv)
     {
       t[bin]=new HMM;   // Each bin has a template HMM allocated that was read from the database file
       hit[bin]=new Hit; // Each bin has an object of type Hit allocated ...
-      hit[bin]->AllocateBacktraceMatrix(q->L+2,par.maxres); // ...with a separate dynamic programming matrix (memory!!)
+      hit[bin]->AllocateBacktraceMatrix(q->L +2,par.maxres); // ...with a separate dynamic programming matrix (memory!!)
     }
   format = new(int[bins]);
 
@@ -2170,7 +2093,7 @@ int main(int argc, char **argv)
     // Save HMM without pseudocounts for prefilter query-profile
     *q_tmp = *q;
 
-    // Write query HHM file?
+    // Write query HHM file? (not the final HMM, which will be written to par.hhmfile)
     if (*query_hhmfile) 
       {
 	v1=v;
@@ -2236,7 +2159,9 @@ int main(int argc, char **argv)
 
     // Main Viterbi HMM-HMM search
     // Starts with empty hitlist (hits of previous iterations were deleted) and creates a hitlist with the hits of this iteration
-    search_database(dbfiles_new,ndb_new,(ndb_new + ndb_old));
+    ViterbiSearch(dbfiles_new,ndb_new,(ndb_new + ndb_old));
+
+    if (print_elapsed) ElapsedTimeSinceLastCall("(Viterbi search)");
 
     // check for new hits or end with iteration
     int new_hits = 0;
@@ -2258,7 +2183,7 @@ int main(int argc, char **argv)
 	if (ndb_old > 0 && realign_old_hits)
 	  {
 	    printf("Rescoring previously found HMMs with Viterbi algorithm\n");
-	    search_database(dbfiles_old,ndb_old,(ndb_new + ndb_old));
+	    ViterbiSearch(dbfiles_old,ndb_old,(ndb_new + ndb_old));
 	    // Add dbfiles_old to dbfiles_new for realign
 	    for (int a = 0; a < ndb_old; a++) 
 	      {
@@ -2270,12 +2195,16 @@ int main(int argc, char **argv)
 	else if (!realign_old_hits && previous_hits->Size() > 0)
 	  {
 	    printf("Rescoring previously found HMMs with Viterbi algorithm\n");
-	    perform_viterbi_search(ndb_new+previous_hits->Size());
+	    RescoreWithViterbiKeepAlignment(ndb_new+previous_hits->Size());
+
+	    if (print_elapsed) ElapsedTimeSinceLastCall("(Rescoring with Viterbi)");
 	  }
       }
 
     // Realign hits with MAC algorithm
     if (par.realign) perform_realign(dbfiles_new,ndb_new);
+
+    if (print_elapsed) ElapsedTimeSinceLastCall("(realigning with MAC)");
 
     // Generate alignment for next iteration
     if (round < num_rounds || *par.alnfile || *par.psifile || *par.hhmfile || *alis_basename)
@@ -2352,7 +2281,7 @@ int main(int argc, char **argv)
 	  }
 	  
 	// Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
-	Qali.FrequenciesAndTransitions(*q,NULL,true);
+	Qali.FrequenciesAndTransitions(q,NULL,true);
 
 	if (par.notags) q->NeutralizeTags();
 
@@ -2362,7 +2291,7 @@ int main(int argc, char **argv)
 	    char ss_pred[par.maxres];
 	    char ss_conf[par.maxres];
 	    
-	    CalculateSS(*q, ss_pred, ss_conf);
+	    CalculateSS(q, ss_pred, ss_conf);
 	    
 	    Qali.AddSSPrediction(ss_pred, ss_conf);
 	    
@@ -2429,15 +2358,15 @@ int main(int argc, char **argv)
     hitlist.Reset();
     while (!hitlist.End())
       {
-	hit_cur = hitlist.ReadNext();
+	hit_cur = hitlist.ReadNext(); //??????????
 	char strtmp[NAMELEN+6];
-	sprintf(strtmp,"%s__%i",hit_cur.name,hit_cur.irep);
+	sprintf(strtmp,"%s__%i%c",hit_cur.name,hit_cur.irep,'\0');
 	if (!already_seen_filter || hit_cur.Eval > par.e || previous_hits->Contains(strtmp))
 	  hit_cur.Delete(); // Delete hit object (deep delete with Hit::Delete())
 	else
 	  previous_hits->Add(strtmp,hit_cur);
 	
-	// Old version by Michael => Delete
+	// // Old version by Michael => Delete
 	// hit_cur = hitlist.ReadNext();
 	// stringstream ss_tmp;
 	// ss_tmp << hit_cur.name << "__" << hit_cur.irep;
@@ -2466,28 +2395,28 @@ int main(int argc, char **argv)
   // Print for each HMM: n  score  -log2(Pval)  L  name  (n=5:same name 4:same fam 3:same sf...)
   if (*par.scorefile) {
     if (v>=3) printf("Printing scores file ...\n");
-    hitlist.PrintScoreFile(*q);
+    hitlist.PrintScoreFile(q);
   }
 
   // Print FASTA or A2M alignments?
   if (*par.pairwisealisfile) {
     if (v>=2) cout<<"Printing alignments in "<<(par.outformat==1? "FASTA" : par.outformat==2?"A2M" :"A3M")<<" format to "<<par.pairwisealisfile<<"\n";
-    hitlist.PrintAlignments(*q,par.pairwisealisfile,par.outformat);
+    hitlist.PrintAlignments(q,par.pairwisealisfile,par.outformat);
   }
 
   // Write alignments in tabular layout to alitabfile
   if (*par.alitabfile) 
-    hitlist.WriteToAlifile(*q,alitab_scop);
+    hitlist.WriteToAlifile(q,alitab_scop);
 
   // Print summary listing of hits
   if (v>=3) printf("Printing hit list ...\n");
-  hitlist.PrintHitList(*q_tmp,par.outfile);
+  hitlist.PrintHitList(q_tmp,par.outfile);
 
   // Write only hit list to screen?
   if (v==2 && strcmp(par.outfile,"stdout")) WriteToScreen(par.outfile,109); // write only hit list to screen
 
   // Print alignments of query sequences against hit sequences
-  hitlist.PrintAlignments(*q_tmp,par.outfile);
+  hitlist.PrintAlignments(q_tmp,par.outfile);
 
   // Write whole output file to screen? (max 10000 lines)
   if (v>=3 && strcmp(par.outfile,"stdout")) WriteToScreen(par.outfile,10009);

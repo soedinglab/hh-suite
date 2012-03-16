@@ -7,8 +7,8 @@ public:
   FullAlignment(int maxseqdis=MAXSEQDIS);
   ~FullAlignment();
   void FreeMemory();
-  void Build(HMM& q, Hit& hit);
-  void PrintHeader(FILE* outf, HMM& q, Hit& hit);
+  void Build(HMM* q, Hit& hit);
+  void PrintHeader(FILE* outf, HMM* q, Hit& hit);
   void PrintHHR(FILE* outf, Hit& hit);
   void PrintA2M(FILE* outf, Hit& hit);
   void PrintFASTA(FILE* outf, Hit& hit);
