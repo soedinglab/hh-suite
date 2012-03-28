@@ -297,7 +297,7 @@ void help(char all=0)
   printf(" -o <file>      write results in standard format to file (default=<infile.hhr>)\n");
   printf(" -oa3m <file>   write multiple alignment of significant matches in a3m format\n");
   if (!all) {
-  printf("                Analogous for a2m, fas, psi, hhm format (e.g. -ohhm, -ofas)\n");
+  printf("                Analogous for a2m, fas, psi, hhm format (e.g. -ohhm)\n");
   }
   if (all) {
   printf(" -ofas <file>   write MSA of significant matches in FASTA format\n");
@@ -316,7 +316,7 @@ void help(char all=0)
   printf(" -Z <int>       maximum number of lines in summary hit list (default=%i)        \n",par.Z);
   printf(" -z <int>       minimum number of lines in summary hit list (default=%i)        \n",par.z);
   printf(" -B <int>       maximum number of alignments in alignment list (default=%i)     \n",par.B);
-  printf(" -b <int>       minimum number of alignments in alignment list (def=ault%i)     \n",par.b);
+  printf(" -b <int>       minimum number of alignments in alignment list (default=%i)     \n",par.b);
   printf("\n");
   printf("Prefilter options                                                               \n");
   printf(" -nofilter      disable all filter steps                                        \n");
@@ -1212,73 +1212,73 @@ void perform_realign(char *dbfiles[], int ndb)
 	  if (nhits>=imax(par.b,par.z) && hit_cur.Probab < par.p) continue;
 	  if (nhits>=imax(par.b,par.z) && hit_cur.Eval > par.E) continue;
 	}
-      if (hit_cur.L>Lmax) Lmax=hit_cur.L;
-      if (hit_cur.L<=Lmaxmem)
-	{
-	  // Seach only around viterbi hit
-	  if (block_filter)
-	    {
-	      // Hash par.block_shading contains pointer to int array which is here called block.
-	      //        This array contains start and stop positions of alignment for shading
-	      // Hash par.block_shading_counter contains currently next free position in par.block_shading int array
-	      
-	      //printf("Viterbi hit %s   q: %i-%i   t: %i-%i\n",hit_cur.name, hit_cur.i1, hit_cur.i2, hit_cur.j1, hit_cur.j2);
-	      int* block;
-	      int counter;
-	      if (par.block_shading->Contains(hit_cur.name))
-		{
-		  block = par.block_shading->Show(hit_cur.name);
-		  counter = par.block_shading_counter->Remove(hit_cur.name);
-		}
-	      else
-		{
-		  block = new(int[400]);
-		  counter = 0;
-		}
-	      block[counter++] = hit_cur.i1;
-	      block[counter++] = hit_cur.i2;
-	      block[counter++] = hit_cur.j1;
-	      block[counter++] = hit_cur.j2;
-	      par.block_shading_counter->Add(hit_cur.name,counter);
-	      if (!par.block_shading->Contains(hit_cur.name))
-		par.block_shading->Add(hit_cur.name,block);
-	      // printf("Add to block shading in realign   key: %s    data:",hit_cur.name);
-	      // for (int i = 0; i < counter; i++)
-	      // 	printf(" %i,",block[i]);
-	      // printf("\n");
-	    }
-	  
-	      //fprintf(stderr,"hit.name=%-15.15s  hit.index=%-5i hit.ftellpos=%-8i  hit.dbfile=%s\n",hit_cur.name,hit_cur.index,(unsigned int)hit_cur.ftellpos,hit_cur.dbfile);
-
-	  if (nhits>=par.premerge) // realign the first premerge hits consecutively to query profile
-	    {
-	      if (hit_cur.irep==1) 
-		{
-		  // For each template (therefore irep==1), store template index and position on disk in a list
-		  Realign_hitpos realign_hitpos;
-		  realign_hitpos.ftellpos = hit_cur.ftellpos;    // stores position on disk of template for current hit
-		  realign_hitpos.index = hit_cur.index;          // stores index of template of current hit
-		  if (!phash_plist_realignhitpos->Contains(hit_cur.dbfile))
-		    {
-		      List<Realign_hitpos>* newlist = new List<Realign_hitpos>;
-		      phash_plist_realignhitpos->Add(hit_cur.dbfile,newlist);
-		    }
-		  // Add template index and ftellpos to list which belongs to key dbfile in hash
-		  phash_plist_realignhitpos->Show(hit_cur.dbfile)->Push(realign_hitpos);
-		}
-	      if (! array_plist_phits[hit_cur.index]) // pointer at index is still NULL  
-		{
-		  List<void*>* newlist = new List<void*>; // create new list of pointers to all aligments of a template
-		  array_plist_phits[hit_cur.index] = newlist; // set array[index] to newlist
-		}
-	      // Push(hitlist.ReadCurrentAddress()) :  Add address of current hit in hitlist to list... 
-	      // array_plist_phits[hit_cur.index]-> :  pointed to by hit_cur.index'th element of array_plist_phits
-	      array_plist_phits[hit_cur.index]->Push(hitlist.ReadCurrentAddress());
-	    }
-	  
-	}
       nhits++;
+
+      if (hit_cur.L>Lmax) Lmax=hit_cur.L;
+      if (hit_cur.L>Lmaxmem) continue;
+
+      // Seach only around viterbi hit
+      if (block_filter)
+	{
+	  // Hash par.block_shading contains pointer to int array which is here called block.
+	  //        This array contains start and stop positions of alignment for shading
+	  // Hash par.block_shading_counter contains currently next free position in par.block_shading int array
+	  
+	  //printf("Viterbi hit %s   q: %i-%i   t: %i-%i\n",hit_cur.name, hit_cur.i1, hit_cur.i2, hit_cur.j1, hit_cur.j2);
+	  int* block;
+	  int counter;
+	  if (par.block_shading->Contains(hit_cur.name))
+	    {
+	      block = par.block_shading->Show(hit_cur.name);
+	      counter = par.block_shading_counter->Remove(hit_cur.name);
+	    }
+	  else
+	    {
+	      block = new(int[400]);
+	      counter = 0;
+	    }
+	  block[counter++] = hit_cur.i1;
+	  block[counter++] = hit_cur.i2;
+	  block[counter++] = hit_cur.j1;
+	  block[counter++] = hit_cur.j2;
+	  par.block_shading_counter->Add(hit_cur.name,counter);
+	  if (!par.block_shading->Contains(hit_cur.name))
+	    par.block_shading->Add(hit_cur.name,block);
+	  // printf("Add to block shading in realign   key: %s    data:",hit_cur.name);
+	  // for (int i = 0; i < counter; i++)
+	  // 	printf(" %i,",block[i]);
+	  // printf("\n");
+	}
+      
+      //fprintf(stderr,"hit.name=%-15.15s  hit.index=%-5i hit.ftellpos=%-8i  hit.dbfile=%s\n",hit_cur.name,hit_cur.index,(unsigned int)hit_cur.ftellpos,hit_cur.dbfile);
+      
+      if (nhits>=par.premerge) // realign the first premerge hits consecutively to query profile
+	{
+	  if (hit_cur.irep==1) 
+	    {
+	      // For each template (therefore irep==1), store template index and position on disk in a list
+	      Realign_hitpos realign_hitpos;
+	      realign_hitpos.ftellpos = hit_cur.ftellpos;    // stores position on disk of template for current hit
+	      realign_hitpos.index = hit_cur.index;          // stores index of template of current hit
+	      if (!phash_plist_realignhitpos->Contains(hit_cur.dbfile))
+		{
+		  List<Realign_hitpos>* newlist = new List<Realign_hitpos>;
+		  phash_plist_realignhitpos->Add(hit_cur.dbfile,newlist);
+		}
+	      // Add template index and ftellpos to list which belongs to key dbfile in hash
+	      phash_plist_realignhitpos->Show(hit_cur.dbfile)->Push(realign_hitpos);
+	    }
+	  if (! array_plist_phits[hit_cur.index]) // pointer at index is still NULL  
+	    {
+	      List<void*>* newlist = new List<void*>; // create new list of pointers to all aligments of a template
+	      array_plist_phits[hit_cur.index] = newlist; // set array[index] to newlist
+	    }
+	  // Push(hitlist.ReadCurrentAddress()) :  Add address of current hit in hitlist to list... 
+	  // array_plist_phits[hit_cur.index]-> :  pointed to by hit_cur.index'th element of array_plist_phits
+	  array_plist_phits[hit_cur.index]->Push(hitlist.ReadCurrentAddress());
+	}
     }
+
   if (Lmax>Lmaxmem)
     {
       Lmax=Lmaxmem;
@@ -1291,7 +1291,6 @@ void perform_realign(char *dbfiles[], int ndb)
 	}
     }
   
-
 
   // Initialize and allocate space for dynamic programming
   jobs_running = 0;
@@ -1333,7 +1332,6 @@ void perform_realign(char *dbfiles[], int ndb)
 	  if (nhits>=imax(par.B,par.Z)) break;
 	  if (nhits>=imax(par.b,par.z) && hit_cur.Probab < par.p) break;
 	  if (nhits>=imax(par.b,par.z) && hit_cur.Eval > par.E) continue;
-	  
 	  nhits++;
 
 	  if (hit_cur.L>Lmaxmem) continue;  // Don't align to long sequences due to memory limit
@@ -2108,6 +2106,9 @@ int main(int argc, char **argv)
 	v=v1;
       }
     
+    //??????????????????????????????????
+    // Can we replace this code by a call to PrepareQueryHMM()?
+
     // Add Pseudocounts, if no HMMER input
     if (input_format == 0)
       {
@@ -2132,6 +2133,8 @@ int main(int argc, char **argv)
     q->CalculateAminoAcidBackground();
 
     if (par.columnscore == 5 && !q->divided_by_local_bg_freqs) q->DivideBySqrtOfLocalBackgroundFreqs(par.half_window_size_local_aa_bg_freqs);
+    //???????????????????????????????????
+
     
     if (print_elapsed) ElapsedTimeSinceLastCall("(before prefiltering (pseudocounts))");
 

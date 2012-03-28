@@ -227,12 +227,12 @@ int HMM::Read(FILE* dbf, char* path)
   static int warn=0;
 
   //Delete name and seq matrices
-  if (!dont_delete_seqs) // don't delete sname and seq if flat copy to hit object has been made
+  if (!dont_delete_seqs) // Delete all sname and seq if no flat copy to hit object has been made
     {
       for (int k=0; k<n_seqs; k++) delete [] sname[k];
       for (int k=0; k<n_seqs; k++) delete [] seq[k];
     }
-  else // Delete all not shown sequences (lost otherwise)
+  else // Otherwise, delete only sequences not diplayed (lost otherwise)
     {
       if (n_seqs > n_display) {
 	for (int k=n_display; k<n_seqs; k++) delete [] sname[k];
@@ -341,7 +341,11 @@ int HMM::Read(FILE* dbf, char* path)
               if (line[0]=='>') //line contains sequence name
                 {
                   if (k>=MAXSEQDIS-1) //maximum number of allowable sequences exceeded
-                    {while (fgetline(line,LINELEN-1,dbf) && line[0]!='#'); break;}
+                    {
+		      if (v>=2) cerr<<"WARNING in "<<program_name<<": number of sequences in "<<file<<" exceeds maximum allowed number of "<<MAXSEQDIS<<". Skipping sequences.\n";
+		      while (fgetline(line,LINELEN-1,dbf) && line[0]!='#'); 
+		      break;
+		    }
                   k++;
                   if      (!strncmp(line,">ss_dssp",8)) nss_dssp=k;
                   else if (!strncmp(line,">sa_dssp",8)) nsa_dssp=k;
@@ -2301,15 +2305,13 @@ void HMM::AddSSPrediction(char seq_pred[], char seq_conf[])
 {
   unsigned int i;
 
-  int m;
-
   if ((int)strlen(seq_pred)!=L+1)
     {
       cerr<<"WARNING: Could not add secondary struture prediction - unequal length!\n";
       return;
     }
 
-if (nss_pred >= 0 && nss_conf >= 0)
+  if (nss_pred >= 0 && nss_conf >= 0)
     {
       strcpy(seq[nss_pred],seq_pred);
       for (i=0; i<strlen(seq_pred); i++) ss_pred[i]=ss2i(seq_pred[i]);
@@ -2318,11 +2320,11 @@ if (nss_pred >= 0 && nss_conf >= 0)
     }
   else
     {
-      // shift existing sequences
-      for (m = n_display-1; m >= 0; --m) 
+      // Shift existing sequences two positions down
+      for (int k=imin(n_display-1,MAXSEQDIS-3); k>=0; --k) 
 	{
-	  seq[m+2] = seq[m];
-	  sname[m+2] = sname[m];
+	  seq[k+2] = seq[k];
+	  sname[k+2] = sname[k];
 	}
       if (nss_dssp >= 0) { nss_dssp += 2; }
       if (nsa_dssp >= 0) { nsa_dssp += 2; }

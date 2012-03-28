@@ -276,13 +276,13 @@ void help_out()
   printf("                Omit this option to write to standard output\n");
   printf(" -v             verbose mode (default: show only warnings)                 \n");
   printf(" -v 0           suppress all screen output                                 \n");
-  printf(" -p <float>     minimum probability in summary and alignment list (def=%G) \n",par.p);
-  printf(" -E <float>     maximum E-value in summary and alignment list (def=%G)     \n",par.E);
-  printf(" -Z <int>       maximum number of lines in summary hit list (def=%i)       \n",par.Z);
-  printf(" -z <int>       minimum number of lines in summary hit list (def=%i)       \n",par.z);
-  printf(" -B <int>       maximum number of alignments in alignment list (def=%i)    \n",par.B);
-  printf(" -b <int>       minimum number of alignments in alignment list (def=%i)    \n",par.b);
-  printf(" -seq  [1,inf[  max. number of query/template sequences displayed  (def=%i)  \n",par.nseqdis);
+  printf(" -p [0,100]     minimum probability in summary and alignment list (default=%G)\n",par.p);
+  printf(" -E [0,inf[     maximum E-value in summary and alignment list (default=%G)    \n",par.E);
+  printf(" -Z <int>       maximum number of lines in summary hit list (default=%i)      \n",par.Z);
+  printf(" -z <int>       minimum number of lines in summary hit list (default=%i)      \n",par.z);
+  printf(" -B <int>       maximum number of alignments in alignment list (default=%i)   \n",par.B);
+  printf(" -b <int>       minimum number of alignments in alignment list (default=%i)   \n",par.b);
+  printf(" -seq  [1,inf[  max. number of query/template sequences displayed  (def=%i)\n",par.nseqdis);
   printf(" -nocons        don't show consensus sequence in alignments (default=show) \n");
   printf(" -nopred        don't show predicted 2ndary structure in alignments (default=show) \n");
   printf(" -nodssp        don't show DSSP 2ndary structure in alignments (default=show) \n");
@@ -669,37 +669,37 @@ void perform_realign(char *dbfiles[], int ndb)
 	  if (nhits>=imax(par.b,par.z) && hit_cur.Probab < par.p) continue;
 	  if (nhits>=imax(par.b,par.z) && hit_cur.Eval > par.E) continue;
 	}
-      if (hit_cur.L>Lmax) Lmax=hit_cur.L;
-      if (hit_cur.L<=Lmaxmem)
-	{
-//        fprintf(stderr,"hit.name=%-15.15s  hit.index=%-5i hit.ftellpos=%-8i  hit.dbfile=%s\n",hit_cur.name,hit_cur.index,(unsigned int)hit_cur.ftellpos,hit_cur.dbfile);
-	  if (nhits>=par.premerge || hit_cur.irep>1) // realign the first premerge hits consecutively to query profile
-	    {
-	      if (hit_cur.irep==1) 
-		{
-		  // For each template (therefore irep==1), store template index and position on disk in a list
-		  Realign_hitpos realign_hitpos;
-		  realign_hitpos.ftellpos = hit_cur.ftellpos;    // stores position on disk of template for current hit
-		  realign_hitpos.index = hit_cur.index;          // stores index of template of current hit
-		  if (! phash_plist_realignhitpos->Contains(hit_cur.dbfile))
-		    {
-		      List<Realign_hitpos>* newlist = new List<Realign_hitpos>;
-		      phash_plist_realignhitpos->Add(hit_cur.dbfile,newlist);
-		    }
-		  // Add template index and ftellpos to list which belongs to key dbfile in hash
-		  phash_plist_realignhitpos->Show(hit_cur.dbfile)->Push(realign_hitpos);
-		}
-	      if (! array_plist_phits[hit_cur.index]) // pointer at index is still NULL  
-		{
-		  List<void*>* newlist = new List<void*>; // create new list of pointers to all aligments of a template
-		  array_plist_phits[hit_cur.index] = newlist; // set array[index] to newlist
-		}
-	      // Push(hitlist.ReadCurrentAddress()) :  Add address of current hit in hitlist to list... 
-	      // array_plist_phits[hit_cur.index]-> :  pointed to by hit_cur.index'th element of array_plist_phits
-	      array_plist_phits[hit_cur.index]->Push(hitlist.ReadCurrentAddress());
-	    }
-	}
       nhits++;
+
+      if (hit_cur.L>Lmax) Lmax=hit_cur.L;
+      if (hit_cur.L>Lmaxmem) continue;
+
+//    fprintf(stderr,"hit.name=%-15.15s  hit.index=%-5i hit.ftellpos=%-8i  hit.dbfile=%s\n",hit_cur.name,hit_cur.index,(unsigned int)hit_cur.ftellpos,hit_cur.dbfile);
+      if (nhits>=par.premerge || hit_cur.irep>1) // realign the first premerge hits consecutively to query profile
+	{
+	  if (hit_cur.irep==1) 
+	    {
+	      // For each template (therefore irep==1), store template index and position on disk in a list
+	      Realign_hitpos realign_hitpos;
+	      realign_hitpos.ftellpos = hit_cur.ftellpos;    // stores position on disk of template for current hit
+	      realign_hitpos.index = hit_cur.index;          // stores index of template of current hit
+	      if (! phash_plist_realignhitpos->Contains(hit_cur.dbfile))
+		{
+		  List<Realign_hitpos>* newlist = new List<Realign_hitpos>;
+		  phash_plist_realignhitpos->Add(hit_cur.dbfile,newlist);
+		}
+	      // Add template index and ftellpos to list which belongs to key dbfile in hash
+	      phash_plist_realignhitpos->Show(hit_cur.dbfile)->Push(realign_hitpos);
+	    }
+	  if (! array_plist_phits[hit_cur.index]) // pointer at index is still NULL  
+	    {
+	      List<void*>* newlist = new List<void*>; // create new list of pointers to all aligments of a template
+	      array_plist_phits[hit_cur.index] = newlist; // set array[index] to newlist
+	    }
+	  // Push(hitlist.ReadCurrentAddress()) :  Add address of current hit in hitlist to list... 
+	  // array_plist_phits[hit_cur.index]-> :  pointed to by hit_cur.index'th element of array_plist_phits
+	  array_plist_phits[hit_cur.index]->Push(hitlist.ReadCurrentAddress());
+	}
     }
   if (Lmax>Lmaxmem)
     {

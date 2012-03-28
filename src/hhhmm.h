@@ -124,7 +124,7 @@ public:
     // Utility for Read()
     int Warning(FILE* dbf, char line[], char name[])
     {
-        if (v) cerr<<"\nWARNING: could not read line\n\'"<<line<<"\'\nin HMM "<<name<<" in "<<file<<"\n";
+        if (v) cerr<<"\nWARNING in "<<program_name<<": could not read line\n\'"<<line<<"\'\nin HMM "<<name<<" in "<<file<<"\n";
         while (fgetline(line,LINELEN,dbf) && !(line[0]=='/' && line[1]=='/'));
         if (line) return 2;  //return status: skip HMM
         return 0;            //return status: end of database file
