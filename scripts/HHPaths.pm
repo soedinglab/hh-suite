@@ -51,4 +51,25 @@ our $context_lib = "$hhdata/context_data.lib";
 # Add hh-suite scripts directory to search path
 $ENV{"PATH"} = $hhscripts.":".$ENV{"PATH"}; # Add hh scripts directory to PATH
 
+################################################################################################
+### System command with return value parsed from output
+################################################################################################
+sub System()
+{
+    if ($v>=2) {printf("\$ %s\n",$_[0]);} 
+    system($_[0]);
+    if ($? == 0) {return;}
+    if ($? == -1) {
+	die("\nError: failed to execute '$_[0]': $!\n\n");	
+    }
+    elsif ($? & 127) {
+	printf "\nError when executing '$_[0]': child died with signal %d, %s coredump\n\n",
+	($? & 127), ($? & 128) ? 'with' : 'without';
+    }
+    else {
+	printf "\nError when executing '$_[0]': child exited with value %d\n\n", $? >> 8;
+    }    
+    return $?;
+}
+
 return 1;

@@ -168,16 +168,8 @@ sub KillAllProcesses()
 sub System {
     if ($v>=2) {print("\n");} 
     if ($v>=1) {print("\n".$_[0]," ");}
-    system($_[0]);
-    if ($? == -1) {
-	die("\nError: failed to execute '$_[0]': $!\n\n");	
-    }
-    elsif ($? & 127) {
-	printf "\nError when executing '$_[0]': child died with signal %d, %s coredump\n\n",
-	($? & 127), ($? & 128) ? 'with' : 'without';
-    }
-    else {
-	printf "\nError when executing '$_[0]': child exited with value %d\n\n", $? >> 8;
-    } 
+    if (system($_[0])) {
+# Why is always -1 returned???
+#       print(STDERR "\nERROR: command '$command' returned error code $?\n");
+    };
 }
-

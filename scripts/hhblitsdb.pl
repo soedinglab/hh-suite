@@ -208,7 +208,7 @@ if (!$csdir)
 	foreach $dir (@dirs) {
 	    print("\nGenerating seq219 files in $tmpdir/ from a3m files in $dir/\n\n");
 	    $command = "$hhbin/cstranslate -i \$file -o $tmpdir/\$base.seq219 -D $context_lib -A $cs_lib -x $x -c $c 1>>$logfile 2>>$logfile";
-	    &System("$hhscripts/multithread.pl '".$dir."/*.a3m' '$command' -cpu $cpu");
+	    &HHPaths::System("$hhscripts/multithread.pl '".$dir."/*.a3m' '$command' -cpu $cpu");
 	    $numa3mfiles += scalar(glob("$dir/*.a3m"));
 	}
 	
@@ -219,23 +219,23 @@ if (!$csdir)
 	    if ($hhmext eq "hmm") {
 		print("\nGenerating prf profile files in $tmpdir/ from hmm files in $dir/\n\n");
 		$command = "$hhscripts/create_profile_from_hmmer.pl -i \$file -o $tmpdir/\$base.prf 1>/dev/null 2>>$logfile";
-		&System("$hhscripts/multithread.pl '".$dir."/*.".$hhmext."' '$command' -cpu $cpu");
+		&HHPaths::System("$hhscripts/multithread.pl '".$dir."/*.".$hhmext."' '$command' -cpu $cpu");
 	    } else { # $hhmext eq "hhm"
 		print("\nGenerating prf profile files in $tmpdir/ from hhm files in $dir/\n\n");
 		$command = "$hhscripts/create_profile_from_hhm.pl -i \$file -o $tmpdir/\$base.prf 1>/dev/null 2>>$logfile";
-		&System("$hhscripts/multithread.pl '".$dir."/*.".$hhmext."' '$command' -cpu $cpu");
+		&HHPaths::System("$hhscripts/multithread.pl '".$dir."/*.".$hhmext."' '$command' -cpu $cpu");
 	    }
 	}
 
 	if ($hhmext eq "hmm") {
 	    print("\nGenerating seq219 files in $tmpdir/ from prf files in $tmpdir/\n\n");
 	    $command = "$hhbin/cstranslate -i \$file -o \$name.seq219 -A $cs_lib 1>>$logfile 2>>$logfile";
-	    &System("$hhscripts/multithread.pl '".$tmpdir."/*.prf' '$command' -cpu $cpu");
+	    &HHPaths::System("$hhscripts/multithread.pl '".$tmpdir."/*.prf' '$command' -cpu $cpu");
 	    
 	} else { # $hhmext eq "hhm"
 	    print("\nGenerating seq219 files in $tmpdir/ from prf files in $tmpdir/\n\n");
 	    $command = "$hhbin/cstranslate -i \$file -o \$name.seq219 -A $cs_lib -D $context_lib -x $x -c $c 1>>$logfile 2>>$logfile";
-	    &System("$hhscripts/multithread.pl '".$tmpdir."/*.prf' '$command' -cpu $cpu");
+	    &HHPaths::System("$hhscripts/multithread.pl '".$tmpdir."/*.prf' '$command' -cpu $cpu");
 	}
     }
 
@@ -281,7 +281,7 @@ if (!$hhmdir)
 	foreach $dir (@dirs) {
 	    print("\nGenerating hhm files in $tmpdir/ from a3m files in $dir/\n\n");
 	    $command = "hhmake -i \$file -o $tmpdir/\$base.hhm  1>/dev/null 2>>$logfile";
-	    &System("$hhscripts/multithread.pl '".$dir."/*.a3m' '$command' -cpu $cpu");	
+	    &HHPaths::System("$hhscripts/multithread.pl '".$dir."/*.a3m' '$command' -cpu $cpu");	
 	}
 	$hhmdir = $tmpdir;
 	$numhhmfiles = scalar(glob("$tmpdir/*.hhm"));
@@ -310,7 +310,7 @@ if ($a3mfile ne "") {
     close OUT;
     
     $command = "ffindex_build -".$a_if_append."s -f $tmpdir/a3m.filelist $a3mfile $a3mfile.index";
-    &System($command);
+    &HHPaths::System($command);
  
     open (OUT, ">$a3mfile.index.sizes");
     print OUT "$numa3mfiles\n";
@@ -334,7 +334,7 @@ if ($hhmfile ne "") {
     close OUT;
 
     $command = "ffindex_build -".$a_if_append."s -f $tmpdir/hhm.filelist $hhmfile $hhmfile.index";
-    &System($command);
+    &HHPaths::System($command);
  
     open (OUT, ">$hhmfile.index.sizes");
     print OUT "$numhhmfiles\n";
@@ -371,23 +371,3 @@ elsif ($v<3) {
 wait;
 exit;
 
-
-################################################################################################
-### System command with return value parsed from output
-################################################################################################
-sub System()
-{
-    if ($v>=2) {printf("\$ %s\n",$_[0]);} 
-    system($_[0]);
-    if ($? == -1) {
-	die("\nError: failed to execute '$_[0]': $!\n\n");
-	
-    }
-    elsif ($? & 127) {
-	printf "\nError when executing '$_[0]': child died with signal %d, %s coredump\n\n",
-	($? & 127), ($? & 128) ? 'with' : 'without';
-    }
-    else {
-	printf "\nError when executing '$_[0]': child exited with value %d\n\n", $? >> 8;
-    }    
-}

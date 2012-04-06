@@ -777,7 +777,7 @@ void init_no_prefiltering()
 	  char db_name[NAMELEN];
 	  strwrd(name,line+1,NAMELEN);
 	  char* ptr1 = strchr(name,'|');
-	  if (ptr1) // found '|' in sequence id?
+	  if (ptr1) // found '|' in sequence id? => extract string up to '|'
 	    {
 	      char* ptr2 = strchr(++ptr1,'|');
 	      if (ptr2) strmcpy(db_name,ptr1,ptr2-ptr1);
@@ -1116,7 +1116,7 @@ void prefilter_db()
       char db_name[NAMELEN];
       strwrd(name,dbnames[(*it).second]);
       char* ptr1 = strchr(name,'|');
-      if (ptr1) // found '|' in sequence id?
+      if (ptr1) // found '|' in sequence id? => extract string up to '|'
       	{
       	  char* ptr2 = strchr(++ptr1,'|');
       	  if (ptr2) strmcpy(db_name,ptr1,ptr2-ptr1);

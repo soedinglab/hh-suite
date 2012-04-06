@@ -107,12 +107,12 @@ void HitList::PrintHitList(HMM* q, char* outfile)
 // 	 fprintf(outf,"%-34.34s %5.1f %7.2G %7.2G %6.1f %5.1f %4i ",str,hit.Probab,hit.Eval,hit.Pval,hit.score,hit.score_ss,hit.matched_cols);
 // #endif
 #ifdef WINDOWS      
-      if (hit.Eval>=1E-99) sprintf(Estr,"%8.2G",hit.Eval); else sprintf(Estr,"%8.1G",hit.Eval);
-      if (hit.Pval>=1E-99) sprintf(Pstr,"%8.2G",hit.Pval); else sprintf(Pstr,"%8.1G",hit.Pval);
+      if (hit.Eval>=1E-99) sprintf(Estr,"%8.2G",hit.Eval); else sprintf(Estr,"%8.1E",hit.Eval);
+      if (hit.Pval>=1E-99) sprintf(Pstr,"%8.2G",hit.Pval); else sprintf(Pstr,"%8.1E",hit.Pval);
       fprintf(outf,"%-34.34s %5.1f %8s %8s ",str,hit.Probab,Estr,Pstr);
 #else
-      if (hit.Eval>=1E-99) sprintf(Estr,"%7.2G",hit.Eval); else sprintf(Estr,"%7.1G",hit.Eval);
-      if (hit.Pval>=1E-99) sprintf(Pstr,"%7.2G",hit.Pval); else sprintf(Pstr,"%7.1G",hit.Pval);
+      if (hit.Eval>=1E-99) sprintf(Estr,"%7.2G",hit.Eval); else sprintf(Estr,"%7.0E",hit.Eval);
+      if (hit.Pval>=1E-99) sprintf(Pstr,"%7.2G",hit.Pval); else sprintf(Pstr,"%7.0E",hit.Pval);
       fprintf(outf,"%-34.34s %5.1f %7s %7s ",str,hit.Probab,Estr,Pstr);
 #endif
 
@@ -800,16 +800,12 @@ inline float beta_NN(float Lqnorm, float Ltnorm, float Nqnorm, float Ntnorm)
 void HitList::CalculateHHblitsEvalues(HMM* q)
 {
   Hit hit; 
-  // OLD!!!
-  //float alpha=0.75, beta=0;  // correlation factors for HHblits Evalue (correlation factor = exp(alpha * S' - beta) )
-  //const float log1000=log(1000.0);
-  //int nhits = 0;
-
-  float alpha = 0;
-  float log_Pcut = log(par.prefilter_evalue_thresh / par.dbsize);
-  float log_dbsize = log(par.dbsize);
+  double alpha = 0;
+  double log_Pcut = log(par.prefilter_evalue_thresh / par.dbsize);
+  double log_dbsize = log((double) par.dbsize);
   //printf("log_Pcut: %7.4f  Pcut: %7.4f DBsize: %10i   a: %4.2f  b: %4.2f  c: %4.2f\n",log_Pcut, exp(log_Pcut), par.dbsize, par.alphaa, par.alphab, par.alphac);
-      
+  // int nhits=0;?
+ 
   Reset();
   while (!End()) 
     {
@@ -823,8 +819,8 @@ void HitList::CalculateHHblitsEvalues(HMM* q)
       hit.Eval = exp(hit.logPval + log_dbsize + (alpha * log_Pcut)); 
       hit.logEval = hit.logPval + log_dbsize + (alpha * log_Pcut); 
 
-      // if (nhits++<50) 
-      // 	printf("                   Eval: %7.4g    logEval: %7.4f   alpha: %7.4f   Neff_T: %5.2f  Neff_Q: %5.2f\n",hit.Eval, hit.logEval, alpha, hit.Neff_HMM, q->Neff_HMM);
+      // if (nhits++<50) //DEBUG?????
+      //  	printf("                   Eval: %11.3E    logEval: %7.4f   logPval: %7.4f   alpha: %7.4f   Neff_T: %5.2f  Neff_Q: %5.2f\n",hit.Eval, hit.logEval, hit.logPval, alpha, hit.Neff_HMM, q->Neff_HMM);//DEBUG?????
 
       Overwrite(hit);   // copy hit object into current position of hitlist
     }

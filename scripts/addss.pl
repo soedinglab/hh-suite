@@ -148,9 +148,9 @@ if ($informat ne "hmm") {
 
     # Use first sequence to define match states and reformat input file to a3m and psi
     if ($informat ne "a3m") {
-	&System("$hhscripts/reformat.pl -v $v2 -M first $informat a3m $infile $tmpfile.in.a3m");
+	&HHPaths::System("$hhscripts/reformat.pl -v $v2 -M first $informat a3m $infile $tmpfile.in.a3m");
     } else {
-	&System("cp $infile $tmpfile.in.a3m");
+	&HHPaths::System("cp $infile $tmpfile.in.a3m");
     }
     
     # Read query sequence
@@ -177,7 +177,7 @@ if ($informat ne "hmm") {
 	$/="\n"; # set input field separator
 	
 	# First sequence contains gaps => calculate consensus sequence
-	&System("hhconsensus -i $tmpfile.in.a3m -s $tmpfile.sq -o $tmpfile.in.a3m > /dev/null");
+	&HHPaths::System("hhconsensus -i $tmpfile.in.a3m -s $tmpfile.sq -o $tmpfile.in.a3m > /dev/null");
 	
     } else {
 	
@@ -209,10 +209,10 @@ if ($informat ne "hmm") {
     
     # Filter alignment to diversity $neff 
     if ($v>=1) {printf ("Filtering alignment to diversity $neff ...\n");}
-    &System("hhfilter -v $v2 -neff $neff -i $tmpfile.in.a3m -o $tmpfile.in.a3m");
+    &HHPaths::System("hhfilter -v $v2 -neff $neff -i $tmpfile.in.a3m -o $tmpfile.in.a3m");
     
     # Reformat into PSI-BLAST readable file for jumpstarting 
-    &System("$hhscripts/reformat.pl -v $v2 -r -noss a3m psi $tmpfile.in.a3m $tmpfile.in.psi");
+    &HHPaths::System("$hhscripts/reformat.pl -v $v2 -r -noss a3m psi $tmpfile.in.a3m $tmpfile.in.psi");
     
     open (ALIFILE, ">$outfile") || die("ERROR: cannot open $outfile: $!\n");
     
@@ -368,9 +368,9 @@ else
 	
 	# Start Psiblast from checkpoint file tmp.chk that was generated to build the profile
 	if (-e "$datadir/weights.dat4") { # Psipred version < 3.0
-	    &System("$execdir/psipred $tmpfile.mtx $datadir/weights.dat $datadir/weights.dat2 $datadir/weights.dat3 $datadir/weights.dat4 > $tmpfile.ss");
+	    &HHPaths::System("$execdir/psipred $tmpfile.mtx $datadir/weights.dat $datadir/weights.dat2 $datadir/weights.dat3 $datadir/weights.dat4 > $tmpfile.ss");
 	} else {
-	    &System("$execdir/psipred $tmpfile.mtx $datadir/weights.dat $datadir/weights.dat2 $datadir/weights.dat3 > $tmpfile.ss");
+	    &HHPaths::System("$execdir/psipred $tmpfile.mtx $datadir/weights.dat $datadir/weights.dat2 $datadir/weights.dat3 > $tmpfile.ss");
 	}
 	
 	# READ PSIPRED file
@@ -403,7 +403,7 @@ else
 	
     close(OUTFILE);
     close(INFILE);
-    System("rm $tmpfile.mtx $tmpfile.ss $tmpfile.ss2");
+    &HHPaths::System("rm $tmpfile.mtx $tmpfile.ss $tmpfile.ss2");
     if ($v>=2) {printf("Added PSIPRED secondary structure to %i models\n",$nmodels);}
 }    
 
@@ -438,28 +438,28 @@ sub RunPsipred() {
     if (!-e "$dummydb.phr") {
 	if (!-e "$dummydb") {die "Error in addss.pl: Could not find $dummydb\n";}
 
-	&System("cp $infile $dummydb");
-	&System("$ncbidir/formatdb -i $dummydb");
+	&HHPaths::System("cp $infile $dummydb");
+	&HHPaths::System("$ncbidir/formatdb -i $dummydb");
 	if (!-e "$dummydb.phr") {die "Error in addss.pl: Could not find nor create index files for $dummydb\n";}
     }
 
     # Start Psiblast from checkpoint file tmp.chk that was generated to build the profile
-    &System("$ncbidir/blastpgp -b 1 -j 1 -h 0.001 -d $dummydb -i $infile -B $tmpfile.in.psi -C $tmpfile.chk 1> $tmpfile.blalog 2> $tmpfile.blalog");
+    &HHPaths::System("$ncbidir/blastpgp -b 1 -j 1 -h 0.001 -d $dummydb -i $infile -B $tmpfile.in.psi -C $tmpfile.chk 1> $tmpfile.blalog 2> $tmpfile.blalog");
     
     #print("Predicting secondary structure...\n");
     
-    &System("echo "."$tmpfile_no_dir".".chk > $tmpfile.pn\n");
-    &System("echo "."$tmpfile_no_dir".".sq  > $tmpfile.sn\n");
-    &System("$ncbidir/makemat -P $tmpfile");
+    &HHPaths::System("echo "."$tmpfile_no_dir".".chk > $tmpfile.pn\n");
+    &HHPaths::System("echo "."$tmpfile_no_dir".".sq  > $tmpfile.sn\n");
+    &HHPaths::System("$ncbidir/makemat -P $tmpfile");
     
     # Start Psiblast from checkpoint file tmp.chk that was generated to build the profile
     if (-e "$datadir/weights.dat4") { # Psipred version < 3.0
-	&System("$execdir/psipred $tmpfile.mtx $datadir/weights.dat $datadir/weights.dat2 $datadir/weights.dat3 $datadir/weights.dat4 > $tmpfile.ss");
+	&HHPaths::System("$execdir/psipred $tmpfile.mtx $datadir/weights.dat $datadir/weights.dat2 $datadir/weights.dat3 $datadir/weights.dat4 > $tmpfile.ss");
     } else {
-	&System("$execdir/psipred $tmpfile.mtx $datadir/weights.dat $datadir/weights.dat2 $datadir/weights.dat3 > $tmpfile.ss");
+	&HHPaths::System("$execdir/psipred $tmpfile.mtx $datadir/weights.dat $datadir/weights.dat2 $datadir/weights.dat3 > $tmpfile.ss");
     }
 
-    &System("$execdir/psipass2 $datadir/weights_p2.dat 1 0.98 1.09 $tmpfile.ss2 $tmpfile.ss > $tmpfile.horiz");
+    &HHPaths::System("$execdir/psipass2 $datadir/weights_p2.dat 1 0.98 1.09 $tmpfile.ss2 $tmpfile.ss > $tmpfile.horiz");
     
     # Remove temporary files
     if ($v<=3) { unlink(split ' ', "$tmpfile.pn $tmpfile.sn $tmpfile.mn $tmpfile.chk $tmpfile.blalog $tmpfile.mtx $tmpfile.aux $tmpfile.ss $tmpfile.ss2 $tmpfile.sq");}
@@ -543,8 +543,8 @@ sub AppendDsspSequences() {
 	    printf(STDOUT "WARNING Cannot open $pdbfile!\n"); 
 	    return 1;
 	} else  {
-	    &System("$dssp $pdbfile $tmpfile.dssp > /dev/null");
-	    &System("cp $tmpfile.dssp $dsspfile ");
+	    &HHpaths::System("$dssp $pdbfile $tmpfile.dssp > /dev/null");
+	    &HHpaths::System("cp $tmpfile.dssp $dsspfile ");
 	    $dsspfile="$tmpfile.dssp";
 	    if (! open (DSSPFILE, "<$dsspfile")) {
 		printf(STDERR "ERROR: dssp couldn't generate file from $pdbfile. Skipping $name\n");
@@ -717,24 +717,5 @@ sub sa2c ()
     elsif ($rsa<=0.33) {return "C";}
     elsif ($rsa<=0.55) {return "D";}
     else               {return "E";}
-}
-
-################################################################################################
-### System command with return value parsed from output
-################################################################################################
-sub System()
-{
-    if ($v>=2) {printf("\$ %s\n",$_[0]);} 
-    system($_[0]);
-    if ($? == -1) {
-	die("\nError: failed to execute '$_[0]': $!\n\n");	
-    }
-    elsif ($? & 127) {
-	printf "\nError when executing '$_[0]': child died with signal %d, %s coredump\n\n",
-	($? & 127), ($? & 128) ? 'with' : 'without';
-    }
-    else {
-	printf "\nError when executing '$_[0]': child exited with value %d\n\n", $? >> 8;
-    }  
 }
 

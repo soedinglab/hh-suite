@@ -692,6 +692,14 @@ The number of effective sequences of the full alignment, which appears as NEFF i
 
 \subsection{More frequently asked questions}
 
+{\bf How can I retrieve individual database A3M or HHM files in my hhblits database?}
+For reasons of efficiency, the MSA A3M and HHM model files are packed into two files, \verb`<db>_a3m_db` and \verb`<db>_hhm_db`, each with its own index file. The contained files are easy to extract from the packed files. For example, to dump \verb`d1aa7a_.a3m` in \verb`scop70` to standard output, type 
+\begin{verbatim}
+$ ffindex_get scop70_a3m_db  scop70_a3m_db.index d1aa7a_.a3m
+\end{verbatim}
+You may write the extracted file to a separate file by appending \verb`'> d1aa7a_.a3m'` to the above command.
+
+
 {\bf Do HHsearch and HHblits work fine with multi-domain sequences?}
 HHblits and HHsearch have been designed to work with multi-domain queries. However, the chances for false positives entering the query alginment during the HHblits iterations is greater for multi-domain proteins. For long sequences, it may therefore be of advantage to first search the PDB or the SCOP domain database and then to cut the query sequence into smaller parts on the basis of the identified structural domains. Pfam or CDD are - in our opinion - not suitable to determine domain boundaries.
 

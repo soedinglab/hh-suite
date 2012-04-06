@@ -1,16 +1,15 @@
 #! /usr/bin/env perl
-
 # splitfasta.pl 
 # Split a file with multiple, FASTA formatted sequences into many single-sequence FASTA files
 #
-#     HHsuite version 2.0 (Febrary 2012)
+# (C) Johannes Soeding, 2012
+#
+#     HHsuite version 2.0.14 (April 2012)
 #
 #     Reference: 
 #     Remmert M., Biegert A., Hauser A., and Soding J.
 #     HHblits: Lightning-fast iterative protein sequence searching by HMM-HMM alignment.
 #     Nat. Methods, epub Dec 25, doi: 10.1038/NMETH.1818 (2011).
-
-#     (C) Johannes Soeding, 2012
 
 #     This program is free software: you can redistribute it and/or modify
 #     it under the terms of the GNU General Public License as published by

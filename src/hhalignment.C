@@ -468,6 +468,8 @@ void Alignment::Compress(const char infile[])
   int unequal_lengths=0;  //k: seq k doesn't have same number of match states as seq 0 => WARNING
   static short unsigned int h[MAXSEQ];  //points to next character in seq[k] to be written
 
+  // for (k=0;k<N_in; ++k) printf("k=%i >%s\n%s\n",k,sname[k],seq[k]); // DEBUG
+  
   // Initialize
   for (k=0;k<N_in; ++k) 
     {
@@ -478,19 +480,19 @@ void Alignment::Compress(const char infile[])
   if (v>=3)
     {
       if (par.M==1)
-        cout<<"Using match state assignment by capital letters (a2m format)\n";
+        cout<<"Using match state assignment by capital letters (a2m/a3m format)\n";
       else if (par.M==2) cout<<"Using percentage-rule match state assignment\n";
       else if (par.M==3) cout<<"Using residues of first sequence as match states\n";
     }
 
   // Warn, if there are gaps in a single sequence
-  if (v>=1 && N_in-N_ss==1 && par.M!= 2 && strchr(X[kfirst],'-')!=NULL)
+  if (v>=1 && N_in-N_ss==1 && par.M!= 2 && strchr(seq[kfirst]+1,'-')!=NULL)
     fprintf(stderr, "WARNING: File %s has a single sequence containing gaps, which will be ignored.\nIf you want to treat the gaps as match states, use the '-M 100' option.\n",infile);
 
   // Too few match states?
   if (par.M==1) 
     {
-      int match_states = strcount(seq[kfirst],'A','Z') + strcount(seq[kfirst],'-','-');
+      int match_states = strcount(seq[kfirst],'A','Z') + strcount(seq[kfirst]+1,'-','-');
       if (match_states < 6) 
 	{
 	  if (N_in-N_ss<=1) {
@@ -515,11 +517,11 @@ void Alignment::Compress(const char infile[])
       // Warn if alignment is ment to be -M first or -M <%> instead of A2M/A3M
       if (v>=2 && strchr(seq[kfirst],'-') ) // Seed/query sequence contains a gap ...
         {
-	  L=strlen(seq[kfirst])-1;
+	  unsigned int len = strlen(seq[kfirst])-1;
           for (k=1; k<N_in; ++k)
 	    {
 	      if (keep[k] && strcount(seq[k],'a','z')) break;
-	      if (strlen(seq[k])!=(unsigned int)L) k=N_in; 
+	      if (strlen(seq[k])!= len) k=N_in; 
 	    }
           if (k>=N_in) // ... but alignment contains no lower case residue
             fprintf(stderr,"WARNING: input alignment %s looks like aligned FASTA instead of A2M/A3M format. Consider using '-M first' or '-M 50'\n",infile);
@@ -853,7 +855,7 @@ void Alignment::Compress(const char infile[])
     for (k=0; k<N_in; ++k)
       {
         if (!display[k]) continue;
-        cout<<">"<<sname[k]<<"\n";
+        cout<<"k="<<k<<" >"<<sname[k]<<"\n";
         if (k==kss_dssp || k==kss_pred) {for (i=1; i<=L; ++i) cout<<char(i2ss(X[k][i]));}
         else if (k==kss_conf)           {for (i=1; i<=L; ++i) cout<<char(i2cf(X[k][i]));}
         else if (k==ksa_dssp)           {for (i=1; i<=L; ++i) cout<<char(i2sa(X[k][i]));}

@@ -730,7 +730,9 @@ void PerformViterbiByWorker(int bin)
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
-// Read input file
+// This function is called if an HMM (<query>.hhm) instead of an MSA given as query.
+// It reads the query MSA either from <query>.a3m if it exists, or from the
+//  representative sequences in the HHM/HMM file
 /////////////////////////////////////////////////////////////////////////////////////
 void ReadQueryA3MFile()
 {
@@ -743,24 +745,28 @@ void ReadQueryA3MFile()
   
   if (!qa3mf) 
     {
-      // Read query alignment from HHM	
+      // <query>.a3m does not exist => extract query MSA from representative seuences in HHM 
       Qali.GetSeqsFromHMM(q);
-      Qali.Compress("compress Qali");
+      Qali.Compress(par.infile);
+      if (Qali.L != q->L) {
+	cerr<<"Error in "<<par.argv[0]<<": "<<par.infile<<" has "<<q->L<<" match states, while its representative sequences have "<<Qali.L<<"!\n";
+	exit(1);
+      }
       
       if (num_rounds > 1 || *par.alnfile || *par.psifile || *par.hhmfile || *alis_basename)
 	{
 	  if (input_format == 0 && v>=1)   // HHM format
-	    cerr<<"WARNING: No alignment file found! Using only representative sequences in HHM-file as starting MSA.\n";
+	    cerr<<"WARNING: No alignment file found! Using only representative sequences in HHM file as starting MSA.\n";
 	  else if (input_format == 1 && v>=1)
-	    cerr<<"WARNING: No alignment file found! Using only consensus sequence from HMMER-file as starting MSA.\n";
+	    cerr<<"WARNING: No alignment file found! Using only consensus sequence from HMMER file as starting MSA.\n";
 	}
     } 
   else 
     {
-      // A3M query file exists => read it into Qali
+      // <query>.a3m does exist => read it into Qali
       Qali.Read(qa3mf,qa3mfile);
-      Qali.Compress("compress Qali");
-     
+      Qali.Compress(qa3mfile);
+
       // Copy names from query HMM (don't use name of master sequence of MSA)
       delete[] Qali.longname;
       Qali.longname = new(char[strlen(q->longname)+1]);
@@ -771,9 +777,8 @@ void ReadQueryA3MFile()
 	printf("Error in %s: query hhm %s has %i match states whereas query a3m %s has %i!\n",par.argv[0],qa3mfile,Qali.L,par.infile,q->L);
 	exit(4);
       }
-
+      fclose(qa3mf);      
     }
-  fclose(qa3mf);
  }
 
 
@@ -1212,10 +1217,9 @@ void perform_realign(char *dbfiles[], int ndb)
 	  if (nhits>=imax(par.b,par.z) && hit_cur.Probab < par.p) continue;
 	  if (nhits>=imax(par.b,par.z) && hit_cur.Eval > par.E) continue;
 	}
-      nhits++;
 
       if (hit_cur.L>Lmax) Lmax=hit_cur.L;
-      if (hit_cur.L>Lmaxmem) continue;
+      if (hit_cur.L>Lmaxmem) {nhits++; continue;}
 
       // Seach only around viterbi hit
       if (block_filter)
@@ -1277,6 +1281,8 @@ void perform_realign(char *dbfiles[], int ndb)
 	  // array_plist_phits[hit_cur.index]-> :  pointed to by hit_cur.index'th element of array_plist_phits
 	  array_plist_phits[hit_cur.index]->Push(hitlist.ReadCurrentAddress());
 	}
+
+      nhits++;
     }
 
   if (Lmax>Lmaxmem)
@@ -1296,6 +1302,8 @@ void perform_realign(char *dbfiles[], int ndb)
   jobs_running = 0;
   jobs_submitted = 0;
   reading_dbs=1;   // needs to be set to 1 before threads are created
+
+  // Michael's version (Why first delete and then reallocate????)
   for (bin=0; bin<bins; bin++)
     {
       // Free previously allocated memory
@@ -1309,6 +1317,13 @@ void perform_realign(char *dbfiles[], int ndb)
 
       bin_status[bin] = FREE;
     }
+  // // Why not like this instead????????? JS
+  // for (bin=0; bin<bins; bin++)
+  //   {
+  //     if (!hit[bin]->forward_allocated)  hit[bin]->AllocateForwardMatrix(q->L+2,Lmax+1);
+  //     if (!hit[bin]->backward_allocated) hit[bin]->AllocateBackwardMatrix(q->L+2,Lmax+1);
+  //     bin_status[bin] = FREE;
+  //   }
  
   if (print_elapsed) ElapsedTimeSinceLastCall("(prepare realign)");
 
@@ -1777,15 +1792,12 @@ void perform_realign(char *dbfiles[], int ndb)
       if (hit_cur.matched_cols < MINCOLS_REALIGN)
 	{
 	  if (v>=3) printf("Deleting alignment of %s with length %i\n",hit_cur.name,hit_cur.matched_cols);
-	  //hitlist.ReadCurrent().Delete();
 	  hitlist.Delete().Delete();               // delete the list record and hit object
-	  // Make sure only realigned alignments get displayed!
-	  if (last_round) {
-	    if (par.B>par.Z) par.B--; else if (par.B==par.Z) {par.B--; par.Z--;} else par.Z--;
-	    //if (par.b>par.z) par.b--; else if (par.b==par.z) {par.b--; par.z--;} else par.z--;
-	  }
+	  // // Make sure only realigned alignments get displayed! JS: Why? better unrealigned than none.
+	  // if (last_round) 
+	        // if (par.B>par.Z) par.B--; else if (par.B==par.Z) {par.B--; par.Z--;} else par.Z--;
 	}
-      else nhits++;
+      nhits++;
     }
 
   // Delete hash phash_plist_realignhitpos with lists

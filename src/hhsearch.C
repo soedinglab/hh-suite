@@ -669,10 +669,9 @@ void perform_realign(char *dbfiles[], int ndb)
 	  if (nhits>=imax(par.b,par.z) && hit_cur.Probab < par.p) continue;
 	  if (nhits>=imax(par.b,par.z) && hit_cur.Eval > par.E) continue;
 	}
-      nhits++;
 
       if (hit_cur.L>Lmax) Lmax=hit_cur.L;
-      if (hit_cur.L>Lmaxmem) continue;
+      if (hit_cur.L>Lmaxmem) {nhits++; continue;}
 
 //    fprintf(stderr,"hit.name=%-15.15s  hit.index=%-5i hit.ftellpos=%-8i  hit.dbfile=%s\n",hit_cur.name,hit_cur.index,(unsigned int)hit_cur.ftellpos,hit_cur.dbfile);
       if (nhits>=par.premerge || hit_cur.irep>1) // realign the first premerge hits consecutively to query profile
@@ -700,6 +699,7 @@ void perform_realign(char *dbfiles[], int ndb)
 	  // array_plist_phits[hit_cur.index]-> :  pointed to by hit_cur.index'th element of array_plist_phits
 	  array_plist_phits[hit_cur.index]->Push(hitlist.ReadCurrentAddress());
 	}
+      nhits++;
     }
   if (Lmax>Lmaxmem)
     {
@@ -719,11 +719,8 @@ void perform_realign(char *dbfiles[], int ndb)
   reading_dbs=1;   // needs to be set to 1 before threads are created
   for (bin=0; bin<bins; bin++)
     {
-      if (par.forward==0)
-	hit[bin]->AllocateForwardMatrix(q->L+2,Lmax+1);
-      if (par.forward<=1)
-	hit[bin]->AllocateBackwardMatrix(q->L+2,Lmax+1);
-      bin_status[bin] = FREE;
+      if (!hit[bin]->forward_allocated)  hit[bin]->AllocateForwardMatrix(q->L+2,Lmax+1);
+      if (!hit[bin]->backward_allocated) hit[bin]->AllocateBackwardMatrix(q->L+2,Lmax+1);
     }
   
   if (v>=2) printf("Realigning %i database HMMs using HMM-HMM Maximum Accuracy algorithm\n",nhits);
@@ -763,10 +760,9 @@ void perform_realign(char *dbfiles[], int ndb)
 	  if (nhits>=imax(par.B,par.Z)) break;
 	  if (nhits>=imax(par.b,par.z) && hit_cur.Probab < par.p) break;
 	  if (nhits>=imax(par.b,par.z) && hit_cur.Eval > par.E) continue;
-	  nhits++;
 	  
-	  if (hit_cur.irep>1) continue;  // Align only the best hit of the first par.premerge templates
-	  if (hit_cur.L>Lmaxmem) continue;  //Don't align to long sequences due to memory limit
+	  if (hit_cur.irep>1) continue;               // Align only the best hit of the first par.premerge templates
+	  if (hit_cur.L>Lmaxmem) {nhits++; continue;} //Don't align to long sequences due to memory limit
 	  
 	  // Open HMM database file dbfiles[idb]
 	  FILE* dbf=fopen(hit_cur.dbfile,"rb");
@@ -909,6 +905,8 @@ void perform_realign(char *dbfiles[], int ndb)
 	  q->Log2LinTransitionProbs(1.0); // transform transition freqs to lin space if not already done
 	  
 	  q->CalculateAminoAcidBackground();
+
+	  nhits++;
 	}
     }
   // End premerge: align the first par.premerge templates?
@@ -1156,13 +1154,12 @@ void perform_realign(char *dbfiles[], int ndb)
       if (hit_cur.matched_cols < MINCOLS_REALIGN)
 	{
 	  if (v>=3) printf("Deleting alignment of %s with length %i\n",hit_cur.name,hit_cur.matched_cols);
-	  //hitlist.ReadCurrent().Delete();
 	  hitlist.Delete().Delete();               // delete the list record and hit object
-	  // Make sure only realigned alignments get displayed!
-	  if (par.B>par.Z) par.B--; else if (par.B==par.Z) {par.B--; par.Z--;} else par.Z--;
-	  if (par.b>par.z) par.b--; else if (par.b==par.z) {par.b--; par.z--;} else par.z--;
+	  // // Make sure only realigned alignments get displayed! JS: Why? better unrealigned than none.
+	  // if (par.B>par.Z) par.B--; else if (par.B==par.Z) {par.B--; par.Z--;} else par.Z--;
+	  // if (par.b>par.z) par.b--; else if (par.b==par.z) {par.b--; par.z--;} else par.z--;
 	}
-      else nhits++;
+      nhits++;
     }
   
   // Delete hash phash_plist_realignhitpos with lists

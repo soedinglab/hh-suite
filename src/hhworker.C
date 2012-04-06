@@ -82,7 +82,7 @@ void AlignByWorker(int bin)
 //////////////////////////////////////////////////////////////////////////////////////
 void RealignByWorker(int bin)
 {
-  // Realign all hits pointed to by list List<void*>* hit[bin]->plist_phits;
+  // Realign all hits with same template, pointed to by list List<void*>* hit[bin]->plist_phits;
   // This list is set up in HHseach and HHblits at the beginning of perform_realign()
   Hit* hit_cur;
 
@@ -96,6 +96,7 @@ void RealignByWorker(int bin)
     {
       // Set pointer hit_cur to next hit to be realigned
       hit_cur = (Hit*) hit[bin]->plist_phits->ReadNext();
+      // printf("Realigning %s, irep=%i\n",hit_cur->name,hit_cur->irep);  //?????????
 
       // Realign only around previous Viterbi hit
       // hit[bin] = *hit_cur; is not possible because the pointers to the DP matrices would be overwritten
