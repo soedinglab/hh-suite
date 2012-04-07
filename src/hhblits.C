@@ -300,7 +300,6 @@ void help(char all=0)
   printf("                Analogous for a2m, fas, psi, hhm format (e.g. -ohhm)\n");
   }
   if (all) {
-  printf(" -ofas <file>   write MSA of significant matches in FASTA format\n");
   printf(" -opsi <file>   write MSA of significant matches in PSI format\n");
   printf(" -ohhm <file>   write HHM file for MSA of significant matches\n");
   }
@@ -745,7 +744,9 @@ void ReadQueryA3MFile()
   
   if (!qa3mf) 
     {
-      // <query>.a3m does not exist => extract query MSA from representative seuences in HHM 
+      // <query>.a3m does not exist => extract query MSA from representative sequences in HHM 
+      if (v>=1 && input_format==0) printf("Extracting representative sequences from %s to merge later with matched database sequences\n",par.infile);
+      if (v>=1 && input_format==1) printf("Extracting consensus sequence from %s to merge later with matched database sequences\n",par.infile);
       Qali.GetSeqsFromHMM(q);
       Qali.Compress(par.infile);
       if (Qali.L != q->L) {
@@ -753,17 +754,18 @@ void ReadQueryA3MFile()
 	exit(1);
       }
       
-      if (num_rounds > 1 || *par.alnfile || *par.psifile || *par.hhmfile || *alis_basename)
-	{
-	  if (input_format == 0 && v>=1)   // HHM format
-	    cerr<<"WARNING: No alignment file found! Using only representative sequences in HHM file as starting MSA.\n";
-	  else if (input_format == 1 && v>=1)
-	    cerr<<"WARNING: No alignment file found! Using only consensus sequence from HMMER file as starting MSA.\n";
-	}
+      // if (num_rounds > 1 || *par.alnfile || *par.psifile || *par.hhmfile || *alis_basename)
+      // 	{
+      // 	  if (input_format==0 && v>=1)   // HHM format
+      // 	    cerr<<"WARNING: No alignment file found! Using only representative sequences in HHM file as starting MSA.\n";
+      // 	  else if (input_format==1 && v>=1)
+      // 	    cerr<<"WARNING: No alignment file found! Using only consensus sequence from HMMER file as starting MSA.\n";
+      // 	}
     } 
   else 
     {
       // <query>.a3m does exist => read it into Qali
+      if (v>=1) printf("Reading query MSA from %s to merge later with matched database sequences\n",qa3mfile);
       Qali.Read(qa3mf,qa3mfile);
       Qali.Compress(qa3mfile);
 
@@ -1883,8 +1885,11 @@ int main(int argc, char **argv)
       if (v>=1) cerr<<"WARNING: Number of iterations ("<<num_rounds<<") to large => Set to 8 iterations\n";
       num_rounds=8; 
     }
+  // Premerging can be very time-consuming on large database a3ms, such as from pdb70. 
+  // Hence it is only done when iteratively searches against uniprot20 or nr20 with their much smaller MSAs:
+  if (! (num_rounds > 1 || *par.alnfile || *par.psifile || *par.hhmfile || *alis_basename) ) par.premerge=0; 
   
-  // No outfile not given? Name it basename.hhm
+  // No outfile given? Name it basename.hhm
   if (!*par.outfile)      // outfile not given? Name it basename.hhm
     {
       RemoveExtension(par.outfile,par.infile);
@@ -2033,7 +2038,8 @@ int main(int argc, char **argv)
   // Read query input file (HHM, HMMER, or alignment format) without adding pseudocounts
   Qali.N_in=0;
   ReadQueryFile(par.infile,input_format,q,&Qali); //????????
-  if (Qali.N_in==0) ReadQueryA3MFile();
+  if (num_rounds > 1 || *par.alnfile || *par.psifile || *par.hhmfile || *alis_basename || par.premerge>0)
+    ReadQueryA3MFile();
   if (Qali.N_in - Qali.N_ss > 1) par.premerge=0;
   par.M=1; // all database MSAs must be in A3M format
 
@@ -2044,7 +2050,6 @@ int main(int argc, char **argv)
   if (par.prefilter)
     {
       // Initialize Prefiltering (Get DBsize)
-      if (v>=2) printf("Reading in column state sequences for prefiltering\n");
       init_prefilter();
     }
   else // Set all HMMs in database as new_dbs
@@ -2232,7 +2237,7 @@ int main(int argc, char **argv)
 	  {
 	    char ta3mfile[NAMELEN];
 	    
-	    if (v>=1) printf("Merging hits to query profile ...\n");
+	    if (v>=1) printf("Merging hits to query profile\n");
 	    
 	    // For each template below threshold
 	    hitlist.Reset();

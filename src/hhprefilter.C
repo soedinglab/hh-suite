@@ -750,7 +750,9 @@ int ungapped_sse_score(const unsigned char* query_profile,
 }
 
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
 // Pull out all names from prefilter db file and copy into dbfiles_new for full HMM-HMM comparison
+///////////////////////////////////////////////////////////////////////////////////////////////////
 void init_no_prefiltering()
 {
   // Get DBsize and num_chars
@@ -796,11 +798,13 @@ void init_no_prefiltering()
     }
   fclose(dbf);
 
-  cerr<<"Init without prefiltering! "<<ndb_new<<" HHMs in database!\n";
+  if (v>=2) cout<<"Searching "<<ndb_new<<" database HHMs without prefiltering"<<endl;
 
 }
       
-
+//////////////////////////////////////////////////////////////
+// Reading in column state sequences for prefiltering
+//////////////////////////////////////////////////////////////
 void init_prefilter()
 {
   // Get Prefilter Pvalue (Evalue / Par.Dbsize)
@@ -809,7 +813,7 @@ void init_prefilter()
   if (par.dbsize == 0 || LDB == 0)
     {cerr<<endl<<"Error! Could not determine DB-size of prefilter db ("<<db<<")\n"; exit(4);}
 	    
-  if (v>=3) printf("Number of column-state sequences: %6i\n",par.dbsize);
+  if (v>=2) cout<<"Reading in "<<par.dbsize<<" column state sequences with a total length of "<<LDB<<" residues"<<endl;
 
   X = (unsigned char*)memalign(16,LDB*sizeof(unsigned char));                     // database string (concatenate all DB-seqs)
   first = (unsigned char**)memalign(16,(par.dbsize+2)*sizeof(unsigned char*));    // first characters of db sequences. Was (par.dbsize*2). Why??

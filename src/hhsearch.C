@@ -1491,6 +1491,7 @@ int main(int argc, char **argv)
 		  fgetline(line,LINELEN,dbf); cerr<<line<<"'\n";
 		  exit(1);
                 }
+	      
               if (read_from_db==2) continue;  // skip current HMM or reached end of database
               if (read_from_db==0) break;     // finished reading HMMs
               if (v>=4) printf("Aligning with %s\n",t[bin]->name);  /////////////////////v>=4
