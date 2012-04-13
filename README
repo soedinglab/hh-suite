@@ -119,8 +119,8 @@ $ export DYLD_LIBRARY_PATH=/opt/hhsuite/lib
 5. Download Databases
 
 Download current databases from our FTP-server:
-ftp://toolkit.genzentrum.lmu.de/HH-suite/hhblits_dbs/
-ftp://toolkit.genzentrum.lmu.de/HH-suite/hhsearch_dbs/
+ftp://toolkit.genzentrum.lmu.de/HH-suite/databases/hhblits/
+ftp://toolkit.genzentrum.lmu.de/HH-suite/databases/
 
 Either uniprot20 or nr20 is sufficient. 
 
