@@ -59,7 +59,6 @@ HMM::HMM(int maxseqdis, int maxres)
   sa_dssp = new char[maxres];     // solvent accessibility state determined by dssp 0:-  1:A (absolutely buried) 2:B  3:C  4:D  5:E (exposed)
   ss_pred = new char[maxres];     // predicted secondary structure          0:-  1:H  2:E  3:C
   ss_conf = new char[maxres];     // confidence value of prediction         0:-  1:0 ... 10:9
-  Xcons   = NULL;                 // create only when needed: consensus sequence in internal representation (A=0 R=1 N=2 D=3 ...)
   l = new int[maxres];            // l[i] = pos. of j'th match state in aligment
   f = new float*[maxres];         // f[i][a] = prob of finding amino acid a in column i WITHOUT pseudocounts
   g = new float*[maxres];         // f[i][a] = prob of finding amino acid a in column i WITH pseudocounts
@@ -117,7 +116,6 @@ HMM::~HMM()
   delete[] sa_dssp;
   delete[] ss_pred;
   delete[] ss_conf;
-  delete[] Xcons;
   delete[] l;
   for (int i=0; i<par.maxres; i++) if (f[i]) delete[] f[i]; else break;
   for (int i=0; i<par.maxres; i++) if (g[i]) delete[] g[i]; else break;
@@ -164,9 +162,6 @@ HMM& HMM::operator=(HMM& q)
       ss_conf[i]=q.ss_conf[i];
       l[i]=q.l[i];
     }
-  if (q.Xcons)
-    for (int i=0; i<=L+1; ++i)
-      Xcons[i]  =q.Xcons[i];
 
   n_display=q.n_display;
   n_seqs=q.n_seqs;

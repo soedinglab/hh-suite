@@ -115,7 +115,6 @@ public:
     char* sa_dssp;            // solvent accessibility state determined by dssp 0:-  1:A (absolutely buried) 2:B  3:C  4:D  5:E (exposed)
     char* ss_pred;            // predicted secondary structure          0:-  1:H  2:E  3:C
     char* ss_conf;            // confidence value of prediction         0:-  1:0 ... 10:9
-    char* Xcons;              // consensus sequence in internal representation (A=0 R=1 N=2 D=3 ...)
     int* l;                   // l[i] = pos. of j'th match state in aligment
     char trans_lin;           // transition probs are given in log or lin space? (0: p_tr  1: log(p_tr)
     bool dont_delete_seqs;    // set to one if flat copy of seqs and sname was made to a hit object, to avoid deletion

@@ -65,7 +65,6 @@ class Hit
   float* S;             // S[step] = match-match score contribution at alignment step
   float* S_ss;          // S_ss[step] = secondary structure score contribution
   float* P_posterior;   // P_posterior[step] = posterior prob for MM states (otherwise zero)
-  char* Xcons;          // consensus sequence for aligned states in internal representation (A=0 R=1 N=2 D=3 ...)
   int i1;               // First aligned residue in query
   int i2;               // Last aligned residue in query
   int j1;               // First aligned residue in template 

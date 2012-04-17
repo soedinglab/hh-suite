@@ -82,7 +82,6 @@ Hit::Hit()
   alt_i = alt_j = NULL;
   states = NULL;
   S = S_ss = P_posterior = NULL;
-  Xcons = NULL;
   //B_MM=B_MI=B_IM=B_DG=B_GD=NULL;
   //F_MM=F_MI=F_IM=F_DG=F_GD=NULL;
   B_MM=NULL;
@@ -113,12 +112,10 @@ void Hit::Delete()
   if (S) delete[] S; 
   if (S_ss) delete[] S_ss; 
   if (P_posterior) delete[] P_posterior;
-  if (Xcons) delete[] Xcons;
   //  delete[] l;    
   i = j = NULL;
   states = NULL;
   S = S_ss = P_posterior = NULL;
-  Xcons = NULL;
 
   delete[] longname; delete[] name; delete[] file; delete[] dbfile;
   if (sname) {
@@ -1147,7 +1144,6 @@ void Hit::Backtrace(HMM* q, HMM* t)
   nsteps=step; 
   
   // Allocate new space for alignment scores
-  if (t->Xcons) Xcons = new( char[q->L+2]); // for template consensus sequence aligned to query
   S    = new( float[nsteps+1]);
   S_ss = new( float[nsteps+1]);
   if (!S_ss) MemoryError("space for HMM-HMM alignments");
@@ -1166,23 +1162,16 @@ void Hit::Backtrace(HMM* q, HMM* t)
 	  S[step] = Score(q->p[i],t->p[j]);
 	  S_ss[step] = ScoreSS(q,t,i,j,ssm);
 	  score_ss += S_ss[step];
-	  if (Xcons) Xcons[i]=t->Xcons[j]; //record database consensus sequence
 	  break;
 	case MI: //if gap in template  
 	case DG:   
-	  if (Xcons) Xcons[this->i[step]]=GAP; //(no break hereafter)
 	default: //if gap in T or Q
 	  S[step]=S_ss[step]=0.0f;
 	  break;
 	}
     }
   if (ssm2>=1) score-=score_ss;    // subtract SS score added during alignment!!!!
-  if (Xcons) 
-    {
-      for (i=0; i<i1; ++i) Xcons[i]=ENDGAP; // set end gap code at beginning and end of template consensus sequence
-      for (i=i2+1; i<=q->L+1; ++i) Xcons[i]=ENDGAP;
-    }
-  
+ 
   // Add contribution from correlation of neighboring columns to score
   float Scorr=0;
   if (nsteps)
@@ -1390,7 +1379,6 @@ void Hit::StochasticBacktrace(HMM* q, HMM* t, char maximize)
   nsteps=step; 
 
   // Allocate new space for alignment scores
-  if (t->Xcons) Xcons = new( char[q->L+2]); // for template consensus sequence aligned to query
   S    = new( float[nsteps+1]);
   S_ss = new( float[nsteps+1]);
   if (!S_ss) MemoryError("space for HMM-HMM alignments");
@@ -1409,22 +1397,15 @@ void Hit::StochasticBacktrace(HMM* q, HMM* t, char maximize)
 	  S[step] = Score(q->p[i],t->p[j]);
 	  S_ss[step] = ScoreSS(q,t,i,j,ssm);
 	  score_ss += S_ss[step];
-	  if (Xcons) Xcons[i]=t->Xcons[j]; //record database consensus sequence
 	  break;
 	case MI: //if gap in template  
 	case DG:   
-	  if (Xcons) Xcons[this->i[step]]=GAP; //(no break hereafter)
 	default: //if gap in T or Q
 	  S[step]=S_ss[step]=0.0f;
 	  break;
 	}
     }
   if (ssm2>=1) score-=score_ss;    // subtract SS score added during alignment!!!!
-  if (Xcons) 
-    {
-      for (i=0; i<i1; ++i) Xcons[i]=ENDGAP; // set end gap code at beginning and end of template consensus sequence
-      for (i=i2+1; i<=q->L+1; ++i) Xcons[i]=ENDGAP;
-    }
 
   delete[] scale_cum;
   */
@@ -1503,7 +1484,6 @@ void Hit::BacktraceMAC(HMM* q, HMM* t)
   nsteps=step; 
     
   // Allocate new space for alignment scores
-  if (t->Xcons) Xcons = new( char[q->L+2]); // for template consensus sequence aligned to query
   S    = new( float[nsteps+1]);
   S_ss = new( float[nsteps+1]);
   P_posterior = new( float[nsteps+1]);
@@ -1529,11 +1509,9 @@ void Hit::BacktraceMAC(HMM* q, HMM* t)
 	  // Add probability to sum of probs if no dssp states given or dssp states exist and state is resolved in 3D structure
 	  if (t->nss_dssp<0 || t->ss_dssp[j]>0) sum_of_probs += P_posterior[step]; 
 	  // 	  printf("j=%-3i  dssp=%1i  P=%4.2f  sum=%6.2f\n",j,t->ss_dssp[j],P_posterior[step],sum_of_probs); //////////////////////////
-	  if (Xcons) Xcons[i]=t->Xcons[j]; //record database consensus sequence
 	  break;
 	case MI: //if gap in template  
 	case DG:   
-	  if (Xcons) Xcons[this->i[step]]=GAP; //(no break hereafter)
 	default: //if gap in T or Q
 	  S[step] = S_ss[step] = P_posterior[step] = 0.0;
 	  break;
@@ -1541,11 +1519,6 @@ void Hit::BacktraceMAC(HMM* q, HMM* t)
     }
   //   printf("\n"); /////////////////////////////////////////////////////////////
   if (ssm2>=1) score-=score_ss;    // subtract SS score added during alignment!!!!
-  if (Xcons) 
-    {
-      for (i=0; i<i1; ++i) Xcons[i]=ENDGAP; // set end gap code at beginning and end of template consensus sequence
-      for (i=i2+1; i<=q->L+1; ++i) Xcons[i]=ENDGAP;
-    }
 
   // Add contribution from correlation of neighboring columns to score
   float Scorr=0;
@@ -1836,7 +1809,6 @@ void Hit::InitializeBacktrace(HMM* q, HMM* t)
   this->j = new( int[i2+j2+2]);
   states  = new( char[i2+j2+2]);
   S = S_ss = P_posterior = NULL; 
-  Xcons = NULL;
 
   sname=new(char*[t->n_display]);   
   seq  =new(char*[t->n_display]);   
