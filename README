@@ -122,7 +122,8 @@ Download current databases from our FTP-server:
 ftp://toolkit.genzentrum.lmu.de/HH-suite/databases/hhblits/
 ftp://toolkit.genzentrum.lmu.de/HH-suite/databases/
 
-Either uniprot20 or nr20 is sufficient. 
+To build up multiple sequences alignments using HHblits, either one of uniprot20 
+or nr20 dbs is sufficient.
 
 
 *****************************************************************************

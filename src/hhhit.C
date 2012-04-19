@@ -214,7 +214,7 @@ void Hit::AllocateForwardMatrix(int Nq, int Nt)
 	  exit(3);
 	} 
       for (int j=0; j<Nt; ++j) 
-	F_MM[i][j]/*=F_MI[i][j]=F_DG[i][j]=F_IM[i][j]=F_GD[i][j]*/=0.0;
+	F_MM[i][j]/*=F_MI[i][j]=F_DG[i][j]=F_IM[i][j]=F_GD[i][j]*/=0.0; // This might be time-consuming! Is it necessary???? JS
 	
     }
   forward_allocated = true;
@@ -267,7 +267,7 @@ void Hit::AllocateBackwardMatrix(int Nq, int Nt)
 	  exit(3);
 	} 
       for (int j=0; j<Nt; ++j) 
-	B_MM[i][j]=0.0;
+	B_MM[i][j]=0.0;   // This might be time-consuming! Is it necessary???? JS
     }
   backward_allocated = true;
 }

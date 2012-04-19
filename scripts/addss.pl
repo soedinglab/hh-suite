@@ -4,7 +4,7 @@
 # Add PSIPRED secondary structure prediction (and DSSP annotation) to an MSA or HMMER file.
 # Output format is A3M (for input alignments) or HMMER (see User Guide).
 
-#     HHsuite version 2.0
+#     HHsuite version 2.0.15 (April 2012)
 #
 #     Reference: 
 #     Remmert M., Biegert A., Hauser A., and Soding J.
@@ -47,6 +47,8 @@ our $v=2;              # verbose mode
 my $numres=0;          # number of residues per line for secondary structure
 my $informat="a3m";    # input format
 my $neff = 7;          # use alignment with this diversity for PSIPRED prediction
+my $program=$0;        # name of perl script
+my $pdbfile;
 
 my $help="
 addss.pl from HHsuite $VERSION  
@@ -103,7 +105,7 @@ elsif ($options=~s/ -clu\s/ /g) {$informat="clu";}
 elsif ($options=~s/ -sto\s/ /g) {$informat="sto";}
 elsif ($options=~s/ -hmm\s/ /g) {$informat="hmm";}
 
-if ($options=~s/ -v\s+(\S+) //) {$v=$1;}
+if ($options=~s/ -v\s+(\d+) / /g)  {$v=$1;}
 
 # Set input and output file
 if ($options=~s/ -i\s+(\S+) //) {$infile=$1;}
@@ -537,19 +539,16 @@ sub AppendDsspSequences() {
     # Try to open dssp file 
     $dsspfile="$dsspdir/$pdbcode.dssp";
     if (! open (DSSPFILE, "<$dsspfile")) {
-	printf(STDOUT "WARNING: Cannot open $dsspfile!\n"); 
-	$pdbfile="$pdbdir/pdb$pdbcode.ent";
-	if (! -e $pdbfile) {
-	    printf(STDOUT "WARNING Cannot open $pdbfile!\n"); 
+	printf(STDERR "WARNING: Cannot open $dsspfile!\n"); 
+	$pdbfile = &OpenPDBfile($pdbcode);
+	if ($pdbfile=="") {return;}
+
+	&HHPaths::System("$dssp $pdbfile $tmpfile.dssp > /dev/null");
+	&HHPaths::System("cp $tmpfile.dssp $dsspfile ");
+	$dsspfile="$tmpfile.dssp";
+	if (! open (DSSPFILE, "<$dsspfile")) {
+	    printf(STDERR "ERROR: dssp couldn't generate file from $pdbfile. Skipping $name\n");
 	    return 1;
-	} else  {
-	    &HHpaths::System("$dssp $pdbfile $tmpfile.dssp > /dev/null");
-	    &HHpaths::System("cp $tmpfile.dssp $dsspfile ");
-	    $dsspfile="$tmpfile.dssp";
-	    if (! open (DSSPFILE, "<$dsspfile")) {
-		printf(STDERR "ERROR: dssp couldn't generate file from $pdbfile. Skipping $name\n");
-		return 1;
-	    } 
 	}
     }
 
@@ -719,3 +718,29 @@ sub sa2c ()
     else               {return "E";}
 }
 
+# Find the pdb file with $pdbcode in pdb directory 
+sub OpenPDBfile() {
+ 
+    my $pdbcode=lc($_[0]);
+    if (! -e "$pdbdir") {
+	print(STDERR "Error in $program: pdb directory '$pdbdir' does not exist!\n"); 
+	return 1;
+    }
+    if (-e "$pdbdir/all") {$pdbfile="$pdbdir/all/";}
+    elsif (-e "$pdbdir/divided") {$pdbfile="$pdbdir/divided/".substr($pdbcode,1,2)."/";}
+    else {$pdbfile="$pdbdir/";}
+    if ($pdbdir=~/divided.?$/) {$pdbfile.=substr($pdbcode,1,2)."/";}
+    if    (-e $pdbfile."pdb$pdbcode.ent")   {$pdbfile.="pdb$pdbcode.ent";}
+    elsif (-e $pdbfile."pdb$pdbcode.ent.gz") {$pdbfile="gunzip -c $pdbfile"."pdb$pdbcode.ent.gz |";}
+    elsif (-e $pdbfile."pdb$pdbcode.ent.Z") {$pdbfile="gunzip -c $pdbfile"."pdb$pdbcode.ent.Z |";}
+    elsif (-e $pdbfile."$pdbcode.pdb")      {$pdbfile."$pdbcode.pdb";}
+    else {
+	printf(STDERR "Error in $program: Cannot find pdb file $pdbfile"."pdb$pdbcode.ent!\n"); 
+	return "";
+    }
+    if (!open (PDBFILE, "$pdbfile")) {
+	printf(STDERR "Error in $program: Cannot open pdb file: $!\n"); 
+	return "";
+    }
+    return $pdbfile;
+}

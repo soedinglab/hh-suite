@@ -47,7 +47,7 @@
 
 \vspace{20mm}
  
-{\huge \bf HH-suite for sensitive sequence searching\\[2mm] based on HMM-HMM alignment}\\[4mm] 
+{\huge \bf HH-suite for sensitive protein sequence\\[2mm] searching based on HMM-HMM alignment}\\[4mm] 
 
 {\Large \bf User Guide}
 
@@ -60,7 +60,8 @@ We are very grateful for bug reports! Please contact us at soeding@genzentrum.lm
 
 \end{center}
 
-\noindent The HH-suite is an open-source software package for sensitive sequence searching based on the pairwise alignment of hidden Markov models (HMMs). It contains HHsearch [1] and HHblits [2] among other programs and utilities. HHsearch takes as input a multiple sequence alignment (MSA) or profile HMM and searches a database of HMMs (e.g. PDB, Pfam, or InterPro) for homologous proteins. HHsearch is often used for protein structure prediction to detect homologous templates and to build highly accurate query-template pairwise alignments for homology modeling. In the CASP9 competition (2010), a fully automated version of HHpred based on HHsearch and HHblits was ranked best out of 81 servers in template-based structure prediction. HHblits can build high-quality MSAs starting from single sequences or from MSAs. It transforms these into a query HMM and iteratively searches through uniprot20 or nr20 databases by adding significantly similar sequences from the previous search to the updated query HMM for the next search iteration. Compared to PSI-BLAST, HHblits is faster, up to twice as sensitive and produces more accurate alignments. HHblits uses the same HMM-HMM alignment algorithms as HHsearch, but it employs a fast prefilter that reduces the number of database HMMs for which to perform the slow HMM-HMM comparison from tens of millions to a few thousands. \\[2mm]
+\noindent The HH-suite is an open-source software package for sensitive protein sequence searching based on the pairwise alignment of hidden Markov models (HMMs). It contains HHsearch [1] and HHblits [2] among other programs and utilities. HHsearch takes as input a multiple sequence alignment (MSA) or profile HMM and searches a database of HMMs (e.g. PDB, Pfam, or InterPro) for homologous proteins. HHsearch is often used for protein structure prediction to detect homologous templates and to build highly accurate query-template pairwise alignments for homology modeling. In the CASP9 competition (2010), a fully automated version of HHpred based on HHsearch and HHblits was ranked best out of 81 servers in template-based structure prediction. HHblits can build high-quality MSAs starting from single sequences or from MSAs. It transforms these into a query HMM and iteratively searches through uniprot20 or nr20 databases by adding significantly similar sequences from the previous search to the updated query HMM for the next search iteration. Compared to PSI-BLAST, HHblits is faster, up to twice as sensitive and produces more accurate alignments. HHblits uses the same HMM-HMM alignment algorithms as HHsearch, but it employs a fast prefilter that reduces the number of database HMMs for which to perform the slow HMM-HMM comparison from tens of millions to a few thousands. 
+\\[2mm]
 
 {\bf References:}
 
@@ -90,7 +91,7 @@ The HH-suite is an open-source software package for highly sensitive sequence se
 
 Profile HMMs are a concise representation of \textit{multiple sequence alignments} (MSAs) \cite{Durbin:2008,Krogh:1994}. Like sequence profiles, they contain for each position in the master sequence the probabilities to observe each of the 20 amino acids in homologous proteins. The amino acid distributions for each column are extrapolated from the homologous sequences in the MSA by adding \textit{pseudocounts} to the amino acid counts observed in the MSA. Unlike sequence profiles, profile HMMs also contain position-specific gap penalties. More precisely, they contain for each position in the master sequence the probability to observe an insertion or a deletion after that position (the log of which corresponds to gap-open penalties) and the probabilities to extend the insertion or deletion (the log of which corresponds to gap-extend penalties). A profile HMM is thus much better suited than a single sequence to find homologous sequences and calculate accurate alignments. By representing both the query sequence and the database sequences by profile HMMs, HHsearch and HHblits are more sensitive for detecting and aligning remotely homologous proteins than methods based on pairwise sequence comparison or profile-sequence comparison.
 
-HHblits can build high-quality multiple sequence alignments (MSAs) starting from a single sequence or from an MSA. Compared to PSI-BLAST \cite{Altschul:1997}, HHblits is faster, finds up to two times more homologous proteins and produces more accurate alignments. It uses an iterative search strategy, adding sequences from significantly similar database HMMs from a previous search iteration to the query HMM for the next search. Because HHblits is based on the pairwise alignment of profile HMMs, it needs its own type of databases that contain multiple sequence alignments and the corresponding profile HMMs instead of single sequences. The HHblits databases uniprot20 and nr20 are generated regularly by clustering the UniProt database \cite{uniprot:2010} from EBI/SIB/PIR and the nonredundant (nr) database from the NCBI into groups of similar sequences alignable over at least 80 \% of their length and down to $\sim 20 \%$ pairwise sequence identity. These databases can be downloaded together with HHblits. HHblits uses the HMM-HMM alignment algorithms in HHsearch, but it employs a fast prefilter (based partly on code from Michael Farrar, \cite{Farrar:2007}) that reduces the number of database HMMs for which to perform the slow HMM-HMM comparison from tens of millions to a few thousands. At the same time, the prefilter is sensitive enough to reduce the sensitivity of HHblits only marginally in comparison to HHsearch. 
+HHblits can build high-quality multiple sequence alignments (MSAs) starting from a single sequence or from an MSA. Compared to PSI-BLAST \cite{Altschul:1997}, HHblits is faster, finds up to two times more homologous proteins and produces more accurate alignments. It uses an iterative search strategy, adding sequences from significantly similar database HMMs from a previous search iteration to the query HMM for the next search. Because HHblits is based on the pairwise alignment of profile HMMs, it needs its own type of databases that contain multiple sequence alignments and the corresponding profile HMMs instead of single sequences. The HHblits/HHsuite databases uniprot20 and nr20 are generated regularly by clustering the UniProt database \cite{uniprot:2010} from EBI/SIB/PIR and the nonredundant (nr) database from the NCBI into groups of similar sequences alignable over at least 80 \% of their length and down to $\sim 20 \%$ pairwise sequence identity. These databases can be downloaded together with HHblits. HHblits uses the HMM-HMM alignment algorithms in HHsearch, but it employs a fast prefilter (based partly on code from Michael Farrar, \cite{Farrar:2007}) that reduces the number of database HMMs for which to perform the slow HMM-HMM comparison from tens of millions to a few thousands. At the same time, the prefilter is sensitive enough to reduce the sensitivity of HHblits only marginally in comparison to HHsearch. 
 
 By generating highly accurate and diverse MSAs, HHblits can improve almost all downstream sequence analysis methods, such as the prediction of secondary and tertiary structure \cite{Jones:1999, Marks:2011}, of membrane helices, functionally conserved residues, binding pockets, protein interaction interfaces, or short linear motifs. The accuracy of all these methods depends critically on the accuracy and the diversity of the underlying MSAs, as too few or too similar sequences do not add significant information for the predictions. As an example, running the popular PSIPRED secondary structure prediction program \cite{Jones:1999} on MSAs generated by HHblits instead of PSI-BLAST improved the accuracy of PSIPRED significantly even without retraining PSIPRED on the HHblits alignments \cite{Remmert:2011}. 
 
@@ -105,7 +106,7 @@ Other popular programs for sensitive, iterative protein sequence searching are P
 
 \section{Installation of the HH-suite and its databases}
 
-The HH-suite source code, executable RPM and DPKG packages for most Linux 64 bit platforms, MAC OS X, and BSD Unix, utility scripts in Perl, and databases for HHblits and HHsearch can be downloaded at
+The HH-suite source code, executable RPM and DPKG packages for most Linux 64 bit platforms, MAC OS X, and BSD Unix, utility scripts in Perl, and databases can be downloaded at
 \begin{verbatim}
   ftp://toolkit.genzentrum.lmu.de/HH-suite/
 \end{verbatim}
@@ -284,12 +285,9 @@ To follow.
 To follow.
 
 
-\subsection{HHblits databases} \label{hhblits_dbs}
-Databases for HHblits are of two types. The first type, uniprot20 and nr20, cover essentially all of the known sequence space and are obtained by clustering UniProt \cite{uniprot:2010} and the non-redundant database from NCBI, respectively. Clusters  contain sequences that need to be almost full-length (80\%) alignable and typically have pairwise sequence identities down to 20\%-30\%. The clustering is done by kClust (Hauser M, Mayer CE, and Soeding J., to be published), a very fast algorithm for all-against-all sequence comparison and clustering developed in our group. Sequences in each cluster are globally aligned into an MSA (using ClustalOmega \cite{Higgins:2011}). The clusters in uniprot20 and nr20 thus treat all member sequences equally, and the annotatation of the cluster is a non-redundant sum of all annotations found in the cluster member sequences. You need this type of database to build MSAs using iterative HHblits searches. Both uniprot20 and nr20 yield MSAs of equivalent quality and diversity, so which one you should choose depends on what sequence annotation and name formats you prefer. 
-
-The second type of HHblits database, for example the pdb70, scop70, represent each master sequence by an MSA. The MSAs are typically built by HHblits searches starting with the master sequence as a query (Pfam uses HMMER searches \url{http://hmmer.org/}). The MSAs and HMMs typically carry the name and annotation of the master sequence. In contrast to the clusters in the first type of database, sequences can in principle occur in several MSAs. These homologous sequences merely serve to contribute evolutionary information to the master sequence. As the second type of databases do not cover the entire sequence space, they are not suited for iterative searches. The HHblits versions are useful as alternatives to the versions formatted for HHsearch (next subsection), because HHblits is almost as sensitive as HHsearch while being much faster. See  section \ref{building_dbs} for how to build your own type 2 databases.
-
-The following HHblits databases can be downloaded at \url{ftp://toolkit.genzentrum.lmu.de/HH-suite/databases/}: 
+\subsection{HHsuite databases} \label{hhblits_dbs}
+The following HHsuite databases, which can be searched by HHblits and HHsearch, 
+can be downloaded at \url{ftp://toolkit.genzentrum.lmu.de/HH-suite/databases/hhsuite_dbs}: 
 \small 
 \begin{verbatim}
  1 uniprot20    based on UniProt db from EBI/SIB/PIR, clustered to 20 % seq. identity
@@ -300,7 +298,7 @@ The following HHblits databases can be downloaded at \url{ftp://toolkit.genzentr
 \end{verbatim} 
 \normalsize
 
-The HHblits databases consist of eight files, which all start with the name of the database, followed by different extensions:
+The databases consist of up to eight files, which all start with the name of the database, followed by different extensions:
 \begin{verbatim}
 <dbname>.cs219                column state sequences for prefiltering
 <dbname>.cs219.sizes          number of sequences and characters in <dbname>.cs219  
@@ -312,20 +310,33 @@ The HHblits databases consist of eight files, which all start with the name of t
 <dbname>_a3m_db.index.sizes   number of lines in <dbname>_a3m_db.index
 \end{verbatim}
 
-The packed files \verb`<dbname>_a3m_db` and \verb`<dbname>_hhm_db` contain simply the concatenated A3M MSAs and HHMs, respectively, with a \verb`\0` character at the beginning of each file. They are therefore human-readable and are parsable for specific MSAs or models using tools such as grep or search functions in text editors (which however should be able to ignore the \verb`\0` character). The \verb`.index` files contain indices to provide fast access to these two packed files. The \verb`a3m` files are not needed for a single search iteration when no output MSA is requested. 
+HHsearch needs just the single \verb`<dbname>_hhm_db` file out of these eight. The packed files \verb`<dbname>_hhm_db` and \verb`<dbname>_a3m_db` contain simply the concatenated A3M MSAs and HHMs, respectively, with a \verb`\0` character at the beginning of each file. They are therefore human-readable and are parsable for specific MSAs or models using tools such as grep or search functions in text editors (which however should be able to ignore the \verb`\0` character). The \verb`.index` files contain indices to provide fast access to these two packed files. The \verb`a3m` files are not needed for a single search iteration when no output MSA is requested. 
 
 To get started, download the uniprot20 or nr20 database files. For example:
 \begin{verbatim}
 $ cd /home/soeding/hh  % change to hh-suite directory
 $ mkdir databases; cd databases
-$ wget ftp://toolkit.genzentrum.lmu.de/HH-suite/databases/uniprot20_<date>.tar.gz`
-$ tar -xzvf uniprot20_<date>.tar.gz`
+$ wget ftp://toolkit.genzentrum.lmu.de/HH-suite/databases/hhsuite_dbs/
+                                                 uniprot20_<date>.tar.gz
+$ tar -xzvf uniprot20_<date>.tar.gz
 \end{verbatim}
 
-More databases will become available in HHblits format that are only available for HHsearch at the time of writing (see next subsection).
+Note that, in order to generate multiple sequence alignments (MSAs) by \emph{iterative} sequence searching using HHblits,
+you need to search either uniprot20 and nr20, since since only these databases cover essentially all of the sequence 
+universe. The pdb70, pfamA, and pdb70 are not sensible to use for iterative searching to build MSAs.
 
-\subsection{HHsearch databases} \label{hhsearch_dbs}
-HHsearch needs just the \verb`<dbname>_hhm_db` file from the hhblits database. This file is simply a concatenation of of all HMM files in HHsearch/HHblits \verb`hhm` format with a leading \verb`\0` character. The following HHsearch databases can be downloaded at \url{ftp://toolkit.lmb.uni-muenchen.de/HH-suite/databases/}
+Uniprot20 and nr20 are obtained by clustering UniProt \cite{uniprot:2010} and the non-redundant database from NCBI, respectively. Clusters  contain sequences that need to be almost full-length (80\%) alignable and typically have pairwise sequence identities down to 20\%-30\%. The clustering is done by kClust (Hauser M, Mayer CE, and Soeding J., to be published), a very fast algorithm for all-against-all sequence comparison and clustering developed in our group. Sequences in each cluster are globally aligned into an MSA (using ClustalOmega \cite{Higgins:2011}). The clusters in uniprot20 and nr20 thus treat all member sequences equally, and the annotatation of the cluster is a non-redundant sum of all annotations found in the cluster member sequences. You need this type of database to build MSAs using iterative HHblits searches. Both uniprot20 and nr20 yield MSAs of equivalent quality and diversity, so which one you should choose depends on what sequence annotation and name formats you prefer. 
+
+In the pdb70 and scop70 databases, each master sequence from the original sequence database is represented by an MSA. The MSAs are built by HHblits searches starting with the master sequence as a query. The MSAs and HMMs typically carry the name and annotation of the master sequence. In contrast to the clusters in the uniprot20 or nr20 databases, sequences can in principle occur in several MSAs. These homologous sequences merely serve to contribute evolutionary information to the master sequence. As the sequences in this type of database do not cover the entire sequence space, they are not suited for iterative searches. See  section \ref{building_dbs} for how to build your own type 2 databases.
+
+
+\subsection{Old-style HHsearch databases} \label{hhsearch_dbs}
+For backward compatibility, the HHsearch databases read by older versions of HHsearch prior to HH-suite 2.0 are 
+still available. They will at some point be superseded by the HHsuite databases as all these databases become 
+available in the new HH-suite format described in the previous subsection. For the time being, however,
+more databases for HHsearch are still availble in the old format.
+
+The following HHsearch databases can be downloaded at \url{ftp://toolkit.lmb.uni-muenchen.de/HH-suite/databases/hhsearch_dbs}
 
 \small 
 \begin{verbatim}
@@ -344,9 +355,7 @@ HHsearch needs just the \verb`<dbname>_hhm_db` file from the hhblits database. T
 13  CATH/Gene3D http://cathwww.biochem.ucl.ac.uk/latest/, from InterPro 
 \end{verbatim} 
 \normalsize
-In the future, all these databases will become available for HHblits in the HHblits format described in the previous subsection.
 
-For the time being, however, these databases are formatted for as they have been in the past:
 The eight databases marked by asterisks contain both HMMs in HHsearch 
 format (*.hhm.tar files) and the multiple sequence alignments (MSAs) in 
 A3M format (*.a3m.tar files).  The *.hhm.tar and *.a3m.tar files untar into thousands
@@ -358,7 +367,7 @@ $ cd scop70_1.75
 $ tar -xzvf scop70_1.75.hhm.tar.gz
 \end{verbatim}
 
-To generate an HHsearch database file, concatenate all *.hhm files:
+To generate an old-style HHsearch database file, concatenate all *.hhm files:
 \begin{verbatim}
 $ cat *.hhm > scop70_1.75.hhm
 \end{verbatim}
@@ -367,9 +376,9 @@ as *.hmm.tar files. Each *.hmm.tar file untars into a single concatenated HMMER-
 database file that can be read by HHsearch. For theses databases, unfortunately no 
 alignments are publicly available. (Information to the contrary is welcome!) 
 
-The pdb70 and scop70 databases are built at the Gene Center using in-house scripts 
+The pdb70 and scop70 databaes are built at the Gene Center using in-house scripts 
 to select representatives and using two iterations of HHblits to generate MSAs for the 
-representative sequences. They are distributed freely under the Lesser Gnu Public License. 
+representative sequences. They are distributed freely under the Lesser GNU Public License. 
 For the other databases, different copy right regulations may apply. 
 Please refer to the databases' original web sites for the copy right notes and 
 references to cite.
@@ -381,7 +390,7 @@ references to cite.
 
 \small 
 \begin{verbatim}
-hhblits        (Iteratively) search an HHblits database with a query sequence or MSA
+hhblits        (Iteratively) search an HH-suite database with a query sequence or MSA
 hhsearch       Search an HHsearch database of HMMs with a query MSA or HMM
 hhmake         Build an HMM from an input MSA 
 hhfilter       Filter an MSA by max sequence identity, coverage, and other criteria
@@ -390,7 +399,7 @@ hhalign        Calculate pairwise alignments, dot plots etc. for two HMMs/MSAs
 reformat.pl    Reformat one or many MSAs
 addss.pl       Add PSIPRED predicted secondary structure to an MSA or HHM file
 hhmakemodel.pl Generate MSAs or coarse 3D models from HHsearch or HHblits results	
-hhblitsdb.pl   Build HHblits database with prefiltering, packed MSA/HMM, and index files
+hhblitsdb.pl   Build HH-suite database with prefiltering, packed MSA/HMM, and index files
 multithread.pl Run a command for many files in parallel using multiple threads
 splitfasta.pl  Split a multiple-sequence FASTA file into multiple single-sequence files
 Align.pm       Utility package for local and global sequence-sequence alignment
@@ -410,13 +419,14 @@ its syntax.
 We will use the MSA \verb`query.a3m` in the \verb`data/` subdirectory of the HH-suite as an example query. To search for sequences in the \verb`scop70_1.75` database that are homologous to the query sequence or MSA in \verb`query.a3m`, type
 
 \begin{verbatim}
-$ hhsearch  -cpu 4 -i data/query.a3m -d databases/scop70_1.75.hhm
+$ hhsearch  -cpu 4 -i data/query.a3m -d databases/scop70_1.75_hhm_db
 \end{verbatim}
 
+(The database file \verb`scop70_1.75_hhm_db` is contained in the HHsuite database tar 
+archive \url{ftp://toolkit.genzentrum.lmu.de/HH-suite/databases/hhsuite_dbs/scop70_1.75.tar.gz}. 
 If the input file is an MSA or a single sequence, HHsearch calculates an HMM from it
-and then aligns this query HMM to all 
-HMMs in the \verb`scop70_1.75` database using the Viterbi algorithm. 
-You should see a dot printed for every twenty HMMs aligned. After the search, 
+and then aligns this query HMM to all HMMs in the \verb`scop70_1.75` database using the Viterbi 
+algorithm. You should see a dot printed for every twenty HMMs aligned. After the search, 
 the most significant HMMs are realigned using the more accurate Maximum Accuracy (MAC) 
 algorithm (subsection \ref{MAC}). After the realignment phase, the complete search results consisting of the 
 summary hit list and the pairwise query-template alignments are written to the default 
@@ -434,16 +444,20 @@ The \verb`-cpu 4` option tells HHsearch to start four POSIX threads for searchin
 \end{figure}
 
 The hhblits tool can be used in much the same way as hhsearch. 
-Apart from the different database format, it takes the same input data and produces a results file in 
-the same format as hhsearch. Most of the hhsearch options also work for hhblits, which has
+It takes the same input data and produces a results file in the same format as hhsearch.
+Most of the hhsearch options also work for hhblits, which has
 additional options associated with its extended functionality for iterative searches. 
 Due to its fast prefilter, hhblits runs between 30 and 3000 times faster than HHsearch
 at the cost of only a few percent lower sensitivity (Fig. \ref{fig:hhsearch_hhblits_bench}).
+Whereas HHsearch only needs the file \verb`<dbname>_hhm_db`, HHblits needs the other files
+belonging to the HH-suite database as well. 
 
 The same search as above is performed here using hhblits instead of hhsearch:
 \begin{verbatim}
 $ hhblits  -cpu 4 -i data/query.a3m -d databases/scop70_1.75 -n 1
 \end{verbatim}
+Note that instead of specifying the up to eight database files explicitly, only their common prefix
+is given (in this case \verb`databases/scop70_1.75`).
 
 HHblits first scans the column state sequences in \verb`scop70_1.75.cs219` with its fast prefilter. HMMs whose column state sequences pass the prefilter are read from the packed file \verb`scop70_1.75_hhm_db` (using the index file \verb`scop70_1.75_hhm_db.index`) and are aligned to the query HMM generated from \verb`query.a3m` using the slow Viterbi HMM-HMM alignment algorithm. The search results are written to the default output file \verb`query.hhr`. The option \verb`-n 1` tells hhblits to perform a single search iteration. (The default is 2 iterations.)
 
@@ -489,11 +503,11 @@ $ reformat.pl a3m clu query.a3m query.clu
 $ reformat.pl a3m fas query.a3m query.fas
 \end{verbatim}
 
-Next, to add secondary structure information to the MSA we call the script \verb`addss.pl`. For \verb`addss.pl` to work, you have to make sure that the paths to BLAST and PSIPRED in the \verb`scripts/HHPaths.pm` are correctly filled in. Then type
+Next, to add secondary structure information to the MSA we call the script \verb`addss.pl`. For \verb`addss.pl` to work, you have to make sure that the paths to BLAST and PSIPRED in the file \verb`scripts/HHPaths.pm` are correctly filled in. Then type
 \begin{verbatim}
 $ addss.pl query.a3m
 \end{verbatim}
-When the sequence has a SCOP or PDB identifier as first word in its name, the script tries to add the DSSP states as well. For this to work, the path to the pdb and dssp directories needs to be specified in the perl file \verb`HHPaths.pm`. Open the \verb`query.a3m` file and check out the two lines that have been added to the MSA. Now you can generate a hidden Markov model (HMM) from this MSA:
+When the sequence has a SCOP or PDB identifier as first word in its name, the script tries to add the DSSP states as well. Open the \verb`query.a3m` file and check out the two lines that have been added to the MSA. Now you can generate a hidden Markov model (HMM) from this MSA:
 \begin{verbatim}
 $ hhmake -i query.a3m
 \end{verbatim}
@@ -523,7 +537,7 @@ Previous versions of HH-suite (the 'HHsearch package') included a perl script \v
 
 \subsection{Building customized databases} \label{building_dbs}
 
-It is simple to build custom databases for HHsearch and HHblits using the same tools we use to build the standard HH-suite databases (except uniprot20 and nr20). An example application is to search for homologs among all proteins of an organism. To build your own HHsearch or HHblits database from a set of sequences, you first need to generate an MSA with predicted secondary structure for every sequence in the set. This can conveniently be done using the script \verb`multithread.pl` in the HH-suite. This script runs a command for many files in parallel, distributing the individual jobs to multiple cores on your server, one file per thread. This will shorten the run-time roughly by the number of cores. 
+It is simple to build custom HH-suite databases using the same tools we use to build the standard HH-suite databases (except uniprot20 and nr20). An example application is to search for homologs among all proteins of an organism. To build your own HH-suite database from a set of sequences, you first need to generate an MSA with predicted secondary structure for every sequence in the set. This can conveniently be done using the script \verb`multithread.pl` in the HH-suite. This script runs a command for many files in parallel, distributing the individual jobs to multiple cores on your server, one file per thread. This will shorten the run-time roughly by the number of cores. 
 
 To run \verb`multithread.pl`, you need first to have each sequences in a separate FASTA-formatted file. If your sequences are contained in a single multiple-sequence FASTA file \verb`<dbseqs.fas>`, first split them up into multiple single-sequence files using \verb`splitfasta.pl`:
 \begin{verbatim}
@@ -543,17 +557,15 @@ Now, add PSIPRED-predicted secondary structure to all MSAs:
 \begin{verbatim}
 $ multithread.pl 'dbs/scop70_1.75/*.a3m' 'addss.pl $file' -cpu 16 
 \end{verbatim}
-Again, piping stdout and stderr into log files and inspecting the warnings and errors is recommended. From here on, the steps to build an HHblits database differ from those needed to build an HHsearch database.
+Again, piping stdout and stderr into log files and inspecting the warnings and errors is recommended. 
 
-\subsubsection*{HHblits databases}
-
-An HHblits database consists of eight files, as described in subsection \ref{hhblits_dbs}. These files can be generated by a single call to \verb`hhblitsdb.pl`:
+An HH-suite database consists of eight files, as described in subsection \ref{hhblits_dbs}. These files can be generated by a single call to \verb`hhblitsdb.pl`:
 \begin{verbatim}
 $ hhblitsdb.pl -o databases/scop70_1.75 -ia3m dbs/scop70_1.75/ -cpu 16
 \end{verbatim}
 In order to build the file containing the column state sequence for prefiltering, \verb`hhblitsdb.pl` will generate a column state sequence for each A3M-formatted MSA in the directory given by the \verb`-ia3m` option. As this can take some time, the script calls \verb`multithread.pl` to distribute the jobs to multiple cores. The script also needs to generate an HHM files for each MSA file, for which again \verb`multithread.pl` is called. In the end, the \verb`ffindex` utility generates the packed files containing the A3M MSAs and HHM models with corresponding index files. The script will report the number of files of each category (column-state, A3M, HHM) and warn if the numbers differ. The option \verb`-log err.log` pipes the stderr stream of each command executed into a log file. As with all perl scripts in the HH-suite, a list of additional options can be retrieved by calling the scripts without parameters.
 
-Alternatively, if you have a set of HHM or HMMER model files but no MSA files, for example for Pfam, you can build an HHblits database with the command
+Alternatively, if you have a set of HHM or HMMER model files but no MSA files, for example for Pfam, you can build an HH-suite database with the command
 \begin{verbatim}
 $ hhblitsdb.pl -o databases/pfamA_25 -ihhm dbs/pfamA_25/ -hhmext hmm -cpu 16
 \end{verbatim}
@@ -562,20 +574,20 @@ The script will then build the column state sequences from the HMMER files in th
 Please note that HHblits and HHsearch lose quite a lot of performance when using HMMER-formatted HMMs instead of HH-suite-formatted ones. We therefore strongly recommend to build HH-suite formatted HMMs directly from the MSAs if possible. (Pfam MSAs can be retrieved from our ftp site.)
 
 
-\subsubsection*{HHsearch databases}
+\subsubsection*{Old-style HHsearch databases}
 
-An HHsearch database consists simply of concatenated hhm files. If you already have an hhblits database, you can simply use the file \verb`<dbname>_hhm_db` as HHsearch database. Otherwise, you may generate the \verb`hhm` files using \verb`multithread.pl`:
+An old-style HHsearch database consists simply of concatenated hhm files. Start from the a3m files including predicted secondary structure, generated as described above. Then generate the \verb`hhm` files using \verb`multithread.pl`:
 \begin{verbatim}
 $ multithread.pl 'dbs/scop70_1.75/*.a3m' 'hhmake -i $file' -cpu 8 
 \end{verbatim}
 The \verb`hhm` files will have the same name but with a different extension as their \verb`a3m` files. You 
 can then concatenate your individual HMMs into your database:
 \begin{verbatim}
-$ cat *.hhm > scop70_1.75_hhm
+$ cat *.hhm > scop70_1.75.hhm
 \end{verbatim}
 or, if the maximum command line buffer size is exceeded, 
 \begin{verbatim}
-$ find $tmpdir -name '*.seq219' -exec cat '{}' + >> scop70_1.75_hhm
+$ find $tmpdir -name '*.seq219' -exec cat '{}' + >> scop70_1.75.hhm
 \end{verbatim}
 
 
@@ -692,7 +704,7 @@ The number of effective sequences of the full alignment, which appears as NEFF i
 
 \subsection{More frequently asked questions}
 
-{\bf How can I retrieve individual database A3M or HHM files in my hhblits database?}
+{\bf How can I retrieve individual database A3M or HHM files in my HH-suite database?}
 For reasons of efficiency, the MSA A3M and HHM model files are packed into two files, \verb`<db>_a3m_db` and \verb`<db>_hhm_db`, each with its own index file. The contained files are easy to extract from the packed files. For example, to dump \verb`d1aa7a_.a3m` in \verb`scop70` to standard output, type 
 \begin{verbatim}
 $ ffindex_get scop70_a3m_db  scop70_a3m_db.index d1aa7a_.a3m
@@ -706,8 +718,11 @@ HHblits and HHsearch have been designed to work with multi-domain queries. Howev
 {\bf Don't I need to calibrate my query or database HMMs anymore?}
 No. If you don't specify otherwise, the two parameters of the extreme-value distribution for the query are estimated by a neural network from the lengths and diversities ($N_\mathrm{eff}$)) of query and database HMMs that was trained on a large set of example queries-template pairs, in an approach simlar to the one used in \cite{Sadreyev:2008}. However, the old calibration is still available as an option in HHsearch.
 
-{\bf How can I build my own UniProt datbase for HHblits? CD-hit only clusters down to 40\% sequence identity.}
-The procedure to cluster the nr or UniProt databases is more complicated than building a database for a genome or for the sequences in the pdb. As its first step it involves clustering these huge databases down to 20\%-30\% sequence identity. The clustering is done in our lab using a new method, kClust (Hauser M, Mayer CE, and Soeding J., to be published). We will add all scripts to build these HHblits databases to the HH-suite in due time. These scripts generate A3M files, HHM files, and consensus sequences. Because of the large number of files to generate, these scripts need to be run on a computer cluster. For the time being, you can only download the clustered uniprot20 or nr20 from the soeding lab's ftp server.
+{\bf How can I build my own UniProt database for HHblits?}
+The procedure to cluster the nr or UniProt databases is more complicated than building a database for a genome or for the sequences in the pdb. As its first step it involves clustering these huge databases down to 20\%-30\% sequence identity. The clustering is done in our lab using a new method, kClust (Hauser M, Mayer CE, and Soeding J., to be published), available und GPL at \url{ftp://ftp://toolkit.lmb.uni-muenchen.de/kClust/}. We will add all scripts to build these HH-suite databases to the HH-suite in due time. These scripts generate A3M files, HHM files, and consensus sequences. Because of the large number of files to generate, these scripts need to be run on a computer cluster and this will require considerable computer savvyness. 
+
+{\bf Will you offer an HH-suite database that includes environmental sequences?}
+We have not seen significant improvements in remote homology detection through inclusion of environmental sequences. A problem with these sequences is their low quality, in particular chimeric sequences from wrong assemblies. This can lead to corrupted profiles in iterative searches. We therefore have no immediate plans to provide a UniProt+env or nr+env for hhblits. If you think you really need the env sequences, you have to use our old \verb`buildali.pl` script or PSI-BLAST for the time being. An alternative is to use kClust to cluster the database yourself. See the previous question.
 
 {\bf Why do I sometimes get the same database hit twice with different probabilities? Is this a bug?} Each line in the summary hit list refers to an alignment with an HMM in the database, not to the database HMM itself. Sometimes, alternative (suboptimal) alignments covering a different part of either the query or the database HMM may appear in the hit list. Usually, both the optimal and the alternative alignments are correct, in particular when the query or the database HMMs represent repeat proteins. 
 
@@ -718,10 +733,12 @@ The procedure to cluster the nr or UniProt databases is more complicated than bu
 {\bf I want to build a phylogenetic tree for HMMs. Which measure of similarity should I use?}
 I would use something like the raw score per alignment length. (You might also add the secondary structure score to the raw score.) Probabilities, E-values, and P-values are useful for deciding whether a match is a reliable homolog or not. They are not suitable for measuring similarities, because they strongly depend on the length of the alignment, roughly like $\mathrm{P-value} \propto \exp(\lambda \times \mathrm{average\_similarity} \times \mathrm{length})$, with some constant $\lambda$ or order 1. The probability has an even more complex dependence on length. The Similarity given above the alignment blocks does not capture the evolutionary information contained in the MSAs (see subsection \ref{aliblocksformat}). One note of caution: Large, diverse MSAs are usually more sensitive to find homologs than narrower ones. Therefore, I would limit the diversity of all HMMs to some reasonable number (perhaps around 5 or 7, depending on how far diverged your HMMs are). This filtering can be done using \verb`$ hhfilter -i <MSA.a3m> -o <MSA_filt.a3m> -neff 5`, for example. 
 
-{\bf Should I use the \verb`-global` option to build MSAs for an hhblits database if I am intersted in global alignments to these database HMMs?}
-Never use \verb`-global` when building MSAs by iterative searches with HHblits. Remember that global alignments are very greedy alignments, where alignments stretch to the ends of either query of database HMM, no matter what. Global alignments will therefore often lead to non-homologous segments getting included in the MSA, which is catastrophic, as these false segments will lead to many false positive matches when searching with this MSA. But you may use \verb`-global` when searching (with a single iteration) for global matches of your query HMMs through your customized HHblits database, for example.
+{\bf Should I use the \verb`-global` option to build MSAs for an HH-suite database if I am intersted in global alignments to these database HMMs?}
+Never use \verb`-global` when building MSAs by iterative searches with HHblits. Remember that global alignments are very greedy alignments, where alignments stretch to the ends of either query of database HMM, no matter what. Global alignments will therefore often lead to non-homologous segments getting included in the MSA, which is catastrophic, as these false segments will lead to many false positive matches when searching with this MSA. But you may use \verb`-global` when searching (with a single iteration) for global matches of your query HMMs through your customized HH-suite database, for example.
 
 {\bf How many iterations of hhblits should I use to search my customized genome database?} One iteration! Doing more than one search iterations in general only makes sense in order to build up a diverse MSA of homologous sequences by searching through the uniprot20 or nr20 databases. 
+
+
 
 
 \section{HHsearch/HHblits output: hit list and pairwise alignments}\label{outformat}
@@ -1266,7 +1283,7 @@ significant database matches or how to avoid high-scoring false positives.
 \subsection{{\tt hhblits} -- HMM-HMM-based lighting-fast iterative sequence search}
 
 HHblits is a sensitive, general-purpose, iterative sequence search tool that represents
-both query and database sequences by HMMs. You can search HHblits databases starting
+both query and database sequences by HMMs. You can search HH-suite databases starting
 with a single query sequence, a multiple sequence alignment (MSA), or an HMM. HHblits
 prints out a ranked list of database HMMs/MSAs and can also generate an MSA by merging
 the significant database HMMs/MSAs onto the query MSA.
@@ -1740,16 +1757,16 @@ homology modeling package.
 \normalsize
 
 
-\subsection{{\tt hhblitsdb.pl} -- Build an HHblits database }
+\subsection{{\tt hhblitsdb.pl} -- Build an HH-suite database }
 
-Builds the HHblits database files from MSA and HMM files 
+Builds the HH-suite database files from MSA and HMM files 
 
 \small 
 \begin{verbatim}
 Usage: hhblitsdb.pl -o <db_name> [-ia3m <a3m_dir>] [-ihhm <hhm_dir>] [-ics <cs_dir>] 
                                                                             [more_options]
 
-Depending on the input directories, the following HHblits database files are generated:
+Depending on the input directories, the following HH-suite database files are generated:
  <db_name>.cs219              column-state sequences, one for each MSA/HMM (for prefilter)
  <db_name>.cs219.sizes        number of sequences and characters in <db_name>.cs219
  <db_name>_a3m_db             packed file containing A3M alignments read from <a3m_dir>

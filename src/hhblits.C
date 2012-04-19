@@ -283,7 +283,7 @@ void help(char all=0)
   printf(" -i <file>      input query (single FASTA-sequence, A3M- or FASTA-alignment, HMM-file)\n");
   printf("\n");
   printf("Options:                                                                       \n");
-  printf(" -d    <base>   database basename (default=%s)                                 \n",db_base);
+  printf(" -d <name>      database name (e.g. uniprot20_29Feb2012) (default=%s)          \n",db_base);
   printf(" -n     [1,8]   number of iterations (default=%i)                              \n",num_rounds); 
   printf(" -e     [0,1]   E-value cutoff for inclusion in result alignment (def=%G)      \n",par.e);
   printf("\n");
@@ -1305,29 +1305,47 @@ void perform_realign(char *dbfiles[], int ndb)
   jobs_submitted = 0;
   reading_dbs=1;   // needs to be set to 1 before threads are created
 
-  // Michael's version (Why first delete and then reallocate????)
+  if (print_elapsed) ElapsedTimeSinceLastCall("(prepare realign without reallocating/reseting forward/backwad matrices)");
+
+  // (Re)allocate memory for forward and backward matrix
   for (bin=0; bin<bins; bin++)
     {
-      // Free previously allocated memory
-      if (hit[bin]->forward_allocated)
-	hit[bin]->DeleteForwardMatrix(q->L+2);
-      if (hit[bin]->backward_allocated)
-	hit[bin]->DeleteBackwardMatrix(q->L+2);
+      // Free previously allocated memory (delete and reallocate, since Lmax may have increased)
+      if (hit[bin]->forward_allocated) hit[bin]->DeleteForwardMatrix(q->L+2);
+      if (hit[bin]->backward_allocated) hit[bin]->DeleteBackwardMatrix(q->L+2);
       
+      // Allocate memory for matrices and set to 0
       hit[bin]->AllocateForwardMatrix(q->L+2,Lmax+1);
       hit[bin]->AllocateBackwardMatrix(q->L+2,Lmax+1);
 
       bin_status[bin] = FREE;
     }
-  // // Why not like this instead????????? JS
+  // // If the above reallocation and reseting to 0 is time-critical, it could be avoided by 
+  // // replacing the above block with this block: (JS)
+  // int Lmaxprev = 0;
+  // if (hit[bin]->forward_allocated)  
+  //   Lmaxprev = sizeof(hit[bin]->F_MM[0]) / sizeof(hit[bin]->F_MM[0][0]);
   // for (bin=0; bin<bins; bin++)
   //   {
   //     if (!hit[bin]->forward_allocated)  hit[bin]->AllocateForwardMatrix(q->L+2,Lmax+1);
+  //     else if (Lmaxprev<Lmax) 
+  // 	{ 
+  // 	  hit[bin]->DeleteForwardMatrix(q->L+2);
+  // 	  hit[bin]->AllocateForwardMatrix(q->L+2,Lmax+1);
+  // 	}
   //     if (!hit[bin]->backward_allocated) hit[bin]->AllocateBackwardMatrix(q->L+2,Lmax+1);
+  //     else if (Lmaxprev<Lmax) 
+  // 	{ 
+  // 	  hit[bin]->DeleteBackwardMatrix(q->L+2);
+  // 	  hit[bin]->AllocateBackwardMatrix(q->L+2,Lmax+1);
+  // 	}
   //     bin_status[bin] = FREE;
   //   }
- 
-  if (print_elapsed) ElapsedTimeSinceLastCall("(prepare realign)");
+  // // This is just an idea. This code would need to be tested!!! 
+  // // First, it would need to be tested whether reseting F_MM and B_MM to 0 during the allocation is needed at all.
+  
+  if (print_elapsed) ElapsedTimeSinceLastCall("(reallocate/reset forward/backwad matrices)");
+  // if (print_elapsed) ElapsedTimeSinceLastCall("(prepare realign)");
 
   if (v>=2)
       printf("Realigning %i HMMs using HMM-HMM Maximum Accuracy algorithm\n",phash_plist_realignhitpos->Size());

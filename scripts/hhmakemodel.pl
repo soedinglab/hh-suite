@@ -4,7 +4,7 @@
 # Generate a model from an output alignment of hhsearch. 
 # Usage: hhmakemodel.pl -i file.out (-ts file.pdb|-al file.al) [-m int|-m name|-m auto] [-pdb pdbdir] 
 
-#     HHsuite version 2.0.3 (January 2012)
+#     HHsuite version 2.0.15 (April 2012)
 #
 #     Reference: 
 #     Remmert M., Biegert A., Hauser A., and Soding J.
@@ -55,7 +55,7 @@ my $Prob=0;
 my $shift=0;       # ATTENTION: set to 0 as default!  
 my $NLEN=14;       # length of the name field in alignments of hhsearch-output 
 my $NUMRES=100;    # number of residues per line in FASTA, A2M, PIR format
-my $program="hhmakemodel.pl";
+my $program=$0;        # name of perl script
 my $usage="
 hhmakemodel.pl from HHsuite $VERSION  
 From the top hits in an hhsearch output file (hhr), you can  
@@ -772,7 +772,7 @@ sub FormatSequences()
 	    if (&ExtractPdbcodeAndChain($tname)) {next;}
 	    
 	    # Read sequence from pdb file
-	    if (!open (PDBFILE, "<$pdbfile")) {
+	    if (!open (PDBFILE, "$pdbfile")) {
 		die ("Error in $program: Couldn't open $pdbfile: $!\n");
 	    }
 	    $aapdb="";
@@ -1194,24 +1194,12 @@ sub ExtractPdbcodeAndChain()
 #	return 1; # no SCOP/DALI/pdb sequence 
     }
 
-    my $div=substr($pdbcode,1,2);
-    $pdbfile = "";
-
-    foreach $pdbdir (@pdbdirs) {
-	#print "PDB-dir: $pdbdir\n";
-#	if (-e "$pdbdivdir/$div/pdb$pdbcode.ent")   {$pdbfile="$pdbdivdir/$div/pdb$pdbcode.ent"; last;}
-#	if (-e "$pdbdivdir/$div/pdb$pdbcode.ent.Z") {$pdbfile="gunzip -c $pdbdivdir/$div/pdb$pdbcode.ent.Z |"; last;}
-	if (-e "$pdbdir/pdb$pdbcode.ent") {$pdbfile="$pdbdir/pdb$pdbcode.ent"; last;}
-	if (-e "$pdbdir/$pdbcode.pdb")    {$pdbfile="$pdbdir/$pdbcode.pdb"; last;}
-	if (-e "$pdbdir/$name.pdb")       {$pdbfile="$pdbdir/$name.pdb"; last;}
-	if (-e "$pdbdir/$pdbcode"."_$chain.pdb")    {$pdbfile="$pdbdir/$pdbcode"."_$chain.pdb"; last;}
-    }
+    &FindPDBfile($pdbcode);
 
     if ($pdbfile eq "") {
 	if ($v>=2) {print("Warning: no pdb file found for sequence name '$name'\n");} 
 	return 1;
     }
-
     return 0;
 }
 
@@ -1302,4 +1290,26 @@ sub One2ThreeLetter {
     elsif ($res eq "B") {return "ASX";}
     elsif ($res eq "Z") {return "GLX";}
     else                {return "UNK";}
+}
+
+# Find the pdb file with $pdbcode in pdb directory 
+sub FindPDBfile() {
+ 
+    my $pdbcode=lc($_[0]);
+    if (! -e "$pdbdir") {
+	die("Error in $program: pdb directory '$pdbdir' does not exist!\n"); 
+    }
+    if (-e "$pdbdir/all") {$pdbfile="$pdbdir/all/";}
+    elsif (-e "$pdbdir/divided") {$pdbfile="$pdbdir/divided/".substr($pdbcode,1,2)."/";}
+    else {$pdbfile="$pdbdir/";}
+    if ($pdbdir=~/divided.?$/) {$pdbfile.=substr($pdbcode,1,2)."/";}
+    if    (-e $pdbfile."pdb$pdbcode.ent")   {$pdbfile.="pdb$pdbcode.ent";}
+    elsif (-e $pdbfile."pdb$pdbcode.ent.gz") {$pdbfile="gunzip -c $pdbfile"."pdb$pdbcode.ent.gz |";}
+    elsif (-e $pdbfile."pdb$pdbcode.ent.Z") {$pdbfile="gunzip -c $pdbfile"."pdb$pdbcode.ent.Z |";}
+    elsif (-e $pdbfile."$pdbcode.pdb")      {$pdbfile."$pdbcode.pdb";}
+    else {
+	printf(STDERR "Warning in $program: Cannot find pdb file $pdbfile"."pdb$pdbcode.ent!\n"); 
+	return "";
+    }
+    return $pdbfile;
 }

@@ -1,10 +1,10 @@
 #!/usr/bin/env perl
 #
 # hhblits.pl
-# Creates HHblits database files from A3M and HHM/HMMER-formatted files 
+# Creates HH-suite database files from A3M and HHM/HMMER-formatted files 
 # Usage: Usage: perl hhblitsdb.pl -o <db_name> [-ia3m <a3m_dir>] [-ihhm <hhm_dir>] [-ics <cs_dir>] [more_options]
 #
-#     HHsuite version 2.0.13 (February 2012)
+#     HHsuite version 2.0.15 (April 2012)
 #
 #     Reference: 
 #     Remmert M., Biegert A., Hauser A., and Soding J.
@@ -59,11 +59,11 @@ my $numa3mfiles=0;
 my $numhhmfiles=0;
 my $help="
 hhblitsdb.pl from HHsuite $VERSION  
-Builds HHblits database files from MSA and HMM files 
+Builds HH-suite database files from MSA and HMM files 
 
 Usage: hhblitsdb.pl -o <db_name> [-ia3m <a3m_dir>] [-ihhm <hhm_dir>] [-ics <cs_dir>] [options]
 
-Depending on the input directories, the following HHblits database files are generated:
+Depending on the input directories, the following HH-suite database files are generated:
  <db_name>.cs219              column-state sequences, one for each MSA/HMM (for prefilter)
  <db_name>.cs219.sizes        number of sequences and characters in <db_name>.cs219
  <db_name>_a3m_db             packed file containing A3M alignments read from <a3m_dir>
