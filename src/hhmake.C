@@ -109,7 +109,7 @@ void help()
   printf(" -v <int>      verbose mode: 0:no screen output  1:only warings  2: verbose\n");
   printf(" -seq <int>    max. number of query/template sequences displayed (def=%i)  \n",par.nseqdis);
   printf("               Beware of overflows! All these sequences are stored in memory.\n");
-  printf(" -cons         insert consensus as main representative sequence of HMM \n");
+  printf(" -cons         make consensus sequence master sequence of query MSA \n");
   printf(" -name <name>  use this name for HMM (default: use name of first sequence)   \n");
   printf("\n");
   printf("Filter input alignment (options can be combined):                         \n");
@@ -118,8 +118,8 @@ void help()
   printf("               many sequences in each block of >50 columns (def=%i)\n",par.Ndiff);
   printf(" -cov  [0,100] minimum coverage with query (%%) (def=%i) \n",par.coverage);
   printf(" -qid  [0,100] minimum sequence identity with query (%%) (def=%i) \n",par.qid);
-  printf(" -neff [1,inf] target diversity of alignment (default=off)\n");
   printf(" -qsc  [0,100] minimum score per column with query  (def=%.1f)\n",par.qsc);
+  printf(" -neff [1,inf] target diversity of alignment (default=off)\n");
   printf("\n");
   printf("Input alignment format:                                                    \n");
   printf(" -M a2m        use A2M/A3M (default): upper case = Match; lower case = Insert;\n");
@@ -134,7 +134,23 @@ void help()
 
 void help_adv()
 {
-  printf("Filter input alignment (options can be combined):                         \n");
+  printf("Pseudocount (pc) options:                                                        \n");
+  printf(" -pcm  0-2      position dependence of pc admixture 'tau' (pc mode, default=%-i) \n",par.pcm);
+  printf("                0: no pseudo counts:    tau = 0                                  \n");
+  printf("                1: constant             tau = a                                  \n");
+  printf("                2: diversity-dependent: tau = a/(1 + ((Neff[i]-1)/b)^c)          \n");
+  printf("                (Neff[i]: number of effective seqs in local MSA around column i) \n");
+  printf("                3: constant diversity pseudocounts                               \n");
+  printf(" -pca  [0,1]    overall pseudocount admixture (def=%-.1f)                        \n",par.pca);
+  printf(" -pcb  [1,inf[  Neff threshold value for -pcm 2 (def=%-.1f)                      \n",par.pcb);
+  printf(" -pcc  [0,3]    extinction exponent c for -pcm 2 (def=%-.1f)                     \n",par.pcc);
+  // printf(" -pcw  [0,3]    weight of pos-specificity for pcs  (def=%-.1f)                   \n",par.pcw);
+  printf(" -pre_pca [0,1]   PREFILTER pseudocount admixture (def=%-.1f)                    \n",par.pre_pca);
+  printf(" -pre_pcb [1,inf[ PREFILTER threshold for Neff (def=%-.1f)                       \n",par.pre_pcb);
+  // HHsearch option should be the same as HHblits option!!
+  printf("Use context-specific pseudo-counts (instead of substitution matrix pcs):          \n");
+  printf(" -contxt <file> context file for computing context-specific pseudocounts (default=%s)\n",par.clusterfile);
+  printf(" -cslib  <file> column state file for fast database prefiltering (default=%s)\n",par.cs_library);
 }
 
 void help_all()
@@ -142,7 +158,6 @@ void help_all()
   help();
   help_adv();
   printf("\n");
-  printf("Default options can be specified in './.hhdefaults' or 'HOME/.hhdefaults' \n");
 }
 
 /////////////////////////////////////////////////////////////////////////////////////

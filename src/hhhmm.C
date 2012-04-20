@@ -1800,8 +1800,7 @@ void HMM::AddAminoAcidPseudocounts(char pcm, float pca, float pcb, float pcc)
         for (a=0; a<20; ++a)
           p[i][a] = (1.-tau)*f[i][a] + tau * g[i][a];
       break;
-    case 2: //divergence-dependent pseudocounts
-    case 4: //divergence-dependent pseudocounts and rate matrix rescaling
+    case 2: // diversity-dependent (i.e, Neff_M[i]-dependent) pseudocounts
       if (par.pcc==1.0f)
         for (i=1; i<=L; ++i)
           {
@@ -1817,7 +1816,7 @@ void HMM::AddAminoAcidPseudocounts(char pcm, float pca, float pcb, float pcc)
               p[i][a] = (1.-tau)*f[i][a] + tau * g[i][a];
           }
       break;
-    case 3: // constant-divergence pseudocounts
+    case 3: // constant-diversity pseudocounts
       for (i=1; i<=L; ++i)
         {
           float x = Neff_M[i]/pcb;

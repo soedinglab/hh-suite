@@ -534,20 +534,20 @@ sub AppendDsspSequences() {
 	}
     }
     close(QFILE);
-    if ($v>=2) {printf("Searching DSSP state assignments...\nname=%s  range=%s\n",$name,$qrange);}
+    if ($v>=3) {printf("Searching DSSP state assignments: name=%s  range=%s\n",$name,$qrange);}
 
     # Try to open dssp file 
     $dsspfile="$dsspdir/$pdbcode.dssp";
     if (! open (DSSPFILE, "<$dsspfile")) {
-	printf(STDERR "WARNING: Cannot open $dsspfile!\n"); 
+	if ($v>=3) {printf(STDERR "Warning in $program: Cannot open $dsspfile!\n");} 
 	$pdbfile = &OpenPDBfile($pdbcode);
 	if ($pdbfile=="") {return;}
 
-	&HHPaths::System("$dssp $pdbfile $tmpfile.dssp > /dev/null");
-	&HHPaths::System("cp $tmpfile.dssp $dsspfile ");
+	system("$dssp $pdbfile $tmpfile.dssp 2> /dev/null");
+	system("cp $tmpfile.dssp $dsspfile 2> /dev/null");
 	$dsspfile="$tmpfile.dssp";
 	if (! open (DSSPFILE, "<$dsspfile")) {
-	    printf(STDERR "ERROR: dssp couldn't generate file from $pdbfile. Skipping $name\n");
+	    if ($v>=3) {printf(STDERR "Warning in $program: dssp couldn't generate file from $pdbfile. Skipping $name\n");}
 	    return 1;
 	}
     }
@@ -723,7 +723,7 @@ sub OpenPDBfile() {
  
     my $pdbcode=lc($_[0]);
     if (! -e "$pdbdir") {
-	print(STDERR "Error in $program: pdb directory '$pdbdir' does not exist!\n"); 
+	if ($v>=3) {print(STDERR "Warning in $program: pdb directory '$pdbdir' does not exist!\n");} 
 	return 1;
     }
     if (-e "$pdbdir/all") {$pdbfile="$pdbdir/all/";}
@@ -735,11 +735,11 @@ sub OpenPDBfile() {
     elsif (-e $pdbfile."pdb$pdbcode.ent.Z") {$pdbfile="gunzip -c $pdbfile"."pdb$pdbcode.ent.Z |";}
     elsif (-e $pdbfile."$pdbcode.pdb")      {$pdbfile."$pdbcode.pdb";}
     else {
-	printf(STDERR "Error in $program: Cannot find pdb file $pdbfile"."pdb$pdbcode.ent!\n"); 
+	if ($v>=3) {printf(STDERR "Warning in $program: Cannot find pdb file $pdbfile"."pdb$pdbcode.ent!\n");}
 	return "";
     }
     if (!open (PDBFILE, "$pdbfile")) {
-	printf(STDERR "Error in $program: Cannot open pdb file: $!\n"); 
+	if ($v>=3) {printf(STDERR "Error in $program: Cannot open pdb file: $!\n");}
 	return "";
     }
     return $pdbfile;

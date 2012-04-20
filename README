@@ -119,8 +119,11 @@ $ export DYLD_LIBRARY_PATH=/opt/hhsuite/lib
 5. Download Databases
 
 Download current databases from our FTP-server:
-ftp://toolkit.genzentrum.lmu.de/HH-suite/databases/hhblits/
-ftp://toolkit.genzentrum.lmu.de/HH-suite/databases/
+ftp://toolkit.genzentrum.lmu.de/HH-suite/databases/hhsuite_dbs/
+ftp://toolkit.genzentrum.lmu.de/HH-suite/databases/hhsearch_dbs/
+
+The latter directory contains old-style HHsearch databases which will in the longer
+run be replaced by the HH-suite formatted versions.
 
 To build up multiple sequences alignments using HHblits, either one of uniprot20 
 or nr20 dbs is sufficient.

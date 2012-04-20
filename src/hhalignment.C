@@ -1381,10 +1381,10 @@ void Alignment::FilterNeff()
   char keep_orig[N_in+1];   
   for (int k=0; k<N_in; ++k) keep_orig[k]=keep[k];
   float x0=-1.0;
-  float x1=+2.0;
+  float x1=+1.0;
   float x=0.0;
-  float y1;
   float y0;
+  float y1=1.0;
   float y;
   int i=2;
 

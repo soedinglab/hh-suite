@@ -308,7 +308,6 @@ void help(char all=0)
   printf(" -Ofas <file>   write pairwise alignments of significant matches in FASTA format\n");
   printf(" -qhhm <file>   write query input HHM file of last iteration (default=off)      \n");
   printf(" -seq <int>     max. number of query/template sequences displayed (default=%i)  \n",par.nseqdis);
-  printf(" -addss         add predicted 2ndary structure in output alignments             \n");
   printf(" -aliw <int>    number of columns per line in alignment list (default=%i)       \n",par.aliwidth);
   printf(" -p [0,100]     minimum probability in summary and alignment list (default=%G)  \n",par.p);
   printf(" -E [0,inf[     maximum E-value in summary and alignment list (default=%G)      \n",par.E);
@@ -332,8 +331,8 @@ void help(char all=0)
   printf(" -nodiff        do not filter sequences in output alignment (def=off)           \n");
   printf(" -cov  [0,100]  minimum coverage with query (%%) (def=%i)                       \n",par.coverage);
   printf(" -qid  [0,100]  minimum sequence identity with query (%%) (def=%i)              \n",par.qid);
-  printf(" -neff [1,inf]  target diversity of alignment (default=off)                     \n");
   printf(" -qsc  [0,100]  minimum score per column with query  (def=%.1f)                 \n",par.qsc);
+  printf(" -neff [1,inf]  target diversity of alignment (default=off)                     \n");
   printf("\n");
   printf("HMM-HMM alignment options:                                                       \n");
   printf(" -norealign     do NOT realign displayed hits with MAC algorithm (def=realign)   \n");
@@ -345,26 +344,10 @@ void help(char all=0)
   printf(" -alt <int>     show up to this many significant alternative alignments(def=%i)  \n",par.altali);
   printf(" -premerge <int> merge <int> hits to query MSA before aligning remaining hits (def=%i)\n",par.premerge);
   printf(" -shift [-1,1]  profile-profile score offset (def=%-.2f)                         \n",par.shift);
-  printf(" -ssm  0-4      0:   no ss scoring                                               \n");
+  printf(" -ssm {0,..,4}  0:   no ss scoring                                             \n");
   printf("                1,2: ss scoring after or during alignment  [default=%1i]         \n",par.ssm);
   printf("                3,4: ss scoring after or during alignment, predicted vs. predicted\n");
   printf(" -ssw [0,1]     weight of ss score  (def=%-.2f)                                  \n",par.ssw);
-  printf("\n");
-  printf("Pseudocount options:                                                             \n");
-  printf(" -pcm  0-2      Pseudocount mode (default=%-i)                                   \n",par.pcm);
-  printf("                tau = substitution matrix pseudocount admixture                  \n");
-  printf("                0: no pseudo counts:     tau = 0                                 \n");
-  printf("                1: constant              tau = a                                 \n");
-  printf("                2: divergence-dependent: tau = a/(1 + ((Neff-1)/b)^c)            \n");
-  printf("                   Neff=( (Neff_q^d+Neff_t^d)/2 )^(1/d)                          \n");
-  printf("                   Neff_q = av number of different AAs per column in query       \n");
-  printf("                3: constant divergence pseudocounts                              \n");
-  printf(" -pca  [0,1]    overall pseudocount admixture (def=%-.1f)                        \n",par.pca);
-  printf(" -pcb  [1,inf[  threshold for Neff (def=%-.1f)                                   \n",par.pcb);
-  printf(" -pcc  [0,3]    extinction exponent for tau(Neff)  (def=%-.1f)                   \n",par.pcc);
-  printf(" -pcw  [0,3]    weight of pos-specificity for pcs  (def=%-.1f)                   \n",par.pcw);
-  printf(" -pre_pca [0,1]   PREFILTER pseudocount admixture (def=%-.1f)                    \n",par.pre_pca);
-  printf(" -pre_pcb [1,inf[ PREFILTER threshold for Neff (def=%-.1f)                       \n",par.pre_pcb);
   printf("\n");
   printf("Gap cost options:                                                                \n");
   printf(" -gapb [0,inf[  Transition pseudocount admixture (def=%-.2f)                     \n",par.gapb);
@@ -377,9 +360,26 @@ void help(char all=0)
   printf(" -egq  [0,inf[  penalty (bits) for end gaps aligned to query residues (def=%-.2f) \n",par.egq);
   printf(" -egt  [0,inf[  penalty (bits) for end gaps aligned to template residues (def=%-.2f)\n",par.egt);
   printf("\n");
-  printf("Directory paths \n");
+  printf("Pseudocount (pc) options:                                                        \n");
+  printf(" -pcm {0,..,3}  position dependence of pc admixture 'tau' (pc mode, default=%-i) \n",par.pcm);
+  printf("                0: no pseudo counts:    tau = 0                                  \n");
+  printf("                1: constant             tau = a                                  \n");
+  printf("                2: diversity-dependent: tau = a/(1 + ((Neff[i]-1)/b)^c)          \n");
+  printf("                (Neff[i]: number of effective seqs in local MSA around column i) \n");
+  printf("                3: constant diversity pseudocounts                               \n");
+  printf(" -pca  [0,1]    overall pseudocount admixture (def=%-.1f)                        \n",par.pca);
+  printf(" -pcb  [1,inf[  Neff threshold value for -pcm 2 (def=%-.1f)                      \n",par.pcb);
+  printf(" -pcc  [0,3]    extinction exponent c for -pcm 2 (def=%-.1f)                     \n",par.pcc);
+  // printf(" -pcw  [0,3]    weight of pos-specificity for pcs  (def=%-.1f)                   \n",par.pcw);
+  printf(" -pre_pca [0,1]   PREFILTER pseudocount admixture (def=%-.1f)                    \n",par.pre_pca);
+  printf(" -pre_pcb [1,inf[ PREFILTER threshold for Neff (def=%-.1f)                       \n",par.pre_pcb);
+  printf("\n");
+  printf("Use context-specific pseudo-counts (instead of substitution matrix pcs):          \n");
   printf(" -contxt <file> context file for computing context-specific pseudocounts (default=%s)\n",par.clusterfile);
   printf(" -cslib  <file> column state file for fast database prefiltering (default=%s)\n",par.cs_library);
+  printf("\n");
+  printf("Predict secondary structure\n");
+  printf(" -addss         add 2ndary structure predicted with PSIPRED to output MSA \n");
   printf(" -psipred <dir> directory with PSIPRED executables (default=%s)  \n",par.psipred);
   printf(" -psipred_data <dir>  directory with PSIPRED data (default=%s) \n",par.psipred_data);
   printf("\n");
@@ -402,10 +402,10 @@ void help(char all=0)
 #endif
   printf("\n");
   if (!all) {
-  printf("An extended list of options can be obtained by using '-help all' as parameter    \n");
+  printf("An extended list of options can be obtained by calling 'hhblits -help'\n");
   }
   printf("\n");
-  printf("Example: %s -i query.fas -oa3m query.a3m -n 2  \n",program_name);
+  printf("Example: %s -i query.fas -oa3m query.a3m -n 1  \n",program_name);
   cout<<endl;
 }
 
@@ -539,11 +539,7 @@ void ProcessArguments(int argc, char** argv)
         }
       else if (!strcmp(argv[i],"-atab_scop")) alitab_scop=true;
       else if (!strcmp(argv[i],"-h")|| !strcmp(argv[i],"-help"))
-        {
-          if (++i>=argc || argv[i][0]=='-') {help(); exit(0);}
-          if (!strcmp(argv[i],"all")) {help(1); exit(0);}
-          else {help(); exit(0);}
-        }
+        { help(1); exit(0); }
       else if (!strcmp(argv[i],"-v") && (i<argc-1) && argv[i+1][0]!='-' ) v=atoi(argv[++i]);
       else if (!strcmp(argv[i],"-v"))  v=2;
       else if (!strcmp(argv[i],"-v0")) v=0;

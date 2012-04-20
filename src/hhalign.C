@@ -285,23 +285,23 @@ void help_hmm()
   printf(" -tags          do NOT neutralize His-, C-myc-, FLAG-tags, and \n");
   printf("                trypsin recognition sequence to background distribution    \n");
   printf("                                                                          \n");
-  printf("Pseudocount options:                                                      \n");
-  printf(" -Gonnet        use the Gonnet substitution matrix (default)               \n");
-  printf(" -Blosum50      use the Blosum50 substitution matrix                       \n");
-  printf(" -Blosum62      use the Blosum62 substitution matrix                       \n");
-  printf(" -HSDM          use the structure-derived HSDM substitution matrix         \n");
-  printf(" -pcm  0-3      Pseudocount mode (default=%-i)                             \n",par.pcm);
-  printf("                tau = substitution matrix pseudocount admixture            \n");
-  printf("                0: no pseudo counts:     tau = 0                           \n");
-  printf("                1: constant              tau = a                           \n");
-  printf("                2: divergence-dependent: tau = a/(1 + ((Neff-1)/b)^c)       \n");
-  printf("                   Neff=( (Neff_q^d+Neff_t^d)/2 )^(1/d)                       \n");
-  printf("                   Neff_q = av number of different AAs per column in query  \n");
-  printf("                3: column-specific:      tau = \'2\' * (Neff(i)/Neff)^(w*Neff/20)\n");
-  printf(" -pca  [0,1]    set a (overall admixture) (def=%-.1f)                      \n",par.pca);
-  printf(" -pcb  [1,inf[  set b (threshold for Neff) (def=%-.1f)                      \n",par.pcb);
-  printf(" -pcc  [0,3]    set c (extinction exponent for tau(Neff))  (def=%-.1f)      \n",par.pcc);
-  printf(" -pcw  [0,3]    set w (weight of pos-specificity for pcs) (def=%-.1f)      \n",par.pcw);
+  printf("Pseudocount (pc) options:                                                        \n");
+  printf(" -pcm  0-2      position dependence of pc admixture 'tau' (pc mode, default=%-i) \n",par.pcm);
+  printf("                0: no pseudo counts:    tau = 0                                  \n");
+  printf("                1: constant             tau = a                                  \n");
+  printf("                2: diversity-dependent: tau = a/(1 + ((Neff[i]-1)/b)^c)          \n");
+  printf("                (Neff[i]: number of effective seqs in local MSA around column i) \n");
+  printf("                3: constant diversity pseudocounts                               \n");
+  printf(" -pca  [0,1]    overall pseudocount admixture (def=%-.1f)                        \n",par.pca);
+  printf(" -pcb  [1,inf[  Neff threshold value for -pcm 2 (def=%-.1f)                      \n",par.pcb);
+  printf(" -pcc  [0,3]    extinction exponent c for -pcm 2 (def=%-.1f)                     \n",par.pcc);
+  // printf(" -pcw  [0,3]    weight of pos-specificity for pcs  (def=%-.1f)                   \n",par.pcw);
+  printf(" -pre_pca [0,1]   PREFILTER pseudocount admixture (def=%-.1f)                    \n",par.pre_pca);
+  printf(" -pre_pcb [1,inf[ PREFILTER threshold for Neff (def=%-.1f)                       \n",par.pre_pcb);
+  // HHsearch option should be the same as HHblits option!!
+  printf("Use context-specific pseudo-counts (instead of substitution matrix pcs):          \n");
+  printf(" -contxt <file> context file for computing context-specific pseudocounts (default=%s)\n",par.clusterfile);
+  printf(" -cslib  <file> column state file for fast database prefiltering (default=%s)\n",par.cs_library);
 }
 
 void help_gap()

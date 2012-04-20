@@ -196,7 +196,7 @@ void ProcessArguments(int argc,char** argv)
 	  else if (!strcmp(argv[i]+7,"80")) par.matrix=80; 
 	  else cerr<<endl<<"WARNING: Ignoring unknown option "<<argv[i]<<" ...\n";
 	}
-       else if (!strcmp(argv[i],"-pcm") && (i<argc-1)) par.pcm=atoi(argv[++i]); 
+      else if (!strcmp(argv[i],"-pcm") && (i<argc-1)) par.pcm=atoi(argv[++i]); 
       else if (!strcmp(argv[i],"-pca") && (i<argc-1)) par.pca=atof(argv[++i]); 
       else if (!strcmp(argv[i],"-pcb") && (i<argc-1)) par.pcb=atof(argv[++i]); 
       else if (!strcmp(argv[i],"-pcc") && (i<argc-1)) par.pcc=atof(argv[++i]);  

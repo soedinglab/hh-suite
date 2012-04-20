@@ -74,17 +74,12 @@ sub System()
 {
     if ($v>=2) {printf("\$ %s\n",$_[0]);} 
     system($_[0]);
-    if ($? == 0) {return;}
     if ($? == -1) {
 	die("\nError: failed to execute '$_[0]': $!\n\n");	
-    }
-    elsif ($? & 127) {
-	printf "\nError when executing '$_[0]': child died with signal %d, %s coredump\n\n",
-	($? & 127), ($? & 128) ? 'with' : 'without';
-    }
-    else {
-	printf "\nError when executing '$_[0]': child exited with value %d\n\n", $? >> 8;
-    }    
+    } elsif ($? != 0) {
+	printf("\nError: command '$_[0]' returned error code %d\n\n", $? >> 8);
+	return 1;
+   }
     return $?;
 }
 
