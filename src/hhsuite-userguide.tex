@@ -406,12 +406,16 @@ Align.pm       Utility package for local and global sequence-sequence alignment
 HHPaths.pm     Configuration file with paths to the PDB, BLAST, PSIPRED etc.
 \end{verbatim} 
 \normalsize
+% To be included with HH-suite 2.1.0
+%renumberpdb.pl Generate PDB file with indices renumbered to match input sequence indices
+%mergeali.pl    Merge MSAs in A3M format according to an MSA of their seed sequences
+%pdb2fasta.pl   Generate FASTA sequence file from SEQRES records of globbed pdb files
+%pdbfilter.pl   Generate representative set of PDB/SCOP sequences from pdb2fasta.pl output
 %replaced by hhblits:
-%  buildali.pl     Build a PSI-BLAST MSA from a sequence or MSA, add sec. structure
-%  alignhits.pl    Extract an MSA from a BLAST/PSI-BLAST output
+%buildali.pl     Build a PSI-BLAST MSA from a sequence or MSA, add sec. structure
+%alignhits.pl    Extract an MSA from a BLAST/PSI-BLAST output
 
-Call a program without arguments or with -h to get a more detailed description of 
-its syntax.
+Call a program without arguments or with \verb`-h` option to get more detailed explanations.
 
 
 \subsection{Searching databases of HMMs using HHsearch and HHblits}\label{searching_hm_dbs}

@@ -4,14 +4,14 @@
 # Generate a model from an output alignment of hhsearch. 
 # Usage: hhmakemodel.pl -i file.out (-ts file.pdb|-al file.al) [-m int|-m name|-m auto] [-pdb pdbdir] 
 
+# (C) Johannes Soeding 2012
+
 #     HHsuite version 2.0.15 (April 2012)
 #
 #     Reference: 
 #     Remmert M., Biegert A., Hauser A., and Soding J.
 #     HHblits: Lightning-fast iterative protein sequence searching by HMM-HMM alignment.
 #     Nat. Methods, epub Dec 25, doi: 10.1038/NMETH.1818 (2011).
-
-#     (C) Johannes Soeding and Michael Remmert, 2012
 
 #     This program is free software: you can redistribute it and/or modify
 #     it under the terms of the GNU General Public License as published by
@@ -43,7 +43,7 @@ our $g=0.1;   # endgap penalty for Align.pm; allow to shift SEQRES residues for 
 my $v=2;      # 3: DEBUG
 
 my $formatting="CASP";     # CASP or LIVEBENCH
-my $servername="HHpred2";  # HHpred2 or HHpred3
+my $servername="My server";  # 
 my $MINRES=30;     # minumum number of new query residues required for a hit to be used as additional parent
 my $infile="";
 my $outfile="";
@@ -278,7 +278,7 @@ sub MakePairwiseAlignments()
 		$line=<INFILE>;
 		if ($line=~/Probab\s*=\s*(\S+).*E-value\s*=\s*(\S+)/) {$score=$1; $evalue=$2} 
 		else {$score=0; warn("WARNING: could not print score $line");}
-		if ($line=~/Aligned_columns=\s*(\S+)/) {;} else {warn("WARNING: could not find COLS\n");}
+		if ($line=~/Aligned_cols=\s*(\S+)/) {;} else {warn("WARNING: could not find aligned_cols\n");}
 		if ($Pthr && $score<$Pthr) {last;}  # Probability too low -> finished
 		if ($Ethr && $evalue>$Ethr) {last;} # Evalue too high > finished
 		
@@ -355,51 +355,7 @@ sub MakePairwiseAlignments()
     }
     $printblock[0].="REMARK AUTHOR $servername\n";
     $printblock[0].="REMARK $date\n";
-    $printblock[0].="REMARK J. Soeding (johannes.soeding\@tuebingen.mpg.de)\n";
 #    $printblock[0].="REMARK J. Soeding \n";
-    
-# Add method description
-#----+----1----+----2----+----3----+----4----+----5----|----6----+----7----+----8
-    if ($formatting eq "CASP") {$keyword="METHOD";} else {$keyword="REMARK";}
-
-    if ($servername eq "HHpred2") {
-	$printblock[0].=
-"$keyword Fold recognition by HMM-HMM comparison and secondary structure scoring
-$keyword A multiple alignment is built from the template sequence with PSI-BLAST
-$keyword (up to 8 rounds with E-value threshold 1E-3). PSIPRED is used for 
-$keyword secondary structure prediction. The alignment is converted to an HMM and 
-$keyword compared with a database of HMMs derived from representative sequences
-$keyword in the PDB and SCOP (70% maximum sequence identity, updated weekly).   
-$keyword Their secondary structure states are determined by DSSP. A fast and 
-$keyword sensitive column score is used, as well as a secondary structure scoring 
-$keyword scheme which is analogous to amino acid scoring with substitution
-$keyword matrices.
-$keyword Soding, J. (2005) Protein homology detection by HMM-HMM comparison.
-$keyword Bioinformatics 21, 951-960.
-REMARK Templates used:
-";
-
-} elsif ($servername eq "HHpred3") {
-    $printblock[0].=
-"$keyword Fold recognition by HMM-HMM comparison using intermediate HMM search
-$keyword A multiple alignment is built from the template sequence with PSI-BLAST
-$keyword (up to 8 rounds with E-value threshold 1E-3). PSIPRED is used for 
-$keyword secondary structure prediction. The alignment is converted to an HMM and
-$keyword compared with a database of HMMs derived from representative sequences
-$keyword in the PDB and SCOP (70% maximum sequence identity, updated weekly).  
-$keyword Their secondary structure states are determined by DSSP. A fast and 
-$keyword sensitive column score is used, as well as a secondary structure scoring
-$keyword scheme which is analogous to amino acid scoring with substitution 
-$keyword matrices.
-$keyword When no significant match can be found, our intermediate HMM search
-$keyword method HHsenser is used to add neighboring, homologous alignments to the 
-$keyword original query alignment by HMM-HMM comparison. The resulting super-
-$keyword alignment is converted to an HMM and PDB and SCOP are searched again.
-$keyword Soding, J. (2005) Protein homology detection by HMM-HMM comparison.
-$keyword Bioinformatics 21, 951-960.
-REMARK Templates used:
-";
-}  
  
     # Add remarks
     for ($k=0; $k<@remarks; $k++) {
@@ -1070,8 +1026,8 @@ sub WritePairwiseAlignments() {
     my @nres;        # $nres[$l] = pdb residue index for residue $aapdb[$l]
     my @coord;       # $coord[$l] = coordinates of CA atom of residue $aapdb[$l]
     while ($line) {
-	if ($line=~/^ATOM\s+\d+  CA [ A](\w{3}) $chain\s*(-?\d+.)   (\s*\S+\s+\S+\s+\S+)/ ||
-	    ($line=~/^HETATM\s+\d+  CA [ A](\w{3}) $chain\s*(-?\d+.)   (\s*\S+\s+\S+\s+\S+)/ && &Three2OneLetter($1) ne "X") ) {
+	if ($line=~/^ATOM\s+\d+  CA [ AB](\w{3}) $chain\s*(-?\d+.)   (\s*\S+\s+\S+\s+\S+)/ ||
+	    ($line=~/^HETATM\s+\d+  CA [ AB](\w{3}) $chain\s*(-?\d+.)   (\s*\S+\s+\S+\s+\S+)/ && &Three2OneLetter($1) ne "X") ) {
 	    $res=$1;
 	    $nres[$l]=$2;
 	    $coord[$l]=$3."  1.00";
@@ -1095,6 +1051,14 @@ sub WritePairwiseAlignments() {
     my $score;  
     $xseq=~tr/-/~/d; # transform Deletes to '~' to distinguish them from gaps inserted by Align.pm   
     #the aligned characters are returend in $j2[$col2] and $l2[$col2]
+
+    if ($v>=3) {
+	printf("Template (hh)  $xseq\n");
+	printf("Identities     $Sstr\n");
+	printf("Template (pdb) $yseq\n");
+	printf("\n");
+    }
+
     $score=&AlignNW(\$xseq,\$yseq,\@j2,\@l2,\$jmin,\$jmax,\$lmin,\$lmax,\$Sstr);  
     
     # DEBUG
@@ -1296,20 +1260,19 @@ sub One2ThreeLetter {
 sub FindPDBfile() {
  
     my $pdbcode=lc($_[0]);
-    if (! -e "$pdbdir") {
-	die("Error in $program: pdb directory '$pdbdir' does not exist!\n"); 
+    foreach $pdbdir (@pdbdirs) {
+	if (! -e "$pdbdir") {warn("Warning in $program: pdb directory '$pdbdir' does not exist!\n"); next;}
+	if (-e "$pdbdir/all") {$pdbfile="$pdbdir/all/";}
+	elsif (-e "$pdbdir/divided") {$pdbfile="$pdbdir/divided/".substr($pdbcode,1,2)."/";}
+	else {$pdbfile="$pdbdir/";}
+	if    ($pdbdir=~/divided.?$/) {$pdbfile.=substr($pdbcode,1,2)."/";}
+	if    (-e $pdbfile."pdb$pdbcode.ent")   {$pdbfile.="pdb$pdbcode.ent";}
+	elsif (-e $pdbfile."pdb$pdbcode.ent.gz") {$pdbfile="gunzip -c $pdbfile"."pdb$pdbcode.ent.gz |";}
+	elsif (-e $pdbfile."pdb$pdbcode.ent.Z") {$pdbfile="gunzip -c $pdbfile"."pdb$pdbcode.ent.Z |";}
+	elsif (-e $pdbfile."$pdbcode.pdb")      {$pdbfile."$pdbcode.pdb";}
+	else {next;}
+	return $pdbfile;
     }
-    if (-e "$pdbdir/all") {$pdbfile="$pdbdir/all/";}
-    elsif (-e "$pdbdir/divided") {$pdbfile="$pdbdir/divided/".substr($pdbcode,1,2)."/";}
-    else {$pdbfile="$pdbdir/";}
-    if ($pdbdir=~/divided.?$/) {$pdbfile.=substr($pdbcode,1,2)."/";}
-    if    (-e $pdbfile."pdb$pdbcode.ent")   {$pdbfile.="pdb$pdbcode.ent";}
-    elsif (-e $pdbfile."pdb$pdbcode.ent.gz") {$pdbfile="gunzip -c $pdbfile"."pdb$pdbcode.ent.gz |";}
-    elsif (-e $pdbfile."pdb$pdbcode.ent.Z") {$pdbfile="gunzip -c $pdbfile"."pdb$pdbcode.ent.Z |";}
-    elsif (-e $pdbfile."$pdbcode.pdb")      {$pdbfile."$pdbcode.pdb";}
-    else {
-	printf(STDERR "Warning in $program: Cannot find pdb file $pdbfile"."pdb$pdbcode.ent!\n"); 
-	return "";
-    }
-    return $pdbfile;
+    printf(STDERR "Warning in $program: Cannot find pdb file $pdbfile"."pdb$pdbcode.ent!\n"); 
+    return "";
 }
