@@ -73,8 +73,9 @@ Usage: perl addss.pl <ali_file> [<outfile>] [-fas|-a3m|-clu|-sto]
 my $line;
 my @seqs;              # sequences from infile (except >aa_ and >ss_pred sequences)
 my $query_length;
+my $header;            # header of MSA: everything before first '>'
+my $name;              # query in fasta format: '>$name [^\n]*\n$qseq\n'
 my $qseq;              # residues of query sequence
-my $name;              # query in fasta format: '>$name [^\n]*\n$qseq'
 my $infile;
 my $outfile;
 my $ss_pred="";        # psipred ss states
@@ -160,8 +161,9 @@ if ($informat ne "hmm") {
     $/=">"; # set input field separator
     my $i=0;
     $qseq="";
+    $header = <INFILE>;
+    $header =~s />$//; 
     while ($line=<INFILE>) {
-	if ($line eq ">") {next;}
 	$line=~s/>$//;
 	if ($line=~/^ss_/ || $line=~/^aa_/) {next;}
 	$seqs[$i++]=">$line";
@@ -173,7 +175,8 @@ if ($informat ne "hmm") {
 	}
     }
     close(INFILE);
-    
+    printf("name='%s'\nqseq='%s'\n",$name,$qseq);
+
     if ($qseq =~ /\-/) {
 	
 	$/="\n"; # set input field separator
@@ -217,6 +220,7 @@ if ($informat ne "hmm") {
     &HHPaths::System("$hhscripts/reformat.pl -v $v2 -r -noss a3m psi $tmpfile.in.a3m $tmpfile.in.psi");
     
     open (ALIFILE, ">$outfile") || die("ERROR: cannot open $outfile: $!\n");
+    printf (ALIFILE "%s",$header);
     
     # Add DSSP sequence (if available)
     if ($dssp ne "") {
@@ -224,13 +228,13 @@ if ($informat ne "hmm") {
 	    if ($numres) {
 		$ss_dssp=~s/(\S{$numres})/$1\n/g;  # insert a line break every $numres residues
 	    }
-	    print(ALIFILE ">ss_dssp\n$ss_dssp\n");
-	    if ($v>=1) {printf ("\nAdding DSSP state sequence ...\n");}
+	    printf (ALIFILE ">ss_dssp\n%s\n",$ss_dssp);
+	    if ($v>=1) {print("\nAdding DSSP state sequence ...\n");}
         }
     }
 
     # Secondary structure prediction with psipred
-    if ($v>=2) {printf ("Predicting secondary structure with PSIPRED ... ");}
+    if ($v>=2) {print("Predicting secondary structure with PSIPRED ... ");}
     &RunPsipred("$tmpfile.sq");
     
     if (open (PSIPREDFILE, "<$tmpfile.horiz")) {
@@ -247,16 +251,16 @@ if ($informat ne "hmm") {
 		$ss_pred=~s/(\S{$numres})/$1\n/g; # insert a line break every $numres residues
 		$ss_conf=~s/(\S{$numres})/$1\n/g; # insert a line break every $numres residues
 	    }
-	print(ALIFILE ">ss_pred PSIPRED predicted secondary structure\n$ss_pred\n");
-	print(ALIFILE ">ss_conf PSIPRED confidence values\n$ss_conf\n");
+	printf(ALIFILE ">ss_pred PSIPRED predicted secondary structure\n%s\n",$ss_pred);
+	printf(ALIFILE ">ss_conf PSIPRED confidence values\n%s\n",$ss_conf);
     }
     
     # Append alignment sequences to psipred sequences
     for ($i=0; $i<@seqs; $i++) {
-	print(ALIFILE $seqs[$i]);
+	printf(ALIFILE "%s",$seqs[$i]);
     }
     close(ALIFILE);
-    if ($v>=2) {printf ("done \n");}
+    if ($v>=2) {print("done \n");}
 } 
 ##############################################################
 # HMMER format

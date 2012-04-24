@@ -309,6 +309,8 @@ if ($a3mfile ne "") {
     }
     close OUT;
     
+    # Build packed file (concatenated with '\0' as delimiters) and index file from files in file list
+    # The ffindex binaries are contained in <install_dir>/lib/ffindex/bin/
     $command = "ffindex_build -".$a_if_append."s -f $tmpdir/a3m.filelist $a3mfile $a3mfile.index";
     &HHPaths::System($command);
  
@@ -333,6 +335,8 @@ if ($hhmfile ne "") {
     }
     close OUT;
 
+    # Build packed file (concatenated with '\0' as delimiters) and index file from files in file list
+    # The ffindex binaries are contained in <install_dir>/lib/ffindex/bin/
     $command = "ffindex_build -".$a_if_append."s -f $tmpdir/hhm.filelist $hhmfile $hhmfile.index";
     &HHPaths::System($command);
  
