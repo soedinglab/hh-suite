@@ -84,7 +84,7 @@ my $ss_dssp;           # dssp states as string
 my $sa_dssp;           # relative solvent accessibility from dssp as string {A,B,C,D,E} A:absolutely buried, B:buried, E:exposed
 my $aa_dssp;           # residues from dssp file as string
 my $aa_astr;           # residues from infile as string
-
+my $q_match;           # number of match states in query sequence
 my $xseq;              # sequence x returned from Align.pm
 my $yseq;              # sequence y returned from Align.pm  
 my $Sstr;              # match sequence returned from Align.pm
@@ -175,11 +175,9 @@ if ($informat ne "hmm") {
 	}
     }
     close(INFILE);
-    printf("name='%s'\nqseq='%s'\n",$name,$qseq);
+    $/="\n"; # set input field separator
 
     if ($qseq =~ /\-/) {
-	
-	$/="\n"; # set input field separator
 	
 	# First sequence contains gaps => calculate consensus sequence
 	&HHPaths::System("hhconsensus -i $tmpfile.in.a3m -s $tmpfile.sq -o $tmpfile.in.a3m > /dev/null");
@@ -188,23 +186,6 @@ if ($informat ne "hmm") {
 	
 	$query_length = ($qseq=~tr/A-Z/A-Z/);
 	$qseq=~tr/A-Z//cd; # remove everything except capital letters
-	
-	# If less than 26 match states => add sufficient number of Xs to the end of each sequence in $tmpfile.in.a3m
-	my $q_match = ($qseq=~tr/A-Z/A-Z/); # count number of capital letters
-	if ($q_match<=25) {                 # Psiblast needs at least 26 residues in query
-	    my $addedXs=('X' x (26-$q_match))."\n";
-	    $qseq.=$addedXs;     # add 'X' to query to make it at least 26 resiudes long
-	    for ($i=0; $i<@seqs; $i++) {	    
-		$seqs[$i]=~s/\n$//g;
-		$seqs[$i].=$addedXs;
-	    }
-	    open (INFILE,">$tmpfile.in.a3m");
-	    for ($i=0; $i<@seqs; $i++) {
-		printf(INFILE "%s",$seqs[$i]);
-	    }
-	    close INFILE;
-	}
-	$/="\n"; # set input field separator
 	
 	# Write query sequence file in FASTA format
 	open (QFILE, ">$tmpfile.sq") or die("ERROR: can't open $tmpfile.sq: $!\n");
