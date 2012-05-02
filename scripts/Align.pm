@@ -130,7 +130,7 @@ my @Gonnet = (
 [-3.6,-1.6,-3.6,-5.2,-1.0,-2.7,-4.3,-4.0,-0.8,-1.8,-0.7,-3.5,-1.0, 3.6,-5.0,-3.3,-3.5,14.2, 4.1,-2.6,-1.0,-9.9], # W
 [-2.2,-1.8,-1.4,-2.8,-0.5,-1.7,-2.7,-4.0,-2.2,-0.7, 0.0,-2.1,-0.2, 5.1,-3.1,-1.9,-1.9, 4.1, 7.8,-1.1,-1.0,-9.9], # Y
 [ 0.1,-2.0,-2.2,-2.9, 0.0,-1.5,-1.9,-3.3,-2.0, 3.1, 1.8,-1.7, 1.6, 0.1,-1.8,-1.0, 0.0,-2.6,-1.1, 3.4,-1.0,-9.9], # V
-[-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-9.9], # X	  
+[-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,+1.0,-9.9], # X	  
 [-9.9,-9.9,-9.9,-9.9,-9.9,-9.9,-9.9,-9.9,-9.9,-9.9,-9.9,-9.9,-9.9,-9.9,-9.9,-9.9,-9.9,-9.9,-9.9,-9.9,-9.9,-9.9]  # ~	  
       );
 
@@ -156,7 +156,7 @@ my @BLOSUM62 = (
 [-3,-3,-4,-4,-2,-2,-3,-2,-2,-3,-2,-3,-1, 1,-4,-3,-2,11, 2,-3,-2,-9],
 [-2,-2,-2,-3,-2,-1,-2,-3, 2,-1,-1,-2,-1, 3,-3,-2,-2, 2, 7,-1,-1,-9],
 [ 0,-3,-3,-3,-1,-2,-2,-3,-3, 3, 1,-2, 1,-1,-2,-2, 0,-3,-1, 4,-1,-9],
-[ 0,-1,-1,-1,-2,-1,-1,-1,-1,-1,-1,-1,-1,-1,-2, 0, 0,-2,-1,-1,-1,-9],
+[ 0,-1,-1,-1,-2,-1,-1,-1,-1,-1,-1,-1,-1,-1,-2, 0, 0,-2,-1,-1,+1,-9],
 [-9,-9,-9,-9,-9,-9,-9,-9,-9,-9,-9,-9,-9,-9,-9,-9,-9,-9,-9,-9,-9,-9]	  
     );
 
@@ -197,6 +197,7 @@ sub SetSubstitutionMatrix {
 		$Sab[20][$b] = $Sab[$b][20] = 0;  
 		$Sab[21][$b] = $Sab[$b][21] = -10;  
 	    }
+	    $Sab[20][20] = $Sab[20][20] = +1;# if in doubt, match X with X
 	}
 
 	$firstcall=0;
@@ -291,7 +292,13 @@ sub AlignSW {
     my $state;           # STOP:0  M:1  A:2  B:3 
     my ($i, $j);    # indices for sequence x and y, respectively
 
-    # Transform @xres and @yres to integer
+    my $dx = $main::dx;
+    my $dy = $main::dy;
+    if (! defined $dx) {$dx = $main::d;}
+    if (! defined $dy) {$dy = $main::d;}
+    printf("dx=%f  dy=%f\n",$dx,$dy); ##############DEBUG#############
+    
+     # Transform @xres and @yres to integer
     for ($i=0; $i<@xchr; $i++) {
 	my $a=ord(uc($xchr[$i]));
 	if ($a<65 || $a>90) {
@@ -339,8 +346,8 @@ sub AlignSW {
 	my $j1=0;
 	for ($j=1; $j<=$Ly; ++$j, ++$j1) {
 	    ${$Mi}[$j] = max3bt(${$Mi1}[$j1],  ${$Ai1}[$j1],  ${$Bi1}[$j1], \$Mbt[$i][$j]) + ${$Sabx}[$yres[$j]];
-	    ${$Ai}[$j] = max2bt(${$Ai}[$j1]-$main::e, ${$Mi}[$j1]-$main::d, \$Abt[$i][$j]);
-	    ${$Bi}[$j] = max2bt(${$Bi1}[$j]-$main::e, ${$Mi1}[$j]-$main::d, \$Bbt[$i][$j]);
+	    ${$Ai}[$j] = max2bt(${$Ai}[$j1]-$main::e, ${$Mi}[$j1]-$dx, \$Abt[$i][$j]);
+	    ${$Bi}[$j] = max2bt(${$Bi1}[$j]-$main::e, ${$Mi1}[$j]-$dy, \$Bbt[$i][$j]);
 	}
     }
 
@@ -380,7 +387,7 @@ sub AlignSW {
 	    $bt = $Abt[$i][$j--];
 	    if ($bt) {
 		# previous state was M
-		unshift(@$rS,-$main::d);
+		unshift(@$rS,-$dx);
 		$state = 1;
 	    } else {
 		# previous state was A
@@ -395,7 +402,7 @@ sub AlignSW {
 	    $bt = $Bbt[$i--][$j];
 	    if ($bt) {
 		# previous state was M
-		unshift(@$rS,-$main::d);
+		unshift(@$rS,-$dy);
 		$state = 1;
 	    } else {
 		# previous state was B
@@ -461,7 +468,13 @@ sub AlignNW {
     my $state;           # STOP:0  M:1  A:2  B:3 
     my ($i, $j);    # indices for sequence x and y, respectively
 
-    # Transform @xres and @yres to integer
+    my $dx = $main::dx;
+    my $dy = $main::dy;
+    if (! defined $dx) {$dx = $main::d;}
+    if (! defined $dy) {$dy = $main::d;}
+    printf("dx=%f  dy=%f\n",$dx,$dy); ##############DEBUG#############
+    
+     # Transform @xres and @yres to integer
     for ($i=0; $i<@xchr; $i++) {
 	my $a=ord(uc($xchr[$i]));
 	if ($a<65 || $a>90) {
@@ -488,8 +501,8 @@ sub AlignNW {
     unshift (@yres,21); unshift (@ychr," "); # insert dummy 0'th element
     
     &SetSubstitutionMatrix;
-
-    # Initialization
+    
+   # Initialization
     $M[0][0]=$A[0][0]=$B[0][0]=0;
     for ($i=1; $i<=$Lx; $i++) {
 	$M[$i][0] = -999;	
@@ -516,8 +529,8 @@ sub AlignNW {
 	my $j1=0;
 	for ($j=1; $j<=$Ly; ++$j, ++$j1) {
 	    ${$Mi}[$j] = max3bt(${$Mi1}[$j1],  ${$Ai1}[$j1],  ${$Bi1}[$j1], \$Mbt[$i][$j]) + ${$Sabx}[$yres[$j]];
-	    ${$Ai}[$j] = max2bt(${$Ai}[$j1]-$main::e, ${$Mi}[$j1]-$main::d, \$Abt[$i][$j]);
-	    ${$Bi}[$j] = max2bt(${$Bi1}[$j]-$main::e, ${$Mi1}[$j]-$main::d, \$Bbt[$i][$j]);
+	    ${$Ai}[$j] = max2bt(${$Ai}[$j1]-$main::e, ${$Mi}[$j1]-$dx, \$Abt[$i][$j]);
+	    ${$Bi}[$j] = max2bt(${$Bi1}[$j]-$main::e, ${$Mi1}[$j]-$dy, \$Bbt[$i][$j]);
 	}
     }
 
@@ -593,7 +606,7 @@ sub AlignNW {
 		if ($i==$Lx || $i==0) {
 		    unshift(@$rS,-$main::g); # end gap
 		} else {
-		    unshift(@$rS,-$main::d); # gap opening
+		    unshift(@$rS,-$dx); # gap opening
 		}
 		$state = 1;
 	    } else {
@@ -616,7 +629,7 @@ sub AlignNW {
 		if ($j==$Ly || $j==0) {
 		    unshift(@$rS,-$main::g); # end gap
 		} else {
-		    unshift(@$rS,-$main::d); # gap opening
+		    unshift(@$rS,-$dy); # gap opening
 		}
 		$state = 1;
 	    } else {

@@ -133,7 +133,8 @@ void PrepareQueryHMM(char* infile, char& input_format, HMM* q, Alignment* qali)
       // Add transition pseudocounts to query -> q->p[i][a]
       q->AddTransitionPseudocounts();
       
-      if (!*par.clusterfile) { //compute context-specific pseudocounts?
+      // Compute substitutino matrix pseudocounts?
+      if (par.nocontxt) { 
 	// Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
 	q->PreparePseudocounts();
 	// Add amino acid pseudocounts to query:  q->p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]

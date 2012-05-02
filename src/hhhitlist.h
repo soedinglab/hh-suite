@@ -26,7 +26,7 @@ public:
   void PrintAlignments(HMM* q, char* outfile, char outformat=0);
 
   // Return a figure of merit for distinction of the score with positive from the scores with negatives
-  void Optimize(HMM* q, char* buffer);
+  void Optimize(HMM* q);
 
   // Print score distribution into file score_dist
   void PrintScoreFile(HMM* q);

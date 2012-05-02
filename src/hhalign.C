@@ -299,7 +299,8 @@ void help_hmm()
   printf(" -pre_pca [0,1]   PREFILTER pseudocount admixture (def=%-.1f)                    \n",par.pre_pca);
   printf(" -pre_pcb [1,inf[ PREFILTER threshold for Neff (def=%-.1f)                       \n",par.pre_pcb);
   // HHsearch option should be the same as HHblits option!!
-  printf("Use context-specific pseudo-counts (instead of substitution matrix pcs):          \n");
+  printf("Context-specific pseudo-counts:                                                  \n");
+  printf(" -nocontxt      use substitution-matrix instead of context-specific pseudocounts \n");
   printf(" -contxt <file> context file for computing context-specific pseudocounts (default=%s)\n",par.clusterfile);
   printf(" -cslib  <file> column state file for fast database prefiltering (default=%s)\n",par.cs_library);
 }
@@ -600,6 +601,7 @@ void ProcessArguments(int argc, char** argv)
       else if (!strcmp(argv[i],"-ovlp") && (i<argc-1)) par.min_overlap=atoi(argv[++i]);
       else if (!strcmp(argv[i],"-tags")) par.notags=0;
       else if (!strcmp(argv[i],"-notags")) par.notags=1;
+      else if (!strcmp(argv[i],"-nocontxt")) par.nocontxt=1;
       else if (!strcmp(argv[i],"-csb") && (i<argc-1)) par.csb=atof(argv[++i]);
       else if (!strcmp(argv[i],"-csw") && (i<argc-1)) par.csw=atof(argv[++i]);
       else if (!strcmp(argv[i],"-cs"))
@@ -803,7 +805,7 @@ int main(int argc, char **argv)
    }
 
   // Prepare CS pseudocounts lib
-  if (*par.clusterfile) {
+  if (!par.nocontxt) {  
     FILE* fin = fopen(par.clusterfile, "r");
     if (!fin) OpenFileError(par.clusterfile);
     context_lib = new cs::ContextLibrary<cs::AA>(fin);
@@ -1403,7 +1405,8 @@ int main(int argc, char **argv)
     hit.DeleteBackwardMatrix(q->L+2);
 //   if (Pstruc) { for (int i=0; i<q->L+2; i++) delete[](Pstruc[i]); delete[](Pstruc);}
 
-  if (*par.clusterfile) {
+  
+  if (!par.nocontxt) { 
     delete context_lib;
     delete lib_pc;
   }

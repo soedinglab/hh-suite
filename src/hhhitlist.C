@@ -197,7 +197,7 @@ void HitList::PrintAlignments(HMM* q, char* outfile, char outformat)
 /////////////////////////////////////////////////////////////////////////////////////
 // Return the ROC_5 score for optimization (changed 28.3.08 by Michael & Johannes)
 /////////////////////////////////////////////////////////////////////////////////////
-void HitList::Optimize(HMM* q, char* buffer)
+void HitList::Optimize(HMM* q)
 {
   const int NFAM =5;   // calculate ROC_5 score 
   const int NSFAM=5;   // calculate ROC_5 score 
@@ -229,18 +229,8 @@ void HitList::Optimize(HMM* q, char* buffer)
     }
 
   // Write ROC score to file or stdout
-  FILE* buf=NULL;
-  if (strcmp(par.buffer,"stdout"))
-    {
-      buf=fopen(buffer,"w");
-      if (!buf) OpenFileError(par.buffer);
-    }
-  else
-    buf = stdout;
-
-  fprintf(buf,"%f\n",float(roc)/float(fam*NFAM+sfam*NSFAM)); // must be between 0 and 1
+  printf("%f\n",float(roc)/float(fam*NFAM+sfam*NSFAM)); // must be between 0 and 1
   if (v>=2) printf("ROC=%f\n",float(roc)/float(fam*NFAM+sfam*NSFAM)); 
-  fclose(buf);
 } 
 
 

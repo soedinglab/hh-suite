@@ -1816,7 +1816,7 @@ void HMM::AddAminoAcidPseudocounts(char pcm, float pca, float pcb, float pcc)
               p[i][a] = (1.-tau)*f[i][a] + tau * g[i][a];
           }
       break;
-    case 3: // constant-diversity pseudocounts
+    case 3: // constant-diversity pseudocounts // Is this still used? => scrap? (JS) 
       for (i=1; i<=L; ++i)
         {
           float x = Neff_M[i]/pcb;

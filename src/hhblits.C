@@ -361,12 +361,11 @@ void help(char all=0)
   printf(" -egt  [0,inf[  penalty (bits) for end gaps aligned to template residues (def=%-.2f)\n",par.egt);
   printf("\n");
   printf("Pseudocount (pc) options:                                                        \n");
-  printf(" -pcm {0,..,3}  position dependence of pc admixture 'tau' (pc mode, default=%-i) \n",par.pcm);
+  printf(" -pcm {0,..,2}  position dependence of pc admixture 'tau' (pc mode, default=%-i) \n",par.pcm);
   printf("                0: no pseudo counts:    tau = 0                                  \n");
   printf("                1: constant             tau = a                                  \n");
   printf("                2: diversity-dependent: tau = a/(1 + ((Neff[i]-1)/b)^c)          \n");
   printf("                (Neff[i]: number of effective seqs in local MSA around column i) \n");
-  printf("                3: constant diversity pseudocounts                               \n");
   printf(" -pca  [0,1]    overall pseudocount admixture (def=%-.1f)                        \n",par.pca);
   printf(" -pcb  [1,inf[  Neff threshold value for -pcm 2 (def=%-.1f)                      \n",par.pcb);
   printf(" -pcc  [0,3]    extinction exponent c for -pcm 2 (def=%-.1f)                     \n",par.pcc);
@@ -374,7 +373,8 @@ void help(char all=0)
   printf(" -pre_pca [0,1]   PREFILTER pseudocount admixture (def=%-.1f)                    \n",par.pre_pca);
   printf(" -pre_pcb [1,inf[ PREFILTER threshold for Neff (def=%-.1f)                       \n",par.pre_pcb);
   printf("\n");
-  printf("Use context-specific pseudo-counts (instead of substitution matrix pcs):          \n");
+  printf("Context-specific pseudo-counts:                                                  \n");
+  printf(" -nocontxt      use substitution-matrix instead of context-specific pseudocounts \n");
   printf(" -contxt <file> context file for computing context-specific pseudocounts (default=%s)\n",par.clusterfile);
   printf(" -cslib  <file> column state file for fast database prefiltering (default=%s)\n",par.cs_library);
   printf("\n");
@@ -639,6 +639,7 @@ void ProcessArguments(int argc, char** argv)
       else if (!strncmp(argv[i],"-cpu",4) && (i<argc-1)) { threads=atoi(argv[++i]); cpu = threads;}
       else if (!strcmp(argv[i],"-maxmem") && (i<argc-1)) {par.maxmem=atof(argv[++i]);}
       else if (!strncmp(argv[i],"-premerge",9) && (i<argc-1)) par.premerge=atoi(argv[++i]);
+      else if (!strcmp(argv[i],"-nocontxt")) par.nocontxt=1;
       else if (!strcmp(argv[i],"-csb") && (i<argc-1)) par.csb=atof(argv[++i]);
       else if (!strcmp(argv[i],"-csw") && (i<argc-1)) par.csw=atof(argv[++i]);
       else cerr<<endl<<"WARNING: Ignoring unknown option "<<argv[i]<<" ...\n";
@@ -1538,7 +1539,8 @@ void perform_realign(char *dbfiles[], int ndb)
 
 	  if (par.notags) q->NeutralizeTags();
 	  
-	  if (!*par.clusterfile) { //compute context-specific pseudocounts?
+	  // Compute substitution matrix pseudocounts?
+	  if (par.nocontxt) { 
 	    // Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
 	    q->PreparePseudocounts();
 	    // Add amino acid pseudocounts to query: p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
@@ -1888,10 +1890,13 @@ int main(int argc, char **argv)
     {help(); cerr<<endl<<"Error in "<<program_name<<": database missing (see -d)\n"; exit(4);}
   if (par.addss==1 && (!*par.psipred || !*par.psipred_data))
     {help(); cerr<<endl<<"Error in "<<program_name<<": missing PSIPRED directory (see -psipred and -psipred_data).\nIf you don't need the predicted secondary structure, don't use the -addss option!\n"; exit(4);}
-  if (!strcmp(par.clusterfile,""))
-    {help(); cerr<<endl<<"Error in "<<program_name<<": context-specific library missing (see -contxt)\n"; exit(4);}
-  if (!strcmp(par.cs_library,""))
-    {help(); cerr<<endl<<"Error in "<<program_name<<": column state library (see -cslib)\n"; exit(4);}
+  if (!par.nocontxt)
+    {
+      if (!strcmp(par.clusterfile,""))
+	{help(); cerr<<endl<<"Error in "<<program_name<<": context-specific library missing (see -contxt)\n"; exit(4);}
+      if (!strcmp(par.cs_library,""))
+	{help(); cerr<<endl<<"Error in "<<program_name<<": column state library (see -cslib)\n"; exit(4);}
+    }
   if (par.loc==0 && num_rounds>=2 && v>=1) cerr<<"WARNING: using -global alignment for iterative searches is deprecated since non-homologous sequence segments can easily enter the MSA and corrupt it.\n";
   if (num_rounds < 1) num_rounds=1; 
   else if (num_rounds > 8) 
@@ -2026,7 +2031,7 @@ int main(int argc, char **argv)
   if (par.ssm) SetSecStrucSubstitutionMatrix();
 
   // Prepare context state pseudocounts lib
-  if (*par.clusterfile) {
+  if (!par.nocontxt) {
     fin = fopen(par.clusterfile, "r");
     if (!fin) OpenFileError(par.clusterfile);
     context_lib = new cs::ContextLibrary<cs::AA>(fin);
@@ -2146,7 +2151,8 @@ int main(int argc, char **argv)
 	// Transform transition freqs to lin space if not already done
 	q->AddTransitionPseudocounts();
 	
-	if (!*par.clusterfile) { //compute context-specific pseudocounts?
+	// Comput substitution matrix pseudocounts
+	if (par.nocontxt) { 
 	  // Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
 	  q->PreparePseudocounts();
 	  // Add amino acid pseudocounts to query: p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
@@ -2541,7 +2547,8 @@ int main(int argc, char **argv)
       delete[](dbnames);
     }
 
-  if (*par.clusterfile) {
+  // Comput substitution matrix pseudocounts
+  if (!par.nocontxt) { 
     delete context_lib;
     delete lib_pc;
   }

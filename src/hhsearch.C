@@ -297,7 +297,8 @@ void help(char all=0)
   // printf(" -pcw  [0,3]    weight of pos-specificity for pcs  (def=%-.1f)                   \n",par.pcw);
   }
   printf("\n");
-  printf("Use context-specific pseudo-counts (instead of substitution matrix pcs):          \n");
+  printf("Context-specific pseudo-counts:                                                  \n");
+  printf(" -nocontxt      use substitution-matrix instead of context-specific pseudocounts \n");
   printf(" -contxt <file> context file for computing context-specific pseudocounts (default=%s)\n",par.clusterfile);
   printf(" -cslib  <file> column state file for fast database prefiltering (default=%s)\n",par.cs_library);
   if (all) {
@@ -414,13 +415,6 @@ void ProcessArguments(int argc, char** argv)
             {help() ; cerr<<endl<<"Error in "<<program_name<<": no output file following -Opsi\n"; exit(4);}
           else strcpy(par.psifile,argv[i]);
         }
-      else if (!strcmp(argv[i],"-opt"))
-        {
-          par.opt=1;
-          if (++i>=argc || argv[i][0]=='-')
-            {help() ; cerr<<endl<<"Error in "<<program_name<<": no file following -opt\n"; exit(4);}
-          else strcpy(par.buffer,argv[i]);
-        }
       else if (!strcmp(argv[i],"-scores"))
         {
           if (++i>=argc || argv[i][0]=='-')
@@ -536,6 +530,7 @@ void ProcessArguments(int argc, char** argv)
       else if (!strncmp(argv[i],"-idummy",7) && (i<argc-1)) par.idummy=atoi(argv[++i]);
       else if (!strncmp(argv[i],"-premerge",9) && (i<argc-1)) par.premerge=atoi(argv[++i]);
       else if (!strncmp(argv[i],"-fdummy",7) && (i<argc-1)) par.fdummy=atof(argv[++i]);
+      else if (!strcmp(argv[i],"-nocontxt")) par.nocontxt=1;
       else if (!strcmp(argv[i],"-csb") && (i<argc-1)) par.csb=atof(argv[++i]);
       else if (!strcmp(argv[i],"-csw") && (i<argc-1)) par.csw=atof(argv[++i]);
       else if (!strcmp(argv[i],"-contxt") || !strcmp(argv[i],"-cs"))
@@ -810,7 +805,8 @@ void perform_realign(char *dbfiles[], int ndb)
 	  // Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
 	  Qali.FrequenciesAndTransitions(q);
 	  
-	  if (!*par.clusterfile) { //compute context-specific pseudocounts?
+	  // Comput substitution matrix pseudocounts
+	  if (par.nocontxt) { 
 	    // Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
 	    q->PreparePseudocounts();
 	    // Add amino acid pseudocounts to query: p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
@@ -1178,7 +1174,7 @@ int main(int argc, char **argv)
     }
 
   // Prepare CS pseudocounts lib
-  if (*par.clusterfile) {
+  if (!par.nocontxt) { 
     FILE* fin = fopen(par.clusterfile, "r");
     if (!fin) OpenFileError(par.clusterfile);
     context_lib = new cs::ContextLibrary<cs::AA>(fin);
@@ -1586,7 +1582,7 @@ int main(int argc, char **argv)
     hitlist.GetPvalsFromCalibration(q);
 
   // Optimization mode?
-  if (par.opt) {hitlist.Optimize(q,par.buffer);}
+  if (par.opt) hitlist.Optimize(q);
 
   // Set new ss weight for realign
   par.ssw = par.ssw_realign;
@@ -1767,7 +1763,7 @@ int main(int argc, char **argv)
     delete[] argv_conf[n];
   delete doubled;
 
-  if (*par.clusterfile) {
+  if (!par.nocontxt) { 
     delete context_lib;
     delete lib_pc;
   }

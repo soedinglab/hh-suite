@@ -209,6 +209,7 @@ void ProcessArguments(int argc,char** argv)
       else if (!strcmp(argv[i],"-gapi") && (i<argc-1)) par.gapi=atof(argv[++i]); 
       else if (!strcmp(argv[i],"-def")) par.readdefaultsfile=1; 
       else if (!strcmp(argv[i],"-addss")) par.addss=1; 
+      else if (!strcmp(argv[i],"-nocontxt")) par.nocontxt=1;
       else if (!strcmp(argv[i],"-csb") && (i<argc-1)) par.csb=atof(argv[++i]);
       else if (!strcmp(argv[i],"-csw") && (i<argc-1)) par.csw=atof(argv[++i]);
       else if (!strcmp(argv[i],"-cs"))
@@ -288,7 +289,7 @@ int main(int argc, char **argv)
     }
 
   // Prepare CS pseudocounts lib
-  if (*par.clusterfile) {
+  if (!par.nocontxt) {
     FILE* fin = fopen(par.clusterfile, "r");
     context_lib = new cs::ContextLibrary<cs::AA>(fin);
     fclose(fin);

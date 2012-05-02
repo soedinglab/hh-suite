@@ -888,7 +888,7 @@ void stripe_query_profile()
   int a,h,i,j,k;
 
   // Add Pseudocounts
-  if (!*par.clusterfile) {
+  if (par.nocontxt) {
     // Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
     q_tmp->PreparePseudocounts();
     // Add amino acid pseudocounts to query: p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
