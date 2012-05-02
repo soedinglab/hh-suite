@@ -47,6 +47,8 @@ Compilation produces by default static binaries. If you encounter missing
 library errors, also make sure you have the static versions installed, e.g.
 glibc-static, zlib-static and libpng-static. Package names and whether they are
 automatically installed or varies with distribution.
+On RHEL/Fedora/SL/CentOS etc. eg.:
+$ yum install glibc-static libpng-static zlib-static
 
 A dynamically linked version of the programs can be compiled with:
 
