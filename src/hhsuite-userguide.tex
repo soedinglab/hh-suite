@@ -402,12 +402,12 @@ hhmakemodel.pl Generate MSAs or coarse 3D models from HHsearch or HHblits result
 hhblitsdb.pl   Build HH-suite database with prefiltering, packed MSA/HMM, and index files
 multithread.pl Run a command for many files in parallel using multiple threads
 splitfasta.pl  Split a multiple-sequence FASTA file into multiple single-sequence files
+renumberpdb.pl Generate PDB file with indices renumbered to match input sequence indices
 Align.pm       Utility package for local and global sequence-sequence alignment
 HHPaths.pm     Configuration file with paths to the PDB, BLAST, PSIPRED etc.
 \end{verbatim} 
 \normalsize
 % To be included with HH-suite 2.1.0
-%renumberpdb.pl Generate PDB file with indices renumbered to match input sequence indices
 %mergeali.pl    Merge MSAs in A3M format according to an MSA of their seed sequences
 %pdb2fasta.pl   Generate FASTA sequence file from SEQRES records of globbed pdb files
 %pdbfilter.pl   Generate representative set of PDB/SCOP sequences from pdb2fasta.pl output
@@ -1897,6 +1897,41 @@ Example 5: using glob expression to specify several input databases
   -v {0,1,2}  verbose mode (default = 1)
 
  Example: multithread.pl '*.a3m' 'hhmake -i $file 1>$name.log 2>>error.log' -cpu 16
+\end{verbatim} 
+\normalsize
+
+\subsection{{\tt splitfasta.pl} -- Split multi-sequence FASTA file into single-sequence files}
+\small 
+\begin{verbatim}
+Write files into current directory and name each file by the first word after ">" in the name line. 
+
+Usage: splitfasta.pl infile [option]
+Option:
+-fam       : use family-based name (for SCOP/ASTRAL sequences
+-name      : use sequence name as file name (default)
+-ext <ext> : extension for sequence files (default=seq)
+\end{verbatim} 
+\normalsize
+
+\subsection{{\tt renumberpdb.pl} -- Renumber indices in PDB file to match input sequence indices}
+
+\small 
+\begin{verbatim}
+ The program reads an input sequence in FASTA/A3M which must have a SCOP domain, PDB chain, or DALI 
+ domain identifier (e.g. d1hz4a_, 1hz4_A, or 1hz4A_1). It reads the corresponding PDB file from the 
+ given pdb directory and  generates a new PDB file by aligning the input sequence to the sequence 
+ extracted from the ATOM records of the corresponding pdb chain and renumbering the residues in 
+ columns 23-26 according to the position in the input sequence.
+ (HETATM records for MSE (selenomethionine) will be interpreted as ATOM records for MET in the 
+ alignment. MSE will be changed to MET in the output file.)
+ 
+ Usage:   renumberpdb.pl [options] infile [outfile] 
+ Example: renumberpdb.pl d1hz4a_.a3m /cluster/tmp/d1hz4a_.pdb 
+
+ Options: 
+   -o <file>    output file (default: <infile_wo_extension>.pdb
+   -d <pdbdir>  give directory of pdb files (default=/cluster/databases/pdb/all)
+   -a [A|B]     filter alternative location identifier (e.g. A or B)
 \end{verbatim} 
 \normalsize
 

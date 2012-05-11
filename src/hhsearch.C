@@ -190,20 +190,22 @@ void help(char all=0)
   printf("%s",HHSEARCH_REFERENCE);
   printf("\n");
   printf("Usage: %s -i query -d database [options]                       \n",program_name);
-  printf(" -i <file>      input query alignment (A2M, A3M, FASTA) or HMM\n");
-  printf(" -d <file>      HMM database of concatenated HMMs in hhm, HMMER, or A3M format,\n");
+  printf(" -i <file>      input/query multiple sequence alignment (a2m, a3m, FASTA) or HMM\n");
+  printf(" -d <file>      HMM database of concatenated HMMs in hhm, HMMER, or a3m format,\n");
   printf("                OR, if file has extension pal, list of HMM file names, one per\n");
   printf("                line. Multiple dbs, HMMs, or pal files with -d '<db1> <db2>...'\n");
+  if (all) {
   printf("\n");
-
-
+  printf("<file> may be 'stdin' or 'stdout' throughout.\n");
+  }
+  printf("\n");
   printf("Output options:                                                              \n");
   printf(" -o <file>      write results in standard format to file (default=<infile.hhr>)\n");
   if (all) {
   printf(" -Ofas <file>   write pairwise alignments of significant matches in FASTA format\n");
-  printf(" -ofas <file>   write multiple alignment of significant matches in FASTA format\n");
-  printf("                Analogous for output in a2m, a3m, hhm format (e.g. -ohhm, -Oa3m)\n");
-  printf("                You may use 'stdin' and 'stdout' instead of file names\n");
+  printf("                Analogous for output in a3m, a2m, and psi format (e.g. -Oa3m)\n");
+  printf(" -oa3m <file>   write MSA of significant matches in a3m format\n");
+  printf("                Analogous for output in a2m, psi, and hhm format (e.g. -ohhm)\n");
   printf(" -e [0,1]       E-value cutoff for inclusion in multiple alignment (def=%G)    \n",par.e);
   printf(" -seq <int>     max. number of query/template sequences displayed (def=%i) \n",par.nseqdis);
   printf("                Beware of overflows! All these sequences are stored in memory.\n");

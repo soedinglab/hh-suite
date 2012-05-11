@@ -200,6 +200,7 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline)
   char* cur_name;         // Sequence currently read in
   int linenr=0;           // current line number in input file
   char skip_sequence=0;
+  char no_name[] = "no_name_1234567890";
   RemoveExtension(file,infile);  //copy rootname (w/o path) of infile into file variable of class object
 
   kss_dssp=ksa_dssp=kss_pred=kss_conf=kfirst=-1;
@@ -227,7 +228,7 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline)
                 cerr<<endl<<"WARNING: maximum number "<<MAXSEQ<<" of sequences exceeded in file "<<infile<<"\n";
               break;
             }
-          cur_name=line+1;          //beginning of current sequence name
+
           if (k>=0) //if this is at least the second name line
             {
               if (strlen(cur_seq)<=1)  // 1, because the sequence in cur_seq starts at position 1 => no residues = length 1 
@@ -247,13 +248,21 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline)
             }
           skip_sequence=0;
 
+	  // Set name of new sequence
           ++k;
+          cur_name = strscn(line+1);   // go to beginning of current sequence name (skip white space)
+	  if (!cur_name) // if no name is given, name sequence >no_name_123
+	    { 
+	      cur_name = no_name;
+	      sprintf(cur_name,"no_name_%i",k);
+	    } 
+          else if (cur_name[0]=='@') cur_name = strscn(cur_name+1);  //skip @-character in name
+
           l=1; //position in current sequence (first=1)
 	  cur_seq[l]='\0'; // avoids taking wrong sequence in case the input alignment is corrupted (two header lines with no sequence line between)
 
           // display[k]= 0: do not show in Q-T alignments  1: show if not filtered out later     2: show in any case    (do not filter out)
           // keep[k]   = 0: do not include in profile      1: include if not filtered out later  2: include in any case (do not filter out)
-          if (line[1]=='@') cur_name++;   //skip @-character in name
           if (!strncmp(line,">ss_dssp",8)) {
             if (kss_dssp<0) {display[k]=2; n_display++; keep[k]=0; kss_dssp=k; N_ss++;} else {skip_sequence=1; k--; continue;}
           }

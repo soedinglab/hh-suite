@@ -280,7 +280,12 @@ void help(char all=0)
   printf("%s",COPYRIGHT);
   printf("\n");
   printf("Usage: %s -i query [options] \n",program_name);
-  printf(" -i <file>      input query (single FASTA-sequence, A3M- or FASTA-alignment, HMM-file)\n");
+  printf(" -i <file>      input/query: single sequence or multiple sequence alignment (MSA)\n");
+  printf("                in a3m, a2m, or FASTA format, or HMM in hhm format\n");
+  if (all) {
+  printf("\n");
+  printf("<file> may be 'stdin' or 'stdout' throughout.\n");
+  }
   printf("\n");
   printf("Options:                                                                       \n");
   printf(" -d <name>      database name (e.g. uniprot20_29Feb2012) (default=%s)          \n",db_base);
@@ -295,17 +300,19 @@ void help(char all=0)
   printf("\n");
   printf("Output options: \n");
   printf(" -o <file>      write results in standard format to file (default=<infile.hhr>)\n");
-  printf(" -oa3m <file>   write multiple alignment of significant matches in a3m format\n");
+  printf(" -oa3m <file>   write MSA of significant matches in a3m format\n");
   if (!all) {
-  printf("                Analogous for a2m, fas, psi, hhm format (e.g. -ohhm)\n");
+  printf("                Analogous for output in a2m, psi, and hhm format (e.g. -ohhm)\n");
   }
   if (all) {
-  printf(" -opsi <file>   write MSA of significant matches in PSI format\n");
+  printf(" -opsi <file>   write MSA of significant matches in PSI-BLAST format\n");
+  printf(" -oa2m <file>   write MSA of significant matches in a2m format\n");
   printf(" -ohhm <file>   write HHM file for MSA of significant matches\n");
   }
   printf(" -oalis <name>  write MSAs in A3M format after each iteration\n");
   if (all) {
   printf(" -Ofas <file>   write pairwise alignments of significant matches in FASTA format\n");
+  printf("                Analogous for output in a3m, a2m, and psi format (e.g. -Oa3m)\n");
   printf(" -qhhm <file>   write query input HHM file of last iteration (default=off)      \n");
   printf(" -seq <int>     max. number of query/template sequences displayed (default=%i)  \n",par.nseqdis);
   printf(" -aliw <int>    number of columns per line in alignment list (default=%i)       \n",par.aliwidth);
@@ -1350,7 +1357,10 @@ void perform_realign(char *dbfiles[], int ndb)
   v1=v;
   if (v>0 && v<=3) v=1; else v-=2;  // Supress verbose output during iterative realignment and realignment
 
-  // Align the first par.premerge templates?
+
+  //////////////////////////////////////////////////////////////////////////////////
+  // start premerge:
+  // Align the first par.premerge templates
   if (par.premerge>0)
     {
       if (v>=2) printf("Merging %i best hits to query alignment ...\n",par.premerge);
@@ -1452,7 +1462,6 @@ void perform_realign(char *dbfiles[], int ndb)
 	    }
 
 	  if (v>=2) fprintf(stderr,"Realigning with %s ***** \n",t[bin]->name);
-
 	  ///////////////////////////////////////////////////
 	  
 	  N_aligned++;
@@ -1561,6 +1570,8 @@ void perform_realign(char *dbfiles[], int ndb)
     }
   
   if (print_elapsed) ElapsedTimeSinceLastCall("(premerge)");
+  // end premerge
+  //////////////////////////////////////////////////////////////////////////////////
 
 #ifdef PTHREAD
   // Start threads for realignment

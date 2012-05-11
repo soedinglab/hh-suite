@@ -141,9 +141,12 @@ foreach $file (@files) {
 	die("\nError: fork returned undefined PID: $!\n");
     }
 }
-wait;
+
+# Wait for all children to finish
+while (wait() != -1) {}
+
 if ($v>=1) {print ("\nAll processes should be finished now\n");}
-if ($numerr>0) {print(STDERR "WARNING: $numerr commands returned with error code >0\n");}
+if ($numerr>0) {print(STDERR "WARNING: $numerr commands returned with error code.\n");}
 exit(0);
 
 
@@ -163,7 +166,7 @@ sub KillAllProcesses()
 }
 
 ################################################################################################
-### System command with return value parsed from output
+### System command
 ################################################################################################
 sub System {
     if ($v>=2) {print("\n");} 
@@ -171,5 +174,6 @@ sub System {
     if (system($_[0])) {
 # Why is always -1 returned???
 #       print(STDERR "\nERROR: command '$command' returned error code $?\n");
+#       $numerr++;
     };
 }
