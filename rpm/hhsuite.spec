@@ -34,6 +34,7 @@ make install INSTALL_DIR="$RPM_BUILD_ROOT/usr"
 /usr/bin/ffindex_build
 /usr/bin/ffindex_get
 /usr/bin/ffindex_modify
+/usr/bin/ffindex_from_fasta
 /usr/include/ffindex.h
 /usr/include/ffutil.h
 /usr/lib/hh/bin/cstranslate
