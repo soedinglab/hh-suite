@@ -6,7 +6,7 @@ soeding@genzentrum.lmu.de
 
 _______________________________________________________________________________
 
-HH-suite 2.0.14  February 2012
+HH-suite 2.0.14  May 2012
 
 * All error messages are now written to stderr (not stdout) and are of the form
   "Error in <program_name>: <error description>"
