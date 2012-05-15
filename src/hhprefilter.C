@@ -813,7 +813,7 @@ void init_prefilter()
   if (par.dbsize == 0 || LDB == 0)
     {cerr<<endl<<"Error! Could not determine DB-size of prefilter db ("<<db<<")\n"; exit(4);}
 	    
-  if (v>=2) cout<<"Reading in "<<par.dbsize<<" column state sequences with a total length of "<<LDB<<" residues"<<endl;
+  if (v>=2) cout<<"Reading in "<<par.dbsize<<" column state sequences with a total of "<<LDB<<" residues"<<endl;
 
   X = (unsigned char*)memalign(16,LDB*sizeof(unsigned char));                     // database string (concatenate all DB-seqs)
   first = (unsigned char**)memalign(16,(par.dbsize+2)*sizeof(unsigned char*));    // first characters of db sequences. Was (par.dbsize*2). Why??

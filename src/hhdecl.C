@@ -119,8 +119,8 @@ public:
   int aliwidth;           // number of characters per line in output alignments for HMM search
   char append;            // append to output file? (hhmake)
   float p;                // minimum probability for inclusion in hit list and alignments
-  float E;                // maximum E-value for inclusion in hit list and alignment list
-  float e;                // maximum E-value for inclusion in output alignment, output HMM, and PSI-BLAST checkpoint model
+  double E;               // maximum E-value for inclusion in hit list and alignment list
+  double e;               // maximum E-value for inclusion in output alignment, output HMM, and PSI-BLAST checkpoint model
   int Z;                  // max number of lines in hit list
   int z;                  // min number of lines in hit list
   int B;                  // max number of lines in alignment list

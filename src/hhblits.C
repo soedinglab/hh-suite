@@ -2390,7 +2390,7 @@ int main(int argc, char **argv)
       }
     
     if (v>=2)
-      printf("%i sequences belonging to %i database HMMs found with an E-value < %-6.4g\n",seqs_found,cluster_found, par.e);
+      printf("%i sequences belonging to %i database HMMs found with an E-value < %-12.4g\n",seqs_found,cluster_found, par.e);
 
     if (v>=2 && (round < num_rounds || *par.alnfile || *par.psifile || *par.hhmfile || *alis_basename))
       printf("Number of effective sequences of resulting query HMM: Neff = %4.2f\n", q->Neff_HMM);

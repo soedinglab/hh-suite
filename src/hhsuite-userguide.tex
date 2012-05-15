@@ -551,11 +551,13 @@ $ splitfasta.pl <dbseqs.fas>
 Now, to build an MSA with HHblits for each sequence \verb`dbs/scop70_1.75/*.seq`, run\\[-1mm]
 
 \verb`$ multithread.pl 'dbs/scop70_1.75/*.seq' `\\
-\verb`                       'hhblits -i $file -d databases/uniprot20 -oa3m $name.a3m'`\\[-1mm]
+\verb`                  'hhblits -i $file -d databases/uniprot20 -oa3m $name.a3m -n 2'`\\[-1mm]
 
 The first argument is the file globbing expression (protected from the shell by quotes), which selects the files with which to run the command. The command is given as second argument within quotes. In this command, the string \verb`$file` is replaced by the actual, globbed file. You might also want to pipe the stdout and stderr streams of the command into a log-file:\\
-\verb`'hhblits -i $file -d databases/uniprot20 1> stdout.log 2>stderr.log'`. 
-The MSAs are written to the file \verb`$name.a3m`. Here, \verb`$name` stands for the globbed file name without its extension. The number of threads to launch can be specified with option \verb`-cpu <int>` (default value is 8). To be sure that everything went smoothly, check that the number of \verb`*.a3m` files is the same as the number of \verb`*.seq` files, and browse the file \verb`'stderr.log'` for error messages. The number of HHblits search iterations and the HMM inclusion E-value threshold for hhblits can be changed from their default values (2 and 0.01, respectively) using the \verb`'-n <int>'` and \verb`'-e <float>'` options.
+{\small \verb`'hhblits -i $file -d databases/uniprot20 -oa3m $name.a3m -n 2 1> stdout.log 2>stderr.log'`}. 
+The MSAs are written to the file \verb`$name.a3m`. Here, \verb`$name` stands for the globbed file name without its extension. The number of threads to launch can be specified with option \verb`-cpu <int>` (default value is 8). To be sure that everything went smoothly, check that the number of \verb`*.a3m` files is the same as the number of \verb`*.seq` files, and browse the file \verb`'stderr.log'` for error messages. 
+
+The number of HHblits search iterations and the HMM inclusion E-value threshold for hhblits can be changed from their default values (2 and 0.01, respectively) using the \verb`'-n <int>'` and \verb`'-e <float>'` options. A higher number of iterations such as  \verb`'-n 3'` will result in very high sensitivity to discover remotely homologous relationships, but the ranking among homologous proteins will often not reflect their degree of relationship to the query. The reason is that any similarities that are higher than the similarities among the sequences in the query and database MSAs cannot be resolved. 
 
 Now, add PSIPRED-predicted secondary structure to all MSAs:
 \begin{verbatim}
@@ -701,7 +703,7 @@ version is clearly better. It is also more robust. If you expect to find globall
 alignable sequence homologs, the second option might be preferable. In that case, 
 it is recommended to run both versions and compare the results. 
 
-\subsection{How is the MSA diversity NEFF (the number of effective sequences) calculated?}
+\subsection{How is the MSA diversity Neff calculated?}
 The number of effective sequences of the full alignment, which appears as NEFF in the header of each hhm file, is the average of local values \verb`Neff_M(i)` over all alignment positions $i$. The values \verb`Neff_M(i)` are given in the main model section of the hhm model files (subsection \ref{hmmformat}). They quantify the \emph{local} diversity of the alignment in a region around position $i$. More precisely, \verb`Neff_M(i)` measures the diversity of subalignment $Ali_M(i)$ that contains all sequences that have a residue at column $i$ of the full alignment. The subalignment contains all columns for which at least 90\% of these sequences have no end gap. End gaps are gaps to the left of the first residue or to the right of the last residue. The latter condition ensures that the sequences in the subalignment $Ali_M(i)$ cover most of the columns in it. The number of effective sequences in the subalignment $Ali_M(i)$ is exp of the average sequence entropy over all columns of the subalignment. Hence, \verb`Neff_M` is bounded by 0 from below and 20 from above. In practice, it is bounded by the entropy of a column with background amino acid distribution $f_a$: $N_{eff} < \sum_{a=1}^{20} f_a \log f_a \approx 16$. Similarly, \verb`Neff_I(i)` gives the diversity of the subalignment $Ali_I(i)$ of all sequences that have an insert at position $i$, and \verb`Neff_D(i)` refers to the diversity of subaligment $Ali_D(i)$ of all sequences that have a Delete (a gap) at position $i$ of the full alignment. 
 
 
@@ -719,14 +721,17 @@ You may write the extracted file to a separate file by appending \verb`'> d1aa7a
 {\bf Do HHsearch and HHblits work fine with multi-domain sequences?}
 HHblits and HHsearch have been designed to work with multi-domain queries. However, the chances for false positives entering the query alginment during the HHblits iterations is greater for multi-domain proteins. For long sequences, it may therefore be of advantage to first search the PDB or the SCOP domain database and then to cut the query sequence into smaller parts on the basis of the identified structural domains. Pfam or CDD are - in our opinion - not suitable to determine domain boundaries.
 
-{\bf Don't I need to calibrate my query or database HMMs anymore?}
-No. If you don't specify otherwise, the two parameters of the extreme-value distribution for the query are estimated by a neural network from the lengths and diversities ($N_\mathrm{eff}$)) of query and database HMMs that was trained on a large set of example queries-template pairs, in an approach simlar to the one used in \cite{Sadreyev:2008}. However, the old calibration is still available as an option in HHsearch.
-
 {\bf How can I build my own UniProt database for HHblits?}
 The procedure to cluster the nr or UniProt databases is more complicated than building a database for a genome or for the sequences in the pdb. As its first step it involves clustering these huge databases down to 20\%-30\% sequence identity. The clustering is done in our lab using a new method, kClust (Hauser M, Mayer CE, and Soeding J., to be published), available und GPL at \url{ftp://ftp://toolkit.lmb.uni-muenchen.de/kClust/}. We will add all scripts to build these HH-suite databases to the HH-suite in due time. These scripts generate A3M files, HHM files, and consensus sequences. Because of the large number of files to generate, these scripts need to be run on a computer cluster and this will require considerable computer savvyness. 
 
 {\bf Will you offer an HH-suite database that includes environmental sequences?}
 We have not seen significant improvements in remote homology detection through inclusion of environmental sequences. A problem with these sequences is their low quality, in particular chimeric sequences from wrong assemblies. This can lead to corrupted profiles in iterative searches. We therefore have no immediate plans to provide a UniProt+env or nr+env for hhblits. If you think you really need the env sequences, you have to use our old \verb`buildali.pl` script or PSI-BLAST for the time being. An alternative is to use kClust to cluster the database yourself. See the previous question.
+
+{\bf How do I best build HMMs for integral membrane proteins?}
+Despite the biased amino acid composition in their integral membrane helices, membrane proteins behave very well in HMM-HMM comparisons. In many benchmark tests and evolutionary studies we have not noticed any higher rates of false positives than with cytosolic proteins. 
+
+{\bf Don't I need to calibrate my query or database HMMs anymore?}
+No. If you don't specify otherwise, the two parameters of the extreme-value distribution for the query are estimated by a neural network from the lengths and diversities ($N_\mathrm{eff}$)) of query and database HMMs that was trained on a large set of example queries-template pairs, in an approach simlar to the one used in \cite{Sadreyev:2008}. However, the old calibration is still available as an option in HHsearch.
 
 {\bf Why do I sometimes get the same database hit twice with different probabilities? Is this a bug?} Each line in the summary hit list refers to an alignment with an HMM in the database, not to the database HMM itself. Sometimes, alternative (suboptimal) alignments covering a different part of either the query or the database HMM may appear in the hit list. Usually, both the optimal and the alternative alignments are correct, in particular when the query or the database HMMs represent repeat proteins. 
 
