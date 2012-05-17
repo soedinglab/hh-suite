@@ -1876,15 +1876,15 @@ int main(int argc, char **argv)
   par.Ndiff = 1000;
   par.prefilter=true;
   par.early_stopping_filter=true;
+  early_stopping = new Early_Stopping;
   early_stopping->length = 200;
   early_stopping->thresh = 0.01;
-  early_stopping->evals = new double[early_stopping->length];
   strcpy(par.outfile,"");
   strcpy(db_ext,"hhm");
   N_searched=0;
   previous_hits = new Hash<Hit>(1631,hit_cur);
   premerged_hits = new Hash<char>(1631);
-  
+ 
   // Make command line input globally available
   par.argv=argv;
   par.argc=argc;
@@ -1982,7 +1982,7 @@ int main(int argc, char **argv)
   dbfiles_new = new char*[par.maxnumdb_no_prefilter+1];
   dbfiles_old = new char*[par.maxnumdb+1];
 
-  early_stopping = new Early_Stopping;
+  early_stopping->evals = new double[early_stopping->length];
 
   // Prepare index-based databases
   char filename[NAMELEN];
@@ -2277,17 +2277,12 @@ int main(int argc, char **argv)
 		ss_tmp << hit_cur.name << "__" << hit_cur.irep;
 		if (previous_hits->Contains((char*)ss_tmp.str().c_str())) continue;  // Already in alignment
 
-		// Update counts
-		cluster_found++;
-		if (!strncmp(hit_cur.name,"cl|",3) || !strncmp(hit_cur.name,"UP20|",5) || !strncmp(hit_cur.name,"NR20|",5))   // kClust formatted database (NR20, ...)
-		  {
-		    char *ptr = hit_cur.name;
-		    seqs_found += strint(ptr);
-		  }
-		else
-		  seqs_found++;
+		// Add number of sequences in this cluster to total found
+		seqs_found += SequencesInCluster(hit_cur.name); // read number after second '|'
+		cluster_found++;		
+		printf("1 clusters_found=%4i  seqs_found=%4i  name=%s\n",cluster_found,seqs_found,hit_cur.name);
 
-		// Skip mering this hit if hit alignment was already merged during premerging
+		// Skip merging this hit if hit alignment was already merged during premerging
 		if (premerged_hits->Contains((char*)ss_tmp.str().c_str())) continue;
 
 		// Read a3m alignment of hit from <file>.a3m file and merge into Qali alignment
@@ -2386,16 +2381,9 @@ int main(int argc, char **argv)
 	    ss_tmp << hit_cur.name << "__" << hit_cur.irep;
 	    if (previous_hits->Contains((char*)ss_tmp.str().c_str())) continue;  // Already in alignment
 
-	    // Update counts
-	    cluster_found++;
-	    if (!strncmp(hit_cur.name,"cl|",3) || !strncmp(hit_cur.name,"UP20|",5) || !strncmp(hit_cur.name,"NR20|",5))   // kClust formatted database (NR20, ...)
-	      {
-		char *ptr = hit_cur.name;
-		seqs_found += strint(ptr);
-	      }
-	    else
-	      seqs_found++;
-
+	    // Add number of sequences in this cluster to total found
+	    seqs_found += SequencesInCluster(hit_cur.name); // read number after second '|'
+	    cluster_found++;		
 	  }
       }
     

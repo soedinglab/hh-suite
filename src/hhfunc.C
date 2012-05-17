@@ -370,3 +370,23 @@ void WriteToAlifile(FILE* alitabf, Hit* hit)
 	}
       return;
    }
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+// Read number of sequences in annotation, after second '|'
+/////////////////////////////////////////////////////////////////////////////////////
+int SequencesInCluster(char* name)
+{
+  int num = 1;		
+  char *ptr = strchr(name,'|');
+  if (!strncmp(name,"cl|",3) || !strncmp(name,"UP20|",5) || !strncmp(name,"NR20|",5))   // kClust formatted database (NR20, ...)
+    {
+      if (*ptr=='|') ptr = strchr(ptr,'|');
+      if (*ptr=='|') 
+	{
+	  num = strint(ptr); 
+	  if (num<0) num = 1;
+	}  
+    }  
+  return num;
+}
