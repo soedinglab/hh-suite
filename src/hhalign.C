@@ -824,7 +824,7 @@ int main(int argc, char **argv)
   // Read input file (HMM, HHM, or alignment format), and add pseudocounts etc.
   char input_format=0;
   ReadQueryFile(par.infile,input_format,q,&qali); 
-  PrepareQueryHMM(par.infile,input_format,q,&qali);
+  PrepareQueryHMM(input_format,q);
 
   // Set query columns in His-tags etc to Null model distribution
   if (par.notags) q->NeutralizeTags();
@@ -1144,10 +1144,13 @@ int main(int argc, char **argv)
       fclose(qa3mf);
       
       // Align query with template in master-slave mode 
+      Alignment Tali;
       FILE* ta3mf=fopen(par.tfile,"r");
       if (!ta3mf) OpenFileError(par.tfile);
-      Qali.MergeMasterSlave(hit,par.tfile, ta3mf);
+      Tali.Read(ta3mf,par.tfile); // Read template alignment into Tali
       fclose(ta3mf);
+      Tali.Compress(par.tfile); // Filter database alignment
+      Qali.MergeMasterSlave(hit,Tali,par.tfile);
       
       // Write output A3M alignment?
       if (*par.alnfile) Qali.WriteToFile(par.alnfile,"a3m");

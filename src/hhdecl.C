@@ -84,6 +84,16 @@ EXTERN float S33[NSSPRED][MAXCF][NSSPRED][MAXCF];  // P[B][cf][B'][cf'] =  log2 
 // float S77[NDSSP][DSSP];                  // P[A][B]           =  log2 P(A,B)/P(A)/P(B)
 
 
+// Structure to store data for HHblits early stopping filter
+EXTERN struct Early_Stopping {
+  int length;       // Length of array of 1/evalues
+  int counter;      // counter for evalue array
+  double* evals;    // array of last 1/evalues
+  double thresh;    // Threshold for early stopping
+  double sum;       // sum of evalues in array
+} *early_stopping=NULL;
+
+
 // cs object declarations
 cs::LibraryPseudocounts<cs::AA> *lib_pc;
 cs::ContextLibrary<cs::AA> *context_lib;
@@ -244,12 +254,6 @@ public:
   // HHblits prefilter
   bool prefilter;             // perform prefiltering in HHblits?
   bool early_stopping_filter; // Break HMM search, when the sum of the last N HMM-hit-Evalues is below threshold
-
-  double filter_thresh;    // Threshold for early stopping
-  int filter_length;       // Length of array of 1/evalues
-  double *filter_evals;    // array of last 1/evalues
-  double filter_sum;       // sum of evalues in array
-  int filter_counter;      // counter for evalue array
 
   Hash<int*>* block_shading;         // Cross out cells not covered by prefiltering hit in HHblits
   Hash<int>* block_shading_counter;  // Cross out cells not covered by prefiltering hit in HHblits
@@ -443,12 +447,6 @@ void Parameters::SetDefaults()
 
   prefilter = false;              //true in hhblits
   early_stopping_filter = false;  //true in hhblits
-
-  filter_thresh=0;                // 0.01 in hhblits
-  filter_length=200;
-  filter_evals=NULL;
-  filter_sum=0.0;
-  filter_counter=0;
 
   block_shading=NULL;
   block_shading_counter=NULL;

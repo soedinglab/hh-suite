@@ -145,9 +145,12 @@ struct Thread_args // data to hand to WorkerLoop thread
   void (*function)(int);  // pointer to function (=job) to execute by WorkerLoop once old job is done
 };
 
-
-
 #ifdef PTHREAD
+struct Thread_args thread_data[MAXTHREADS]; // store a threads thread_id and function to call (AlignByWorker, RealignByWorker)
+pthread_t pthread[MAXTHREADS]; // info on thread's structures (needed by system)
+pthread_attr_t joinable;       // attribute set for describing threads
+int rc;                        // return code for threading commands
+
 // With this condition variable the main thread signals to the worker threads that it has submitted a new job
 pthread_cond_t new_job = PTHREAD_COND_INITIALIZER;
 
@@ -159,12 +162,8 @@ pthread_mutex_t hitlist_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 // With this condition variable a worker thread signals to the main thread that it has finished a job
 pthread_cond_t finished_job = PTHREAD_COND_INITIALIZER;
-
-struct Thread_args thread_data[MAXTHREADS]; // store a threads thread_id and function to call (AlignByWorker, RealignByWorker)
-pthread_t pthread[MAXTHREADS]; // info on thread's structures (needed by system)
-pthread_attr_t joinable;       // attribute set for describing threads
-int rc;                        // return code for threading commands
 #endif
+
 
 ///////////////////////////////////////////////////////////////////////////////////////
 //// For multi-threading: return a bin with the desired status, return -1 if no such bin found
@@ -793,10 +792,13 @@ void perform_realign(char *dbfiles[], int ndb)
 	  // Read a3m alignment of hit and merge with Qali according to Q-T-alignment in hit[bin]
 	  strcpy(ta3mfile,hit[bin]->file); // copy filename including path but without extension
 	  strcat(ta3mfile,".a3m");
+	  Alignment Tali;
 	  FILE* ta3mf=fopen(ta3mfile,"r");
 	  if (!ta3mf) OpenFileError(ta3mfile);
-	  Qali.MergeMasterSlave(*hit[bin],ta3mfile, ta3mf);
+	  Tali.Read(ta3mf,ta3mfile); // Read template alignment into Tali
 	  fclose(ta3mf);
+	  Tali.Compress(ta3mfile); // Filter database alignment
+	  Qali.MergeMasterSlave(*hit[bin],Tali,ta3mfile);
 	  
 	  // Convert ASCII to int (0-20),throw out all insert states, record their number in I[k][i]
 	  Qali.Compress("merged A3M file");
@@ -1668,11 +1670,14 @@ int main(int argc, char **argv)
           // Read a3m alignment of hit from <file>.a3m file and merge into Qali alignment
           strcpy(ta3mfile,hit.file); // copy filename including path but without extension
           strcat(ta3mfile,".a3m");
-          FILE* ta3mf=fopen(ta3mfile,"r");
+ 	  Alignment Tali;
+	  FILE* ta3mf=fopen(ta3mfile,"r");
 	  if (!ta3mf) OpenFileError(ta3mfile);
-	  Qali.MergeMasterSlave(hit,ta3mfile, ta3mf);
+	  Tali.Read(ta3mf,ta3mfile); // Read template alignment into Tali
 	  fclose(ta3mf);
-          nhits++;
+	  Tali.Compress(ta3mfile); // Filter database alignment
+	  Qali.MergeMasterSlave(hit,Tali,ta3mfile);
+	  nhits++;
         }
 
       // Convert ASCII to int (0-20),throw out all insert states, record their number in I[k][i]

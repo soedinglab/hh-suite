@@ -1,5 +1,6 @@
 // hhworker.C
 
+
 ///////////////////////////////////////////////////////////////////////////////////////
 //// Do the pairwise comparison of q and t[bin] for the database search
 //////////////////////////////////////////////////////////////////////////////////////
@@ -59,13 +60,14 @@ void AlignByWorker(int bin)
 	  hit[bin]->Eval = exp(hit[bin]->logPval + log_dbsize + (alpha * log_Pcut)); 
 	  hit[bin]->logEval = hit[bin]->logPval + log_dbsize + (alpha * log_Pcut); 
 
-	  par.filter_sum -= par.filter_evals[par.filter_counter];
-	  par.filter_evals[par.filter_counter] = 1.0/(1.0+hit[bin]->Eval);
-	  par.filter_sum += par.filter_evals[par.filter_counter];
+	  // Rolling average: replace oldest data point at par.filter_counter by newest one
+	  early_stopping->sum -= early_stopping->evals[early_stopping->counter];
+	  early_stopping->evals[early_stopping->counter] = 1.0/(1.0+hit[bin]->Eval);
+	  early_stopping->sum += early_stopping->evals[early_stopping->counter];
 
 	  //printf("E-val: %4.2g   1/(1+Eval): %4.2g  => new sum: %16.2f\n",hit[bin]->Eval,par.filter_evals[par.filter_counter],par.filter_sum);
-	  par.filter_counter++;
-	  if (par.filter_counter==par.filter_length) {par.filter_counter=0;}
+	  early_stopping->counter++;
+	  if (early_stopping->counter==early_stopping->length) early_stopping->counter=0;
 	}
 #ifdef PTHREAD
       pthread_mutex_unlock(&hitlist_mutex); // unlock access to hitlist

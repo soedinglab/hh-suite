@@ -853,7 +853,7 @@ void Alignment::Compress(const char infile[])
 	{
 	  fprintf(stderr,"Merged MSA:\n");
 	  for (k=0; k<=unequal_lengths; ++k)
-	    fprintf(stderr,"#%3i\n>%s\n%s\n",k,sname[k],seq[k]);
+	    fprintf(stderr,"%3i\n>%s\n%s\n",k,sname[k],seq[k]);
 	}
       exit(1);
     }
@@ -2412,9 +2412,8 @@ void Alignment::WriteToFile(const char* alnfile, const char format[])
 /////////////////////////////////////////////////////////////////////////////////////
 // Read a3m slave alignment of hit from file and merge into (query) master alignment
 /////////////////////////////////////////////////////////////////////////////////////
-void Alignment::MergeMasterSlave(Hit& hit, char ta3mfile[], FILE* ta3mf, bool filter_tali)
+void Alignment::MergeMasterSlave(Hit& hit, Alignment& Tali, char* ta3mfile)
 {
-  Alignment Tali;
   char* cur_seq = new(char[par.maxcol]);   // Sequence currently read in
   int maxcol=par.maxcol;
   int l,ll;           // position in unaligned template (T) sequence Tali.seq[l]
@@ -2428,14 +2427,6 @@ void Alignment::MergeMasterSlave(Hit& hit, char ta3mfile[], FILE* ta3mf, bool fi
 
   // If par.append==1 do not print query alignment
   if (par.append) for (k=0; k<N_in; ++k) keep[k]=display[k]=0;
-
-  // Read template alignment into Tali
-  Tali.Read(ta3mf,ta3mfile);
-
-  // Filter Tali alignment
-  Tali.Compress(ta3mfile);
-  if (filter_tali)
-    N_filtered = Tali.Filter(par.max_seqid_db,par.coverage_db,par.qid_db,par.qsc_db,par.Ndiff_db);
 
   // Record imatch[j]
   int* imatch=new(int[hit.j2+1]);
@@ -2603,7 +2594,7 @@ void Alignment::MergeMasterSlave(Hit& hit, char ta3mfile[], FILE* ta3mf, bool fi
 
     } // end for (k)
 
-//   printf("N_in=%-5i  HMM=%s  with %i sequences\n",N_in,ta3mfile,N_filtered);
+//   printf("N_in=%-5i  HMM=%s  with %i sequences\n",N_in,ta3mfile,Tali.N_filtered);
 
   delete[] cur_seq;
   delete[] imatch;
