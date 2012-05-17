@@ -51,7 +51,7 @@
 
 {\Large \bf User Guide}
 
-  Version 2.0.14, May 2012\\[2mm]
+  Version 2.0.15, May 2012\\[2mm]
 {\copyright  Johannes S\"oding, Michael Remmert, Andreas Hauser}\\[2mm]
 Available under the Gnu Public License (version 3)\\[2mm]
 We are very grateful for bug reports! Please contact us at soeding@genzentrum.lmu.de
@@ -495,13 +495,12 @@ results in shorter but very precise alignments. The default value of mact in HHb
 
 To avoid unnecessarily large and diverse MSAs, HHblits stops iterating when the diversity of the query MSA -- measured as number of effective sequences, see section \ref{aliformats} -- grows passed a threshold of 10.0. This threshold can be modified with the \verb`--neffmax <float>` option. See subsection \ref{hhmformat} for a description of how the number of effective sequences is calculated in HH-suite.
 
-To avoid the final MSAs to grow unnecessarily large, by default the cluster MSAs are filtered with the option \verb`-diff 1000` prior to merging them with the query MSA. The \verb`-diff 1000` option selects the most representative sequences from an MSA such that every regions is covered by at least 1000 sequences. To turn off the filtering and obtain all sequences in the significantly similar uniprot20 clusters, use the \verb`-nodiff` option: 
+To avoid the final MSAs to grow unnecessarily large, by default the database MSAs that are going to be merged with the query MSA into the result MSA are filtered with the active filter options (by default \verb`-id 90` and \verb`-diff 1000`). The \verb`-all` option turns off the filtering of the result MSA. Use this option if you want to get all sequences in the significantly similar uniprot20 clusters: 
 \begin{verbatim}
-$ hhblits -cpu 4 -i data/query.seq -d databases/uniprot20 -oa3m query.a3m -nodiff
+$ hhblits -cpu 4 -i data/query.seq -d databases/uniprot20 -oa3m query.a3m -all
 \end{verbatim}
 
-The A3M format uses small letters to mark inserts and capital letters to designate match and delete columns (see subsection \ref{aliformats}), allowing to omit gaps aligned to insert columns. The A3M format therefore uses much less space for large alignments than FASTA but looks misaligned to the human eye. Use the \verb`reformat.pl` script to reformat \verb`query.a3m` to other formats, e.g. for reformatting the MSA to Clustal and FASTA format, type
-
+The A3M format uses small letters to mark inserts and capital letters to designate match and delete columns (see subsection \ref{aliformats}), allowing you to omit gaps aligned to insert columns. The A3M format therefore uses much less space for large alignments than FASTA but looks misaligned to the human eye. Use the \verb`reformat.pl` script to reformat \verb`query.a3m` to other formats, e.g. for reformatting the MSA to Clustal and FASTA format, type
 \begin{verbatim}
 $ reformat.pl a3m clu query.a3m query.clu
 $ reformat.pl a3m fas query.a3m query.fas
@@ -1337,15 +1336,16 @@ Prefilter options
  -noblockfilter search complete matrix in Viterbi                               
  -maxfilt       max number of hits allowed to pass 2nd prefilter (default=20000)  
 
-Filter result alignment (options can be combined):                              
- -id   [0,100]  maximum pairwise sequence identity (%) (def=90)                
- -diff [0,inf[  filter query and db MSAs by selecting most diverse set of sequences,
-                keeping at least this many seq's in each MSA block of length 50 (def=1000)
- -nodiff        do not filter sequences in output alignment (def=off)           
- -cov  [0,100]  minimum coverage with query (%) (def=0)                       
- -qid  [0,100]  minimum sequence identity with query (%) (def=0)              
- -qsc  [0,100]  minimum score per column with query  (def=-20.0)                 
- -neff [1,inf]  target diversity of alignment (default=off)                     
+Filter options applied to query MSA, database MSAs, and result MSA              
+ -all           show all sequences in result MSA; do not filter result MSA!     
+ -id   [0,100]  maximum pairwise sequence identity (def=90)
+ -diff [0,inf[  filter MSAs by selecting most diverse set of sequences, keeping 
+                at least this many seqs in each MSA block of length 50 (def=1000) 
+ -cov  [0,100]  minimum coverage with master sequence (%) (def=0)             
+ -qid  [0,100]  minimum sequence identity with master sequence (%) (def=0)    
+ -qsc  [0,100]  minimum score per column with master sequence (default=-20.0)             
+ -neff [1,inf]  target diversity of multiple sequence alignment (default=off)   
+
 
 HMM-HMM alignment options:                                                       
  -norealign     do NOT realign displayed hits with MAC algorithm (def=realign)   

@@ -99,6 +99,7 @@ Alignment::~Alignment()
 Alignment& Alignment::operator=(Alignment& ali)
 {
 
+  // First delete all arrays
   for(int k=0; k<N_in; ++k)
     {
       delete[] sname[k];
@@ -137,38 +138,48 @@ Alignment& Alignment::operator=(Alignment& ali)
       nres = NULL;
     }
 
+  // Then allocate new space and copy stuff from source alignment
   if (ali.nres)
     {
       nres=new(int[N_in]);
       for(int k=0; k<N_in; ++k)
 	  nres[k] = ali.nres[k];
     }
-
   for(int k=0; k<N_in; ++k)
     {
       sname[k]=new(char[strlen(ali.sname[k])+1]);
       if (!sname[k]) MemoryError("array of names for sequences to display");
       strcpy(sname[k],ali.sname[k]);
-
+    }
+  for(int k=0; k<N_in; ++k)
+    {
       seq[k]=new(char[strlen(ali.seq[k])+1]);
       if (!seq[k]) MemoryError("array of names for sequences to display");
       strcpy(seq[k],ali.seq[k]);
-      
+    }
+  for(int k=0; k<N_in; ++k)
+    {
       X[k]=new(char[strlen(ali.seq[k])+2]);
       if (!X[k]) MemoryError("array for input sequences");
+    }
+  for(int k=0; k<N_in; ++k)
+    {
       I[k]=new(short unsigned int[strlen(ali.seq[k])+2]);
       if (!I[k]) MemoryError("array for input sequences");
-
+    }
+  for(int k=0; k<N_in; ++k)
+    {
       for(int i = 0; i<=L; ++i)
 	{
 	  X[k][i] = ali.X[k][i];
 	  I[k][i] = ali.I[k][i];
 	}
-
+    }
+  for(int k=0; k<N_in; ++k)
+    {
       keep[k] = ali.keep[k];
       display[k] = ali.display[k];
       wg[k] = ali.wg[k];
-
     }
 
   kss_dssp = ali.kss_dssp;
@@ -837,6 +848,13 @@ void Alignment::Compress(const char infile[])
       strcut(sname[unequal_lengths]);
       cerr<<endl<<"Error in "<<par.argv[0]<<": sequences in "<<infile<<" do not all have the same number of columns, \ne.g. first sequence and sequence "<<sname[unequal_lengths]<<".\n";
       if(par.M==1) cerr<<".\nCheck input format for '-M a2m' option and consider using '-M first' or '-M 50'\n";
+
+      if (v>=2 && !strncmp(infile,"merged A3M",10)) 
+	{
+	  fprintf(stderr,"Merged MSA:\n");
+	  for (k=0; k<=unequal_lengths; ++k)
+	    fprintf(stderr,"#%3i\n>%s\n%s\n",k,sname[k],seq[k]);
+	}
       exit(1);
     }
 
@@ -2417,7 +2435,7 @@ void Alignment::MergeMasterSlave(Hit& hit, char ta3mfile[], FILE* ta3mf, bool fi
   // Filter Tali alignment
   Tali.Compress(ta3mfile);
   if (filter_tali)
-    N_filtered = Tali.Filter(par.max_seqid,par.coverage,par.qid,par.qsc,par.Ndiff);
+    N_filtered = Tali.Filter(par.max_seqid_db,par.coverage_db,par.qid_db,par.qsc_db,par.Ndiff_db);
 
   // Record imatch[j]
   int* imatch=new(int[hit.j2+1]);

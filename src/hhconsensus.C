@@ -112,7 +112,7 @@ void help()
   printf(" -M [0,100]    use FASTA: columns with fewer than X%% gaps are match states   \n");
   printf("\n");    
   printf("Other options:                                                               \n");
-  printf(" -addss        add predicted secondary structure information from PSI-PRED   \n");
+  printf(" -addss        add predicted secondary structure information from PSIPRED    \n");
   printf("\n");    
   printf("Example: %s -i stdin -s stdout\n",program_name);
   printf("\n");    
@@ -304,7 +304,37 @@ int main(int argc, char **argv)
   // Read input file (HMM, HHM, or alignment format), and add pseudocounts etc.
   char input_format=0;
   ReadQueryFile(par.infile,input_format,q,qali); 
-  PrepareQueryHMM(par.infile,input_format,q,qali);
+
+  // Same code as in PrepareQueryHMM(par.infile,input_format,q,qali), except that we add SS prediction
+  // Add Pseudocounts, if no HMMER input
+  if (input_format == 0)
+    {
+      // Transform transition freqs to lin space if not already done
+      q->AddTransitionPseudocounts();
+      
+      // Comput substitution matrix pseudocounts
+      if (par.nocontxt) { 
+	// Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
+	q->PreparePseudocounts();
+	// Add amino acid pseudocounts to query: p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
+	q->AddAminoAcidPseudocounts();
+      } else {
+	// Add full context specific pseudocounts to query
+	q->AddContextSpecificPseudocounts();
+      }
+    } 
+  else 
+    {
+      q->AddAminoAcidPseudocounts(0);
+    }
+  
+  q->CalculateAminoAcidBackground();
+  
+  if (par.addss==1) CalculateSS(q); // !!
+
+  if (par.columnscore == 5 && !q->divided_by_local_bg_freqs) 
+    q->DivideBySqrtOfLocalBackgroundFreqs(par.half_window_size_local_aa_bg_freqs);
+  
 
   // Write consensus sequence to sequence file
   // Consensus sequence is calculated in hhalignment.C, Alignment::FrequenciesAndTransitions()

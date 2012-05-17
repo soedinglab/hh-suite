@@ -111,14 +111,14 @@ void help(char all=0)
   printf(" -cons         make consensus sequence master sequence of query MSA \n");
   printf(" -name <name>  use this name for HMM (default: use name of first sequence)   \n");
   printf("\n");
-  printf("Filter input alignment (options can be combined):                         \n");
-  printf(" -id   [0,100] maximum pairwise sequence identity (%%) (def=%i)   \n",par.max_seqid);
-  printf(" -diff [0,inf[ filter most diverse set of sequences, keeping at least this    \n");
-  printf("               many sequences in each block of >50 columns (def=%i)\n",par.Ndiff);
-  printf(" -cov  [0,100] minimum coverage with query (%%) (def=%i) \n",par.coverage);
-  printf(" -qid  [0,100] minimum sequence identity with query (%%) (def=%i) \n",par.qid);
-  printf(" -qsc  [0,100] minimum score per column with query  (def=%.1f)\n",par.qsc);
-  printf(" -neff [1,inf] target diversity of alignment (default=off)\n");
+  printf("Filter query multiple sequence alignment                                     \n");
+  printf(" -id   [0,100]  maximum pairwise sequence identity (%%) (def=%i)   \n",par.max_seqid);
+  printf(" -diff [0,inf[  filter MSA by selecting most diverse set of sequences, keeping \n");
+  printf("                at least this many seqs in each MSA block of length 50 (def=%i) \n",par.Ndiff);
+  printf(" -cov  [0,100]  minimum coverage with query (%%) (def=%i) \n",par.coverage);
+  printf(" -qid  [0,100]  minimum sequence identity with query (%%) (def=%i) \n",par.qid);
+  printf(" -qsc  [0,100]  minimum score per column with query  (def=%.1f)\n",par.qsc);
+  printf(" -neff [1,inf]  target diversity of alignment (default=off)\n");
   printf("\n");
   printf("Input alignment format:                                                    \n");
   printf(" -M a2m        use A2M/A3M (default): upper case = Match; lower case = Insert;\n");
@@ -334,7 +334,7 @@ int main(int argc, char **argv)
   // Read input file (HMM, HHM, or alignment format), and add pseudocounts etc.
   char input_format=0;
   ReadQueryFile(par.infile,input_format,q); 
-  PrepareQueryHMM(par.infile,input_format,q);
+  PrepareQueryHMM(input_format,q);
 
   // Write HMM to output file in HHsearch format
   q->WriteToFile(par.outfile);

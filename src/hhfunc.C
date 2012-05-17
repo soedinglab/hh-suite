@@ -4,7 +4,7 @@
 void ReadQueryFile(char* infile, char& input_format, HMM* q, Alignment* qali=NULL);
 
 // Add transition and amino acid pseudocounts to query HMM, calculate aa background etc.
-void PrepareQueryHMM(char* infile, char& input_format, HMM* q, Alignment* qali=NULL);
+void PrepareQueryHMM(char& input_format, HMM* q);
 
 // Do precalculations for q and t to prepare comparison
 void PrepareTemplateHMM(HMM* q, HMM* t, int format);
@@ -125,7 +125,7 @@ void ReadQueryFile(char* infile, char& input_format, HMM* q, Alignment* qali)
 /////////////////////////////////////////////////////////////////////////////////////
 // Add transition and amino acid pseudocounts to query HMM, calculate aa background etc.
 /////////////////////////////////////////////////////////////////////////////////////
-void PrepareQueryHMM(char* infile, char& input_format, HMM* q, Alignment* qali)
+void PrepareQueryHMM(char& input_format, HMM* q)
 {
   // Was query an HHsearch formatted file or MSA (no pseudocounts added yet)?
   if (input_format==0)
@@ -156,7 +156,7 @@ void PrepareQueryHMM(char* infile, char& input_format, HMM* q, Alignment* qali)
   
   q->CalculateAminoAcidBackground();
   
-  if (par.addss==1) CalculateSS(q);
+  // if (par.addss==1) CalculateSS(q);
   
   if (par.columnscore == 5 && !q->divided_by_local_bg_freqs) 
     q->DivideBySqrtOfLocalBackgroundFreqs(par.half_window_size_local_aa_bg_freqs);
@@ -274,6 +274,10 @@ void CalculateSS(char *ss_pred, char *ss_conf, char *tmpfile)
 /////////////////////////////////////////////////////////////////////////////////////
 void CalculateSS(HMM* q, char *ss_pred, char *ss_conf)
 {
+	  
+  if (q->divided_by_local_bg_freqs) 
+    {cerr<<"WARNING: Can not add predicted secondary structure when using column score 5!\n"; return;}
+
   char tmpfile[]="/tmp/HHsuite_CaluclateSS_XXXXXX";
   if (mkstemp(tmpfile) == -1) {
     cerr << "Error: Could not create tmp file "<<tmpfile<<"!\n"; 
