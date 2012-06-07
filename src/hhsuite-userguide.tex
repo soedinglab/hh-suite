@@ -26,7 +26,7 @@
     pdfstartview={FitH},    % fits the width of the page to the window
     pdftitle={HH-suite User Guide},      % title
     pdfauthor={Johannes Soeding},  % author
-    pdfsubject={HH-suite for sensitive sequence searching\\[2mm] based on HMM-HMM alignment},   % subject of the document
+    pdfsubject={HH-suite for sensitive sequence searching based on HMM-HMM alignment},   % subject of the document
     pdfnewwindow=true,      % links in new window
     colorlinks=true,        % false: boxed links; true: colored links
      linkcolor=black,        % color of internal links
@@ -73,7 +73,7 @@ We are very grateful for bug reports! Please contact us at soeding@genzentrum.lm
 
 [2] & Remmert M., Biegert A., Hauser A., and S\"oding J. (2011) \\
     & HHblits: Lightning-fast iterative protein sequence searching by HMM-HMM alignment. \\
-    & {\it Nat.\  Methods}, epub Dec 25, doi: 10.1038/NMETH.1818.ßß
+    & {\it Nat.\  Methods} {\bf 9}, 173-175.\\
 \end{tabular}
 
 
@@ -123,7 +123,7 @@ If your computer's CPU does support SSE2 but not SSE3, the precompiled standard 
 
 If your computer does not run on Intel or AMD CPUs it probably does not support SSE2. In that case, you can still run all executables except \verb`hhblits`. Simply build the HH-suite from sources by running \verb`make NO_SSE2=1` with the \verb`NO_SSE2` flag set (see next subsection). HHsearch speed will be reduced by around 50\%-70\%.
 
-\subsection{Installation from source code} \label{installation}
+\subsection{Installation from source code} 
 
 \newcounter{mycounter}  
 \newenvironment{enum}
@@ -703,7 +703,7 @@ alignable sequence homologs, the second option might be preferable. In that case
 it is recommended to run both versions and compare the results. 
 
 \subsection{How is the MSA diversity Neff calculated?}
-The number of effective sequences of the full alignment, which appears as NEFF in the header of each hhm file, is the average of local values \verb`Neff_M(i)` over all alignment positions $i$. The values \verb`Neff_M(i)` are given in the main model section of the hhm model files (subsection \ref{hmmformat}). They quantify the \emph{local} diversity of the alignment in a region around position $i$. More precisely, \verb`Neff_M(i)` measures the diversity of subalignment $Ali_M(i)$ that contains all sequences that have a residue at column $i$ of the full alignment. The subalignment contains all columns for which at least 90\% of these sequences have no end gap. End gaps are gaps to the left of the first residue or to the right of the last residue. The latter condition ensures that the sequences in the subalignment $Ali_M(i)$ cover most of the columns in it. The number of effective sequences in the subalignment $Ali_M(i)$ is exp of the average sequence entropy over all columns of the subalignment. Hence, \verb`Neff_M` is bounded by 0 from below and 20 from above. In practice, it is bounded by the entropy of a column with background amino acid distribution $f_a$: $N_{eff} < \sum_{a=1}^{20} f_a \log f_a \approx 16$. Similarly, \verb`Neff_I(i)` gives the diversity of the subalignment $Ali_I(i)$ of all sequences that have an insert at position $i$, and \verb`Neff_D(i)` refers to the diversity of subaligment $Ali_D(i)$ of all sequences that have a Delete (a gap) at position $i$ of the full alignment. 
+The number of effective sequences of the full alignment, which appears as NEFF in the header of each hhm file, is the average of local values \verb`Neff_M(i)` over all alignment positions $i$. The values \verb`Neff_M(i)` are given in the main model section of the hhm model files (subsection \ref{hhmformat}). They quantify the \emph{local} diversity of the alignment in a region around position $i$. More precisely, \verb`Neff_M(i)` measures the diversity of subalignment $Ali_M(i)$ that contains all sequences that have a residue at column $i$ of the full alignment. The subalignment contains all columns for which at least 90\% of these sequences have no end gap. End gaps are gaps to the left of the first residue or to the right of the last residue. The latter condition ensures that the sequences in the subalignment $Ali_M(i)$ cover most of the columns in it. The number of effective sequences in the subalignment $Ali_M(i)$ is exp of the average sequence entropy over all columns of the subalignment. Hence, \verb`Neff_M` is bounded by 0 from below and 20 from above. In practice, it is bounded by the entropy of a column with background amino acid distribution $f_a$: $N_{eff} < \sum_{a=1}^{20} f_a \log f_a \approx 16$. Similarly, \verb`Neff_I(i)` gives the diversity of the subalignment $Ali_I(i)$ of all sequences that have an insert at position $i$, and \verb`Neff_D(i)` refers to the diversity of subaligment $Ali_D(i)$ of all sequences that have a Delete (a gap) at position $i$ of the full alignment. 
 
 
 

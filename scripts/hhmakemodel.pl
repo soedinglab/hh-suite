@@ -1266,10 +1266,10 @@ sub FindPDBfile() {
 	elsif (-e "$pdbdir/divided") {$pdbfile="$pdbdir/divided/".substr($pdbcode,1,2)."/";}
 	else {$pdbfile="$pdbdir/";}
 	if    ($pdbdir=~/divided.?$/) {$pdbfile.=substr($pdbcode,1,2)."/";}
-	if    (-e $pdbfile."pdb$pdbcode.ent")   {$pdbfile.="pdb$pdbcode.ent";}
+	if    (-e $pdbfile."pdb$pdbcode.ent")    {$pdbfile.="pdb$pdbcode.ent";}
 	elsif (-e $pdbfile."pdb$pdbcode.ent.gz") {$pdbfile="gunzip -c $pdbfile"."pdb$pdbcode.ent.gz |";}
-	elsif (-e $pdbfile."pdb$pdbcode.ent.Z") {$pdbfile="gunzip -c $pdbfile"."pdb$pdbcode.ent.Z |";}
-	elsif (-e $pdbfile."$pdbcode.pdb")      {$pdbfile."$pdbcode.pdb";}
+	elsif (-e $pdbfile."pdb$pdbcode.ent.Z")  {$pdbfile="gunzip -c $pdbfile"."pdb$pdbcode.ent.Z |";}
+	elsif (-e $pdbfile."$pdbcode.pdb")       {$pdbfile.="$pdbcode.pdb";}
 	else {next;}
 	return $pdbfile;
     }

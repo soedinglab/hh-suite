@@ -108,8 +108,8 @@ using std::ofstream;
 /////////////////////////////////////////////////////////////////////////////////////
 // Global variables 
 /////////////////////////////////////////////////////////////////////////////////////
-HMM* q = new HMM;            //Create a HMM with maximum of par.maxres match states
-HMM* t;                      // Create template HMM with maximum of MAXRES match states 
+HMM* q = new HMM;            // Create query    HMM with maximum of par.maxres match states
+HMM* t = new HMM;            // Create template HMM with maximum of par.maxres match states
 Alignment qali;              // (query alignment might be needed outside of hhfunc.C for -a option)
 Hit hit;                     // Ceate new hit object pointed at by hit
 HitList hitlist;             // list of hits with one Hit object for each pairwise comparison done
@@ -838,7 +838,7 @@ int main(int argc, char **argv)
       }
 
       // Deep-copy q into t
-      t = q;
+      *t = *q;
       
       // Find overlapping alternative alignments
       hit.self=1;
@@ -1420,6 +1420,7 @@ int main(int argc, char **argv)
     hitlist.ReadNext().Delete(); // Delete content of hit object
 
   delete q;
+  delete t;
 
   if (strucfile && par.wstruc>0) 
     {
