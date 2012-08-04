@@ -1143,6 +1143,9 @@ int main(int argc, char **argv)
       Qali.Read(qa3mf,qa3mfile);
       fclose(qa3mf);
       
+      // If par.append==1 do not print query alignment
+      if (par.append) Qali.MarkSeqsAsNonPrintable();
+
       // Align query with template in master-slave mode 
       Alignment Tali;
       FILE* ta3mf=fopen(par.tfile,"r");

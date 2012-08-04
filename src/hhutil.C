@@ -323,13 +323,13 @@ int OpenFileError(const char outfile[])
 
 int MemoryError(const char arrayname[])
 {
-  cerr<<"Error in "<<par.argv[0]<<": Memory overflow while creating \'"<<arrayname<<"\'. Please report this bug to the developers\n";
+  cerr<<"Error in "<<par.argv[0]<<": Could not allocate memory for \'"<<arrayname<<"\'.\nIs your max memory size sufficient? (Check using '$ ulimit -a' under Linux)"<<endl;
   exit(3);
 }
 
 int NoMemoryError(const char arrayname[])
 {
-  cerr<<"Error in "<<par.argv[0]<<": Could not allocate memory in \'"<<arrayname<<"\'.\n";
+  cerr<<"Error in "<<par.argv[0]<<": Could not allocate memory for \'"<<arrayname<<"\'.\nIs your max memory size sufficient? (Check using '$ ulimit -a' under Linux)"<<endl; 
   exit(3);
 }
 
@@ -347,14 +347,14 @@ int InternalError(const char errstr[])
 
 
 /////////////////////////////////////////////////////////////////////////////////////
-//// Replace memalign by posix_memalign (Why? [JS]
+//// Replace memalign by posix_memalign (Why? [JS])
 /////////////////////////////////////////////////////////////////////////////////////
 void *memalign(size_t boundary, size_t size)
 {
   void *pointer;
   if (posix_memalign(&pointer,boundary,size) != 0)
     {
-      cerr<<"Error in "<<par.argv[0]<<": Could not allocate memory by memalign. Please report this bug to developers\n";
+      cerr<<"Error in "<<par.argv[0]<<": memalign could not allocate memory of "<<size<<" bytes, "<<strerror(errno)<<".\nIs your max memory size sufficient? (Check using '$ ulimit -a' under Linux)"<<endl;
       exit(3);
     }
   return pointer;
@@ -370,7 +370,7 @@ void runSystem(std::string cmd, int v = 2)
   int res = system(cmd.c_str());
   if (res!=0) 
     {
-      cerr << endl << "Error in "<<par.argv[0]<<": Could not execute '" << cmd << "\n";
+      cerr << endl << "Error in "<<par.argv[0]<<": Could not execute '" << cmd << "; "<<strerror(errno)<<endl;
       exit(1);
     }
     

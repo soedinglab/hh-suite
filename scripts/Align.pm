@@ -296,7 +296,6 @@ sub AlignSW {
     my $dy = $main::dy;
     if (! defined $dx) {$dx = $main::d;}
     if (! defined $dy) {$dy = $main::d;}
-    printf("dx=%f  dy=%f\n",$dx,$dy); ##############DEBUG#############
     
      # Transform @xres and @yres to integer
     for ($i=0; $i<@xchr; $i++) {

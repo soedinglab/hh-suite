@@ -81,6 +81,9 @@ public:
   // Determine matrix of position-specific weights w[k][i] for multiple alignment
   void GetPositionSpecificWeights(float* w[]);
 
+  // Set keep[] and display[] arrays to 0 to mark seqs as non-printable
+  void MarkSeqsAsNonPrintable();
+
   char readCommentLine;   // Set to 1, if a comment line with '#' is read
 
 private:

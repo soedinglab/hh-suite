@@ -848,7 +848,7 @@ void HitList::CalculatePvalues(HMM* q)
       hit.Eval=exp(hit.logPval+log(N_searched));
       hit.logEval = hit.logPval+log(N_searched);
 //    hit.score_aass = hit.logPval/LAMDA-3.0 - hit.score_ss;  // median(lamda)~0.45, median(mu)~3.0 in EVDs for scop20.1.63 HMMs
-      // P-value = 1- exp(-exp(-lamda*(Saa-mu))) => -lamda*(Saa-mu) = log(-log(1-Pvalue))
+// P-value = 1- exp(-exp(-lamda*(Saa-mu))) => -lamda*(Saa-mu) = log(-log(1-Pvalue))
       hit.score_aass = (hit.logPval<-10.0? hit.logPval : log(-log(1-hit.Pval)) )/0.45 - fmin(lamda*hit.score_ss,fmax(0.0,0.2*(hit.score-8.0)))/0.45 - 3.0;
       hit.score_sort = hit.score_aass;
       hit.Probab = Probab(hit);

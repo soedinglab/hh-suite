@@ -32,6 +32,7 @@
 #include <limits.h>   // INT_MIN
 #include <float.h>    // FLT_MIN
 #include <time.h>     // clock
+#include <errno.h>    // perror(), strerror(errno)
 #include <ctype.h>    // islower, isdigit etc
 #include <cassert>
 

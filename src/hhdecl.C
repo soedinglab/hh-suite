@@ -241,7 +241,7 @@ public:
   float alphac;
 
   // For filtering database alignments in HHsearch and HHblits 
-  // JS: What are these used for? They are set to the options without _db anyway.
+  // JS: What are these used for? They are set to the values without _db anyway.
   int max_seqid_db;
   int qid_db;      
   float qsc_db;    

@@ -72,7 +72,7 @@
 #include <float.h>    // FLT_MIN
 #include <ctype.h>    // islower, isdigit etc
 #include <time.h>     // clock_gettime etc. (in realtime library (-lrt compiler option))
-#include <errno.h>    // perror()
+#include <errno.h>    // perror(), strerror(errno)
 #include <cassert>
 #include <stdexcept>
 
@@ -1952,22 +1952,20 @@ int main(int argc, char **argv)
   strcat(dba3m,"_a3m_db");
 
   fin = fopen(dba3m, "r");
-  if (fin) {
+  if (fin) { // opening file successful?
     fclose(fin);
-  } else {
+  } else {   // unsuccessful
     if(errno == EOVERFLOW)
     {
       cerr << endl;
-      cerr <<"ERROR in "<< program_name <<": A3M database too big (>2GB on 32bit system?):";
-      cerr << endl;
-      cerr << dba3m;
-      cerr << endl;
+      cerr <<"Error in "<< program_name <<": A3M database  "<<dba3m<<" too big (>2GB on 32bit system?):"<< endl;
       exit(errno);
     }
-    if (num_rounds > 1)
-      {help(); cerr<<endl<<"Error in "<<program_name<<": A3M database missing (needed for more than 1 search iteration)\n"; exit(4);}
-    if (*par.alnfile || *par.psifile || *par.hhmfile || *alis_basename)
-      {help(); cerr<<endl<<"Error in "<<program_name<<": A3M database missing (needed for result alignment)\n"; exit(4);}
+    if (num_rounds > 1 ||*par.alnfile || *par.psifile || *par.hhmfile || *alis_basename)
+      {
+	cerr<<endl<<"Error in "<<program_name<<": Could not open A3M database "<<dba3m<<", "<<strerror(errno)<<" (needed to construct result MSA)"<<endl; 
+	exit(4);
+      }
     dba3m[0] = 0;
   }
 
@@ -2280,15 +2278,13 @@ int main(int argc, char **argv)
 		// Add number of sequences in this cluster to total found
 		seqs_found += SequencesInCluster(hit_cur.name); // read number after second '|'
 		cluster_found++;		
-		printf("1 clusters_found=%4i  seqs_found=%4i  name=%s\n",cluster_found,seqs_found,hit_cur.name);
 
 		// Skip merging this hit if hit alignment was already merged during premerging
 		if (premerged_hits->Contains((char*)ss_tmp.str().c_str())) continue;
 
-		// Read a3m alignment of hit from <file>.a3m file and merge into Qali alignment
+		// Read a3m alignment of hit from <file>.a3m file
 		RemoveExtension(ta3mfile,hit_cur.dbfile);
 		strcat(ta3mfile,".a3m");
-
 
 		// Reading in next db MSA and merging it onto Qali
 		FILE* ta3mf;
@@ -2324,7 +2320,7 @@ int main(int argc, char **argv)
 	    // Convert ASCII to int (0-20),throw out all insert states, record their number in I[k][i]
 	    Qali.Compress("merged A3M file");
 
-	    // Sort out the nseqdis most dissimilar sequences for display in the result alignments
+	    // Sort out the nseqdis most dissimilacd r sequences for display in the result alignments
 	    Qali.FilterForDisplay(par.max_seqid,par.coverage,par.qid,par.qsc,par.nseqdis);
 	    
 	    // Remove sequences with seq. identity larger than seqid percent (remove the shorter of two)

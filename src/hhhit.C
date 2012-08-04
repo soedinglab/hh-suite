@@ -494,7 +494,7 @@ void Hit::Viterbi(HMM* q, HMM* t, float** Sstruc)
 
   state=MM; // state with maximum score is MM state
 
-  //   printf("Template=%-12.12s  i=%-4i j=%-4i score=%6.3f\n",t->name,i2,j2,score);
+  //printf("Template=%-12.12s  i=%-4i j=%-4i score=%6.3f\n",t->name,i2,j2,score);  ///??? DEBUG
 
   return;
 }
@@ -758,9 +758,9 @@ void Hit::Forward(HMM* q, HMM* t, float** Pstruc)
   if (par.loc) 
     {
       if (self)
-	score=score-log(0.5*t->L*q->L)/LAMDA+14.; // +14.0 to get approx same mean as for -global
+	score -= log(0.5*t->L*q->L)/LAMDA+14.; // +14.0 to get approx same mean as for -global
       else 
-	score=score-log(t->L*q->L)/LAMDA+14.; // +14.0 to get approx same mean as for -global
+	score -= log(t->L*q->L)/LAMDA+14.; // +14.0 to get approx same mean as for -global
     }
   
   // Debugging output
@@ -2078,6 +2078,6 @@ inline double Probab(Hit& hit)
 
     }
 
-  return 100.0/(1.0+t*t);
+  return 100.0/(1.0+t*t); // ??? JS Jul'12
 }
 

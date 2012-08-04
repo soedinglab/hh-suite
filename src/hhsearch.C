@@ -666,6 +666,9 @@ void perform_realign(char *dbfiles[], int ndb)
       strcpy(Qali.fam,q->fam);
       RemovePathAndExtension(Qali.file,par.hhmfile);
       
+      // If par.append==1 do not print query alignment
+      if (par.append) Qali.MarkSeqsAsNonPrintable();
+      
       if (v>=2) printf("Merging best hits to query alignment %s ...\n",qa3mfile);
       
       bin=0;
@@ -1654,6 +1657,10 @@ int main(int argc, char **argv)
       if (!qa3mf) OpenFileError(qa3mfile);
       Qali.Read(qa3mf,qa3mfile);
       fclose(qa3mf);
+
+      // If par.append==1 do not print query alignment
+      if (par.append) Qali.MarkSeqsAsNonPrintable();
+
       if (v>=2) printf("Merging hits to query alignment %s ...\n",qa3mfile);
       // If query consists of only one sequence:
       //     realign templates to query HMM enforced by sequences from up to the 10 best templates
