@@ -4,7 +4,7 @@
 # Creates HH-suite database files from A3M and HHM/HMMER-formatted files 
 # Usage: Usage: perl hhblitsdb.pl -o <db_name> [-ia3m <a3m_dir>] [-ihhm <hhm_dir>] [-ics <cs_dir>] [more_options]
 #
-#     HHsuite version 2.0.14 (May 2012)
+#     HHsuite version 2.0.16 (Sept 2012)
 #
 #     Reference: 
 #     Remmert M., Biegert A., Hauser A., and Soding J.
@@ -31,12 +31,14 @@
 use lib $ENV{"HHLIB"}."/scripts";
 use HHPaths;   # config file with path variables for nr, blast, psipred, pdb, dssp etc.
 use strict;
+#use File::Glob 'bsd_glob'; # splits patterns delimited by spaces into multiple patterns and applies them using OR
 
 $|= 1; # Activate autoflushing on STDOUT
 
 # Default values:
 our $v=2;             # verbose mode
-my $a_if_append = ""; # do not append by default
+my $a_if_append = ""; # do not append by default (default: create new db)
+my $remove = 0;       # do not remove by default (default: create new db)
 my $hhmext = "hhm";   # default HHM-file extension
 my $csext = "seq219";   # default HHM-file extension
 my $cpu = 8;
@@ -44,8 +46,8 @@ my $cpu = 8;
 # Variable declarations
 my $line;
 my $command;
-my $a3mdir  = "";     # name of input A3M directory
-my $hhmdir  = "";     # name of input HHM/HMM directory
+my $a3mdir = "";     # name of input A3M directory
+my $hhmdir = "";     # name of input HHM/HMM directory
 my $csdir  = "";      # name of input cs directory
 my $a3mfile = "";     # name of packed ouput A3M file 
 my $hhmfile = "";     # name of packed ouput HHM file
@@ -53,17 +55,19 @@ my $csfile = "";      # name of cs sequence db file
 my $dbname = "";      # output db name
 my $logfile = "/dev/null"; # log file 
 my $file;
-my $dir;
-my $numcsfiles=0;
+my $numcsfiles= 0;
+my $num_chars = 0;
 my $numa3mfiles=0;
 my $numhhmfiles=0;
+my $fileglob="";
 my $help="
 hhblitsdb.pl from HHsuite $VERSION  
-Builds HH-suite database files from MSA and HMM files 
+Builds HH-suite database from files with a3m formatted multiple sequence alignments (MSAs).
+MSAs and HMMs can also be added or removed from an existing database. 
 
-Usage: hhblitsdb.pl -o <db_name> [-ia3m <a3m_dir>] [-ihhm <hhm_dir>] [-ics <cs_dir>] [options]
+Usage: hhblitsdb.pl [-o|-a|-r] <db_name> [-ia3m <a3m_dir>] [-ihhm <hhm_dir>] [-ics <cs_dir>] [options]
 
-Depending on the input directories, the following HH-suite database files are generated:
+With option -d, depending on the input directories the following HH-suite database files are generated:
  <db_name>.cs219              column-state sequences, one for each MSA/HMM (for prefilter)
  <db_name>.cs219.sizes        number of sequences and characters in <db_name>.cs219
  <db_name>_a3m_db             packed file containing A3M alignments read from <a3m_dir>
@@ -74,7 +78,9 @@ Depending on the input directories, the following HH-suite database files are ge
  <db_name>_hhm_db.index.sizes number of lines in <db_name>_hhm_db.index
 
 Options:
- -o <db_name>    name of database
+ -o <db_name>    create database with this name
+ -a <db_name>    append files to database with this name
+ -r <db_name>    remove files from database with this name
  -ia3m <a3m_dir> input directory (or glob of directories) with A3M-formatted files
                  These files MUST have extension 'a3m'.
  -ihhm <hhm_dir> input directory (or glob of directories) with HHM (or HMMER) files 
@@ -85,10 +91,9 @@ Options:
  -csext <ext>    extension of column state sequences (default: $csext)
  -hmm            use HMMER-formatted files. These MUST have extension hmm
                  (WARNING! HMMER format results in decreased performance over HHM format)
- -append         append A3M/HHM files to packed db files if they exist (default: overwrite)
  -v [1-3]        verbose mode (default: $v)
  -cpu <int>      number of threads to generate cs219 and hhm files (default = $cpu)
-
+ -f 'file_glob'  string with list of glob expression of files to remove
  
 Example 1: only -ia3m given; cs sequences and hhm files are generated from a3m files
    perl hhblitsdb.pl -o databases/mydb -ia3m mydb/a3ms/ 
@@ -102,8 +107,14 @@ Example 3: -ia3m and -ihhm given; cs sequences are generated from a3m files
 Example 4: -ics, -ia3m, and -ihhm given; all db files are created 
    perl hhblitsdb.pl -o databases/mydb -ia3m mydb/a3ms/ -ihhm mydb/hhms/ -ics mydb/cs/  
 
-Example 5: using glob expression to specify several input databases (note the singe quotes)
-   perl hhblitsdb.pl -o databases/mydb -ihhm 'mydbs*/hhms/'  
+Example 5: using glob expression to specify files (note the singe quotes)
+   perl hhblitsdb.pl -o databases/mydb -ihhm 'mydbs*/hhms/*.hhm'  
+
+Example 6: add files to database; cs sequences and hhm files are generated from a3m files
+   perl hhblitsdb.pl -a databases/mydb -ia3m 'mydbs/a3ms/g1a*.a3m'  
+
+Example 7: remove files from database
+   perl hhblitsdb.pl -r databases/mydb -f 'mydbs/a3ms/g1a*.* mydbs2/'  
 \n";
 
 
@@ -132,12 +143,6 @@ for (my $i=0; $i<@ARGV; $i++) {
 	} else {
 	    die ("$help\n\nERROR! Missing directory after -ihhm option!\n");
 	}
-    } elsif ($ARGV[$i] eq "-o") {
-	if (++$i<@ARGV) {
-	    $dbname=$ARGV[$i];
-	} else {
-	    die ("$help\n\nERROR! Missing filename after -o option!\n");
-	}
     } elsif ($ARGV[$i] eq "-log") {
 	if (++$i<@ARGV) {
 	    $logfile=$ARGV[$i];
@@ -164,10 +169,43 @@ for (my $i=0; $i<@ARGV; $i++) {
 	if (++$i<@ARGV) {
 	    $cpu=$ARGV[$i];
 	}
-    } elsif ($ARGV[$i] eq "-append") {
-	$a_if_append="a";
+    } elsif ($ARGV[$i] eq "-f") {
+	if (++$i<@ARGV) {
+	    $fileglob=$ARGV[$i];
+	} else {
+	    die ("$help\n\nERROR! Missing expression after -f option!\n");
+	}
+   } elsif ($ARGV[$i] eq "-r") {
+	if (++$i<@ARGV) {
+	    if ($dbname!="") {die("$help\n\nERROR! options -o and -r not compatible!\n");}
+	    $dbname=$ARGV[$i];
+	    $remove=1;
+	} else {
+	    die ("$help\n\nERROR! Missing filename after -o option!\n");
+	}
+    } elsif ($ARGV[$i] eq "-a") {
+	if (++$i<@ARGV) {
+	    if ($remove==1) {die("$help\n\nERROR! options -r and -a not compatible!\n");}
+	    if ($dbname!="") {die("$help\n\nERROR! options -o and -a not compatible!\n");}
+	    $dbname=$ARGV[$i];
+	    $a_if_append="a";
+	} else {
+	    die ("$help\n\nERROR! Missing filename after -o option!\n");
+	}
+    } elsif ($ARGV[$i] eq "-o") {
+	if (++$i<@ARGV) {
+	    if ($remove==1) {die("$help\n\nERROR! options -r and -o not compatible!\n");}
+	    if ($a_if_append) {die("$help\n\nERROR! options -a and -o not compatible!\n");}
+	    $dbname=$ARGV[$i];
+	} else {
+	    die ("$help\n\nERROR! Missing filename after -o option!\n");
+	}
     } else {
-	print "WARNING! Unknown option $ARGV[$i]!\n";
+	if ($dbname="") {
+	    $dbname=$ARGV[$i];
+	} else {
+	    print "WARNING! Unknown option $ARGV[$i]!\n";
+	}
     }
 }
 
@@ -179,9 +217,91 @@ $csfile = $dbname.".cs219";
 
 if ($a_if_append eq "") {unlink $csfile, $a3mfile, $a3mfile.".index", $hhmfile, $hhmfile.".index"; }
 
-if ($a3mdir eq "" && $hhmdir eq "" && $csdir eq "") {
+if ($a3mdir eq "" && $hhmdir eq "" && $csdir eq "" && $remove==0) {
     print($help); print "ERROR! At least one input directory must be given!\n"; exit(1);
 }
+
+# If $csdir is simple directory instead of glob expression, turn it into glob expression
+if ($csdir) {
+    if ($csdir !~ /\*/ && $csdir !~ /\?/ && $csdir !~ / /) { 
+	$csdir .= "/*.".$csext;
+    }
+}
+if ($a3mdir) {
+    if ($a3mdir !~ /\*/ && $a3mdir !~ /\?/ && $a3mdir !~ / /) { 
+	$a3mdir .= "/*.a3m";
+    }
+}    
+if ($hhmdir) {
+    if ($hhmdir !~ /\*/ && $hhmdir !~ /\?/ && $hhmdir !~ / /) { 
+	$hhmdir .= "/*.".$hhmext;
+    }
+}
+
+
+
+##############################################################################################
+# Remove files?
+##############################################################################################
+if ($remove==1) {
+
+    printf("Removing files from indices...\n");
+    
+    # Read numbers of sequences and characters in csfile
+    open (IN, "<$csfile.sizes");
+    $line = <IN>;
+    close IN;
+    $line =~ /(\S*)\s+(\S*)/;
+    $numcsfiles = $1;
+    $num_chars = $2;
+
+    # Remove names from a3m and hhm index files
+    my $files = " ".join(" ", glob($fileglob));
+    $files =~ s/\S*\///g;
+    &HHPaths::System("ffindex_modify -su $dbname"."_a3m_db.index ".$files); 
+    &HHPaths::System("ffindex_modify -su $dbname"."_hhm_db.index ".$files); 
+    
+    # Remove sequences of globbed files from cs file
+    my 	$skipseq=0;
+    $numcsfiles = 0;
+    $num_chars = 0;
+    open (IN,  "<$csfile");
+    open (OUT, ">$csfile".".tmp");
+    foreach my $line (<IN>) {
+	if ($line =~ /^>(\w*)/) {
+	    my $name = $1;
+	    if ($files =~ / $name\./) { # found name in list of globbed file names?
+		$skipseq=1;
+	    } else {
+		$skipseq=0;
+		printf(OUT "%s",$line); 
+		$numcsfiles++;
+	    }
+	} else {
+	    if (!$skipseq) {
+		printf(OUT "%s",$line); 
+		$num_chars += length($line);
+	    }
+	}
+    }
+    close(OUT);	
+    close(IN);	
+    unlink($csfile);
+    &HHPaths::System("mv $csfile".".tmp ".$csfile); 
+
+    # Adjust csfile.sizes
+    open (OUT, ">$csfile.sizes");
+    print OUT "$numcsfiles $num_chars\n";
+    close OUT;
+
+    print("\n");
+    exit;
+}
+
+
+##############################################################################################
+# Generate new db or append to old
+##############################################################################################
 
 # Create tmp directory (plus path, if necessary)
 my $tmpdir="/tmp/$ENV{USER}/$$";  # directory where all temporary files are written: /tmp/UID/PID
@@ -192,6 +312,38 @@ while ($suffix=~s/^\/[^\/]+//) {
 } 
 unlink glob("$tmpdir/*"); # clean up directory if it already exists
 unlink $logfile;
+
+
+# If in append mode, initialize size counters with present sizes
+if ($a_if_append) {
+    open (IN, "<$a3mfile.index.sizes");
+    $line = <IN>;
+    close IN;
+    $line =~ /^(\S*)/;
+    $numa3mfiles = $1;
+
+    open (IN, "<$hhmfile.index.sizes");
+    $line = <IN>;
+    close IN;
+    $line =~ /^(\S*)/;
+    $numhhmfiles = $1;
+
+    open (IN, "<$csfile.sizes");
+    $line = <IN>;
+    close IN;
+    $line =~ /(\S*)\s+(\S*)/;
+    $numcsfiles = $1;
+    $num_chars = $2;
+
+} else {
+    $numa3mfiles = 0;
+    $numhhmfiles = 0;
+    $numcsfiles = 0;
+    $num_chars = 0;
+}
+
+
+
 
 ##############################################################################################
 # Generate column-state database file
@@ -204,51 +356,43 @@ if (!$csdir)
     my $c = 4;      # parameters for cstranslate
     
     if ($a3mdir) {
-	my @dirs = glob($a3mdir);
-	foreach $dir (@dirs) {
-	    print("\nGenerating seq219 files in $tmpdir/ from a3m files in $dir/\n\n");
-	    $command = "$hhbin/cstranslate -i \$file -o $tmpdir/\$base.seq219 -D $context_lib -A $cs_lib -x $x -c $c 1>>$logfile 2>>$logfile";
-	    &HHPaths::System("$hhscripts/multithread.pl '".$dir."/*.a3m' '$command' -cpu $cpu");
-	    $numa3mfiles += scalar(glob("$dir/*.a3m"));
-	}
+	print("\nGenerating seq219 files in $tmpdir/ from a3m files $a3mdir\n\n");
+	$command = "$hhbin/cstranslate -i \$file -o $tmpdir/\$base.seq219 -D $context_lib -A $cs_lib -x $x -c $c 1>>$logfile 2>>$logfile";
+	&HHPaths::System("$hhscripts/multithread.pl '".$a3mdir."' '$command' -cpu $cpu");
 	
     } elsif ($hhmdir) {
 	
-	my @dirs = glob($hhmdir);
-	foreach $dir (@dirs) {
-	    if ($hhmext eq "hmm") {
-		print("\nGenerating prf profile files in $tmpdir/ from hmm files in $dir/\n\n");
-		$command = "$hhscripts/create_profile_from_hmmer.pl -i \$file -o $tmpdir/\$base.prf 1>/dev/null 2>>$logfile";
-		&HHPaths::System("$hhscripts/multithread.pl '".$dir."/*.".$hhmext."' '$command' -cpu $cpu");
-	    } else { # $hhmext eq "hhm"
-		print("\nGenerating prf profile files in $tmpdir/ from hhm files in $dir/\n\n");
-		$command = "$hhscripts/create_profile_from_hhm.pl -i \$file -o $tmpdir/\$base.prf 1>/dev/null 2>>$logfile";
-		&HHPaths::System("$hhscripts/multithread.pl '".$dir."/*.".$hhmext."' '$command' -cpu $cpu");
-	    }
+	if ($hhmext eq "hmm") {
+	    print("\nGenerating prf profile files in $tmpdir/ from hmm files $hhmdir/\n\n");
+	    $command = "$hhscripts/create_profile_from_hmmer.pl -i \$file -o $tmpdir/\$base.prf 1>/dev/null 2>>$logfile";
+	    &HHPaths::System("$hhscripts/multithread.pl '".$hhmdir."' '$command' -cpu $cpu");
+	} else { # $hhmext eq "hhm"
+	    print("\nGenerating prf profile files in $tmpdir/ from hhm files $hhmdir/\n\n");
+	    $command = "$hhscripts/create_profile_from_hhm.pl -i \$file -o $tmpdir/\$base.prf 1>/dev/null 2>>$logfile";
+	    &HHPaths::System("$hhscripts/multithread.pl '".$hhmdir."' '$command' -cpu $cpu");
 	}
 
+	print("\nGenerating seq219 files in $tmpdir/ from prf files in $tmpdir/\n\n");
 	if ($hhmext eq "hmm") {
-	    print("\nGenerating seq219 files in $tmpdir/ from prf files in $tmpdir/\n\n");
-	    $command = "$hhbin/cstranslate -i \$file -o \$name.seq219 -A $cs_lib 1>>$logfile 2>>$logfile";
-	    &HHPaths::System("$hhscripts/multithread.pl '".$tmpdir."/*.prf' '$command' -cpu $cpu");
-	    
+	    $command = "$hhbin/cstranslate -i \$file -o \$name.seq219 -A $cs_lib 1>>$logfile 2>>$logfile";	    
 	} else { # $hhmext eq "hhm"
-	    print("\nGenerating seq219 files in $tmpdir/ from prf files in $tmpdir/\n\n");
 	    $command = "$hhbin/cstranslate -i \$file -o \$name.seq219 -A $cs_lib -D $context_lib -x $x -c $c 1>>$logfile 2>>$logfile";
-	    &HHPaths::System("$hhscripts/multithread.pl '".$tmpdir."/*.prf' '$command' -cpu $cpu");
 	}
+	&HHPaths::System("$hhscripts/multithread.pl '".$tmpdir."/*.prf' '$command' -cpu $cpu");
     }
 
-    $csdir = $tmpdir;
+    $csdir = $tmpdir."/*.$csext";
 }
 
 
 # Write columns state sequences into cs database file, 
 # replace names in cs sequences with filenames: ">name+description" => ">filename"
-$numcsfiles = 0;
-my $num_chars = 0;
-open (OUT, ">$csfile");
-foreach my $seq219file (glob($csdir."/*.$csext")) { 
+if ($a_if_append) {
+    open (OUT, ">>$csfile");
+} else {
+    open (OUT, ">$csfile");
+}
+foreach my $seq219file (glob($csdir)) { 
     open (IN, "<$seq219file");
     my @lines = <IN>;
     close(IN);
@@ -277,14 +421,11 @@ close OUT;
 if (!$hhmdir) 
 {
     if ($a3mdir) {
-	my @dirs = glob($a3mdir);
-	foreach $dir (@dirs) {
-	    print("\nGenerating hhm files in $tmpdir/ from a3m files in $dir/\n\n");
-	    $command = "hhmake -i \$file -o $tmpdir/\$base.hhm  1>/dev/null 2>>$logfile";
-	    &HHPaths::System("$hhscripts/multithread.pl '".$dir."/*.a3m' '$command' -cpu $cpu");	
-	}
-	$hhmdir = $tmpdir;
-	$numhhmfiles = scalar(glob("$tmpdir/*.hhm"));
+	print("\nGenerating hhm files in $tmpdir/ from a3m files $a3mdir/\n\n");
+	$command = "hhmake -i \$file -o $tmpdir/\$base.hhm  1>/dev/null 2>>$logfile";
+	&HHPaths::System("$hhscripts/multithread.pl '".$a3mdir."' '$command' -cpu $cpu");	
+	$hhmdir = $tmpdir."/*.$hhmext";;
+	$numhhmfiles += scalar(glob("$hhmdir"));
     }
 }
 
@@ -298,14 +439,12 @@ if ($a3mfile ne "") {
     print "Creating packed A3M database file $a3mfile ...\n";
 
     open (OUT, ">$tmpdir/a3m.filelist");
-    $numa3mfiles = 0;
-    my @dirs = glob($a3mdir);
-    foreach $dir (@dirs) {
-	my @files = glob("$dir/*.a3m");
-	$numa3mfiles += scalar(@files);
-	foreach $file (@files) {
-	    print OUT "$file\n";
-	}
+    my @files = glob("$a3mdir");
+    printf("files: 1:%s  2:%s\n",$files[0],$files[1]);
+    printf("\$numa3mfiles=%i    scalar(\$files)=%i\n",$numa3mfiles, scalar(@files));
+    $numa3mfiles += scalar(@files);
+    foreach $file (@files) {
+	print OUT "$file\n";
     }
     close OUT;
     
@@ -324,14 +463,12 @@ if ($hhmfile ne "") {
     print "Creating packed HHM database file $hhmfile ...\n";
 
     open (OUT, ">$tmpdir/hhm.filelist");
-    $numhhmfiles = 0;
-    my @dirs = glob($hhmdir);
-    foreach $dir (@dirs) {
-	my @files = glob("$dir/*.$hhmext");
-	$numhhmfiles += scalar(@files);
-	foreach $file (@files) {
-	    print OUT "$file\n";
-	}
+    my @files = glob("$hhmdir");
+    printf("files: 1:%s  2:%s\n",$files[0],$files[1]);
+    printf("\$numhhmfiles=%i    scalar(\$files)=%i\n",$numhhmfiles, scalar(@files));
+    $numhhmfiles += scalar(@files);
+    foreach $file (@files) {
+	print OUT "$file\n";
     }
     close OUT;
 

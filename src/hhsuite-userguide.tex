@@ -380,7 +380,7 @@ as *.hmm.tar files. Each *.hmm.tar file untars into a single concatenated HMMER-
 database file that can be read by HHsearch. For theses databases, unfortunately no 
 alignments are publicly available. (Information to the contrary is welcome!) 
 
-The pdb70 and scop70 databaes are built at the Gene Center using in-house scripts 
+The pdb70 and scop70 databases are built at the Gene Center using in-house scripts 
 to select representatives and using two iterations of HHblits to generate MSAs for the 
 representative sequences. They are distributed freely under the Lesser GNU Public License. 
 For the other databases, different copy right regulations may apply. 
@@ -576,7 +576,7 @@ In order to build the file containing the column state sequence for prefiltering
 
 Alternatively, if you have a set of HHM or HMMER model files but no MSA files, for example for Pfam, you can build an HH-suite database with the command
 \begin{verbatim}
-$ hhblitsdb.pl -o databases/pfamA_25 -ihhm dbs/pfamA_25/ -hhmext hmm -cpu 16
+$ hhblitsdb.pl -o databases/pfamA_25 -ihhm dbs/pfamA_25/ -hmm -cpu 16
 \end{verbatim}
 The script will then build the column state sequences from the HMMER files in the directory given by the \verb`-ihhm` option. It will then generate the five database files that are needed by \verb`hhblits` for non-iterative searches throug the database. (The three files referring to the A3M MSAs cannot be built since no MSAs were supplied. However, these file are only needed to build output MSAs with the -oa3m option or to build a query MSA for a second search iteration. They are dispensable for non-iterative searches.)
 
@@ -599,6 +599,35 @@ or, if the maximum command line buffer size is exceeded,
 $ find $tmpdir -name '*.seq219' -exec cat '{}' + >> scop70_1.75.hhm
 \end{verbatim}
 
+
+\subsection{Modifying or extending existing databases}
+
+There are two ways to add, remove, or replace HMMs and A3M files in HH-suite databases. The computationally efficient way is the following. Suppose you want to add a3m and hhm files for \verb`mydb1/myseq.a3m` and all files \verb`mydb2/*.a3m` to the uniprot20. You can do that by using \verb`hhblitsdb.pl` with the append option \verb`-a`:   
+\begin{verbatim}
+$ hhblitsdb.pl -a databases/uniprot20 -ia3m 'mydb1/myseq.a3m mydb2/*.a3m' 
+\end{verbatim}
+The expression in apostrophes is a globbing expression that has the same syntax as Linux command line glob expressions (with * representing any string, ? a wildcard character etc.). For each a3m file, hhblitsdb.pl will generate column state sequences and hhm files and will add these to the database. If you already have hhm files \verb`mydb2/*.hhm` for \emph{all} the a3m files, you can give these on the command line to save the time to generate them from the a3m files: 
+\begin{verbatim}
+$ hhblitsdb.pl -a databases/uniprot20 -ia3m 'mydb1/myseq.a3m mydb2/*.a3m' -ihhm 'mydb1/myseq.hhm mydb2/*.hhm'
+\end{verbatim}
+Since the file names are used for retrieving the files in the ffindex data structure, it is very important to add only files whose file name does not yet exist in the HH-suite database.
+
+To remove files, call hhblitsdb.pl with the remove option \verb`-r`, listing the files to remove in a glob expression after the \verb`-f` option:
+\begin{verbatim}
+$ hhblitsdb.pl -r databases/uniprot20 -f 'mydb2/*.hhm mydb2/*.a3m' 
+\end{verbatim}
+Don't forget to remove both a3m and hhm files from the database. The cs files will be removed automatically.
+
+When the HH-suite database to modify is not too large (such as the PDB, SCOP, Pfam etc.), you might also extract all files into a directory:
+\begin{verbatim}
+$ ffindex_unpack <db>_a3m_db  <db>_a3m_db.index dbs/mydb/
+$ ffindex_unpack <db>_hhm_db  <db>_hhm_db.index dbs/mydb/ 
+\end{verbatim}
+Now add, replace, modify, or remove  the a3m and hhm files in \verb`dbs/mydb/` as desired. Last, build a new HH-suite database from the modified set of a3m and hhm files in \verb`dbs/mydb/`:
+\begin{verbatim}
+$ hhblitsdb.pl -o databases/mydb -ia3m dbs/mydb/ -ihhm dbs/mydb/
+\end{verbatim}
+Don't try that with the uniprot20 or nr20 databases, though. It would take many hours just to unpack the ffindex data files into the original MSA and HMM files.
 
 
 \section{Frequently asked questions}
@@ -722,10 +751,10 @@ You may write the extracted file to a separate file by appending \verb`'> d1aa7a
 
 
 {\bf Do HHsearch and HHblits work fine with multi-domain sequences?}
-HHblits and HHsearch have been designed to work with multi-domain queries. However, the chances for false positives entering the query alginment during the HHblits iterations is greater for multi-domain proteins. For long sequences, it may therefore be of advantage to first search the PDB or the SCOP domain database and then to cut the query sequence into smaller parts on the basis of the identified structural domains. Pfam or CDD are - in our opinion - not suitable to determine domain boundaries.
+HHblits and HHsearch have been designed to work with multi-domain queries. However, the chances for false positives entering the query alginment during the HHblits iterations is greater for multi-domain proteins. For long sequences, it may therefore be of advantage to first search the PDB or the SCOP domain database and then to cut the query sequence into smaller parts on the basis of the identified structural domains. Pfam or CDD are - in our opinion - less suitable to determine domain boundaries.
 
 {\bf How can I build my own UniProt database for HHblits?}
-The procedure to cluster the nr or UniProt databases is more complicated than building a database for a genome or for the sequences in the pdb. As its first step it involves clustering these huge databases down to 20\%-30\% sequence identity. The clustering is done in our lab using a new method, kClust (Hauser M, Mayer CE, and S\"oding J., to be published), available und GPL at \url{ftp://ftp://toolkit.lmb.uni-muenchen.de/kClust/}. We will add all scripts to build these HH-suite databases to the HH-suite in due time. These scripts generate A3M files, HHM files, and consensus sequences. Because of the large number of files to generate, these scripts need to be run on a computer cluster and this will require considerable computer savvyness. 
+The procedure to cluster the nr or UniProt databases is more complicated than building a database for a genome or for the sequences in the pdb. As its first step it involves clustering these huge databases down to 20\%-30\% sequence identity. The clustering is done in our lab using a new method, kClust (Hauser M, Mayer CE, and S\"oding J., to be published), available under GPL at \url{ftp://ftp://toolkit.lmb.uni-muenchen.de/kClust/}. We will add all scripts to build these HH-suite databases to the HH-suite in due time. These scripts generate A3M files, HHM files, and consensus sequences. Because of the large number of files to generate, these scripts need to be run on a computer cluster and this will require considerable computer savvyness. 
 
 {\bf Will you offer an HH-suite database that includes environmental sequences?}
 We have not seen significant improvements in remote homology detection through inclusion of environmental sequences. A problem with these sequences is their low quality, in particular chimeric sequences from wrong assemblies. This can lead to corrupted profiles in iterative searches. We therefore have no immediate plans to provide a UniProt+env or nr+env for hhblits. If you think you really need the env sequences, you have to use our old \verb`buildali.pl` script or PSI-BLAST for the time being. An alternative is to use kClust to cluster the database yourself. See the previous question.
@@ -736,20 +765,24 @@ Despite the biased amino acid composition in their integral membrane helices, me
 {\bf Don't I need to calibrate my query or database HMMs anymore?}
 No. If you don't specify otherwise, the two parameters of the extreme-value distribution for the query are estimated by a neural network from the lengths and diversities ($N_\mathrm{eff}$)) of query and database HMMs that was trained on a large set of example queries-template pairs, in an approach similar to the one used in \cite{Sadreyev:2008}. However, the old calibration is still available as an option in HHsearch.
 
-{\bf Why do I sometimes get the same database hit twice with different probabilities? Is this a bug?} Each line in the summary hit list refers to an alignment with an HMM in the database, not to the database HMM itself. Sometimes, alternative (suboptimal) alignments covering a different part of either the query or the database HMM may appear in the hit list. Usually, both the optimal and the alternative alignments are correct, in particular when the query or the database HMMs represent repeat proteins. 
+{\bf Why do I sometimes get the same database hit twice with different probabilities?} Each line in the summary hit list refers to an alignment with an HMM in the database, not to the database HMM itself. Sometimes, alternative (suboptimal) alignments covering a different part of either the query or the database HMM may appear in the hit list. Usually, both the optimal and the alternative alignments are correct, in particular when the query or the database HMMs represent repeat proteins. 
 
-{\bf How do I reconcile overlapping and conflicting domain predictions, for example domain A predicted from residues 2-50 with 98\% probability and domain B from 2-200 with 95\% probability?} The probability that a pair of residues is correctly aligned is the product of the probability for the database match to be homologous (given by the values in the \verb`Probab` column of the hit list) times the posterior probability of the residue pair to be correctly aligned given the database match is correct in the first place. The posterior probabilities are specified by the confidence numbers in the last line of the alignment blocks (0 corresponds approximately to 0-10\%, 9 to 90-100\%). Therefore, an obvious solution is to prune the alignments in the overlapping region such that the sum of total probabilities is maximized. There is no script yet that does this automatically.
+{\bf Why do I get different results using hhblits and hhsearch} when I search with the same query through the same database? There are two reasons. First, some hits that hhsearch shows might not have passed the prefilter in hhblits. The option \verb`-prepre_smax_thresh <bits>` lets you modify the minimum score threshold of the first, gapless alignment prefilter (default is 10 bits). Option \verb`-pre_evalue_thresh <E-value>` sets the maximum E-value threshold for the second, gapped alignment prefilter (default is 1000). Second, while the probabilities and P-values of hhblits and hhsearch should be the identical for the same matches, the E-values are only similar. The reason is that hhblits heuristically combines the E-values of the second prefilter with the E-values from the full HMM-HMM Viterbi alignment into total E-values \cite{Remmert:2011}. These E-values are slightly better in distinguishing true from false hits, because they combine the partly independent information from two comparisons.
 
-{\bf Why do I get different results when I search with the same query through the same database using hhblits and hhsearch?} There are two reasons. First, some hits that hhsearch shows might not have passed the prefilter in hhblits. The option \verb`-prepre_smax_thresh <bits>` lets you modify the minimum score threshold of the first, gapless alignment prefilter (default is 10 bits). Option \verb`-pre_evalue_thresh <E-value>` sets the maximum E-value threshold for the second, gapped alignment prefilter (default is 1000). Second, while the probabilities and P-values of hhblits and hhsearch should be the identical for the same matches, the E-values are only similar. The reason is that hhblits heuristically combines the E-values of the second prefilter with the E-values from the full HMM-HMM Viterbi alignment into total E-values \cite{Remmert:2011}. These E-values are slightly better in distinguishing true from false hits, because they combine the partly independent information from two comparisons.
+{\bf Why do I get different results when I perform $2$ and $1+1$ iterations with HHblits?} When you do a single iteration and start a second iteration with the A3M output file from the first iteration, the alignments should be the same as if you do two iterations (\verb`-n 2`), but the significance values can be slightly different. The reason is that the HHblits P-value is calculated by a weighted combination of the P-value of the Viterbi pairwise HMM alignment and the prefilter E-value. The prefilter E-values differ in the two cases described, since in the first case the E-value is calculated for the first prefilter search (before the first full search) and in the second case it is calculated for the second prefilter search, performed with the query MSA obtained \emph{after} the first search iteration. 
 
-{\bf I want to build a phylogenetic tree for HMMs. Which measure of similarity should I use?}
-I would use something like the raw score per alignment length. (You might also add the secondary structure score to the raw score.) Probabilities, E-values, and P-values are useful for deciding whether a match is a reliable homolog or not. They are not suitable for measuring similarities, because they strongly depend on the length of the alignment, roughly like $\mathrm{P-value} \propto \exp(\lambda \times \mathrm{average\_similarity} \times \mathrm{length})$, with some constant $\lambda$ or order 1. The probability has an even more complex dependence on length. The Similarity given above the alignment blocks does not capture the evolutionary information contained in the MSAs (see subsection \ref{aliblocksformat}). One note of caution: Large, diverse MSAs are usually more sensitive to find homologs than narrower ones. Therefore, I would limit the diversity of all HMMs to some reasonable number (perhaps around 5 or 7, depending on how far diverged your HMMs are). This filtering can be done using \verb`$ hhfilter -i <MSA.a3m> -o <MSA_filt.a3m> -neff 5`, for example. 
+{\bf How do I reconcile overlapping and conflicting domain predictions}, for example when domain A is predicted from residues 2-50 with 98\% probability and domain B from 2-200 with 95\% probability? The probability that a pair of residues is correctly aligned is the product of the probability for the database match to be homologous (given by the values in the \verb`Probab` column of the hit list) times the posterior probability of the residue pair to be correctly aligned given the database match is correct in the first place. The posterior probabilities are specified by the confidence numbers in the last line of the alignment blocks (0 corresponds approximately to 0-10\%, 9 to 90-100\%). Therefore, an obvious solution would be to prune the alignments in the overlapping region such that the sum of total probabilities is maximized. There is no script yet that does this automatically.
 
-{\bf Should I use the \verb`-global` option to build MSAs for an HH-suite database if I am intersted in global alignments to these database HMMs?}
+{\bf How can I build a phylogenetic tree for HMMs?}
+I would use a similarity measure like the raw score per alignment length. You might also add the secondary structure score to the raw score with some weight. Whereas probabilities, E-values, and P-values are useful for deciding whether a match is a reliable homolog or not, they are not suitable for measuring similarities because they strongly depend on the length of the alignment, roughly like $\mathrm{P-value} \propto \exp(\lambda \times \mathrm{average\_similarity} \times \mathrm{length})$, with some constant $\lambda$ of order 1. The probability has an even more complex dependence on length. Also, the ``Similarity'' given above the alignment blocks is a simple substitution matrix score per column between the query and template master sequences and does not capture the evolutionary information contained in the MSAs (see subsection \ref{aliblocksformat}). One note of caution: Large, diverse MSAs are usually more sensitive to find homologs than narrower ones. Therefore, I would limit the diversity of all HMMs to some reasonable number (perhaps around 5 or 7, depending on how far diverged your HMMs are). This filtering can be done using \verb`$ hhfilter -i <MSA.a3m> -o <MSA_filt.a3m> -neff 5`. 
+
+{\bf Should I use the \verb`-global` option to build MSAs} for an HH-suite database if I am intersted in global alignments to these database HMMs?
 Never use \verb`-global` when building MSAs by iterative searches with HHblits. Remember that global alignments are very greedy alignments, where alignments stretch to the ends of either query of database HMM, no matter what. Global alignments will therefore often lead to non-homologous segments getting included in the MSA, which is catastrophic, as these false segments will lead to many false positive matches when searching with this MSA. But you may use \verb`-global` when searching (with a single iteration) for global matches of your query HMMs through your customized HH-suite database, for example.
 
 {\bf How many iterations of hhblits should I use to search my customized genome database?} One iteration! Doing more than one search iterations in general only makes sense in order to build up a diverse MSA of homologous sequences by searching through the uniprot20 or nr20 databases. 
 
+{\bf How do I read the sequence/HMM headers in the pdb70 databases?}
+The pdb70 database is clustered to 70\% maximum pairwise sequence identity to reduce redundancy. The PDB identifiers at the end of the description line of sequence $X$ lists the sequences with lower experimental resolution that were removed for having higher than 70\% sequence identity with PDB sequence $X$. The asterisks indicate that a multi-atom ligand is bound in the structure. 
 
 
 
@@ -1846,8 +1879,7 @@ Builds the HH-suite database files from MSA and HMM files
 
 \small 
 \begin{verbatim}
-Usage: hhblitsdb.pl -o <db_name> [-ia3m <a3m_dir>] [-ihhm <hhm_dir>] [-ics <cs_dir>] 
-                                                                            [more_options]
+Usage: hhblitsdb.pl -o <db_name> [-ia3m <a3m_dir>] [-ihhm <hhm_dir>] [-ics <cs_dir>] [options]
 
 Depending on the input directories, the following HH-suite database files are generated:
  <db_name>.cs219              column-state sequences, one for each MSA/HMM (for prefilter)
@@ -1862,33 +1894,34 @@ Depending on the input directories, the following HH-suite database files are ge
 Options:
  -o <db_name>    name of database
  -ia3m <a3m_dir> input directory (or glob of directories) with A3M-formatted files
+                 These files MUST have extension 'a3m'.
  -ihhm <hhm_dir> input directory (or glob of directories) with HHM (or HMMER) files 
-                 (WARNING! HMMER format results in decreased performance over HHM format)
+                 These files MUST have extension 'hhm' (HHsuite) or 'hmm' (HMMER3). 
  -ics  <cs_dir>  input directory (or glob of directories) with column state sequences
  -log <logfile>  log file recording stderr stream of cstranslate and hhmake commands
 
- -csext          extension of column state sequences (default: $csext)
- -a3mext         extension of A3M-formatted files (default: $a3mext)
- -hhmext         extension of HHM- or HMMER-formatted files (default: $hhmext)
- -append         if the packed db files exists, append input A3M/HHM files (def: overwrite)
- -v [1-3]        verbose mode (default: $v)
- -cpu <int>      numbers of threads for generating cs219 and hhm files (default = $cpu)
+ -csext <ext>    extension of column state sequences (default: seq219)
+ -hmm            use HMMER-formatted files. These MUST have extension hmm
+                 (WARNING! HMMER format results in decreased performance over HHM format)
+ -append         append A3M/HHM files to packed db files if they exist (default: overwrite)
+ -v [1-3]        verbose mode (default: 2)
+ -cpu <int>      number of threads to generate cs219 and hhm files (default = 8)
 
  
 Example 1: only -ia3m given; cs sequences and hhm files are generated from a3m files
-   perl hhblitsdb.pl -o databases/mydb -ia3m mydb/a3ms 
+   perl hhblitsdb.pl -o databases/mydb -ia3m mydb/a3ms/ 
 
 Example 2: only -ihhm given; cs sequences are generated from hhm files, but no a3m db file 
-   perl hhblitsdb.pl -o databases/mydb -ihhm mydb/hhms 
+   perl hhblitsdb.pl -o databases/mydb -ihhm mydb/hhms/ 
 
 Example 3: -ia3m and -ihhm given; cs sequences are generated from a3m files
-   perl hhblitsdb.pl -o databases/mydb -ia3m mydb/a3ms -ihhm mydb/hhms   
+   perl hhblitsdb.pl -o databases/mydb -ia3m mydb/a3ms/ -ihhm mydb/hhms/   
 
 Example 4: -ics, -ia3m, and -ihhm given; all db files are created 
-   perl hhblitsdb.pl -o databases/mydb -ia3m mydb/a3ms -ihhm mydb/hhms -ics mydb/cs  
+   perl hhblitsdb.pl -o databases/mydb -ia3m mydb/a3ms/ -ihhm mydb/hhms/ -ics mydb/cs/  
 
-Example 5: using glob expression to specify several input databases
-   perl hhblitsdb.pl -o databases/mydb -ihhm 'mydbs*/hhms'  
+Example 5: using glob expression to specify several input databases (note the singe quotes)
+   perl hhblitsdb.pl -o databases/mydb -ihhm 'mydbs*/hhms/'  
 \end{verbatim} 
 \normalsize
 
