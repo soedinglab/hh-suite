@@ -2,7 +2,29 @@
 Bugs? Ideas? Need for improvement? 
 soeding@genzentrum.lmu.de
 
+_______________________________________________________________________________
 
+HH-suite 2.0.15  June 2012
+
+    * Fix hhalign regression introduced in 2.0.14.
+
+    * Fix a bug in the counting of the number of sequences found.
+
+    * Code cleanup
+
+    * Removed a regression in -nodiff option: sequences in query MSA were filtered by
+      normal, active filters such as -diff and -id. Only db MSAs were not filtered.
+
+    * Removed a regression that read sequences from query HHM or <query>.a3m even when a sequence file query.seq was given.
+
+    * Simplified code in hhblits.
+
+    * Renamed option -nodiff to -all. The name -nodiff is very misleading as
+      the diff option is not actually switched off on the query and db alignments.
+
+    * Improved the filtering section of the help lists
+
+    * Fixed problem for small -e <E-value> thesholds by declaring par.e as double instead of float.
 
 _______________________________________________________________________________
 

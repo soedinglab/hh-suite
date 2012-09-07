@@ -211,11 +211,15 @@ for (my $i=0; $i<@ARGV; $i++) {
 
 # Check input
 if (!$dbname) {print($help); die("ERROR! Name of database is missing! Use -o <db_name>\n");}
-if ($a3mdir) {$a3mdir=~s/\/$//; $a3mfile = $dbname."_a3m_db"; $hhmfile = $dbname."_hhm_db";}
-if ($hhmdir) {$hhmdir=~s/\/$//; $hhmfile = $dbname."_hhm_db";}
+$a3mdir=~s/\/$//; 
+$a3mfile = $dbname."_a3m_db"; 
+$hhmfile = $dbname."_hhm_db";
 $csfile = $dbname.".cs219";
+if ($hhmdir) {$hhmdir=~s/\/$//;} 
 
-if ($a_if_append eq "") {unlink $csfile, $a3mfile, $a3mfile.".index", $hhmfile, $hhmfile.".index"; }
+if ($a_if_append eq "" && $remove==0) {
+    unlink $csfile, $a3mfile, $a3mfile.".index", $hhmfile, $hhmfile.".index"; 
+}
 
 if ($a3mdir eq "" && $hhmdir eq "" && $csdir eq "" && $remove==0) {
     print($help); print "ERROR! At least one input directory must be given!\n"; exit(1);
@@ -239,6 +243,49 @@ if ($hhmdir) {
 }
 
 
+# If in append mode, initialize size counters with present sizes
+if ($a_if_append || $remove==1) {
+    open (IN, "<$a3mfile.index.sizes") || die("Error: can't open $a3mfile.index.sizes: $!");
+    $line = <IN>;
+    close IN;
+    $line =~ /^(\S*)/;
+    $numa3mfiles = $1;
+
+    open (IN, "<$hhmfile.index.sizes") || die("Error: can't open $hhmfile.index.sizes: $!");
+    $line = <IN>;
+    close IN;
+    $line =~ /^(\S*)/;
+    $numhhmfiles = $1;
+
+    open (IN, "<$csfile.sizes") || die("Error: can't open $csfile.sizes: $!");
+    $line = <IN>;
+    close IN;
+    $line =~ /(\S*)\s+(\S*)/;
+    $numcsfiles = $1;
+    $num_chars = $2;
+
+    printf("Current number of a3m files in db:    %i\n",$numa3mfiles);
+    printf("Current number of $hhmext files in db:    %i\n",$numhhmfiles);
+    printf("Current number of $csext files in db: %i\n\n",$numcsfiles);
+
+} else {
+    $numa3mfiles = 0;
+    $numhhmfiles = 0;
+    $numcsfiles = 0;
+    $num_chars = 0;
+}
+
+# Create tmp directory (plus path, if necessary)
+my $tmpdir="/tmp/$ENV{USER}/$$";  # directory where all temporary files are written: /tmp/UID/PID
+my $suffix=$tmpdir;
+while ($suffix=~s/^\/[^\/]+//) {
+    $tmpdir=~/(.*)$suffix/;
+    if (!-d $1) {mkdir($1,0777);}
+} 
+unlink glob("$tmpdir/*"); # clean up directory if it already exists
+unlink $logfile;
+    
+
 
 ##############################################################################################
 # Remove files?
@@ -261,6 +308,25 @@ if ($remove==1) {
     &HHPaths::System("ffindex_modify -su $dbname"."_a3m_db.index ".$files); 
     &HHPaths::System("ffindex_modify -su $dbname"."_hhm_db.index ".$files); 
     
+    # Adjust number of files in $a3mfile.index.sizes
+    $numa3mfiles = 0;
+    open (IN, "<$a3mfile.index") || die("Error: can't open $a3mfile.index: $!");
+    while(<IN>) {$numa3mfiles++;}
+    close IN;
+    open (OUT, ">$a3mfile.index.sizes") || die("Error: can't open $a3mfile.index.sizes: $!");
+    printf(OUT "%i\n",$numa3mfiles);
+    close(OUT);
+
+    # Adjust number of files in $hhmfile.index.sizes
+    $numhhmfiles = 0;
+    open (IN, "<$hhmfile.index") || die("Error: can't open $hhmfile.index: $!");
+    while(<IN>) {$numhhmfiles++;}
+    close IN;
+    open (OUT, ">$hhmfile.index.sizes") || die("Error: can't open $hhmfile.index.sizes: $!");
+    printf(OUT "%i\n",$numa3mfiles);
+    close(OUT);
+
+
     # Remove sequences of globbed files from cs file
     my 	$skipseq=0;
     $numcsfiles = 0;
@@ -289,222 +355,174 @@ if ($remove==1) {
     unlink($csfile);
     &HHPaths::System("mv $csfile".".tmp ".$csfile); 
 
-    # Adjust csfile.sizes
+    # Adjust $csfile.sizes
     open (OUT, ">$csfile.sizes");
     print OUT "$numcsfiles $num_chars\n";
     close OUT;
 
-    print("\n");
-    exit;
-}
-
+} else {
 
 ##############################################################################################
 # Generate new db or append to old
 ##############################################################################################
-
-# Create tmp directory (plus path, if necessary)
-my $tmpdir="/tmp/$ENV{USER}/$$";  # directory where all temporary files are written: /tmp/UID/PID
-my $suffix=$tmpdir;
-while ($suffix=~s/^\/[^\/]+//) {
-    $tmpdir=~/(.*)$suffix/;
-    if (!-d $1) {mkdir($1,0777);}
-} 
-unlink glob("$tmpdir/*"); # clean up directory if it already exists
-unlink $logfile;
-
-
-# If in append mode, initialize size counters with present sizes
-if ($a_if_append) {
-    open (IN, "<$a3mfile.index.sizes");
-    $line = <IN>;
-    close IN;
-    $line =~ /^(\S*)/;
-    $numa3mfiles = $1;
-
-    open (IN, "<$hhmfile.index.sizes");
-    $line = <IN>;
-    close IN;
-    $line =~ /^(\S*)/;
-    $numhhmfiles = $1;
-
-    open (IN, "<$csfile.sizes");
-    $line = <IN>;
-    close IN;
-    $line =~ /(\S*)\s+(\S*)/;
-    $numcsfiles = $1;
-    $num_chars = $2;
-
-} else {
-    $numa3mfiles = 0;
-    $numhhmfiles = 0;
-    $numcsfiles = 0;
-    $num_chars = 0;
-}
-
-
 
 
 ##############################################################################################
 # Generate column-state database file
 ##############################################################################################
 
-# Generate column-state sequences in $tmpdir if no -ics directory given
-if (!$csdir) 
-{
-    my $x = 0.3;    # parameters for cstranslate
-    my $c = 4;      # parameters for cstranslate
+    # Generate column-state sequences in $tmpdir if no -ics directory given
+    if (!$csdir) 
+    {
+	my $x = 0.3;    # parameters for cstranslate
+	my $c = 4;      # parameters for cstranslate
+	
+	if ($a3mdir) {
+	    print("Generating seq219 files in $tmpdir/ from a3m files $a3mdir\n\n");
+	    $command = "$hhbin/cstranslate -i \$file -o $tmpdir/\$base.seq219 -D $context_lib -A $cs_lib -x $x -c $c 1>>$logfile 2>>$logfile";
+	    &HHPaths::System("$hhscripts/multithread.pl '".$a3mdir."' '$command' -cpu $cpu");
+	    
+	} elsif ($hhmdir) {
+	    
+	    if ($hhmext eq "hmm") {
+		print("\nGenerating prf profile files in $tmpdir/ from hmm files $hhmdir/\n\n");
+		$command = "$hhscripts/create_profile_from_hmmer.pl -i \$file -o $tmpdir/\$base.prf 1>/dev/null 2>>$logfile";
+		&HHPaths::System("$hhscripts/multithread.pl '".$hhmdir."' '$command' -cpu $cpu");
+	    } else { # $hhmext eq "hhm"
+		print("\nGenerating prf profile files in $tmpdir/ from hhm files $hhmdir/\n\n");
+		$command = "$hhscripts/create_profile_from_hhm.pl -i \$file -o $tmpdir/\$base.prf 1>/dev/null 2>>$logfile";
+		&HHPaths::System("$hhscripts/multithread.pl '".$hhmdir."' '$command' -cpu $cpu");
+	    }
+	    
+	    print("\nGenerating seq219 files in $tmpdir/ from prf files in $tmpdir/\n\n");
+	    if ($hhmext eq "hmm") {
+		$command = "$hhbin/cstranslate -i \$file -o \$name.seq219 -A $cs_lib 1>>$logfile 2>>$logfile";	    
+	    } else { # $hhmext eq "hhm"
+		$command = "$hhbin/cstranslate -i \$file -o \$name.seq219 -A $cs_lib -D $context_lib -x $x -c $c 1>>$logfile 2>>$logfile";
+	    }
+	    &HHPaths::System("$hhscripts/multithread.pl '".$tmpdir."/*.prf' '$command' -cpu $cpu");
+	}
+	
+	$csdir = $tmpdir."/*.$csext";
+    }
     
-    if ($a3mdir) {
-	print("\nGenerating seq219 files in $tmpdir/ from a3m files $a3mdir\n\n");
-	$command = "$hhbin/cstranslate -i \$file -o $tmpdir/\$base.seq219 -D $context_lib -A $cs_lib -x $x -c $c 1>>$logfile 2>>$logfile";
-	&HHPaths::System("$hhscripts/multithread.pl '".$a3mdir."' '$command' -cpu $cpu");
-	
-    } elsif ($hhmdir) {
-	
-	if ($hhmext eq "hmm") {
-	    print("\nGenerating prf profile files in $tmpdir/ from hmm files $hhmdir/\n\n");
-	    $command = "$hhscripts/create_profile_from_hmmer.pl -i \$file -o $tmpdir/\$base.prf 1>/dev/null 2>>$logfile";
-	    &HHPaths::System("$hhscripts/multithread.pl '".$hhmdir."' '$command' -cpu $cpu");
-	} else { # $hhmext eq "hhm"
-	    print("\nGenerating prf profile files in $tmpdir/ from hhm files $hhmdir/\n\n");
-	    $command = "$hhscripts/create_profile_from_hhm.pl -i \$file -o $tmpdir/\$base.prf 1>/dev/null 2>>$logfile";
-	    &HHPaths::System("$hhscripts/multithread.pl '".$hhmdir."' '$command' -cpu $cpu");
-	}
-
-	print("\nGenerating seq219 files in $tmpdir/ from prf files in $tmpdir/\n\n");
-	if ($hhmext eq "hmm") {
-	    $command = "$hhbin/cstranslate -i \$file -o \$name.seq219 -A $cs_lib 1>>$logfile 2>>$logfile";	    
-	} else { # $hhmext eq "hhm"
-	    $command = "$hhbin/cstranslate -i \$file -o \$name.seq219 -A $cs_lib -D $context_lib -x $x -c $c 1>>$logfile 2>>$logfile";
-	}
-	&HHPaths::System("$hhscripts/multithread.pl '".$tmpdir."/*.prf' '$command' -cpu $cpu");
+    
+    # Write columns state sequences into cs database file, 
+    # replace names in cs sequences with filenames: ">name+description" => ">filename"
+    if ($a_if_append) {
+	open (OUT, ">>$csfile");
+    } else {
+	open (OUT, ">$csfile");
     }
-
-    $csdir = $tmpdir."/*.$csext";
-}
-
-
-# Write columns state sequences into cs database file, 
-# replace names in cs sequences with filenames: ">name+description" => ">filename"
-if ($a_if_append) {
-    open (OUT, ">>$csfile");
-} else {
-    open (OUT, ">$csfile");
-}
-foreach my $seq219file (glob($csdir)) { 
-    open (IN, "<$seq219file");
-    my @lines = <IN>;
-    close(IN);
-    $seq219file =~ s/.*?([^\/]*)\.$csext\s*/$1/ or die ("Error: $seq219file does not have the extension $csext!?\n");
-    foreach my $line (@lines) {
-	if ($line =~ /^>/) {
-	    $line = ">".$seq219file."\n";
-	    $numcsfiles++;
-	} else {
-	    $num_chars += length($line);
+    foreach my $seq219file (glob($csdir)) { 
+	open (IN, "<$seq219file");
+	my @lines = <IN>;
+	close(IN);
+	$seq219file =~ s/.*?([^\/]*)\.$csext\s*/$1/ or die ("Error: $seq219file does not have the extension $csext!?\n");
+	foreach my $line (@lines) {
+	    if ($line =~ /^>/) {
+		$line = ">".$seq219file."\n";
+		$numcsfiles++;
+	    } else {
+		$num_chars += length($line);
+	    }
+	    printf(OUT "%s",$line); 	
 	}
-	printf(OUT "%s",$line); 	
-    }
-} 
-close(OUT);	
-
-open (OUT, ">$csfile.sizes");
-print OUT "$numcsfiles $num_chars\n";
-close OUT;
-
-
+    } 
+    close(OUT);	
+    
+    open (OUT, ">$csfile.sizes");
+    print OUT "$numcsfiles $num_chars\n";
+    close OUT;
+    
+    
 ##############################################################################################
 # Generate hhm files with hhmake from a3m files if no -ihhm directory given
 ##############################################################################################
-
-if (!$hhmdir) 
-{
-    if ($a3mdir) {
-	print("\nGenerating hhm files in $tmpdir/ from a3m files $a3mdir/\n\n");
-	$command = "hhmake -i \$file -o $tmpdir/\$base.hhm  1>/dev/null 2>>$logfile";
-	&HHPaths::System("$hhscripts/multithread.pl '".$a3mdir."' '$command' -cpu $cpu");	
-	$hhmdir = $tmpdir."/*.$hhmext";;
-	$numhhmfiles += scalar(glob("$hhmdir"));
+    
+    if (!$hhmdir) 
+    {
+	if ($a3mdir) {
+	    print("\nGenerating hhm files in $tmpdir/ from a3m files $a3mdir/\n\n");
+	    $command = "hhmake -i \$file -o $tmpdir/\$base.hhm  1>/dev/null 2>>$logfile";
+	    &HHPaths::System("$hhscripts/multithread.pl '".$a3mdir."' '$command' -cpu $cpu");	
+	    $hhmdir = $tmpdir."/*.$hhmext";;
+	    $numhhmfiles += scalar(glob("$hhmdir"));
+	}
     }
-}
-
-
+    
+    
 ##############################################################################################
 # Generate packed A3M and HMM files and index files
 ##############################################################################################
-
-# Generate packed A3M file and index file?
-if ($a3mfile ne "") {
-    print "Creating packed A3M database file $a3mfile ...\n";
-
-    open (OUT, ">$tmpdir/a3m.filelist");
-    my @files = glob("$a3mdir");
-    printf("files: 1:%s  2:%s\n",$files[0],$files[1]);
-    printf("\$numa3mfiles=%i    scalar(\$files)=%i\n",$numa3mfiles, scalar(@files));
-    $numa3mfiles += scalar(@files);
-    foreach $file (@files) {
-	print OUT "$file\n";
-    }
-    close OUT;
     
-    # Build packed file (concatenated with '\0' as delimiters) and index file from files in file list
-    # The ffindex binaries are contained in <install_dir>/lib/ffindex/bin/
-    $command = "ffindex_build -".$a_if_append."s -f $tmpdir/a3m.filelist $a3mfile $a3mfile.index";
-    &HHPaths::System($command);
- 
-    open (OUT, ">$a3mfile.index.sizes");
-    print OUT "$numa3mfiles\n";
-    close OUT;
-} 
-
-# Generate packed HHMM file and index file?
-if ($hhmfile ne "") {
-    print "Creating packed HHM database file $hhmfile ...\n";
-
-    open (OUT, ">$tmpdir/hhm.filelist");
-    my @files = glob("$hhmdir");
-    printf("files: 1:%s  2:%s\n",$files[0],$files[1]);
-    printf("\$numhhmfiles=%i    scalar(\$files)=%i\n",$numhhmfiles, scalar(@files));
-    $numhhmfiles += scalar(@files);
-    foreach $file (@files) {
-	print OUT "$file\n";
+    # Generate packed A3M file and index file?
+    if ($a3mdir ne "") {
+	print "Creating packed A3M database file $a3mfile ...\n";
+	
+	open (OUT, ">$tmpdir/a3m.filelist");
+	my @files = glob("$a3mdir");
+	$numa3mfiles += scalar(@files);
+	foreach $file (@files) {
+	    print OUT "$file\n";
+	}
+	close OUT;
+	
+	# Build packed file (concatenated with '\0' as delimiters) and index file from files in file list
+	# The ffindex binaries are contained in <install_dir>/lib/ffindex/bin/
+	$command = "ffindex_build -".$a_if_append."s -f $tmpdir/a3m.filelist $a3mfile $a3mfile.index";
+	&HHPaths::System($command);
+	
+	open (OUT, ">$a3mfile.index.sizes");
+	print OUT "$numa3mfiles\n";
+	close OUT;
+    } 
+    
+    # Generate packed HHMM file and index file?
+    if ($hhmdir ne "") {
+	print "Creating packed HHM database file $hhmfile ...\n";
+	
+	open (OUT, ">$tmpdir/hhm.filelist");
+	my @files = glob("$hhmdir");
+	$numhhmfiles += scalar(@files);
+	foreach $file (@files) {
+	    print OUT "$file\n";
+	}
+	close OUT;
+	
+	# Build packed file (concatenated with '\0' as delimiters) and index file from files in file list
+	# The ffindex binaries are contained in <install_dir>/lib/ffindex/bin/
+	$command = "ffindex_build -".$a_if_append."s -f $tmpdir/hhm.filelist $hhmfile $hhmfile.index";
+	&HHPaths::System($command);
+	
+	open (OUT, ">$hhmfile.index.sizes");
+	print OUT "$numhhmfiles\n";
+	close OUT;
     }
-    close OUT;
-
-    # Build packed file (concatenated with '\0' as delimiters) and index file from files in file list
-    # The ffindex binaries are contained in <install_dir>/lib/ffindex/bin/
-    $command = "ffindex_build -".$a_if_append."s -f $tmpdir/hhm.filelist $hhmfile $hhmfile.index";
-    &HHPaths::System($command);
- 
-    open (OUT, ">$hhmfile.index.sizes");
-    print OUT "$numhhmfiles\n";
-    close OUT;
-}
+} # end if $remove==0
 
 print("\n");
-printf("Number of a3m files:    %i\n",$numa3mfiles);
-printf("Number of $hhmext files:    %i\n",$numhhmfiles);
-printf("Number of $csext files: %i\n\n",$numcsfiles);
+printf("New number of a3m files in db:    %i\n",$numa3mfiles);
+printf("New number of $hhmext files in db:    %i\n",$numhhmfiles);
+printf("New number of $csext files in db: %i\n\n",$numcsfiles);
 
 my $err=0;
 if ($numa3mfiles && $numhhmfiles && $numa3mfiles != $numhhmfiles) {
     print("**************************************************************************
-WARNING: Number of a3m files not equal to number of $hhmext files
-**************************************************************************\n"); $err=1;
+WARNING: Number of a3m files not equal to number of $hhmext files\n"); $err=1;
 }
 if ($numcsfiles && $numhhmfiles && $numcsfiles != $numhhmfiles) {
     print("**************************************************************************
-WARNING: Number of $csext files not equal to number of $hhmext files
-**************************************************************************\n"); $err=1;
+WARNING: Number of $csext files not equal to number of $hhmext files\n"); $err=1;
 }
 if ($numcsfiles && $numa3mfiles && $numcsfiles != $numa3mfiles) {
     print("**************************************************************************
-WARNING: Number of $csext files not equal to number of a3m files
-**************************************************************************\n"); $err=1;
+WARNING: Number of $csext files not equal to number of a3m files\n"); $err=1;
 }
 
-if ($err==1) {print("$tmpdir will not be removed to check for missing files\n");}
+if ($err==1) {print("**************************************************************************
+$tmpdir will not be removed to check for missing files
+**************************************************************************\n");}
 elsif ($v<3) {
     $command = "rm -rf $tmpdir";
 #    &System($command);

@@ -816,14 +816,14 @@ void DoViterbiSearch(char *dbfiles[], int ndb, bool alignByWorker=true)
       FILE* dbf;
       char filename[NAMELEN];
       strcpy(filename,dbfiles[idb]);
-      dbf = ffindex_fopen(dbhhm_data, dbhhm_index, dbfiles[idb]);
+      dbf = ffindex_fopen_by_name(dbhhm_data, dbhhm_index, dbfiles[idb]);
       if (dbf == NULL) {
 	RemoveExtension(filename, dbfiles[idb]);
 	strcat(filename,".a3m");
 	if(dba3m_index_file==NULL) {
 	  cerr<<endl<<"Error opening "<<filename<<": A3M database missing\n"; exit(4);
 	}	
-	dbf = ffindex_fopen(dba3m_data, dba3m_index, filename);
+	dbf = ffindex_fopen_by_name(dba3m_data, dba3m_index, filename);
 	if (dbf == NULL) 
 	  {
 	    RemoveExtension(filename, dbfiles[idb]);
@@ -831,7 +831,7 @@ void DoViterbiSearch(char *dbfiles[], int ndb, bool alignByWorker=true)
 	    if(dbhhm_index_file==NULL) {
 	      cerr<<endl<<"Error opening "<<dbfiles[idb]<<": HHM database missing\n"; exit(4);
 	    }
-	    dbf = ffindex_fopen(dbhhm_data, dbhhm_index, filename);
+	    dbf = ffindex_fopen_by_name(dbhhm_data, dbhhm_index, filename);
 	    if (dbf == NULL) OpenFileError(dbfiles[idb]);
 	  }
       }
@@ -1380,13 +1380,13 @@ void perform_realign(char *dbfiles[], int ndb)
 
 	  // Open HMM database file dbfiles[idb]
 	  FILE* dbf;
-	  dbf = ffindex_fopen(dbhhm_data, dbhhm_index, hit_cur.dbfile);
+	  dbf = ffindex_fopen_by_name(dbhhm_data, dbhhm_index, hit_cur.dbfile);
 	  if (dbf == NULL) {
 	    char filename[NAMELEN];
 	    RemoveExtension(filename, hit_cur.file);
 	    strcat(filename,".a3m");
 	    if(dba3m_index_file!=NULL) {
-	      dbf = ffindex_fopen(dba3m_data, dba3m_index, filename);
+	      dbf = ffindex_fopen_by_name(dba3m_data, dba3m_index, filename);
 	    } else {
 	      cerr<<endl<<"Error opening "<<hit_cur.dbfile<<": A3M database missing\n"; exit(4);
 	    }
@@ -1521,7 +1521,7 @@ void perform_realign(char *dbfiles[], int ndb)
 
 	  // Reading in next db MSA and merging it onto Qali
 	  Alignment Tali;
-	  FILE* ta3mf = ffindex_fopen(dba3m_data, dba3m_index, ta3mfile);
+	  FILE* ta3mf = ffindex_fopen_by_name(dba3m_data, dba3m_index, ta3mfile);
 	  if (ta3mf == NULL) OpenFileError(ta3mfile);
 	  Tali.Read(ta3mf,ta3mfile); // Read template alignment into Tali
 	  fclose(ta3mf);
@@ -1611,13 +1611,13 @@ void perform_realign(char *dbfiles[], int ndb)
       
       // Open HMM database file dbfiles[idb]
       FILE* dbf;
-      dbf = ffindex_fopen(dbhhm_data, dbhhm_index, dbfiles[idb]);
+      dbf = ffindex_fopen_by_name(dbhhm_data, dbhhm_index, dbfiles[idb]);
       if (dbf == NULL) {
 	char filename[NAMELEN];
 	RemoveExtension(filename, dbfiles[idb]);
 	strcat(filename,".a3m");
 	if(dba3m_index_file!=NULL) {
-	  dbf = ffindex_fopen(dba3m_data, dba3m_index, filename);
+	  dbf = ffindex_fopen_by_name(dba3m_data, dba3m_index, filename);
 	} else {
 	  cerr<<endl<<"Error opening "<<dbfiles[idb]<<": A3M database missing\n"; exit(4);
 	}
@@ -2289,7 +2289,7 @@ int main(int argc, char **argv)
 		// Reading in next db MSA and merging it onto Qali
 		FILE* ta3mf;
 		Alignment Tali;
-		ta3mf = ffindex_fopen(dba3m_data, dba3m_index, ta3mfile);
+		ta3mf = ffindex_fopen_by_name(dba3m_data, dba3m_index, ta3mfile);
 		if (ta3mf == NULL) OpenFileError(ta3mfile);
 		Tali.Read(ta3mf,ta3mfile); // Read template alignment into Tali
 		fclose(ta3mf);

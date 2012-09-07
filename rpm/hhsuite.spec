@@ -1,10 +1,10 @@
 Summary: Protein sequenging analysing tools using HMM-HMM comparison
 Name: hhsuite
-Version: 2.0.14
+Version: 2.0.15
 Release: 1
 License: GPL
 Group: Utilities/System
-Source: ftp://toolkit.genzentrum.lmu.de/HH-suite/releases/hhsuite-2.0.14.tar.gz
+Source: ftp://toolkit.genzentrum.lmu.de/HH-suite/releases/hhsuite-2.0.15.tar.gz
 Requires: libpng, perl
 BuildRequires: libpng-devel
 BuildRoot: /tmp/hhsuite-build
@@ -35,6 +35,7 @@ make install INSTALL_DIR="$RPM_BUILD_ROOT/usr"
 /usr/bin/ffindex_get
 /usr/bin/ffindex_modify
 /usr/bin/ffindex_from_fasta
+/usr/bin/ffindex_apply
 /usr/include/ffindex.h
 /usr/include/ffutil.h
 /usr/lib/hh/bin/cstranslate
