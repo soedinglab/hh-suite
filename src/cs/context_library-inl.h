@@ -1,4 +1,21 @@
-// Copyright 2009, Andreas Biegert
+/*
+  Copyright 2009 Andreas Biegert
+
+  This file is part of the CS-BLAST package.
+
+  The CS-BLAST package is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  The CS-BLAST package is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 #ifndef CS_CONTEXT_LIBRARY_INL_H_
 #define CS_CONTEXT_LIBRARY_INL_H_
@@ -7,7 +24,7 @@
 
 #include "abstract_state_matrix-inl.h"
 #include "context_profile-inl.h"
-#include "pseudocounts.h"
+#include "pseudocounts-inl.h"
 
 namespace cs {
 
@@ -43,9 +60,9 @@ void ContextLibrary<Abc>::Read(FILE* fin) {
 
   char buffer[KB];
   size_t size = 0;
-  if (cs::fgetline(buffer, KB, fin))
+  if (fgetline(buffer, KB, fin))
     size = ReadInt(buffer, "SIZE", "Unable to parse context library 'SIZE'!");
-  if (cs::fgetline(buffer, KB, fin))
+  if (fgetline(buffer, KB, fin))
     wlen_ = ReadInt(buffer, "LENG", "Unable to parse context library 'LENG'!");
 
   // Read context profiles
@@ -142,6 +159,74 @@ void GaussianLibraryInit<Abc>::operator() (ContextLibrary<Abc>& lib) const {
     TransformToLin(cp);
     Normalize(cp.probs, 1.0);
     lib.SetProfile(k, cp);
+  }
+}
+
+template<class Abc>
+void CrfBasedLibraryInit<Abc>::operator() (ContextLibrary<Abc>& lib) const {
+  if (crf_.size() < lib.size())
+    throw Exception("Too few context profiles for CRF initialization!");
+
+  // Precompute column weights
+  size_t c = crf_.center();
+  double cw[crf_.wlen()];
+  cw[c] = wcenter_;
+  for (size_t j = 1; j <= c; ++j) {
+    cw[c - j] = cw[c - j + 1] * wdecay_;
+    cw[c + j] = cw[c - j];
+  }   
+
+  // Initialize all context profiles
+  double prior[lib.size()];
+  for (size_t k = 0; k < lib.size(); ++k) {
+    const CrfState<Abc>& state = crf_[k];
+    ContextProfile<Abc> cp(crf_.wlen());
+    cp.is_log = true;
+
+    prior[k] = 0.0;
+    for (size_t i = 0; i < crf_.wlen(); ++i) {
+      // Compute delta_k(i)
+      double col[Abc::kSize];
+      double max = -DBL_MAX;
+      for (size_t a = 0; a < Abc::kSize; ++a) {
+        col[a] = state.context_weights[i][a] / cw[i];
+        if (col[a] > max) max = col[a];
+      }
+      double delta = 0.0;
+      for (size_t a = 0; a < Abc::kSize; ++a) 
+        delta += exp(col[a] - max);
+      delta = -cw[i] * (max + log(delta));
+
+      // log(p_k(i,a))
+      for (size_t a = 0; a < Abc::kSize; ++a)
+        cp.probs[i][a] = (state.context_weights[i][a] + delta) / cw[i];
+      cp.probs[i][Abc::kAny] = 0.0;
+
+      // needed for computing the prior
+      prior[k] += delta;
+    }
+    // Set the pc column
+    for (size_t a = 0; a < Abc::kSizeAny; ++a)
+      cp.pc[a] = cp.probs[c][a];
+
+    lib.SetProfile(k, cp);
+  }
+
+  // Compute log(prior)
+  double max = -DBL_MAX;
+  for (size_t k = 0; k < lib.size(); ++k) {
+    prior[k] = crf_[k].bias_weight - neff_ * prior[k];
+    if (prior[k] > max) max = prior[k];
+  }
+  double delta = 0.0;
+  for (size_t k = 0; k < lib.size(); ++k) 
+    delta += exp(prior[k] - max);
+  delta = max + log(delta);
+  for (size_t k = 0; k < lib.size(); ++k) {
+    ContextProfile<Abc>& cp = lib[k];
+    cp.prior = prior[k] - delta;
+    TransformToLin(cp);
+    Normalize(cp.probs, 1.0);
   }
 }
 

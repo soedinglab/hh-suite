@@ -1,4 +1,21 @@
-// Copyright 2009, Andreas Biegert
+/*
+  Copyright 2009-2012 Andreas Biegert, Christof Angermueller
+
+  This file is part of the CS-BLAST package.
+
+  The CS-BLAST package is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  The CS-BLAST package is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 // Collection of commonly used inline utility functions.
 
 #ifndef CS_UTILS_H_
@@ -54,6 +71,11 @@ inline float SIGN(const float &a, const double &b) {
 
 inline float SIGN(const double &a, const float &b) {
   return (float)(b >= 0 ? (a >= 0 ? a : -a) : (a >= 0 ? -a : a));
+}
+
+template<class T>
+inline int SIGN(const T& a) {
+    return (a > 0) ? 1 : ((a < 0) ? -1 : 0);
 }
 
 template<class T>
@@ -256,7 +278,7 @@ inline float Normalize(float* array, size_t length,
                        const float* default_array = NULL) {
   float sum = 0.0f;
   for (size_t i = 0; i < length; ++i) sum += array[i];
-  if (sum != 0.0f) {
+  if (fabs(1.0 - sum) > kNormalize) {
     float fac = 1.0f / sum;
     for (size_t i = 0; i < length; ++i) array[i] *= fac;
   } else if (default_array) {
@@ -271,7 +293,7 @@ inline double Normalize(double* array, size_t length,
                         const double* default_array = NULL) {
   double sum = 0.0;
   for (size_t i = 0; i < length; ++i) sum += array[i];
-  if (sum != 0.0) {
+  if (fabs(1.0 - sum) > kNormalize) {
     double fac = 1.0 / sum;
     for (size_t i = 0; i < length; ++i) array[i] *= fac;
   } else if (default_array) {
@@ -436,9 +458,19 @@ inline std::string GetDirname(const std::string& s) {
   return "";
 }
 
+// Concatenates pathname and a filename.
+inline const char* PathCat(const std::string& path, const std::string& file) {
+  std::string cat = path;
+  if (*(cat.rbegin()) != kDirSep) cat += kDirSep;
+  cat += file;
+  return cat.c_str();
+}
+
 // Reads all files in 'path' and pushes them onto given vector.
 void GetAllFiles(const std::string& path, std::vector<std::string>& files,
                  const std::string& ext = "");
+
+
 
 }  // namespace cs
 

@@ -17,40 +17,37 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef CS_CONTEXT_LIB_PSEUDOCOUNTS_H_
-#define CS_CONTEXT_LIB_PSEUDOCOUNTS_H_
+#ifndef CS_CRF_PSEUDOCOUNTS_H_
+#define CS_CRF_PSEUDOCOUNTS_H_
 
 #include "count_profile-inl.h"
 #include "emission.h"
 #include "profile-inl.h"
 #include "pseudocounts-inl.h"
 #include "sequence-inl.h"
-#include "context_library-inl.h"
+#include "crf-inl.h"
 
 namespace cs {
 
-// Encapsulation of context-specific pseudocounts calculated from a library
-// of context profiles.
+// Encapsulation of context-specific pseudocounts calculated from a context CRF
 template<class Abc>
-class LibraryPseudocounts : public Pseudocounts<Abc> {
-  public:
-    LibraryPseudocounts(const ContextLibrary<Abc>& lib, double weight_center = 1.6, double weight_decay = 0.85);
+class CrfPseudocounts : public Pseudocounts<Abc> {
+ public:
+  CrfPseudocounts(const Crf<Abc>& lib);
 
-    virtual ~LibraryPseudocounts() {}
+  virtual ~CrfPseudocounts() {}
 
-    virtual void AddToSequence(const Sequence<Abc>& seq, Profile<Abc>& p) const;
+  virtual void AddToSequence(const Sequence<Abc>& seq, Profile<Abc>& p) const;
 
-    virtual void AddToProfile(const CountProfile<Abc>& cp, Profile<Abc>& p) const;
+  virtual void AddToProfile(const CountProfile<Abc>& cp, Profile<Abc>& p) const;
 
-  private:
-    // Profile library with context profiles.
-    const ContextLibrary<Abc>& lib_;
-    // Needed to compute emission probabilities of context profiles.
-    const Emission<Abc> emission_;
+ private:
+  // CRF with context weights and pseudocount emission weights.
+  const Crf<Abc>& crf_;
 
-    DISALLOW_COPY_AND_ASSIGN(LibraryPseudocounts);
-};  // LibraryPseudocounts
+  DISALLOW_COPY_AND_ASSIGN(CrfPseudocounts);
+};  // CrfPseudocounts
 
 }  // namespace cs
 
-#endif  // CS_CONTEXT_LIB_PSEUDOCOUNTS_H_
+#endif  // CS_CRF_PSEUDOCOUNTS_H_

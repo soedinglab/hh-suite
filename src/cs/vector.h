@@ -1,4 +1,21 @@
-// Copyright 2009, Andreas Biegert
+/*
+  Copyright 2009 Andreas Biegert
+
+  This file is part of the CS-BLAST package.
+
+  The CS-BLAST package is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  The CS-BLAST package is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 #ifndef CS_VECTOR_H_
 #define CS_VECTOR_H_
@@ -22,6 +39,7 @@ class Vector {
   inline size_t size() const;
   void Resize(size_t newn);
   void Assign(size_t newn, const T &a);
+  inline void Assign(const T &a);
 
  private:
   size_t nn;
@@ -106,6 +124,11 @@ void Vector<T>::Assign(size_t newn, const T& a) {
     v = nn > 0 ? new T[nn] : NULL;
   }
   for (size_t i=0;i<nn;i++) v[i] = a;
+}
+
+template <class T>
+inline void Vector<T>::Assign(const T& a) {
+  Assign(nn, a);
 }
 
 template <class T>

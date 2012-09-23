@@ -83,6 +83,7 @@ using std::ofstream;
 #include "cs.h"          // context-specific pseudocounts
 #include "context_library.h"
 #include "library_pseudocounts-inl.h"
+#include "crf_pseudocounts-inl.h"
 
 
 #include "util.C"        // imax, fmax, iround, iceil, ifloor, strint, strscn, strcut, substr, uprstr, uprchr, Basename etc.
@@ -821,7 +822,7 @@ void perform_realign(char *dbfiles[], int ndb)
 	  } else {
 	    // Generate an amino acid frequency matrix from f[i][a] with full context specific pseudocount admixture (tau=1) -> g[i][a]
 	    // q->PrepareContextSpecificPseudocounts(); //OLD
-	    q->AddContextSpecificPseudocounts();
+	    q->AddContextSpecificPseudocounts(pc, pc_admix);
 	  }
 	  
 	  // Transform transition freqs to lin space if not already done

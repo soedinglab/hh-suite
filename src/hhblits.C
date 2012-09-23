@@ -122,6 +122,7 @@ extern "C" {
 #include "cs.h"          // context-specific pseudocounts
 #include "context_library.h"
 #include "library_pseudocounts-inl.h"
+#include "crf_pseudocounts-inl.h"
 #include "abstract_state_matrix.h"
 cs::ContextLibrary<cs::AA> *cs_lib;
 
@@ -368,17 +369,19 @@ void help(char all=0)
   printf(" -egt  [0,inf[  penalty (bits) for end gaps aligned to template residues (def=%-.2f)\n",par.egt);
   printf("\n");
   printf("Pseudocount (pc) options:                                                        \n");
-  printf(" -pcm {0,..,2}  position dependence of pc admixture 'tau' (pc mode, default=%-i) \n",par.pcm);
-  printf("                0: no pseudo counts:    tau = 0                                  \n");
-  printf("                1: constant             tau = a                                  \n");
-  printf("                2: diversity-dependent: tau = a/(1 + ((Neff[i]-1)/b)^c)          \n");
-  printf("                (Neff[i]: number of effective seqs in local MSA around column i) \n");
-  printf(" -pca  [0,1]    overall pseudocount admixture (def=%-.1f)                        \n",par.pca);
-  printf(" -pcb  [1,inf[  Neff threshold value for -pcm 2 (def=%-.1f)                      \n",par.pcb);
-  printf(" -pcc  [0,3]    extinction exponent c for -pcm 2 (def=%-.1f)                     \n",par.pcc);
-  // printf(" -pcw  [0,3]    weight of pos-specificity for pcs  (def=%-.1f)                   \n",par.pcw);
-  printf(" -pre_pca [0,1]   PREFILTER pseudocount admixture (def=%-.1f)                    \n",par.pre_pca);
-  printf(" -pre_pcb [1,inf[ PREFILTER threshold for Neff (def=%-.1f)                       \n",par.pre_pcb);
+  printf(" -pcm {0,..,3}      position dependence of pc admixture 'tau' (pc mode, default=%-i) \n",par.pc.admix);
+  printf("                    0: no pseudo counts:    tau = 0                                  \n");
+  printf("                    1: constant             tau = a                                  \n");
+  printf("                    2: diversity-dependent: tau = a/(1 + ((Neff[i]-1)/b)^c)          \n");
+  printf("                    3: CSBlast admixture:   tau = a(1+b)/(Neff[i]+b)                 \n");
+  printf("                    (Neff[i]: number of effective seqs in local MSA around column i) \n");
+  printf(" -pca  [0,1]        overall pseudocount admixture (def=%-.1f)                        \n",par.pc.pca);
+  printf(" -pcb  [1,inf[      Neff threshold value for -pcm 2 (def=%-.1f)                      \n",par.pc.pcb);
+  printf(" -pcc  [0,3]        extinction exponent c for -pcm 2 (def=%-.1f)                     \n",par.pc.pcc);
+  printf(" -pre_pcm {0,..,3}  PREFILTER admixture (pc mode, default=%-i)                 \n",par.pre_pc.admix);
+  printf(" -pre_pca [0,1]     PREFILTER pseudocount admixture (def=%-.1f)                \n",par.pre_pc.pca);
+  printf(" -pre_pcb [1,inf[   PREFILTER threshold for Neff (def=%-.1f)                   \n",par.pre_pc.pcb);
+  printf(" -pre_pcc [0,3]     PREFILTER extinction exponent c for -pre_pcm 2 (def=%-.1f) \n",par.pre_pc.pcc);
   printf("\n");
   printf("Context-specific pseudo-counts:                                                  \n");
   printf(" -nocontxt      use substitution-matrix instead of context-specific pseudocounts \n");
@@ -414,187 +417,188 @@ void help(char all=0)
   printf("\n");
   printf("Example: %s -i query.fas -oa3m query.a3m -n 1  \n",program_name);
   cout<<endl;
-}
+  }
 
 
-/////////////////////////////////////////////////////////////////////////////////////
-//// Processing input options from command line and .hhdefaults file
-/////////////////////////////////////////////////////////////////////////////////////
-void ProcessArguments(int argc, char** argv)
-{
-  //Processing command line input
-  for (int i=1; i<argc; i++)
-    {
-      if (v>=4) cout<<i<<"  "<<argv[i]<<endl; //PRINT
-      if (!strcmp(argv[i],"-i"))
-        {
-          if (++i>=argc || argv[i][0]=='-')
-            {help() ; cerr<<endl<<"Error in "<<program_name<<": no query file following -i\n"; exit(4);}
-          else strcpy(par.infile,argv[i]);
-        }
-      else if (!strcmp(argv[i],"-d"))
-        {
-          if (++i>=argc || argv[i][0]=='-')
-            {help() ; cerr<<endl<<"Error in "<<program_name<<": no database basename following -d\n"; exit(4);}
-          else
-	    strcpy(db_base,argv[i]);
-        }
-      else if (!strcmp(argv[i],"-contxt") || !strcmp(argv[i],"-context_data"))
-        {
-          if (++i>=argc || argv[i][0]=='-')
-            {help() ; cerr<<endl<<"Error in "<<program_name<<": no lib following -contxt\n"; exit(4);}
-          else
-	    strcpy(par.clusterfile,argv[i]);
-        }
-      else if (!strcmp(argv[i],"-cslib") || !strcmp(argv[i],"-cs_lib"))
-        {
-          if (++i>=argc || argv[i][0]=='-')
-            {help() ; cerr<<endl<<"Error in "<<program_name<<": no lib following -cslib\n"; exit(4);}
-          else strcpy(par.cs_library,argv[i]);
-        }
-      else if (!strcmp(argv[i],"-psipred"))
-        {
-          if (++i>=argc || argv[i][0]=='-')
-            {help() ; cerr<<endl<<"Error in "<<program_name<<": no directory following -psipred\n"; exit(4);}
-          else
-	    strcpy(par.psipred,argv[i]);
-        }
-      else if (!strcmp(argv[i],"-psipred_data"))
-        {
-          if (++i>=argc || argv[i][0]=='-')
-            {help() ; cerr<<endl<<"Error in "<<program_name<<": no database directory following -psipred_data\n"; exit(4);}
-          else
-	    strcpy(par.psipred_data,argv[i]);
-        }
-      else if (!strcmp(argv[i],"-o"))
-        {
-          if (++i>=argc || argv[i][0]=='-')
-            {help() ; cerr<<endl<<"Error in "<<program_name<<": no output file following -o\n"; exit(4);}
-          else strcpy(par.outfile,argv[i]);
-        }
-      else if (!strcmp(argv[i],"-oa3m"))
-        {
-          if (++i>=argc || argv[i][0]=='-')
-            {help() ; cerr<<endl<<"Error in "<<program_name<<": no output file following -oa3m\n"; exit(4);}
-          else strcpy(par.alnfile,argv[i]);
-        }
-      else if (!strcmp(argv[i],"-ohhm"))
-        {
-          if (++i>=argc || argv[i][0]=='-')
-            {help() ; cerr<<endl<<"Error in "<<program_name<<": no output file following -ohhm\n"; exit(4);}
-          else strcpy(par.hhmfile,argv[i]);
-        }
-      else if (!strcmp(argv[i],"-opsi"))
-        {
-          if (++i>=argc || argv[i][0]=='-')
-            {help() ; cerr<<endl<<"Error in "<<program_name<<": no output file following -opsi\n"; exit(4);}
-          else strcpy(par.psifile,argv[i]);
-        }
-      else if (!strcmp(argv[i],"-oalis"))
-        {
-          if (++i>=argc || argv[i][0]=='-')
-            {help() ; cerr<<endl<<"Error in "<<program_name<<": no file basename following -oalis\n"; exit(4);}
-          else strcpy(alis_basename,argv[i]);
-        }
-      else if (!strcmp(argv[i],"-Ofas"))
-        {
-          par.append=0;
-          par.outformat=1;
-          if (++i>=argc || argv[i][0]=='-')
-            {help() ; cerr<<endl<<"Error in "<<program_name<<": no output file following -o\n"; exit(4);}
-          else strcpy(par.pairwisealisfile,argv[i]);
-        }
-      else if (!strcmp(argv[i],"-Oa2m"))
-        {
-          par.append=0;
-          par.outformat=2;
-          if (++i>=argc || argv[i][0]=='-')
-            {help() ; cerr<<endl<<"Error in "<<program_name<<": no output file following -o\n"; exit(4);}
-          else strcpy(par.pairwisealisfile,argv[i]);
-        }
-      else if (!strcmp(argv[i],"-Oa3m"))
-        {
-          par.append=0;
-          par.outformat=3;
-          if (++i>=argc || argv[i][0]=='-')
-            {help() ; cerr<<endl<<"Error in "<<program_name<<": no output file following -o\n"; exit(4);}
-          else strcpy(par.pairwisealisfile,argv[i]);
-        }
-      else if (!strcmp(argv[i],"-qhhm"))
-        {
-          if (++i>=argc || argv[i][0]=='-')
-            {help() ; cerr<<endl<<"Error in "<<program_name<<": no filename following -qhhm\n"; exit(4);}
-          else strcpy(query_hhmfile,argv[i]);
-        }
-      else if (!strcmp(argv[i],"-scores"))
-        {
-          if (++i>=argc || argv[i][0]=='-')
-            {help() ; cerr<<endl<<"Error in "<<program_name<<": no file following -scores\n"; exit(4);}
-          else {strcpy(par.scorefile,argv[i]);}
-        }
-      else if (!strcmp(argv[i],"-db_ext"))
-        {
-          if (++i>=argc || argv[i][0]=='-')
-            {help() ; cerr<<endl<<"Error in "<<program_name<<": no extension following -db_ext\n"; exit(4);}
-          else {strcpy(db_ext,argv[i]);}
-        }
-      else if (!strcmp(argv[i],"-atab"))
-        {
-          if (++i>=argc || argv[i][0]=='-')
-            {help() ; cerr<<endl<<"Error in "<<program_name<<": no file following -atab\n"; exit(4);}
-          else {strcpy(par.alitabfile,argv[i]);}
-        }
-      else if (!strcmp(argv[i],"-atab_scop")) alitab_scop=true;
-      else if (!strcmp(argv[i],"-h")|| !strcmp(argv[i],"-help"))
-        { help(1); exit(0); }
-      else if (!strcmp(argv[i],"-v") && (i<argc-1) && argv[i+1][0]!='-' ) v=atoi(argv[++i]);
-      else if (!strcmp(argv[i],"-v"))  v=2;
-      else if (!strcmp(argv[i],"-v0")) v=0;
-      else if (!strcmp(argv[i],"-v1")) v=1;
-      else if (!strcmp(argv[i],"-n") && (i<argc-1)) num_rounds = atoi(argv[++i]); 
-      else if (!strncmp(argv[i],"-BLOSUM",7) || !strncmp(argv[i],"-Blosum",7))
-        {
-          if (!strcmp(argv[i]+7,"30")) par.matrix=30;
-          else if (!strcmp(argv[i]+7,"40")) par.matrix=40;
-          else if (!strcmp(argv[i]+7,"50")) par.matrix=50;
-          else if (!strcmp(argv[i]+7,"62")) par.matrix=62;
-          else if (!strcmp(argv[i]+7,"65")) par.matrix=65;
-          else if (!strcmp(argv[i]+7,"80")) par.matrix=80;
-          else cerr<<endl<<"WARNING: Ignoring unknown option "<<argv[i]<<" ...\n";
-        }
-      else if (!strcmp(argv[i],"-M") && (i<argc-1))
-        if (!strcmp(argv[++i],"a2m") || !strcmp(argv[i],"a3m"))  par.M=1;
-        else if(!strcmp(argv[i],"first"))  par.M=3;
-        else if (argv[i][0]>='0' && argv[i][0]<='9') {par.Mgaps=atoi(argv[i]); par.M=2;}
-        else cerr<<endl<<"WARNING: Ignoring unknown argument: -M "<<argv[i]<<"\n";
-      else if (!strcmp(argv[i],"-p") && (i<argc-1)) par.p = atof(argv[++i]);
-      else if (!strcmp(argv[i],"-P") && (i<argc-1)) par.p = atof(argv[++i]);
-      else if (!strcmp(argv[i],"-E") && (i<argc-1)) par.E = atof(argv[++i]);
-      else if (!strcmp(argv[i],"-b") && (i<argc-1)) par.b = atoi(argv[++i]);
-      else if (!strcmp(argv[i],"-B") && (i<argc-1)) par.B = atoi(argv[++i]);
-      else if (!strcmp(argv[i],"-z") && (i<argc-1)) par.z = atoi(argv[++i]);
-      else if (!strcmp(argv[i],"-Z") && (i<argc-1)) par.Z = atoi(argv[++i]);
-      else if (!strcmp(argv[i],"-realign_max") && (i<argc-1)) par.realign_max = atoi(argv[++i]);
-      else if (!strcmp(argv[i],"-e") && (i<argc-1)) par.e = atof(argv[++i]);
-      else if (!strncmp(argv[i],"-nopred",7) || !strncmp(argv[i],"-noss",5)) par.showpred=0;
-      else if (!strncmp(argv[i],"-addss",6)) par.addss=1;
-      else if (!strcmp(argv[i],"-seq") && (i<argc-1))  par.nseqdis=atoi(argv[++i]);
-      else if (!strcmp(argv[i],"-aliw") && (i<argc-1)) par.aliwidth=atoi(argv[++i]);
-      else if (!strcmp(argv[i],"-id") && (i<argc-1))   par.max_seqid=atoi(argv[++i]);
-      else if (!strcmp(argv[i],"-qid") && (i<argc-1))  par.qid=atoi(argv[++i]);
-      else if (!strcmp(argv[i],"-qsc") && (i<argc-1))  par.qsc=atof(argv[++i]);
-      else if (!strcmp(argv[i],"-cov") && (i<argc-1))  par.coverage=atoi(argv[++i]);
-      else if (!strcmp(argv[i],"-diff") && (i<argc-1)) par.Ndiff=atoi(argv[++i]);
-      else if (!strcmp(argv[i],"-all") || !strcmp(argv[i],"-nodiff")) {par.allseqs=true;}
-      else if (!strcmp(argv[i],"-neffmax") && (i<argc-1)) neffmax=atof(argv[++i]); 
-      else if ((!strcmp(argv[i],"-neff") || !strcmp(argv[i],"-Neff")) && (i<argc-1)) par.Neff=atof(argv[++i]); 
-      else if (!strcmp(argv[i],"-pcm") && (i<argc-1)) par.pcm=atoi(argv[++i]);
-      else if (!strcmp(argv[i],"-pca") && (i<argc-1)) par.pca=atof(argv[++i]);
-      else if (!strcmp(argv[i],"-pcb") && (i<argc-1)) par.pcb=atof(argv[++i]);
-      else if (!strcmp(argv[i],"-pcc") && (i<argc-1)) par.pcc=atof(argv[++i]);
-      else if (!strcmp(argv[i],"-pcw") && (i<argc-1)) par.pcw=atof(argv[++i]);
-      else if (!strcmp(argv[i],"-pre_pca") && (i<argc-1)) par.pre_pca=atof(argv[++i]);
-      else if (!strcmp(argv[i],"-pre_pcb") && (i<argc-1)) par.pre_pcb=atof(argv[++i]);
+  /////////////////////////////////////////////////////////////////////////////////////
+  //// Processing input options from command line and .hhdefaults file
+  /////////////////////////////////////////////////////////////////////////////////////
+  void ProcessArguments(int argc, char** argv)
+  {
+    //Processing command line input
+    for (int i=1; i<argc; i++)
+      {
+        if (v>=4) cout<<i<<"  "<<argv[i]<<endl; //PRINT
+        if (!strcmp(argv[i],"-i"))
+          {
+            if (++i>=argc || argv[i][0]=='-')
+              {help() ; cerr<<endl<<"Error in "<<program_name<<": no query file following -i\n"; exit(4);}
+            else strcpy(par.infile,argv[i]);
+          }
+        else if (!strcmp(argv[i],"-d"))
+          {
+            if (++i>=argc || argv[i][0]=='-')
+              {help() ; cerr<<endl<<"Error in "<<program_name<<": no database basename following -d\n"; exit(4);}
+            else
+        strcpy(db_base,argv[i]);
+          }
+        else if (!strcmp(argv[i],"-contxt") || !strcmp(argv[i],"-context_data"))
+          {
+            if (++i>=argc || argv[i][0]=='-')
+              {help() ; cerr<<endl<<"Error in "<<program_name<<": no lib following -contxt\n"; exit(4);}
+            else
+        strcpy(par.clusterfile,argv[i]);
+          }
+        else if (!strcmp(argv[i],"-cslib") || !strcmp(argv[i],"-cs_lib"))
+          {
+            if (++i>=argc || argv[i][0]=='-')
+              {help() ; cerr<<endl<<"Error in "<<program_name<<": no lib following -cslib\n"; exit(4);}
+            else strcpy(par.cs_library,argv[i]);
+          }
+        else if (!strcmp(argv[i],"-psipred"))
+          {
+            if (++i>=argc || argv[i][0]=='-')
+              {help() ; cerr<<endl<<"Error in "<<program_name<<": no directory following -psipred\n"; exit(4);}
+            else
+        strcpy(par.psipred,argv[i]);
+          }
+        else if (!strcmp(argv[i],"-psipred_data"))
+          {
+            if (++i>=argc || argv[i][0]=='-')
+              {help() ; cerr<<endl<<"Error in "<<program_name<<": no database directory following -psipred_data\n"; exit(4);}
+            else
+        strcpy(par.psipred_data,argv[i]);
+          }
+        else if (!strcmp(argv[i],"-o"))
+          {
+            if (++i>=argc || argv[i][0]=='-')
+              {help() ; cerr<<endl<<"Error in "<<program_name<<": no output file following -o\n"; exit(4);}
+            else strcpy(par.outfile,argv[i]);
+          }
+        else if (!strcmp(argv[i],"-oa3m"))
+          {
+            if (++i>=argc || argv[i][0]=='-')
+              {help() ; cerr<<endl<<"Error in "<<program_name<<": no output file following -oa3m\n"; exit(4);}
+            else strcpy(par.alnfile,argv[i]);
+          }
+        else if (!strcmp(argv[i],"-ohhm"))
+          {
+            if (++i>=argc || argv[i][0]=='-')
+              {help() ; cerr<<endl<<"Error in "<<program_name<<": no output file following -ohhm\n"; exit(4);}
+            else strcpy(par.hhmfile,argv[i]);
+          }
+        else if (!strcmp(argv[i],"-opsi"))
+          {
+            if (++i>=argc || argv[i][0]=='-')
+              {help() ; cerr<<endl<<"Error in "<<program_name<<": no output file following -opsi\n"; exit(4);}
+            else strcpy(par.psifile,argv[i]);
+          }
+        else if (!strcmp(argv[i],"-oalis"))
+          {
+            if (++i>=argc || argv[i][0]=='-')
+              {help() ; cerr<<endl<<"Error in "<<program_name<<": no file basename following -oalis\n"; exit(4);}
+            else strcpy(alis_basename,argv[i]);
+          }
+        else if (!strcmp(argv[i],"-Ofas"))
+          {
+            par.append=0;
+            par.outformat=1;
+            if (++i>=argc || argv[i][0]=='-')
+              {help() ; cerr<<endl<<"Error in "<<program_name<<": no output file following -o\n"; exit(4);}
+            else strcpy(par.pairwisealisfile,argv[i]);
+          }
+        else if (!strcmp(argv[i],"-Oa2m"))
+          {
+            par.append=0;
+            par.outformat=2;
+            if (++i>=argc || argv[i][0]=='-')
+              {help() ; cerr<<endl<<"Error in "<<program_name<<": no output file following -o\n"; exit(4);}
+            else strcpy(par.pairwisealisfile,argv[i]);
+          }
+        else if (!strcmp(argv[i],"-Oa3m"))
+          {
+            par.append=0;
+            par.outformat=3;
+            if (++i>=argc || argv[i][0]=='-')
+              {help() ; cerr<<endl<<"Error in "<<program_name<<": no output file following -o\n"; exit(4);}
+            else strcpy(par.pairwisealisfile,argv[i]);
+          }
+        else if (!strcmp(argv[i],"-qhhm"))
+          {
+            if (++i>=argc || argv[i][0]=='-')
+              {help() ; cerr<<endl<<"Error in "<<program_name<<": no filename following -qhhm\n"; exit(4);}
+            else strcpy(query_hhmfile,argv[i]);
+          }
+        else if (!strcmp(argv[i],"-scores"))
+          {
+            if (++i>=argc || argv[i][0]=='-')
+              {help() ; cerr<<endl<<"Error in "<<program_name<<": no file following -scores\n"; exit(4);}
+            else {strcpy(par.scorefile,argv[i]);}
+          }
+        else if (!strcmp(argv[i],"-db_ext"))
+          {
+            if (++i>=argc || argv[i][0]=='-')
+              {help() ; cerr<<endl<<"Error in "<<program_name<<": no extension following -db_ext\n"; exit(4);}
+            else {strcpy(db_ext,argv[i]);}
+          }
+        else if (!strcmp(argv[i],"-atab"))
+          {
+            if (++i>=argc || argv[i][0]=='-')
+              {help() ; cerr<<endl<<"Error in "<<program_name<<": no file following -atab\n"; exit(4);}
+            else {strcpy(par.alitabfile,argv[i]);}
+          }
+        else if (!strcmp(argv[i],"-atab_scop")) alitab_scop=true;
+        else if (!strcmp(argv[i],"-h")|| !strcmp(argv[i],"-help"))
+          { help(1); exit(0); }
+        else if (!strcmp(argv[i],"-v") && (i<argc-1) && argv[i+1][0]!='-' ) v=atoi(argv[++i]);
+        else if (!strcmp(argv[i],"-v"))  v=2;
+        else if (!strcmp(argv[i],"-v0")) v=0;
+        else if (!strcmp(argv[i],"-v1")) v=1;
+        else if (!strcmp(argv[i],"-n") && (i<argc-1)) num_rounds = atoi(argv[++i]); 
+        else if (!strncmp(argv[i],"-BLOSUM",7) || !strncmp(argv[i],"-Blosum",7))
+          {
+            if (!strcmp(argv[i]+7,"30")) par.matrix=30;
+            else if (!strcmp(argv[i]+7,"40")) par.matrix=40;
+            else if (!strcmp(argv[i]+7,"50")) par.matrix=50;
+            else if (!strcmp(argv[i]+7,"62")) par.matrix=62;
+            else if (!strcmp(argv[i]+7,"65")) par.matrix=65;
+            else if (!strcmp(argv[i]+7,"80")) par.matrix=80;
+            else cerr<<endl<<"WARNING: Ignoring unknown option "<<argv[i]<<" ...\n";
+          }
+        else if (!strcmp(argv[i],"-M") && (i<argc-1))
+          if (!strcmp(argv[++i],"a2m") || !strcmp(argv[i],"a3m"))  par.M=1;
+          else if(!strcmp(argv[i],"first"))  par.M=3;
+          else if (argv[i][0]>='0' && argv[i][0]<='9') {par.Mgaps=atoi(argv[i]); par.M=2;}
+          else cerr<<endl<<"WARNING: Ignoring unknown argument: -M "<<argv[i]<<"\n";
+        else if (!strcmp(argv[i],"-p") && (i<argc-1)) par.p = atof(argv[++i]);
+        else if (!strcmp(argv[i],"-P") && (i<argc-1)) par.p = atof(argv[++i]);
+        else if (!strcmp(argv[i],"-E") && (i<argc-1)) par.E = atof(argv[++i]);
+        else if (!strcmp(argv[i],"-b") && (i<argc-1)) par.b = atoi(argv[++i]);
+        else if (!strcmp(argv[i],"-B") && (i<argc-1)) par.B = atoi(argv[++i]);
+        else if (!strcmp(argv[i],"-z") && (i<argc-1)) par.z = atoi(argv[++i]);
+        else if (!strcmp(argv[i],"-Z") && (i<argc-1)) par.Z = atoi(argv[++i]);
+        else if (!strcmp(argv[i],"-realign_max") && (i<argc-1)) par.realign_max = atoi(argv[++i]);
+        else if (!strcmp(argv[i],"-e") && (i<argc-1)) par.e = atof(argv[++i]);
+        else if (!strncmp(argv[i],"-nopred",7) || !strncmp(argv[i],"-noss",5)) par.showpred=0;
+        else if (!strncmp(argv[i],"-addss",6)) par.addss=1;
+        else if (!strcmp(argv[i],"-seq") && (i<argc-1))  par.nseqdis=atoi(argv[++i]);
+        else if (!strcmp(argv[i],"-aliw") && (i<argc-1)) par.aliwidth=atoi(argv[++i]);
+        else if (!strcmp(argv[i],"-id") && (i<argc-1))   par.max_seqid=atoi(argv[++i]);
+        else if (!strcmp(argv[i],"-qid") && (i<argc-1))  par.qid=atoi(argv[++i]);
+        else if (!strcmp(argv[i],"-qsc") && (i<argc-1))  par.qsc=atof(argv[++i]);
+        else if (!strcmp(argv[i],"-cov") && (i<argc-1))  par.coverage=atoi(argv[++i]);
+        else if (!strcmp(argv[i],"-diff") && (i<argc-1)) par.Ndiff=atoi(argv[++i]);
+        else if (!strcmp(argv[i],"-all") || !strcmp(argv[i],"-nodiff")) {par.allseqs=true;}
+        else if (!strcmp(argv[i],"-neffmax") && (i<argc-1)) neffmax=atof(argv[++i]); 
+        else if ((!strcmp(argv[i],"-neff") || !strcmp(argv[i],"-Neff")) && (i<argc-1)) par.Neff=atof(argv[++i]); 
+      else if (!strcmp(argv[i],"-pcm") && (i<argc-1)) par.pc.admix=(Pseudocounts::Admix)atoi(argv[++i]);
+      else if (!strcmp(argv[i],"-pca") && (i<argc-1)) par.pc.pca=atof(argv[++i]);
+      else if (!strcmp(argv[i],"-pcb") && (i<argc-1)) par.pc.pcb=atof(argv[++i]);
+      else if (!strcmp(argv[i],"-pcc") && (i<argc-1)) par.pc.pcc=atof(argv[++i]);
+      else if (!strcmp(argv[i],"-pre_pcm") && (i<argc-1)) par.pre_pc.admix=(Pseudocounts::Admix)atoi(argv[++i]);
+      else if (!strcmp(argv[i],"-pre_pca") && (i<argc-1)) par.pre_pc.pca=atof(argv[++i]);
+      else if (!strcmp(argv[i],"-pre_pcb") && (i<argc-1)) par.pre_pc.pcb=atof(argv[++i]);
+      else if (!strcmp(argv[i],"-pre_pcc") && (i<argc-1)) par.pre_pc.pcc=atof(argv[++i]);
       else if (!strcmp(argv[i],"-gapb") && (i<argc-1)) { par.gapb=atof(argv[++i]); if (par.gapb<=0.01) par.gapb=0.01;}
       else if (!strcmp(argv[i],"-gapd") && (i<argc-1)) par.gapd=atof(argv[++i]);
       else if (!strcmp(argv[i],"-gape") && (i<argc-1)) par.gape=atof(argv[++i]);
@@ -1569,7 +1573,7 @@ void perform_realign(char *dbfiles[], int ndb)
 	    q->AddAminoAcidPseudocounts();
 	  } else {
 	    // Add full context specific pseudocounts to query
-	    q->AddContextSpecificPseudocounts();
+	    q->AddContextSpecificPseudocounts(pc, pc_admix);
 	  }
 
 	  q->CalculateAminoAcidBackground();
@@ -2043,8 +2047,8 @@ int main(int argc, char **argv)
   // Check option compatibilities
   if (par.nseqdis>MAXSEQDIS-3-par.showcons) par.nseqdis=MAXSEQDIS-3-par.showcons; //3 reserved for secondary structure
   if (par.aliwidth<20) par.aliwidth=20;
-  if (par.pca<0.001) par.pca=0.001; // to avoid log(0)
-  if (par.pre_pca<0.001) par.pre_pca=0.001; // to avoid log(0)
+  if (par.pc.pca<0.001) par.pc.pca=0.001; // to avoid log(0)
+  if (par.pre_pc.pca<0.001) par.pre_pc.pca=0.001; // to avoid log(0)
   if (par.b>par.B) par.B=par.b;
   if (par.z>par.Z) par.Z=par.z;
   if (par.maxmem<1.0) {cerr<<"WARNING: setting -maxmem to its minimum allowed value of 1.0\n"; par.maxmem=1.0;}
@@ -2055,15 +2059,30 @@ int main(int argc, char **argv)
   // Set secondary structure substitution matrix
   if (par.ssm) SetSecStrucSubstitutionMatrix();
 
-  // Prepare context state pseudocounts lib
-  if (!par.nocontxt) {
+  // Prepare pseudocounts
+  if (*par.clusterfile) {
+    // Prepare pseudocounts engine
     fin = fopen(par.clusterfile, "r");
     if (!fin) OpenFileError(par.clusterfile);
-    context_lib = new cs::ContextLibrary<cs::AA>(fin);
+    char ext[100];
+    Extension(ext, par.clusterfile);
+    if (strcmp(ext, "crf") == 0)  {
+      crf = new cs::Crf<cs::AA>(fin);
+      pc = new cs::CrfPseudocounts<cs::AA>(*crf);
+      pre_pc = new cs::CrfPseudocounts<cs::AA>(*crf);
+    } else {
+      context_lib = new cs::ContextLibrary<cs::AA>(fin);
+      cs::TransformToLog(*context_lib);
+      pc = new cs::LibraryPseudocounts<cs::AA>(*context_lib, par.csw, par.csb);
+      pre_pc = new cs::LibraryPseudocounts<cs::AA>(*context_lib, par.csw, par.csb);
+    }
     fclose(fin);
-    cs::TransformToLog(*context_lib);
-    
-    lib_pc = new cs::LibraryPseudocounts<cs::AA>(*context_lib, par.csw, par.csb);
+    pc->SetTargetNeff(par.pc.target_neff);
+    pre_pc->SetTargetNeff(par.pre_pc.target_neff);
+
+    // Prepare pseudocounts admixture method
+    pc_admix = par.pc.CreateAdmix();
+    pre_pc_admix = par.pre_pc.CreateAdmix();
   }
 
   // Prepare column state lib (context size =1 )
@@ -2555,10 +2574,15 @@ int main(int argc, char **argv)
       delete[](dbnames);
     }
 
-  // Comput substitution matrix pseudocounts
-  if (!par.nocontxt) { 
-    delete context_lib;
-    delete lib_pc;
+  if (*par.clusterfile) {
+    if (crf != NULL)
+      delete crf;
+    else
+      delete context_lib;
+    delete pc;
+    delete pc_admix;
+    delete pre_pc;
+    delete pre_pc_admix;
   }
 
   delete cs_lib;

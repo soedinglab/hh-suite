@@ -1,4 +1,21 @@
-// Copyright 2009, Andreas Biegert
+/*
+  Copyright 2009-2012 Andreas Biegert, Christof Angermueller
+
+  This file is part of the CS-BLAST package.
+
+  The CS-BLAST package is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  The CS-BLAST package is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 #ifndef CS_GLOBALS_H_
 #define CS_GLOBALS_H_
@@ -13,6 +30,7 @@ const int GB = KB * KB * KB;
 const int kMaxInt = 0x7FFFFFFF;
 const int kMinInt = -kMaxInt - 1;
 const int kScale  = 1000; // scaling factor for serialization
+const double kNormalize = 1e-6;
 
 const int kCharSize     = sizeof(char);
 const int kShortSize    = sizeof(short);

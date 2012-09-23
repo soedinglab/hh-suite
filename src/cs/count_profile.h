@@ -1,12 +1,29 @@
-// Copyright 2009, Andreas Biegert
+/*
+  Copyright 2009-2012 Andreas Biegert, Christof Angermueller
+
+  This file is part of the CS-BLAST package.
+
+  The CS-BLAST package is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  The CS-BLAST package is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 #ifndef CS_COUNT_PROFILE_H_
 #define CS_COUNT_PROFILE_H_
 
 #include "alignment.h"
-#include "profile.h"
 #include "sequence.h"
 #include "substitution_matrix-inl.h"
+#include "profile-inl.h"
 
 namespace cs {
 
@@ -51,6 +68,7 @@ struct CountProfile {
     // Returns number of columns.
     size_t length() const { return counts.length(); }
 
+
     std::string name;               // optional name descriptor
     Profile<Abc> counts;            // absolute counts of alphabet letters
     Vector<double> neff;            // effective number of sequences at column i
@@ -76,6 +94,7 @@ std::string ConservationSequence(const CountProfile<Abc>& cp,
 // Prints counts and neff in human-readable format for debugging.
 template<class Abc>
 std::ostream& operator<< (std::ostream& out, const CountProfile<Abc>& cp);
+
 
 }  // namespace cs
 

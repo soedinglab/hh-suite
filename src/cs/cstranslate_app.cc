@@ -1,10 +1,29 @@
-// Copyright 2009, Andreas Biegert
+/*
+  Copyright 2009-2012 Andreas Biegert, Christof Angermueller
+
+  This file is part of the CS-BLAST package.
+
+  The CS-BLAST package is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  The CS-BLAST package is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 #include "cs.h"
 #include "alignment-inl.h"
 #include "application.h"
 #include "blosum_matrix.h"
 #include "context_library.h"
+#include "crf_pseudocounts-inl.h"
+#include "crf-inl.h"
 #include "count_profile-inl.h"
 #include "getopt_pp.h"
 #include "library_pseudocounts-inl.h"
@@ -28,8 +47,8 @@ struct CSTranslateAppOptions {
     void Init() {
         informat         = "auto";
         outformat        = "seq";
-        pc_admix         = 0.30;
-        pc_ali           = 4.0;
+        pc_admix         = 0.90;
+        pc_ali           = 12.0;
         pc_engine        = "auto";
         match_assign     = kAssignMatchColsByQuery;
         weight_center    = 1.6;
@@ -98,6 +117,8 @@ class CSTranslateApp : public Application {
     scoped_ptr< ContextLibrary<Abc> > as_lib_;
     // Profile library for context pseudocounts
     scoped_ptr< ContextLibrary<Abc> > pc_lib_;
+    // CRF for CRF context pseudocounts
+    scoped_ptr< Crf<Abc> > pc_crf_;
     // Pseudocount engine
     scoped_ptr< Pseudocounts<Abc> > pc_;
 };  // class CSTranslateApp
@@ -151,6 +172,7 @@ void CSTranslateApp<Abc>::PrintOptions() const {
     fprintf(out_, "  %-30s %s\n", "", "(def: make columns with residue in first sequence match columns)");
     fprintf(out_, "  %-30s %s (def=off)\n", "-A, --alphabet <file>", "Abstract state alphabet consisting of exactly 219 states");
     fprintf(out_, "  %-30s %s (def=off)\n", "-D, --context-data <file>", "Add context-specific pseudocounts using given context-data");
+    // fprintf(out_, "  %-30s %s (def=%s)\n", "-p, --pc-engine lib|crf", "Specify engine for pseudocount generation", opts_.pc_engine.c_str());
     fprintf(out_, "  %-30s %s (def=%-.2f)\n", "-x, --pc-admix [0,1]", "Pseudocount admix for context-specific pseudocounts", opts_.pc_admix);
     fprintf(out_, "  %-30s %s (def=%-.1f)\n", "-c, --pc-ali [0,inf[", "Constant in pseudocount calculation for alignments", opts_.pc_ali);
     fprintf(out_, "  %-30s %s (def=%-.2f)\n", "-w, --weight [0,inf[", "Weight of abstract state column in emission calculation", opts_.weight_as);
@@ -220,6 +242,15 @@ int CSTranslateApp<Abc>::Run() {
         pc_.reset(new LibraryPseudocounts<Abc>(*pc_lib_, opts_.weight_center,
                                                opts_.weight_decay));
 
+    } else if (!opts_.modelfile.empty() && opts_.pc_engine == "crf") {
+        fprintf(out_, "Reading CRF for pseudocounts from %s ...\n",
+                GetBasename(opts_.modelfile).c_str());
+        FILE* fin = fopen(opts_.modelfile.c_str(), "r");
+        if (!fin)
+            throw Exception("Unable to read file '%s'!", opts_.modelfile.c_str());
+        pc_crf_.reset(new Crf<Abc>(fin));
+        fclose(fin);
+        pc_.reset(new CrfPseudocounts<Abc>(*pc_crf_));
     }
 
     // Setup abstract state engine

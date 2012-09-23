@@ -320,7 +320,7 @@ int main(int argc, char **argv)
 	q->AddAminoAcidPseudocounts();
       } else {
 	// Add full context specific pseudocounts to query
-	q->AddContextSpecificPseudocounts();
+	q->AddContextSpecificPseudocounts(pc, pc_admix);
       }
     } 
   else 
