@@ -2060,29 +2060,30 @@ int main(int argc, char **argv)
   if (par.ssm) SetSecStrucSubstitutionMatrix();
 
   // Prepare pseudocounts
-  if (*par.clusterfile) {
-    // Prepare pseudocounts engine
-    fin = fopen(par.clusterfile, "r");
-    if (!fin) OpenFileError(par.clusterfile);
+  if (!par.nocontxt && *par.clusterfile) {
     char ext[100];
     Extension(ext, par.clusterfile);
-    if (strcmp(ext, "crf") == 0)  {
-      crf = new cs::Crf<cs::AA>(fin);
-      pc = new cs::CrfPseudocounts<cs::AA>(*crf);
-      pre_pc = new cs::CrfPseudocounts<cs::AA>(*crf);
-    } else {
-      context_lib = new cs::ContextLibrary<cs::AA>(fin);
-      cs::TransformToLog(*context_lib);
-      pc = new cs::LibraryPseudocounts<cs::AA>(*context_lib, par.csw, par.csb);
-      pre_pc = new cs::LibraryPseudocounts<cs::AA>(*context_lib, par.csw, par.csb);
+    if (strcmp(ext, "crf") == 0) {
+      if (par.pc.admix == Pseudocounts::CSBlastAdmix) {
+        if (num_rounds == 1) {
+          par.pc.pca = 1.0;
+          par.pc.pcb = 13.7;
+        } else {
+          par.pc.pca = 0.58;
+          par.pc.pcb = 18.2;
+        }
+      }
+      if (par.pre_pc.admix == Pseudocounts::CSBlastAdmix) {
+        if (num_rounds == 1) {
+          par.pre_pc.pca = 0.93;
+          par.pre_pc.pcb = 16.0;
+        } else {
+          par.pre_pc.pca = 0.85;
+          par.pre_pc.pcb = 6.6;
+        }
+      }
     }
-    fclose(fin);
-    pc->SetTargetNeff(par.pc.target_neff);
-    pre_pc->SetTargetNeff(par.pre_pc.target_neff);
-
-    // Prepare pseudocounts admixture method
-    pc_admix = par.pc.CreateAdmix();
-    pre_pc_admix = par.pre_pc.CreateAdmix();
+    InitializePseudocountsEngine();
   }
 
   // Prepare column state lib (context size =1 )
@@ -2574,16 +2575,7 @@ int main(int argc, char **argv)
       delete[](dbnames);
     }
 
-  if (*par.clusterfile) {
-    if (crf != NULL)
-      delete crf;
-    else
-      delete context_lib;
-    delete pc;
-    delete pc_admix;
-    delete pre_pc;
-    delete pre_pc_admix;
-  }
+  DeletePseudocountsEngine();
 
   delete cs_lib;
 

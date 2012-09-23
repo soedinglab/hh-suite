@@ -5,7 +5,6 @@
 #endif
 
 
-
 /////////////////////////////////////////////////////////////////////////////////////
 //// Constants
 /////////////////////////////////////////////////////////////////////////////////////
@@ -94,19 +93,12 @@ EXTERN struct Early_Stopping {
 } *early_stopping=NULL;
 
 
-// cs object declarations
-cs::ContextLibrary<cs::AA> *context_lib = NULL;
-cs::Crf<cs::AA> *crf = NULL;
-cs::Pseudocounts<cs::AA> *pc     = NULL; // Pseudocounts engine
-cs::Admix* pc_admix = NULL;              // Pseudocounts admixture method
-cs::Pseudocounts<cs::AA> *pre_pc = NULL; // Pseudocounts engine for prefiltering
-cs::Admix* pre_pc_admix = NULL;          // Pseudocounts admixture method for prefiltering
-
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Class declarations
 /////////////////////////////////////////////////////////////////////////////////////
 
+// Pseudocounts
 namespace Pseudocounts {
 enum Admix {
   ConstantAdmix = 1,
@@ -139,7 +131,7 @@ struct Params {
     }
   }
 
-  Admix admix;        // Admixture mode
+  Admix admix;        // admixture mode
   double pca;         // admixture paramter a
   double pcb;         // admixture paramter b
   double pcc;         // admixture parameter c needed for HHsearchAdmix
@@ -560,3 +552,48 @@ public:
 };
 
 EXTERN Parameters par;
+
+// cs object declarations
+cs::ContextLibrary<cs::AA>* context_lib = NULL; // Context library for pseudocounts generation
+cs::Crf<cs::AA>* crf                    = NULL; // CRF for pseudocounts generation
+cs::Pseudocounts<cs::AA>* pc            = NULL; // Pseudocounts engine
+cs::Admix* pc_admix                     = NULL; // Pseudocounts admixture method
+cs::Pseudocounts<cs::AA>* pre_pc        = NULL; // Pseudocounts engine for prefiltering
+cs::Admix* pre_pc_admix                 = NULL; // Pseudocounts admixture method for prefiltering
+
+void InitializePseudocountsEngine() {
+  // Prepare pseudocounts engine
+  FILE* fin = fopen(par.clusterfile, "r");
+  if (!fin) {
+    cerr<<endl<<"Error in "<<par.argv[0]<<": could not open file \'"<<par.clusterfile<<"\'\n";
+    exit(2);
+  }
+  char ext[100];
+  Extension(ext, par.clusterfile);
+  if (strcmp(ext, "crf") == 0)  {
+    crf = new cs::Crf<cs::AA>(fin);
+    pc = new cs::CrfPseudocounts<cs::AA>(*crf);
+    pre_pc = new cs::CrfPseudocounts<cs::AA>(*crf);
+  } else {
+    context_lib = new cs::ContextLibrary<cs::AA>(fin);
+    cs::TransformToLog(*context_lib);
+    pc = new cs::LibraryPseudocounts<cs::AA>(*context_lib, par.csw, par.csb);
+    pre_pc = new cs::LibraryPseudocounts<cs::AA>(*context_lib, par.csw, par.csb);
+  }
+  fclose(fin);
+  pc->SetTargetNeff(par.pc.target_neff);
+  pre_pc->SetTargetNeff(par.pre_pc.target_neff);
+
+  // Prepare pseudocounts admixture method
+  pc_admix = par.pc.CreateAdmix();
+  pre_pc_admix = par.pre_pc.CreateAdmix();
+}
+
+void DeletePseudocountsEngine() {
+  if (context_lib != NULL) delete context_lib;
+  if (crf != NULL) delete crf;
+  if (pc != NULL) delete pc;
+  if (pc_admix != NULL) delete pc_admix;
+  if (pre_pc != NULL) delete pre_pc;
+  if (pre_pc_admix != NULL) delete pre_pc_admix;
+}
