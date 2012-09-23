@@ -372,7 +372,7 @@ void help(char all=0)
   printf(" -pcm {0,..,3}      position dependence of pc admixture 'tau' (pc mode, default=%-i) \n",par.pc.admix);
   printf("                    0: no pseudo counts:    tau = 0                                  \n");
   printf("                    1: constant             tau = a                                  \n");
-  printf("                    2: diversity-dependent: tau = a/(1 + ((Neff[i]-1)/b)^c)          \n");
+  printf("                    2: diversity-dependent: tau = a/(1+((Neff[i]-1)/b)^c)            \n");
   printf("                    3: CSBlast admixture:   tau = a(1+b)/(Neff[i]+b)                 \n");
   printf("                    (Neff[i]: number of effective seqs in local MSA around column i) \n");
   printf(" -pca  [0,1]        overall pseudocount admixture (def=%-.1f)                        \n",par.pc.pca);
