@@ -295,7 +295,8 @@ int CSTranslateApp<Abc>::Run() {
 
         if (pc_) {
             fprintf(out_, "Adding cs-pseudocounts (admix=%.2f) ...\n", opts_.pc_admix);
-            profile.counts = pc_->AddTo(seq, ConstantAdmix(opts_.pc_admix));
+            ConstantAdmix admix(opts_.pc_admix);
+            profile.counts = pc_->AddTo(seq, admix);
         }
 
     } else {  // build profile from alignment

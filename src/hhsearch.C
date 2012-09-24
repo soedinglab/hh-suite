@@ -296,6 +296,7 @@ void help(char all=0)
   printf(" -pca  [0,1]        overall pseudocount admixture (def=%-.1f)                        \n",par.pc.pca);
   printf(" -pcb  [1,inf[      Neff threshold value for -pcm 2 (def=%-.1f)                      \n",par.pc.pcb);
   printf(" -pcc  [0,3]        extinction exponent c for -pcm 2 (def=%-.1f)                     \n",par.pc.pcc);
+  // printf(" -pcw  [0,3]    weight of pos-specificity for pcs  (def=%-.1f)                   \n",par.pcw);
   }
   printf("\n");
   printf("Context-specific pseudo-counts:                                                  \n");

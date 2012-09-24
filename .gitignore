@@ -17,3 +17,11 @@ tags
 /src/hhblits_valgrind
 /src/hhmake
 /src/hhmake_valgrind
+/src/hhfilter
+/src/hhmake_filter
+/src/hhalign
+/src/hhalign_valgrind
+/src/hhconsensus
+/src/hhconsensus_valgrind
+/src/cstranslate
+/src/cstranslate

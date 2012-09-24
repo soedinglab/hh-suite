@@ -65,6 +65,7 @@ using std::ofstream;
 #include "cs.h"          // context-specific pseudocounts
 #include "context_library.h"
 #include "library_pseudocounts-inl.h"
+#include "crf_pseudocounts-inl.h"
 
 #include "list.h"        // list data structure
 #include "hash.h"        // hash data structure
