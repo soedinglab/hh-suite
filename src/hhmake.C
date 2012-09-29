@@ -270,7 +270,8 @@ int main(int argc, char **argv)
   par.M=1;                     // match state assignment is by A2M/A3M
   par.Mgaps=50;                // above this percentage of gaps, columns are assigned to insert states
   par.matrix=0;                // Subst.matrix 0: Gonnet, 1: HSDM, 2: BLOSUM50 3: BLOSUM62
-  par.pc.admix=0               // no amino acid and transition pseudocounts added
+  par.pc.admix=
+    (Pseudocounts::Admix)0;    // no amino acid and transition pseudocounts added
   par.gapb=0.0;                // default values for transition pseudocounts; 0.0: add no transition pseudocounts!
   par.wg=0;                    // 0: use local sequence weights   1: use local ones
 

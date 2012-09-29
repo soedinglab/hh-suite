@@ -15,15 +15,17 @@ endif
 ifdef ICC
   CXX = env LANG=C icc
   CXXFLAGS = -fast -Wall -fno-strict-aliasing -finline-functions -funroll-loops -fp-model fast=2 -fast-transcendentals -wd981 -wd383 -wd2259 -wd1572 -D HH_SSE3 -I$(CS_DIR) -I$(FFINDEX_DIR)
-  HHSEARCH_LIBS = -lpthread -lrt
+  HHSEARCH_LIBS = -lpthread -lrt -openmp
   HHBLITS_LIBS = -lpthread -lrt -openmp
-  OBJECT_LIBS = -openmp
+	HHMAKE_LIBS = -fopenmp
+  OBJECT_LIBS = -fopenmp
 else # ifndef ICC
   CXX = g++
   CXXFLAGS = -O3 -Wall -Wno-deprecated -Wno-char-subscripts -fno-strict-aliasing -I$(CS_DIR) $(BITS_FLAG) -I$(FFINDEX_DIR)
   HHSEARCH_LIBS = -lpthread
   HHBLITS_LIBS = -lpthread -fopenmp
   HHALIGN_LIBS = 
+	HHMAKE_LIBS = -fopenmp
   OBJECT_LIBS = -fopenmp
   ifdef WITH_NATIVE
     CXXFLAGS += -march=native
@@ -101,10 +103,13 @@ hhblits_valgrind: hhblits.C $(SOURCES) $(HEADERS)$(CS_OBJECTS)
 	  $(CPP_VALGRIND) hhblits.C -o hhblits_valgrind $(CS_OBJECTS) $(HHBLITS_LIBS) $(FFINDEX_DIR)/libffindex.a
 
 hhmake: hhmake.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
-	$(CPP) hhmake.C -o hhmake $(CS_OBJECTS)
+	$(CPP) hhmake.C -o hhmake $(CS_OBJECTS) $(HHMAKE_LIBS)
 
 hhmake_static: hhmake.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
-	$(CPP) -static hhmake.C -o hhmake $(CS_OBJECTS)
+	$(CPP) -static hhmake.C -o hhmake $(CS_OBJECTS) $(HHMAKE_LIBS)
+
+hhmake_valgrind: hhmake.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
+	$(CPP_VALGRIND) hhmake.C -o hhmake_valgrind $(HHMAKE_LIBS)
 
 hhalign: hhalign.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
 	 $(CPP) hhalign.C -o hhalign $(CS_OBJECTS) $(HHALIGN_LIBS)

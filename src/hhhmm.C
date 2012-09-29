@@ -1640,7 +1640,7 @@ void HMM::PreparePseudocounts()
 // Add pseudocounts to profile p[]
 /////////////////////////////////////////////////////////////////////////////////////
 void HMM::AddContextSpecificPseudocounts(cs::Pseudocounts<cs::AA>* pc, cs::Admix* admix) {
-  if (has_pseudocounts || pc == NULL) {
+  if (has_pseudocounts || pc == NULL || admix == NULL) {
     for (int i = 1; i <= L; ++i) {
       for (int a = 0; a < 20; ++a) {
         p[i][a] = f[i][a];
