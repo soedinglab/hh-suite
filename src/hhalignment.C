@@ -2367,19 +2367,25 @@ void Alignment::WriteWithoutInsertsToFile(const char* alnfile)
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
-// Write stored,filtered sequences WITH insert states (lower case) to alignment file?
+// Write stored, filtered sequences WITH insert states (lower case) to alignment file?
 /////////////////////////////////////////////////////////////////////////////////////
 void Alignment::WriteToFile(const char* alnfile, const char format[])
 {
   FILE* alnf=NULL;
   char* tmp_name = new(char[NAMELEN]);
-  if(strcmp(alnfile, "stdout")) 
-    {
-      if (!par.append) alnf = fopen(alnfile, "w"); else alnf = fopen(alnfile, "a");
-      if (!alnf) OpenFileError(alnfile);
-    } 
-  else 
+
+  if(strcmp(alnfile, "stdout") != 0) {
+    if (!par.append)
+      alnf = fopen(alnfile, "w");
+    else
+      alnf = fopen(alnfile, "a");
+    }
+  else {
     alnf = stdout;
+  }
+
+  if (!alnf)
+    OpenFileError(alnfile);
 
   if (!format || !strcmp(format,"a3m"))
     {

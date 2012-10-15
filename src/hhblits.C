@@ -1908,7 +1908,7 @@ int main(int argc, char **argv)
   // Process command line options (they override defaults from .hhdefaults file)
   ProcessArguments(argc,argv);
 
-  // Check files needed 
+  // Check needed files
   if (!*par.infile || !strcmp(par.infile,"")) // infile not given
     {help(); cerr<<endl<<"Error in "<<program_name<<": input file missing!\n"; exit(4);}
   if (!*db_base)
@@ -2226,7 +2226,9 @@ int main(int argc, char **argv)
 
 	if (ndb_old > 0 && realign_old_hits)
 	  {
+            if(v > 0) {
 	    printf("Rescoring previously found HMMs with Viterbi algorithm\n");
+            }
 	    ViterbiSearch(dbfiles_old,ndb_old,(ndb_new + ndb_old));
 	    // Add dbfiles_old to dbfiles_new for realign
 	    for (int a = 0; a < ndb_old; a++) 
@@ -2238,7 +2240,9 @@ int main(int argc, char **argv)
 	  }
 	else if (!realign_old_hits && previous_hits->Size() > 0)
 	  {
-	    printf("Rescoring previously found HMMs with Viterbi algorithm\n");
+            if(v > 0) {
+	      printf("Rescoring previously found HMMs with Viterbi algorithm\n");
+            }
 	    RescoreWithViterbiKeepAlignment(ndb_new+previous_hits->Size());
 
 	    if (print_elapsed) ElapsedTimeSinceLastCall("(Rescoring with Viterbi)");
