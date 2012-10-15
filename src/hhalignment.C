@@ -2373,8 +2373,22 @@ void Alignment::WriteToFile(const char* alnfile, const char format[])
 {
   FILE* alnf;
   char* tmp_name = new(char[NAMELEN]);
-  if (!par.append) alnf = fopen(alnfile,"w"); else alnf = fopen(alnfile,"a");
-  if (!alnf) OpenFileError(alnfile);
+  if(strcmp(alnfile, "stdout") != 0) {
+    if (!par.append)
+      alnf = fopen(alnfile, "w");
+    else
+      alnf = fopen(alnfile, "a");
+    }
+  else {
+    alnf = stdout;
+  }
+
+  if (!alnf)
+    OpenFileError(alnfile);
+
+//  if (!par.append) alnf = fopen(alnfile,"w"); else alnf = fopen(alnfile,"a");
+
+//  if (!alnf) OpenFileError(alnfile);
 
   if (!format || !strcmp(format,"a3m"))
     {
@@ -2408,7 +2422,9 @@ void Alignment::WriteToFile(const char* alnfile, const char format[])
     }
   
   delete[] tmp_name;
-  fclose(alnf);
+  if(strcmp(alnfile, "stdout") != 0) {
+    fclose(alnf);
+  }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
