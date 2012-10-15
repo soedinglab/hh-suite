@@ -1908,8 +1908,8 @@ int main(int argc, char **argv)
   // Process command line options (they override defaults from .hhdefaults file)
   ProcessArguments(argc,argv);
 
-  // Check needed files
-  if (!*par.infile || !strcmp(par.infile,"") || !strcmp(par.infile,"stdin")) // infile not given
+  // Check files needed 
+  if (!*par.infile || !strcmp(par.infile,"")) // infile not given
     {help(); cerr<<endl<<"Error in "<<program_name<<": input file missing!\n"; exit(4);}
   if (!*db_base)
     {help(); cerr<<endl<<"Error in "<<program_name<<": database missing (see -d)\n"; exit(4);}

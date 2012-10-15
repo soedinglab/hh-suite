@@ -1107,7 +1107,7 @@ int main(int argc, char **argv)
 {
   char* argv_conf[MAXOPT];       // Input arguments from .hhdefaults file (first=1: argv_conf[0] is not used)
   int argc_conf=0;               // Number of arguments in argv_conf
-  char inext[IDLEN]="";          // Extension of input file (hhm or a3m)
+  char inext[IDLEN]="";          // Extension of input file ich 5 Leute, die an Transkription arbeiten. (hhm or a3m)
   const char print_elapsed=0;
 
 #ifdef PTHREAD
@@ -1145,8 +1145,8 @@ int main(int argc, char **argv)
   ProcessArguments(argc,argv);
 
   // Check command line input and default values
-  if (!*par.infile) // string empty?
-    {help(); cerr<<endl<<"Error in "<<program_name<<": no query alignment file given (-i file)\n"; exit(4);}
+  if (!*par.infile || !strcmp(par.infile,"")) // infile not given
+    {help(); cerr<<endl<<"Error in "<<program_name<<": input file missing!\n"; exit(4);}
   if (!par.dbfiles) // pointer never set?
     {help(); cerr<<endl<<"Error in "<<program_name<<": no HMM database file given (-d file)\n"; exit(4);}
   if (threads<=1) threads=0;

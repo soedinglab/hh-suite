@@ -2165,7 +2165,7 @@ void HMM::WriteToFile(char* outfile)
     } // end for(i)-loop for printing HMM columns
 
   fprintf(outf,"//\n");
-  fclose(outf);
+  if (strcmp(outfile,"stdout")) fclose(outf);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////

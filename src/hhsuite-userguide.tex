@@ -56,8 +56,9 @@
 {\Large \bf User Guide}
 
   Version 2.0.15, June 2012\\[2mm]
-{\copyright  Johannes S\"oding, Michael Remmert, Andreas Hauser}\\[2mm]
-Available under the Gnu Public License (version 3)\\[2mm]
+{\copyright  Johannes S\"oding, Michael Remmert, Andreas Hauser, Markus Meier, Andreas Biegert, Christof Angerm\"uller, and Martin Steinegger}\\[2mm]
+
+Available under the GNU Public License (version 3)\\[2mm]
 We are very grateful for bug reports! Please contact us at soeding@genzentrum.lmu.de
 
 {\bf \Large Summary}
@@ -427,7 +428,7 @@ Call a program without arguments or with \verb`-h` option to get more detailed e
 We will use the MSA \verb`query.a3m` in the \verb`data/` subdirectory of the HH-suite as an example query. To search for sequences in the \verb`scop70_1.75` database that are homologous to the query sequence or MSA in \verb`query.a3m`, type
 
 \begin{verbatim}
-$ hhsearch  -cpu 4 -i data/query.a3m -d databases/scop70_1.75_hhm_db
+$ hhsearch  -cpu 4 -i data/query.a3m -d dbs/scop70_1.75_hhm_db
 \end{verbatim}
 
 (The database file \verb`scop70_1.75_hhm_db` is contained in the HHsuite database tar 
@@ -462,34 +463,34 @@ belonging to the HH-suite database as well.
 
 The same search as above is performed here using hhblits instead of hhsearch:
 \begin{verbatim}
-$ hhblits  -cpu 4 -i data/query.a3m -d databases/scop70_1.75 -n 1
+$ hhblits  -cpu 4 -i data/query.a3m -d dbs/scop70_1.75 -n 1
 \end{verbatim}
 Note that instead of specifying the up to eight database files explicitly, only their common prefix
-is given (in this case \verb`databases/scop70_1.75`).
+is given (in this case \verb`dbs/scop70_1.75`).
 
 HHblits first scans the column state sequences in \verb`scop70_1.75.cs219` with its fast prefilter. HMMs whose column state sequences pass the prefilter are read from the packed file \verb`scop70_1.75_hhm_db` (using the index file \verb`scop70_1.75_hhm_db.index`) and are aligned to the query HMM generated from \verb`query.a3m` using the slow Viterbi HMM-HMM alignment algorithm. The search results are written to the default output file \verb`query.hhr`. The option \verb`-n 1` tells hhblits to perform a single search iteration. (The default is 2 iterations.)
 
 
 \subsection{Generating a multiple sequence alignment using HHblits}\label{msa_hhblits}
 
-To generate an MSA for a sequence or initial MSA in query.a3m, the database to be searched should cover the entire sequence space, such as uniprot20 or nr20. The option \verb`-oa3m <msa_file>` tells HHblits to generate an output MSA from the significant hits:
+To generate an MSA for a sequence or initial MSA in query.a3m, the database to be searched should cover the entire sequence space, such as uniprot20 or nr20. The option \verb`-oa3m <msa_file>` tells HHblits to generate an output MSA from the significant hits, \verb`-n 1` specifies a single search iteration.
 \begin{verbatim}
-$ hhblits -cpu 4 -i data/query.seq -d databases/uniprot20 -oa3m query.a3m -n 1
+$ hhblits -cpu 4 -i data/query.seq -d dbs/uniprot20 -oa3m query.a3m -n 1
 \end{verbatim}
 
-At the end of the search, HHblits reads from the packed database file containing the MSAs the sequences belonging to HMMs with E-value below the threshold. The E-value threshold for inclusion into the MSA can be specified using the \verb`-e <E-value>` option. After the search, \verb`query.a3m` will contain the MSA in A3M format. 
+At the end of the search, HHblits reads from the packed database file containing the MSAs the sequences belonging to HMMs with E-value below the threshold. The E-value threshold for inclusion into the MSA can be specified using the \verb`-e <E-value>` option. After the search, \verb`query.a3m` will contain the MSA in A3M format.
 
 We could do a second search iteration, starting with the MSA from the previous search, to add more sequences. Since the MSA generated after the previous search contains more information than the single sequence in \verb`query.seq`, searching with this MSA will probably result in many more homologous database matches.
 \begin{verbatim}
-$ hhblits -cpu 4 -i query.a3m -d databases/uniprot20 -oa3m query.a3m -n 1
+$ hhblits -cpu 4 -i query.a3m -d dbs/uniprot20 -oa3m query.a3m -n 1
 \end{verbatim}
-
-Instead, we could start the search with \verb`query.seq` and directly perform two search iterations, by doing two search iterations using the option \verb`-n 2`:
+Instead, we could directly perform two search iterations starting from \verb`query.seq`:
 \begin{verbatim}
-$ hhblits -cpu 4 -i data/query.seq -d databases/uniprot20 -oa3m query.a3m -n 2 
+$ hhblits -cpu 4 -i data/query.seq -d dbs/uniprot20 -oa3m query.a3m -n 2 
 \end{verbatim}
+See section \ref{2_vs_1+1} for an explanation why the results can be slightly different.
 
-In practice, it is recommended to use between 1 and 4 iterations for building MSAs, depending on the trade-off between reliability and specificity on one side and sensitivity for remotely homologous sequences on the other side. The more search iterations are done, the higher will be the risk of non-homologous sequences or sequence segments entering the MSA and recruiting more of their kind in subsequent iterations. This is particularly problematic when searching with sequences containing short repeats, regions with amino acid compositional bias and, although less dramatic,  with multiple domains. Fortunately, this problem is much less pronounced in hhblits as compared to PSI-BLAST due to hhblits's lower number of iterations, its more robust Maximum Accuracy alignment algorithm, and the higher precision of its HMM-HMMs alignments. 
+In practice, it is recommended to use between 1 and 4 iterations for building MSAs, depending on the trade-off between reliability and specificity on one side and sensitivity for remotely homologous sequences on the other side. The more search iterations are done, the higher will be the risk of non-homologous sequences or sequence segments entering the MSA and recruiting more of their kind in subsequent iterations. This is particularly problematic when searching with sequences containing short repeats, regions with amino acid compositional bias and, although less dramatic,  with multiple domains. Fortunately, this problem is much less pronounced in hhblits as compared to PSI-BLAST due to hhblits's lower number of iterations, its more robust Maximum Accuracy alignment algorithm, and the higher precision of its HMM-HMM alignments. 
 
 The parameter \verb`mact` (maximum accuracy threshold) lets you choose the trade-off between sensitivity and 
 precision. With a low mact-value (e.g.\ \verb`-mact 0.01`) very sensitive, but not 
@@ -501,7 +502,7 @@ To avoid unnecessarily large and diverse MSAs, HHblits stops iterating when the 
 
 To avoid the final MSAs to grow unnecessarily large, by default the database MSAs that are going to be merged with the query MSA into the result MSA are filtered with the active filter options (by default \verb`-id 90` and \verb`-diff 1000`). The \verb`-all` option turns off the filtering of the result MSA. Use this option if you want to get all sequences in the significantly similar uniprot20 clusters: 
 \begin{verbatim}
-$ hhblits -cpu 4 -i data/query.seq -d databases/uniprot20 -oa3m query.a3m -all
+$ hhblits -cpu 4 -i data/query.seq -d dbs/uniprot20 -oa3m query.a3m -all
 \end{verbatim}
 
 The A3M format uses small letters to mark inserts and capital letters to designate match and delete columns (see subsection \ref{aliformats}), allowing you to omit gaps aligned to insert columns. The A3M format therefore uses much less space for large alignments than FASTA but looks misaligned to the human eye. Use the \verb`reformat.pl` script to reformat \verb`query.a3m` to other formats, e.g.\ for reformatting the MSA to Clustal and FASTA format, type
@@ -542,41 +543,77 @@ detect remote homologs.
 Previous versions of HH-suite (the 'HHsearch package') included a perl script \verb`buildali.pl` to build MSAs for a query sequence using PSI-BLAST as its search engine. Because HHblits performs better than PSI-BLAST in all aspects that we have tested, we decided to remove this script from HH-suite. It can still be downloaded as part of HHsearch version 1.5.0.
 
 
+\subsection{Visually checking an MSA for corrupted regions}
+
+Iterative search methods such as PSI-BLAST and HHblits may generate alignments containing non-homologous sequence stretches or even large fractions of non-homologous sequences. The cause for this is almost always the overextension of homologous alignments into non-homologous regions. This has been termed \emph{homologous overextension} in \cite{Gonzalez:2010}. This effect occurs particularly in multidomain and repeat proteins. A single overextended alignment in the search results leads to more of such sequences to be included in the profile of the next iteration -- usally all homologous to the first problematic sequence but with even longer non-homologous stretches. Thus, after three or more iterations, large sections of the resulting MSA may be non-homologous to the original query sequence. This risk of homologous overextension is greatly reduced in HHblits in comparison to PSI-BLAST, because fewer iterations are usually necessary for HHblits and because HHblits uses the Maximum Accuracy alignment algorithm (see section \ref{MAC}), which is much less prone to overextend alignments than the Smith-Waterman/Viterbi algorithm used by most other programs including PSI-BLAST. Still, in many cases, it is worth investigating an interesting homology prediction by visually checking the MSAs of the query and the matched database protein for the presence of corrupted regions containing non-homologous sequence stretches. 
+
+The recommended procedure to visually check an MSA is the following. We first reduce the MSA to a small set of sequences that could still fit into a single window of an alignment viewer:
+\begin{verbatim}
+$ hhfilter -i query.a3m -o query.fil.a3m -diff 30
+\end{verbatim}
+The option \verb`-diff` causes hhfilter to select a representative set of at least 30 sequences that best represent the full diversity of the MSA. Sequences that contain non-homologous strechtes are therefore usually retained, as the tend to be the most dissimilar to the main sequence cluster. 
+
+Next, we remove all inserts (option \verb`-r`) with respect to the first, master sequence in the MSA. The resulting MSA is sometimes called a master-slave alignment:
+\begin{verbatim}
+$ reformat.pl -r query.fil.a3m query.fil.fas
+\end{verbatim}
+
+This alignment is now very easy to inspect for problematic regions in any viewer that allows to color the residues according to their physico-chemical properties. We can recommend \verb`alnedit` (downloadable from \url{www.eb.tuebingen.mpg.de/?id=421}) or \verb`jalview`, for example:
+\begin{verbatim}
+$ java -jar ~/bioinfo/alnedit.jar query.fil.fas .
+\end{verbatim}
+%Here is an example of a corrupted MSA, visualized as described here with alnedit
+%\begin{figure}[h]
+%\begin{center}
+%\includegraphics[width=0.5 \textwidth]{hhblits-hhsearch.png}
+%\caption{Corrupted alignment: The master-slave MSA for sequence XXXX generated using three iterations of PSI-BLAST shows ...}
+%\label{fig:hhsearch_hhblits_bench}
+%\end{center}
+%\end{figure}
+
+
+
+
+
 \subsection{Building customized databases} \label{building_dbs}
 
 It is simple to build custom HH-suite databases using the same tools we use to build the standard HH-suite databases (except uniprot20 and nr20). An example application is to search for homologs among all proteins of an organism. To build your own HH-suite database from a set of sequences, you first need to generate an MSA with predicted secondary structure for every sequence in the set. This can conveniently be done using the script \verb`multithread.pl` in the HH-suite. This script runs a command for many files in parallel, distributing the individual jobs to multiple cores on your server, one file per thread. This will shorten the run-time roughly by the number of cores. 
 
 To run \verb`multithread.pl`, you need first to have each sequences in a separate FASTA-formatted file. If your sequences are contained in a single multiple-sequence FASTA file \verb`<dbseqs.fas>`, first split them up into multiple single-sequence files using \verb`splitfasta.pl`:
 \begin{verbatim}
-$ mkdir dbs/scop70_1.75; cd dbs/scop70_1.75
+$ mkdir tmp/scop70_1.75; cd tmp/scop70_1.75
 $ splitfasta.pl <dbseqs.fas> 
 \end{verbatim}
-Now, to build an MSA with HHblits for each sequence \verb`dbs/scop70_1.75/*.seq`, run\\[-1mm]
+Now, to build an MSA with HHblits for each sequence \verb`tmp/scop70_1.75/*.seq`, run\\[-1mm]
 
-\verb`$ multithread.pl 'dbs/scop70_1.75/*.seq' `\\
-\verb`                  'hhblits -i $file -d databases/uniprot20 -oa3m $name.a3m -n 2'`\\[-1mm]
+\verb`$ multithread.pl 'tmp/scop70_1.75/*.seq' `\\
+\verb`                  'hhblits -i $file -d dbs/uniprot20 -oa3m $name.a3m -n 2'`\\[-1mm]
 
-The first argument is the file globbing expression (protected from the shell by quotes), which selects the files with which to run the command. The command is given as second argument within quotes. In this command, the string \verb`$file` is replaced by the actual, globbed file. You might also want to pipe the stdout and stderr streams of the command into a log-file:\\
-{\small \verb`'hhblits -i $file -d databases/uniprot20 -oa3m $name.a3m -n 2 1> stdout.log 2>stderr.log'`}. 
+The first argument is the file globbing expression (protected from the shell by quotes), which selects the files with which to run the command. The command is given as second argument within quotes. In this command, the string \verb`$file` is replaced by the actual, globbed file. You might also want to pipe the stdout and stderr streams of the command into log files, for example using the following command string:
+{
+\begin{verbatim}
+'hhblits -i $file -d dbs/uniprot20 -oa3m $name.a3m -n 2 1>out.log 2>err.log'.
+\end{verbatim}
+}
 The MSAs are written to the file \verb`$name.a3m`. Here, \verb`$name` stands for the globbed file name without its extension. The number of threads to launch can be specified with option \verb`-cpu <int>` (default value is 8). To be sure that everything went smoothly, check that the number of \verb`*.a3m` files is the same as the number of \verb`*.seq` files, and browse the file \verb`'stderr.log'` for error messages. 
 
 The number of HHblits search iterations and the HMM inclusion E-value threshold for hhblits can be changed from their default values (2 and 0.01, respectively) using the \verb`'-n <int>'` and \verb`'-e <float>'` options. A higher number of iterations such as  \verb`'-n 3'` will result in very high sensitivity to discover remotely homologous relationships, but the ranking among homologous proteins will often not reflect their degree of relationship to the query. The reason is that any similarities that are higher than the similarities among the sequences in the query and database MSAs cannot be resolved. 
 
 Now, add PSIPRED-predicted secondary structure to all MSAs:
 \begin{verbatim}
-$ multithread.pl 'dbs/scop70_1.75/*.a3m' 'addss.pl $file' -cpu 16 
+$ multithread.pl 'tmp/scop70_1.75/*.a3m' 'addss.pl $file' -cpu 16 
 \end{verbatim}
 Again, piping stdout and stderr into log files and inspecting the warnings and errors is recommended. 
 
 An HH-suite database consists of eight files, as described in subsection \ref{hhblits_dbs}. These files can be generated by a single call to \verb`hhblitsdb.pl`:
 \begin{verbatim}
-$ hhblitsdb.pl -o databases/scop70_1.75 -ia3m dbs/scop70_1.75/ -cpu 16
+$ hhblitsdb.pl -o dbs/scop70_1.75 -ia3m tmp/scop70_1.75/ -cpu 16
 \end{verbatim}
 In order to build the file containing the column state sequence for prefiltering, \verb`hhblitsdb.pl` will generate a column state sequence for each A3M-formatted MSA in the directory given by the \verb`-ia3m` option. As this can take some time, the script calls \verb`multithread.pl` to distribute the jobs to multiple cores. The script also needs to generate an HHM files for each MSA file, for which again \verb`multithread.pl` is called. In the end, the \verb`ffindex` utility generates the packed files containing the A3M MSAs and HHM models with corresponding index files. The script will report the number of files of each category (column-state, A3M, HHM) and warn if the numbers differ. The option \verb`-log err.log` pipes the stderr stream of each command executed into a log file. As with all perl scripts in the HH-suite, a list of additional options can be retrieved by calling the scripts without parameters.
 
 Alternatively, if you have a set of HHM or HMMER model files but no MSA files, for example for Pfam, you can build an HH-suite database with the command
 \begin{verbatim}
-$ hhblitsdb.pl -o databases/pfamA_25 -ihhm dbs/pfamA_25/ -hmm -cpu 16
+$ hhblitsdb.pl -o dbs/pfamA_25 -ihhm tmp/pfamA_25/ -hmm -cpu 16
 \end{verbatim}
 The script will then build the column state sequences from the HMMER files in the directory given by the \verb`-ihhm` option. It will then generate the five database files that are needed by \verb`hhblits` for non-iterative searches throug the database. (The three files referring to the A3M MSAs cannot be built since no MSAs were supplied. However, these file are only needed to build output MSAs with the -oa3m option or to build a query MSA for a second search iteration. They are dispensable for non-iterative searches.)
 
@@ -587,7 +624,7 @@ Please note that HHblits and HHsearch lose quite a lot of performance when using
 
 An old-style HHsearch database consists simply of concatenated hhm files. Start from the a3m files including predicted secondary structure, generated as described above. Then generate the \verb`hhm` files using \verb`multithread.pl`:
 \begin{verbatim}
-$ multithread.pl 'dbs/scop70_1.75/*.a3m' 'hhmake -i $file' -cpu 8 
+$ multithread.pl 'tmp/scop70_1.75/*.a3m' 'hhmake -i $file' -cpu 8 
 \end{verbatim}
 The \verb`hhm` files will have the same name but with a different extension as their \verb`a3m` files. You 
 can then concatenate your individual HMMs into your database:
@@ -604,28 +641,30 @@ $ find $tmpdir -name '*.seq219' -exec cat '{}' + >> scop70_1.75.hhm
 
 There are two ways to add, remove, or replace HMMs and A3M files in HH-suite databases. The computationally efficient way is the following. Suppose you want to add a3m and hhm files for \verb`mydb1/myseq.a3m` and all files \verb`mydb2/*.a3m` to the uniprot20. You can do that by using \verb`hhblitsdb.pl` with the append option \verb`-a`:   
 \begin{verbatim}
-$ hhblitsdb.pl -a databases/uniprot20 -ia3m 'mydb1/myseq.a3m mydb2/*.a3m' 
+$ hhblitsdb.pl -a dbs/uniprot20 -ia3m 'mydb1/myseq.a3m mydb2/*.a3m' 
 \end{verbatim}
 The expression in apostrophes is a globbing expression that has the same syntax as Linux command line glob expressions (with * representing any string, ? a wildcard character etc.). For each a3m file, hhblitsdb.pl will generate column state sequences and hhm files and will add these to the database. If you already have hhm files \verb`mydb2/*.hhm` for \emph{all} the a3m files, you can give these on the command line to save the time to generate them from the a3m files: 
-\begin{verbatim}
-$ hhblitsdb.pl -a databases/uniprot20 -ia3m 'mydb1/myseq.a3m mydb2/*.a3m' -ihhm 'mydb1/myseq.hhm mydb2/*.hhm'
-\end{verbatim}
+\\[-1mm]
+
+\verb`$ hhblitsdb.pl -a dbs/uniprot20 -ia3m 'mydb1/myseq.a3m mydb2/*.a3m'`\\
+\verb`                                               -ihhm 'mydb1/myseq.hhm mydb2/*.hhm'`\\[-1mm]
+
 Since the file names are used for retrieving the files in the ffindex data structure, it is very important to add only files whose file name does not yet exist in the HH-suite database.
 
 To remove files, call hhblitsdb.pl with the remove option \verb`-r`, listing the files to remove in a glob expression after the \verb`-f` option:
 \begin{verbatim}
-$ hhblitsdb.pl -r databases/uniprot20 -f 'mydb2/*.hhm mydb2/*.a3m' 
+$ hhblitsdb.pl -r dbs/uniprot20 -f 'mydb2/*.hhm mydb2/*.a3m' 
 \end{verbatim}
 Don't forget to remove both a3m and hhm files from the database. The cs files will be removed automatically.
 
 When the HH-suite database to modify is not too large (such as the PDB, SCOP, Pfam etc.), you might also extract all files into a directory:
 \begin{verbatim}
-$ ffindex_unpack <db>_a3m_db  <db>_a3m_db.index dbs/mydb/
-$ ffindex_unpack <db>_hhm_db  <db>_hhm_db.index dbs/mydb/ 
+$ ffindex_unpack <db>_a3m_db  <db>_a3m_db.index tmp/mydb/
+$ ffindex_unpack <db>_hhm_db  <db>_hhm_db.index tmp/mydb/ 
 \end{verbatim}
-Now add, replace, modify, or remove  the a3m and hhm files in \verb`dbs/mydb/` as desired. Last, build a new HH-suite database from the modified set of a3m and hhm files in \verb`dbs/mydb/`:
+Now add, replace, modify, or remove  the a3m and hhm files in \verb`tmp/mydb/` as desired. Last, build a new HH-suite database from the modified set of a3m and hhm files in \verb`tmp/mydb/`:
 \begin{verbatim}
-$ hhblitsdb.pl -o databases/mydb -ia3m dbs/mydb/ -ihhm dbs/mydb/
+$ hhblitsdb.pl -o dbs/mydb -ia3m tmp/mydb/ -ihhm tmp/mydb/
 \end{verbatim}
 Don't try that with the uniprot20 or nr20 databases, though. It would take many hours just to unpack the ffindex data files into the original MSA and HMM files.
 
@@ -742,12 +781,17 @@ The number of effective sequences of the full alignment, which appears as NEFF i
 
 \subsection{More frequently asked questions}
 
-{\bf How can I retrieve individual database A3M or HHM files in my HH-suite database?}
+{\bf How can I retrieve database A3M or HHM files from my HH-suite database?}
 For reasons of efficiency, the MSA A3M and HHM model files are packed into two files, \verb`<db>_a3m_db` and \verb`<db>_hhm_db`, each with its own index file. The contained files are easy to extract from the packed files. For example, to dump \verb`d1aa7a_.a3m` in \verb`scop70` to standard output, type 
 \begin{verbatim}
-$ ffindex_get scop70_a3m_db  scop70_a3m_db.index d1aa7a_.a3m
+$ ffindex_get scop70_a3m_db scop70_a3m_db.index d1aa7a_.a3m
 \end{verbatim}
 You may write the extracted file to a separate file by appending \verb`'> d1aa7a_.a3m'` to the above command.
+If you want to extract all files in the ffindex data structures to directory \verb`tmp/scop70`, type
+\begin{verbatim}
+$ ffindex_unpack scop70_a3m_db scop70_a3m_db.index tmp/scop70/ .
+\end{verbatim}
+
 
 
 {\bf Do HHsearch and HHblits work fine with multi-domain sequences?}
@@ -769,7 +813,7 @@ No. If you don't specify otherwise, the two parameters of the extreme-value dist
 
 {\bf Why do I get different results using hhblits and hhsearch} when I search with the same query through the same database? There are two reasons. First, some hits that hhsearch shows might not have passed the prefilter in hhblits. The option \verb`-prepre_smax_thresh <bits>` lets you modify the minimum score threshold of the first, gapless alignment prefilter (default is 10 bits). Option \verb`-pre_evalue_thresh <E-value>` sets the maximum E-value threshold for the second, gapped alignment prefilter (default is 1000). Second, while the probabilities and P-values of hhblits and hhsearch should be the identical for the same matches, the E-values are only similar. The reason is that hhblits heuristically combines the E-values of the second prefilter with the E-values from the full HMM-HMM Viterbi alignment into total E-values \cite{Remmert:2011}. These E-values are slightly better in distinguishing true from false hits, because they combine the partly independent information from two comparisons.
 
-{\bf Why do I get different results when I perform $2$ and $1+1$ iterations with HHblits?} When you do a single iteration and start a second iteration with the A3M output file from the first iteration, the alignments should be the same as if you do two iterations (\verb`-n 2`), but the significance values can be slightly different. The reason is that the HHblits P-value is calculated by a weighted combination of the P-value of the Viterbi pairwise HMM alignment and the prefilter E-value. The prefilter E-values differ in the two cases described, since in the first case the E-value is calculated for the first prefilter search (before the first full search) and in the second case it is calculated for the second prefilter search, performed with the query MSA obtained \emph{after} the first search iteration. 
+{\label{2_vs_1+1} \bf Why do I get different results when I perform $2$ and $1+1$ iterations with HHblits?} When you do a single iteration and start a second iteration with the A3M output file from the first iteration, the alignments should be the same as if you do two iterations (\verb`-n 2`), but the significance values can be slightly different. The reason is that the HHblits P-value is calculated by a weighted combination of the P-value of the Viterbi pairwise HMM alignment and the prefilter E-value. The prefilter E-values differ in the two cases described, since in the first case the E-value is calculated for the first prefilter search (before the first full search) and in the second case it is calculated for the second prefilter search, performed with the query MSA obtained \emph{after} the first search iteration. 
 
 {\bf How do I reconcile overlapping and conflicting domain predictions}, for example when domain A is predicted from residues 2-50 with 98\% probability and domain B from 2-200 with 95\% probability? The probability that a pair of residues is correctly aligned is the product of the probability for the database match to be homologous (given by the values in the \verb`Probab` column of the hit list) times the posterior probability of the residue pair to be correctly aligned given the database match is correct in the first place. The posterior probabilities are specified by the confidence numbers in the last line of the alignment blocks (0 corresponds approximately to 0-10\%, 9 to 90-100\%). Therefore, an obvious solution would be to prune the alignments in the overlapping region such that the sum of total probabilities is maximized. There is no script yet that does this automatically.
 
@@ -1875,13 +1919,14 @@ homology modeling package.
 
 \subsection{{\tt hhblitsdb.pl} -- Build an HH-suite database }
 
-Builds the HH-suite database files from MSA and HMM files 
+Builds HH-suite database from a3m formatted MSAs and/or from HMMs (-o).
+MSAs and HMMs can also be added (-a) to or removed (-r) from an existing database. 
 
 \small 
 \begin{verbatim}
-Usage: hhblitsdb.pl -o <db_name> [-ia3m <a3m_dir>] [-ihhm <hhm_dir>] [-ics <cs_dir>] [options]
+Usage: hhblitsdb.pl -o|-a|-r <db_name> [-ia3m <a3m_dir>] [-ihhm <hhm_dir>] [-ics <cs_dir>]... 
 
-Depending on the input directories, the following HH-suite database files are generated:
+With option -o, the following HH-suite database files can be generated:
  <db_name>.cs219              column-state sequences, one for each MSA/HMM (for prefilter)
  <db_name>.cs219.sizes        number of sequences and characters in <db_name>.cs219
  <db_name>_a3m_db             packed file containing A3M alignments read from <a3m_dir>
@@ -1892,7 +1937,9 @@ Depending on the input directories, the following HH-suite database files are ge
  <db_name>_hhm_db.index.sizes number of lines in <db_name>_hhm_db.index
 
 Options:
- -o <db_name>    name of database
+ -o <db_name>    create database with this name
+ -a <db_name>    append files to database with this name
+ -r <db_name>    remove files from database with this name
  -ia3m <a3m_dir> input directory (or glob of directories) with A3M-formatted files
                  These files MUST have extension 'a3m'.
  -ihhm <hhm_dir> input directory (or glob of directories) with HHM (or HMMER) files 
@@ -1903,10 +1950,9 @@ Options:
  -csext <ext>    extension of column state sequences (default: seq219)
  -hmm            use HMMER-formatted files. These MUST have extension hmm
                  (WARNING! HMMER format results in decreased performance over HHM format)
- -append         append A3M/HHM files to packed db files if they exist (default: overwrite)
  -v [1-3]        verbose mode (default: 2)
  -cpu <int>      number of threads to generate cs219 and hhm files (default = 8)
-
+ -f 'file_glob'  string with list of glob expression of files to remove
  
 Example 1: only -ia3m given; cs sequences and hhm files are generated from a3m files
    perl hhblitsdb.pl -o databases/mydb -ia3m mydb/a3ms/ 
@@ -1920,8 +1966,14 @@ Example 3: -ia3m and -ihhm given; cs sequences are generated from a3m files
 Example 4: -ics, -ia3m, and -ihhm given; all db files are created 
    perl hhblitsdb.pl -o databases/mydb -ia3m mydb/a3ms/ -ihhm mydb/hhms/ -ics mydb/cs/  
 
-Example 5: using glob expression to specify several input databases (note the singe quotes)
-   perl hhblitsdb.pl -o databases/mydb -ihhm 'mydbs*/hhms/'  
+Example 5: using glob expression to specify files (note the singe quotes)
+   perl hhblitsdb.pl -o databases/mydb -ihhm 'mydbs*/hhms/*.hhm'  
+
+Example 6: add files to database; cs sequences and hhm files are generated from a3m files
+   perl hhblitsdb.pl -a databases/mydb -ia3m 'mydbs/a3ms/g1a*.a3m'  
+
+Example 7: remove files from database
+   perl hhblitsdb.pl -r databases/mydb -f 'mydbs/a3ms/g1a*.* mydbs2/'  
 \end{verbatim} 
 \normalsize
 
@@ -1973,7 +2025,7 @@ Option:
 
  Options: 
    -o <file>    output file (default: <infile_wo_extension>.pdb
-   -d <pdbdir>  give directory of pdb files (default=/cluster/databases/pdb/all)
+   -d <pdbdir>  give directory of pdb files (default=)
    -a [A|B]     filter alternative location identifier (e.g. A or B)
 \end{verbatim} 
 \normalsize
@@ -2235,6 +2287,14 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 \bibliography{../../papers/johannes}
 
  
+\section{Acknowlegements}
+
+We thank the many users of HH-suite who sent bug reports and who gave critical feedback that led to improvements in the software. 
+%We gratefully acknowlege contributions from Martin Steinegger, Christof Angerm\"uller, and Andreas Biegert, and Markus Meier to the code. 
+We are grateful to Lazlo Kajan, Stefan M\"oller and the Debian team for making the HH-suite software available as a Debian package. J.S. thanks Andrei Lupas for his invaluable support, encouragement, and feedback during the first five years of the work on HH-suite in his department.
+
+
+
 \vspace{20mm}
 \begin{center}
 Good luck with your work!
