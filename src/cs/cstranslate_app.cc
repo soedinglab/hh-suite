@@ -35,6 +35,7 @@ struct CSTranslateAppOptions {
         weight_center    = 1.6;
         weight_decay     = 0.85;
         weight_as        = 1000.0;
+        verbose          = true;
     }
 
     // Validates the parameter settings and throws exception if needed.
@@ -71,6 +72,8 @@ struct CSTranslateAppOptions {
     double weight_decay;
     // Weight in emission calculation of abstract states
     double weight_as;
+    // verbose output
+    bool verbose;
 };  // CSTranslateAppOptions
 
 
@@ -118,8 +121,12 @@ void CSTranslateApp<Abc>::ParseOptions(GetOpt_pp& ops) {
     ops >> Option('D', "context-data", opts_.modelfile, opts_.modelfile);
     ops >> Option('p', "pc-engine", opts_.pc_engine, opts_.pc_engine);
     ops >> Option('w', "weight", opts_.weight_as, opts_.weight_as);
+    ops >> Option('v', "verbose", opts_.verbose, opts_.verbose);
 
     opts_.Validate();
+
+    if (strcmp(opts_.outfile.c_str(), "stdout") == 0)
+        opts_.verbose = false;
 
     if (opts_.outfile.empty() && opts_.appendfile.empty())
         opts_.outfile = GetBasename(opts_.infile, false) + ".as";
@@ -159,17 +166,23 @@ void CSTranslateApp<Abc>::PrintOptions() const {
 template<class Abc>
 void CSTranslateApp<Abc>::WriteStateSequence(const Sequence<AS219>& seq) const {
     if (!opts_.outfile.empty()) {
-        FILE* fout = fopen(opts_.outfile.c_str(), "w");
+        FILE* fout;
+        if (strcmp(opts_.outfile.c_str(), "stdout") == 0)
+            fout = stdout;
+        else
+            fout = fopen(opts_.outfile.c_str(), "w");
         if (!fout) throw Exception("Can't write to output file '%s'!", opts_.outfile.c_str());
         seq.Write(fout);
-        fprintf(out_, "Wrote abstract state sequence to %s\n", opts_.outfile.c_str());
+        if (opts_.verbose)
+            fprintf(out_, "Wrote abstract state sequence to %s\n", opts_.outfile.c_str());
         fclose(fout);
     }
     if (!opts_.appendfile.empty()) {
         FILE* fout = fopen(opts_.appendfile.c_str(), "a");
         if (!fout) throw Exception("Can't append to file '%s'!", opts_.appendfile.c_str());
         seq.Write(fout);
-        fprintf(out_, "Appended abstract state sequence to %s\n", opts_.appendfile.c_str());
+        if (opts_.verbose)
+            fprintf(out_, "Appended abstract state sequence to %s\n", opts_.appendfile.c_str());
         fclose(fout);
     }
 }
@@ -177,17 +190,23 @@ void CSTranslateApp<Abc>::WriteStateSequence(const Sequence<AS219>& seq) const {
 template<class Abc>
 void CSTranslateApp<Abc>::WriteStateProfile(const CountProfile<AS219>& prof) const {
     if (!opts_.outfile.empty()) {
-        FILE* fout = fopen(opts_.outfile.c_str(), "w");
+        FILE* fout;
+        if (strcmp(opts_.outfile.c_str(), "stdout") == 0)
+            fout = stdout;
+        else
+            fout = fopen(opts_.outfile.c_str(), "w");
         if (!fout) throw Exception("Can't write to output file '%s'!", opts_.outfile.c_str());
         prof.Write(fout);
-        fprintf(out_, "Wrote abstract state count profile to %s\n", opts_.outfile.c_str());
+        if (opts_.verbose)
+            fprintf(out_, "Wrote abstract state count profile to %s\n", opts_.outfile.c_str());
         fclose(fout);
     }
     if (!opts_.appendfile.empty()) {
         FILE* fout = fopen(opts_.appendfile.c_str(), "a");
         if (!fout) throw Exception("Can't append to file '%s'!", opts_.appendfile.c_str());
         prof.Write(fout);
-        fprintf(out_, "Appended abstract state count profile to %s\n", opts_.appendfile.c_str());
+        if (opts_.verbose)
+            fprintf(out_, "Appended abstract state count profile to %s\n", opts_.appendfile.c_str());
         fclose(fout);
     }
 }
@@ -209,7 +228,8 @@ template<class Abc>
 int CSTranslateApp<Abc>::Run() {
     // Setup pseudocount engine
     if (!opts_.modelfile.empty() && opts_.pc_engine == "lib") {
-        fprintf(out_, "Reading context library for pseudocounts from %s ...\n",
+        if (opts_.verbose)
+            fprintf(out_, "Reading context library for pseudocounts from %s ...\n",
                 GetBasename(opts_.modelfile).c_str());
         FILE* fin = fopen(opts_.modelfile.c_str(), "r");
         if (!fin)
@@ -223,7 +243,8 @@ int CSTranslateApp<Abc>::Run() {
     }
 
     // Setup abstract state engine
-    fprintf(out_, "Reading abstract state alphabet from %s ...\n",
+    if (opts_.verbose)
+        fprintf(out_, "Reading abstract state alphabet from %s ...\n",
             GetBasename(opts_.alphabetfile).c_str());
     FILE* fin = fopen(opts_.alphabetfile.c_str(), "r");
     if (!fin) throw Exception("Unable to read file '%s'!",
@@ -241,7 +262,10 @@ int CSTranslateApp<Abc>::Run() {
     string header;
     CountProfile<Abc> profile;  // input profile we want to translate
 
-    fin = fopen(opts_.infile.c_str(), "r");
+    if (strcmp(opts_.infile.c_str(), "stdin") == 0)
+        fin = stdin;
+    else
+        fin = fopen(opts_.infile.c_str(), "r");
     if (!fin)
         throw Exception("Unable to read input file '%s'!", opts_.infile.c_str());
 
@@ -251,7 +275,8 @@ int CSTranslateApp<Abc>::Run() {
         else header = profile.name;
 
         if (pc_) {
-            fprintf(out_, "Adding cs-pseudocounts (admix=%.2f) ...\n", opts_.pc_admix);
+            if (opts_.verbose)
+                fprintf(out_, "Adding cs-pseudocounts (admix=%.2f) ...\n", opts_.pc_admix);
             CSBlastAdmix admix(opts_.pc_admix, opts_.pc_ali);
             profile.counts = pc_->AddTo(profile, admix);
             Normalize(profile.counts, profile.neff);
@@ -263,7 +288,8 @@ int CSTranslateApp<Abc>::Run() {
         profile = CountProfile<Abc>(seq);
 
         if (pc_) {
-            fprintf(out_, "Adding cs-pseudocounts (admix=%.2f) ...\n", opts_.pc_admix);
+            if (opts_.verbose)
+                fprintf(out_, "Adding cs-pseudocounts (admix=%.2f) ...\n", opts_.pc_admix);
             profile.counts = pc_->AddTo(seq, ConstantAdmix(opts_.pc_admix));
         }
 
@@ -281,7 +307,8 @@ int CSTranslateApp<Abc>::Run() {
         profile = CountProfile<Abc>(ali);
 
         if (pc_) {
-            fprintf(out_, "Adding cs-pseudocounts (admix=%.2f) ...\n", opts_.pc_admix);
+            if (opts_.verbose)
+                fprintf(out_, "Adding cs-pseudocounts (admix=%.2f) ...\n", opts_.pc_admix);
             CSBlastAdmix admix(opts_.pc_admix, opts_.pc_ali);
             profile.counts = pc_->AddTo(profile, admix);
             Normalize(profile.counts, profile.neff);
@@ -298,7 +325,8 @@ int CSTranslateApp<Abc>::Run() {
 
     // Translate count profile into abstract state count profile (Neff is one)
     CountProfile<AS219> as_profile(profile.counts.length());  // output profile
-    fputs("Translating count profile to abstract state alphabet AS219 ...\n", out_);
+    if (opts_.verbose)
+        fputs("Translating count profile to abstract state alphabet AS219 ...\n", out_);
     for (size_t i = 0; i < as_profile.length(); ++i)
         CalculatePosteriorProbs(*as_lib_, emission, profile, i, as_profile.counts[i]);
     as_profile.name = GetBasename(opts_.infile, false);
@@ -340,21 +368,23 @@ int CSTranslateApp<Abc>::Run() {
         ali[4].append(strprintf("%d", GetConfidence(as_profile.counts[i][as_seq[i]])));
     }
 
-    // Print pseudo alignment in blocks
-    fputc('\n', out_);  // blank line before alignment
-    while (!ali.front().empty()) {
-        for (size_t k = 0; k < nseqs; ++k) {
-            string label = labels[k];
-            label += string(header_width - label.length() + 1, ' ');
-            fputs(label.c_str(), out_);
-            fputc(' ', out_);  // separator between header and sequence
+    // Print pseudo alignment in blocks if verbose
+    if (opts_.verbose){
+        fputc('\n', out_);  // blank line before alignment
+        while (!ali.front().empty()) {
+            for (size_t k = 0; k < nseqs; ++k) {
+                string label = labels[k];
+                label += string(header_width - label.length() + 1, ' ');
+                fputs(label.c_str(), out_);
+                fputc(' ', out_);  // separator between header and sequence
 
-            size_t len = MIN(width, ali[k].length());
-            fputs(ali[k].substr(0, len).c_str(), out_);
-            fputc('\n', out_);
-            ali[k].erase(0, len);
+                size_t len = MIN(width, ali[k].length());
+                fputs(ali[k].substr(0, len).c_str(), out_);
+                fputc('\n', out_);
+                ali[k].erase(0, len);
+            }
+            fputc('\n', out_);  // blank line after each block
         }
-        fputc('\n', out_);  // blank line after each block
     }
 
     // Write abstract-state sequence or profile to outfile
