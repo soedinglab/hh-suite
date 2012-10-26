@@ -98,6 +98,10 @@ HHsearch and HHblits look for the column state library file cs219.lib
 and the context library file context_data.lib in $HHLIB/data/. The hh-suite
 perl scripts also read HHLIB to locate 
 
+Add the location of HH-suite binaries and scripts to your search PATH variable
+$ export PATH=$PATH:<install_dir>/bin:$HHLIB/scripts
+
+
 4.2. Specify paths to BLAST, PSIPRED, PDB, DSSP etc. in 
 $INSTALL_DIR/lib/hh/scripts/HHPaths.pm
 where they are read by the perl scripst in hh-suite.
