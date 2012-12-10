@@ -1,6 +1,6 @@
 # HHPaths.pm 
 
-#     HHsuite version 2.0.15 (June 2012)
+#     HHsuite version 2.0.165 (January 2013)
 #     (C) J. Soeding, A. Hauser 2012
 
 #     This program is free software: you can redistribute it and/or modify

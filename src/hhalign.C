@@ -1110,6 +1110,8 @@ int main(int argc, char **argv)
       hitlist.PrintHitList(q,par.outfile);
       hitlist.PrintAlignments(q,par.outfile);
       if (v==2 && strcmp(par.outfile,"stdout")) WriteToScreen(par.outfile,1009); // write only hit list to screen
+      // Write whole output file to screen? (max 10000 lines)
+      if (v>=3 && strcmp(par.outfile,"stdout")) WriteToScreen(par.outfile,10009);
     }
 
 

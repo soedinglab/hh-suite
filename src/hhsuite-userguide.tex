@@ -115,6 +115,7 @@ The HH-suite source code, executable RPM and DPKG packages for most Linux 64 bit
 \begin{verbatim}
   ftp://toolkit.genzentrum.lmu.de/HH-suite/
 \end{verbatim}
+Because hhblits needs a 64 bit system to read files larger than 4 GB (such as the \verb`uniprot20_a3m_db` file), 32 bit precompiled binaries for HHsuite are not available from our website. 
 
 \subsection{Supported platforms} \label{installation}
 
@@ -413,12 +414,13 @@ HHPaths.pm     Configuration file with paths to the PDB, BLAST, PSIPRED etc.
 \end{verbatim} 
 \normalsize
 % To be included with HH-suite 2.1.0
+%hhconsensus    Calculate the consensus sequence for an A3M/FASTA input file
 %mergeali.pl    Merge MSAs in A3M format according to an MSA of their seed sequences
 %pdb2fasta.pl   Generate FASTA sequence file from SEQRES records of globbed pdb files
 %pdbfilter.pl   Generate representative set of PDB/SCOP sequences from pdb2fasta.pl output
 %replaced by hhblits:
-%buildali.pl     Build a PSI-BLAST MSA from a sequence or MSA, add sec. structure
-%alignhits.pl    Extract an MSA from a BLAST/PSI-BLAST output
+%alignhits.pl   Extract an MSA from a BLAST/PSI-BLAST output
+%buildali.pl    Build a PSI-BLAST MSA from a sequence or MSA, add sec. structure
 
 Call a program without arguments or with \verb`-h` option to get more detailed explanations.
 
@@ -832,14 +834,15 @@ The pdb70 database is clustered to 70\% maximum pairwise sequence identity to re
 
 \subsection{More questions about unexpected HH-suite behavior}
 
+{\bf Why do I get different results when reversing the roles of query and template?} When taking A as the query, the pairwise alignment and significance scores with template B in the database can be different than when B is the query and A the template. By default hhblits, hhsearch, and hhalign add context-specific pseudocounts to the query MSA or HMM whereas the much faster substitution matrix pseudocounts are added to the database HMMs/MSAs for reasons of speed. If you want to combine the significance estimates from the forward and reverse comparisons, we recommend to take the geometric mean of Probability, P-value and E-value. Since the less diverse HMM or MSA will profit more from the context-specific pseudocounts than the more diverse HMM or MSA, it might be even better to take the estimate from the comparison in which the HMM/MSA with the smaller diversity (measured as number of effective sequences, NEFF) is used as the query. 
+
 {\bf Why do I sometimes get the same database hit twice with different probabilities?} Each line in the summary hit list refers to an alignment with an HMM in the database, not to the database HMM itself. Sometimes, alternative (suboptimal) alignments covering a different part of either the query or the database HMM may appear in the hit list. Usually, both the optimal and the alternative alignments are correct, in particular when the query or the database HMMs represent repeat proteins. 
 
 {\bf Why do I get different results using hhblits and hhsearch} when I search with the same query through the same database? There are two reasons. First, some hits that hhsearch shows might not have passed the prefilter in hhblits. The option \verb`-prepre_smax_thresh <bits>` lets you modify the minimum score threshold of the first, gapless alignment prefilter (default is 10 bits). Option \verb`-pre_evalue_thresh <E-value>` sets the maximum E-value threshold for the second, gapped alignment prefilter (default is 1000). Second, while the probabilities and P-values of hhblits and hhsearch should be the identical for the same matches, the E-values are only similar. The reason is that hhblits heuristically combines the E-values of the second prefilter with the E-values from the full HMM-HMM Viterbi alignment into total E-values \cite{Remmert:2011}. These E-values are slightly better in distinguishing true from false hits, because they combine the partly independent information from two comparisons.
 
 {\label{2_vs_1+1} \bf Why do I get different results when I perform $2$ and $1+1$ iterations with HHblits?} When you do a single iteration and start a second iteration with the A3M output file from the first iteration, the alignments should be the same as if you do two iterations (\verb`-n 2`), but the significance values can be slightly different. The reason is that the HHblits P-value is calculated by a weighted combination of the P-value of the Viterbi pairwise HMM alignment and the prefilter E-value. The prefilter E-values differ in the two cases described, since in the first case the E-value is calculated for the first prefilter search (before the first full search) and in the second case it is calculated for the second prefilter search, performed with the query MSA obtained \emph{after} the first search iteration. 
 
-
-
+q
 
 \section{HHsearch/HHblits output: hit list and pairwise alignments}\label{outformat}
 

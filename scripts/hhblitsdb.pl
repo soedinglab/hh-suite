@@ -4,7 +4,7 @@
 # Creates HH-suite database files from A3M and HHM/HMMER-formatted files 
 # Usage: Usage: perl hhblitsdb.pl -o <db_name> [-ia3m <a3m_dir>] [-ihhm <hhm_dir>] [-ics <cs_dir>] [more_options]
 #
-#     HHsuite version 2.0.16 (Sept 2012)
+#     HHsuite version 2.0.16 (January 2013)
 #
 #     Reference: 
 #     Remmert M., Biegert A., Hauser A., and Soding J.

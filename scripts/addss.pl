@@ -526,7 +526,7 @@ sub AppendDsspSequences() {
     if (! open (DSSPFILE, "<$dsspfile")) {
 	if ($v>=3) {printf(STDERR "Warning in $program: Cannot open $dsspfile!\n");} 
 	$pdbfile = &OpenPDBfile($pdbcode);
-	if ($pdbfile eq "") {return;}
+	if ($pdbfile eq "") {return 1;}
 
 	system("$dssp $pdbfile $tmpfile.dssp 2> /dev/null");
 	system("cp $tmpfile.dssp $dsspfile 2> /dev/null");
