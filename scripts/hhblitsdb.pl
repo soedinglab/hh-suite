@@ -62,12 +62,12 @@ my $numhhmfiles=0;
 my $fileglob="";
 my $help="
 hhblitsdb.pl from HHsuite $VERSION  
-Builds HH-suite database from files with a3m formatted multiple sequence alignments (MSAs).
-MSAs and HMMs can also be added or removed from an existing database. 
+Builds HH-suite database from a3m formatted MSAs and/or from HMMs (-o).
+MSAs and HMMs can also be added (-a) to or removed (-r) from an existing database. 
 
-Usage: hhblitsdb.pl [-o|-a|-r] <db_name> [-ia3m <a3m_dir>] [-ihhm <hhm_dir>] [-ics <cs_dir>] [options]
+Usage: hhblitsdb.pl -o|-a|-r <db_name> [-ia3m <a3m_dir>] [-ihhm <hhm_dir>] [-ics <cs_dir>]... 
 
-With option -d, depending on the input directories the following HH-suite database files are generated:
+With option -o, the following HH-suite database files can be generated:
  <db_name>.cs219              column-state sequences, one for each MSA/HMM (for prefilter)
  <db_name>.cs219.sizes        number of sequences and characters in <db_name>.cs219
  <db_name>_a3m_db             packed file containing A3M alignments read from <a3m_dir>
@@ -87,7 +87,6 @@ Options:
                  These files MUST have extension 'hhm' (HHsuite) or 'hmm' (HMMER3). 
  -ics  <cs_dir>  input directory (or glob of directories) with column state sequences
  -log <logfile>  log file recording stderr stream of cstranslate and hhmake commands
-
  -csext <ext>    extension of column state sequences (default: $csext)
  -hmm            use HMMER-formatted files. These MUST have extension hmm
                  (WARNING! HMMER format results in decreased performance over HHM format)
