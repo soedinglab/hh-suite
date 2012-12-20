@@ -2063,26 +2063,6 @@ int main(int argc, char **argv)
   if (!par.nocontxt && *par.clusterfile) {
     char ext[100];
     Extension(ext, par.clusterfile);
-    if (strcmp(ext, "crf") == 0) {
-      if (par.pc.admix == Pseudocounts::CSBlastAdmix) {
-        if (num_rounds == 1) {
-          par.pc.pca = 1.0;
-          par.pc.pcb = 13.7;
-        } else {
-          par.pc.pca = 0.58;
-          par.pc.pcb = 18.2;
-        }
-      }
-      if (par.pre_pc.admix == Pseudocounts::CSBlastAdmix) {
-        if (num_rounds == 1) {
-          par.pre_pc.pca = 0.93;
-          par.pre_pc.pcb = 16.0;
-        } else {
-          par.pre_pc.pca = 0.85;
-          par.pre_pc.pcb = 6.6;
-        }
-      }
-    }
     InitializePseudocountsEngine();
   }
 

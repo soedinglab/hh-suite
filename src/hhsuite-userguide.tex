@@ -198,7 +198,7 @@ $ export HHLIB=<install_dir>/lib/hh
 \end{verbatim}
 and, for csh or tcsh: \verb`$ setenv HHLIB=<install_dir>/lib/hh`. 
 HHsearch and HHblits look for the column state library file \verb`cs219.lib`
-and the context library file \verb`context_data.lib` in \verb`$HHLIB/data/`. The hh-suite
+and the context library file \verb`context_data.crf` in \verb`$HHLIB/data/`. The hh-suite
 perl scripts also read HHLIB (via file \verb`scripts/HHPaths.pm`) to locate hh-suite binaries and data files.
 
 Put the location of your hh-suite binaries and scripts into your search path:
@@ -1697,7 +1697,7 @@ Pseudocount (pc) options:
 
 Context-specific pseudo-counts:                                                  
  -nocontxt      use substitution-matrix instead of context-specific pseudocounts 
- -contxt <file> context file for computing context-specific pseudocounts (default=/home/soeding/hh/data/context_data.lib)
+ -contxt <file> context file for computing context-specific pseudocounts (default=/home/soeding/hh/data/context_data.crf)
  -cslib  <file> column state file for fast database prefiltering (default=/home/soeding/hh/data/cs219.lib)
 
 Example: hhmake -i test.a3m 

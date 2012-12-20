@@ -324,7 +324,7 @@ void Parameters::SetDefaultPaths(char *program_path)
     strcpy(hhlib, "/usr/lib/hh");
 
   strcat(strcpy(hhdata, hhlib), "/data");
-  strcat(strcpy(clusterfile, hhdata), "/context_data.lib");
+  strcat(strcpy(clusterfile, hhdata), "/context_data.crf");
   strcat(strcpy(cs_library, hhdata), "/cs219.lib");
   
   testf = fopen(cs_library, "r");
@@ -338,7 +338,7 @@ void Parameters::SetDefaultPaths(char *program_path)
 	{
 	  strcat(strcpy(hhlib, program_path), "../lib/hh");
 	  strcat(strcpy(hhdata, hhlib), "/data");
-	  strcat(strcpy(clusterfile, hhdata), "/context_data.lib");
+	  strcat(strcpy(clusterfile, hhdata), "/context_data.crf");
 	  strcat(strcpy(cs_library, hhdata), "/cs219.lib");
 	  testf = fopen(cs_library, "r");
 	  if (testf) fclose(testf);
@@ -348,7 +348,7 @@ void Parameters::SetDefaultPaths(char *program_path)
 	      
 	      strcat(strcpy(hhlib, program_path), "..");
 	      strcat(strcpy(hhdata, hhlib), "/data");
-	      strcat(strcpy(clusterfile, hhdata), "/context_data.lib");
+	      strcat(strcpy(clusterfile, hhdata), "/context_data.crf");
 	      strcat(strcpy(cs_library, hhdata), "/cs219.lib");	  
 	      testf = fopen(cs_library, "r");
 	      if (testf) fclose(testf);
@@ -359,7 +359,7 @@ void Parameters::SetDefaultPaths(char *program_path)
     }
   if (!testf)
     {
-      cerr<<endl<<"Error in "<<argv[0]<<": could not find context_data.lib and cs219.lib in '" << hhlib << "'.\n"
+      cerr<<endl<<"Error in "<<argv[0]<<": could not find context_data.crf and cs219.lib in '" << hhlib << "'.\n"
 	"Please set the HHLIB environment variable to the HH-suite directory\n"
 	"(Linux bash: export HHLIB=<hh_dir>, csh/tcsh: setenv HHLIB=<hh_dir>).\n"
 	"The missing files should be in $HHLIB/data/.\n ";
@@ -420,8 +420,8 @@ void Parameters::SetDefaults()
   matrix=0;                // Subst.matrix 0: Gonnet, 1: HSDM, 2: BLOSUM50 3: BLOSUM62
 
   pc.admix       = Pseudocounts::HHsearchAdmix;
-  pc.pca         = 1.0;
-  pc.pcb         = 1.5;
+  pc.pca         = 0.85;
+  pc.pcb         = 4.0;
   pc.pcc         = 1.0;
   pc.target_neff = 0.0;
 
