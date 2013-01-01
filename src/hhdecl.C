@@ -420,14 +420,14 @@ void Parameters::SetDefaults()
   matrix=0;                // Subst.matrix 0: Gonnet, 1: HSDM, 2: BLOSUM50 3: BLOSUM62
 
   pc.admix       = Pseudocounts::HHsearchAdmix;
-  pc.pca         = 0.85;
-  pc.pcb         = 4.0;
+  pc.pca         = 0.90;
+  pc.pcb         = 4.00;
   pc.pcc         = 1.0;
   pc.target_neff = 0.0;
 
   pre_pc.admix       = Pseudocounts::CSBlastAdmix;
-  pre_pc.pca         = 0.75;
-  pre_pc.pcb         = 1.75;
+  pre_pc.pca         = 0.80;
+  pre_pc.pcb         = 2.00;
   pre_pc.pcc         = 1.0;
   pre_pc.target_neff = 0.0;
 
