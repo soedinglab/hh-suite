@@ -1,4 +1,21 @@
-// Copyright 2009, Andreas Biegert
+/*
+  Copyright 2009 Andreas Biegert
+
+  This file is part of the CS-BLAST package.
+
+  The CS-BLAST package is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  The CS-BLAST package is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 #ifndef CS_CONTEXT_PROFILE_H_
 #define CS_CONTEXT_PROFILE_H_
@@ -15,26 +32,26 @@ struct Color {
 	    : red(r), green(g), blue(b) {}
 
     Color(std::string coldef) {
-	std::vector<std::string> tokens;
-	Tokenize(coldef, ',', &tokens);
-	red   = atof(tokens[0].c_str());
-	green = atof(tokens[1].c_str());
-	blue  = atof(tokens[2].c_str());
+        std::vector<std::string> tokens;
+        Tokenize(coldef, ',', &tokens);
+        red   = atof(tokens[0].c_str());
+        green = atof(tokens[1].c_str());
+        blue  = atof(tokens[2].c_str());
     }
 
     std::string ToString() const {
-	return strprintf("%4.2f,%4.2f,%4.2f", red, green, blue);
+        return strprintf("%4.2f,%4.2f,%4.2f", red, green, blue);
     }
 
     bool operator< (const Color& rhs) const {
-	if (red != rhs.red)     return (red < rhs.red);
-	if (green != rhs.green) return (green < rhs.green);
-	return (blue < rhs.blue);
+        if (red != rhs.red)     return (red < rhs.red);
+        if (green != rhs.green) return (green < rhs.green);
+        return (blue < rhs.blue);
     }
 
     friend std::ostream& operator<< (std::ostream& out, const Color& c) {
-	out << c.ToString();
-	return out;
+        out << c.ToString();
+        return out;
     }
 
     double red, green, blue;
@@ -43,49 +60,24 @@ struct Color {
 template<class Abc>
 struct ContextProfile {
     // Default construction
-    ContextProfile() : prior(0.0), probs(), pc() {};
+    ContextProfile();
 
     // Constructs a context profile with 'len' columns
-    explicit ContextProfile(size_t len)
-	    : prior(0.0), is_log(false), probs(len), pc() {
-	assert(len & 1);
-    }
+    explicit ContextProfile(size_t len);
 
     // Construction from serialized profile read from input stream.
-    explicit ContextProfile(FILE* fin) { Read(fin); }
+    explicit ContextProfile(FILE* fin);
 
     // Constructs a context profile from normalized values in given profile 'p'.
-    explicit ContextProfile(const Profile<Abc>& p)
-	    : prior(0.0),
-	      is_log(false),
-	      probs(p),
-	      pc(&p[(p.length() - 1) / 2][0]) {
-	assert(p.length() & 1);
-	for (size_t i = 0; i < probs.length(); ++i)
-	    probs[i][Abc::kAny] = 1.0;
-	pc[Abc::kAny] = 1.0;
-
-	Normalize(probs, 1.0);
-	Normalize(pc, 1.0);
-    }
+    explicit ContextProfile(const Profile<Abc>& p);
 
     // Construct a context profile by copying subprofile starting at index 'start'
     // for 'len' columns and normalizing afterwards.
-    ContextProfile(const Profile<Abc>& p, size_t start, size_t len)
-	    : prior(0.0),
-	      is_log(false),
-	      probs(len),
-	      pc(&p[start + (len - 1) / 2][0]) {
-	assert(len & 1);
-	for (size_t i = 0; i < len; ++i) {
-	    for (size_t a = 0; a < Abc::kSize; ++a)
-		probs[i][a] = p[start + i][a];
-	    probs[i][Abc::kAny] = 1.0;
-	}
-	pc[Abc::kAny] = 1.0;
+    ContextProfile(const Profile<Abc>& p, size_t start, size_t len);
 
-	Normalize(probs, 1.0);
-	Normalize(pc, 1.0);
+    // Compares context profiles
+    bool operator < (const ContextProfile<Abc>& other) const {
+      return prior < other.prior;
     }
 
     // Initializes count profile with a serialized profile read from stream.
@@ -95,7 +87,7 @@ struct ContextProfile {
     void Write(FILE* fin) const;
 
     // Returns number of columns.
-    size_t length() const { return probs.length(); }
+    size_t length() const;
 
     std::string name;               // optional name of this context profile
     double prior;                   // prior probability

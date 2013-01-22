@@ -138,10 +138,10 @@ void PrepareQueryHMM(char& input_format, HMM* q)
 	// Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
 	q->PreparePseudocounts();
 	// Add amino acid pseudocounts to query:  q->p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
-	q->AddAminoAcidPseudocounts(par.pcm, par.pca, par.pcb, par.pcc);;
+	q->AddAminoAcidPseudocounts(par.aa_pcm, par.aa_pca, par.aa_pcb, par.aa_pcc);
       } else {
 	// Add context specific pseudocount to query
-	q->AddContextSpecificPseudocounts(par.pcm);
+	q->AddContextSpecificPseudocounts(pc, pc_admix);
       }
       
     }	
@@ -151,7 +151,7 @@ void PrepareQueryHMM(char& input_format, HMM* q)
     { 
       // Don't add transition pseudocounts to query!!
       // DON'T ADD amino acid pseudocounts to query: pcm=0!  q->p[i][a] = f[i][a]
-      q->AddAminoAcidPseudocounts(0, par.pca, par.pcb, par.pcc);
+      q->AddAminoAcidPseudocounts(0, par.aa_pca, par.aa_pcb, par.aa_pcc);
     }
   
   q->CalculateAminoAcidBackground();
@@ -182,7 +182,7 @@ void PrepareTemplateHMM(HMM* q, HMM* t, int format)
 	t->PreparePseudocounts();
 	
 	// Add amino acid pseudocounts to query:  p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
-	t->AddAminoAcidPseudocounts(par.pcm, par.pca, par.pcb, par.pcc);
+	t->AddAminoAcidPseudocounts(par.aa_pcm, par.aa_pca, par.aa_pcb, par.aa_pcc);
     }
     else // HHMER format
     {
@@ -193,7 +193,7 @@ void PrepareTemplateHMM(HMM* q, HMM* t, int format)
         // t->PreparePseudocounts();
 
         // DON'T ADD amino acid pseudocounts to temlate: pcm=0!  t->p[i][a] = t->f[i][a]
-        t->AddAminoAcidPseudocounts(0, par.pca, par.pcb, par.pcc);
+        t->AddAminoAcidPseudocounts(0, par.aa_pca, par.aa_pcb, par.aa_pcc);
     }
     t->CalculateAminoAcidBackground();
     

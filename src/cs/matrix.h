@@ -1,4 +1,21 @@
-// Copyright 2009, Andreas Biegert
+/*
+  Copyright 2009 Andreas Biegert
+
+  This file is part of the CS-BLAST package.
+
+  The CS-BLAST package is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  The CS-BLAST package is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 #ifndef CS_MATRIX_H_
 #define CS_MATRIX_H_
@@ -144,8 +161,8 @@ class Matrix {
   size_t ncols() const;
   void Resize(size_t newn, size_t newm);
   void Assign(size_t newn, size_t newm, const T &a);
-  T* begin() { return v; }
-  const T* begin() const { return v; }
+  T* begin() { return *v; }
+  const T* begin() const { return *v; }
 
  private:
   size_t nn;

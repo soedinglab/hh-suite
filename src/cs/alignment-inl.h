@@ -1,4 +1,21 @@
-// Copyright 2009, Andreas Biegert
+/*
+  Copyright 2009 Andreas Biegert
+
+  This file is part of the CS-BLAST package.
+
+  The CS-BLAST package is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  The CS-BLAST package is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 #ifndef CS_ALIGNMENT_INL_H_
 #define CS_ALIGNMENT_INL_H_
@@ -103,11 +120,6 @@ void Alignment<Abc>::Init(const std::vector<std::string>& headers,
             seqs_[i][k] = Abc::kEndGap;
     }
 
-    // Name of this alignment is the name of the first sequence if not already set
-    if (name_.empty()) {
-        name_ = headers_[0];
-    }
-
     // Initialize index array for match columns
     SetMatchIndices();
 }
@@ -160,9 +172,15 @@ void Alignment<Abc>::ReadFastaFlavors(FILE* fin, std::vector<std::string>& heade
             if (buffer[0] == '#') {
                 name_ = std::string(buffer + 1);
             } else if (buffer[0] == '>') {
-                if (headers.empty() && strstr(buffer, ">ss_")) {
-                    while (fgetline(buffer, kBufferSize, fin))
-                        if (buffer[0] == '>' && strstr(buffer, ">ss_") == NULL) break;
+                if (headers.empty() && 
+                    (strstr(buffer, ">ss_") == buffer || strstr(buffer, ">sa_") == buffer)) {
+                  while (!feof(fin)) {
+                    c = getc(fin);
+                    ungetc(c, fin);
+                    if (c == '>') break;
+                    fgetline(buffer, kBufferSize, fin);
+                  }
+                  continue;
                 }
                 headers.push_back(std::string(buffer + 1));
                 break;
@@ -187,6 +205,7 @@ void Alignment<Abc>::ReadFastaFlavors(FILE* fin, std::vector<std::string>& heade
 
         LOG(DEBUG2) << headers.back();
     }
+    //LOG(DEBUG2) << "Number of sequences read: " << headers.size() << std::endl;
     if (headers.empty())
         throw Exception("Bad alignment: no alignment data found in stream!");
 }
@@ -660,18 +679,18 @@ void ReadAll(FILE* fin, AlignmentFormat format, std::vector< Alignment<Abc> >& v
 
 // Returns the alignment format corresponding to provided filename extension
 inline AlignmentFormat AlignmentFormatFromString(const std::string& s) {
-  if (s.substr(0,2) == "fa" || s.substr(0,2) == "FA"|| s.substr(0,2) == "Fa")
+    if (s == "fas" || s == "mfa")
         return FASTA_ALIGNMENT;
-    else if (s == "a2m" || s == "A2M")
+    else if (s == "a2m")
         return A2M_ALIGNMENT;
-    else if (s == "a3m" || s == "A3M")
+    else if (s == "a3m")
         return A3M_ALIGNMENT;
-    else if (s.substr(0,2) == "cl" || s.substr(0,2) == "CL" || s.substr(0,2) == "Cl")
+    else if (s == "clu")
         return CLUSTAL_ALIGNMENT;
-    else if (s.substr(0,2) == "ps" || s.substr(0,2) == "PS" || s.substr(0,2) == "Ps")
+    else if (s == "psi")
         return PSI_ALIGNMENT;
     else
-        throw Exception("Unknown alignment format extension '%s'! \nAllowed extensions: fa* (FASTA); a2m, A2M (A2M); a3m, A3M (A3M); cl* (CLUSTAL); ps* (PSI-BLAST checkpoints format)\n ", s.c_str());
+        throw Exception("Unknown alignment format extension '%s'!", s.c_str());
 }
 
 template<class Abc>

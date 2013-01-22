@@ -1,4 +1,21 @@
-// Copyright 2009, Andreas Biegert
+/*
+  Copyright 2009 Andreas Biegert
+
+  This file is part of the CS-BLAST package.
+
+  The CS-BLAST package is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  The CS-BLAST package is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 #ifndef CS_CONTEXT_LIBRARY_H_
 #define CS_CONTEXT_LIBRARY_H_
@@ -6,7 +23,7 @@
 #include "abstract_state_matrix.h"
 #include "co_emission.h"
 #include "context_profile.h"
-#include "pseudocounts.h"
+#include "pseudocounts-inl.h"
 
 namespace cs {
 
@@ -16,6 +33,12 @@ class ContextLibrary;
 
 template<class Abc>
 class Emission;
+
+template<class Abc>
+class Crf;
+
+template<class Abc>
+class CrfState;
 
 // Strategy class for initializing a context library
 template<class Abc>
@@ -113,7 +136,8 @@ void TransformToLin(ContextLibrary<Abc>& lib);
 // centered at index 'i' and writes them to array 'pp'. Caller is responsible for
 // making sure that 'pp' has sufficient length. Return value is log sum of all
 // individual emission terms. The third template parameter specifies the central
-// position of the context window. 
+// position of the context window. Note: For PO-HMMs this is not an ordinary size_t
+// but a vertex descriptor.
 template<class Abc, class ContextInput, class CenterPos>
 double CalculatePosteriorProbs(const ContextLibrary<Abc>& lib,
                                const Emission<Abc>& emission,
@@ -168,6 +192,28 @@ class GaussianLibraryInit : public LibraryInit<Abc> {
   const SubstitutionMatrix<Abc>& sm_;
   unsigned int seed_;
 };  // class GaussianLibraryInit
+
+// Uses a CRF for initialization
+template<class Abc>
+class CrfBasedLibraryInit : public LibraryInit<Abc> {
+ public:
+  CrfBasedLibraryInit(
+      const Crf<Abc>& crf, 
+      double wcenter = 1.6,
+      double wdecay  = 0.85,
+      double neff    = 1.0) :
+    crf_(crf), wcenter_(wcenter), wdecay_(wdecay), neff_(neff) {}
+
+  virtual ~CrfBasedLibraryInit() {}
+
+  virtual void operator() (ContextLibrary<Abc>& lib) const;
+
+ protected:
+  const Crf<Abc>& crf_;
+  const double wcenter_;
+  const double wdecay_;
+  const double neff_;
+};  // class CrfBasedLibraryInit
 
 // Translate a sequence or count profile into an abstract state sequence.
 template<class AS, class Abc, class CountsInput>

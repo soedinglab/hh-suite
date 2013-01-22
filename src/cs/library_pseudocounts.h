@@ -1,4 +1,21 @@
-// Copyright 2009, Andreas Biegert
+/*
+  Copyright 2009-2012 Andreas Biegert, Christof Angermueller
+
+  This file is part of the CS-BLAST package.
+
+  The CS-BLAST package is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  The CS-BLAST package is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 #ifndef CS_CONTEXT_LIB_PSEUDOCOUNTS_H_
 #define CS_CONTEXT_LIB_PSEUDOCOUNTS_H_
@@ -6,7 +23,7 @@
 #include "count_profile-inl.h"
 #include "emission.h"
 #include "profile-inl.h"
-#include "pseudocounts.h"
+#include "pseudocounts-inl.h"
 #include "sequence-inl.h"
 #include "context_library-inl.h"
 
@@ -21,9 +38,9 @@ class LibraryPseudocounts : public Pseudocounts<Abc> {
 
     virtual ~LibraryPseudocounts() {}
 
-    virtual void AddToSequence(const Sequence<Abc>& seq, const Admix& pca, Profile<Abc>& p) const;
+    virtual void AddToSequence(const Sequence<Abc>& seq, Profile<Abc>& p) const;
 
-    virtual void AddToProfile(const CountProfile<Abc>& cp, const Admix& pca, Profile<Abc>& p) const;
+    virtual void AddToProfile(const CountProfile<Abc>& cp, Profile<Abc>& p) const;
 
   private:
     // Profile library with context profiles.

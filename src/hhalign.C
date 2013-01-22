@@ -77,6 +77,7 @@ using std::ofstream;
 #include "cs.h"          // context-specific pseudocounts
 #include "context_library.h"
 #include "library_pseudocounts-inl.h"
+#include "crf_pseudocounts-inl.h"
 
 #include "util.C"        // imax, fmax, iround, iceil, ifloor, strint, strscn, strcut, substr, uprstr, uprchr, Basename etc.
 #include "list.C"        // list data structure
@@ -286,18 +287,15 @@ void help_hmm()
   printf("                trypsin recognition sequence to background distribution    \n");
   printf("                                                                          \n");
   printf("Pseudocount (pc) options:                                                        \n");
-  printf(" -pcm  0-2      position dependence of pc admixture 'tau' (pc mode, default=%-i) \n",par.pcm);
-  printf("                0: no pseudo counts:    tau = 0                                  \n");
-  printf("                1: constant             tau = a                                  \n");
-  printf("                2: diversity-dependent: tau = a/(1 + ((Neff[i]-1)/b)^c)          \n");
-  printf("                (Neff[i]: number of effective seqs in local MSA around column i) \n");
-  printf("                3: constant diversity pseudocounts                               \n");
-  printf(" -pca  [0,1]    overall pseudocount admixture (def=%-.1f)                        \n",par.pca);
-  printf(" -pcb  [1,inf[  Neff threshold value for -pcm 2 (def=%-.1f)                      \n",par.pcb);
-  printf(" -pcc  [0,3]    extinction exponent c for -pcm 2 (def=%-.1f)                     \n",par.pcc);
-  // printf(" -pcw  [0,3]    weight of pos-specificity for pcs  (def=%-.1f)                   \n",par.pcw);
-  printf(" -pre_pca [0,1]   PREFILTER pseudocount admixture (def=%-.1f)                    \n",par.pre_pca);
-  printf(" -pre_pcb [1,inf[ PREFILTER threshold for Neff (def=%-.1f)                       \n",par.pre_pcb);
+  printf(" -pcm {0,..,3}      position dependence of pc admixture 'tau' (pc mode, default=%-i) \n",par.pc.admix);
+  printf("                    0: no pseudo counts:    tau = 0                                  \n");
+  printf("                    1: constant             tau = a                                  \n");
+  printf("                    2: diversity-dependent: tau = a/(1+((Neff[i]-1)/b)^c)            \n");
+  printf("                    3: CSBlast admixture:   tau = a(1+b)/(Neff[i]+b)                 \n");
+  printf("                    (Neff[i]: number of effective seqs in local MSA around column i) \n");
+  printf(" -pca  [0,1]        overall pseudocount admixture (def=%-.1f)                        \n",par.pc.pca);
+  printf(" -pcb  [1,inf[      Neff threshold value for -pcm 2 (def=%-.1f)                      \n",par.pc.pcb);
+  printf(" -pcc  [0,3]        extinction exponent c for -pcm 2 (def=%-.1f)                     \n",par.pc.pcc);
   // HHsearch option should be the same as HHblits option!!
   printf("Context-specific pseudo-counts:                                                  \n");
   printf(" -nocontxt      use substitution-matrix instead of context-specific pseudocounts \n");
@@ -553,11 +551,10 @@ void ProcessArguments(int argc, char** argv)
       else if (!strcmp(argv[i],"-BLOSUM62")) par.matrix=3; 
       else if (!strcmp(argv[i],"-Blosum62")) par.matrix=3; 
       else if (!strcmp(argv[i],"-B62")) par.matrix=3; 
-      else if (!strcmp(argv[i],"-pcm") && (i<argc-1)) par.pcm=atoi(argv[++i]); 
-      else if (!strcmp(argv[i],"-pca") && (i<argc-1)) par.pca=atof(argv[++i]); 
-      else if (!strcmp(argv[i],"-pcb") && (i<argc-1)) par.pcb=atof(argv[++i]); 
-      else if (!strcmp(argv[i],"-pcc") && (i<argc-1)) par.pcc=atof(argv[++i]);  
-      else if (!strcmp(argv[i],"-pcw") && (i<argc-1)) par.pcw=atof(argv[++i]); 
+      else if (!strcmp(argv[i],"-pcm") && (i<argc-1)) par.pc.admix=(Pseudocounts::Admix)atoi(argv[++i]);
+      else if (!strcmp(argv[i],"-pca") && (i<argc-1)) par.pc.pca=atof(argv[++i]);
+      else if (!strcmp(argv[i],"-pcb") && (i<argc-1)) par.pc.pcb=atof(argv[++i]);
+      else if (!strcmp(argv[i],"-pcc") && (i<argc-1)) par.pc.pcc=atof(argv[++i]);
       else if (!strcmp(argv[i],"-gapb") && (i<argc-1)) { par.gapb=atof(argv[++i]); if (par.gapb<=0.01) par.gapb=0.01;} 
       else if (!strcmp(argv[i],"-gapd") && (i<argc-1)) par.gapd=atof(argv[++i]); 
       else if (!strcmp(argv[i],"-gape") && (i<argc-1)) par.gape=atof(argv[++i]); 
@@ -790,7 +787,7 @@ int main(int argc, char **argv)
   // Check option compatibilities
   if (par.nseqdis>MAXSEQDIS-3-par.showcons) par.nseqdis=MAXSEQDIS-3-par.showcons; //3 reserved for secondary structure
   if (par.aliwidth<20) par.aliwidth=20; 
-  if (par.pca<0.001) par.pca=0.001; // to avoid log(0)
+  if (par.pc.pca<0.001) par.pc.pca=0.001; // to avoid log(0)
   if (par.b>par.B) par.B=par.b;
   if (par.z>par.Z) par.Z=par.z;
   if (par.hitrank>0) par.altali=0;
@@ -805,14 +802,8 @@ int main(int argc, char **argv)
    }
 
   // Prepare CS pseudocounts lib
-  if (!par.nocontxt) {  
-    FILE* fin = fopen(par.clusterfile, "r");
-    if (!fin) OpenFileError(par.clusterfile);
-    context_lib = new cs::ContextLibrary<cs::AA>(fin);
-    fclose(fin);
-    cs::TransformToLog(*context_lib);
-    
-    lib_pc = new cs::LibraryPseudocounts<cs::AA>(*context_lib, par.csw, par.csb);
+  if (!par.nocontxt && *par.clusterfile) {
+    InitializePseudocountsEngine();
   }
 
   // Set (global variable) substitution matrix and derived matrices
@@ -1414,10 +1405,7 @@ int main(int argc, char **argv)
 //   if (Pstruc) { for (int i=0; i<q->L+2; i++) delete[](Pstruc[i]); delete[](Pstruc);}
 
   
-  if (!par.nocontxt) { 
-    delete context_lib;
-    delete lib_pc;
-  }
+  DeletePseudocountsEngine();
 
   // Delete content of hits in hitlist
   hitlist.Reset();

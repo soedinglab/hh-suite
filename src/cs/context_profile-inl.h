@@ -1,4 +1,21 @@
-// Copyright 2009, Andreas Biegert
+/*
+  Copyright 2009 Andreas Biegert
+
+  This file is part of the CS-BLAST package.
+
+  The CS-BLAST package is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  The CS-BLAST package is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 #ifndef CS_CONTEXT_PROFILE_INL_H_
 #define CS_CONTEXT_PROFILE_INL_H_
@@ -7,6 +24,59 @@
 
 namespace cs {
 
+// Default construction
+template<class Abc>
+ContextProfile<Abc>::ContextProfile() 
+  : prior(0.0), probs(), pc() {};
+
+// Constructs a context profile with 'len' columns
+template<class Abc>
+ContextProfile<Abc>::ContextProfile(size_t len) 
+  : prior(0.0), is_log(false), probs(len), pc() {
+    assert(len & 1);
+}
+
+template<class Abc>
+ContextProfile<Abc>::ContextProfile(FILE* fin) { Read(fin); }
+
+// Constructs a context profile from normalized values in given profile 'p'.
+template<class Abc>
+ContextProfile<Abc>::ContextProfile(const Profile<Abc>& p)
+  : prior(0.0),
+    is_log(false),
+    probs(p),
+    pc(&p[(p.length() - 1) / 2][0]) {
+
+    assert(p.length() & 1);
+    for (size_t i = 0; i < probs.length(); ++i)
+        probs[i][Abc::kAny] = 1.0;
+    pc[Abc::kAny] = 1.0;
+
+    Normalize(probs, 1.0);
+    Normalize(pc, 1.0);
+}
+
+// Construct a context profile by copying subprofile starting at index 'start'
+// for 'len' columns and normalizing afterwards.
+template<class Abc>
+ContextProfile<Abc>::ContextProfile(const Profile<Abc>& p, size_t start, size_t len)
+  : prior(0.0),
+    is_log(false),
+    probs(len),
+    pc(&p[start + (len - 1) / 2][0]) {
+
+    assert(len & 1);
+    for (size_t i = 0; i < len; ++i) {
+        for (size_t a = 0; a < Abc::kSize; ++a)
+          probs[i][a] = p[start + i][a];
+        probs[i][Abc::kAny] = 1.0;
+    }
+    pc[Abc::kAny] = 1.0;
+
+    Normalize(probs, 1.0);
+    Normalize(pc, 1.0);
+}
+
 template<class Abc>
 void ContextProfile<Abc>::Read(FILE* fin) {
     // Parse and check header information
@@ -14,23 +84,23 @@ void ContextProfile<Abc>::Read(FILE* fin) {
         throw Exception("Stream does not start with class id 'ContextProfile'!");
 
     char buffer[KB];
-    cs::fgetline(buffer, KB, fin);
+    fgetline(buffer, KB, fin);
     if (strstr(buffer, "NAME")) {
         name = ReadString(buffer, "NAME", "Unable to parse context profile 'NAME'!");
-        cs::fgetline(buffer, KB, fin);
+        fgetline(buffer, KB, fin);
     }
     prior = ReadDouble(buffer, "PRIOR", "Unable to parse context profile 'PRIOR'!");
-    cs::fgetline(buffer, KB, fin);
+    fgetline(buffer, KB, fin);
     if (strstr(buffer, "COLOR")) {
         std::string coldef;
         coldef = ReadString(buffer, "COLOR", "Unable to parse context profile 'COLOR'!");
         color = Color(coldef);
-        cs::fgetline(buffer, KB, fin);
+        fgetline(buffer, KB, fin);
     }
     is_log = ReadBool(buffer, "ISLOG", "Unable to parse context profile 'ISLOG'!");
-    cs::fgetline(buffer, KB, fin);
+    fgetline(buffer, KB, fin);
     size_t  len = ReadInt(buffer, "LENG", "Unable to parse context profile 'LENG'!");
-    cs::fgetline(buffer, KB, fin);
+    fgetline(buffer, KB, fin);
     size_t nalph = ReadInt(buffer, "ALPH", "Unable to parse context profile 'ALPH'!");
     if (is_log) prior = log(prior);
     assert(len & 1);
@@ -45,8 +115,8 @@ void ContextProfile<Abc>::Read(FILE* fin) {
     const char* ptr = buffer;
     const size_t center = (len - 1) / 2;
     size_t i = 0;
-    cs::fgetline(buffer, KB, fin);  // skip alphabet description line
-    while (cs::fgetline(buffer, KB, fin) && buffer[0] != '/' && buffer[1] != '/') {
+    fgetline(buffer, KB, fin);  // skip alphabet description line
+    while (fgetline(buffer, KB, fin) && buffer[0] != '/' && buffer[1] != '/') {
         ptr = buffer;
         i = strtoi(ptr) - 1;
         assert(i < len);
@@ -104,6 +174,15 @@ void ContextProfile<Abc>::Write(FILE* fout) const {
     }
     fputs("//\n", fout);
 }
+
+// Returns number of columns.
+template <class Abc>
+size_t ContextProfile<Abc>::length() const { return probs.length(); }
+
+
+
+
+
 
 // Prints context profile probabilities in human-readable format for debugging.
 template<class Abc>

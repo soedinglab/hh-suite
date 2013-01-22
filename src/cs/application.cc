@@ -1,4 +1,21 @@
-// Copyright 2009, Andreas Biegert
+/*
+  Copyright 2009-2012 Andreas Biegert, Christof Angermueller
+
+  This file is part of the CS-BLAST package.
+
+  The CS-BLAST package is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  The CS-BLAST package is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 #include "cs.h"
 #include "application.h"
@@ -10,10 +27,10 @@ namespace cs {
 
 Application* Application::instance_;
 
-const char* Application::kVersionNumber = "2.1.2";
+const char* Application::kVersionNumber = "2.2.26";
 
 const char* Application::kCopyright =
-  "Copyright (c) 2010 Andreas Biegert, Johannes Soding, and LMU Munich";
+  "Copyright (c) 2010-2012 Andreas Biegert, Christof Angermueller, Johannes Soeding, and LMU Munich";
 
 Application::Application()
     : log_level_(Log::to_string(Log::from_int(LOG_MAX_LEVEL))),
@@ -39,33 +56,46 @@ int Application::main(int argc, char* argv[], FILE* fout, const string& name) {
   GetOpt_pp options(argc, argv, Include_Environment);
   options.exceptions_all();
 
-  try {
-    // Print usage?
-    if (argc < 2 || argv[1][0] == '?' ||
-        options >> OptionPresent(' ', std::string("help"))) {
-      PrintHelp();
-      return 1;
-    }
+  try{
+    try {
+      // Print usage?
+      if (argc < 2 || argv[1][0] == '?' ||
+          options >> OptionPresent(' ', std::string("help"))) {
+        PrintHelp();
+        return 0;
+      }
 
 #ifdef LOGGING
-    // Process logging options
-    options >> Option(' ', "loglevel", log_level_, log_level_);
-    Log::reporting_level() = Log::from_string(log_level_);
-    options >> Option(' ', "logfile", log_file_, log_file_);
-    if (log_file_.empty() || log_file_ == "stderr") log_fp_ = stderr;
-    else log_fp_ = fopen(log_file_.c_str(), "w");
-    Log::stream() = log_fp_;
+      // Process logging options
+      options >> Option(' ', "loglevel", log_level_, log_level_);
+      Log::reporting_level() = Log::from_string(log_level_);
+      options >> Option(' ', "logfile", log_file_, log_file_);
+      if (log_file_.empty() || log_file_ == "stderr") log_fp_ = stderr;
+      else log_fp_ = fopen(log_file_.c_str(), "w");
+      Log::stream() = log_fp_;
 #endif
 
-    // Let subclasses parse the command line options
-    ParseOptions(options);
+      // Let subclasses parse the command line options
+      ParseOptions(options);
 
-    // Run application
-    status = Run();
+      // Run application
+      status = Run();
+
+    } catch(const OptionNotFoundEx& e) {
+      throw Exception("Missing command line option!");
+    } catch(const ArgumentNotFoundEx& e) {
+      throw Exception("Missing argument for command line option!");
+    } catch(const TooManyOptionsEx& e) {
+      throw Exception("Invalid command line option!");
+    } catch(const TooManyArgumentsEx& e) {
+      throw Exception("Too many arguments for command line option!");
+    } catch(const GetOptEx& e) {
+      throw Exception("Error parsing command line options!");
+    }
 
   } catch(const std::exception& e) {
     LOG(ERROR) << e.what();
-    fprintf(fout, "\n%s\n", e.what());
+    fprintf(stderr, "\nERROR: %s\n", e.what());
     return 1;
   }
 

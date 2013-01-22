@@ -5,7 +5,6 @@
 #endif
 
 
-
 /////////////////////////////////////////////////////////////////////////////////////
 //// Constants
 /////////////////////////////////////////////////////////////////////////////////////
@@ -94,14 +93,52 @@ EXTERN struct Early_Stopping {
 } *early_stopping=NULL;
 
 
-// cs object declarations
-cs::LibraryPseudocounts<cs::AA> *lib_pc;
-cs::ContextLibrary<cs::AA> *context_lib;
-
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Class declarations
 /////////////////////////////////////////////////////////////////////////////////////
+
+// Pseudocounts
+namespace Pseudocounts {
+enum Admix {
+  ConstantAdmix = 1,
+  HHsearchAdmix = 2,
+  CSBlastAdmix  = 3
+};
+
+struct Params {
+  Params(
+      Admix m     = ConstantAdmix,
+      double a    = 1.0,
+      double b    = 1.0,
+      double c    = 1.0,
+      double neff = 0.0)
+    : admix(m), pca(a), pcb(b), pcc(c), target_neff(neff) {}
+
+  cs::Admix* CreateAdmix() {
+    switch (admix) {
+      case ConstantAdmix: 
+        return new cs::ConstantAdmix(pca);
+        break;
+      case HHsearchAdmix: 
+        return new cs::HHsearchAdmix(pca, pcb, pcc);
+        break;
+      case CSBlastAdmix:
+        return new cs::CSBlastAdmix(pca, pcb);
+        break;
+      default:
+        return NULL;
+    }
+  }
+
+  Admix admix;        // admixture mode
+  double pca;         // admixture paramter a
+  double pcb;         // admixture paramter b
+  double pcc;         // admixture parameter c needed for HHsearchAdmix
+  double target_neff; // target diversity adjusted by optimizing a
+};
+
+};  // Pseudocounts
 
 // Input parameters
 class Parameters          // Parameters for gap penalties and pseudocounts
@@ -158,14 +195,13 @@ public:
 
   char wg;                // 0: use local sequence weights   1: use local ones
 
-  char pcm;               // 0:no pseudocounts, 1:pos-specific pcs, 2:PSIBLAST pcs
-  float pca;              // Pseudocount matrix = (1-tau(i))*I + tau(i)*S
-  float pcb;              // tau(i) = pca/(1 + ((Neff-1)/pcb)^pcc
-  float pcc;              //
-  float pcw;              // Decrease pseudocounts for conserved columns
+  Pseudocounts::Params pc;     // Pseudocounts parameters
+  Pseudocounts::Params pre_pc; // Pseudocounts parameters for prefiltering
 
-  float pre_pca;          // Pseudocount matrix = (1-tau(i))*I + tau(i)*S   for prefiltering
-  float pre_pcb;          // tau(i) = pca/(1 + ((Neff-1)/pcb)^pcc           for prefiltering
+  int aa_pcm;              // Admixture method
+  float aa_pca;            // Admixture parameter a
+  float aa_pcb;            // Admixture parameter b
+  float aa_pcc;            // Admixture parameter c
 
   float gapb;             // Diversity threshold for adding pseudocounts to transitions from M state
   float gapd;             // Gap open penalty factor for deletions
@@ -288,7 +324,7 @@ void Parameters::SetDefaultPaths(char *program_path)
     strcpy(hhlib, "/usr/lib/hh");
 
   strcat(strcpy(hhdata, hhlib), "/data");
-  strcat(strcpy(clusterfile, hhdata), "/context_data.lib");
+  strcat(strcpy(clusterfile, hhdata), "/context_data.crf");
   strcat(strcpy(cs_library, hhdata), "/cs219.lib");
   
   testf = fopen(cs_library, "r");
@@ -302,7 +338,7 @@ void Parameters::SetDefaultPaths(char *program_path)
 	{
 	  strcat(strcpy(hhlib, program_path), "../lib/hh");
 	  strcat(strcpy(hhdata, hhlib), "/data");
-	  strcat(strcpy(clusterfile, hhdata), "/context_data.lib");
+	  strcat(strcpy(clusterfile, hhdata), "/context_data.crf");
 	  strcat(strcpy(cs_library, hhdata), "/cs219.lib");
 	  testf = fopen(cs_library, "r");
 	  if (testf) fclose(testf);
@@ -312,7 +348,7 @@ void Parameters::SetDefaultPaths(char *program_path)
 	      
 	      strcat(strcpy(hhlib, program_path), "..");
 	      strcat(strcpy(hhdata, hhlib), "/data");
-	      strcat(strcpy(clusterfile, hhdata), "/context_data.lib");
+	      strcat(strcpy(clusterfile, hhdata), "/context_data.crf");
 	      strcat(strcpy(cs_library, hhdata), "/cs219.lib");	  
 	      testf = fopen(cs_library, "r");
 	      if (testf) fclose(testf);
@@ -323,7 +359,7 @@ void Parameters::SetDefaultPaths(char *program_path)
     }
   if (!testf)
     {
-      cerr<<endl<<"Error in "<<argv[0]<<": could not find context_data.lib and cs219.lib in '" << hhlib << "'.\n"
+      cerr<<endl<<"Error in "<<argv[0]<<": could not find context_data.crf and cs219.lib in '" << hhlib << "'.\n"
 	"Please set the HHLIB environment variable to the HH-suite directory\n"
 	"(Linux bash: export HHLIB=<hh_dir>, csh/tcsh: setenv HHLIB=<hh_dir>).\n"
 	"The missing files should be in $HHLIB/data/.\n ";
@@ -382,15 +418,23 @@ void Parameters::SetDefaults()
   wg=0;                    // 0: use local sequence weights   1: use local ones
 
   matrix=0;                // Subst.matrix 0: Gonnet, 1: HSDM, 2: BLOSUM50 3: BLOSUM62
-  pcm=2;                   // pseudocount mode: default=divergence-dependent (but not column-specific)
-  pca=1.0f;                // default values for substitution matrix pseudocounts
-  pcb=1.5f;                // significant reduction of pcs by Neff_M starts around Neff_M-1=pcb
-  pcc=1.0f;                // pcs are reduced prop. to 1/Neff^pcc
-  pcw=0.0f;                // wc>0 weighs columns according to their intra-clomun similarity
-  nocontxt=0;              // use context-specific pseudocounts by default, not substitution matrix pcs
 
-  pre_pca=0.75f;            // PREFILTER - default values for substitution matrix pseudocounts 
-  pre_pcb=1.75f;            // PREFILTER - significant reduction of pcs by Neff_M starts around Neff_M-1=pcb
+  pc.admix       = Pseudocounts::HHsearchAdmix;
+  pc.pca         = 0.90;
+  pc.pcb         = 4.00;
+  pc.pcc         = 1.0;
+  pc.target_neff = 0.0;
+
+  pre_pc.admix       = Pseudocounts::CSBlastAdmix;
+  pre_pc.pca         = 0.80;
+  pre_pc.pcb         = 2.00;
+  pre_pc.pcc         = 1.0;
+  pre_pc.target_neff = 0.0;
+
+  aa_pcm=2;
+  aa_pca=1.0f;
+  aa_pcb=1.5f;
+  aa_pcc=1.0f;
 
   gapb=1.0;                // default values for transition pseudocounts
   gapd=0.15;               // gap open penalty pseudocount; 0.25 corresponds to 7.1*gapf bits
@@ -508,3 +552,48 @@ public:
 };
 
 EXTERN Parameters par;
+
+// cs object declarations
+cs::ContextLibrary<cs::AA>* context_lib = NULL; // Context library for pseudocounts generation
+cs::Crf<cs::AA>* crf                    = NULL; // CRF for pseudocounts generation
+cs::Pseudocounts<cs::AA>* pc            = NULL; // Pseudocounts engine
+cs::Admix* pc_admix                     = NULL; // Pseudocounts admixture method
+cs::Pseudocounts<cs::AA>* pre_pc        = NULL; // Pseudocounts engine for prefiltering
+cs::Admix* pre_pc_admix                 = NULL; // Pseudocounts admixture method for prefiltering
+
+void InitializePseudocountsEngine() {
+  // Prepare pseudocounts engine
+  FILE* fin = fopen(par.clusterfile, "r");
+  if (!fin) {
+    cerr<<endl<<"Error in "<<par.argv[0]<<": could not open file \'"<<par.clusterfile<<"\'\n";
+    exit(2);
+  }
+  char ext[100];
+  Extension(ext, par.clusterfile);
+  if (strcmp(ext, "crf") == 0)  {
+    crf = new cs::Crf<cs::AA>(fin);
+    pc = new cs::CrfPseudocounts<cs::AA>(*crf);
+    pre_pc = new cs::CrfPseudocounts<cs::AA>(*crf);
+  } else {
+    context_lib = new cs::ContextLibrary<cs::AA>(fin);
+    cs::TransformToLog(*context_lib);
+    pc = new cs::LibraryPseudocounts<cs::AA>(*context_lib, par.csw, par.csb);
+    pre_pc = new cs::LibraryPseudocounts<cs::AA>(*context_lib, par.csw, par.csb);
+  }
+  fclose(fin);
+  pc->SetTargetNeff(par.pc.target_neff);
+  pre_pc->SetTargetNeff(par.pre_pc.target_neff);
+
+  // Prepare pseudocounts admixture method
+  pc_admix = par.pc.CreateAdmix();
+  pre_pc_admix = par.pre_pc.CreateAdmix();
+}
+
+void DeletePseudocountsEngine() {
+  if (context_lib != NULL) delete context_lib;
+  if (crf != NULL) delete crf;
+  if (pc != NULL) delete pc;
+  if (pc_admix != NULL) delete pc_admix;
+  if (pre_pc != NULL) delete pre_pc;
+  if (pre_pc_admix != NULL) delete pre_pc_admix;
+}

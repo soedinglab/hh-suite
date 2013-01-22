@@ -1637,107 +1637,25 @@ void HMM::PreparePseudocounts()
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
-// Generate an AA frequency matrix g[][] with full context specific pseudocount admixture (tau=1)
+// Add pseudocounts to profile p[]
 /////////////////////////////////////////////////////////////////////////////////////
-
-void HMM::AddContextSpecificPseudocounts(char pcm, float pca, float pcb, float pcc)
-{
-  int i;               //position in HMM
-  int a;               //amino acid (0..19)
-  
-  if (has_pseudocounts) {
-    pcm = 0;
+void HMM::AddContextSpecificPseudocounts(cs::Pseudocounts<cs::AA>* pc, cs::Admix* admix) {
+  if (has_pseudocounts || pc == NULL || admix == NULL) {
+    for (int i = 1; i <= L; ++i) {
+      for (int a = 0; a < 20; ++a) {
+        p[i][a] = f[i][a];
+      }
+    }
+  } else {
+    cs::CountProfile<cs::AA> cp(L);
+    fillCountProfile(&cp);
+    cs::Profile<cs::AA> profile = pc->AddTo(cp, *admix);
+    for (int i = 1; i <= L; ++i) {
+      for (int a = 0; a < 20; ++a) {
+        p[i][a] = profile[i - 1][a];
+      }
+    }
   }
-
-  cs::CountProfile<cs::AA> ali_profile(L);
-  fillCountProfile(&ali_profile);
-
-  cs::Admix *admix = NULL;
-
-  switch (pcm)
-    {
-    case 1:
-      admix =  new cs::ConstantAdmix(pca);
-      break;
-    case 2:
-    case 4:
-      admix =  new cs::HHsearchAdmix(pca, pcb, pcc);
-      break;
-    case 3:
-      // TODO
-      break;
-    case 5:   // use CS-BLAST Admix for prefiltering
-      admix = new cs::CSBlastAdmix(pca, pcb);
-      break;
-    }      
-
-  if (admix == NULL)
-    {
-      // write cs-pseudocounts in HMM.p
-      for (i=1; i<=L; ++i)
-	for (a=0; a<20; ++a)
-	  p[i][a] = f[i][a];
-
-    }
-  else
-    {
-
-      cs::Profile<cs::AA> profile(lib_pc->AddTo(ali_profile, *admix));
-      delete admix;
-      
-      // write cs-pseudocounts in HMM.p
-      for (i=1; i<=L; ++i)
-	for (a=0; a<20; ++a)
-	  p[i][a] = profile[i-1][a];
-    }
-
-  // DEBUGGING output
-  if (v>=3)
-    {
-      float sum;
-      
-      cout<<"Context specific pseudocounts added!\n\n";
-      switch (pcm)
-        {
-        case 0:
-          cout<<"No pseudocounts added (-pcm 0)\n";
-          return;
-        case 1:
-          cout<<"Adding constant AA pseudocount admixture of "<<pca<<" to HMM "<<name<<"\n";
-          break;
-        case 2:
-          cout<<"Adding divergence-dependent AA pseudocounts (-pcm 2) with admixture of "
-              <<fmin(1.0, pca/(1. + Neff_HMM/pcb ) )<<" to HMM "<<name<<"\n";
-          break;
-        } //end switch (pcm)
-      if (v>=4)
-        {
-          cout<<"\nAmino acid frequencies WITHOUT pseudocounts:\n       A    R    N    D    C    Q    E    G    H    I    L    K    M    F    P    S    T    W    Y    V\n";
-          for (i=1; i<=L; ++i)
-            {
-              printf("%3i:  ",i);
-              sum=0;
-              for (a=0; a<20; ++a)
-                {
-                  sum+=f[i][a];
-                  printf("%4.1f ",100*f[i][a]);
-                }
-              printf("  sum=%5.3f   Neff_M=%4.2f\n",sum,Neff_M[i]);
-            }
-          cout<<"\nAmino acid frequencies WITH pseudocounts:\n       A    R    N    D    C    Q    E    G    H    I    L    K    M    F    P    S    T    W    Y    V\n";
-          for (i=1; i<=L; ++i)
-            {
-              printf("%3i:  ",i);
-              sum=0;
-              for (a=0; a<20; ++a)
-                {
-                  sum+=p[i][a];
-                  printf("%4.1f ",100*p[i][a]);
-                }
-              printf("  sum=%5.3f\n",sum);
-            }
-        }
-    }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -1800,8 +1718,8 @@ void HMM::AddAminoAcidPseudocounts(char pcm, float pca, float pcb, float pcc)
         for (a=0; a<20; ++a)
           p[i][a] = (1.-tau)*f[i][a] + tau * g[i][a];
       break;
-    case 2: // diversity-dependent (i.e, Neff_M[i]-dependent) pseudocounts
-      if (par.pcc==1.0f)
+    case 2: //divergence-dependent pseudocounts and rate matrix rescaling
+      if (pcc==1.0f)
         for (i=1; i<=L; ++i)
           {
             tau = fmin(1.0, pca/(1. + Neff_M[i]/pcb ) );

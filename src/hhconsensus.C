@@ -51,6 +51,7 @@ using std::ofstream;
 #include "cs.h"          // context-specific pseudocounts
 #include "context_library.h"
 #include "library_pseudocounts-inl.h"
+#include "crf_pseudocounts-inl.h"
 
 #include "list.h"        // list data structure
 #include "hash.h"        // hash data structure
@@ -196,10 +197,10 @@ void ProcessArguments(int argc,char** argv)
 	  else if (!strcmp(argv[i]+7,"80")) par.matrix=80; 
 	  else cerr<<endl<<"WARNING: Ignoring unknown option "<<argv[i]<<" ...\n";
 	}
-      else if (!strcmp(argv[i],"-pcm") && (i<argc-1)) par.pcm=atoi(argv[++i]); 
-      else if (!strcmp(argv[i],"-pca") && (i<argc-1)) par.pca=atof(argv[++i]); 
-      else if (!strcmp(argv[i],"-pcb") && (i<argc-1)) par.pcb=atof(argv[++i]); 
-      else if (!strcmp(argv[i],"-pcc") && (i<argc-1)) par.pcc=atof(argv[++i]);  
+      else if (!strcmp(argv[i],"-pcm") && (i<argc-1)) par.pc.admix=(Pseudocounts::Admix)atoi(argv[++i]);
+      else if (!strcmp(argv[i],"-pca") && (i<argc-1)) par.pc.pca=atof(argv[++i]);
+      else if (!strcmp(argv[i],"-pcb") && (i<argc-1)) par.pc.pcb=atof(argv[++i]);
+      else if (!strcmp(argv[i],"-pcc") && (i<argc-1)) par.pc.pcc=atof(argv[++i]);
       else if (!strcmp(argv[i],"-gapb") && (i<argc-1)) { par.gapb=atof(argv[++i]); if (par.gapb<=0.01) par.gapb=0.01;} 
       else if (!strcmp(argv[i],"-gapd") && (i<argc-1)) par.gapd=atof(argv[++i]); 
       else if (!strcmp(argv[i],"-gape") && (i<argc-1)) par.gape=atof(argv[++i]); 
@@ -244,8 +245,8 @@ int main(int argc, char **argv)
   par.Ndiff=0;
   par.max_seqid=100;
   par.coverage=0;
-  par.pcm=0;    // no amino acid pseudocounts
-  par.pca=0.0;  // no amino acid pseudocounts
+  par.pc.pca=0.0;  // no amino acid pseudocounts
+  par.aa_pca=0.0;  // no amino acid pseudocounts
   par.gapb=0.0; // no transition pseudocounts
 
   // Make command line input globally available
@@ -289,13 +290,8 @@ int main(int argc, char **argv)
     }
 
   // Prepare CS pseudocounts lib
-  if (!par.nocontxt) {
-    FILE* fin = fopen(par.clusterfile, "r");
-    context_lib = new cs::ContextLibrary<cs::AA>(fin);
-    fclose(fin);
-    cs::TransformToLog(*context_lib);
-    
-    lib_pc = new cs::LibraryPseudocounts<cs::AA>(*context_lib, par.csw, par.csb);
+  if (!par.nocontxt && *par.clusterfile) {
+    InitializePseudocountsEngine();
   }
 
   // Set substitution matrix; adjust to query aa distribution if par.pcm==3
@@ -320,7 +316,7 @@ int main(int argc, char **argv)
 	q->AddAminoAcidPseudocounts();
       } else {
 	// Add full context specific pseudocounts to query
-	q->AddContextSpecificPseudocounts();
+	q->AddContextSpecificPseudocounts(pc, pc_admix);
       }
     } 
   else 
@@ -375,6 +371,7 @@ int main(int argc, char **argv)
 
   delete qali;
   delete q;
+  DeletePseudocountsEngine();
 
   // Print 'Done!'
   printf("Done!\n");

@@ -1,10 +1,29 @@
-// Copyright 2009, Andreas Biegert
+/*
+  Copyright 2009-2012 Andreas Biegert, Christof Angermueller
+
+  This file is part of the CS-BLAST package.
+
+  The CS-BLAST package is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  The CS-BLAST package is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 #include "cs.h"
 #include "alignment-inl.h"
 #include "application.h"
 #include "blosum_matrix.h"
 #include "context_library.h"
+#include "crf_pseudocounts-inl.h"
+#include "crf-inl.h"
 #include "count_profile-inl.h"
 #include "getopt_pp.h"
 #include "library_pseudocounts-inl.h"
@@ -28,13 +47,14 @@ struct CSTranslateAppOptions {
     void Init() {
         informat         = "auto";
         outformat        = "seq";
-        pc_admix         = 0.30;
-        pc_ali           = 4.0;
+        pc_admix         = 0.90;
+        pc_ali           = 12.0;
         pc_engine        = "auto";
         match_assign     = kAssignMatchColsByQuery;
         weight_center    = 1.6;
         weight_decay     = 0.85;
         weight_as        = 1000.0;
+        verbose          = true;
     }
 
     // Validates the parameter settings and throws exception if needed.
@@ -71,6 +91,8 @@ struct CSTranslateAppOptions {
     double weight_decay;
     // Weight in emission calculation of abstract states
     double weight_as;
+    // verbose output
+    bool verbose;
 };  // CSTranslateAppOptions
 
 
@@ -98,6 +120,8 @@ class CSTranslateApp : public Application {
     scoped_ptr< ContextLibrary<Abc> > as_lib_;
     // Profile library for context pseudocounts
     scoped_ptr< ContextLibrary<Abc> > pc_lib_;
+    // CRF for CRF context pseudocounts
+    scoped_ptr< Crf<Abc> > pc_crf_;
     // Pseudocount engine
     scoped_ptr< Pseudocounts<Abc> > pc_;
 };  // class CSTranslateApp
@@ -118,8 +142,12 @@ void CSTranslateApp<Abc>::ParseOptions(GetOpt_pp& ops) {
     ops >> Option('D', "context-data", opts_.modelfile, opts_.modelfile);
     ops >> Option('p', "pc-engine", opts_.pc_engine, opts_.pc_engine);
     ops >> Option('w', "weight", opts_.weight_as, opts_.weight_as);
+    ops >> Option('v', "verbose", opts_.verbose, opts_.verbose);
 
     opts_.Validate();
+
+    if (strcmp(opts_.outfile.c_str(), "stdout") == 0)
+        opts_.verbose = false;
 
     if (opts_.outfile.empty() && opts_.appendfile.empty())
         opts_.outfile = GetBasename(opts_.infile, false) + ".as";
@@ -151,6 +179,7 @@ void CSTranslateApp<Abc>::PrintOptions() const {
     fprintf(out_, "  %-30s %s\n", "", "(def: make columns with residue in first sequence match columns)");
     fprintf(out_, "  %-30s %s (def=off)\n", "-A, --alphabet <file>", "Abstract state alphabet consisting of exactly 219 states");
     fprintf(out_, "  %-30s %s (def=off)\n", "-D, --context-data <file>", "Add context-specific pseudocounts using given context-data");
+    // fprintf(out_, "  %-30s %s (def=%s)\n", "-p, --pc-engine lib|crf", "Specify engine for pseudocount generation", opts_.pc_engine.c_str());
     fprintf(out_, "  %-30s %s (def=%-.2f)\n", "-x, --pc-admix [0,1]", "Pseudocount admix for context-specific pseudocounts", opts_.pc_admix);
     fprintf(out_, "  %-30s %s (def=%-.1f)\n", "-c, --pc-ali [0,inf[", "Constant in pseudocount calculation for alignments", opts_.pc_ali);
     fprintf(out_, "  %-30s %s (def=%-.2f)\n", "-w, --weight [0,inf[", "Weight of abstract state column in emission calculation", opts_.weight_as);
@@ -159,17 +188,23 @@ void CSTranslateApp<Abc>::PrintOptions() const {
 template<class Abc>
 void CSTranslateApp<Abc>::WriteStateSequence(const Sequence<AS219>& seq) const {
     if (!opts_.outfile.empty()) {
-        FILE* fout = fopen(opts_.outfile.c_str(), "w");
+        FILE* fout;
+        if (strcmp(opts_.outfile.c_str(), "stdout") == 0)
+            fout = stdout;
+        else
+            fout = fopen(opts_.outfile.c_str(), "w");
         if (!fout) throw Exception("Can't write to output file '%s'!", opts_.outfile.c_str());
         seq.Write(fout);
-        fprintf(out_, "Wrote abstract state sequence to %s\n", opts_.outfile.c_str());
+        if (opts_.verbose)
+            fprintf(out_, "Wrote abstract state sequence to %s\n", opts_.outfile.c_str());
         fclose(fout);
     }
     if (!opts_.appendfile.empty()) {
         FILE* fout = fopen(opts_.appendfile.c_str(), "a");
         if (!fout) throw Exception("Can't append to file '%s'!", opts_.appendfile.c_str());
         seq.Write(fout);
-        fprintf(out_, "Appended abstract state sequence to %s\n", opts_.appendfile.c_str());
+        if (opts_.verbose)
+            fprintf(out_, "Appended abstract state sequence to %s\n", opts_.appendfile.c_str());
         fclose(fout);
     }
 }
@@ -177,17 +212,23 @@ void CSTranslateApp<Abc>::WriteStateSequence(const Sequence<AS219>& seq) const {
 template<class Abc>
 void CSTranslateApp<Abc>::WriteStateProfile(const CountProfile<AS219>& prof) const {
     if (!opts_.outfile.empty()) {
-        FILE* fout = fopen(opts_.outfile.c_str(), "w");
+        FILE* fout;
+        if (strcmp(opts_.outfile.c_str(), "stdout") == 0)
+            fout = stdout;
+        else
+            fout = fopen(opts_.outfile.c_str(), "w");
         if (!fout) throw Exception("Can't write to output file '%s'!", opts_.outfile.c_str());
         prof.Write(fout);
-        fprintf(out_, "Wrote abstract state count profile to %s\n", opts_.outfile.c_str());
+        if (opts_.verbose)
+            fprintf(out_, "Wrote abstract state count profile to %s\n", opts_.outfile.c_str());
         fclose(fout);
     }
     if (!opts_.appendfile.empty()) {
         FILE* fout = fopen(opts_.appendfile.c_str(), "a");
         if (!fout) throw Exception("Can't append to file '%s'!", opts_.appendfile.c_str());
         prof.Write(fout);
-        fprintf(out_, "Appended abstract state count profile to %s\n", opts_.appendfile.c_str());
+        if (opts_.verbose)
+            fprintf(out_, "Appended abstract state count profile to %s\n", opts_.appendfile.c_str());
         fclose(fout);
     }
 }
@@ -209,7 +250,8 @@ template<class Abc>
 int CSTranslateApp<Abc>::Run() {
     // Setup pseudocount engine
     if (!opts_.modelfile.empty() && opts_.pc_engine == "lib") {
-        fprintf(out_, "Reading context library for pseudocounts from %s ...\n",
+        if (opts_.verbose)
+            fprintf(out_, "Reading context library for pseudocounts from %s ...\n",
                 GetBasename(opts_.modelfile).c_str());
         FILE* fin = fopen(opts_.modelfile.c_str(), "r");
         if (!fin)
@@ -220,10 +262,20 @@ int CSTranslateApp<Abc>::Run() {
         pc_.reset(new LibraryPseudocounts<Abc>(*pc_lib_, opts_.weight_center,
                                                opts_.weight_decay));
 
+    } else if (!opts_.modelfile.empty() && opts_.pc_engine == "crf") {
+        fprintf(out_, "Reading CRF for pseudocounts from %s ...\n",
+                GetBasename(opts_.modelfile).c_str());
+        FILE* fin = fopen(opts_.modelfile.c_str(), "r");
+        if (!fin)
+            throw Exception("Unable to read file '%s'!", opts_.modelfile.c_str());
+        pc_crf_.reset(new Crf<Abc>(fin));
+        fclose(fin);
+        pc_.reset(new CrfPseudocounts<Abc>(*pc_crf_));
     }
 
     // Setup abstract state engine
-    fprintf(out_, "Reading abstract state alphabet from %s ...\n",
+    if (opts_.verbose)
+        fprintf(out_, "Reading abstract state alphabet from %s ...\n",
             GetBasename(opts_.alphabetfile).c_str());
     FILE* fin = fopen(opts_.alphabetfile.c_str(), "r");
     if (!fin) throw Exception("Unable to read file '%s'!",
@@ -241,7 +293,10 @@ int CSTranslateApp<Abc>::Run() {
     string header;
     CountProfile<Abc> profile;  // input profile we want to translate
 
-    fin = fopen(opts_.infile.c_str(), "r");
+    if (strcmp(opts_.infile.c_str(), "stdin") == 0)
+        fin = stdin;
+    else
+        fin = fopen(opts_.infile.c_str(), "r");
     if (!fin)
         throw Exception("Unable to read input file '%s'!", opts_.infile.c_str());
 
@@ -251,7 +306,8 @@ int CSTranslateApp<Abc>::Run() {
         else header = profile.name;
 
         if (pc_) {
-            fprintf(out_, "Adding cs-pseudocounts (admix=%.2f) ...\n", opts_.pc_admix);
+            if (opts_.verbose)
+                fprintf(out_, "Adding cs-pseudocounts (admix=%.2f) ...\n", opts_.pc_admix);
             CSBlastAdmix admix(opts_.pc_admix, opts_.pc_ali);
             profile.counts = pc_->AddTo(profile, admix);
             Normalize(profile.counts, profile.neff);
@@ -263,8 +319,10 @@ int CSTranslateApp<Abc>::Run() {
         profile = CountProfile<Abc>(seq);
 
         if (pc_) {
-            fprintf(out_, "Adding cs-pseudocounts (admix=%.2f) ...\n", opts_.pc_admix);
-            profile.counts = pc_->AddTo(seq, ConstantAdmix(opts_.pc_admix));
+            if (opts_.verbose) 
+                fprintf(out_, "Adding cs-pseudocounts (admix=%.2f) ...\n", opts_.pc_admix);
+            ConstantAdmix admix(opts_.pc_admix);
+            profile.counts = pc_->AddTo(seq, admix);
         }
 
     } else {  // build profile from alignment
@@ -281,7 +339,8 @@ int CSTranslateApp<Abc>::Run() {
         profile = CountProfile<Abc>(ali);
 
         if (pc_) {
-            fprintf(out_, "Adding cs-pseudocounts (admix=%.2f) ...\n", opts_.pc_admix);
+            if (opts_.verbose)
+                fprintf(out_, "Adding cs-pseudocounts (admix=%.2f) ...\n", opts_.pc_admix);
             CSBlastAdmix admix(opts_.pc_admix, opts_.pc_ali);
             profile.counts = pc_->AddTo(profile, admix);
             Normalize(profile.counts, profile.neff);
@@ -298,7 +357,8 @@ int CSTranslateApp<Abc>::Run() {
 
     // Translate count profile into abstract state count profile (Neff is one)
     CountProfile<AS219> as_profile(profile.counts.length());  // output profile
-    fputs("Translating count profile to abstract state alphabet AS219 ...\n", out_);
+    if (opts_.verbose)
+        fputs("Translating count profile to abstract state alphabet AS219 ...\n", out_);
     for (size_t i = 0; i < as_profile.length(); ++i)
         CalculatePosteriorProbs(*as_lib_, emission, profile, i, as_profile.counts[i]);
     as_profile.name = GetBasename(opts_.infile, false);
@@ -340,21 +400,23 @@ int CSTranslateApp<Abc>::Run() {
         ali[4].append(strprintf("%d", GetConfidence(as_profile.counts[i][as_seq[i]])));
     }
 
-    // Print pseudo alignment in blocks
-    fputc('\n', out_);  // blank line before alignment
-    while (!ali.front().empty()) {
-        for (size_t k = 0; k < nseqs; ++k) {
-            string label = labels[k];
-            label += string(header_width - label.length() + 1, ' ');
-            fputs(label.c_str(), out_);
-            fputc(' ', out_);  // separator between header and sequence
+    // Print pseudo alignment in blocks if verbose
+    if (opts_.verbose){
+        fputc('\n', out_);  // blank line before alignment
+        while (!ali.front().empty()) {
+            for (size_t k = 0; k < nseqs; ++k) {
+                string label = labels[k];
+                label += string(header_width - label.length() + 1, ' ');
+                fputs(label.c_str(), out_);
+                fputc(' ', out_);  // separator between header and sequence
 
-            size_t len = MIN(width, ali[k].length());
-            fputs(ali[k].substr(0, len).c_str(), out_);
-            fputc('\n', out_);
-            ali[k].erase(0, len);
+                size_t len = MIN(width, ali[k].length());
+                fputs(ali[k].substr(0, len).c_str(), out_);
+                fputc('\n', out_);
+                ali[k].erase(0, len);
+            }
+            fputc('\n', out_);  // blank line after each block
         }
-        fputc('\n', out_);  // blank line after each block
     }
 
     // Write abstract-state sequence or profile to outfile

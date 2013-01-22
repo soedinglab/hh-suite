@@ -6,6 +6,11 @@ _______________________________________________________________________________
 
 HH-suite 2.0.15  June 2012
 
+    * cstranslate understand now -i stdin and -o stdout.
+_______________________________________________________________________________
+
+HH-suite 2.0.15  June 2012
+
     * Fix hhalign regression introduced in 2.0.14.
 
     * Fix a bug in the counting of the number of sequences found.
