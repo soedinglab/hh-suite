@@ -26,6 +26,13 @@
 //     HHblits: Lightning-fast iterative protein sequence searching by HMM-HMM alignment.
 //     Nat. Methods 9:173-175 (2011); epub Dec 25, doi: 10.1038/NMETH.1818
 
+//
+// TODOs
+//
+// * Allow using the base name (without extension) in hhsearch to make it compatible with the ussage of hhblits
+//
+
+
 
 ////#define WINDOWS
 #define PTHREAD

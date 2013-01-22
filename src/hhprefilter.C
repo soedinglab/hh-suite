@@ -907,13 +907,13 @@ void stripe_query_profile()
  
   const cs::ContextLibrary<cs::AA>& lib = *cs_lib;
 
-  // log (S(i,k)) = log ( SUM_a p(i,a) * p(k,a) / f(a) )   k: column state, i: pos in ali, a: amino acid
+  // log S(i,k) = log ( SUM_a p(i,a) * p(k,a) / f(a) )   k: column state, i: pos in ali, a: amino acid
   for (i=0; i<LQ; ++i)
     for (k=0; k<NUMCOLSTATES; ++k)
       {
 	float sum = 0;
 	for (a=0; a<20; ++a)
-	  sum += ((q_tmp->p[i][a] * lib[k].probs[0][a]) / q_tmp->pav[a]);
+	  sum += (q_tmp->p[i][a] * lib[k].probs[0][a]) / q_tmp->pav[a];
 	query_profile[i+1][k] = sum;
       }
       
@@ -935,10 +935,11 @@ void stripe_query_profile()
   	      else
   		{
   		  float dummy = flog2(query_profile[j+1][a])*par.prefilter_bit_factor + par.prefilter_score_offset + 0.5;
-  		  if (dummy>255.0) qc[h] = 255;
-  		  else if (dummy<0) qc[h] = 0;
-  		  else qc[h] = (unsigned char) dummy;  // 1/3 bits & make scores >=0 everywhere
-  		}
+  		  // if (dummy>255.0) qc[h] = 255;
+  		  // else if (dummy<0) qc[h] = 0;
+  		  // else qc[h] = (unsigned char) dummy;  // 1/3 bits & make scores >=0 everywhere
+		  qc[h] = (unsigned char) fmax(0.0,fmin(255.0,dummy));
+		}
   	      ++h;
   	      j+=W;
   	    }

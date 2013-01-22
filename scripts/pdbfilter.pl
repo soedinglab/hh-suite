@@ -1,16 +1,15 @@
 #! /usr/bin/env perl
 # pdbfilter.pl - Read pdb or SCOP sequences from infile and write representative set of sequences to outfile
 
-# (C) Johannes Soeding, 2012
 #
-
-#
-#     HHsuite version 2.0.15 (April 2012)
+#     HHsuite version 2.0.16 (April 2013)
 #
 #     Reference: 
 #     Remmert M., Biegert A., Hauser A., and Soding J.
 #     HHblits: Lightning-fast iterative protein sequence searching by HMM-HMM alignment.
 #     Nat. Methods, epub Dec 25, doi: 10.1038/NMETH.1818 (2011).
+
+#     (C) Johannes Soeding, 2012
 
 #     This program is free software: you can redistribute it and/or modify
 #     it under the terms of the GNU General Public License as published by

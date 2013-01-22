@@ -302,17 +302,16 @@ void help(char all=0)
   printf(" -o <file>      write results in standard format to file (default=<infile.hhr>)\n");
   printf(" -oa3m <file>   write result MSA with significant matches in a3m format\n");
   if (!all) {
-  printf("                Analogous for output in a2m, psi, and hhm format (e.g. -ohhm)\n");
+  printf("                Analogous for -opsi and -ohhm\n");
   }
   if (all) {
   printf(" -opsi <file>   write result MSA of significant matches in PSI-BLAST format\n");
-  printf(" -oa2m <file>   write result MSA of significant matches in a2m format\n");
   printf(" -ohhm <file>   write HHM file for result MSA of significant matches\n");
   }
   printf(" -oalis <name>  write MSAs in A3M format after each iteration\n");
   if (all) {
   printf(" -Ofas <file>   write pairwise alignments of significant matches in FASTA format\n");
-  printf("                Analogous for output in a3m, a2m, and psi format (e.g. -Oa3m)\n");
+  printf("                Analogous for output in a3m and a2m format (e.g. -Oa3m)\n");
   printf(" -qhhm <file>   write query input HHM file of last iteration (default=off)      \n");
   printf(" -seq <int>     max. number of query/template sequences displayed (default=%i)  \n",par.nseqdis);
   printf(" -aliw <int>    number of columns per line in alignment list (default=%i)       \n",par.aliwidth);
@@ -1930,7 +1929,7 @@ int main(int argc, char **argv)
       num_rounds=8; 
     }
   // Premerging can be very time-consuming on large database a3ms, such as from pdb70. 
-  // Hence it is only done when iteratively searches against uniprot20 or nr20 with their much smaller MSAs:
+  // Hence it is only done when iteratively searching against uniprot20 or nr20 with their much smaller MSAs:
   if (! (num_rounds > 1 || *par.alnfile || *par.psifile || *par.hhmfile || *alis_basename) ) par.premerge=0; 
   
   // No outfile given? Name it basename.hhm
