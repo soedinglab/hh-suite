@@ -2551,12 +2551,12 @@ int main(int argc, char **argv)
   
   if (par.prefilter)
     {
-      free(X);
       free(length);
       free(first);
-      for (int n = 0; n < num_dbs; n++)
+      for (size_t n = 0; n < num_dbs; n++)
 	delete[](dbnames[n]);
       delete[](dbnames);
+      fclose(db_data_file);
     }
 
   DeletePseudocountsEngine();

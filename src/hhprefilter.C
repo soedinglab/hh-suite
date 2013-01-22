@@ -49,8 +49,7 @@ struct ali_pos {
 #define SHORT_BIAS 32768
 
 const int NUMCOLSTATES = cs::AS219::kSize;
-int LDB = 0;              // number of characters of input prefilter database file
-int num_dbs = 0;          // number of sequences in prefilter database file
+size_t num_dbs = 0;          // number of sequences in prefilter database file
 Hash<char>* doubled;
 
 int pos;                  // 
@@ -58,14 +57,15 @@ int block_count;          //
 char actual_hit[NAMELEN]; //
 int* block;               // int array keeping start and stop positions (i1,j1, i2,j2) of prefilter alignment
 
-char** dbnames;           // array containing all sequence names in prefilter db file
-int LQ;                   // length of query profile
-unsigned char* qc;        // extended column state query profile as char 
-unsigned char* X;         // database string of all concatenated all DB seqs in column state representation 
-unsigned char** first;    // pointer to first letter of next sequence in X
-int* length;              // length of next sequence in X
-int W;                    // 
-unsigned short* qw;       // extended column state query profile as short int
+FILE* db_data_file;
+unsigned char* db_data;
+unsigned char** first; // pointer to first letter of next sequence in db_data
+int* length;           // length of next sequence
+char** dbnames;        // array containing all sequence names in prefilter db file
+int LQ;                // length of query profile
+unsigned char* qc;     // extended column state query profile as char
+int W;                 //
+unsigned short* qw;    // extended column state query profile as short int
 int Ww;
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -749,15 +749,39 @@ int ungapped_sse_score(const unsigned char* query_profile,
   return score;
 }
 
+void make_db_filename(char *filename, const char* ext = NULL) {
+  strcpy(filename, db_base);
+  strcat(filename, "_cs219");
+  if (ext != NULL) {
+    strcat(filename, ext);
+  }
+}
+
+void extract_name_from_index(char* name, const char* index_name) {
+  strcpy(name, index_name);
+  for (size_t i = 0; i < strlen(name); ++i) {
+    if (name[i] == '.' || name[i] == '|') {
+      name[i] = 0;
+      break;
+    }
+  }
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Pull out all names from prefilter db file and copy into dbfiles_new for full HMM-HMM comparison
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void init_no_prefiltering()
 {
-  // Get DBsize and num_chars
-  CountSeqsInFile(db, par.dbsize);  // Get DBsize but not number of chars
-  
+  char db_index_filename[NAMELEN];
+  make_db_filename(db_index_filename, ".ffindex");
+  FILE* db_index_file = fopen(db_index_filename, "r");
+  if (db_index_file == NULL) OpenFileError(db_index_filename); 
+  ffindex_index_t* db_index = ffindex_index_parse(db_index_file, 0);
+  fclose(db_index_file);
+
+  num_dbs = db_index->n_entries;
+  par.dbsize = db_index->n_entries;
   
   if (par.dbsize > par.maxnumdb_no_prefilter)
     {cerr<<endl<<"Error in "<<program_name<<": Without prefiltering, the max. number of database HHMs is "<<par.maxnumdb_no_prefilter<<" (actual: "<<par.dbsize<<")\n";
@@ -765,41 +789,24 @@ void init_no_prefiltering()
       exit(4);
     }
 
-  FILE* dbf = NULL;
-  dbf = fopen(db,"rb");
-  if (!dbf) OpenFileError(db);
-
-  while(fgetline(line,LINELEN,dbf)) // read HMM files in pal file
-    {
-      if (line[0]=='>')
-	{
-
-	  // Add hit to dbfiles
-	  char name[NAMELEN];
-	  char db_name[NAMELEN];
-	  strwrd(name,line+1,NAMELEN);
-	  char* ptr1 = strchr(name,'|');
-	  if (ptr1) // found '|' in sequence id? => extract string up to '|'
-	    {
-	      char* ptr2 = strchr(++ptr1,'|');
-	      if (ptr2) strmcpy(db_name,ptr1,ptr2-ptr1);
-	      else strcpy(db_name,ptr1);
-	    }
-	  else 
-	    strcpy(db_name,name);
-	  
-	  strcat(db_name,".");
-	  strcat(db_name,db_ext);
-
-	  dbfiles_new[ndb_new]=new(char[strlen(db_name)+1]);
-	  strcpy(dbfiles_new[ndb_new],db_name);
-	  ndb_new++;
-	}
+  for (size_t n = 0; n < num_dbs; n++) {
+    ffindex_entry_t* entry = ffindex_get_entry_by_index(db_index, n);
+    char name[NAMELEN];
+    strcpy(name, entry->name);
+    for (size_t i = 0; i < strlen(name); ++i) {
+      if (name[i] == '.' || name[i] == '|') {
+        name[i] = 0;
+        break;
+      }
     }
-  fclose(dbf);
+    strcat(name,".");
+    strcat(name,db_ext);
+    dbfiles_new[n] = new char[strlen(name)+1];
+    strcpy(dbfiles_new[n], name);
+  }
+  ndb_new = num_dbs;
 
   if (v>=2) cout<<"Searching "<<ndb_new<<" database HHMs without prefiltering"<<endl;
-
 }
       
 //////////////////////////////////////////////////////////////
@@ -807,75 +814,38 @@ void init_no_prefiltering()
 //////////////////////////////////////////////////////////////
 void init_prefilter()
 {
-  // Get Prefilter Pvalue (Evalue / Par.Dbsize)
-  LDB = CountSeqsInFile(db, par.dbsize);  // Get DBsize but not number of chars
+  // Map data file into memory
+  char db_data_filename[NAMELEN];
+  make_db_filename(db_data_filename, ".ffdata");
+  db_data_file  = fopen(db_data_filename,  "rb");
+  if (db_data_file == NULL) OpenFileError(db_data_filename); 
+  size_t db_data_size;
+  db_data = (unsigned char*)ffindex_mmap_data(db_data_file, &db_data_size);
 
-  if (par.dbsize == 0 || LDB == 0)
-    {cerr<<endl<<"Error! Could not determine DB-size of prefilter db ("<<db<<")\n"; exit(4);}
-	    
-  if (v>=2) cout<<"Reading in "<<par.dbsize<<" column state sequences with a total of "<<LDB<<" residues"<<endl;
+  // Read index
+  char db_index_filename[NAMELEN];
+  make_db_filename(db_index_filename, ".ffindex");
+  FILE* db_index_file = fopen(db_index_filename, "r");
+  if (db_index_file == NULL) OpenFileError(db_index_filename); 
+  ffindex_index_t* db_index = ffindex_index_parse(db_index_file, 0);
+  fclose(db_index_file);
 
-  X = (unsigned char*)memalign(16,LDB*sizeof(unsigned char));                     // database string (concatenate all DB-seqs)
-  first = (unsigned char**)memalign(16,(par.dbsize+2)*sizeof(unsigned char*));    // first characters of db sequences. Was (par.dbsize*2). Why??
-  length = (int*)memalign(16,(par.dbsize+2)*sizeof(int));                         // lengths of db sequences Was (par.dbsize*2). Why??
-  dbnames = new char*[par.dbsize+2];                                              // names of db sequences   Was (par.dbsize*2). Why??
-
-  /////////////////////////////////////////
-  // Read in database
-  num_dbs = 0;
-  int len = 0;
-  int pos = 0;
-  char word[NAMELEN];
-  FILE* dbf = NULL;
-  dbf = fopen(db,"rb");
-  if (!dbf) OpenFileError(db);
-
-  while(fgets(line,LINELEN,dbf)) // read prefilter database
-    {
-      
-      if (line[0] == '>')  // Header
-	{
-	  if (len > 0)           // if it is not the first sequence
-	    length[num_dbs++] = imin(par.maxres,len);
-	  len = 0;
-	      
-	  strwrd(word,line+1,NAMELEN);
-	  /////// TEMP - temporär, wird von alten DBs benötigt, alle DBs ab 2011 sollten auf neuem Stand sein
-	  strcut(word,"_cons");
-
-	  dbnames[num_dbs]=new(char[strlen(word)+1]);
-	  strcpy(dbnames[num_dbs],word);
-	      
-	  first[num_dbs] = X + pos;
-	}
-      else
-	{
-	  unsigned char* c = (unsigned char*)line;
- 	  while (*c!='\n')
-	    {
-#ifdef HHDEBUG
-	      if (cs::AS219::kValidChar[*c])
-	      	{
-		  X[pos++]= (unsigned char)(cs::AS219::kCharToInt[*c]);
-		  ++len;
-	      	}
-	      else
-	      	cerr<<endl<<"WARNING: ignoring invalid symbol with ASCII code "<<int(*c)<<" in "<<pos<<" of sequence "<<dbnames[num_dbs]<<" of file "<<db<<"\n";
-	      c++;
-#else
-	      X[pos++]= (unsigned char)(cs::AS219::kCharToInt[*c++]); // map printable characters to range 0-219
-	      ++len;
-#endif
-
-	    }
-	  
-	}
-    }
-
-  if (len > 0)
-    length[num_dbs++] = imin(par.maxres,len);
-      
-  fclose(dbf);
+  // Set up variables for prefiltering
+  num_dbs = db_index->n_entries;
+  par.dbsize = db_index->n_entries;
+  first = (unsigned char**)memalign(16, num_dbs * sizeof(unsigned char*));;
+  length = (int*)memalign(16, num_dbs * sizeof(int));
+  dbnames = (char**)memalign(16, num_dbs * sizeof(char*));
+  for (size_t n = 0; n < num_dbs; n++) {
+    ffindex_entry_t* entry = ffindex_get_entry_by_index(db_index, n);
+    first[n] = (unsigned char*)ffindex_get_data_by_entry((char*)db_data, entry);
+    length[n] = entry->length - 1;
+    dbnames[n] = new char[strlen(entry->name)];
+    extract_name_from_index(dbnames[n], entry->name);
+  }
+  if (v>=2) {
+    printf("Searching %zu column state sequences.\n", num_dbs);
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -1060,7 +1030,7 @@ void prefilter_db()
     workspace[i] = (__m128i*)memalign(16,3*(LQ+15)*sizeof(char));
   
 #pragma omp parallel for schedule(static) private(score, thread_id)
-  for (int n = 0; n < num_dbs; n++)     // Loop over all database sequences
+  for (size_t n = 0; n < num_dbs; n++)     // Loop over all database sequences
     {
 #ifdef _OPENMP
       thread_id = omp_get_thread_num();
@@ -1118,19 +1088,8 @@ void prefilter_db()
       // Add hit to dbfiles
       char name[NAMELEN];
       char db_name[NAMELEN];
-      strwrd(name,dbnames[(*it).second]);
-      char* ptr1 = strchr(name,'|');
-      if (ptr1) // found '|' in sequence id? => extract string up to '|'
-      	{
-      	  char* ptr2 = strchr(++ptr1,'|');
-      	  if (ptr2) strmcpy(db_name,ptr1,ptr2-ptr1);
-	  else strcpy(db_name,ptr1);
-      	}
-      else 
-      	strcpy(db_name,name);
-      
-      strcat(db_name,".");
-      strcat(db_name,db_ext);
+      strcpy(db_name, dbnames[(*it).second]);
+      strcpy(name, db_name);
 
       if (! doubled->Contains(db_name))
 	{
