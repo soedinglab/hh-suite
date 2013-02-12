@@ -336,6 +336,9 @@ Uniprot20 and nr20 are obtained by clustering UniProt \cite{uniprot:2010} and th
 
 In the pdb70 and scop70 databases, each master sequence from the original sequence database is represented by an MSA. The MSAs are built by HHblits searches starting with the master sequence as a query. The MSAs and HMMs typically carry the name and annotation of the master sequence. In contrast to the clusters in the uniprot20 or nr20 databases, sequences can in principle occur in several MSAs. These homologous sequences merely serve to contribute evolutionary information to the master sequence. As the sequences in this type of database do not cover the entire sequence space, they are not suited for iterative searches. See  section \ref{building_dbs} for how to build your own type 2 databases.
 
+{\bf Note on efficiency}: Always try to keep the HH-suite databases on a local disk drive of the computer running HHblits, if possible. Otherwise file access times on your (shared) remote file server might limit the performance of HHblits. For explanations, see section \ref{efficiency}.
+
+
 
 \subsection{Old-style HHsearch databases} \label{hhsearch_dbs}
 For backward compatibility, the HHsearch databases read by older versions of HHsearch prior to HH-suite 2.0 are 
@@ -390,62 +393,63 @@ For the other databases, different copy right regulations may apply.
 Please refer to the databases' original web sites for the copy right notes and 
 references to cite.
 
-\subsection{How to run HH-suite efficiently on a computer cluster}
+\subsection{How to run HH-suite efficiently on a computer cluster} \label{efficiency}
 
 When HHblits runs on many cores of a compute cluster and accesses the HH-suite database(s) 
-via a central file system, hard disk random access times and file system throughput can quickly become 
-limiting instead of the available compute power. To efficiently search with HHblits with millions of 
-sequences in parallel on a compute cluster, we therefore recommend one of the following options, 
-with strongly decreasing preference and efficiency .
-
-1. The ideal solution is to write a script that loads the needed HHblits databases from the 
-file system into the virtal {\it RAM drive} of each compute node upon boot-up. This requires 
-enough memory in your computer. Software for RAM drives exist on all major operating systems. 
-On Linux from kernel 2.4 up, a RAM drive is installed by default at \verb`/dev/shm`. When 
-memory is low, this software can intelligently swap rarely used files to a hard drive. 
-This solution is also attractive because it eliminates the mechanical wear of disk drives.
-
-2. You put a copy of the needed HHblits databases onto the local hard disk drive 
-of each of your compute nodes that can accept HH-suite jobs. This helps, because each of the 
-local disk drives can serve out files, increasing file access throughput by a factor
-equal to the number of compute nodes. But file access can still be a serions bottleneck if
-each local hard drive serves a lot of strong CPU cores (see estimation below). 
-
-3. You (or your sysadmin) can make sure that your compute nodes at least have sufficient memory reserves 
-and proper cache settings in order to keep the prefiltering database file in cache (size: a few GB).
-You can check this by running HHblits on a fresh computd node twice and observing that the 
-second run takes much less time to read the prefiltering database file. But this only solves
-the problem of having to read the prefiltering file every time hhblits is called. Another,
-usually more serious bottleneck is reading the a3m and hhm files that passed the prefilter 
-via the file system. These can also be cached, but since each time only a small subset of 
-all files are read, caching is inefficient for these.
-
-
-Let us estimate the random file access bottleneck at an example. Suppose you want to search the uniprot20 
-database with HHblits on four compute nodes with 32 CPU cores each. You let each job run on a single 
-core, which is the most efficient way when processing many jobs. Let's say aach HHblits iteration through 
-uniprot20 on a modern 3GHz Intel/AMD core takes around 60s on average and after each search iteration, 
+via a central file system, hard disk random access times can quickly become limiting instead 
+of the available compute power. To understand why, let us estimate the random file access 
+bottleneck at an example. Suppose you want to search the uniprot20 database with HHblits 
+on four compute nodes with 32 CPU cores each. You let each job run on a single core, 
+which is the most efficient way when processing many jobs. Each HHblits iteration through 
+uniprot20 on a modern 3GHz Intel/AMD core takes around, say, 60s on average. After each search iteration, 
 HHblits needs to read around $3000$ a3m or hhm files on disk that passed the prefilter. 
-The total number of file accesses per second is thus estimated at 
+The total number of expected file accesses per second is therefore 
 \begin{equation}
 \textrm{number of file accesses} = 4 \textrm{(nodes)} \times 32 \textrm{(cores)} \times 3000 \textrm{(files)} / 60s = 6400/s
 \end{equation}
-A typical hard disk has a latency of around $5 ms$ and can therefore ranmdomly access only 200 files 
-per second. Hence, if all cores need to access the files from the same RAID disk array, only
-4 CPU cores would already saturate the RAID's disk drives! (You can slightly decrease latency by 
-using RAIDs with striping, but this will not be nearly enough.)
+A typical server hard disk has a latency of around $5\,ms$ and can therefore randomly access 
+only 200 files per second. Hence, if all cores need to access the files from the same RAID 
+disk array, only 4 CPU cores would already saturate the RAID's disk drives! (You can slightly 
+decrease latency by a factor of two by using RAID configurations with striping, but this 
+won't help much.)
 
-Now suppose you have the luck of having a file server that caches the hhblits databases in RAM, uses a RAM 
-drive to store them, or uses a solid state drive (SSD) with typical random access times below $100 \mu s$. 
-Then file access time is not problematic anymore, but data throughput might get limiting. The four servers would
-need to read 
+To efficiently search with HHblits with millions of sequences in parallel on a compute cluster, 
+we therefore recommend one of the first two options.
+
+1. The ideal solution is to automatically load the needed HH-suite databases from the 
+file system into the virtual {\it RAM drive} of each compute node upon boot-up. This requires 
+enough memory in your computer. Software for RAM drives exist on all major operating systems. 
+On Linux from kernel 2.4 upwards, a RAM drive is installed by default at \verb`/dev/shm`. When 
+memory is low, this software can intelligently swap rarely used files to a hard drive. 
+
+2. Another good option is to hold the HH-suite databases on local solid state drive (SSD) 
+of each of the cluster's compute nodes that can accept HH-suite jobs. The local SSDs also 
+remove the file access bottleneck, as SSDs have typical random access times below 
+$100 \mu s$. Reading the 3000 files from SSD after prefiltering therefore will take below $0.3 s$.
+
+3. Another good option might be to use a RAM disk (or SSD) on your file server to hold the 
+HH-suite databases. Then file access time is not problematic anymore, but you need to estimate 
+if data throughput might get limiting. The four servers from our previous example would
+ need to read data at a rate 
 \begin{equation}
-\textrm{data transfer rate} = 4 \textrm{(nodes)} \times 32 \textrm{(cores)} \times 3000 \textrm{(files)} \times 5 kB/ 60s = 256 Mb/s
+\textrm{transfer rate}\, = 4 \, \textrm{(nodes)} \times 32\, \textrm{(cores)} \times 3000\, \textrm{(files)} \times 5\,\textrm{kB}\, \textrm{(av. file size)}\,/ 60 \,s = 256 \,\textrm{Mb}/s
 \end{equation}
-If data transfer from the file server has to be shared with many other copmute servers, this rate may also not be 
-available. Again, point 1 above offers an ideal solution.
+If you have 16 instead of 4 compute servers or if data transfer from the file server has to be 
+shared with many other compute servers, the network transfer may be limiting the performance.
 
-SSD!!!!!
+4. A not so good option is to keep the HH-suite databases on local hard disk drives (HDDs). In this 
+way, you at least distribute the file accesses to as many HDDs as you have compute nodes. 
+But as we have seen, already at around 4 cores per HDD, you will be limited by file access
+rather than CPU power.
+
+5. You (or your sysadmin) should at least make sure that your compute nodes have sufficient memory reserves 
+and proper cache settings in order to keep the prefiltering database file in cache (size: a few GB).
+You can check this by running HHblits on a fresh compute node twice and observing that the 
+second run takes much less time to read the prefiltering database file. But this only solves
+the problem of having to read the prefiltering file every time hhblits is called. But, as discussed,
+the usually more serious bottleneck is reading the a3m and hhm files that passed the prefilter 
+via the file system. These can also be cached, but since each time only a small subset of 
+all files are read, caching is inefficient for these.
 
 
 \section{Brief tutorial to HH-suite tools}
