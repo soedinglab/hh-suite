@@ -596,7 +596,7 @@ void perform_realign(char *dbfiles[], int ndb)
 	}
 
       if (hit_cur.L>Lmax) Lmax=hit_cur.L;
-      if (hit_cur.L>Lmaxmem) {nhits++; continue;}
+      if (hit_cur.L>Lmaxmem) {nhits++; continue;} // skip HMMs that require too much memory to be realigned
 
 //    fprintf(stderr,"hit.name=%-15.15s  hit.index=%-5i hit.ftellpos=%-8i  hit.dbfile=%s\n",hit_cur.name,hit_cur.index,(unsigned int)hit_cur.ftellpos,hit_cur.dbfile);
       if (nhits>=par.premerge || hit_cur.irep>1) // realign the first premerge hits consecutively to query profile
@@ -632,8 +632,8 @@ void perform_realign(char *dbfiles[], int ndb)
       if (v>=1) 
 	{
 	  cerr<<"WARNING: Realigning sequences only up to length "<<Lmaxmem<<"."<<endl;
-	  cerr<<"This is genarally unproboblematic but may lead to slightly sub-optimal alignments for longer sequences."<<endl;
- 	  cerr<<"You can increase available memory using the -maxmem <GB> option (currently "<<par.maxmem<<" GB)."<<endl; // still to be implemented
+	  cerr<<"This is genarally unproboblematic but may lead to slightly sub-optimal alignments for these sequences."<<endl;
+ 	  cerr<<"You can increase available memory using the -maxmem <GB> option (currently "<<par.maxmem<<" GB)."<<endl; 
 	  cerr<<"The maximum length realignable is approximately (maxmem-0.5GB)/query_length/(cpus+1)/24B."<<endl;
 	}
     }
@@ -689,7 +689,8 @@ void perform_realign(char *dbfiles[], int ndb)
 	  if (nhits>=imax(par.b,par.z) && hit_cur.Probab < par.p) break;
 	  if (nhits>=imax(par.b,par.z) && hit_cur.Eval > par.E) continue;
 	  
-	  if (hit_cur.irep>1) continue;               // Align only the best hit of the first par.premerge templates
+	  // if (hit_cur.irep>1) continue; // Align only the best hit of the first par.premerge templates // JS 13 Feb 13: commented out since this could lead to problems with hits that are then not realigned at all and missing posterior probs => remove entirely?
+	 
 	  if (hit_cur.L>Lmaxmem) {nhits++; continue;} //Don't align to long sequences due to memory limit
 	  
 	  // Open HMM database file dbfiles[idb]

@@ -1370,16 +1370,19 @@ void perform_realign(char *dbfiles[], int ndb)
       bin=0;
       nhits=0;
       hitlist.Reset();
+
       while (!hitlist.End() && nhits<par.premerge)
 	{
 	  hit_cur = hitlist.ReadNext();
-	  if (nhits>=imax(par.B,par.Z)) break;
-	  if (nhits>=imax(par.b,par.z) && hit_cur.Probab < par.p) break;
-	  if (nhits>=imax(par.b,par.z) && hit_cur.Eval > par.E) continue;
+	  if (hit_cur.Eval > par.e) // JS: removed bug on 13 Feb 13 due to which premerged hits with E-value > par.e were not realigned
+	    {
+	      if (nhits>=imax(par.B,par.Z)) break;
+	      if (nhits>=imax(par.b,par.z) && hit_cur.Probab < par.p) break;
+	      if (nhits>=imax(par.b,par.z) && hit_cur.Eval > par.E) continue;
+	    }
 	  nhits++;
 
-	  if (hit_cur.L>Lmaxmem) continue;  // Don't align to long sequences due to memory limit
-	  if (hit_cur.Eval > par.e) continue; // Don't align hits with an E-value below the inclusion threshold
+	  if (hit_cur.L>Lmaxmem) continue;  // Don't align too long sequences due to memory limit
 
 	  // Open HMM database file dbfiles[idb]
 	  FILE* dbf;
