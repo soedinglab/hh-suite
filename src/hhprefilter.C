@@ -290,8 +290,8 @@ int swStripedWord_backtrace(int              queryLength,
   __m128i v0x03 = _mm_set1_epi16(0x0100);
   __m128i v0x04 = _mm_set1_epi16(0x1000);
 
-  __m128i* Hmatrix = (__m128i*)memalign(16,dbLength*LQ*sizeof(unsigned short));   // 2GB für 35000*35000 (titin)
-  __m128i* Btmatrix = (__m128i*)memalign(16,dbLength*LQ*sizeof(unsigned short));
+  __m128i* Hmatrix = (__m128i*)memalign(16,dbLength*LQ*sizeof(unsigned short),"Hmatrix used during prefiltering");   // 2GB für 35000*35000 (titin)
+  __m128i* Btmatrix = (__m128i*)memalign(16,dbLength*LQ*sizeof(unsigned short),"Btmatrix used during prefiltering");
     
   __m128i* Hmatrix_it = Hmatrix;
   __m128i* Btmatrix_it = Btmatrix;
@@ -815,10 +815,10 @@ void init_prefilter()
 	    
   if (v>=2) cout<<"Reading in "<<par.dbsize<<" column state sequences with a total of "<<LDB<<" residues"<<endl;
 
-  X = (unsigned char*)memalign(16,LDB*sizeof(unsigned char));                     // database string (concatenate all DB-seqs)
-  first = (unsigned char**)memalign(16,(par.dbsize+2)*sizeof(unsigned char*));    // first characters of db sequences. Was (par.dbsize*2). Why??
-  length = (int*)memalign(16,(par.dbsize+2)*sizeof(int));                         // lengths of db sequences Was (par.dbsize*2). Why??
-  dbnames = new char*[par.dbsize+2];                                              // names of db sequences   Was (par.dbsize*2). Why??
+  X = (unsigned char*)memalign(16,LDB*sizeof(unsigned char),"column state db sequence during prefiltering"); // database string (concatenate all DB-seqs)
+  first = (unsigned char**)memalign(16,(par.dbsize+2)*sizeof(unsigned char*),"array of start positions of cs sequences during prefiltering"); // pos of first characters of db sequences. JS 06/2012: Was (par.dbsize*2). Why??
+  length = (int*)memalign(16,(par.dbsize+2)*sizeof(int),"array of lengths of cs sequences during prefiltering");  // lengths of db sequences. JS: Was (par.dbsize*2). Why??
+  dbnames = new char*[par.dbsize+2]; // names of db sequences. JS:Was (par.dbsize*2). Why??
 
   /////////////////////////////////////////
   // Read in database
@@ -903,7 +903,7 @@ void stripe_query_profile()
   // Build query profile with 219 column states
   query_profile = new float*[LQ+1];
   for (i=0; i<LQ+1; ++i) 
-    query_profile[i]=(float*) memalign(16,NUMCOLSTATES*sizeof(float));
+    query_profile[i]=(float*) memalign(16,NUMCOLSTATES*sizeof(float),"the query profile during prefiltering");
  
   const cs::ContextLibrary<cs::AA>& lib = *cs_lib;
 
@@ -919,7 +919,7 @@ void stripe_query_profile()
       
   /////////////////////////////////////////
   // Stripe query profile with chars
-  qc = (unsigned char*)memalign(16,(NUMCOLSTATES+1)*(LQ+15)*sizeof(unsigned char));   // query profile (states + 1 because of ANY char)
+  qc = (unsigned char*)memalign(16,(NUMCOLSTATES+1)*(LQ+15)*sizeof(unsigned char),"the striped query profile during prefiltering");   // query profile (states + 1 because of ANY char)
   W = (LQ+15) / 16;   // band width = hochgerundetes LQ/16
   
   for (a=0; a < NUMCOLSTATES; ++a)  
@@ -964,7 +964,7 @@ void stripe_query_profile()
   
   //////////////////////////////////////////////+
   // Stripe query profile with shorts
-  qw = (unsigned short*)memalign(16,(NUMCOLSTATES+1)*(LQ+7)*sizeof(unsigned short));   // query profile (states + 1 because of ANY char)
+  qw = (unsigned short*)memalign(16,(NUMCOLSTATES+1)*(LQ+7)*sizeof(unsigned short),"the striped 2B query profile during prefiltering");   // query profile (states + 1 because of ANY char)
   Ww = (LQ+7) / 8;
   
   /////////////////////////////////////////
@@ -1042,7 +1042,7 @@ void prefilter_db()
   int* prefiltered_hits = new int[par.dbsize+1];
   int* backtrace_hits = new int[par.maxnumdb+1];
 
-  __m128i** workspace = new(__m128i*[cpu]);
+  __m128i** workspace = new(__m128i*[threads]);
 
   int score;
   double evalue;
@@ -1057,8 +1057,8 @@ void prefilter_db()
 
   if (print_elapsed) ElapsedTimeSinceLastCall("(init prefiltering)");
 
-  for (int i = 0; i < cpu; i++)
-    workspace[i] = (__m128i*)memalign(16,3*(LQ+15)*sizeof(char));
+  for (int i = 0; i < threads; i++)
+    workspace[i] = (__m128i*)memalign(16,3*(LQ+15)*sizeof(char),"the dynamic programming workspace during prefiltering");
   
 #pragma omp parallel for schedule(static) private(score, thread_id)
   for (int n = 0; n < num_dbs; n++)     // Loop over all database sequences
@@ -1166,9 +1166,9 @@ void prefilter_db()
   if (block_filter)
     {
       // Run SW with backtrace
-      for (int i = 0; i < cpu; i++) {
+      for (int i = 0; i < threads; i++) {
 	free(workspace[i]);
-	workspace[i] = (__m128i*)memalign(16,3*(LQ+7)*sizeof(short));
+	workspace[i] = (__m128i*)memalign(16,3*(LQ+7)*sizeof(short),"the dynamic programming workspace during prefiltering");
       }
       __m128i *qw_it = (__m128i*) qw;
       
@@ -1218,7 +1218,7 @@ void prefilter_db()
 
   // Free memory
   free(qc);
-  for (int i = 0; i < cpu; i++)
+  for (int i = 0; i < threads; i++)
     free(workspace[i]);
   delete[] workspace;
   delete[] prefiltered_hits;

@@ -2,7 +2,7 @@
 # pdbfilter.pl - Read pdb or SCOP sequences from infile and write representative set of sequences to outfile
 
 #
-#     HHsuite version 2.0.16 (April 2013)
+#     HHsuite version 2.0.16 (February 2013)
 #
 #     Reference: 
 #     Remmert M., Biegert A., Hauser A., and Soding J.

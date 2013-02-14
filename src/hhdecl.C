@@ -9,7 +9,7 @@
 //// Constants
 /////////////////////////////////////////////////////////////////////////////////////
 
-EXTERN const char VERSION_AND_DATE[]="version 2.0.15 (June 2012)";
+EXTERN const char VERSION_AND_DATE[]="version 2.0.16-pre (February 2013)";
 EXTERN const char REFERENCE[]="Remmert M, Biegert A, Hauser A, and Soding J.\nHHblits: Lightning-fast iterative protein sequence searching by HMM-HMM alignment.\nNat. Methods 9:173-175 (2011).\n";
 EXTERN const char COPYRIGHT[]="(C) Johannes Soeding, Michael Remmert, Andreas Biegert, Andreas Hauser\n";
 EXTERN const int MAXSEQ=65535; //max number of sequences in input alignment (must be <~30000 on cluster nodes??)
@@ -390,7 +390,7 @@ void Parameters::SetDefaults()
   z=10;                    // min number of lines in hit list
   Z=500;                   // max number of lines in hit list
   e=1e-3f;                 // maximum E-value for inclusion in output alignment, output HMM, and PSI-BLAST checkpoint model
-  realign_max=100000;      // Maximum number of HMM hits to realign. JS 14 Feb 13: increased from 1000
+  realign_max=2000;        // Maximum number of HMM hits to realign // JS 14 Feb 13: increased from 2000 
   maxmem = 3.0;            // 3GB
   showcons=1;              // show consensus sequence
   showdssp=1;              // show predicted secondary structure ss_dssp

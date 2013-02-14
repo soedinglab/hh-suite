@@ -171,8 +171,6 @@ char input_format = 0;                  // Set to 1 if input in HMMER format (ha
 
 float neffmax = 10;                     // Break if Neff > Neffmax
 
-int cpu = 2;                            // default: use 2 cores
-
 char config_file[NAMELEN];
 char infile[NAMELEN];
 char alis_basename[NAMELEN];
@@ -210,7 +208,7 @@ Hash<char>* premerged_hits;
 const int MAXTHREADS=256; // maximum number of threads (i.e. CPUs) for parallel computation
 const int MAXBINS=384;    // maximum number of bins (positions in thread queue)
 enum bin_states {FREE=0, SUBMITTED=1, RUNNING=2};
-int threads=0;            // number of threads (apart from the main thread which reads from the databases file) 0:no multithreading
+int threads=2;            // number of compute pthreads during Viterbi and Realign (apart from the main thread which reads from db file) and # OpenMP threads; 0:no multithreading
 int bins;                 // number of bins; jobs gets allocated to a FREE bin were they are waiting for execution by a thread
 char bin_status[MAXBINS]; // The status for each bin is FREE, SUBMITTED, or RUNNING
 int jobs_running;         // number of active jobs, i.e. number of bins set to RUNNING
@@ -398,7 +396,7 @@ void help(char all=0)
   printf(" -neffmax ]1,20] skip further search iterations when diversity Neff of query MSA \n");
   printf("                becomes larger than neffmax (default=%.1f)\n",neffmax); 
 #ifdef PTHREAD
-  printf(" -cpu <int>     number of CPUs to use (for shared memory SMPs) (default=%i)      \n",cpu);
+  printf(" -cpu <int>     number of CPUs to use (for shared memory SMPs) (default=%i)      \n",threads);
 #endif
   if (all) {
   printf(" -scores <file> write scores for all pairwise comparisions to file               \n");
@@ -643,7 +641,7 @@ void help(char all=0)
       else if (!strcmp(argv[i],"-shift") && (i<argc-1)) par.shift=atof(argv[++i]);
       else if ((!strcmp(argv[i],"-mact") || !strcmp(argv[i],"-mapt")) && (i<argc-1)) par.mact=atof(argv[++i]);
       else if (!strcmp(argv[i],"-scwin") && (i<argc-1)) {par.columnscore=5; par.half_window_size_local_aa_bg_freqs = imax(1,atoi(argv[++i]));}
-      else if (!strncmp(argv[i],"-cpu",4) && (i<argc-1)) { threads=atoi(argv[++i]); cpu = threads;}
+      else if (!strncmp(argv[i],"-cpu",4) && (i<argc-1)) { threads=atoi(argv[++i]);}
       else if (!strcmp(argv[i],"-maxmem") && (i<argc-1)) {par.maxmem=atof(argv[++i]);}
       else if (!strncmp(argv[i],"-premerge",9) && (i<argc-1)) par.premerge=atoi(argv[++i]);
       else if (!strcmp(argv[i],"-nocontxt")) par.nocontxt=1;
@@ -2042,8 +2040,7 @@ int main(int argc, char **argv)
 
   // Set OpenMP threads
 #ifdef _OPENMP
-  cpu = imin(cpu,omp_get_max_threads());
-  omp_set_num_threads(cpu);
+ omp_set_num_threads(threads);
 #endif
   
   // Check option compatibilities
