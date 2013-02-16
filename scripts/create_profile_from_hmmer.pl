@@ -3,7 +3,7 @@
 # create_profile_from_hmmer.pl 
 # Create a profile (.prf) from a given HMMER/HMMER3 file
 
-#     HHsuite version 2.0.15 (June 2012)
+#     HHsuite version 2.0.16 (January 2013)
 #
 #     Reference: 
 #     Remmert M., Biegert A., Hauser A., and Soding J.

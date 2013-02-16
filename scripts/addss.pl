@@ -4,14 +4,15 @@
 # Add PSIPRED secondary structure prediction (and DSSP annotation) to an MSA or HMMER file.
 # Output format is A3M (for input alignments) or HMMER (see User Guide).
 
-# (C) Johannes Soeding and Michael Remmert, 2012
 
-#     HHsuite version 2.0.15 (June 2012)
+#     HHsuite version 2.0.16 (January 2013)
 #
 #     Reference: 
 #     Remmert M., Biegert A., Hauser A., and Soding J.
 #     HHblits: Lightning-fast iterative protein sequence searching by HMM-HMM alignment.
 #     Nat. Methods, epub Dec 25, doi: 10.1038/NMETH.1818 (2011).
+
+#     (C) Johannes Soeding and Michael Remmert, 2012
 
 #     This program is free software: you can redistribute it and/or modify
 #     it under the terms of the GNU General Public License as published by
@@ -526,7 +527,7 @@ sub AppendDsspSequences() {
     if (! open (DSSPFILE, "<$dsspfile")) {
 	if ($v>=3) {printf(STDERR "Warning in $program: Cannot open $dsspfile!\n");} 
 	$pdbfile = &OpenPDBfile($pdbcode);
-	if ($pdbfile eq "") {return;}
+	if ($pdbfile eq "") {return 1;}
 
 	system("$dssp $pdbfile $tmpfile.dssp 2> /dev/null");
 	system("cp $tmpfile.dssp $dsspfile 2> /dev/null");

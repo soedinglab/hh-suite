@@ -1802,18 +1802,19 @@ void HMM::AddAminoAcidPseudocounts(char pcm, float pca, float pcb, float pcc)
 // Divide aa probabilties by square root of locally averaged background frequencies
 // !!!!! ATTENTION!!!!!!!  after this p is not the same as after adding pseudocounts !!!
 /////////////////////////////////////////////////////////////////////////////////////
-void HMM::DivideBySqrtOfLocalBackgroundFreqs(int D) // 2*D+1 is window size
+void HMM::DivideBySqrtOfLocalBackgroundFreqs(const int D) // 2*D+1 is window size
 {
   if (divided_by_local_bg_freqs) {cerr<<"WARNING: already divided probs by local aa frequencies!\n"; return;}
   divided_by_local_bg_freqs=1;
 
   int i;                     // query and template match state indices
   int a;                     // amino acid index
-  float fac=1.0/(2*D+1);     // 1 / window size 
+  const float pc = 10.0;     // amount of pseudocounts on local amino acid frequencies
+  float fac=1.0/(2.0*(float) D + 1.0 + pc );  // 1 / window size 
 
   float** pnul = new float*[L+1];  // null model probabilities   
   for (i=0; i<=L; ++i) pnul[i] = new(float[NAA]);
-  for (a=0; a<NAA; ++a) pnul[0][a] = 0.0;
+  for (a=0; a<NAA; ++a) pnul[0][a] = pc*pb[a];
 
   // HMM shorter than window length? => average over entire length L
   if (L <= 2*D+1) 
@@ -1824,7 +1825,7 @@ void HMM::DivideBySqrtOfLocalBackgroundFreqs(int D) // 2*D+1 is window size
       for (i=1; i<=L; ++i)
 	for (a=0; a<NAA; ++a)
 	  pnul[i][a] = pnul[0][a];
-      fac=1.0/L;
+      fac=1.0/((float) L + pc);
     }
   // HMM longer than window length? => average over window size 2*D+1
   else 
@@ -2083,7 +2084,7 @@ void HMM::WriteToFile(char* outfile)
     } // end for(i)-loop for printing HMM columns
 
   fprintf(outf,"//\n");
-  if (strcmp(outfile,"stdout")) fclose(outf);
+  if(strcmp(outfile,"stdout")) fclose(outf);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////

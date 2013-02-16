@@ -72,7 +72,7 @@ public:
     void NoAminoAcidPseudocounts() {for(int i=1; i<=L; i++) for(int a=0; a<20; a++) p[i][a]=f[i][a];};
 
     // Divide aa probabilties by square root of locally averaged background frequencies
-    void DivideBySqrtOfLocalBackgroundFreqs(int D);
+    void DivideBySqrtOfLocalBackgroundFreqs(const int D);
 
     // Factor Null model into HMM t
     void IncludeNullModelInHMM(HMM* q, HMM* t, int columnscore=par.columnscore);
