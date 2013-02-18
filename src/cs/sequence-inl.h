@@ -122,10 +122,42 @@ void Sequence<Abc>::Read(FILE* fin) {
         }
     }
     // Read sequence and stop if either a new header or delimiter is found
-    // NOTE: does not work properly with special characters (e.g. cs219)
-    while (fgetline(buffer, kBuffSize, fin) && buffer[0] != '/' && buffer[1] != '/') {
+    while (fgetline(buffer, kBuffSize, fin) && !(buffer[0] == '/' && buffer[1] == '/')) {
         if (strscn(buffer))
             sequence.append(buffer);
+
+        c = getc(fin);
+        if (c == EOF) break;
+        ungetc(c, fin);
+        if (static_cast<char>(c) == '>') break;
+    }
+    Init(sequence, header);
+}
+
+template<>
+void Sequence<AS219>::Read(FILE* fin) {
+    delete [] seq_;
+    const size_t kBuffSize = MB;
+    char buffer[kBuffSize];
+    int c = '\0';
+    std::string header;
+    std::string sequence;
+
+    // Read header
+    while (fgetline(buffer, kBuffSize, fin)) {
+        if (!strscn(buffer)) continue;
+        if (buffer[0] == '>') {
+            header.append(buffer + 1);
+            break;
+        } else {
+            throw Exception("Sequence header does not start with '>'!");
+        }
+    }
+    // Read sequence and stop if either a new header or delimiter is found
+    while (fgets(buffer, kBuffSize, fin) != NULL) {
+        if (strscn(buffer)) {
+            sequence.append(buffer);
+        }
 
         c = getc(fin);
         if (c == EOF) break;

@@ -467,6 +467,11 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline)
           strcpy(fam,name);                      // set family name = Pfam code
         }
     }
+  char* ptr1 = strchr(name, '|');
+  if (ptr1) {
+    char* ptr2 = strchr(++ptr1,'|');
+    if (ptr2) strmcpy(name,ptr1,ptr2-ptr1);
+  }
 
   // Checking for warning messages
   if (v==0) return;

@@ -751,7 +751,7 @@ int ungapped_sse_score(const unsigned char* query_profile,
 
 void make_db_filename(char *filename, const char* ext = NULL) {
   strcpy(filename, db_base);
-  strcat(filename, "_cs219");
+  strcat(filename, "_csint");
   if (ext != NULL) {
     strcat(filename, ext);
   }
@@ -1089,8 +1089,19 @@ void prefilter_db()
       // Add hit to dbfiles
       char name[NAMELEN];
       char db_name[NAMELEN];
-      strcpy(db_name, dbnames[(*it).second]);
-      strcpy(name, db_name);
+      strwrd(name,dbnames[(*it).second]);
+      char* ptr1 = strchr(name,'|');
+      if (ptr1) // found '|' in sequence id? => extract string up to '|'
+      	{
+      	  char* ptr2 = strchr(++ptr1,'|');
+      	  if (ptr2) strmcpy(db_name,ptr1,ptr2-ptr1);
+	  else strcpy(db_name,ptr1);
+      	}
+      else 
+      	strcpy(db_name,name);
+      
+      strcat(db_name,".");
+      strcat(db_name,db_ext);
 
       if (! doubled->Contains(db_name))
 	{

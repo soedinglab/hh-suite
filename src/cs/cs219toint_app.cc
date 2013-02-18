@@ -85,22 +85,21 @@ int CS219toIntApp<Abc>::Run() {
     if (opts_.infile.empty() || opts_.infile.compare("stdin") == 0 || opts_.infile.compare("-") == 0) {
         fin = stdin;
     } else {
-        fin = fopen(opts_.infile.c_str(), "r");
+        fin = fopen(opts_.infile.c_str(), "rb");
         if (!fin)
             throw Exception("Unable to read input file '%s'!", opts_.infile.c_str());
     }
     Sequence<Abc> seq(fin);
-    fclose(fin);
 
     FILE* fout;
     if (opts_.outfile.empty() || opts_.outfile.compare("stdout") == 0) {
         fout = stdout;
     } else {
-        fout = fopen(opts_.outfile.c_str(), "w");
+        fout = fopen(opts_.outfile.c_str(), "wb");
         if (!fout)
             throw Exception("Unable to write to file '%s'!", opts_.outfile.c_str());
     }
-    // fprintf(fout, ">%s\n", seq.header().c_str());
+
     for (size_t i = 0; i < seq.length(); ++i) {
         fprintf(fout, "%c", (char)seq[i]);
     }
