@@ -6,10 +6,15 @@ _______________________________________________________________________________
 
 HH-suite 2.0.16  June 2012
 
-    * cstranslate understand now -i stdin and -o stdout.
+    * cstranslate: Understand now -i stdin and -o stdout.
 
-    * ????
-_______________________________________________________________________________
+    * hhblitsdb.pl: Some help list updates and stdin and stdout fixes.
+                    Added options for adding (-a) and removing (-r) files from the database.
+
+    * hhblits: Fixed -i stdin, -oa3m stdout and -v 0.
+
+    * hhsearch/hhalign: Fixed small bug that removed all sequences from output alignment when trying to use append
+
 
 HH-suite 2.0.15  June 2012
 
