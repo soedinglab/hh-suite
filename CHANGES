@@ -4,13 +4,32 @@ soeding@genzentrum.lmu.de
 
 _______________________________________________________________________________
 
-HH-suite 2.0.16  February 2013
+HH-suite 2.1.0  March 2013
+
+* Introduced a new format for hhblits databases: the prefilter flat files 
+  *.cs219 containing the column-state sequences for prefiltering are replaced
+  by a pair of ffindex files. This leads to ~4 seconds faster execution and 
+  improves scaling of hhblits with the number of cores.
+
+* Increased speed of hhsearch about 8-fold and of HHblits about 1.5-fold by 
+  implementing the HMM-HMM Viterbi alingment in SSE2 SIMD (single input 
+  multiple data) instructions 
+
+* Improved sensitivity and alignment accuracy through introduction of a new,
+  discriminative method to calculate pseudocounts, described in Angermuller C, 
+  Biegert A, and Soding J, Bioinformatics 28: 3240-3247 (2012).
 
 * Added section to hhsuite user guide on 
   - how to modify or extend existing databases
   - how to efficiently run hhblits on a cluster
   - how to visually check multiple sequence alignments
   - troubleshooting
+
+
+
+_______________________________________________________________________________
+
+HH-suite 2.0.16  February 2013
 
 * Added options -i stdin and -o stdout to cstranslate to read from stdin and 
   write to stdout.
@@ -24,7 +43,8 @@ HH-suite 2.0.16  February 2013
   their E-value was above the one given by -e <Evalue>
   
 * Removed bug in filtering with -neff option that led to a single sequence 
-  if -neff target value was within 0.01 of input MSA Neff value 
+  if -neff target value was within 0.01 of input MSA Neff value; sped up 
+  -neff filtering. 
 
 * Removed bug that led to occasional segementation faults with the -atab option
 
