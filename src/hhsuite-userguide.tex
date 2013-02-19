@@ -114,23 +114,19 @@ The HH-suite source code, executable RPM and DPKG packages for most Linux 64 bit
 \begin{verbatim}
   ftp://toolkit.genzentrum.lmu.de/HH-suite/
 \end{verbatim}
-Because hhblits needs a 64 bit system to read files larger than 4 GB (such as the \verb`uniprot20_a3m_db` file), 32 bit precompiled binaries for HHsuite are not available from our website. 
+(such as the \verb`uniprot20_a3m_db` file), 32 bit precompiled binaries for HHsuite are not available from our website. 
 
 \subsection{Supported platforms and hardware requirements} \label{installation}
 
-HH-suite has been extensively tested on Linux, in particular Debian, Ubuntu, Scientific Linux (SL), and Red Hat. We have done limited testing under BSD, MAX OS X, and CygWin. We plan to offer a Windows version compiled under MinGW in the future.
+HHsuite needs a 64 bit system to read files larger than 4 GB. HH-suite has been extensively tested on 64 bit Linux, in particular Debian, Ubuntu, Scientific Linux (SL), and Red Hat. We have done limited testing under BSD, MAX OS X, and CygWin. We plan to offer a 64 bit Windows version compiled under MinGW in the future.
 
-HHs-suite requires at least 4GB of main memory. Memory requirements can be estimated with the following formula:
+HHs-suite typically requires at least 4GB of main memory. Memory requirements can be estimated as follows:
 \begin{equation}
-\textbox{Query\_length} \times max\_db\_seq\_length \times 5B \times (num\_threads+1) \times 5 bytes
-\end{equation{}
-Often, segmentation faults can be caused by too little available memory. HHblits needs memory to read the entire column state file into memory for prefiltering (\verb`*.cs219`). For Viterbi HMM-HMM alignment it needs about Query\_length $\times$ max\_db\_seq\_length $\times$ 5B $\times$ (num\_threads+1) $\times$ 5 bytes. Here, num\_threads is the number of threads specified with option \verb`-cpu <int>`. For realignment, HHblits needs Query\_length $\times$ max\_db\_seq\_length $\times$ 4B $\times$ (num\_threads+1) $\times$ 24 bytes, but the amount of memory for realignment can be limited using the \verb`-maxmem <GB>` option, which will cause the realignment to skip the longest sequences. Under Linux, you can check your memory limit settings using ulimit -a`. Make sure you have at least 4GB per thread. Try 
-\begin{verbatim}
-ulimit -m 4000000 -v 4000000 -s 8192 -f 4000000
-\end{verbatim}
-Also try using \verb`-cpu 1 -maxmex 2` to reduce memory requirements. If it still does not work, follow the tipps in subsection \ref{report-bug} to report your problems to us.
+\textrm{Memory req.} = \textrm{Query\_length} \times \textrm{max\_db\_seq\_length} \times (\textrm{num\_threads}+1) \times 5 \textrm{B} + 1 \textrm{GB} 
+\end{equation}
+Here, num\_threads is the number of threads specified with option \verb`-cpu <int>`.
 
-
+Due to the high number of random file accesses by HHblits, it is important for good efficiency that the databases used by HHblits are placed in RAM disk or on a local solid state drive (SSD). See section \ref{efficiency} for details.
 
 
 \subsubsection*{Support for SSE2 instruction set} 
@@ -347,7 +343,7 @@ Uniprot20 and nr20 are obtained by clustering UniProt \cite{uniprot:2010} and th
 
 In the pdb70 and scop70 databases, each master sequence from the original sequence database is represented by an MSA. The MSAs are built by HHblits searches starting with the master sequence as a query. The MSAs and HMMs typically carry the name and annotation of the master sequence. In contrast to the clusters in the uniprot20 or nr20 databases, sequences can in principle occur in several MSAs. These homologous sequences merely serve to contribute evolutionary information to the master sequence. As the sequences in this type of database do not cover the entire sequence space, they are not suited for iterative searches. See  section \ref{building_dbs} for how to build your own type 2 databases.
 
-{\bf Note on efficiency}: Always try to keep the HH-suite databases on a local disk drive of the computer running HHblits, if possible. Otherwise file access times on your (shared) remote file server might limit the performance of HHblits. For explanations, see section \ref{efficiency}.
+{\bf Note on efficiency}: Always try to keep the HH-suite databases on a local SSD drive of the computer running HHblits, if possible. Otherwise file access times on your (shared) remote file server of local HD drive might limit the performance of HHblits. For explanations, see section \ref{efficiency}.
 
 
 
@@ -404,7 +400,7 @@ For the other databases, different copy right regulations may apply.
 Please refer to the databases' original web sites for the copy right notes and 
 references to cite.
 
-\subsection{How to run HH-suite efficiently on a computer cluster} \label{efficiency}
+\subsection{Running HHblits efficiently on a computer cluster} \label{efficiency}
 
 When HHblits runs on many cores of a compute cluster and accesses the HH-suite database(s) 
 via a central file system, hard disk random access times can quickly become limiting instead 
@@ -732,7 +728,7 @@ $ hhblitsdb.pl -r dbs/uniprot20 -f 'mydb2/*.hhm mydb2/*.a3m'
 \end{verbatim}
 Don't forget to remove both a3m and hhm files from the database. The cs files will be removed automatically.
 
-When the HH-suite database to modify is not too large (such as the PDB, SCOP, Pfam etc.), you might also extract all files into a directory:
+hen the HH-suite database to modify is not too large (such as the PDB, SCOP, Pfam etc.), you might also extract all files into a directory:
 \begin{verbatim}
 $ ffindex_unpack <db>_a3m_db  <db>_a3m_db.index tmp/mydb/
 $ ffindex_unpack <db>_hhm_db  <db>_hhm_db.index tmp/mydb/ 
@@ -922,7 +918,7 @@ Often, segmentation faults can be caused by too little available memory. HHblits
 \begin{verbatim}
 ulimit -m 4000000 -v 4000000 -s 8192 -f 4000000
 \end{verbatim}
-Also try using \verb`-cpu 1 -maxmex 2` to reduce memory requirements. If it still does not work, follow the tipps in subsection \ref{report-bug} to report your problems to us.
+Also try using \verb`-cpu 1 -maxmem 2` to reduce memory requirements. If it still does not work, follow the tipps in subsection \ref{report-bug} to report your problems to us.
 
 
 

@@ -20,8 +20,8 @@ HH-suite 2.1.0  March 2013
   Biegert A, and Soding J, Bioinformatics 28: 3240-3247 (2012).
 
 * Added section to hhsuite user guide on 
+  - how to efficiently run hhblits, in particular on a cluster
   - how to modify or extend existing databases
-  - how to efficiently run hhblits on a cluster
   - how to visually check multiple sequence alignments
   - troubleshooting
 
