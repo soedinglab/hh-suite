@@ -514,11 +514,7 @@ void Parameters::SetDefaults()
   Ndiff_db=Ndiff;        
 
   // Initialize strings
-<<<<<<< HEAD
   strcpy(infile,""); // was reverted back from 'strcpy(infile,"stdin");' (to show help list when no options are given)
-=======
-  strcpy(infile,"");
->>>>>>> 9180f415ebc66fb12063b957a653482185d4f608
   strcpy(outfile,"");
   strcpy(pairwisealisfile,"");
   strcpy(scorefile,"");
