@@ -1306,7 +1306,7 @@ int main(int argc, char **argv)
       // Print out dot plot for scores averaged over window of length W
 //      printf("x=%i   y=%i,  %s\n",dotscale * t->L,dotscale * q->L,par.pngfile);
 
-      pngwriter png(dotscale * t->L, dotscale * q->L , 1 ,pngfile);
+      pngwriter png(dotscale * t->L, dotscale * q->L , 1 ,pngfile);  // pngwriter: open png plot
       if (v>=2) cout<<"Writing dot plot to "<<pngfile<<"\n";
       for(i=1; i<=q->L; i++)
 	for (j=1; j<=t->L; j++) // Loop through template positions j
@@ -1355,11 +1355,11 @@ int main(int argc, char **argv)
 	    for (int ii=dotscale*(q->L-i)+1; ii<=dotscale*(q->L-i+1); ii++)
 	      for (int jj=dotscale*(j-1)+1; jj<=dotscale*j; jj++)
 		{
-		  png.plot(jj,ii,r,g,b);
+		  png.plot(jj,ii,r,g,b); // pngwriter: write to png plot
 		}
 	  }
 
-      png.close();
+      png.close();  // pngwriter: close png plot
       for (i=0; i<q->L+2; i++) delete[] s[i];
       delete[] s;
 

@@ -51,6 +51,7 @@
 #include <errno.h>    // perror()
 #include <cassert>
 #include <stdexcept>
+#include <unistd.h>   // access()
 
 #ifdef PTHREAD
 #include <pthread.h>  // POSIX pthread functions and data structures

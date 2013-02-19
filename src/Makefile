@@ -20,7 +20,7 @@ ifdef ICC
   OBJECT_LIBS = -openmp
 else # ifndef ICC
   CXX = g++
-  CXXFLAGS = -O3 -Wall -Wno-deprecated -Wno-char-subscripts -fno-strict-aliasing -I$(CS_DIR) $(BITS_FLAG) -I$(FFINDEX_DIR)
+  CXXFLAGS = -O3 -Wall -Wno-deprecated -Wno-char-subscripts -fno-strict-aliasing -I$(CS_DIR) $(BITS_FLAG) -I$(FFINDEX_DIR) -fopenmp
   HHSEARCH_LIBS = -lpthread
   HHBLITS_LIBS = -lpthread
   HHALIGN_LIBS = 

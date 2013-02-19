@@ -48,8 +48,20 @@ HH-suite 2.0.16  February 2013
 
 * Removed bug that led to occasional segementation faults with the -atab option
 
+<<<<<<< HEAD
 
 _______________________________________________________________________________
+=======
+    * cstranslate: Understand now -i stdin and -o stdout.
+
+    * hhblitsdb.pl: Some help list updates and stdin and stdout fixes.
+                    Added options for adding (-a) and removing (-r) files from the database.
+
+    * hhblits: Fixed -i stdin, -oa3m stdout and -v 0.
+
+    * hhsearch/hhalign: Fixed small bug that removed all sequences from output alignment when trying to use append
+
+>>>>>>> 9180f415ebc66fb12063b957a653482185d4f608
 
 HH-suite 2.0.15  June 2012
 
