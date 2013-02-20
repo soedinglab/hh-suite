@@ -61,7 +61,7 @@ inline double Pvalue(double x, double a[]);
 inline double Pvalue(float x, float lamda, float mu);
 inline double logPvalue(float x, float lamda, float mu);
 inline double logPvalue(float x, double a[]);
-inline double Probab(Hit& hit);
+inline double Probab();
 #ifdef HH_SSE2
 inline __m128 _mm_flog2_ps(__m128 X); // Fast SSE2 log2 for four floats
 #endif
@@ -2029,14 +2029,14 @@ inline double logPvalue(float x, double a[])
 
 // Calculate probability of true positive : p_TP(score)/( p_TP(score)+p_FP(score) )
 // TP: same superfamily OR MAXSUB score >=0.1
-inline double Probab(Hit& hit)
+inline double Hit::CalcProbab()
 {
-  double s=-hit.score_aass;
+  double s=-score_aass;
   double t;
   if (s>200) return 100.0; 
   if (par.loc) 
     {
-      if (par.ssm && (hit.ssm1 || hit.ssm2) && par.ssw>0) 
+      if (par.ssm && (ssm1 || ssm2) && par.ssw>0) 
 	{
 	  // local with SS
 	  const double a=sqrt(6000.0);
@@ -2081,13 +2081,13 @@ inline double Probab(Hit& hit)
   return 100.0/(1.0+t*t); // ??? JS Jul'12
 }
 
-// Calculate Evalue, logEvalue, score_aass, score_sort from hit.logPval 
-inline double EvalScoreProbab(Hit& hit)
+// Calculate Evalue, score_aass, Proba from logPval and score_ss
+inline void Hit::CalcEvalScoreProbab(int N_searched, float lamda)
 {
-  hit.Eval    = exp(hit.logPval+log(N_searched));
-  hit.logEval = hit.logPval+log(N_searched);
+  Eval    = exp(logPval+log(N_searched));
+  logEval = logPval+log(N_searched);
   // P-value = 1 - exp(-exp(-lamda*(Saa-mu))) => -lamda*(Saa-mu) = log(-log(1-Pvalue))
-  hit.score_aass = (hit.logPval<-10.0? hit.logPval : log(-log(1-hit.Pval)) )/0.45 - fmin(lamda*hit.score_ss,fmax(0.0,0.2*(hit.score-8.0)))/0.45 - 3.0;
-  hit.score_sort = hit.score_aass;
-  hit.Probab = Probab(hit);
+  score_aass = (logPval<-10.0? logPval : log(-log(1-Pval)) )/0.45 - fmin(lamda*score_ss,fmax(0.0,0.2*(score-8.0)))/0.45 - 3.0;
+  score_sort = score_aass;
+  Probab = CalcProbab();
 }

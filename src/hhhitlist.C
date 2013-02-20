@@ -666,7 +666,8 @@ void HitList::MaxLikelihoodEVD(HMM* q, int nbest)
       hit = ReadNext();
       hit.logPval = logPvalue(hit.score,q->lamda,q->mu);
       hit.Pval    = Pvalue(hit.score,q->lamda,q->mu);
-      EvalScoreProbab(hit);
+      hit.CalcEvalScoreProbab(N_searched,q->lamda);  // calculate Evalue, score_aass, Proba from logPval and score_ss
+
       Overwrite(hit);
     }
 }
@@ -838,7 +839,8 @@ void HitList::CalculatePvalues(HMM* q)
 	}
       hit.logPval = logPvalue(hit.score,lamda,mu);
       hit.Pval    = Pvalue(hit.score,lamda,mu);
-      EvalScoreProbab(hit);
+      hit.CalcEvalScoreProbab(N_searched,lamda); // calculate Evalue, score_aass, Proba from logPval and score_ss
+
       Overwrite(hit);
 
     }
@@ -895,7 +897,8 @@ void HitList::GetPvalsFromCalibration(HMM* q)
 	  if (v>=5) printf("Score: %7.1f  lamda: %7.1f  mu: %7.1f  P-values:  query-calibrated: %8.2G   template-calibrated: %8.2G   geometric mean: %8.2G\n",hit.score,q->lamda,q->mu,Pvalue(hit.score,q->lamda,q->mu),hit.Pvalt,hit.Pval);
 	}
 
-      EvalScoreProbab(hit);
+      hit.CalcEvalScoreProbab(N_searched,q->lamda); // calculate Evalue, score_aass, Proba from logPval and score_ss
+
       Overwrite(hit);
     }
   SortList();

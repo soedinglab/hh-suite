@@ -139,6 +139,8 @@ class Hit
   // Comparison (used to sort list of hits)
   int operator<(const Hit& hit2)  {return score_sort<hit2.score_sort;}
 
+  // Calculate Evalue, score_aass, Proba from logPval and score_ss
+  void CalcEvalScoreProbab(int N_searched, float lamda);
 
   /* // Merge HMM with next aligned HMM   */
   /* void MergeHMM(HMM* Q, HMM* t, float wk[]); */
@@ -165,6 +167,8 @@ private:
 
   void InitializeBacktrace(HMM* q, HMM* t);
   void InitializeForAlignment(HMM* q, HMM* t, bool vit=true);
+  double CalcProbab();
+
 };
 
 
@@ -172,7 +176,6 @@ double Pvalue(double x, double a[]);
 double Pvalue(float x, float lamda, float mu);
 double logPvalue(float x, float lamda, float mu);
 double logPvalue(float x, double a[]);
-double Probab(Hit& hit);
 
 
 
