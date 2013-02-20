@@ -664,17 +664,10 @@ void HitList::MaxLikelihoodEVD(HMM* q, int nbest)
   while (!End()) 
     {
       hit = ReadNext();
-      
-      // Calculate total score in raw score units: P-value = 1- exp(-exp(-lamda*(Saa-mu))) 
-      hit.logPval = logPvalue(hit.score,vertex);
-      hit.Pval=Pvalue(hit.score,vertex);
-      hit.Eval=exp(hit.logPval+log(N_searched));
-      hit.logEval = hit.logPval+log(N_searched);
-//    hit.score_aass = hit.logPval/0.45-3.0 - hit.score_ss;  // median(lamda)~0.45, median(mu)~4.0 in EVDs for scop20.1.63 HMMs
-      hit.score_aass = -q->lamda*(hit.score-q->mu)/0.45-3.0 - fmin(hit.score_ss,fmax(0.0,0.5*hit.score-5.0)); // median(lamda)~0.45, median(mu)~3.0 in EVDs for scop20.1.63 HMMs
-      hit.Probab = Probab(hit);
-      hit.score_sort = hit.score_aass;
-      Overwrite(hit);                     // copy hit object into current position of hitlist
+      hit.logPval = logPvalue(hit.score,q->lamda,q->mu);
+      hit.Pval    = Pvalue(hit.score,q->lamda,q->mu);
+      EvalScoreProbab(hit);
+      Overwrite(hit);
     }
 }
 
@@ -845,14 +838,9 @@ void HitList::CalculatePvalues(HMM* q)
 	}
       hit.logPval = logPvalue(hit.score,lamda,mu);
       hit.Pval    = Pvalue(hit.score,lamda,mu);
-      hit.Eval=exp(hit.logPval+log(N_searched));
-      hit.logEval = hit.logPval+log(N_searched);
-//    hit.score_aass = hit.logPval/LAMDA-3.0 - hit.score_ss;  // median(lamda)~0.45, median(mu)~3.0 in EVDs for scop20.1.63 HMMs
-// P-value = 1- exp(-exp(-lamda*(Saa-mu))) => -lamda*(Saa-mu) = log(-log(1-Pvalue))
-      hit.score_aass = (hit.logPval<-10.0? hit.logPval : log(-log(1-hit.Pval)) )/0.45 - fmin(lamda*hit.score_ss,fmax(0.0,0.2*(hit.score-8.0)))/0.45 - 3.0;
-      hit.score_sort = hit.score_aass;
-      hit.Probab = Probab(hit);
+      EvalScoreProbab(hit);
       Overwrite(hit);
+
     }
   SortList();
   Reset();
@@ -907,13 +895,7 @@ void HitList::GetPvalsFromCalibration(HMM* q)
 	  if (v>=5) printf("Score: %7.1f  lamda: %7.1f  mu: %7.1f  P-values:  query-calibrated: %8.2G   template-calibrated: %8.2G   geometric mean: %8.2G\n",hit.score,q->lamda,q->mu,Pvalue(hit.score,q->lamda,q->mu),hit.Pvalt,hit.Pval);
 	}
 
-      hit.Eval=exp(hit.logPval+log(N_searched));
-      hit.logEval = hit.logPval+log(N_searched);
-//    hit.score_aass = hit.logPval/LAMDA-3.0 - hit.score_ss;  // median(lamda)~0.45, median(mu)~3.0 in EVDs for scop20.1.63 HMMs
-      // P-value = 1- exp(-exp(-lamda*(Saa-mu))) => -lamda*(Saa-mu) = log(-log(1-Pvalue))
-      hit.score_aass = (hit.logPval<-10.0? hit.logPval : log(-log(1-hit.Pval)) ) / 0.45-3.0 - fmin(hit.score_ss,fmax(0.0,0.5*hit.score-5.0));
-      hit.score_sort = hit.score_aass;
-      hit.Probab = Probab(hit);
+      EvalScoreProbab(hit);
       Overwrite(hit);
     }
   SortList();

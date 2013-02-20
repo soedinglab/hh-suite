@@ -2081,3 +2081,13 @@ inline double Probab(Hit& hit)
   return 100.0/(1.0+t*t); // ??? JS Jul'12
 }
 
+// Calculate Evalue, logEvalue, score_aass, score_sort from hit.logPval 
+inline double EvalScoreProbab(Hit& hit)
+{
+  hit.Eval    = exp(hit.logPval+log(N_searched));
+  hit.logEval = hit.logPval+log(N_searched);
+  // P-value = 1 - exp(-exp(-lamda*(Saa-mu))) => -lamda*(Saa-mu) = log(-log(1-Pvalue))
+  hit.score_aass = (hit.logPval<-10.0? hit.logPval : log(-log(1-hit.Pval)) )/0.45 - fmin(lamda*hit.score_ss,fmax(0.0,0.2*(hit.score-8.0)))/0.45 - 3.0;
+  hit.score_sort = hit.score_aass;
+  hit.Probab = Probab(hit);
+}

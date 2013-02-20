@@ -1266,7 +1266,7 @@ int main(int argc, char **argv)
 	    }
 	} // end if (dotali) 
       
-      // Write to dmapfile? (will contain regions aroun alignment traces (clickable in web browser))
+      // Write to dmapfile? (will contain regions around alignment traces (clickable in web browser))
       if (dmapfile) 
 	{
 	  if (v>=2) printf("Printing self-alignment coordinates in png plot to %s\n",dmapfile);
