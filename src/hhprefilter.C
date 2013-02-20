@@ -773,6 +773,7 @@ void extract_name_from_index(char* name, const char* index_name) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void init_no_prefiltering()
 {
+  exit(0);
   char db_index_filename[NAMELEN];
   make_db_filename(db_index_filename, ".ffindex");
   FILE* db_index_file = fopen(db_index_filename, "r");
@@ -1081,25 +1082,18 @@ void prefilter_db()
 
   vector<pair<double, int> >::iterator it;
   count_dbs = 0;
+  printf("Size previous_hits: %d\n", previous_hits->Size());
   
   for ( it=hits.begin() ; it < hits.end(); it++ )
     {
+      printf("%d\n", (*it).second);
       backtrace_hits[count_dbs++] = (*it).second;
 
       // Add hit to dbfiles
       char name[NAMELEN];
+      strcpy(name, dbnames[(*it).second]);
       char db_name[NAMELEN];
-      strwrd(name,dbnames[(*it).second]);
-      char* ptr1 = strchr(name,'|');
-      if (ptr1) // found '|' in sequence id? => extract string up to '|'
-      	{
-      	  char* ptr2 = strchr(++ptr1,'|');
-      	  if (ptr2) strmcpy(db_name,ptr1,ptr2-ptr1);
-	  else strcpy(db_name,ptr1);
-      	}
-      else 
-      	strcpy(db_name,name);
-      
+      strcpy(db_name, name);
       strcat(db_name,".");
       strcat(db_name,db_ext);
 
@@ -1131,9 +1125,19 @@ void prefilter_db()
 	}
     }
 
+  printf("dbfiles_old: %d\n", ndb_old);
+  for (int i = 0; i < ndb_old; ++i) {
+    printf("%s\n", dbfiles_old[i]);
+  }
+
+  printf("dbfiles_new: %d\n", ndb_new);
+  for (int i = 0; i < ndb_new; ++i) {
+    printf("%s\n", dbfiles_new[i]);
+  }
+
   if (print_elapsed) ElapsedTimeSinceLastCall("(SW prefilter)");
 
-  if (block_filter)
+  if (0 && block_filter)
     {
       // Run SW with backtrace
       for (int i = 0; i < cpu; i++) {
@@ -1160,7 +1164,7 @@ void prefilter_db()
 	      if (num_res > 0) 
 		{
 		  char name[NAMELEN];
-		  strwrd(name,dbnames[backtrace_hits[n]]);
+		  strcpy(name,dbnames[backtrace_hits[n]]);
 		  block = new(int[400]);
 		  block_count = 0;
 		  for (int a = 0; a < num_res; a++) 

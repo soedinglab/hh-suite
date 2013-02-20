@@ -1645,15 +1645,15 @@ void Hit::InitializeForAlignment(HMM* q, HMM* t, bool vit)
     }
   else
     {
-      if (par.block_shading && !strcmp(par.block_shading_mode,"tube") && par.block_shading->Contains(t->name))
+      if (par.block_shading && !strcmp(par.block_shading_mode,"tube") && par.block_shading->Contains(t->file))
 	{
 	  // Deactivate all cells in dynamic programming matrix
 	  for (i=1; i<=q->L; ++i) 
 	    for (j=1; j<=t->L; ++j) 
 	      cell_off[i][j]=1;   
 
-	  int* tmp = par.block_shading->Show(t->name);
-	  int counter = par.block_shading_counter->Show(t->name);
+	  int* tmp = par.block_shading->Show(t->file);
+	  int counter = par.block_shading_counter->Show(t->file);
 
 	  //printf("Hit %s:\n",t->name);
 	  
@@ -1745,10 +1745,10 @@ void Hit::InitializeForAlignment(HMM* q, HMM* t, bool vit)
 	    }
 
 	  // Cross out cells not contained in the range of the prefiltering in HHblits
-	  if (par.block_shading && par.block_shading->Contains(t->name))
+	  if (par.block_shading && par.block_shading->Contains(t->file))
 	    {
-	      int* tmp = par.block_shading->Show(t->name);
-	      int counter = par.block_shading_counter->Show(t->name);
+	      int* tmp = par.block_shading->Show(t->file);
+	      int counter = par.block_shading_counter->Show(t->file);
 	      
 	      int i0, i1, j0, j1;
 	      i0 = j0 = 1000000;
