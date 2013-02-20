@@ -2134,6 +2134,32 @@ Option:
 \section{Selected changes from previous versions}
 
 
+\subsection{Up to 2.1.0  (March 2013)}
+
+\begin{itemize}
+\item Introduced a new format for hhblits databases: the prefilter flat files 
+  *.cs219 containing the column-state sequences for prefiltering are replaced
+  by a pair of ffindex files. This leads to a speed up for reading the prefilter 
+  db by ~4 seconds and improved scaling of hhblits with the number of cores. 
+  For compatibility with older versions of HH-suite, the *.cs219 files will 
+  be still be provided with new db versions.
+
+\item Improved sensitivity and alignment accuracy through introduction of a new,
+  discriminative method to calculate pseudocounts, described in Angermuller C, 
+  Biegert A, and Soding J, Bioinformatics 28: 3240-3247 (2012).
+
+\item Increased speed of hhsearch about 8-fold and of HHblits about 1.5-fold by 
+  implementing the HMM-HMM Viterbi alingment in SSE2 SIMD (single input 
+  multiple data) instructions 
+
+\item Expanded hhsuite user guide (how to runn hhblits efficiently, how to 
+  modify or extend existing databases, how to visually check multiple sequence 
+  alignments, troubleshooting)
+
+\item Added options to hhblitsdb.pl for adding (-a) and removing (-r) files 
+  from HH-suite database.
+\end{itemize}
+
 \subsection{Up to 2.0.16 (January 2013)}
 
 \begin{itemize}
@@ -2354,21 +2380,17 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 \end{verbatim}
 
-%\bibliographystyle{model3-num-names}
-\bibliography{../../papers/johannes}
-
- 
 \section{Contributors and Contact}
 
-\emph{Johannes S\"oding}: main code base incl.\ perl scripts up to version 2.0, debugging, documentation\\ 
-\emph{Michael Remmert}: HHblits in version 2.0\\
-\emph{Andy Hauser}: ffindex, version and release management, installation management, HH-suite databases\\
-\emph{Christof Angerm\"uller}: HH-suite pseudocounts, speed optimizations\\
-\emph{Martin Steinegger}: Fast SIMD HMM-HMM Viterbi code\\
-\emph{Markus Meier}: uniprot-1it database and associated hhblits code, tests and benchmarks\\
-\emph{Armin Meier}: HHblits column state alphabets, tests and benchmarks\\
-\emph{Andreas Biegert}: HHblits column state alphabets\\
-\emph{Joern Marialke}: hhblits and hhpred server maintainance, HH-suite databases\\[2mm]
+\emph{Johannes S\"oding}: main code base incl.\ perl scripts up to version 2.0, debugging, documentation\\ [1mm]
+\emph{Michael Remmert}: HHblits in version 2.0\\[1mm]
+\emph{Andy Hauser}: ffindex, speed/memory optimization, version and release management, installation management, HH-suite databases\\[1mm]
+\emph{Christof Angerm\"uller}: context-specific pseudocounts, speed optimizations, debugging\\[1mm]
+\emph{Martin Steinegger}: Fast SIMD HMM-HMM Viterbi code\\[1mm]
+\emph{Markus Meier}: uniprot-1it database and associated hhblits code, tests and benchmarks\\[1mm]
+\emph{Armin Meier}: HHblits column state alphabets, tests and benchmarks\\[1mm]
+\emph{Andreas Biegert}: HHblits column state alphabet cs219, context-specific pseudocounts\\[1mm]
+\emph{Joern Marialke}: HHblits and HHpred server maintainance, HH-suite databases\\[1mm]
 
 Contact:\\[2mm]
 Johannes S\"oding\\
@@ -2380,10 +2402,15 @@ http://www.soeding.genzentrum.lmu.de\\
 soeding@genzentrum.lmu.de
 \section{Acknowlegements}
 
-We thank the many users of HH-suite who sent bug reports and who gave critical feedback that led to improvements in the software. 
+We thank the many users of HH-suite who sent bug reports or gave critical feedback that led to improvements in the software. 
 %We gratefully acknowlege contributions from Martin Steinegger, Christof Angerm\"uller, and Andreas Biegert, and Markus Meier to the code. 
 We are grateful to Lazlo Kajan, Stefan M\"oller and the Debian team for making the HH-suite software available as a Debian package. J.S. thanks Andrei Lupas for his invaluable support, encouragement, and feedback during the first five years of the work on HH-suite in his department.
 
+%\bibliographystyle{model3-num-names}
+\addcontentsline{toc}{section}{References}
+\bibliography{../../papers/johannes}
+
+ 
 
 
 \vspace{20mm}
