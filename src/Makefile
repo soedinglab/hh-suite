@@ -65,7 +65,7 @@ CS_OBJECTS = $(patsubst %.cc, %.o, $(CS_SOURCES))
 
 HEADERS = hhhitlist.h hhhit.h hhalignment.h hhhmm.h hhfullalignment.h hhfullalignment.h hash.h list.h
 
-TARGETS = hhblits hhsearch hhmake hhalign hhfilter hhconsensus cstranslate cs219toint
+TARGETS = hhblits hhsearch hhmake hhalign hhfilter hhconsensus cstranslate
 TARGETS_STATIC = hhblits_static hhsearch_static hhmake_static hhalign_static hhfilter_static hhconsensus_static cstranslate_static
 TARGETS_VALGRIND = hhblits_valgrind hhsearch_valgrind hhalign_valgrind
 
@@ -83,9 +83,6 @@ cstranslate: $(CS_DIR)/cstranslate_app.cc $(CS_DIR)/*.cc $(CS_DIR)/*.h $(CS_OBJE
 
 cstranslate_static: $(CS_DIR)/cstranslate_app.cc $(CS_DIR)/*.cc $(CS_DIR)/*.h $(CS_OBJECTS)
 	$(CPP) $(CS_LIBS) -static -lm -o cstranslate $(CS_DIR)/cstranslate_app.cc $(CS_OBJECTS)
-
-cs219toint: $(CS_DIR)/cs219toint_app.cc $(CS_OBJECTS)
-	$(CPP) -o $@ $+
 
 hhsearch: hhsearch.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
 	 $(CPP) hhsearch.C -o hhsearch $(CS_OBJECTS) $(HHSEARCH_LIBS)
@@ -147,4 +144,4 @@ hhsuite-userguide.pdf: hhsuite-userguide.tex
 
 clean: 	
 	-rm -f *.o cs/*.o
-	-rm -f hhconsensus hhconsensus_valgrind hhfilter_valgrind hhfilter hhalign_valgrind hhalign hhmake hhblits_valgrind hhblits hhsearch_valgrind hhsearch cstranslate cs219toint
+	-rm -f hhconsensus hhconsensus_valgrind hhfilter_valgrind hhfilter hhalign_valgrind hhalign hhmake hhblits_valgrind hhblits hhsearch_valgrind hhsearch cstranslate

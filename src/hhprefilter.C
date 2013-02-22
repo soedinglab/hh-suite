@@ -751,7 +751,7 @@ int ungapped_sse_score(const unsigned char* query_profile,
 
 void make_db_filename(char *filename, const char* ext = NULL) {
   strcpy(filename, db_base);
-  strcat(filename, "_csint");
+  strcat(filename, "_cs219");
   if (ext != NULL) {
     strcat(filename, ext);
   }
