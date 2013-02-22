@@ -773,7 +773,6 @@ void extract_name_from_index(char* name, const char* index_name) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void init_no_prefiltering()
 {
-  exit(0);
   char db_index_filename[NAMELEN];
   make_db_filename(db_index_filename, ".ffindex");
   FILE* db_index_file = fopen(db_index_filename, "r");
@@ -793,13 +792,7 @@ void init_no_prefiltering()
   for (size_t n = 0; n < num_dbs; n++) {
     ffindex_entry_t* entry = ffindex_get_entry_by_index(db_index, n);
     char name[NAMELEN];
-    strcpy(name, entry->name);
-    for (size_t i = 0; i < strlen(name); ++i) {
-      if (name[i] == '.' || name[i] == '|') {
-        name[i] = 0;
-        break;
-      }
-    }
+    extract_name_from_index(name, entry->name);
     strcat(name,".");
     strcat(name,db_ext);
     dbfiles_new[n] = new char[strlen(name)+1];
@@ -1082,11 +1075,9 @@ void prefilter_db()
 
   vector<pair<double, int> >::iterator it;
   count_dbs = 0;
-  printf("Size previous_hits: %d\n", previous_hits->Size());
   
   for ( it=hits.begin() ; it < hits.end(); it++ )
     {
-      printf("%d\n", (*it).second);
       backtrace_hits[count_dbs++] = (*it).second;
 
       // Add hit to dbfiles
@@ -1125,19 +1116,9 @@ void prefilter_db()
 	}
     }
 
-  printf("dbfiles_old: %d\n", ndb_old);
-  for (int i = 0; i < ndb_old; ++i) {
-    printf("%s\n", dbfiles_old[i]);
-  }
-
-  printf("dbfiles_new: %d\n", ndb_new);
-  for (int i = 0; i < ndb_new; ++i) {
-    printf("%s\n", dbfiles_new[i]);
-  }
-
   if (print_elapsed) ElapsedTimeSinceLastCall("(SW prefilter)");
 
-  if (0 && block_filter)
+  if (block_filter)
     {
       // Run SW with backtrace
       for (int i = 0; i < cpu; i++) {

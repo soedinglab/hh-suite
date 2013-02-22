@@ -1559,7 +1559,7 @@ void perform_realign(char *dbfiles[], int ndb)
 	  Qali.FrequenciesAndTransitions(q);
 
 	  stringstream ss_tmp;
-	  ss_tmp << hit[bin]->name << "__" << hit[bin]->irep;
+	  ss_tmp << hit[bin]->file << "__" << hit[bin]->irep;
 	  premerged_hits->Add((char*)ss_tmp.str().c_str());
 
 	  if (par.notags) q->NeutralizeTags();
@@ -2182,9 +2182,10 @@ int main(int argc, char **argv)
     // Prefiltering
     ////////////////////////////////////////////
 
-    if (par.prefilter)
+    if (par.prefilter) {
       if (v>=2) printf("Prefiltering database\n");
       prefilter_db();  // in hhprefilter.C
+    }
     
     if (print_elapsed) ElapsedTimeSinceLastCall("(prefiltering)"); 
 

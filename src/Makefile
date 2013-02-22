@@ -17,12 +17,14 @@ ifdef ICC
   CXXFLAGS = -fast -Wall -fno-strict-aliasing -finline-functions -funroll-loops -fp-model fast=2 -fast-transcendentals -wd981 -wd383 -wd2259 -wd1572 -D HH_SSE3 -I$(CS_DIR) -I$(FFINDEX_DIR)
   HHSEARCH_LIBS = -lpthread -lrt
   HHBLITS_LIBS = -lpthread -lrt -openmp
+	CS_LIBS = -openmp
   OBJECT_LIBS = -openmp
 else # ifndef ICC
   CXX = g++
   CXXFLAGS = -O3 -Wall -Wno-deprecated -Wno-char-subscripts -fno-strict-aliasing -I$(CS_DIR) $(BITS_FLAG) -I$(FFINDEX_DIR)
   HHSEARCH_LIBS = -lpthread
   HHBLITS_LIBS = -lpthread -fopenmp
+	CS_LIBS = -fopenmp
   HHALIGN_LIBS = 
   OBJECT_LIBS = -fopenmp
   ifdef WITH_NATIVE
@@ -77,10 +79,10 @@ $(CS_OBJECTS): $(CS_DIR)/%.o: $(CS_DIR)/%.cc
 	$(CPP) $(OBJECT_LIBS) -c $< -o $@
 
 cstranslate: $(CS_DIR)/cstranslate_app.cc $(CS_DIR)/*.cc $(CS_DIR)/*.h $(CS_OBJECTS)
-	$(CPP) -lm -o cstranslate $(CS_DIR)/cstranslate_app.cc $(CS_OBJECTS)
+	$(CPP) $(CS_LIBS) -lm -o cstranslate $(CS_DIR)/cstranslate_app.cc $(CS_OBJECTS)
 
 cstranslate_static: $(CS_DIR)/cstranslate_app.cc $(CS_DIR)/*.cc $(CS_DIR)/*.h $(CS_OBJECTS)
-	$(CPP) -static -lm -o cstranslate $(CS_DIR)/cstranslate_app.cc $(CS_OBJECTS)
+	$(CPP) $(CS_LIBS) -static -lm -o cstranslate $(CS_DIR)/cstranslate_app.cc $(CS_OBJECTS)
 
 cs219toint: $(CS_DIR)/cs219toint_app.cc $(CS_OBJECTS)
 	$(CPP) -o $@ $+
