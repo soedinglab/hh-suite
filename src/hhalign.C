@@ -724,7 +724,6 @@ int main(int argc, char **argv)
   char text[IDLEN]="";         // Extension of template input file (hhm or a3m) 
 #ifdef HH_PNG
   int** ali=NULL;              // ali[i][j]=1 if (i,j) is part of an alignment
-  int** alisto=NULL;           // ali[i][j]=1 if (i,j) is part of an alignment
 #endif
   int Nali;                    // number of normally backtraced alignments in dot plot
 
@@ -918,7 +917,7 @@ int main(int argc, char **argv)
 
   // Allocate memory for dynamic programming matrix
   // Longest allowable length of database HMM (backtrace: 5 chars, fwd, bwd: 1 double
-  long int Lmaxmem=(par.maxmem*1024*1024*1024)/sizeof(double)/q->L/bins;
+  long int Lmaxmem=(par.maxmem*1024*1024*1024)/sizeof(double)/q->L;
   if (par.forward==2 && t->L+2>=Lmaxmem) 
     {
       if (v>=1) {
