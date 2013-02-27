@@ -127,7 +127,6 @@ int dotscale=600;            // size scale of dotplot
 char dotali=0;               // show no alignments in dotplot
 float dotsat=0.3;            // saturation of grid and alignments in dot plot
 float pself=0.001;           // maximum p-value of 2nd and following self-alignments
-int Nstochali=0;             // number of stochastically traced alignments in dot plot
 float** Pstruc=NULL;         // structure matrix which can be multiplied to prob ratios from aa column comparisons in Forward()
 float** Sstruc=NULL;         // structure matrix which can be added to log odds from aa column comparisons in Forward()
 
@@ -580,7 +579,6 @@ void ProcessArguments(int argc, char** argv)
 	SyntaxError("Please note that this option has been replaced by the '-norealign' option."); 
       else if (!strcmp(argv[i],"-realign")) par.realign=1;
       else if (!strcmp(argv[i],"-norealign")) par.realign=0;
-      else if (!strcmp(argv[i],"-sto") && (i<argc-1))  {Nstochali=atoi(argv[++i]); par.forward=1; par.realign=0;}
       else if (!strcmp(argv[i],"-M") && (i<argc-1)) 
 	if (!strcmp(argv[++i],"a2m") || !strcmp(argv[i],"a3m"))  par.M=1; 
 	else if(!strcmp(argv[i],"first"))  par.M=3; 
@@ -922,7 +920,7 @@ int main(int argc, char **argv)
       par.forward=0;
     }
   hit.AllocateBacktraceMatrix(q->L+2,t->L+2); // ...with a separate dynamic programming matrix (memory!!)
-  if (par.forward>=1 || Nstochali) 
+  if (par.forward>=1) 
     hit.AllocateForwardMatrix(q->L+2,t->L+2);
   if (par.forward==2)     
     hit.AllocateBackwardMatrix(q->L+2,t->L+2);
@@ -973,7 +971,6 @@ int main(int argc, char **argv)
     {
       if (par.forward==2)       printf("Using maximum accuracy (MAC) alignment algorithm ...\n");
       else if (par.forward==0) printf("Using Viterbi algorithm ...\n");
-      else if (par.forward==1) printf("Using stochastic sampling algorithm ...\n");
       else printf("\nWhat alignment algorithm are we using??\n");
     }
   hit.irep=1; 
@@ -988,15 +985,6 @@ int main(int argc, char **argv)
 	  }
 	  hit.Backtrace(q,t);
 	} 
-      else if (par.forward==1)   // generate a single stochastically sampled alignment
-	{
-	  hit.Forward(q,t,Pstruc); 
-	  srand( time(NULL) );   // initialize random generator 
-	  hit.StochasticBacktrace(q,t);
-	  hitlist.Push(hit);      //insert hit at beginning of list (last repeats first!)
-	  (hit.irep)++;
-	  break;
-	}
       else if (par.forward==2)   // generate forward alignment
 	{
 	  hit.Forward(q,t,Pstruc); 
@@ -1079,15 +1067,6 @@ int main(int argc, char **argv)
     }
   else 
     printf("WARNING: E-values and Probabilities can only be calculated when the default Viterbi algorithm is used (with or without -norealign option)\n");
-
-  // Do Stochastic backtracing?
-  if (par.forward==1)
-    for (int i=1; i<Nstochali; i++) 
-      {
-	hit.StochasticBacktrace(q,t);
-	hitlist.Push(hit);      //insert hit at beginning of list (last repeats first!)
-	(hit.irep)++;
-      }
 
   // Print FASTA or A2M alignments?
   if (*par.pairwisealisfile) {
@@ -1206,7 +1185,7 @@ int main(int argc, char **argv)
 	dotscale=imin(5,imax(1,dotscale/imax(q->L,t->L)));
       
       // Set alignment matrix
-      if (dotali || Nstochali) 
+      if (dotali) 
 	{
 	  if (dotali) 
 	    {
@@ -1217,40 +1196,12 @@ int main(int argc, char **argv)
 		  for(j=1; j<=t->L; j++) ali[i][j]=0;
 		}
 	    } 
-	  if (Nstochali) 
-	    {
-	      alisto = new(int*[q->L+2]);
-	      for(i=0; i<q->L+2; i++)
-		{
-		  alisto[i] = new(int[t->L+2]);
-		  for(j=1; j<=t->L; j++) alisto[i][j]=0;
-		}
-	    }
-
 	  int nhits=1;
 	  hitlist.Reset();
 	  while (!hitlist.End() && nhits<256) 
 	    {
 	      hit = hitlist.ReadNext();
 
-	      if (nhits>=Nali && Nstochali) 
-		{
-// 		  int i0 = hit.i[hit.nsteps];
-// 		  int j0 = hit.j[hit.nsteps];
-// 		  int i1,j1;
-		  for (int step=hit.nsteps; step>=1; step--)
-		    {
-		      alisto[ hit.i[step] ][ hit.j[step] ]++;
-// 		      if (hit.states[step]<MM) continue;
-// 		      i1=hit.i[step];
-// 		      j1=hit.j[step];
-// 		      for (i=i0+1; i<i1; i++) alisto[i][j0]++;
-// 		      for (j=j0+1; j<j1; j++) alisto[i0][j]++;
-// 		      alisto[i1][j1]++;
-// 		      i0=i1;
-// 		      j0=j1;
-		    }		  
-		}
 	      if (nhits>par.z) 
 		{
 		  if (nhits>=par.Z) continue;       //max number of lines reached?
@@ -1332,7 +1283,6 @@ int main(int argc, char **argv)
 	      }
 
 	    if (i==j && hit.self) {b=r=g=0.0;} 
-	    else if (Nstochali && alisto[i][j]) {r=b=1-0.9*alisto[i][j]; g=1;}
 	    else if ((sum<=0.05 && par.realign) || (sum<=dotthr*l && !par.realign)) 
 	      {
 	    	if (dotali && ali[i][j]) {r=g=1-dotsat; b=1.0;}
@@ -1369,11 +1319,6 @@ int main(int argc, char **argv)
 	  for(i=0; i<q->L+2; i++) delete[] ali[i];
 	  delete[] ali;
 	}
-      if (Nstochali)
-      {
-	  for(i=0; i<q->L+2; i++) delete[] alisto[i];
-	  delete[] alisto;
-      }
 
     } // if (*par.pngfile)
 #endif
@@ -1398,7 +1343,7 @@ int main(int argc, char **argv)
 
   // Delete memory for dynamic programming matrix
   hit.DeleteBacktraceMatrix(q->L+2);
-  if (par.forward>=1 || Nstochali || par.realign) 
+  if (par.forward>=1 || par.realign) 
     hit.DeleteForwardMatrix(q->L+2);
   if (par.forward==2 || par.realign) 
     hit.DeleteBackwardMatrix(q->L+2);

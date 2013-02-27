@@ -249,27 +249,24 @@ void Hit::DeleteForwardMatrix(int Nq)
 /////////////////////////////////////////////////////////////////////////////////////
 void Hit::AllocateBackwardMatrix(int Nq, int Nt)
 {
-  B_MM=new(double*[Nq]);
-  /*
-  B_MI=F_MI; 
-  B_DG=F_DG; 
-  B_IM=F_IM; 
-  B_GD=F_GD; 
-  */
-  for (int i=0; i<Nq; ++i) 
-    {
-      B_MM[i] = new(double[Nt]);
-      if (!B_MM[i]) 
-	{
-	  fprintf(stderr,"Error in %s: out of memory while allocating row %i (out of %i) for dynamic programming matrices \n",par.argv[0],i+1,Nq);
-	  fprintf(stderr,"Please decrease your memory requirements to the available memory using option -maxmem <GBs>\n");
-	  fprintf(stderr,"You may want to check and increase your stack size limit (Linux: ulimit -a)\n");
-	  exit(3);
-	} 
-      for (int j=0; j<Nt; ++j) 
-	B_MM[i][j]=0.0;   // This might be time-consuming! Is it necessary???? JS
-    }
-  backward_allocated = true;
+  B_MM = F_MM; // identify B_MM and F_MM! and comment out rest of function
+
+
+  // // B_MM=new(double*[Nq]);
+  // for (int i=0; i<Nq; ++i) 
+  //   {
+  //     B_MM[i] = new(double[Nt]);
+  //     if (!B_MM[i]) 
+  // 	{
+  // 	  fprintf(stderr,"Error in %s: out of memory while allocating row %i (out of %i) for dynamic programming matrices \n",par.argv[0],i+1,Nq);
+  // 	  fprintf(stderr,"Please decrease your memory requirements to the available memory using option -maxmem <GBs>\n");
+  // 	  fprintf(stderr,"You may want to check and increase your stack size limit (Linux: ulimit -a)\n");
+  // 	  exit(3);
+  // 	} 
+  //     for (int j=0; j<Nt; ++j) 
+  // 	B_MM[i][j]=0.0;   // This might be time-consuming! Is it necessary???? JS
+  //   }
+  // backward_allocated = true;
 }
 
 void Hit::DeleteBackwardMatrix(int Nq)
@@ -891,7 +888,10 @@ void Hit::Backward(HMM* q, HMM* t)
 	    } // end else	      
 
 	  /* Copy back to matrix */
-	  B_MM[i][j] = B_MM_curr[j];
+	  //	  B_MM[i][j] = B_MM_curr[j];
+	  B_MM[i][j] *= B_MM_curr[j]/Pforward;  // identify B_MM and F_MM!
+
+
 	} //end for j
 
       for(int jj = 0; jj <= t->L; jj++)
@@ -944,9 +944,10 @@ void Hit::Backward(HMM* q, HMM* t)
   */
 
   // Calculate Posterior matrix and overwrite Backward matrix with it
-  for (i=1; i<=q->L; ++i) 
-    for (j=1; j<=t->L; ++j) 
-      B_MM[i][j] *= F_MM[i][j]/Pforward;
+  // Commented out because identified B_MM and F_MM!
+  // for (i=1; i<=q->L; ++i) 
+  //   for (j=1; j<=t->L; ++j) 
+  //     B_MM[i][j] *= F_MM[i][j]/Pforward;
 
   return;
 }
@@ -1223,196 +1224,6 @@ void Hit::Backtrace(HMM* q, HMM* t)
 
   return;
 }
-
-
-
-/////////////////////////////////////////////////////////////////////////////////////
-// GLOBAL stochastic trace back through the forward matrix of probability ratios
-/////////////////////////////////////////////////////////////////////////////////////
-void Hit::StochasticBacktrace(HMM* q, HMM* t, char maximize)
-{
-  /*
-  int step;        // counts steps in path through 5-layered dynamic programming matrix
-  int i,j;         // query and template match state indices
-  //  float pmin=(par.loc? 1.0: 0.0);    // used to distinguish between SW and NW algorithms in maximization         
-  const float pmin=0;
-  double* scale_cum = new(double[q->L+2]);
-  
-
-  scale_cum[0]=1;
-  for (i=1; i<=q->L+1; ++i) scale_cum[i] = scale_cum[i-1]*scale[i];
-
-  // Select start cell for GLOBAL alignment
-  // (Implementing this in a local version would make this method work for local backtracing as well)
-  if (maximize) 
-    {
-      double F_max=0;
-      for (i=q->L-1; i>=1; i--) 
-	if (F_MM[i][t->L]/scale_cum[i]>F_max) {i2=i; j2=t->L; F_max=F_MM[i][t->L]/scale_cum[i];}
-      for (j=t->L; j>=1; j--) 
-	if (F_MM[q->L][j]/scale_cum[q->L]>F_max) {i2=q->L; j2=j; F_max=F_MM[q->L][j]/scale_cum[q->L];}
-    }
-  else 
-    {
-      //      float sumF[q->L+t->L];
-      double* sumF=new(double[q->L+t->L]);
-      sumF[0]=0.0;
-      for (j=1; j<=t->L; ++j)        sumF[j] = sumF[j-1] + F_MM[q->L][j]/scale_cum[q->L];;
-      for (j=t->L+1; j<t->L+q->L; ++j) sumF[j] = sumF[j-1] + F_MM[j-t->L][t->L]/scale_cum[j-t->L];;
-      float x = sumF[t->L+q->L-1]*frand(); // generate random number between 0 and sumF[t->L+q->L-1]
-      for (j=1; j<t->L+q->L; ++j) 
-	if (x<sumF[j]) break;
-      if (j<=t->L) {i2=q->L; j2=j;} else {i2=j-t->L; j2=t->L;}
-      delete[] sumF;
-    }
-
-  InitializeBacktrace(q,t);
-
-  int (*pick2)(const double&, const double&, const int&);
-  int (*pick3_GD)(const double&, const double&, const double&);
-  int (*pick3_IM)(const double&, const double&, const double&);
-  int (*pick6)(const double&, const double&, const double&, const double&, const double&, const double&);
-  if (maximize) 
-    {
-      pick2 = &pickmax2;
-      pick3_GD = &pickmax3_GD;      
-      pick3_IM = &pickmax3_IM;
-      pick6 = &pickmax6;
-    }
-  else 
-    {
-      pick2 = &pickprob2;
-      pick3_GD = &pickprob3_GD;
-      pick3_IM = &pickprob3_IM;
-      pick6 = &pickprob6;
-    }
-
-  // Back-tracing loop
-  matched_cols=0;     // for each MACTH (or STOP) state matched_col is incremented by 1
-  step=0;             // steps through the matrix correspond to alignment columns (from 1 to nsteps)
-  state = MM;
-  i=i2; j=j2;    // start at end of query and template
-  while (state)  // while not reached STOP state or upper or left border 
-    {
-      step++;
-      states[step] = state;
-      this->i[step] = i;
-      this->j[step] = j;
-
-      switch (state)
-	{
-	  
-	case MM: // current state is MM, previous state is state
-	  // 	  fprintf(stderr,"%4i  %1c %1c %4i %4i     MM %7.2f\n",step,q->seq[q->nfirst][i],seq[nfirst][j],i,j,Score(q->p[i],t->p[j])); 
-	  // 	  printf("0:%7.3f   MM:%7.3f   GD:%7.3f   IM:%7.3f   DG:%7.3f   MI:%7.3f \n",
-	  // 		        pmin*scale_cum[i-1],
-	  // 		        F_MM[i-1][j-1] * q->tr[i-1][M2M] * t->tr[j-1][M2M], 
-	  // 			F_GD[i-1][j-1] * q->tr[i-1][M2M] * t->tr[j-1][D2M],
-	  // 			F_IM[i-1][j-1] * q->tr[i-1][I2M] * t->tr[j-1][M2M],
-	  // 			F_DG[i-1][j-1] * q->tr[i-1][D2M] * t->tr[j-1][M2M],
-	  // 		        F_MI[i-1][j-1] * q->tr[i-1][M2M] * t->tr[j-1][I2M]);
-	  matched_cols++; 
-	  if (j>1 && i>1)
-	    state = (*pick6)( 
-			     pmin*scale_cum[i-1],
-			     F_MM[i-1][j-1] * q->tr[i-1][M2M] * t->tr[j-1][M2M], 
-			     F_GD[i-1][j-1] * q->tr[i-1][M2M] * t->tr[j-1][D2M],
-			     F_IM[i-1][j-1] * q->tr[i-1][I2M] * t->tr[j-1][M2M],
-			     F_DG[i-1][j-1] * q->tr[i-1][D2M] * t->tr[j-1][M2M],
-			     F_MI[i-1][j-1] * q->tr[i-1][M2M] * t->tr[j-1][I2M]
-			      );
-	  else state=0;	  
-	  i--; j--;
-	  break;	      
-	case GD: // current state is GD
-	  // 	  fprintf(stderr,"%4i  - %1c %4i %4i     GD %7.2f\n",step,q->seq[q->nfirst][j],i,j,Score(q->p[i],t->p[j])); 
-	  if (j>1) 
-	    state = (*pick3_GD)(
-				F_MM[i][j-1] * t->tr[j-1][M2D],
-				F_DG[i][j-1] * t->tr[j-1][M2D] * q->tr[i][D2M],   // DG -> GD
-				F_GD[i][j-1] * t->tr[j-1][D2D]                   // gap extension (DD) in template
-				);
-	  else state=0;	  
-	  j--;
-	  break;	      
-	case IM: 
-	  // 	  fprintf(stderr,"%4i  - %1c %4i %4i     IM %7.2f\n",step,q->seq[q->nfirst][j],i,j,Score(q->p[i],t->p[j])); 
-	  if (j>1) 
-	    state = (*pick3_IM)(
-				F_MM[i][j-1] * q->tr[i][M2I] * t->tr[j-1][M2M],
-				F_MI[i][j-1] * q->tr[i][M2I] * t->tr[j-1][I2M],  // MI -> IM
-				F_IM[i][j-1] * q->tr[i][I2I] * t->tr[j-1][M2M]   // gap extension (II) in query
-				); 
-	  else state=0;	  
-	  j--;
-	  break;	      
-	case DG:
-	  // 	  fprintf(stderr,"%4i  %1c - %4i %4i     DG %7.2f\n",step,q->seq[q->nfirst][i],i,j,Score(q->p[i],t->p[j])); 
-	  if (i>1) 
-	    state = (*pick2)(
-			     F_MM[i-1][j] * q->tr[i-1][M2D],
-			     F_DG[i-1][j] * q->tr[i-1][D2D], //gap extension (DD) in query
-			     DG
-			     );
-	  else state=0;	  
-	  i--; 
-	  break;	      
-	case MI:
-	  // 	  fprintf(stderr,"%4i  %1c - %4i %4i     MI %7.2f\n",step,q->seq[q->nfirst][i],i,j,Score(q->p[i],t->p[j])); 
-	  if (i>1) 
-	    state = (*pick2)(
-			     F_MM[i-1][j] * q->tr[i-1][M2M] * t->tr[j][M2I],
-			     F_MI[i-1][j] * q->tr[i-1][M2M] * t->tr[j][I2I], //gap extension (II) in template
-			     MI
-			     );
-	  else state=0;
-	  i--; 
-	  break;
-
-	} //end switch (state)
-
-    } //end while (state)
- 
-  i1 = this->i[step];
-  j1 = this->j[step];
-  states[step] = MM;  // first state (STOP state) is set to MM state
-  nsteps=step; 
-
-  // Allocate new space for alignment scores
-  S    = new( float[nsteps+1]);
-  S_ss = new( float[nsteps+1]);
-  if (!S_ss) MemoryError("space for HMM-HMM alignments");
-
-  // Add contribution from secondary structure score, record score along alignment,
-  // and record template consensus sequence in master-slave-alignment to query sequence
-  score_ss=0.0f;
-  int ssm=ssm1+ssm2;
-  for (step=1; step<=nsteps; step++)
-    {
-      switch(states[step])
-	{
-	case MM: 
-	  i = this->i[step];
-	  j = this->j[step];
-	  S[step] = Score(q->p[i],t->p[j]);
-	  S_ss[step] = ScoreSS(q,t,i,j,ssm);
-	  score_ss += S_ss[step];
-	  break;
-	case MI: //if gap in template  
-	case DG:   
-	default: //if gap in T or Q
-	  S[step]=S_ss[step]=0.0f;
-	  break;
-	}
-    }
-  if (ssm2>=1) score-=score_ss;    // subtract SS score added during alignment!!!!
-
-  delete[] scale_cum;
-  */
-
-  return;
-}
-
 
 
 

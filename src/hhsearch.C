@@ -506,7 +506,6 @@ void ProcessArguments(int argc, char** argv)
       else if (!strcmp(argv[i],"-ssa") && (i<argc-1)) par.ssa=atof(argv[++i]);
       else if (!strcmp(argv[i],"-realign")) par.realign=1;
       else if (!strcmp(argv[i],"-norealign")) par.realign=0;
-      else if (!strcmp(argv[i],"-forward")) par.forward=1;
       else if (!strcmp(argv[i],"-mac") || !strcmp(argv[i],"-MAC")) par.forward=2;
       else if (!strcmp(argv[i],"-map") || !strcmp(argv[i],"-MAP")) par.forward=2;
       else if (!strcmp(argv[i],"-vit")) par.forward=0;
@@ -1225,7 +1224,6 @@ int main(int argc, char **argv)
 
   if (par.forward>=1)
     {
-      if (v>=2 && par.forward==1) printf("Using Forward algorithm ...\n");
       if (v>=2 &&par.forward==2) printf("Using maximum accuracy (MAC) alignment algorithm ...\n");
     }
   else if (v>=3) printf("Using Viterbi algorithm ...\n");

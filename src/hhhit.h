@@ -115,9 +115,6 @@ class Hit
   // Trace back alignment of two profiles based on matrices bXX[][]
   void Backtrace(HMM* q, HMM* t);
 
-  // Trace back alignment of two profiles based on matrices bXX[][]
-  void StochasticBacktrace(HMM* q, HMM* t, char maximize=0);
-
   // Trace back MAC alignment of two profiles based on matrix bMM[][]
   void BacktraceMAC(HMM* q, HMM* t);
 
