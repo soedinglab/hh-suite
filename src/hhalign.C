@@ -339,6 +339,7 @@ void help_ali()
   printf("                2:ss scoring during alignment                              \n");
   printf(" -ssw  [0,1]    weight of ss score compared to column score (def=%-.2f)    \n",par.ssw);
   printf(" -ssa  [0,1]    ss confusion matrix = (1-ssa)*I + ssa*psipred-confusion-matrix [def=%-.2f)\n",par.ssa);
+  printf(" -maxmem [1,inf[ limit memory for realignment (in GB) (def=%.1f)          \n",par.maxmem);
 }
 
 void help_all()
@@ -591,8 +592,13 @@ void ProcessArguments(int argc, char** argv)
       else if (!strcmp(argv[i],"-opt") && (i<argc-1)) par.opt=atoi(argv[++i]); 
       else if (!strcmp(argv[i],"-scwin") && (i<argc-1)) {par.columnscore=5; par.half_window_size_local_aa_bg_freqs = imax(1,atoi(argv[++i]));}
       else if (!strcmp(argv[i],"-sc") && (i<argc-1)) par.columnscore=atoi(argv[++i]); 
-      else if (!strcmp(argv[i],"-corr") && (i<argc-1)) par.corr=atof(argv[++i]); 
       else if (!strcmp(argv[i],"-def")) par.readdefaultsfile=1; 
+      else if (!strcmp(argv[i],"-maxres") && (i<argc-1)) {
+	par.maxres=atoi(argv[++i]);
+	par.maxcol=2*par.maxres;
+      }
+      else if (!strcmp(argv[i],"-maxmem") && (i<argc-1)) {par.maxmem=atof(argv[++i]);}
+      else if (!strcmp(argv[i],"-corr") && (i<argc-1)) par.corr=atof(argv[++i]); 
       else if (!strcmp(argv[i],"-ovlp") && (i<argc-1)) par.min_overlap=atoi(argv[++i]);
       else if (!strcmp(argv[i],"-tags")) par.notags=0;
       else if (!strcmp(argv[i],"-notags")) par.notags=1;
@@ -911,12 +917,16 @@ int main(int argc, char **argv)
 
 
   // Allocate memory for dynamic programming matrix
-  const float MEMSPACE_DYNPROG = 512*1024*1024;
-  int Lmaxmem=(int)((float)MEMSPACE_DYNPROG/q->L/6/8); // longest allowable length of database HMM
+  // Longest allowable length of database HMM (backtrace: 5 chars, fwd, bwd: 1 double
+  long int Lmaxmem=(par.maxmem*1024*1024*1024)/sizeof(double)/q->L/bins;
   if (par.forward==2 && t->L+2>=Lmaxmem) 
     {
-      if (v>=1)
+      if (v>=1) {
 	cerr<<"WARNING: Not sufficient memory to realign with MAC algorithm. Using Viterbi algorithm."<<endl;
+	cerr<<"This is genarally unproboblematic but may lead to slightly sub-optimal alignments."<<endl;
+	cerr<<"You can increase available memory for realignment using the -maxmem <GB> option (currently "<<par.maxmem<<" GB)."<<endl; // still to be implemented
+	cerr<<"The maximum length realignable is approximately maxmem/query_length/(cpus+1)/8B."<<endl;
+      }
       par.forward=0;
     }
   hit.AllocateBacktraceMatrix(q->L+2,t->L+2); // ...with a separate dynamic programming matrix (memory!!)

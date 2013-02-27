@@ -402,7 +402,7 @@ void help(char all=0)
   printf(" -scores <file> write scores for all pairwise comparisions to file               \n");
   printf(" -atab   <file> write all alignments in tabular layout to file                   \n");
   printf(" -maxres <int>  max number of HMM columns (def=%5i)             \n",par.maxres);
-  printf(" -maxmem [1,inf[ max available memory in GB (def=%.1f)          \n",par.maxmem);
+  printf(" -maxmem [1,inf[ limit memory for realignment (in GB) (def=%.1f)          \n",par.maxmem);
   } 
 #ifndef PTHREAD
   printf("(The -cpu option is inactive since HHblits was not compiled with POSIX thread support)\n");
@@ -1187,8 +1187,8 @@ void perform_realign(char *dbfiles[], int ndb)
   int nhits=0;
   int N_aligned=0;
 
-  // Longest allowable length of database HMM (backtrace: 5 chars, fwd: 1 double, bwd: 1 double 
-  long int Lmaxmem=((par.maxmem-0.5)*1024*1024*1024)/(2*sizeof(double)+8)/q->L/bins;
+  // Longest allowable length of database HMM (backtrace: 5 chars, fwd, bwd: 1 double
+  long int Lmaxmem=(par.maxmem*1024*1024*1024)/sizeof(double)/q->L/bins;
   long int Lmax=0;      // length of longest HMM to be realigned
     
   par.block_shading->Reset();
@@ -1299,7 +1299,7 @@ void perform_realign(char *dbfiles[], int ndb)
 	  cerr<<"WARNING: Realigning sequences only up to length "<<Lmaxmem<<"."<<endl;
 	  cerr<<"This is genarally unproboblematic but may lead to slightly sub-optimal alignments for longer sequences."<<endl;
  	  cerr<<"You can increase available memory using the -maxmem <GB> option (currently "<<par.maxmem<<" GB)."<<endl; // still to be implemented
-	  cerr<<"The maximum length realignable is approximately (maxmem-0.5GB)/query_length/(cpus+1)/24B."<<endl;
+	  cerr<<"The maximum length realignable is approximately maxmem/query_length/(cpus+1)/8B."<<endl;
 	}
     }
   

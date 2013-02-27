@@ -911,7 +911,15 @@ The pdb70 database is clustered to 70\% maximum pairwise sequence identity to re
 {\label{2_vs_1+1} \bf Why do I get different results when I perform $2$ and $1+1$ iterations with HHblits?} When you do a single iteration and start a second iteration with the A3M output file from the first iteration, the alignments should be nearly the same as if you do two iterations (\verb`-n 2`) Why not exactly the same? Because when doing multiple iterations in a single hhblits run, alignments for each hit are only calculated once. When the same database HMM is found in later search iterations, the ``frozen'', first alignment is used instead of recomputing it. This increases robustness with respect to homologous overextension. However, the significance values can be slightly different between the cases with$2$ and $1+1$ iterations. The reason is that the HHblits P-value is calculated by a weighted combination of the P-value of the Viterbi pairwise HMM alignment and the prefilter E-value. The prefilter E-values differ in the two cases described, since in the first case the E-value is calculated for the first prefilter search (before the first full search) and in the second case it is calculated for the second prefilter search, performed with the query MSA obtained \emph{after} the first search iteration. 
 
 {\bf Why do I get a segmentation fault when calling hhblits on our new machine?}
-Often, segmentation faults can be caused by too little available memory. HHblits needs memory to read the entire column state file into memory for prefiltering (\verb`*.cs219`). For Viterbi HMM-HMM alignment it needs about Query\_length $\times$ max\_db\_seq\_length $\times$ 5B $\times$ (num\_threads+1) $\times$ 5 bytes. Here, num\_threads is the number of threads specified with option \verb`-cpu <int>`. For realignment, HHblits needs Query\_length $\times$ max\_db\_seq\_length $\times$ 5B $\times$ (num\_threads+1) $\times$ 24 bytes, but the amount of memory for realignment can be limited using the \verb`-maxmem <GB>` option, which will cause the realignment to skip the longest sequences. Under Linux, you can check your memory limit settings using ulimit -a`. Make sure you have at least 4GB per thread. Try 
+Often, segmentation faults can be caused by too little available memory. HHblits needs memory to read the entire column state file into memory for prefiltering (\verb`*.cs219`). For Viterbi HMM-HMM alignment it needs about 
+\begin{equation}
+\textrm{Memory Viterbi} = \textrm{Query\_length} \times \textrm{max\_db\_seq\_length} \times (\textrm{num\_threads}+1) \times 5 \textrm{B} \,. 
+\end{equation}
+Here, num\_threads is the number of threads specified with option \verb`-cpu <int>`. For realignment, HHblits needs in addition 
+\begin{equation}
+\textrm{Memory Realing} = \textrm{Query\_length} \times \textrm{max\_db\_seq\_length} \times (\textrm{num\_threads}+1) \times 8 \textrm{B} \,, 
+\end{equation}
+but the amount of memory for realignment can be limited using the \verb`-maxmem <GB>` option, which will cause the realignment to skip the longest sequences. Under Linux, you can check your memory limit settings using ulimit -a`. Make sure you have at least 4GB per thread. Try 
 \begin{verbatim}
 ulimit -m 4000000 -v 4000000 -s 8192 -f 4000000
 \end{verbatim}

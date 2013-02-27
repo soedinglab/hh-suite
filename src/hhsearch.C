@@ -323,7 +323,7 @@ void help(char all=0)
   printf(" -v <int>       verbose mode: 0:no screen output  1:only warings  2: verbose   \n");
   if (all) {
   printf(" -maxres <int>  max number of HMM columns (def=%5i)             \n",par.maxres);
-  printf(" -maxmem [1,inf[ max available memory in GB (def=%.1f)          \n",par.maxmem);
+  printf(" -maxmem [1,inf[ limit memory for realignment (in GB) (def=%.1f)          \n",par.maxmem);
   printf(" -scores <file> write scores for all pairwise comparisions to file         \n");
   printf(" -calm {0,..,3} empirical score calibration of 0:query 1:template 2:both   \n");
   printf("                default 3: neural network-based estimation of EVD params   \n");
@@ -563,8 +563,8 @@ void perform_realign(char *dbfiles[], int ndb)
   int nhits=0;
   int N_aligned=0;
   
-  // Longest allowable length of database HMM (backtrace: 5 chars, fwd: 1 double, bwd: 1 double 
-  long int Lmaxmem=((par.maxmem-0.5)*1024*1024*1024)/(2*sizeof(double)+8)/q->L/bins;
+  // Longest allowable length of database HMM (backtrace: 5 chars, fwd, bwd: 1 double
+  long int Lmaxmem=(par.maxmem*1024*1024*1024)/sizeof(double)/q->L/bins;
   long int Lmax=0;      // length of longest HMM to be realigned
     
   // phash_plist_realignhitpos->Show(dbfile) is pointer to list with template indices and their ftell positions.
@@ -633,7 +633,7 @@ void perform_realign(char *dbfiles[], int ndb)
 	  cerr<<"WARNING: Realigning sequences only up to length "<<Lmaxmem<<"."<<endl;
 	  cerr<<"This is genarally unproboblematic but may lead to slightly sub-optimal alignments for these sequences."<<endl;
  	  cerr<<"You can increase available memory using the -maxmem <GB> option (currently "<<par.maxmem<<" GB)."<<endl; 
-	  cerr<<"The maximum length realignable is approximately (maxmem-0.5GB)/query_length/(cpus+1)/24B."<<endl;
+	  cerr<<"The maximum length realignable is approximately maxmem/query_length/(cpus+1)/8B."<<endl;
 	}
     }
   
