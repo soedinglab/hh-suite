@@ -783,8 +783,8 @@ sub reformat()
 		$num++;
 	    }
 	}
-	while($seqs[0] ne "") {                         # While there are still residues left
-	    for ($k=0; $k<scalar(@names); $k++) {       # go through all sequences
+	while($seqs[0] ne "") {                         # While there are still residues left, write new block of sequences
+	    for ($k=0; $k<scalar(@names); $k++) {       # Go through all sequences
 		$names[$k] =~ s/\s*(\S+).*/$1/;
 		$seqs[$k]=~s/(\S{1,$numres})//;           # remove the leftmost (up to) 60 residues from sequence $nseq
 		if (!$lname) {$lname=18;}

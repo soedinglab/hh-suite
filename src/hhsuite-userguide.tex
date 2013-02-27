@@ -850,7 +850,7 @@ The number of effective sequences of the full alignment, which appears as NEFF i
 
 
 
-\subsection{More questions about how to use HH-suite tools}
+\subsection{On how to use HH-suite tools}
 
 {\bf Do HHsearch and HHblits work fine with multi-domain sequences?}
 HHblits and HHsearch have been designed to work with multi-domain queries. However, the chances for false positives entering the query alginment during the HHblits iterations is greater for multi-domain proteins. For long sequences, it may therefore be of advantage to first search the PDB or the SCOP domain database and then to cut the query sequence into smaller parts on the basis of the identified structural domains. Pfam or CDD are - in our opinion - less suitable to determine domain boundaries.
@@ -876,11 +876,11 @@ Never use \verb`-global` when building MSAs by iterative searches with HHblits. 
 
 
 
-\subsection{More questions about HH-suite databases}
+\subsection{About HH-suite databases}
 
 
 {\bf How can I retrieve database A3M or HHM files from my HH-suite database?}
-For reasons of efficiency, the MSA A3M and HHM model files are packed into two files, \verb`<db>_a3m_db` and \verb`<db>_hhm_db`, each with its own index file. The contained files are easy to extract from the packed files. For example, to dump \verb`d1aa7a_.a3m` in \verb`scop70` to standard output, type 
+For reasons of efficiency, the MSA A3M and HHM model files are packed into two files, \verb`<db>_a3m.ffdata` and \verb`<db>_hhm.ffdata`, each with its own index file. The contained files are easy to extract from the packed files. For example, to dump \verb`d1aa7a_.a3m` in \verb`scop70` to standard output, type 
 \begin{verbatim}
 $ ffindex_get scop70_a3m.ffdata scop70_a3m.ffindex d1aa7a_.a3m
 \end{verbatim}
@@ -889,7 +889,6 @@ If you want to extract all files in the ffindex data structures to directory \ve
 \begin{verbatim}
 $ ffindex_unpack scop70_a3m.ffdata scop70_a3m.ffindex tmp/scop70/ .
 \end{verbatim}
-
 
 {\bf How can I build my own UniProt database for HHblits?}
 The procedure to cluster the nr or UniProt databases is more complicated than building a database for a genome or for the sequences in the pdb. As its first step it involves clustering these huge databases down to 20\%-30\% sequence identity. The clustering is done in our lab using a new method, kClust (Hauser M, Mayer CE, and S\"oding J., to be published), available under GPL at \url{ftp://ftp://toolkit.lmb.uni-muenchen.de/kClust/}. We will add all scripts to build these HH-suite databases to the HH-suite in due time. These scripts generate A3M files, HHM files, and consensus sequences. Because of the large number of files to generate, these scripts need to be run on a computer cluster and this would require considerable computer savvyness. 
@@ -901,7 +900,7 @@ We have not seen significant improvements in remote homology detection through i
 The pdb70 database is clustered to 70\% maximum pairwise sequence identity to reduce redundancy. The PDB identifiers at the end of the description line of sequence $X$ lists the sequences with lower experimental resolution that were removed for having higher than 70\% sequence identity with PDB sequence $X$. The asterisks indicate that a multi-atom ligand is bound in the structure. 
 
 
-\subsection{Questions about unexpected HH-suite behavior}
+\subsection{About unexpected HH-suite behavior and troubleshooting}
 
 {\bf Why do I get different results when reversing the roles of query and template?} When taking A as the query, the pairwise alignment and significance scores with template B in the database can be different than when B is the query and A the template. By default hhblits, hhsearch, and hhalign add context-specific pseudocounts to the query MSA or HMM whereas the much faster substitution matrix pseudocounts are added to the database HMMs/MSAs for reasons of speed. If you want to combine the significance estimates from the forward and reverse comparisons, we recommend to take the geometric mean of Probability, P-value and E-value. Since the less diverse HMM or MSA will profit more from the context-specific pseudocounts than the more diverse HMM or MSA, it might be even better to take the estimate from the comparison in which the HMM/MSA with the smaller diversity (measured as number of effective sequences, NEFF) is used as the query. 
 
@@ -910,8 +909,6 @@ The pdb70 database is clustered to 70\% maximum pairwise sequence identity to re
 {\bf Why do I get different results using hhblits and hhsearch} when I search with the same query through the same database? There are two reasons. First, some hits that hhsearch shows might not have passed the prefilter in hhblits. The option \verb`-prepre_smax_thresh <bits>` lets you modify the minimum score threshold of the first, gapless alignment prefilter (default is 10 bits). Option \verb`-pre_evalue_thresh <E-value>` sets the maximum E-value threshold for the second, gapped alignment prefilter (default is 1000). Second, while the probabilities and P-values of hhblits and hhsearch should be the identical for the same matches, the E-values are only similar. The reason is that hhblits heuristically combines the E-values of the second prefilter with the E-values from the full HMM-HMM Viterbi alignment into total E-values \cite{Remmert:2011}. These E-values are slightly better in distinguishing true from false hits, because they combine the partly independent information from two comparisons.
 
 {\label{2_vs_1+1} \bf Why do I get different results when I perform $2$ and $1+1$ iterations with HHblits?} When you do a single iteration and start a second iteration with the A3M output file from the first iteration, the alignments should be nearly the same as if you do two iterations (\verb`-n 2`) Why not exactly the same? Because when doing multiple iterations in a single hhblits run, alignments for each hit are only calculated once. When the same database HMM is found in later search iterations, the ``frozen'', first alignment is used instead of recomputing it. This increases robustness with respect to homologous overextension. However, the significance values can be slightly different between the cases with$2$ and $1+1$ iterations. The reason is that the HHblits P-value is calculated by a weighted combination of the P-value of the Viterbi pairwise HMM alignment and the prefilter E-value. The prefilter E-values differ in the two cases described, since in the first case the E-value is calculated for the first prefilter search (before the first full search) and in the second case it is calculated for the second prefilter search, performed with the query MSA obtained \emph{after} the first search iteration. 
-
-\subsection{Troubleshooting}
 
 {\bf Why do I get a segmentation fault when calling hhblits on our new machine?}
 Often, segmentation faults can be caused by too little available memory. HHblits needs memory to read the entire column state file into memory for prefiltering (\verb`*.cs219`). For Viterbi HMM-HMM alignment it needs about Query\_length $\times$ max\_db\_seq\_length $\times$ 5B $\times$ (num\_threads+1) $\times$ 5 bytes. Here, num\_threads is the number of threads specified with option \verb`-cpu <int>`. For realignment, HHblits needs Query\_length $\times$ max\_db\_seq\_length $\times$ 5B $\times$ (num\_threads+1) $\times$ 24 bytes, but the amount of memory for realignment can be limited using the \verb`-maxmem <GB>` option, which will cause the realignment to skip the longest sequences. Under Linux, you can check your memory limit settings using ulimit -a`. Make sure you have at least 4GB per thread. Try 
