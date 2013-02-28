@@ -1030,14 +1030,14 @@ int main(int argc, char **argv)
       fprintf(tcf,"#1 2\n");
       for (i=1; i<=q->L; i++)  // print all pairs (i,j) with probability above PROBTCMIN
 	for (j=1; j<=t->L; j++)
-	  if (hit.F_MM[i][j]>probmin_tc) 
-	    fprintf(tcf,"%5i %5i %5i\n",i,j,iround(100.0*hit.F_MM[i][j]));
+	  if (hit.P_MM[i][j]>probmin_tc) 
+	    fprintf(tcf,"%5i %5i %5i\n",i,j,iround(100.0*hit.P_MM[i][j]));
       for (int step=hit.nsteps; step>=1; step--)  // print all pairs on MAC alignment which were not yet printed
 	{
 	  i=hit.i[step]; j=hit.j[step];
-// 	  printf("%5i %5i %5i  %i\n",i,j,iround(100.0*hit.F_MM[i][j]),hit.states[step]);
-	  if (hit.states[step]>=MM && hit.F_MM[i][j]<=probmin_tc) 
-	    fprintf(tcf,"%5i %5i %5i\n",i,j,iround(100.0*hit.F_MM[i][j]));
+// 	  printf("%5i %5i %5i  %i\n",i,j,iround(100.0*hit.P_MM[i][j]),hit.states[step]);
+	  if (hit.states[step]>=MM && hit.P_MM[i][j]<=probmin_tc) 
+	    fprintf(tcf,"%5i %5i %5i\n",i,j,iround(100.0*hit.P_MM[i][j]));
 	}
 
 
@@ -1046,7 +1046,7 @@ int main(int argc, char **argv)
 //       for (i=1; i<=q->L; i++)
 //        	{
 //        	  double sum=0.0;
-//        	  for (j=1; j<=t->L; j++) sum+=hit.F_MM[i][j];
+//        	  for (j=1; j<=t->L; j++) sum+=hit.P_MM[i][j];
 // 	  printf("i=%-3i sum=%7.4f\n",i,sum);
 //        	}
 //        printf("\n");
@@ -1281,7 +1281,7 @@ int main(int argc, char **argv)
 	      } 
 	    else 
 	      {
-		sum = hit.F_MM[i][j];
+		sum = hit.P_MM[i][j];
 		dotval = fmax(0.0, 1.0 - 1.0*sum/dotthr); 
 		l=1; 
 

@@ -56,7 +56,7 @@ class Hit
   int nfirst;           // index of query sequence in seq[]
   int ncons;            // index of consensus sequence
   
-  double** F_MM;        // Forward matrix
+  double** P_MM;        // Posterior probability matrix, filled in Forward and Backward algorithms
   int nsteps;           // index for last step in Viterbi path; (first=1)
   int* i;               // i[step] = query match state at step of Viterbi path
   int* j;               // j[step] = template match state at step of Viterbi path

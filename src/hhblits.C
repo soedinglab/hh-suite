@@ -1326,7 +1326,7 @@ void perform_realign(char *dbfiles[], int ndb)
   // // replacing the above block with this block: (JS)
   // int Lmaxprev = 0;
   // if (hit[bin]->forward_allocated)  
-  //   Lmaxprev = sizeof(hit[bin]->F_MM[0]) / sizeof(hit[bin]->F_MM[0][0]);
+  //   Lmaxprev = sizeof(hit[bin]->P_MM[0]) / sizeof(hit[bin]->P_MM[0][0]);
   // for (bin=0; bin<bins; bin++)
   //   {
   //     if (!hit[bin]->forward_allocated)  hit[bin]->AllocateForwardMatrix(q->L+2,Lmax+1);
@@ -1338,7 +1338,7 @@ void perform_realign(char *dbfiles[], int ndb)
   //     bin_status[bin] = FREE;
   //   }
   // // This is just an idea. This code would need to be tested!!! 
-  // // First, it would need to be tested whether reseting F_MM and B_MM to 0 during the allocation is needed at all.
+  // // First, it would need to be tested whether reseting P_MM to 0 during the allocation is needed at all.
   
   if (print_elapsed) ElapsedTimeSinceLastCall("(reallocate/reset forward/backwad matrices)");
   // if (print_elapsed) ElapsedTimeSinceLastCall("(prepare realign)");
