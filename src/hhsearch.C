@@ -642,11 +642,8 @@ void perform_realign(char *dbfiles[], int ndb)
   jobs_submitted = 0;
   reading_dbs=1;   // needs to be set to 1 before threads are created
   for (bin=0; bin<bins; bin++)
-    {
-      if (!hit[bin]->forward_allocated)  hit[bin]->AllocateForwardMatrix(q->L+2,Lmax+1);
-      if (!hit[bin]->backward_allocated) hit[bin]->AllocateBackwardMatrix(q->L+2,Lmax+1);
-    }
-  
+    if (!hit[bin]->forward_allocated)  hit[bin]->AllocateForwardMatrix(q->L+2,Lmax+1);
+    
   if (v>=2) printf("Realigning %i database HMMs using HMM-HMM Maximum Accuracy algorithm\n",nhits);
   v1 = v;
   if (v>0 && v<=3) v=1; else v-=2;  // Supress verbose output during iterative realignment and realignment
@@ -1240,8 +1237,6 @@ int main(int argc, char **argv)
       hit[bin]->AllocateBacktraceMatrix(q->L+2,par.maxres); // ...with a separate dynamic programming matrix (memory!!)
       if (par.forward>=1)
         hit[bin]->AllocateForwardMatrix(q->L+2,par.maxres);
-      if (par.forward==2)
-        hit[bin]->AllocateBackwardMatrix(q->L+2,par.maxres);
 
       bin_status[bin] = FREE;
     }
@@ -1762,8 +1757,6 @@ int main(int argc, char **argv)
       hit[bin]->DeleteBacktraceMatrix(q->L+2);
       if (par.forward>=1 || par.realign)
         hit[bin]->DeleteForwardMatrix(q->L+2);
-      if (par.forward==2 || par.realign)
-        hit[bin]->DeleteBackwardMatrix(q->L+2);
       delete hit[bin];
       delete t[bin];
      }

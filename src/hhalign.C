@@ -633,8 +633,6 @@ void RealignByWorker(Hit& hit)
   // Allocate space
   if (par.forward==0)
     hit.AllocateForwardMatrix(q->L+2,t->L+2);
-  if (par.forward<=1)
-    hit.AllocateBackwardMatrix(q->L+2,t->L+2);
   
   // Search positions in hitlist with correct index of template
   hitlist.Reset();
@@ -931,8 +929,6 @@ int main(int argc, char **argv)
   hit.AllocateBacktraceMatrix(q->L+2,t->L+2); // ...with a separate dynamic programming matrix (memory!!)
   if (par.forward>=1) 
     hit.AllocateForwardMatrix(q->L+2,t->L+2);
-  if (par.forward==2)     
-    hit.AllocateBackwardMatrix(q->L+2,t->L+2);
 
   // Read structure file for Forward() function?
   if (strucfile && par.wstruc>0) 
@@ -1034,14 +1030,14 @@ int main(int argc, char **argv)
       fprintf(tcf,"#1 2\n");
       for (i=1; i<=q->L; i++)  // print all pairs (i,j) with probability above PROBTCMIN
 	for (j=1; j<=t->L; j++)
-	  if (hit.B_MM[i][j]>probmin_tc) 
-	    fprintf(tcf,"%5i %5i %5i\n",i,j,iround(100.0*hit.B_MM[i][j]));
+	  if (hit.F_MM[i][j]>probmin_tc) 
+	    fprintf(tcf,"%5i %5i %5i\n",i,j,iround(100.0*hit.F_MM[i][j]));
       for (int step=hit.nsteps; step>=1; step--)  // print all pairs on MAC alignment which were not yet printed
 	{
 	  i=hit.i[step]; j=hit.j[step];
-// 	  printf("%5i %5i %5i  %i\n",i,j,iround(100.0*hit.B_MM[i][j]),hit.states[step]);
-	  if (hit.states[step]>=MM && hit.B_MM[i][j]<=probmin_tc) 
-	    fprintf(tcf,"%5i %5i %5i\n",i,j,iround(100.0*hit.B_MM[i][j]));
+// 	  printf("%5i %5i %5i  %i\n",i,j,iround(100.0*hit.F_MM[i][j]),hit.states[step]);
+	  if (hit.states[step]>=MM && hit.F_MM[i][j]<=probmin_tc) 
+	    fprintf(tcf,"%5i %5i %5i\n",i,j,iround(100.0*hit.F_MM[i][j]));
 	}
 
 
@@ -1050,7 +1046,7 @@ int main(int argc, char **argv)
 //       for (i=1; i<=q->L; i++)
 //        	{
 //        	  double sum=0.0;
-//        	  for (j=1; j<=t->L; j++) sum+=hit.B_MM[i][j];
+//        	  for (j=1; j<=t->L; j++) sum+=hit.F_MM[i][j];
 // 	  printf("i=%-3i sum=%7.4f\n",i,sum);
 //        	}
 //        printf("\n");
@@ -1285,7 +1281,7 @@ int main(int argc, char **argv)
 	      } 
 	    else 
 	      {
-		sum = hit.B_MM[i][j];
+		sum = hit.F_MM[i][j];
 		dotval = fmax(0.0, 1.0 - 1.0*sum/dotthr); 
 		l=1; 
 
@@ -1354,8 +1350,6 @@ int main(int argc, char **argv)
   hit.DeleteBacktraceMatrix(q->L+2);
   if (par.forward>=1 || par.realign) 
     hit.DeleteForwardMatrix(q->L+2);
-  if (par.forward==2 || par.realign) 
-    hit.DeleteBackwardMatrix(q->L+2);
 //   if (Pstruc) { for (int i=0; i<q->L+2; i++) delete[](Pstruc[i]); delete[](Pstruc);}
 
   

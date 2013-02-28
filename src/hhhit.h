@@ -56,6 +56,7 @@ class Hit
   int nfirst;           // index of query sequence in seq[]
   int ncons;            // index of consensus sequence
   
+  double** F_MM;        // Forward matrix
   int nsteps;           // index for last step in Viterbi path; (first=1)
   int* i;               // i[step] = query match state at step of Viterbi path
   int* j;               // j[step] = template match state at step of Viterbi path
@@ -78,9 +79,7 @@ class Hit
   float Neff_HMM;       // Diversity of underlying alignment
 
   bool realign_around_viterbi;
-
   bool forward_allocated;
-  bool backward_allocated;
 
   // Constructor (only set pointers to NULL)
   Hit();
@@ -94,8 +93,6 @@ class Hit
   void DeleteBacktraceMatrix(int Nq);
   void AllocateForwardMatrix(int Nq, int Nt);
   void DeleteForwardMatrix(int Nq);
-  void AllocateBackwardMatrix(int Nq, int Nt);
-  void DeleteBackwardMatrix(int Nq);
   
   void AllocateIndices(int len);
   void DeleteIndices();
@@ -142,7 +139,6 @@ class Hit
   /* // Merge HMM with next aligned HMM   */
   /* void MergeHMM(HMM* Q, HMM* t, float wk[]); */
 
-  double** B_MM;        // Backward matrices
   
 private:
   char state;          // 0: Start/STOP state  1: MM state  2: GD state (-D)  3: IM state  4: DG state (D-)  5 MI state
@@ -152,14 +148,6 @@ private:
   char** bIM;          // (backtracing)
   char** bMI;          // (backtracing)
   char** cell_off;     // cell_off[i][j]=1 means this cell will get score -infinity
-
-  double** F_MM;        // Forward matrices 
-  /*
-  double** F_GD;        // F_XY[i][j] * Prod_1^i(scale[i]) 
-  double** F_DG;        //   = Sum_x1..xl{ P(HMMs aligned up to Xi||Yj co-emmitted x1..xl ) / (Prod_k=1^l f(x_k)) }   
-  double** F_IM;        // end gaps are not penalized!
-  double** F_MI;        // 
-  */
   double* scale;        // 
 
   void InitializeBacktrace(HMM* q, HMM* t);

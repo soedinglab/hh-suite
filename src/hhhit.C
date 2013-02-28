@@ -82,16 +82,13 @@ Hit::Hit()
   alt_i = alt_j = NULL;
   states = NULL;
   S = S_ss = P_posterior = NULL;
-  //B_MM=B_MI=B_IM=B_DG=B_GD=NULL;
-  //F_MM=F_MI=F_IM=F_DG=F_GD=NULL;
-  B_MM=NULL;
   F_MM=NULL;
   cell_off = NULL;
   scale = NULL;
   sum_of_probs=0.0; 
   Neff_HMM=0.0;
   realign_around_viterbi=false;
-  forward_allocated = backward_allocated = false;
+  forward_allocated = false;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -200,12 +197,6 @@ void Hit::AllocateForwardMatrix(int Nq, int Nt)
   for (int i=0; i<Nq; ++i) 
     {
       F_MM[i] = new(double[Nt]);
-      /*
-      F_MI[i] = new(double[Nt]);
-      F_DG[i] = new(double[Nt]);
-      F_IM[i] = new(double[Nt]);
-      F_GD[i] = new(double[Nt]);
-      */
       if (!F_MM[i] /* || !F_MI[i] || !F_IM[i] || !F_GD[i] || !F_DG[i]*/) 
 	{
 	  fprintf(stderr,"Error in %s: out of memory while allocating row %i (out of %i) for dynamic programming matrices \n",par.argv[0],i+1,Nq);
@@ -214,7 +205,7 @@ void Hit::AllocateForwardMatrix(int Nq, int Nt)
 	  exit(3);
 	} 
       for (int j=0; j<Nt; ++j) 
-	F_MM[i][j]/*=F_MI[i][j]=F_DG[i][j]=F_IM[i][j]=F_GD[i][j]*/=0.0; // This might be time-consuming! Is it necessary???? JS
+	F_MM[i][j]=0.0; // This might be time-consuming! Is it necessary???? JS
 	
     }
   forward_allocated = true;
@@ -223,61 +214,11 @@ void Hit::AllocateForwardMatrix(int Nq, int Nt)
 void Hit::DeleteForwardMatrix(int Nq)
 {
   for (int i=0; i<Nq; ++i) 
-    {
-      delete[] F_MM[i];
-      /*
-      delete[] F_MI[i];
-      delete[] F_IM[i];
-      delete[] F_GD[i];
-      delete[] F_DG[i];
-      */
-    }
+    delete[] F_MM[i];
   delete[] F_MM;
-  /*
-  delete[] F_MI;
-  delete[] F_IM;
-  delete[] F_DG;
-  delete[] F_GD;
-  */
   delete[] scale;
   F_MM/*=F_MI=F_IM=F_DG=F_GD*/=NULL;
   forward_allocated = false;
-}
-
-/////////////////////////////////////////////////////////////////////////////////////
-//// Allocate/delete memory for Backward dynamic programming matrix (DO ONLY AFTER FORWARD MATRIX HAS BEEN ALLOCATED)
-/////////////////////////////////////////////////////////////////////////////////////
-void Hit::AllocateBackwardMatrix(int Nq, int Nt)
-{
-  B_MM = F_MM; // identify B_MM and F_MM! and comment out rest of function
-
-
-  // // B_MM=new(double*[Nq]);
-  // for (int i=0; i<Nq; ++i) 
-  //   {
-  //     B_MM[i] = new(double[Nt]);
-  //     if (!B_MM[i]) 
-  // 	{
-  // 	  fprintf(stderr,"Error in %s: out of memory while allocating row %i (out of %i) for dynamic programming matrices \n",par.argv[0],i+1,Nq);
-  // 	  fprintf(stderr,"Please decrease your memory requirements to the available memory using option -maxmem <GBs>\n");
-  // 	  fprintf(stderr,"You may want to check and increase your stack size limit (Linux: ulimit -a)\n");
-  // 	  exit(3);
-  // 	} 
-  //     for (int j=0; j<Nt; ++j) 
-  // 	B_MM[i][j]=0.0;   // This might be time-consuming! Is it necessary???? JS
-  //   }
-  // backward_allocated = true;
-}
-
-void Hit::DeleteBackwardMatrix(int Nq)
-{
-  for (int i=0; i<Nq; ++i) 
-    {
-      delete[] B_MM[i];
-    }
-  delete[] B_MM;
-  B_MM=/*B_MI=B_IM=B_DG=B_GD=*/NULL;
-  backward_allocated = false;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -606,7 +547,8 @@ void Hit::Forward(HMM* q, HMM* t, float** Pstruc)
       // 	}
     }
 
-
+  
+  // Initialize
   for (j=1; j<=t->L; ++j) 
     F_MM_curr[j] = 0.0;
 
@@ -818,9 +760,12 @@ void Hit::Backward(HMM* q, HMM* t)
   for (int j=t->L; j>=1; j--) 
   {
     if (cell_off[q->L][j]) 
-      B_MM[q->L][j] = B_MM_prev[j] = 0.0;
+      F_MM[q->L][j] = B_MM_prev[j] = 0.0;
     else 
-      B_MM[q->L][j] = B_MM_prev[j] = scale[q->L+1];
+      {
+	B_MM_prev[j] = scale[q->L+1];
+	F_MM[q->L][j] *= scale[q->L+1]/Pforward; 
+      }
     B_MI_prev[j] = B_DG_prev[j] = 0.0;
   }
   if (par.loc) pmin = scale[q->L+1]; else pmin = 0.0; // transform pmin (for local alignment) to scale of present (i'th) row 
@@ -836,9 +781,13 @@ void Hit::Backward(HMM* q, HMM* t)
       scale_prod *= scale[i+1];
       if (scale_prod<DBL_MIN*100) scale_prod = 0.0;
       if (cell_off[i][t->L]) 
-	B_MM[i][t->L] = B_MM_curr[t->L] = 0.0;  
+	F_MM[i][t->L] = B_MM_curr[t->L] = 0.0;  
       else 
-	B_MM[i][t->L] = B_MM_curr[t->L] = scale_prod;
+	{
+	  B_MM_curr[t->L] = scale_prod;
+	  F_MM[i][t->L] *= scale_prod/Pforward; 
+	}
+
       B_IM_curr[t->L] = B_MI_curr[t->L] = B_DG_curr[t->L] = B_GD_curr[t->L] = 0.0; 
       pmin *= scale[i+1]; // transform pmin (for local alignment) to scale of present (i'th) row 
       if (pmin<DBL_MIN*100) pmin = 0.0;
@@ -887,9 +836,8 @@ void Hit::Backward(HMM* q, HMM* t)
 
 	    } // end else	      
 
-	  /* Copy back to matrix */
-	  //	  B_MM[i][j] = B_MM_curr[j];
-	  B_MM[i][j] *= B_MM_curr[j]/Pforward;  // identify B_MM and F_MM!
+	  // Calculate posterior probability from Forward and Backward matrix elements
+	  F_MM[i][j] *= B_MM_curr[j]/Pforward;
 
 
 	} //end for j
@@ -942,12 +890,6 @@ void Hit::Backward(HMM* q, HMM* t)
 
   if (v>=4) printf("\nForward total probability ratio: %8.3G\n",Pforward);
   */
-
-  // Calculate Posterior matrix and overwrite Backward matrix with it
-  // Commented out because identified B_MM and F_MM!
-  // for (i=1; i<=q->L; ++i) 
-  //   for (j=1; j<=t->L; ++j) 
-  //     B_MM[i][j] *= F_MM[i][j]/Pforward;
 
   return;
 }
@@ -1016,15 +958,15 @@ void Hit::MACAlignment(HMM* q, HMM* t)
 	      // NOT the state before the first MM state)
 	      CALCULATE_MAX4(
 			     S_curr[j],
-			     B_MM[i][j] - par.mact,  // STOP signifies the first MM state, NOT the state before the first MM state (as in Viterbi)
-			     S_prev[j-1] + B_MM[i][j] - par.mact, // B_MM[i][j] contains posterior probability
-			     S_prev[j] - 0.5*par.mact,  // gap penalty prevents alignments such as this: XX--xxXX
-			     S_curr[j-1] - 0.5*par.mact,  //                                               YYyy--YY  
+			     F_MM[i][j] - par.mact,      // STOP signifies the first MM state, NOT the state before the first MM state (as in Viterbi)
+			     S_prev[j-1] + F_MM[i][j] - par.mact, // F_MM[i][j] contains posterior probability
+			     S_prev[j] - 0.5*par.mact,   // gap penalty prevents alignments such as this: XX--xxXX
+			     S_curr[j-1] - 0.5*par.mact, //                                               YYyy--YY  
 			     bMM[i][j]   // backtracing matrix
 			     );
 
 	      //if (i>36 && i<40 && j>2200 && j<2230) 
-	      //printf("i=%i  j=%i  S[i][j]=%8.3f  MM:%7.3f  MI:%7.3f  IM:%7.3f  b:%i\n",i,j,S[i][j],S[i-1][j-1]+B_MM[i][j]-par.mact,S[i-1][j],S[i][j-1],bMM[i][j]);
+	      //printf("i=%i  j=%i  S[i][j]=%8.3f  MM:%7.3f  MI:%7.3f  IM:%7.3f  b:%i\n",i,j,S[i][j],S[i-1][j-1]+F_MM[i][j]-par.mact,S[i-1][j],S[i][j-1],bMM[i][j]);
 	      
 	      // Find maximum score; global alignment: maximize only over last row and last column
 	      if(S_curr[j]>score_MAC && (par.loc || i==q->L)) { i2=i; j2=j; score_MAC=S_curr[j]; }	      
@@ -1316,7 +1258,7 @@ void Hit::BacktraceMAC(HMM* q, HMM* t)
 	  S[step] = Score(q->p[i],t->p[j]);
 	  S_ss[step] = ScoreSS(q,t,i,j,ssm);
 	  score_ss += S_ss[step];
-	  P_posterior[step] = B_MM[this->i[step]][this->j[step]];
+	  P_posterior[step] = F_MM[this->i[step]][this->j[step]];
 	  // Add probability to sum of probs if no dssp states given or dssp states exist and state is resolved in 3D structure
 	  if (t->nss_dssp<0 || t->ss_dssp[j]>0) sum_of_probs += P_posterior[step]; 
 	  // 	  printf("j=%-3i  dssp=%1i  P=%4.2f  sum=%6.2f\n",j,t->ss_dssp[j],P_posterior[step],sum_of_probs); //////////////////////////

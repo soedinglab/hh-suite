@@ -919,11 +919,11 @@ Here, num\_threads is the number of threads specified with option \verb`-cpu <in
 \begin{equation}
 \textrm{Memory Realing} = \textrm{Query\_length} \times \textrm{max\_db\_seq\_length} \times (\textrm{num\_threads}+1) \times 8 \textrm{B} \,, 
 \end{equation}
-but the amount of memory for realignment can be limited using the \verb`-maxmem <GB>` option, which will cause the realignment to skip the longest sequences. Under Linux, you can check your memory limit settings using ulimit -a`. Make sure you have at least 4GB per thread. Try 
+but the amount of memory for realignment can be limited using the \verb`-maxmem <GB>` option, which will cause the realignment to skip the longest sequences. Under Linux, you can check your memory limit settings using \verb`ulimit -a`. Make sure you have at least 4GB per thread. Try 
 \begin{verbatim}
-ulimit -m 4000000 -v 4000000 -s 8192 -f 4000000
+$ ulimit -m 4000000 -v 4000000 -s 8192 -f 4000000
 \end{verbatim}
-Also try using \verb`-cpu 1 -maxmem 2` to reduce memory requirements. If it still does not work, follow the tipps in subsection \ref{report-bug} to report your problems to us.
+Also try using \verb`-cpu 1 -maxmem 1` to reduce memory requirements. If it still does not work, follow the tipps in subsection \ref{report-bug} to report your problems to us.
 
 
 

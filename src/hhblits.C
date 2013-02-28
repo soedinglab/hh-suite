@@ -1316,11 +1316,9 @@ void perform_realign(char *dbfiles[], int ndb)
     {
       // Free previously allocated memory (delete and reallocate, since Lmax may have increased)
       if (hit[bin]->forward_allocated) hit[bin]->DeleteForwardMatrix(q->L+2);
-      if (hit[bin]->backward_allocated) hit[bin]->DeleteBackwardMatrix(q->L+2);
       
-      // Allocate memory for matrices and set to 0
+      // Allocate memory for matrix and set to 0
       hit[bin]->AllocateForwardMatrix(q->L+2,Lmax+1);
-      hit[bin]->AllocateBackwardMatrix(q->L+2,Lmax+1);
 
       bin_status[bin] = FREE;
     }
@@ -1336,12 +1334,6 @@ void perform_realign(char *dbfiles[], int ndb)
   // 	{ 
   // 	  hit[bin]->DeleteForwardMatrix(q->L+2);
   // 	  hit[bin]->AllocateForwardMatrix(q->L+2,Lmax+1);
-  // 	}
-  //     if (!hit[bin]->backward_allocated) hit[bin]->AllocateBackwardMatrix(q->L+2,Lmax+1);
-  //     else if (Lmaxprev<Lmax) 
-  // 	{ 
-  // 	  hit[bin]->DeleteBackwardMatrix(q->L+2);
-  // 	  hit[bin]->AllocateBackwardMatrix(q->L+2,Lmax+1);
   // 	}
   //     bin_status[bin] = FREE;
   //   }
@@ -2523,9 +2515,6 @@ int main(int argc, char **argv)
       hit[bin]->DeleteBacktraceMatrix(q->L+2);
       if (hit[bin]->forward_allocated)
 	hit[bin]->DeleteForwardMatrix(q->L+2);
-      if (hit[bin]->backward_allocated)
-	hit[bin]->DeleteBackwardMatrix(q->L+2);
-
       delete hit[bin];
       delete t[bin];
     }
