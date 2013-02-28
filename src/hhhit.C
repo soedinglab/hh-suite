@@ -781,17 +781,17 @@ void Hit::Backward(HMM* q, HMM* t)
 	      double pmatch = B_MM_prev[j+1] * ProbFwd(q->p[i+1],t->p[j+1]) * fpow2(ScoreSS(q,t,i+1,j+1)) * Cshift * scale[i+1];
 	      B_MM_curr[j] =  
 		(
-		 + pmin                                                       // MM -> EE (End/End, for local alignment)
-		 + pmatch       * q->tr[i][M2M]   * t->tr[j][M2M]             // MM -> MM
-		 + B_GD_curr[j+1]                 * t->tr[j][M2D]             // MM -> GD (q->tr[i][M2M] is already contained in GD->MM)
-		 + B_IM_curr[j+1] * q->tr[i][M2I] * t->tr[j][M2M]             // MM -> IM
-		 + B_DG_prev[j] * q->tr[i][M2D]                  * scale[i+1] // MM -> DG (t->tr[j][M2M] is already contained in DG->MM)
-		 + B_MI_prev[j] * q->tr[i][M2M]   * t->tr[j][M2I]* scale[i+1] // MM -> MI
+		 + pmin                                                    // MM -> EE (End/End, for local alignment)
+		 + pmatch       * q->tr[i][M2M]   * t->tr[j][M2M]              // MM -> MM
+		 + B_GD_curr[j+1]                 * t->tr[j][M2D]              // MM -> GD (q->tr[i][M2M] is already contained in GD->MM)
+		 + B_IM_curr[j+1] * q->tr[i][M2I] * t->tr[j][M2M]              // MM -> IM
+		 + B_DG_prev[j] * q->tr[i][M2D]                 * scale[i+1] // MM -> DG (t->tr[j][M2M] is already contained in DG->MM)
+		 + B_MI_prev[j] * q->tr[i][M2M]   * t->tr[j][M2I] * scale[i+1] // MM -> MI
 		 );
 	      B_GD_curr[j] = 
 		(
-		 + pmatch        * q->tr[i][M2M] * t->tr[j][D2M]              // GD -> MM 
-		 + B_GD_curr[j+1]                * t->tr[j][D2D]              // DG -> DG   
+		 + pmatch       * q->tr[i][M2M] * t->tr[j][D2M]              // GD -> MM 
+		 + B_GD_curr[j+1]               * t->tr[j][D2D]              // DG -> DG   
 		 );
 	      B_IM_curr[j] = 
 		(
@@ -802,13 +802,13 @@ void Hit::Backward(HMM* q, HMM* t)
 		(
 		 + pmatch       * q->tr[i][D2M] * t->tr[j][M2M]              // DG -> MM
 		 + B_DG_prev[j] * q->tr[i][D2D]                * scale[i+1]  // DG -> DG
- //   	         + B_GD[i][j+1] * q->tr[i][D2M] * t->tr[j][M2D]              // DG -> GD
+  //   	         + B_GD[i][j+1] * q->tr[i][D2M] * t->tr[j][M2D]              // DG -> GD
 		 );
 	      B_MI_curr[j] = 
 		(
 		 + pmatch       * q->tr[i][M2M] * t->tr[j][I2M]              // MI -> MM       
 		 + B_MI_prev[j] * q->tr[i][M2M] * t->tr[j][I2I] * scale[i+1] // MI -> MI
- // 	         + B_IM[i][j+1] * q->tr[i][M2I] * t->tr[j][I2M]              // MI -> IM    
+    // 	         + B_IM[i][j+1] * q->tr[i][M2I] * t->tr[j][I2M]              // MI -> IM    
 		 );
 
 	    } // end else	      
@@ -890,6 +890,8 @@ void Hit::MACAlignment(HMM* q, HMM* t)
   double S_prev[t->L + 1];    // scores
   double S_curr[t->L + 1];    // scores
   double score_MAC;   // score of the best MAC alignment
+  const double GAPPENALTY = 0.5*(1.0 - (double) par.macins);
+
 
   // Initialization of top row, i.e. cells (0,j)
   for (j=0; j<=t->L; ++j)
@@ -923,7 +925,7 @@ void Hit::MACAlignment(HMM* q, HMM* t)
 
 	  if (cell_off[i][j]) 
 	    {
-	      S_curr[j] = -FLT_MIN;
+	      S_curr[j] = -DBL_MIN;
 	      bMM[i][j] = STOP;
 	      //	      if (i>135 && i<140) 
 	      // 		printf("Cell off   i=%i  j=%i b:%i\n",i,j,bMM[i][j]);
@@ -932,13 +934,17 @@ void Hit::MACAlignment(HMM* q, HMM* t)
 	    {
 	      // Recursion
 	     
+	      // GAPPENALTY suppresses alignments XX-xXX IF the posterior prob for aligning (x,y) as in XXxXX
+              //                                  YYy-YY                                                YYyYY
+	      // is larger than par.macins. For par.macins = 0.0, such insertions are always compressed and aligned on top of each other.
+
 	      // NOT the state before the first MM state)
 	      CALCULATE_MAX4(
 			     S_curr[j],
-			     P_MM[i][j] - par.mact,      // STOP signifies the first MM state, NOT the state before the first MM state (as in Viterbi)
+			     P_MM[i][j] - par.mact,     // STOP signifies the first MM state, NOT the state before the first MM state (as in Viterbi)
 			     S_prev[j-1] + P_MM[i][j] - par.mact, // P_MM[i][j] contains posterior probability
-			     S_prev[j] - 0.5*par.mact,   // gap penalty prevents alignments such as this: XX--xxXX
-			     S_curr[j-1] - 0.5*par.mact, //                                               YYyy--YY  
+			     S_prev[j] - GAPPENALTY,   
+			     S_curr[j-1] - GAPPENALTY, 
 			     bMM[i][j]   // backtracing matrix
 			     );
 

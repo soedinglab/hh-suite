@@ -142,78 +142,79 @@ void help()
   printf("%s",COPYRIGHT);
   printf("\n");
   printf("Usage: %s -i query [-t template] [options]  \n",program_name);
-  printf(" -i <file>     input query alignment  (fasta/a2m/a3m) or HMM file (.hhm)\n");
-  printf(" -t <file>     input template alignment (fasta/a2m/a3m) or HMM file (.hhm)\n");
+  printf(" -i <file>      input query alignment  (fasta/a2m/a3m) or HMM file (.hhm)\n");
+  printf(" -t <file>      input template alignment (fasta/a2m/a3m) or HMM file (.hhm)\n");
 #ifdef HH_PNG
-  printf(" -png <file>   write dotplot into PNG-file (default=none)           \n");
+  printf(" -png <file>    write dotplot into PNG-file (default=none)           \n");
 #endif
   printf("\n");         
   printf("Output options:                                                           \n");
-  printf(" -o <file>     write output alignment to file\n"); 
-  printf(" -ofas <file>  write alignments in FASTA, A2M (-oa2m) or A3M (-oa3m) format   \n"); 
-  printf(" -Oa3m <file>  write query alignment in a3m format to file (default=none)\n");
-  printf(" -Aa3m <file>  append query alignment in a3m format to file (default=none)\n");
-  printf(" -atab <file>  write alignment as a table (with posteriors) to file (default=none)\n");
-  printf(" -index <file> use given alignment to calculate Viterbi score (default=none)\n");
-  printf(" -v <int>      verbose mode: 0:no screen output  1:only warings  2: verbose\n");
-  printf(" -seq  [1,inf[ max. number of query/template sequences displayed  (def=%i)  \n",par.nseqdis);
-  printf(" -nocons       don't show consensus sequence in alignments (default=show) \n");
-  printf(" -nopred       don't show predicted 2ndary structure in alignments (default=show) \n");
-  printf(" -nodssp       don't show DSSP 2ndary structure in alignments (default=show) \n");
-  printf(" -ssconf       show confidences for predicted 2ndary structure in alignments\n");
-  printf(" -aliw int     number of columns per line in alignment list (def=%i)\n",par.aliwidth);
-  printf(" -P <float>    for self-comparison: max p-value of alignments (def=%.2g\n",pself);
-  printf(" -p <float>    minimum probability in summary and alignment list (def=%G) \n",par.p);
-  printf(" -E <float>    maximum E-value in summary and alignment list (def=%G)     \n",par.E);
-  printf(" -Z <int>      maximum number of lines in summary hit list (def=%i)       \n",par.Z);
-  printf(" -z <int>      minimum number of lines in summary hit list (def=%i)       \n",par.z);
-  printf(" -B <int>      maximum number of alignments in alignment list (def=%i)    \n",par.B);
-  printf(" -b <int>      minimum number of alignments in alignment list (def=%i)    \n",par.b);
-  printf(" -rank int     specify rank of alignment to write with -Oa3m or -Aa3m option (default=1)\n");
+  printf(" -o <file>      write output alignment to file\n"); 
+  printf(" -ofas <file>   write alignments in FASTA, A2M (-oa2m) or A3M (-oa3m) format   \n"); 
+  printf(" -Oa3m <file>   write query alignment in a3m format to file (default=none)\n");
+  printf(" -Aa3m <file>   append query alignment in a3m format to file (default=none)\n");
+  printf(" -atab <file>   write alignment as a table (with posteriors) to file (default=none)\n");
+  printf(" -index <file>  use given alignment to calculate Viterbi score (default=none)\n");
+  printf(" -v <int>       verbose mode: 0:no screen output  1:only warings  2: verbose\n");
+  printf(" -seq  [1,inf[  max. number of query/template sequences displayed  (def=%i)  \n",par.nseqdis);
+  printf(" -nocons        don't show consensus sequence in alignments (default=show) \n");
+  printf(" -nopred        don't show predicted 2ndary structure in alignments (default=show) \n");
+  printf(" -nodssp        don't show DSSP 2ndary structure in alignments (default=show) \n");
+  printf(" -ssconf        show confidences for predicted 2ndary structure in alignments\n");
+  printf(" -aliw int      number of columns per line in alignment list (def=%i)\n",par.aliwidth);
+  printf(" -P <float>     for self-comparison: max p-value of alignments (def=%.2g\n",pself);
+  printf(" -p <float>     minimum probability in summary and alignment list (def=%G) \n",par.p);
+  printf(" -E <float>     maximum E-value in summary and alignment list (def=%G)     \n",par.E);
+  printf(" -Z <int>       maximum number of lines in summary hit list (def=%i)       \n",par.Z);
+  printf(" -z <int>       minimum number of lines in summary hit list (def=%i)       \n",par.z);
+  printf(" -B <int>       maximum number of alignments in alignment list (def=%i)    \n",par.B);
+  printf(" -b <int>       minimum number of alignments in alignment list (def=%i)    \n",par.b);
+  printf(" -rank int      specify rank of alignment to write with -Oa3m or -Aa3m option (default=1)\n");
   printf("\n");         
 #ifdef HH_PNG
   printf("Dotplot options:\n");
-  printf(" -dthr <float> probability/score threshold for dotplot (default=%.2f)        \n",dotthr);
-  printf(" -dsca <int>   if value <= 20: size of dot plot unit box in pixels           \n");
-  printf("               if value > 20: maximum dot plot size in pixels (default=%i)   \n",dotscale);
-  printf(" -dwin <int>   average score over window [i-W..i+W] (for -norealign) (def=%i)\n",dotW);
-  printf(" -dali <list>  show alignments with indices in <list> in dot plot            \n");
-  printf("               <list> = <index1> ... <indexN>  or  <list> = all              \n");
+  printf(" -dthr <float>  probability/score threshold for dotplot (default=%.2f)        \n",dotthr);
+  printf(" -dsca <int>    if value <= 20: size of dot plot unit box in pixels           \n");
+  printf("                if value > 20: maximum dot plot size in pixels (default=%i)   \n",dotscale);
+  printf(" -dwin <int>    average score over window [i-W..i+W] (for -norealign) (def=%i)\n",dotW);
+  printf(" -dali <list>   show alignments with indices in <list> in dot plot            \n");
+  printf("                <list> = <index1> ... <indexN>  or  <list> = all              \n");
   printf("\n");         
 #endif
   printf("Filter input alignment (options can be combined):                         \n");
-  printf(" -id   [0,100] maximum pairwise sequence identity (%%) (def=%i)   \n",par.max_seqid);
-  printf(" -diff [0,inf[ filter most diverse set of sequences, keeping at least this    \n");
-  printf("               many sequences in each block of >50 columns (def=%i)\n",par.Ndiff);
-  printf(" -cov  [0,100] minimum coverage with query (%%) (def=%i) \n",par.coverage);
-  printf(" -qid  [0,100] minimum sequence identity with query (%%) (def=%i) \n",par.qid);
-  printf(" -qsc  [0,100] minimum score per column with query  (def=%.1f)\n",par.qsc);
+  printf(" -id   [0,100]  maximum pairwise sequence identity (%%) (def=%i)   \n",par.max_seqid);
+  printf(" -diff [0,inf[  filter most diverse set of sequences, keeping at least this    \n");
+  printf("                many sequences in each block of >50 columns (def=%i)\n",par.Ndiff);
+  printf(" -cov  [0,100]  minimum coverage with query (%%) (def=%i) \n",par.coverage);
+  printf(" -qid  [0,100]  minimum sequence identity with query (%%) (def=%i) \n",par.qid);
+  printf(" -qsc  [0,100]  minimum score per column with query  (def=%.1f)\n",par.qsc);
   printf("\n");         
   printf("Input alignment format:                                                     \n");
-  printf(" -M a2m        use A2M/A3M (default): upper case = Match; lower case = Insert;\n");         
-  printf("               '-' = Delete; '.' = gaps aligned to inserts (may be omitted)   \n");
-  printf(" -M first      use FASTA: columns with residue in 1st sequence are match states\n");
-  printf(" -M [0,100]    use FASTA: columns with fewer than X%% gaps are match states   \n");
+  printf(" -M a2m         use A2M/A3M (default): upper case = Match; lower case = Insert;\n");         
+  printf("                '-' = Delete; '.' = gaps aligned to inserts (may be omitted)   \n");
+  printf(" -M first       use FASTA: columns with residue in 1st sequence are match states\n");
+  printf(" -M [0,100]     use FASTA: columns with fewer than X%% gaps are match states   \n");
   printf("\n");    
   printf("HMM-HMM alignment options:                                                  \n");
-  printf(" -glob/-loc    global or local alignment mode (def=local)         \n");
-  printf(" -alt <int>    show up to this number of alternative alignments (def=%i)    \n",par.altali);
+  printf(" -glob/-loc     global or local alignment mode (def=local)         \n");
+  printf(" -alt <int>     show up to this number of alternative alignments (def=%i)    \n",par.altali);
   //  printf(" -vit          use Viterbi algorithm for alignment instead of MAC algorithm \n");
   //  printf(" -mac          use Maximum Accuracy (MAC) alignment (default)  \n");
-  printf(" -realign      realign displayed hits with max. accuracy (MAC) algorithm \n");
-  printf(" -norealign    do NOT realign displayed hits with MAC algorithm (def=realign)\n");
-  printf(" -mact [0,1[   posterior probability threshold for MAC alignment (def=%.3f) \n",par.mact);
-  printf("               A threshold value of 0.0 yields global alignments.\n");
-  printf(" -sto <int>    use global stochastic sampling algorithm to sample this many alignments\n");
-  printf(" -excl <range> exclude query positions from the alignment, e.g. '1-33,97-168'\n");
-  printf(" -shift [-1,1] score offset (def=%-.3f)                                      \n",par.shift);
-  printf(" -corr [0,1]   weight of term for pair correlations (def=%.2f)               \n",par.corr);
-  printf(" -ssm  0-4     0:no ss scoring [default=%i]               \n",par.ssm);
-  printf("               1:ss scoring after alignment                                  \n");
-  printf("               2:ss scoring during alignment                                 \n");
-  printf(" -ssw  [0,1]   weight of ss score  (def=%-.2f)                               \n",par.ssw);
+  printf(" -realign       realign displayed hits with max. accuracy (MAC) algorithm \n");
+  printf(" -norealign     do NOT realign displayed hits with MAC algorithm (def=realign)\n");
+  printf(" -mact [0,1[    posterior prob threshold for MAC realignment controlling greedi- \n");
+  printf("                ness at alignment ends: 0:global >0.1:local (default=%.2f)       \n",par.mact);
+  printf(" -macins [0,1[  posterior prob threshold for MAC realignment controlling greedi- \n");
+  printf("                ness for aligning nonhomologous inserts to each other (def=%.2f)\n",par.macins);
+  printf(" -excl <range>  exclude query positions from the alignment, e.g. '1-33,97-168'\n");
+  printf(" -shift [-1,1]  score offset (def=%-.3f)                                      \n",par.shift);
+  printf(" -corr [0,1]    weight of term for pair correlations (def=%.2f)               \n",par.corr);
+  printf(" -ssm  0-4      0:no ss scoring [default=%i]               \n",par.ssm);
+  printf("                1:ss scoring after alignment                                  \n");
+  printf("                2:ss scoring during alignment                                 \n");
+  printf(" -ssw  [0,1]    weight of ss score  (def=%-.2f)                               \n",par.ssw);
   printf("\n");
-  printf(" -def          read default options from ./.hhdefaults or <home>/.hhdefault. \n");
+  printf(" -def           read default options from ./.hhdefaults or <home>/.hhdefault. \n");
   printf("\n");
   printf("Example: %s -i T0187.a3m -t d1hz4a_.hhm -png T0187pdb.png \n",program_name);
   cout<<endl;
@@ -321,7 +322,10 @@ void help_ali()
   printf("Alignment options:  \n");
   printf(" -glob/-loc     global or local alignment mode (def=global)                \n");
   printf(" -mac           use Maximum Accuracy (MAC) alignment instead of Viterbi\n");
-  printf(" -mact [0,1]    posterior prob threshold for MAC alignment (def=%.3f)      \n",par.mact);
+  printf(" -mact [0,1[    posterior prob threshold for MAC realignment controlling greedi- \n");
+  printf("                ness at alignment ends: 0:global >0.1:local (default=%.2f)       \n",par.mact);
+  printf(" -macins [0,1[  posterior prob threshold for MAC realignment controlling greedi- \n");
+  printf("                ness for aligning nonhomologous inserts to each other (def=%.2f)\n",par.macins);
   printf(" -sto <int>     use global stochastic sampling algorithm to sample this many alignments\n");
   printf(" -sc   <int>    amino acid score         (tja: template HMM at column j) (def=%i)\n",par.columnscore);
   printf("        0       = log2 Sum(tja*qia/pa)   (pa: aa background frequencies)    \n");
@@ -558,7 +562,7 @@ void ProcessArguments(int argc, char** argv)
       else if (!strcmp(argv[i],"-ssm") && (i<argc-1)) par.ssm=atoi(argv[++i]); 
       else if (!strcmp(argv[i],"-ssw") && (i<argc-1)) par.ssw=atof(argv[++i]); 
       else if (!strcmp(argv[i],"-ssa") && (i<argc-1)) par.ssa=atof(argv[++i]); 
-      else if (!strncmp(argv[i],"-glo",3)) {par.loc=0; if (par.mact>0.3 && par.mact<0.301) {par.mact=0;} }
+      else if (!strncmp(argv[i],"-glo",3)) {par.loc=0; if (par.mact>0.35 && par.mact<0.3502) {par.mact=0;} }
       else if (!strncmp(argv[i],"-loc",3)) par.loc=1;
       else if (!strncmp(argv[i],"-alt",4) && (i<argc-1)) par.altali=atoi(argv[++i]); 
       else if (!strcmp(argv[i],"-map") || !strcmp(argv[i],"-MAP") || !strcmp(argv[i],"-mac") || !strcmp(argv[i],"-MAC")) 
@@ -575,6 +579,7 @@ void ProcessArguments(int argc, char** argv)
       else if (!strcmp(argv[i],"-calm") && (i<argc-1)) par.calm=atoi(argv[++i]);
       else if (!strcmp(argv[i],"-shift") && (i<argc-1)) par.shift=atof(argv[++i]); 
       else if (!strcmp(argv[i],"-mact") && (i<argc-1)) {par.mact=atof(argv[++i]);}
+      else if (!strcmp(argv[i],"-macins") && (i<argc-1)) par.macins=atof(argv[++i]);
       else if (!strcmp(argv[i],"-opt") && (i<argc-1)) par.opt=atoi(argv[++i]); 
       else if (!strcmp(argv[i],"-scwin") && (i<argc-1)) {par.columnscore=5; par.half_window_size_local_aa_bg_freqs = imax(1,atoi(argv[++i]));}
       else if (!strcmp(argv[i],"-sc") && (i<argc-1)) par.columnscore=atoi(argv[++i]); 
@@ -757,13 +762,6 @@ int main(int argc, char **argv)
   // Check command line input and default values
   if (!*par.infile) 
     {help(); cerr<<endl<<"Error in "<<program_name<<": no query alignment file given (-i file)\n"; exit(4);}
-  if (par.forward==2 && par.loc==0) 
-    {
-      if (par.mact<0.301 || par.mact>0.300) 
-	if (v>=1) fprintf(stderr,"REMARK: in -mac -global mode -mact is forced to 0\n");
-      par.mact=0;
-//       par.loc=1; // global forward-backward algorithm seems to work fine! use it in place of local version.
-    }
 
   // Get rootname (no directory path, no extension) and extension of infile
   RemoveExtension(q->file,par.infile);
@@ -778,6 +776,8 @@ int main(int argc, char **argv)
   if (par.b>par.B) par.B=par.b;
   if (par.z>par.Z) par.Z=par.z;
   if (par.hitrank>0) par.altali=0;
+  if (par.mact>=1.0) par.mact=0.999; else if (par.mact<0) par.mact=0.0;
+  if (par.macins>=1.0) par.macins=0.999; else if (par.macins<0) par.macins=0.0;
 
   // Input parameters
   if (v>=3) 

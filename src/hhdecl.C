@@ -234,7 +234,8 @@ public:
   int half_window_size_local_aa_bg_freqs; // half-window size to average local aa background frequencies
   float corr;             // Weight of correlations between scores with |i-j|<=4
   float shift;            // Score offset for match-match states
-  float mact;             // Score threshold (negative offset) in MAC alignment
+  double mact;            // Probability threshold (negative offset) in MAC alignment determining greediness at ends of alignment
+  double macins;          // Probability threshold (negative offset) in MAC alignment determining greediness inside the alignment
   int realign_max;        // Realign max ... hits
   float maxmem;           // maximum available memory in GB for realignment (approximately)
  
@@ -448,7 +449,8 @@ void Parameters::SetDefaults()
   ssw_realign=0.11f;       // weight of ss scoring for realign
   ssa=1.0f;                // weight of ss evolution matrix
   shift=-0.03f;            // Shift match score up
-  mact=0.3501f;            // Score threshold for MAC alignment in local mode (set to 0.3501 to track user modification)
+  mact=0.3501f;            // Probability threshold for MAC alignment in local mode for alignment ends (set to 0.3501 to track user modification)
+  macins=0.0f;             // Probability threshold for MAC alignment in local mode for internal insertions (set to 0 for greediness)
   corr=0.1f;               // Weight of correlations of scores for |i-j|<=4
 
   egq=0.0f;                // no charge for end gaps as default

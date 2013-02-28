@@ -341,8 +341,10 @@ void help(char all=0)
   printf("\n");
   printf("HMM-HMM alignment options:                                                       \n");
   printf(" -norealign     do NOT realign displayed hits with MAC algorithm (def=realign)   \n");
-  printf(" -mact [0,1[    posterior probability threshold for MAC re-alignment (def=%.3f)  \n",par.mact);
-  printf("                Parameter controls alignment greediness: 0:global >0.1:local     \n");
+  printf(" -mact [0,1[    posterior prob threshold for MAC realignment controlling greedi- \n");
+  printf("                ness at alignment ends: 0:global >0.1:local (default=%.2f)       \n",par.mact);
+  printf(" -macins [0,1[  posterior prob threshold for MAC realignment controlling greedi- \n");
+  printf("                ness for aligning nonhomologous inserts to each other (def=%.2f)\n",par.macins);
   printf(" -glob/-loc     use global/local alignment mode for searching/ranking (def=local)\n");
   if (all) {
   printf(" -realign_max <int>  realign max. <int> hits (default=%i)                        \n",par.realign_max);  
@@ -635,11 +637,12 @@ void help(char all=0)
 	par.maxres=atoi(argv[++i]);
 	par.maxcol=2*par.maxres;
       }
-      else if (!strncmp(argv[i],"-glo",3)) {par.loc=0; if (par.mact>0.35 && par.mact<0.351) {par.mact=0;} }
+      else if (!strncmp(argv[i],"-glo",3)) {par.loc=0; if (par.mact>0.35 && par.mact<0.3502) {par.mact=0;} }
       else if (!strncmp(argv[i],"-loc",4)) par.loc=1;
       else if (!strncmp(argv[i],"-alt",4) && (i<argc-1)) par.altali=atoi(argv[++i]);
       else if (!strcmp(argv[i],"-shift") && (i<argc-1)) par.shift=atof(argv[++i]);
       else if ((!strcmp(argv[i],"-mact") || !strcmp(argv[i],"-mapt")) && (i<argc-1)) par.mact=atof(argv[++i]);
+      else if (!strcmp(argv[i],"-macins") && (i<argc-1)) par.macins=atof(argv[++i]);
       else if (!strcmp(argv[i],"-scwin") && (i<argc-1)) {par.columnscore=5; par.half_window_size_local_aa_bg_freqs = imax(1,atoi(argv[++i]));}
       else if (!strncmp(argv[i],"-cpu",4) && (i<argc-1)) { threads=atoi(argv[++i]);}
       else if (!strcmp(argv[i],"-maxmem") && (i<argc-1)) {par.maxmem=atof(argv[++i]);}
@@ -2043,6 +2046,8 @@ int main(int argc, char **argv)
   if (par.b>par.B) par.B=par.b;
   if (par.z>par.Z) par.Z=par.z;
   if (par.maxmem<1.0) {cerr<<"WARNING: setting -maxmem to its minimum allowed value of 1.0\n"; par.maxmem=1.0;}
+  if (par.mact>=1.0) par.mact=0.999; else if (par.mact<0) par.mact=0.0;
+  if (par.macins>=1.0) par.macins=0.999; else if (par.macins<0) par.macins=0.0;
 
   // Set (global variable) substitution matrix and derived matrices
   SetSubstitutionMatrix();
