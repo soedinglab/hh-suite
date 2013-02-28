@@ -2,7 +2,7 @@
 # pdbfilter.pl - Read pdb or SCOP sequences from infile and write representative set of sequences to outfile
 
 #
-#     HHsuite version 2.0.16 (April 2013)
+#     HHsuite version 2.0.16 (February 2013)
 #
 #     Reference: 
 #     Remmert M., Biegert A., Hauser A., and Soding J.
@@ -34,7 +34,7 @@ $|= 1; # Activate autoflushing on STDOUT
 
 # Default options
 my $idmax=90;      # maximum sequence identity threshold 
-my $Evalmin=10.1;  # minimum BLAST E-value (should be <0.01 to ensure that sequences being filtered out are homologous to some representative sequence
+my $Evalmin=0.01;  # minimum BLAST E-value (should be <0.01 to ensure that sequences being filtered out are homologous to some representative sequence
 my $covmin=90;     # minimum coverage threshold (should be large enough to ensure that no structural domain is lost from the filtered set just because it occurs in a sequence with, say, 2 other domains similar to some representative sequence) 
 my $v=2;
 my $blastpgp="$ncbidir/blastpgp";
@@ -42,12 +42,13 @@ my $blastpgp="$ncbidir/blastpgp";
 my $help="
  pdbfilter.pl - Read pdb or SCOP sequences from infile and write representative set of 
  sequences to outfile
- Compares each sequence with all others using BLAST (blastpgp). If two sequences are
- sufficiently similar, the sequence with lower resolution will be removed. The exact criterion
- for removal is: 
- IF more than \$covmin\% of the sequence with lower resolution is covered by the BLAST alignment 
- AND the sequence identity is larger than \$idmin AND the E-value is better than \$Evalmin
- AND the sequence has lower coverage than the already accepted representative sequence.
+ Compares each sequence with all others using BLAST (blastpgp). If two sequences A and B are
+ sufficiently similar, the sequence with lower resolution will be removed. 
+ The exact criterion for removal of sequence B is: 
+ IF more than \$covmin\% residues of sequence B are aligned to sequence A
+ AND the sequence identity of the alignment is larger than \$idmin 
+ AND the E-value is better than \$Evalmin
+ AND sequence B has lower resolution than A. 
  The input file must have been prepared with pdb2fasta.pl or scop2fasta.pl. 
  Sequences with fewer than 15 residues are suppressed.
 
@@ -195,7 +196,7 @@ foreach $seq (@seqs) {
 	    $line=~/^ Identities =\s*\d+\/(\d+)\s+\((\d+)\%\)/o or die("Error: format error in '$blastpgp -i $root.tmp -d $root.db -v 1 -b 1000 -s T -z $ntot|', line $.\n");
 	    $len=$1;
 	    $id=$2;
-	    # Coverage = (length of whole alignment (including gaps) - gaps in query or HSP) / length of HSP
+	    # Coverage = (length of whole alignment (including gaps) - gaps in query or HSP) / total length of matched sequence
 	    if ($line=~/Gaps =\s*(\d+)\/\d+/) {$cov=($len-$1)/$len{$pdbid};} else {$cov=$len/$len{$pdbid};} 
 
 	    ## Main filtering criterion: remove sequence from representative set if... 

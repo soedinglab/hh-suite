@@ -171,8 +171,6 @@ char input_format = 0;                  // Set to 1 if input in HMMER format (ha
 
 float neffmax = 10;                     // Break if Neff > Neffmax
 
-int cpu = 2;                            // default: use 2 cores
-
 char config_file[NAMELEN];
 char infile[NAMELEN];
 char alis_basename[NAMELEN];
@@ -210,7 +208,7 @@ Hash<char>* premerged_hits;
 const int MAXTHREADS=256; // maximum number of threads (i.e. CPUs) for parallel computation
 const int MAXBINS=384;    // maximum number of bins (positions in thread queue)
 enum bin_states {FREE=0, SUBMITTED=1, RUNNING=2};
-int threads=0;            // number of threads (apart from the main thread which reads from the databases file) 0:no multithreading
+int threads=2;            // number of compute pthreads during Viterbi and Realign (apart from the main thread which reads from db file) and # OpenMP threads; 0:no multithreading
 int bins;                 // number of bins; jobs gets allocated to a FREE bin were they are waiting for execution by a thread
 char bin_status[MAXBINS]; // The status for each bin is FREE, SUBMITTED, or RUNNING
 int jobs_running;         // number of active jobs, i.e. number of bins set to RUNNING
@@ -398,13 +396,13 @@ void help(char all=0)
   printf(" -neffmax ]1,20] skip further search iterations when diversity Neff of query MSA \n");
   printf("                becomes larger than neffmax (default=%.1f)\n",neffmax); 
 #ifdef PTHREAD
-  printf(" -cpu <int>     number of CPUs to use (for shared memory SMPs) (default=%i)      \n",cpu);
+  printf(" -cpu <int>     number of CPUs to use (for shared memory SMPs) (default=%i)      \n",threads);
 #endif
   if (all) {
   printf(" -scores <file> write scores for all pairwise comparisions to file               \n");
   printf(" -atab   <file> write all alignments in tabular layout to file                   \n");
   printf(" -maxres <int>  max number of HMM columns (def=%5i)             \n",par.maxres);
-  printf(" -maxmem [1,inf[ max available memory in GB (def=%.1f)          \n",par.maxmem);
+  printf(" -maxmem [1,inf[ limit memory for realignment (in GB) (def=%.1f)          \n",par.maxmem);
   } 
 #ifndef PTHREAD
   printf("(The -cpu option is inactive since HHblits was not compiled with POSIX thread support)\n");
@@ -643,7 +641,7 @@ void help(char all=0)
       else if (!strcmp(argv[i],"-shift") && (i<argc-1)) par.shift=atof(argv[++i]);
       else if ((!strcmp(argv[i],"-mact") || !strcmp(argv[i],"-mapt")) && (i<argc-1)) par.mact=atof(argv[++i]);
       else if (!strcmp(argv[i],"-scwin") && (i<argc-1)) {par.columnscore=5; par.half_window_size_local_aa_bg_freqs = imax(1,atoi(argv[++i]));}
-      else if (!strncmp(argv[i],"-cpu",4) && (i<argc-1)) { threads=atoi(argv[++i]); cpu = threads;}
+      else if (!strncmp(argv[i],"-cpu",4) && (i<argc-1)) { threads=atoi(argv[++i]);}
       else if (!strcmp(argv[i],"-maxmem") && (i<argc-1)) {par.maxmem=atof(argv[++i]);}
       else if (!strncmp(argv[i],"-premerge",9) && (i<argc-1)) par.premerge=atoi(argv[++i]);
       else if (!strcmp(argv[i],"-nocontxt")) par.nocontxt=1;
@@ -1189,8 +1187,8 @@ void perform_realign(char *dbfiles[], int ndb)
   int nhits=0;
   int N_aligned=0;
 
-  // Longest allowable length of database HMM (backtrace: 5 chars, fwd: 1 double, bwd: 1 double 
-  long int Lmaxmem=((par.maxmem-0.5)*1024*1024*1024)/(2*sizeof(double)+8)/q->L/bins;
+  // Longest allowable length of database HMM (backtrace: 5 chars, fwd, bwd: 1 double
+  long int Lmaxmem=(par.maxmem*1024*1024*1024)/sizeof(double)/q->L/bins;
   long int Lmax=0;      // length of longest HMM to be realigned
     
   par.block_shading->Reset();
@@ -1301,7 +1299,7 @@ void perform_realign(char *dbfiles[], int ndb)
 	  cerr<<"WARNING: Realigning sequences only up to length "<<Lmaxmem<<"."<<endl;
 	  cerr<<"This is genarally unproboblematic but may lead to slightly sub-optimal alignments for longer sequences."<<endl;
  	  cerr<<"You can increase available memory using the -maxmem <GB> option (currently "<<par.maxmem<<" GB)."<<endl; // still to be implemented
-	  cerr<<"The maximum length realignable is approximately (maxmem-0.5GB)/query_length/(cpus+1)/24B."<<endl;
+	  cerr<<"The maximum length realignable is approximately maxmem/query_length/(cpus+1)/8B."<<endl;
 	}
     }
   
@@ -1318,11 +1316,9 @@ void perform_realign(char *dbfiles[], int ndb)
     {
       // Free previously allocated memory (delete and reallocate, since Lmax may have increased)
       if (hit[bin]->forward_allocated) hit[bin]->DeleteForwardMatrix(q->L+2);
-      if (hit[bin]->backward_allocated) hit[bin]->DeleteBackwardMatrix(q->L+2);
       
-      // Allocate memory for matrices and set to 0
+      // Allocate memory for matrix and set to 0
       hit[bin]->AllocateForwardMatrix(q->L+2,Lmax+1);
-      hit[bin]->AllocateBackwardMatrix(q->L+2,Lmax+1);
 
       bin_status[bin] = FREE;
     }
@@ -1330,7 +1326,7 @@ void perform_realign(char *dbfiles[], int ndb)
   // // replacing the above block with this block: (JS)
   // int Lmaxprev = 0;
   // if (hit[bin]->forward_allocated)  
-  //   Lmaxprev = sizeof(hit[bin]->F_MM[0]) / sizeof(hit[bin]->F_MM[0][0]);
+  //   Lmaxprev = sizeof(hit[bin]->P_MM[0]) / sizeof(hit[bin]->P_MM[0][0]);
   // for (bin=0; bin<bins; bin++)
   //   {
   //     if (!hit[bin]->forward_allocated)  hit[bin]->AllocateForwardMatrix(q->L+2,Lmax+1);
@@ -1339,16 +1335,10 @@ void perform_realign(char *dbfiles[], int ndb)
   // 	  hit[bin]->DeleteForwardMatrix(q->L+2);
   // 	  hit[bin]->AllocateForwardMatrix(q->L+2,Lmax+1);
   // 	}
-  //     if (!hit[bin]->backward_allocated) hit[bin]->AllocateBackwardMatrix(q->L+2,Lmax+1);
-  //     else if (Lmaxprev<Lmax) 
-  // 	{ 
-  // 	  hit[bin]->DeleteBackwardMatrix(q->L+2);
-  // 	  hit[bin]->AllocateBackwardMatrix(q->L+2,Lmax+1);
-  // 	}
   //     bin_status[bin] = FREE;
   //   }
   // // This is just an idea. This code would need to be tested!!! 
-  // // First, it would need to be tested whether reseting F_MM and B_MM to 0 during the allocation is needed at all.
+  // // First, it would need to be tested whether reseting P_MM to 0 during the allocation is needed at all.
   
   if (print_elapsed) ElapsedTimeSinceLastCall("(reallocate/reset forward/backwad matrices)");
   // if (print_elapsed) ElapsedTimeSinceLastCall("(prepare realign)");
@@ -1370,16 +1360,19 @@ void perform_realign(char *dbfiles[], int ndb)
       bin=0;
       nhits=0;
       hitlist.Reset();
+
       while (!hitlist.End() && nhits<par.premerge)
 	{
 	  hit_cur = hitlist.ReadNext();
-	  if (nhits>=imax(par.B,par.Z)) break;
-	  if (nhits>=imax(par.b,par.z) && hit_cur.Probab < par.p) break;
-	  if (nhits>=imax(par.b,par.z) && hit_cur.Eval > par.E) continue;
+	  if (hit_cur.Eval > par.e) // JS: removed bug on 13 Feb 13 due to which premerged hits with E-value > par.e were not realigned
+	    {
+	      if (nhits>=imax(par.B,par.Z)) break;
+	      if (nhits>=imax(par.b,par.z) && hit_cur.Probab < par.p) break;
+	      if (nhits>=imax(par.b,par.z) && hit_cur.Eval > par.E) continue;
+	    }
 	  nhits++;
 
-	  if (hit_cur.L>Lmaxmem) continue;  // Don't align to long sequences due to memory limit
-	  if (hit_cur.Eval > par.e) continue; // Don't align hits with an E-value below the inclusion threshold
+	  if (hit_cur.L>Lmaxmem) continue;  // Don't align too long sequences due to memory limit
 
 	  // Open HMM database file dbfiles[idb]
 	  FILE* dbf;
@@ -2039,8 +2032,7 @@ int main(int argc, char **argv)
 
   // Set OpenMP threads
 #ifdef _OPENMP
-  cpu = imin(cpu,omp_get_max_threads());
-  omp_set_num_threads(cpu);
+ omp_set_num_threads(threads);
 #endif
   
   // Check option compatibilities
@@ -2523,9 +2515,6 @@ int main(int argc, char **argv)
       hit[bin]->DeleteBacktraceMatrix(q->L+2);
       if (hit[bin]->forward_allocated)
 	hit[bin]->DeleteForwardMatrix(q->L+2);
-      if (hit[bin]->backward_allocated)
-	hit[bin]->DeleteBackwardMatrix(q->L+2);
-
       delete hit[bin];
       delete t[bin];
     }

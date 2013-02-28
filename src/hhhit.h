@@ -56,6 +56,7 @@ class Hit
   int nfirst;           // index of query sequence in seq[]
   int ncons;            // index of consensus sequence
   
+  double** P_MM;        // Posterior probability matrix, filled in Forward and Backward algorithms
   int nsteps;           // index for last step in Viterbi path; (first=1)
   int* i;               // i[step] = query match state at step of Viterbi path
   int* j;               // j[step] = template match state at step of Viterbi path
@@ -78,9 +79,7 @@ class Hit
   float Neff_HMM;       // Diversity of underlying alignment
 
   bool realign_around_viterbi;
-
   bool forward_allocated;
-  bool backward_allocated;
 
   // Constructor (only set pointers to NULL)
   Hit();
@@ -94,8 +93,6 @@ class Hit
   void DeleteBacktraceMatrix(int Nq);
   void AllocateForwardMatrix(int Nq, int Nt);
   void DeleteForwardMatrix(int Nq);
-  void AllocateBackwardMatrix(int Nq, int Nt);
-  void DeleteBackwardMatrix(int Nq);
   
   void AllocateIndices(int len);
   void DeleteIndices();
@@ -114,9 +111,6 @@ class Hit
 
   // Trace back alignment of two profiles based on matrices bXX[][]
   void Backtrace(HMM* q, HMM* t);
-
-  // Trace back alignment of two profiles based on matrices bXX[][]
-  void StochasticBacktrace(HMM* q, HMM* t, char maximize=0);
 
   // Trace back MAC alignment of two profiles based on matrix bMM[][]
   void BacktraceMAC(HMM* q, HMM* t);
@@ -139,11 +133,12 @@ class Hit
   // Comparison (used to sort list of hits)
   int operator<(const Hit& hit2)  {return score_sort<hit2.score_sort;}
 
+  // Calculate Evalue, score_aass, Proba from logPval and score_ss
+  void CalcEvalScoreProbab(int N_searched, float lamda);
 
   /* // Merge HMM with next aligned HMM   */
   /* void MergeHMM(HMM* Q, HMM* t, float wk[]); */
 
-  double** B_MM;        // Backward matrices
   
 private:
   char state;          // 0: Start/STOP state  1: MM state  2: GD state (-D)  3: IM state  4: DG state (D-)  5 MI state
@@ -153,18 +148,12 @@ private:
   char** bIM;          // (backtracing)
   char** bMI;          // (backtracing)
   char** cell_off;     // cell_off[i][j]=1 means this cell will get score -infinity
-
-  double** F_MM;        // Forward matrices 
-  /*
-  double** F_GD;        // F_XY[i][j] * Prod_1^i(scale[i]) 
-  double** F_DG;        //   = Sum_x1..xl{ P(HMMs aligned up to Xi||Yj co-emmitted x1..xl ) / (Prod_k=1^l f(x_k)) }   
-  double** F_IM;        // end gaps are not penalized!
-  double** F_MI;        // 
-  */
   double* scale;        // 
 
   void InitializeBacktrace(HMM* q, HMM* t);
   void InitializeForAlignment(HMM* q, HMM* t, bool vit=true);
+  double CalcProbab();
+
 };
 
 
@@ -172,7 +161,6 @@ double Pvalue(double x, double a[]);
 double Pvalue(float x, float lamda, float mu);
 double logPvalue(float x, float lamda, float mu);
 double logPvalue(float x, double a[]);
-double Probab(Hit& hit);
 
 
 

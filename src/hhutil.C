@@ -323,13 +323,7 @@ int OpenFileError(const char outfile[])
 
 int MemoryError(const char arrayname[])
 {
-  cerr<<"Error in "<<par.argv[0]<<": Could not allocate memory for \'"<<arrayname<<"\'.\nIs your max memory size sufficient? (Check using '$ ulimit -a' under Linux)"<<endl;
-  exit(3);
-}
-
-int NoMemoryError(const char arrayname[])
-{
-  cerr<<"Error in "<<par.argv[0]<<": Could not allocate memory for \'"<<arrayname<<"\'.\nIs your max memory size sufficient? (Check using '$ ulimit -a' under Linux)"<<endl; 
+  cerr<<"Error in "<<par.argv[0]<<": Could not allocate memory for \'"<<arrayname<<"\'.\nDo you have >=4GB of RAM per core on your machine? Are your max memory size and stack sizes sufficient? (Check using '$ ulimit -a' under Linux and best set to 'unlimited')"<<endl;
   exit(3);
 }
 
@@ -349,12 +343,15 @@ int InternalError(const char errstr[])
 /////////////////////////////////////////////////////////////////////////////////////
 //// Replace memalign by posix_memalign (Why? [JS])
 /////////////////////////////////////////////////////////////////////////////////////
-void *memalign(size_t boundary, size_t size)
+void *memalign(size_t boundary, size_t size, const char* what_for=NULL)
 {
   void *pointer;
   if (posix_memalign(&pointer,boundary,size) != 0)
     {
-      cerr<<"Error in "<<par.argv[0]<<": memalign could not allocate memory of "<<size<<" bytes, "<<strerror(errno)<<".\nIs your max memory size sufficient? (Check using '$ ulimit -a' under Linux)"<<endl;
+      cerr<<"Error in "<<par.argv[0]<<": memalign could not allocate memory of "<<size<<" bytes, "<<strerror(errno);
+      if (what_for!=NULL)
+	cerr<<"for "<<what_for;	
+	cerr<<".\nDo you have >=4GB of RAM per core on your machine? Are your max memory size and stack sizes sufficient? (Check using '$ ulimit -a' under Linux and best set to 'unlimited')"<<endl;
       exit(3);
     }
   return pointer;

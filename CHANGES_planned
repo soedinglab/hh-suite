@@ -1,16 +1,16 @@
- * Clean up mess with ReadInput(), ReadInputFile(), ReadAndPrepare() in hhblits.C and hhfunc.C
+ 
+
+ * Add hhconsensus and scripts mergealis.pl, pdbfilter.pl, pdb2fasta.pl, makepdbfile.pl
 
  * Add option -novlap: no overlap between database matches, chose best and optimize boundaries.
 
  * Change hhblits database format: package cs sequences with ffindex for parallel reading
-   
+  
+ * Parallelize merging of alignments in Qa3m after search
+
  * Put all hhblits database files into a single one? 
    - advantages: elegant; ?
    - disadvantages: file gets very big; hhsearch could not used hhm file from hhblits database
-
- * Parallelize merging of alignments in Qa3m after search
-
- * Add scripts mergealis.pl, pdbfilter.pl, pdb2fasta.pl, makepdbfile.pl
 
 
 

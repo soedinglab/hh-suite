@@ -342,7 +342,7 @@ void CalculateSS(HMM* q)
 /////////////////////////////////////////////////////////////////////////////////////
 void WriteToAlifile(FILE* alitabf, Hit* hit)
     {
-      if (par.forward==2 || par.realign) 
+      if (hit->P_posterior != NULL && (par.forward==2 || par.realign)) 
 	{
 	  if (hit->nss_dssp >= 0)
 	    {

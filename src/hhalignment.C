@@ -1403,8 +1403,7 @@ int Alignment::FilterWithCoreHMM(char in[], float coresc, HMM* qcore)
 /////////////////////////////////////////////////////////////////////////////////////
 void Alignment::FilterNeff()
 {
-  int v1=v;
-  v=v1-1;
+  int v1 = v--;
   const float TOLX=0.01; 
   const float TOLY=0.02; 
   char keep_orig[N_in+1];   
@@ -1415,31 +1414,38 @@ void Alignment::FilterNeff()
   float y0;
   float y1=1.0;
   float y;
-  int i=2;
+  int i=1;
 
-  y=y0=filter_by_qsc(x0,keep_orig);
+  HMM q;
+  FrequenciesAndTransitions(&q);
+  y=y0=q.Neff_HMM;
+  if (fabs(par.Neff-y0)<TOLY) {v=v1; return;}
   if (y0<par.Neff) 
     {
-      v=v1;
       if (v>=2) 
-	printf("Diversity of unfiltered alignment %.2f is below target diversity %.2f.\n",y0,par.Neff);
+	printf("Diversity of alignment before Neff filter %.2f is below target diversity Neff = %.2f.\n",y0,par.Neff);
       return;
     }
+
   y1=filter_by_qsc(x1,keep_orig);
-  
-  while (fabs(par.Neff-y)>TOLY && x1-x0>TOLX)
-    {
-      x = x0 + (par.Neff-y0)*(x1-x0)/(y1-y0); // linear interpolation between (x0,y0) and (x1,y1)
-      y = filter_by_qsc(x,keep_orig);
-      if (v>=2) printf(" %3i  x0=%6.3f -> %6.3f     x=%6.3f -> %6.3f     x1=%6.3f -> %6.3f \n",++i,x0,y0,x,y,x1,y1);
-      if (y>par.Neff) {x0=x; y0=y;} else {x1=x; y1=y;}
+  if (fabs(par.Neff-y1)<TOLY) {v=v1; return;}
+
+  // Contract interval (x0,x1) for par.sc around target value: Neff(x0) > Neff_target > Neff(x1)
+  do {
+    const float w = 0.5;  // mixture coefficient 
+    x = w*(0.5*(x0+x1)) + (1-w)* (x0 + (par.Neff-y0)*(x1-x0)/(y1-y0) ); // mixture of bisection and linear interpolation 
+    y = filter_by_qsc(x,keep_orig);
+    if (v>=2) printf(" %3i  x0=%6.3f -> %6.3f     x=%6.3f -> %6.3f     x1=%6.3f -> %6.3f \n",++i,x0,y0,x,y,x1,y1);
+    if (y>par.Neff) {x0=x; y0=y;} else {x1=x; y1=y;}
     }
-  v=v1;
-  
+  while (fabs(par.Neff-y)>TOLY && x1-x0>TOLX);
+
   // Write filtered alignment WITH insert states (lower case) to alignment file
   if (v>=2) printf("Found Neff=%6.3f at filter threshold qsc=%6.3f\n",y,x);
+  v=v1; 
   return;
 }
+
 
 float Alignment::filter_by_qsc(float qsc, char* keep_orig)
 {

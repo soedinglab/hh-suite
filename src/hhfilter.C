@@ -90,7 +90,8 @@ void help()
 {
   printf("\n");
   printf("HHfilter %s\n",VERSION_AND_DATE);
-  printf("Filter an alignment by maximum sequence identity of match states and minimum coverage\n");
+  printf("Filter an alignment by maximum pairwise sequence identity, minimum coverage,\n");
+  printf("minimum sequence identity, or score per column to the first (seed) sequence.n");
   printf("%s",COPYRIGHT);
   printf("%s",REFERENCE);
   printf("\n");

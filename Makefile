@@ -13,7 +13,7 @@ INSTALL_SCRIPTS_DIR?=$(INSTALL_LIB_DIR)/scripts
 INSTALL_DATA_DIR?=$(INSTALL_LIB_DIR)/data
 INSTALL_LIB_BIN_DIR?=$(INSTALL_LIB_DIR)/bin
 
-dist_name=hhsuite-2.0.15
+dist_name=hhsuite-2.0.16
 
 .PHONY: all_static
 all_static: ffindex_static
@@ -38,7 +38,7 @@ ffindex:
 
 ffindex_static:
 	$(MAKE) -C lib/ffindex FFINDEX_STATIC=1
-	
+
 install:
 	$(MAKE) -C lib/ffindex install INSTALL_DIR=$(INSTALL_DIR)
 	mkdir -p $(INSTALL_DIR)/bin

@@ -4,39 +4,83 @@ soeding@genzentrum.lmu.de
 
 _______________________________________________________________________________
 
-HH-suite 2.0.16  June 2012
+HH-suite 2.1.0  March 2013
 
-    * cstranslate: Understand now -i stdin and -o stdout.
+* Introduced a new format for hhblits databases: the prefilter flat files 
+  *.cs219 containing the column-state sequences for prefiltering are replaced
+  by a pair of ffindex files. This leads to a speed up for reading the prefilter 
+  db by ~4 seconds and improved scaling of hhblits with the number of cores. 
+  For compatibility with older versions of HH-suite, the *.cs219 files will 
+  be still be provided with new db versions.
 
-    * hhblitsdb.pl: Some help list updates and stdin and stdout fixes.
-                    Added options for adding (-a) and removing (-r) files from the database.
+* Improved sensitivity and alignment accuracy through introduction of a new,
+  discriminative method to calculate pseudocounts, described in Angermuller C, 
+  Biegert A, and Soding J, Bioinformatics 28: 3240-3247 (2012).
 
-    * hhblits: Fixed -i stdin, -oa3m stdout and -v 0.
+* Increased speed of hhsearch about 8-fold and of HHblits about 1.5-fold by 
+  implementing the HMM-HMM Viterbi alingment in SSE2 SIMD (single input 
+  multiple data) instructions 
 
-    * hhsearch/hhalign: Fixed small bug that removed all sequences from output alignment when trying to use append
+* Added section to hhsuite user guide on 
+  - how to efficiently run hhblits, in particular on a cluster
+  - how to modify or extend existing databases
+  - how to visually check multiple sequence alignments
+  - troubleshooting
 
+
+_______________________________________________________________________________
+
+HH-suite 2.0.16  February 2013
+
+* Added options to hhblitsdb.pl for adding (-a) and removing (-r) files 
+  from HH-suite database. Updeated help list and did stdin and stdout fixes.
+
+* Added options -i stdin and -o stdout to cstranslate to read from stdin and 
+  write to stdout.
+
+* hhblits: Fixed -i stdin, -oa3m stdout and -v 0.
+
+* hhsearch/hhalign: Fixed small bug that removed all sequences from output 
+  alignment when trying to use append.
+
+* Set default number of threads to 2 for HHblits. (Before, prefiltering was 
+  done with 2 threads, but HMM-HMM comparison with only 1.)
+
+* Improved error messages for memory problems
+
+* Removed bug in hhblits that would skip realignment of first three hits if 
+  their E-value was above the one given by -e <Evalue>
+  
+* Removed bug in filtering with -neff option that led to a single sequence 
+  if -neff target value was within 0.01 of input MSA Neff value; implemented
+  speed up for -neff filtering. 
+
+* Removed bug that led to occasional segementation faults with the -atab option
+
+
+_______________________________________________________________________________
 
 HH-suite 2.0.15  June 2012
 
-    * Fix hhalign regression introduced in 2.0.14.
+* Fixed a bug in the counting of the number of sequences found.
 
-    * Fix a bug in the counting of the number of sequences found.
+* Removed a regression in -nodiff option: sequences in query MSA were filtered by
+  normal, active filters such as -diff and -id. Only db MSAs were not filtered.
 
-    * Code cleanup
+* Fix hhalign regression introduced in 2.0.14.
 
-    * Removed a regression in -nodiff option: sequences in query MSA were filtered by
-      normal, active filters such as -diff and -id. Only db MSAs were not filtered.
+* Removed a regression that read sequences from query HHM or <query>.a3m even 
+  when a sequence file query.seq was given.
 
-    * Removed a regression that read sequences from query HHM or <query>.a3m even when a sequence file query.seq was given.
+* Renamed option -nodiff to -all. The name -nodiff is very misleading as
+  the diff option is not actually switched off on the query and db alignments.
 
-    * Simplified code in hhblits.
+* Improved the filtering section of the help lists
 
-    * Renamed option -nodiff to -all. The name -nodiff is very misleading as
-      the diff option is not actually switched off on the query and db alignments.
+* Fixed problem for small -e <E-value> thesholds by declaring par.e as double
 
-    * Improved the filtering section of the help lists
+* Refactored some of the code in hhblits.
 
-    * Fixed problem for small -e <E-value> thesholds by declaring par.e as double instead of float.
 
 _______________________________________________________________________________
 
@@ -156,9 +200,11 @@ HHsearch 1.6.1 April 2011
 
 * Increased speed by using SSE3 instructions in some functions
 
-* Adding new option "-atab" for writing alignment as a table (with posteriors) to file
+* Adding new option "-atab" for writing alignment as a table (with posteriors) 
+  to file
 
-* HHsearch is now able to read HMMER3 profiles (but should not be used due to a loss of sensitivity)
+* HHsearch is now able to read HMMER3 profiles (but should not be used due to a 
+  loss of sensitivity)
 
 * Removed a bug related with "neutralize HIS-tag" option
 
