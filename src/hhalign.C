@@ -116,7 +116,6 @@ Hit hit;                     // Ceate new hit object pointed at by hit
 HitList hitlist;             // list of hits with one Hit object for each pairwise comparison done
 char aliindices[256];        // hash containing indices of all alignments which to show in dot plot
 char* dmapfile=NULL;         // where to write the coordinates for the HTML map file (to click the alignments)
-char* strucfile=NULL;        // where to read structure scores
 char* pngfile=NULL;          // pointer to pngfile
 char* tcfile=NULL;           // TCoffee output file name
 float probmin_tc=0.05;       // 5% minimum posterior probability for printing pairs of residues for TCoffee
@@ -127,8 +126,6 @@ int dotscale=600;            // size scale of dotplot
 char dotali=0;               // show no alignments in dotplot
 float dotsat=0.3;            // saturation of grid and alignments in dot plot
 float pself=0.001;           // maximum p-value of 2nd and following self-alignments
-float** Pstruc=NULL;         // structure matrix which can be multiplied to prob ratios from aa column comparisons in Forward()
-float** Sstruc=NULL;         // structure matrix which can be added to log odds from aa column comparisons in Forward()
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Help functions
@@ -441,16 +438,6 @@ void ProcessArguments(int argc, char** argv)
 	      strcpy(pngfile,argv[i]);
 	    }
 	}
-      else if (!strcmp(argv[i],"-Struc"))
-	{
-	  if (++i>=argc || argv[i][0]=='-') 
-	    {help(); cerr<<endl<<"Error in "<<program_name<<": no query file following -Struc\n"; exit(4);}
-	  else 
-	    {
-	      strucfile = new(char[strlen(argv[i])+1]);
-	      strcpy(strucfile,argv[i]);
-	    }
-	}
       else if (!strcmp(argv[i],"-atab") || !strcmp(argv[i],"-Aliout"))
 	{
 	  if (++i>=argc || argv[i][0]=='-') 
@@ -588,7 +575,6 @@ void ProcessArguments(int argc, char** argv)
       else if (!strcmp(argv[i],"-calm") && (i<argc-1)) par.calm=atoi(argv[++i]);
       else if (!strcmp(argv[i],"-shift") && (i<argc-1)) par.shift=atof(argv[++i]); 
       else if (!strcmp(argv[i],"-mact") && (i<argc-1)) {par.mact=atof(argv[++i]);}
-      else if (!strcmp(argv[i],"-wstruc") && (i<argc-1)) par.wstruc=atof(argv[++i]); 
       else if (!strcmp(argv[i],"-opt") && (i<argc-1)) par.opt=atoi(argv[++i]); 
       else if (!strcmp(argv[i],"-scwin") && (i<argc-1)) {par.columnscore=5; par.half_window_size_local_aa_bg_freqs = imax(1,atoi(argv[++i]));}
       else if (!strcmp(argv[i],"-sc") && (i<argc-1)) par.columnscore=atoi(argv[++i]); 
@@ -929,47 +915,6 @@ int main(int argc, char **argv)
   hit.AllocateBacktraceMatrix(q->L+2,t->L+2); // ...with a separate dynamic programming matrix (memory!!)
   if (par.forward>=1) 
     hit.AllocateForwardMatrix(q->L+2,t->L+2);
-
-  // Read structure file for Forward() function?
-  if (strucfile && par.wstruc>0) 
-    {
-      float PMIN=1E-20;
-      Pstruc = new(float*[q->L+2]);
-      for (int i=0; i<q->L+2; i++) Pstruc[i] = new(float[t->L+2]);
-      Sstruc = new(float*[q->L+2]);
-      for (int i=0; i<q->L+2; i++) Sstruc[i] = new(float[t->L+2]);
-      FILE* strucf=NULL;
-      if (strcmp(strucfile,"stdin"))
-	{
-	  strucf = fopen(strucfile, "r");
-	  if (!strucf) OpenFileError(strucfile);
-	}
-      else 
-	{
-	  strucf = stdin;
-	  if (v>=2) printf("Reading structure matrix from standard input ... (for UNIX use ^D for 'end-of-file')\n");
-	}
-      for (int i=1; i<=q->L; i++)
-	{
-	  for (int j=1; j<=t->L; j++)
-	    {
-	      float f;
-	      if (fscanf(strucf,"%f",&f) <=0 )
-	      {
-		fprintf(stderr,"Error in %s: too few numbers in file %s while reading line %i, column %i\n",par.argv[0],strucfile,i,j);
-		exit(1);
-	      } 
-	      if (par.wstruc==1)
-		Pstruc[i][j]=fmax(f,PMIN);
-	      else 
-		Pstruc[i][j]=fmax(pow(f,par.wstruc),PMIN);
-// 	      printf("%10.2E ",f);
-	      Sstruc[i][j] = par.wstruc * log2(f);
-	    }
-// 	  printf("\n");
-	}
-      fclose(strucf);
-    }
   
   // Do (self-)comparison, store results if score>SMIN, and try next best alignment
   if (v>=2) 
@@ -983,7 +928,7 @@ int main(int argc, char **argv)
     {
       if (par.forward==0)        // generate Viterbi alignment
 	{
-	  hit.Viterbi(q,t,Sstruc);
+	  hit.Viterbi(q,t);
 	  if (hit.irep>1 && hit.irep>par.hitrank && hit.score<=SMIN && !(hit.Pvalt<pself && hit.score>0 )) {
 	    hit = hitlist.ReadLast(); // last alignment was not significant => read last (significant) hit from list
 	    break;
@@ -992,7 +937,7 @@ int main(int argc, char **argv)
 	} 
       else if (par.forward==2)   // generate forward alignment
 	{
-	  hit.Forward(q,t,Pstruc); 
+	  hit.Forward(q,t); 
 	  hit.Backward(q,t); 
 	  hit.MACAlignment(q,t);
 	  if (hit.irep>1 && hit.irep>par.hitrank && hit.score<=SMIN && !(hit.Pvalt<pself && hit.score>0 )) {
@@ -1165,26 +1110,6 @@ int main(int argc, char **argv)
 	    s[i][j]=hit.Score(q->p[i],t->p[j]) + hit.ScoreSS(q,t,i,j) + par.shift;	  }
  	    //printf("%-3i %-3i %7.3f %7.3f\n",i,j,s[i][j],hit.Score(q->p[i],t->p[j]));
       
-      // if (0) 
-      // 	{
-      // 	  FILE* aaf = fopen("aa.scores","w");
-      // 	  FILE* asf = fopen("as.scores","w");
-      // 	  if (aaf) OpenFileError("aa.scores");
-      // 	  if (asf) OpenFileError("as.scores");
-      // 	  for(i=1; i<=q->L; i++)
-      // 	    {
-      // 	      for (j=1; j<=t->L; j++) // Loop through template positions j
-      // 		{
-      // 		  fprintf(aaf,"%9.2E ",s[i][j]);
-      // 		  fprintf(asf,"%9.2E ",s[i][j]+Sstruc[i][j]);
-      // 		}
-      // 	      fprintf(aaf,"\n");
-      // 	      fprintf(asf,"\n");
-      // 	    }
-      // 	  fclose(aaf);
-      // 	  fclose(asf);
-      // 	}
-      
       // Choose scale automatically
       if (dotscale>20) 
 	dotscale=imin(5,imax(1,dotscale/imax(q->L,t->L)));
@@ -1350,8 +1275,6 @@ int main(int argc, char **argv)
   hit.DeleteBacktraceMatrix(q->L+2);
   if (par.forward>=1 || par.realign) 
     hit.DeleteForwardMatrix(q->L+2);
-//   if (Pstruc) { for (int i=0; i<q->L+2; i++) delete[](Pstruc[i]); delete[](Pstruc);}
-
   
   DeletePseudocountsEngine();
 
@@ -1363,14 +1286,6 @@ int main(int argc, char **argv)
   delete q;
   delete t;
 
-  if (strucfile && par.wstruc>0) 
-    {
-      for (int i=0; i<q->L+2; i++) delete[] Pstruc[i];
-      delete[] Pstruc;
-      for (int i=0; i<q->L+2; i++) delete[] Sstruc[i];
-      delete[] Sstruc;
-      delete[] strucfile;
-    }
 
   if (pngfile) delete[] pngfile;
   if (tcfile) delete[] tcfile;

@@ -236,7 +236,7 @@ void Hit::DeleteIndices()
 // The function is called with q and t
 // If q and t are equal (self==1), only the upper right part of the matrix is calculated: j>=i+3
 /////////////////////////////////////////////////////////////////////////////////////
-void Hit::Viterbi(HMM* q, HMM* t, float** Sstruc)
+void Hit::Viterbi(HMM* q, HMM* t)
 {
   
   // Linear topology of query (and template) HMM:
@@ -373,7 +373,7 @@ void Hit::Viterbi(HMM* q, HMM* t, float** Sstruc)
 			      bMM[i][j]
 			      );
 
- 	      sMM_i_j += Si[j] + ScoreSS(q,t,i,j) + par.shift + (Sstruc==NULL? 0: Sstruc[i][j]); 
+ 	      sMM_i_j += Si[j] + ScoreSS(q,t,i,j) + par.shift;
 	      
 
 	      sGD_i_j = max2
@@ -437,7 +437,7 @@ void Hit::Viterbi(HMM* q, HMM* t, float** Sstruc)
 // Compare two HMMs with Forward Algorithm in lin-space (~ 2x faster than in log-space)
 /////////////////////////////////////////////////////////////////////////////////////
 
-void Hit::Forward(HMM* q, HMM* t, float** Pstruc)
+void Hit::Forward(HMM* q, HMM* t)
 {
 
   // Variable declarations
@@ -551,7 +551,7 @@ void Hit::Forward(HMM* q, HMM* t, float** Pstruc)
       F_MM_prev[j] = F_MI_prev[j] = F_DG_prev[j] = F_IM_prev[j] = F_GD_prev[j] = 0.0;
     else
     {
-      F_MM_prev[j] = P_MM[1][j] = ProbFwd(q->p[1],t->p[j]) * fpow2(ScoreSS(q,t,1,j)) * Cshift * (Pstruc==NULL? 1: Pstruc[1][j]) ;
+      F_MM_prev[j] = P_MM[1][j] = ProbFwd(q->p[1],t->p[j]) * fpow2(ScoreSS(q,t,1,j)) * Cshift;
       F_MI_prev[j] = F_DG_prev[j] = 0.0;
       F_IM_prev[j] = F_MM_prev[j-1] * q->tr[1][M2I] * t->tr[j-1][M2M] + F_IM_prev[j-1] * q->tr[1][I2I] * t->tr[j-1][M2M];
       F_GD_prev[j] = F_MM_prev[j-1] * t->tr[j-1][M2D]                 + F_GD_prev[j-1] * t->tr[j-1][D2D];
@@ -572,7 +572,7 @@ void Hit::Forward(HMM* q, HMM* t, float** Pstruc)
 	F_MM_curr[jmin] = F_MI_curr[jmin] = F_DG_curr[jmin] = F_IM_curr[jmin] = F_GD_curr[jmin] = 0.0;
       else 
       {
-	F_MM_curr[jmin] = scale_prod * ProbFwd(q->p[i],t->p[jmin]) * fpow2(ScoreSS(q,t,i,jmin)) * Cshift * (Pstruc==NULL? 1: Pstruc[i][jmin]);
+	F_MM_curr[jmin] = scale_prod * ProbFwd(q->p[i],t->p[jmin]) * fpow2(ScoreSS(q,t,i,jmin)) * Cshift;
 	F_IM_curr[jmin] = F_GD_curr[jmin] = 0.0; 
 	F_MI_curr[jmin] = scale[i] * (F_MM_prev[jmin] * q->tr[i-1][M2M] * t->tr[jmin][M2I] + F_MI_prev[jmin] * q->tr[i-1][M2M] * t->tr[jmin][I2I]);
 	F_DG_curr[jmin] = scale[i] * (F_MM_prev[jmin] * q->tr[i-1][M2D]                   + F_DG_prev[jmin] * q->tr[i-1][D2D]);
@@ -591,7 +591,7 @@ void Hit::Forward(HMM* q, HMM* t, float** Pstruc)
 	  F_MM_curr[j] = F_MI_curr[j] = F_DG_curr[j] = F_IM_curr[j] = F_GD_curr[j] = 0.0;
 	else
 	{
-	  F_MM_curr[j] = ProbFwd(q->p[i],t->p[j]) * fpow2(ScoreSS(q,t,i,j)) * Cshift * (Pstruc==NULL? 1: Pstruc[i][j]) * scale[i] *
+	  F_MM_curr[j] = ProbFwd(q->p[i],t->p[j]) * fpow2(ScoreSS(q,t,i,j)) * Cshift;
 	    ( pmin
 	      + F_MM_prev[j-1] * q->tr[i-1][M2M] * t->tr[j-1][M2M] // BB -> MM (BB = Begin/Begin, for local alignment)
 	      + F_GD_prev[j-1] * q->tr[i-1][M2M] * t->tr[j-1][D2M] // GD -> MM
@@ -602,12 +602,12 @@ void Hit::Forward(HMM* q, HMM* t, float** Pstruc)
 	  F_GD_curr[j] = 
 	    (   F_MM_curr[j-1] * t->tr[j-1][M2D]                    // GD -> MM
 	      + F_GD_curr[j-1] * t->tr[j-1][D2D]                    // GD -> GD
-	      + (Pstruc==NULL? 0 : F_DG_curr[j-1] * t->tr[j-1][M2D] * q->tr[i][D2M] ) // DG -> GD (only when structure scores given)
+ //	      + F_DG_curr[j-1] * t->tr[j-1][M2D] * q->tr[i][D2M] )  // DG -> GD (only when structure scores given)
 	    );
 	  F_IM_curr[j] = 
 	    (   F_MM_curr[j-1] * q->tr[i][M2I] * t->tr[j-1][M2M]     // MM -> IM
 	      + F_IM_curr[j-1] * q->tr[i][I2I] * t->tr[j-1][M2M]     // IM -> IM
-	      + (Pstruc==NULL? 0 : F_MI_curr[j-1] * q->tr[i][M2I] * t->tr[j-1][I2M] ) // MI -> IM (only when structure scores given)
+ //	      + F_MI_curr[j-1] * q->tr[i][M2I] * t->tr[j-1][I2M] )   // MI -> IM (only when structure scores given)
 	    );
 	  F_DG_curr[j] = scale[i] * 
 	    (   F_MM_prev[j] * q->tr[i-1][M2D]                    // DG -> MM
@@ -781,34 +781,34 @@ void Hit::Backward(HMM* q, HMM* t)
 	      double pmatch = B_MM_prev[j+1] * ProbFwd(q->p[i+1],t->p[j+1]) * fpow2(ScoreSS(q,t,i+1,j+1)) * Cshift * scale[i+1];
 	      B_MM_curr[j] =  
 		(
-		 + pmin                                                    // MM -> EE (End/End, for local alignment)
-		 + pmatch       * q->tr[i][M2M] * t->tr[j][M2M]              // MM -> MM
-		 + B_GD_curr[j+1]                * t->tr[j][M2D]              // MM -> GD (q->tr[i][M2M] is already contained in GD->MM)
-		 + B_IM_curr[j+1] * q->tr[i][M2I] * t->tr[j][M2M]              // MM -> IM
-		 + B_DG_prev[j] * q->tr[i][M2D]                * scale[i+1] // MM -> DG (t->tr[j][M2M] is already contained in DG->MM)
-		 + B_MI_prev[j] * q->tr[i][M2M] * t->tr[j][M2I] * scale[i+1] // MM -> MI
+		 + pmin                                                       // MM -> EE (End/End, for local alignment)
+		 + pmatch       * q->tr[i][M2M]   * t->tr[j][M2M]             // MM -> MM
+		 + B_GD_curr[j+1]                 * t->tr[j][M2D]             // MM -> GD (q->tr[i][M2M] is already contained in GD->MM)
+		 + B_IM_curr[j+1] * q->tr[i][M2I] * t->tr[j][M2M]             // MM -> IM
+		 + B_DG_prev[j] * q->tr[i][M2D]                  * scale[i+1] // MM -> DG (t->tr[j][M2M] is already contained in DG->MM)
+		 + B_MI_prev[j] * q->tr[i][M2M]   * t->tr[j][M2I]* scale[i+1] // MM -> MI
 		 );
 	      B_GD_curr[j] = 
 		(
-		 + pmatch       * q->tr[i][M2M] * t->tr[j][D2M]              // GD -> MM 
+		 + pmatch        * q->tr[i][M2M] * t->tr[j][D2M]              // GD -> MM 
 		 + B_GD_curr[j+1]                * t->tr[j][D2D]              // DG -> DG   
 		 );
 	      B_IM_curr[j] = 
 		(
-		 + pmatch       * q->tr[i][I2M] * t->tr[j][M2M]              // IM -> MM
-		 + B_IM_curr[j+1] * q->tr[i][I2I] * t->tr[j][M2M]              // IM -> IM
+		 + pmatch         * q->tr[i][I2M] * t->tr[j][M2M]            // IM -> MM
+		 + B_IM_curr[j+1] * q->tr[i][I2I] * t->tr[j][M2M]            // IM -> IM
 		 );
 	      B_DG_curr[j] =  
 		(
 		 + pmatch       * q->tr[i][D2M] * t->tr[j][M2M]              // DG -> MM
-		 + B_DG_prev[j] * q->tr[i][D2D]                * scale[i+1] // DG -> DG
-		 //   	         + B_GD[i][j+1] * q->tr[i][D2M] * t->tr[j][M2D]              // DG -> GD
+		 + B_DG_prev[j] * q->tr[i][D2D]                * scale[i+1]  // DG -> DG
+ //   	         + B_GD[i][j+1] * q->tr[i][D2M] * t->tr[j][M2D]              // DG -> GD
 		 );
 	      B_MI_curr[j] = 
 		(
 		 + pmatch       * q->tr[i][M2M] * t->tr[j][I2M]              // MI -> MM       
 		 + B_MI_prev[j] * q->tr[i][M2M] * t->tr[j][I2I] * scale[i+1] // MI -> MI
-		 // 	         + B_IM[i][j+1] * q->tr[i][M2I] * t->tr[j][I2M]              // MI -> IM    
+ // 	         + B_IM[i][j+1] * q->tr[i][M2I] * t->tr[j][I2M]              // MI -> IM    
 		 );
 
 	    } // end else	      

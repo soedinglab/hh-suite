@@ -98,10 +98,10 @@ class Hit
   void DeleteIndices();
 
   // Compare an HMM with overlapping subalignments
-  void Viterbi(HMM* q, HMM* t, float** Sstruc=NULL);
+  void Viterbi(HMM* q, HMM* t);
 
   // Compare two HMMs with each other in lin space
-  void Forward(HMM* q, HMM* t, float** Pstruc=NULL);
+  void Forward(HMM* q, HMM* t);
 
   // Compare two HMMs with each other in lin space
   void Backward(HMM* q, HMM* t);
