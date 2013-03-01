@@ -109,10 +109,10 @@ class Hit
    // Find maximum accuracy alignment (after running Forward and Backward algorithms)
   void MACAlignment(HMM* q, HMM* t);
 
-  // Trace back alignment of two profiles based on matrices bXX[][]
+  // Trace back alignment of two profiles based on matrices btr[][]
   void Backtrace(HMM* q, HMM* t);
 
-  // Trace back MAC alignment of two profiles based on matrix bMM[][]
+  // Trace back MAC alignment of two profiles based on matrix btr[][]
   void BacktraceMAC(HMM* q, HMM* t);
 
   // Calculate secondary structure score between columns i and j of two HMMs (query and template)
@@ -142,13 +142,9 @@ class Hit
   
 private:
   char state;          // 0: Start/STOP state  1: MM state  2: GD state (-D)  3: IM state  4: DG state (D-)  5 MI state
-  char** bMM;          // (backtracing) bMM[i][j] = STOP:start of alignment  MM:prev was MM  GD:prev was GD etc
-  char** bGD;          // (backtracing) bMM[i][j] = STOP:start of alignment  MM:prev was MM  SAME:prev was GD
-  char** bDG;          // (backtracing)
-  char** bIM;          // (backtracing)
-  char** bMI;          // (backtracing)
+  unsigned char** btr; // backtracing matrix for all  5 pair states in one bit representation: btr[i][j] = 0|MI|DG|IM|GD|MM = 0|1|1|1|1|111
   char** cell_off;     // cell_off[i][j]=1 means this cell will get score -infinity
-  double* scale;        // 
+  double* scale;       // 
 
   void InitializeBacktrace(HMM* q, HMM* t);
   void InitializeForAlignment(HMM* q, HMM* t, bool vit=true);

@@ -29,22 +29,13 @@ using std::ofstream;
 #endif
 
 
-// #define CALCULATE_MAX6(max, var1, var2, var3, var4, var5, var6, varb)	\
-//   if (var1>var2) { max=var1; varb=STOP;}				\
-//   else           { max=var2; varb=MM;};					\
-//   if (var3>max)  { max=var3; varb=GD;};					\
-//   if (var4>max)  { max=var4; varb=IM;};					\
-//   if (var5>max)  { max=var5; varb=DG;};					\
-//   if (var6>max)  { max=var6; varb=MI;}; 
-
-#define CALCULATE_MAX6(max, var1, var2, var3, var4, var5, var6, varb)	\
-  varb=0;                                                               \
-  if (var1>var2) { max=var1; varb |= STOP);}				\
-  else           { max=var2; varb |= MM;};					\
-  if (var3>max)  { max=var3; varb |= GD;};					\
-  if (var4>max)  { max=var4; varb |= IM;};					\
-  if (var5>max)  { max=var5; varb |= DG;};					\
-  if (var6>max)  { max=var6; varb |= MI;}; 
+#define CALCULATE_MAX6(max, var1, var2, var3, var4, var5, var6, varb) \
+  if (var1>var2) { max=var1; varb=STOP;}			          \
+  else           { max=var2; varb=MM;};					\
+  if (var3>max)  { max=var3; varb=GD;};					\
+  if (var4>max)  { max=var4; varb=IM;};					\
+  if (var5>max)  { max=var5; varb=DG;};					\
+  if (var6>max)  { max=var6; varb=MI;}; 
 
 #define CALCULATE_MAX4(max, var1, var2, var3, var4, varb)	\
   if (var1>var2) { max=var1; varb=STOP;}			\
@@ -57,7 +48,7 @@ using std::ofstream;
 
 
 // Function declarations
-inline float max2(const float& xMM, const float& xX, char& b); 
+inline float max2(const float& xMM, const float& xX, char& b, unsigned char bit); 
 inline int pickprob2(const double& xMM, const double& xX, const int& state); 
 inline int pickprob3_GD(const double& xMM, const double& xDG, const double& xGD); 
 inline int pickprob3_IM(const double& xMM, const double& xMI, const double& xIM); 
@@ -83,7 +74,7 @@ Hit::Hit()
   longname = name = file = dbfile = NULL;
   sname = NULL;
   seq = NULL;  
-  bMM = bGD = bDG = bIM = bMI = NULL;
+  btr = NULL;
   self = 0;
   i = j = NULL;
   // alt_i = new List<int>();
@@ -144,21 +135,13 @@ void Hit::Delete()
 void Hit::AllocateBacktraceMatrix(int Nq, int Nt)
 {
   int i;
-  bMM=new(char*[Nq]);
-  bMI=new(char*[Nq]);
-  bIM=new(char*[Nq]);
-  bDG=new(char*[Nq]);
-  bGD=new(char*[Nq]);
+  btr=new(char*[Nq]);
   cell_off=new(char*[Nq]);
   for (i=0; i<Nq; ++i) 
     {
-      bMM[i]=new(char[Nt]);
-      bMI[i]=new(char[Nt]);
-      bIM[i]=new(char[Nt]);
-      bGD[i]=new(char[Nt]);
-      bDG[i]=new(char[Nt]);
+      btr[i]=new(char[Nt]);
       cell_off[i]=new(char[Nt]);
-      if (!bMM[i] || !bMI[i] || !bIM[i] || !bGD[i] || !bDG[i] || !cell_off[i]) 
+      if (!btr[i] || !cell_off[i]) 
 	{
 	  fprintf(stderr,"Error in %s: out of memory while allocating row %i (out of %i) for dynamic programming matrices \n",par.argv[0],i+1,Nq);
 	  fprintf(stderr,"Please decrease your memory requirements to the available memory using option -maxmem <GBs>\n");
@@ -173,20 +156,12 @@ void Hit::DeleteBacktraceMatrix(int Nq)
   int i;
   for (i=0; i<Nq; ++i) 
     {
-      delete[] bMM[i];
-      delete[] bMI[i];
-      delete[] bIM[i];
-      delete[] bGD[i];
-      delete[] bDG[i];
+      delete[] btr[i];
       delete[] cell_off[i];
     }
-  delete[] bMM;
-  delete[] bMI;
-  delete[] bIM;
-  delete[] bDG;
-  delete[] bGD;
+  delete[] btr;
   delete[] cell_off;
-  bMM = bGD = bDG = bIM = bMI = NULL;
+  btr = NULL;
 }
 
 
@@ -276,7 +251,10 @@ void Hit::Viterbi(HMM* q, HMM* t)
   //                     j
   // i-1:               CAAAAAAAAAAAAAAAAAA
   //  i :   BBBBBBBBBBBBBD
-  
+  //
+  // The backtracing information is kept for all 5 pair states in a matrix btr[i][j] with a single byte per cell.
+  // The last 3 bits store the previous state for the MM state, the successively higher bits are for GD, IM, DG, MI states:
+  // btr[i][j] = 0|MI|DG|IM|GD|MM = 0|1|1|1|1|111
   
   // Variable declarations
   float __attribute__((aligned(16))) Si[par.maxres];  // sMM[i][j] = score of best alignment up to indices (i,j) ending in (Match,Match) 
@@ -300,7 +278,7 @@ void Hit::Viterbi(HMM* q, HMM* t)
       sMM[j] = (self? 0 : -j*par.egt);
       sIM[j] = sMI[j] = sDG[j] = sGD[j] = -FLT_MAX; 
     }
-  score=-INT_MAX; i2=j2=0; bMM[0][0]=STOP;
+  score=-INT_MAX; i2=j2=0; btr[0][0]=STOP;
 
   // Viterbi algorithm
   for (i=1; i<=q->L; ++i) // Loop through query positions i
@@ -379,35 +357,35 @@ void Hit::Viterbi(HMM* q, HMM* t)
 			      sIM_i_1_j_1 + q->tr[i-1][I2M] + t->tr[j-1][M2M],
 			      sDG_i_1_j_1 + q->tr[i-1][D2M] + t->tr[j-1][M2M],
 			      sMI_i_1_j_1 + q->tr[i-1][M2M] + t->tr[j-1][I2M],
-			      bMM[i][j]
+			      btr[i][j]
 			      );
-
- 	      sMM_i_j += Si[j] + ScoreSS(q,t,i,j) + par.shift;
+		  
+	      sMM_i_j += Si[j] + ScoreSS(q,t,i,j) + par.shift;
 	      
 
 	      sGD_i_j = max2
 		(
 		 sMM[j-1] + t->tr[j-1][M2D], // MM->GD gap opening in query 
 		 sGD[j-1] + t->tr[j-1][D2D], // GD->GD gap extension in query 
-		 bGD[i][j]
+		 btr[i][j], 0x08
 		 );
 	      sIM_i_j = max2
 		(
 		 sMM[j-1] + q->tr[i][M2I] + t->tr[j-1][M2M] ,
 		 sIM[j-1] + q->tr[i][I2I] + t->tr[j-1][M2M], // IM->IM gap extension in query 
-		 bIM[i][j]
+		 btr[i][j], 0x10
 		 );
 	      sDG_i_j = max2
 		(
 		 sMM[j] + q->tr[i-1][M2D],
 		 sDG[j] + q->tr[i-1][D2D], //gap extension (DD) in query
-		 bDG[i][j]
+		 btr[i][j], 0x20
 		 );
 	      sMI_i_j = max2
 		(
 		 sMM[j] + q->tr[i-1][M2M] + t->tr[j][M2I], // MM->MI gap opening M2I in template 
 		 sMI[j] + q->tr[i-1][M2M] + t->tr[j][I2I], // MI->MI gap extension I2I in template 
-		 bMI[i][j]
+		 btr[i][j], 0x40
 		 );
 
 	      sMM_i_1_j_1 = sMM[j];
@@ -906,7 +884,7 @@ void Hit::MACAlignment(HMM* q, HMM* t)
   // Initialization of top row, i.e. cells (0,j)
   for (j=0; j<=t->L; ++j)
     S_prev[j] = 0.0;
-  score_MAC=-INT_MAX; i2=j2=0; bMM[0][0]=STOP;
+  score_MAC=-INT_MAX; i2=j2=0; btr[0][0]=STOP;
 
   // Dynamic programming 
   for (i=1; i<=q->L; ++i) // Loop through query positions i
@@ -936,9 +914,9 @@ void Hit::MACAlignment(HMM* q, HMM* t)
 	  if (cell_off[i][j]) 
 	    {
 	      S_curr[j] = -FLT_MIN;
-	      bMM[i][j] = STOP;
+	      btr[i][j] = STOP;
 	      //	      if (i>135 && i<140) 
-	      // 		printf("Cell off   i=%i  j=%i b:%i\n",i,j,bMM[i][j]);
+	      // 		printf("Cell off   i=%i  j=%i b:%i\n",i,j,btr[i][j]);
 	    }
 	  else 
 	    {
@@ -955,11 +933,11 @@ void Hit::MACAlignment(HMM* q, HMM* t)
 			     S_prev[j-1] + P_MM[i][j] - par.mact, // P_MM[i][j] contains posterior probability
 			     S_prev[j] - GAPPENALTY,   
 			     S_curr[j-1] - GAPPENALTY, 
-			     bMM[i][j]   // backtracing matrix
+			     btr[i][j]   // backtracing matrix
 			     );
 
 	      //if (i>36 && i<40 && j>2200 && j<2230) 
-	      //printf("i=%i  j=%i  S[i][j]=%8.3f  MM:%7.3f  MI:%7.3f  IM:%7.3f  b:%i\n",i,j,S[i][j],S[i-1][j-1]+P_MM[i][j]-par.mact,S[i-1][j],S[i][j-1],bMM[i][j]);
+	      //printf("i=%i  j=%i  S[i][j]=%8.3f  MM:%7.3f  MI:%7.3f  IM:%7.3f  b:%i\n",i,j,S[i][j],S[i-1][j-1]+P_MM[i][j]-par.mact,S[i-1][j],S[i][j-1],btr[i][j]);
 	      
 	      // Find maximum score; global alignment: maximize only over last row and last column
 	      if(S_curr[j]>score_MAC && (par.loc || i==q->L)) { i2=i; j2=j; score_MAC=S_curr[j]; }	      
@@ -1010,7 +988,7 @@ void Hit::MACAlignment(HMM* q, HMM* t)
 
 
 /////////////////////////////////////////////////////////////////////////////////////
-// Trace back Viterbi alignment of two profiles based on matrices bXX[][]
+// Trace back Viterbi alignment of two profiles based on matrix btr[][]
 /////////////////////////////////////////////////////////////////////////////////////
 void Hit::Backtrace(HMM* q, HMM* t)
 {
@@ -1022,8 +1000,8 @@ void Hit::Backtrace(HMM* q, HMM* t)
   InitializeBacktrace(q,t);
   
   // Make sure that backtracing stops when t:M1 or q:M1 is reached (Start state), e.g. sMM[i][1], or sIM[i][1] (M:MM, B:IM)
-  for (i=0; i<=q->L; ++i) bMM[i][1]=bGD[i][1]=bIM[i][1] = STOP;
-  for (j=1; j<=t->L; ++j) bMM[1][j]=bDG[1][j]=bMI[1][j] = STOP;
+  for (i=0; i<=q->L; ++i) btr[i][1] = STOP;
+  for (j=1; j<=t->L; ++j) btr[1][j] = STOP;
   
 
   // Back-tracing loop
@@ -1045,37 +1023,21 @@ void Hit::Backtrace(HMM* q, HMM* t)
       
       switch (state)
 	{
-	case MM: // current state is MM, previous state is bMM[i][j]
+	case MM: // current state is MM, previous state is btr[i][j]
 	  matched_cols++; 
-	  state = bMM[i--][j--];
+	  state = (0x07 & btr[i--][j--]);
 	  break;	      
 	case GD: // current state is GD
-	  switch (bGD[i][j--])
-	    {
-	    case STOP: state = STOP; break; // current state does not have predecessor
-	    case MM:   state = MM;   break; // previous state is Match state
-	    }                               // default: previous state is same state (GD)
-	  break;	      
+	  if (0x08 & btr[i][j--]) state = MM;
+	  break;
 	case IM: 
-	  switch (bIM[i][j--]) 
-	    {
-	    case STOP: state = STOP; break; // current state does not have predecessor
-	    case MM:   state = MM;   break; // previous state is Match state
-	    }                               // default: previous state is same state (IM)
+	  if (0x10 & btr[i][j--]) state = MM;
 	  break;	      
 	case DG:
-	  switch (bDG[i--][j])
-	    {
-	    case STOP: state = STOP; break; // current state does not have predecessor
-	    case MM:   state = MM;   break; // previous state is Match state
-	    }                               // default: previous state is same state (DG)
+	  if (0x20 & btr[i--][j]) state = MM;
 	  break;	      
 	case MI:
-	  switch (bMI[i--][j])
-	    {
-	    case STOP: state = STOP; break; // current state does not have predecessor
-	    case MM:   state = MM;   break; // previous state is Match state
-	    }                               // default: previous state is same state (MI)
+	  if (0x40 & btr[i--][j]) state = MM;
 	  break;
 	default:
 	  fprintf(stderr,"Error in %s: unallowed state value %i occurred during backtracing at step %i, (i,j)=(%i,%i)\n",par.argv[0],state,step,i,j);
@@ -1146,7 +1108,7 @@ void Hit::Backtrace(HMM* q, HMM* t)
   if (v>=4) 
     {
       printf("NAME=%7.7s score=%7.3f  score_ss=%7.3f\n",name,score,score_ss);
-      printf("step  Q T    i    j  state   score    T Q cf ss-score\n");
+      printf("step  Q T    i    j  state   score    bt T Q cf ss-score\n");
       for (step=nsteps; step>=1; step--)
 	{
 	  switch(states[step])
@@ -1163,9 +1125,11 @@ void Hit::Backtrace(HMM* q, HMM* t)
 	      printf("%4i  %1c - ",step,q->seq[q->nfirst][this->i[step]]); 
 	      break;
 	    }
-	  printf("%4i %4i     %2i %7.2f    ",this->i[step],this->j[step],(int)states[step],S[step]); 
+	  printf("%4i %4i     %2i %7.2f    %2x ",this->i[step],this->j[step],(int)states[step],S[step],btr[this->i[step]][this->j[step]]); 
 	  printf("%c %c %1i %7.2f\n",i2ss(t->ss_dssp[this->j[step]]),i2ss(q->ss_pred[this->i[step]]),q->ss_conf[this->i[step]]-1,S_ss[step]); 
 	}
+      cerr<<"Exiting in DEBUG output loop of BacktraceViterbi\n";
+      exit(1);
     }
 
   return;
@@ -1175,13 +1139,13 @@ void Hit::Backtrace(HMM* q, HMM* t)
 
 
 /////////////////////////////////////////////////////////////////////////////////////
-// Trace back alignment of two profiles based on matrices bXX[][]
+// Trace back alignment of two profiles based on matrix btr[][]
 /////////////////////////////////////////////////////////////////////////////////////
 void Hit::BacktraceMAC(HMM* q, HMM* t)
 {
   // Trace back trough the matrix b[i][j] until STOP state is found
 
-  char** b=bMM;  // define alias for backtracing matrix
+  char** b=btr;  // define alias for backtracing matrix
   int step;      // counts steps in path through 5-layered dynamic programming matrix
   int i,j;       // query and template match state indices
 
@@ -1677,14 +1641,14 @@ inline float Hit::ScoreSS(HMM* q, HMM* t, int i, int j)
 // /////////////////////////////////////////////////////////////////////////////////////
 // //// Function for Viterbi()
 // /////////////////////////////////////////////////////////////////////////////////////
-inline float max2(const float& xMM, const float& xX, char& b) 
-{
-  if (xMM>xX) { b=MM; return xMM;} else { b=SAME;  return xX;}
-}
-// inline float max2(const float& xMM, const float& xX, char& b, int bit) 
+// inline float max2(const float& xMM, const float& xX, char& b) 
 // {
-//   if (xMM>xX) { b |= (MM<<bit); return xMM;} else { b=SAME;  return xX;}
+//   if (xMM>xX) { b=MM; return xMM;} else { b=SAME;  return xX;}
 // }
+inline float max2(const float& xMM, const float& xSAME, char& b, const unsigned char bit) 
+{
+  if (xMM>xSAME) {b |= bit; return xMM;} else {  /* b |= 0x00!*/ return xSAME;}
+}
 
 
 /////////////////////////////////////////////////////////////////////////////////////
