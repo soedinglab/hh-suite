@@ -29,13 +29,22 @@ using std::ofstream;
 #endif
 
 
+// #define CALCULATE_MAX6(max, var1, var2, var3, var4, var5, var6, varb)	\
+//   if (var1>var2) { max=var1; varb=STOP;}				\
+//   else           { max=var2; varb=MM;};					\
+//   if (var3>max)  { max=var3; varb=GD;};					\
+//   if (var4>max)  { max=var4; varb=IM;};					\
+//   if (var5>max)  { max=var5; varb=DG;};					\
+//   if (var6>max)  { max=var6; varb=MI;}; 
+
 #define CALCULATE_MAX6(max, var1, var2, var3, var4, var5, var6, varb)	\
-  if (var1>var2) { max=var1; varb=STOP;}				\
-  else           { max=var2; varb=MM;};					\
-  if (var3>max)  { max=var3; varb=GD;};					\
-  if (var4>max)  { max=var4; varb=IM;};					\
-  if (var5>max)  { max=var5; varb=DG;};					\
-  if (var6>max)  { max=var6; varb=MI;}; 
+  varb=0;                                                               \
+  if (var1>var2) { max=var1; varb |= STOP);}				\
+  else           { max=var2; varb |= MM;};					\
+  if (var3>max)  { max=var3; varb |= GD;};					\
+  if (var4>max)  { max=var4; varb |= IM;};					\
+  if (var5>max)  { max=var5; varb |= DG;};					\
+  if (var6>max)  { max=var6; varb |= MI;}; 
 
 #define CALCULATE_MAX4(max, var1, var2, var3, var4, varb)	\
   if (var1>var2) { max=var1; varb=STOP;}			\
@@ -1665,13 +1674,17 @@ inline float Hit::ScoreSS(HMM* q, HMM* t, int i, int j)
   return ScoreSS(q,t,i,j,ssm2);
 }
 
-/////////////////////////////////////////////////////////////////////////////////////
-//// Function for Viterbi()
-/////////////////////////////////////////////////////////////////////////////////////
+// /////////////////////////////////////////////////////////////////////////////////////
+// //// Function for Viterbi()
+// /////////////////////////////////////////////////////////////////////////////////////
 inline float max2(const float& xMM, const float& xX, char& b) 
 {
   if (xMM>xX) { b=MM; return xMM;} else { b=SAME;  return xX;}
 }
+// inline float max2(const float& xMM, const float& xX, char& b, int bit) 
+// {
+//   if (xMM>xX) { b |= (MM<<bit); return xMM;} else { b=SAME;  return xX;}
+// }
 
 
 /////////////////////////////////////////////////////////////////////////////////////
