@@ -142,7 +142,7 @@ class Hit
   
 private:
   char state;          // 0: Start/STOP state  1: MM state  2: GD state (-D)  3: IM state  4: DG state (D-)  5 MI state
-  unsigned char** btr; // backtracing matrix for all  5 pair states in one bit representation: btr[i][j] = 0|MI|DG|IM|GD|MM = 0|1|1|1|1|111
+  char** btr;          // backtracing matrix for all  5 pair states in one bit representation: btr[i][j] = 0|MI|DG|IM|GD|MM = 0|1|1|1|1|111
   char** cell_off;     // cell_off[i][j]=1 means this cell will get score -infinity
   double* scale;       // 
 

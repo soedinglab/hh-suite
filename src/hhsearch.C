@@ -258,7 +258,6 @@ void help(char all=0)
   printf("                ness at alignment ends: 0:global  >0.1:local (default=%.2f)       \n",par.mact);
   printf(" -macins [0,1[  controls the cost of internal gap positions in the MAC algorithm.\n");
   printf("                0:dense alignments  1:gappy alignments (default=%.2f)\n",par.macins);
-controls the costs of internal gap positions in the Maximum Accuracy Algorithm. 
   
   printf(" -glob/-loc     use global/local alignment mode for searching/ranking (def=local)\n");
 //   printf(" -vit          use Viterbi algorithm for searching/ranking (default)          \n");

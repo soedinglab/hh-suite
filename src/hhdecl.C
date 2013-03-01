@@ -377,7 +377,7 @@ void Parameters::SetDefaults()
 
   // Parameter class
   maxcol=32765;            // max number of columns in sequence/MSA input files; must be <= LINELEN and >= maxres
-  maxres=15002;            // max number of states in HMM; must be <= LINELEN
+  maxres=20000;            // max number of states in HMM; must be <= LINELEN
   maxnumdb=20000;          // max number of hits allowed past prefilter
   maxnumdb_no_prefilter=20000;// max number of hits without prefiltering
 

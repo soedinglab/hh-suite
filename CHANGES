@@ -9,9 +9,9 @@ HH-suite 2.1.0  March 2013
 * Introduced a new format for hhblits databases: the prefilter flat files 
   *.cs219 containing the column-state sequences for prefiltering are replaced
   by a pair of ffindex files. This leads to a speed up for reading the prefilter 
-  db by ~4 seconds and improved scaling of hhblits with the number of cores. 
-  For compatibility with older versions of HH-suite, the *.cs219 files will 
-  be still be provided with new db versions.
+  db by ~4 seconds, improved scaling of hhblits with the number of cores, and
+  lower memory requirements. For compatibility with older versions of HH-suite, 
+  the *.cs219 files will be still be provided with new db versions.
 
 * Improved sensitivity and alignment accuracy through introduction of a new,
   discriminative method to calculate pseudocounts, described in Angermuller C, 
@@ -21,16 +21,20 @@ HH-suite 2.1.0  March 2013
   implementing the HMM-HMM Viterbi alingment in SSE2 SIMD (single input 
   multiple data) instructions 
 
+* Added option -macins to hhblits, hhsearch and hhalign that controls the
+  costs of internal gap positions in the Maximum Accuracy Algorithm. 
+  0: gap cost is half the mact value (default) 1: no gap cost, leads to very 
+  gappy alignments.
+
+* Reduced memory requirements (in Viterbi algorithm by a factor 3,
+  in MAC algorithm by a factor 4, in total by a factor >5), improved -maxmem
+  option to more accurately reflect total memory required 
+
 * Added section to hhsuite user guide on 
   - how to efficiently run hhblits, in particular on a cluster
   - how to modify or extend existing databases
   - how to visually check multiple sequence alignments
   - troubleshooting
-
-* Added option -macins to hhblits, hhsearch and hhalign that controls the
-  costs of internal gap positions in the Maximum Accuracy Algorithm. 
-  0: gap cost is half the mact value (default) 1: no gap cost, leads to very 
-  gappy alignments.
 
 _______________________________________________________________________________
 
