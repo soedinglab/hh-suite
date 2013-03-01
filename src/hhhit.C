@@ -191,7 +191,7 @@ void Hit::AllocateForwardMatrix(int Nq, int Nt)
   for (int i=0; i<Nq; ++i) 
     {
       P_MM[i] = new(double[Nt]);
-      if (!P_MM[i] /* || !F_MI[i] || !F_IM[i] || !F_GD[i] || !F_DG[i]*/) 
+      if (!P_MM[i]) 
 	{
 	  fprintf(stderr,"Error in %s: out of memory while allocating row %i (out of %i) for dynamic programming matrices \n",par.argv[0],i+1,Nq);
 	  fprintf(stderr,"Please decrease your memory requirements to the available memory using option -maxmem <GBs>\n");
@@ -890,8 +890,11 @@ void Hit::MACAlignment(HMM* q, HMM* t)
   double S_prev[t->L + 1];    // scores
   double S_curr[t->L + 1];    // scores
   double score_MAC;   // score of the best MAC alignment
-  const double GAPPENALTY = 0.5*(1.0 - (double) par.macins);
+  const double GAPPENALTY = 0.5*(1.0 - (double) par.macins)*par.mact;
 
+  //DEBUG////////////////////////////////////////////////////////////////////////////////////////////
+  float S[1000][2000]; //DEBUG////////////////////////////////////////////////////////////////////////////////////////////
+  //DEBUG////////////////////////////////////////////////////////////////////////////////////////////
 
   // Initialization of top row, i.e. cells (0,j)
   for (j=0; j<=t->L; ++j)
@@ -925,7 +928,7 @@ void Hit::MACAlignment(HMM* q, HMM* t)
 
 	  if (cell_off[i][j]) 
 	    {
-	      S_curr[j] = -DBL_MIN;
+	      S_curr[j] = -FLT_MIN;
 	      bMM[i][j] = STOP;
 	      //	      if (i>135 && i<140) 
 	      // 		printf("Cell off   i=%i  j=%i b:%i\n",i,j,bMM[i][j]);
@@ -954,21 +957,36 @@ void Hit::MACAlignment(HMM* q, HMM* t)
 	      // Find maximum score; global alignment: maximize only over last row and last column
 	      if(S_curr[j]>score_MAC && (par.loc || i==q->L)) { i2=i; j2=j; score_MAC=S_curr[j]; }	      
 	      
+	      //DEBUG////////////////////////////////////////////////////////////////////////////////////////////
+	      S[i][j] = S_curr[j]; //DEBUG////////////////////////////////////////////////////////////////////////////////////////////
+	      //DEBUG////////////////////////////////////////////////////////////////////////////////////////////
+
 	    } // end if 
 	  
 	} //end for j
       
-	  // if global alignment: look for best cell in last column
+      // if global alignment: look for best cell in last column
       if (!par.loc && S_curr[jmax]>score_MAC) { i2=i; j2=jmax; score_MAC=S_curr[jmax]; }
       
       for (j=0; j<=t->L; ++j)
 	S_prev[j] = S_curr[j];
     } // end for i
   
-  /*
+
   // DEBUG
-  if (v>=5) 
-    {
+  if (!strncmp(t->name,"UP20|QED",8))
+	{
+	  printf("\nTemplate=%-12.12s  i=%-4i j=%-4i score=%6.3f  Pforward=%6.3f\n",t->name,i2,j2,score_MAC,Pforward);
+      printf("\nP_MM  ");
+      for (j=0; j<=t->L; ++j) printf("%3i   ",j);
+      printf("\n");
+      for (i=0; i<=q->L; ++i) 
+	{
+	  printf("%2i:    ",i);
+ 	  for (j=0; j<=t->L; ++j) 
+	    printf("%5.2f ",P_MM[i][j]);
+	  printf("\n");
+	}
       printf("\nScore  ");
       for (j=0; j<=t->L; ++j) printf("%3i   ",j);
       printf("\n");
@@ -979,10 +997,8 @@ void Hit::MACAlignment(HMM* q, HMM* t)
 	    printf("%5.2f ",S[i][j]);
 	  printf("\n");
 	}
-      printf("\n");
-      printf("Template=%-12.12s  i=%-4i j=%-4i score=%6.3f\n",t->name,i2,j2,score_MAC);
+      printf("***************\n");
     }
-    */
 
   return;
 }

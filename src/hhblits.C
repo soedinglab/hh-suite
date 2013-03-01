@@ -175,10 +175,10 @@ char config_file[NAMELEN];
 char infile[NAMELEN];
 char alis_basename[NAMELEN];
 char query_hhmfile[NAMELEN];             // -qhmm output file
-
 bool alitab_scop = false;                // Write only SCOP alignments in alitabfile
-
 char db_ext[NAMELEN];
+int omp_threads=2;                       // number of OpenMP threads to start
+
 
 // Needed for fast index reading
 size_t data_size;                        
@@ -1820,7 +1820,6 @@ void perform_realign(char *dbfiles[], int ndb)
   while (!hitlist.End())
     {
       hit_cur = hitlist.ReadNext();
-      //printf("Deleting alignment of %s with length %i? irep=%i nhits=%-2i  par.B=%-3i  par.Z=%-3i par.e=%.2g par.b=%-3i  par.z=%-3i par.p=%.2g\n",hit_cur.name,hit_cur.matched_cols,hit_cur.irep,nhits,par.B,par.Z,par.e,par.b,par.z,par.p);
 
       if (nhits > par.realign_max && nhits>=imax(par.B,par.Z)) break;
       if (hit_cur.Eval > par.e)
@@ -1832,6 +1831,8 @@ void perform_realign(char *dbfiles[], int ndb)
 
       if (hit_cur.matched_cols < MINCOLS_REALIGN)
 	{
+	  // printf("Deleting alignment of %s with length %i? irep=%i nhits=%-2i  par.B=%-3i  par.Z=%-3i par.e=%.2g par.b=%-3i  par.z=%-3i par.p=%.2g\n",hit_cur.name,hit_cur.matched_cols,hit_cur.irep,nhits,par.B,par.Z,par.e,par.b,par.z,par.p);
+	  
 	  if (v>=3) printf("Deleting alignment of %s with length %i\n",hit_cur.name,hit_cur.matched_cols);
 	  hitlist.Delete().Delete();               // delete the list record and hit object
 	  // // Make sure only realigned alignments get displayed! JS: Why? better unrealigned than none.
@@ -2026,10 +2027,10 @@ int main(int argc, char **argv)
   }
 
   // Check for threads
-  if (threads<=1) threads=0;
+  if (threads<=1) {threads=0; omp_threads=1;}
   else if (threads>MAXTHREADS)
     {
-      threads=MAXTHREADS;
+      omp_threads=threads=MAXTHREADS;
       if (v>=1) fprintf(stderr,"WARNING: number of CPUs set to maximum value of %i\n",MAXTHREADS);
     }
 

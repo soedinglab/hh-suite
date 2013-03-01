@@ -1042,7 +1042,7 @@ void prefilter_db()
   int* prefiltered_hits = new int[par.dbsize+1];
   int* backtrace_hits = new int[par.maxnumdb+1];
 
-  __m128i** workspace = new(__m128i*[threads]);
+  __m128i** workspace = new(__m128i*[omp_threads]);
 
   int score;
   double evalue;
@@ -1057,7 +1057,7 @@ void prefilter_db()
 
   if (print_elapsed) ElapsedTimeSinceLastCall("(init prefiltering)");
 
-  for (int i = 0; i < threads; i++)
+  for (int i = 0; i < omp_threads; i++)
     workspace[i] = (__m128i*)memalign(16,3*(LQ+15)*sizeof(char),"the dynamic programming workspace during prefiltering");
   
 #pragma omp parallel for schedule(static) private(score, thread_id)
@@ -1166,7 +1166,7 @@ void prefilter_db()
   if (block_filter)
     {
       // Run SW with backtrace
-      for (int i = 0; i < threads; i++) {
+      for (int i = 0; i < omp_threads; i++) {
 	free(workspace[i]);
 	workspace[i] = (__m128i*)memalign(16,3*(LQ+7)*sizeof(short),"the dynamic programming workspace during prefiltering");
       }
@@ -1218,7 +1218,7 @@ void prefilter_db()
 
   // Free memory
   free(qc);
-  for (int i = 0; i < threads; i++)
+  for (int i = 0; i < omp_threads; i++)
     free(workspace[i]);
   delete[] workspace;
   delete[] prefiltered_hits;
