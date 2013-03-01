@@ -2159,12 +2159,18 @@ Option:
   implementing the HMM-HMM Viterbi alingment in SSE2 SIMD (single input 
   multiple data) instructions 
 
+\item Added option -macins to hhblits, hhsearch and hhalign that controls the
+  costs of internal gap positions in the Maximum Accuracy Algorithm. 
+  0: gap cost is half the mact value. 1: no gap cost, leads to very gappy 
+  alignments.
+
 \item Expanded hhsuite user guide (how to runn hhblits efficiently, how to 
   modify or extend existing databases, how to visually check multiple sequence 
   alignments, troubleshooting)
 
 \item Added options to hhsuitedb.pl for adding (-a) and removing (-r) files 
   from HH-suite database.
+
 \end{itemize}
 
 \subsection{Up to 2.0.16 (January 2013)}

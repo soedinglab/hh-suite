@@ -390,7 +390,7 @@ void Parameters::SetDefaults()
   z=10;                    // min number of lines in hit list
   Z=500;                   // max number of lines in hit list
   e=1e-3f;                 // maximum E-value for inclusion in output alignment, output HMM, and PSI-BLAST checkpoint model
-  realign_max=2000;        // Maximum number of HMM hits to realign // JS 14 Feb 13: increased from 2000 
+  realign_max=2000;        // Maximum number of HMM hits to realign 
   maxmem = 3.0;            // 3GB
   showcons=1;              // show consensus sequence
   showdssp=1;              // show predicted secondary structure ss_dssp

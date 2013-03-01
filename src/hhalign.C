@@ -204,8 +204,8 @@ void help()
   printf(" -norealign     do NOT realign displayed hits with MAC algorithm (def=realign)\n");
   printf(" -mact [0,1[    posterior prob threshold for MAC realignment controlling greedi- \n");
   printf("                ness at alignment ends: 0:global >0.1:local (default=%.2f)       \n",par.mact);
-  printf(" -macins [0,1[  posterior prob threshold for MAC realignment controlling greedi- \n");
-  printf("                ness for aligning nonhomologous inserts to each other (def=%.2f)\n",par.macins);
+  printf(" -macins [0,1[  controls the cost of internal gap positions in the MAC algorithm.\n");
+  printf("                0:dense alignments  1:gappy alignments (default=%.2f)\n",par.macins);
   printf(" -excl <range>  exclude query positions from the alignment, e.g. '1-33,97-168'\n");
   printf(" -shift [-1,1]  score offset (def=%-.3f)                                      \n",par.shift);
   printf(" -corr [0,1]    weight of term for pair correlations (def=%.2f)               \n",par.corr);

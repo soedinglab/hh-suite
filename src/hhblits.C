@@ -343,8 +343,8 @@ void help(char all=0)
   printf(" -norealign     do NOT realign displayed hits with MAC algorithm (def=realign)   \n");
   printf(" -mact [0,1[    posterior prob threshold for MAC realignment controlling greedi- \n");
   printf("                ness at alignment ends: 0:global >0.1:local (default=%.2f)       \n",par.mact);
-  printf(" -macins [0,1[  posterior prob threshold for MAC realignment controlling greedi- \n");
-  printf("                ness for aligning nonhomologous inserts to each other (def=%.2f)\n",par.macins);
+  printf(" -macins [0,1[  controls the cost of internal gap positions in the MAC algorithm.\n");
+  printf("                0:dense alignments  1:gappy alignments (default=%.2f)\n",par.macins);
   printf(" -glob/-loc     use global/local alignment mode for searching/ranking (def=local)\n");
   if (all) {
   printf(" -realign_max <int>  realign max. <int> hits (default=%i)                        \n",par.realign_max);  
@@ -1203,7 +1203,7 @@ void perform_realign(char *dbfiles[], int ndb)
   // phash_plist_realignhitpos->Show(dbfile) is pointer to list with template indices and their ftell positions.
   // This list can be sorted by ftellpos to access one template after the other efficiently during realignment
   Hash< List<Realign_hitpos>* >* phash_plist_realignhitpos;
-  phash_plist_realignhitpos = new Hash< List<Realign_hitpos>* > (30031,NULL);
+  phash_plist_realignhitpos = new Hash< List<Realign_hitpos>* > (100031,NULL);
   
   // Some templates have several (suboptimal) alignments in hitlist. For realignment, we need to efficiently 
   // access all hit objects in hitlist belonging to one template (because we don't want to read templates twice)
@@ -1293,6 +1293,8 @@ void perform_realign(char *dbfiles[], int ndb)
 
       nhits++;
     }
+  if (v>=2)
+      printf("Realigning %i HMM-HMM alignments using Maximum Accuracy algorithm\n",nhits);
 
   if (Lmax>Lmaxmem)
     {
@@ -1345,9 +1347,6 @@ void perform_realign(char *dbfiles[], int ndb)
   
   if (print_elapsed) ElapsedTimeSinceLastCall("(reallocate/reset forward/backwad matrices)");
   // if (print_elapsed) ElapsedTimeSinceLastCall("(prepare realign)");
-
-  if (v>=2)
-      printf("Realigning %i HMMs using HMM-HMM Maximum Accuracy algorithm\n",phash_plist_realignhitpos->Size());
 
   v1=v;
   if (v>0 && v<=3) v=1; else v-=2;  // Supress verbose output during iterative realignment and realignment
@@ -2005,8 +2004,7 @@ int main(int argc, char **argv)
   if (!*dba3m) {
     dba3m_data_file = dba3m_index_file = NULL;
     dba3m_index = NULL;
-    // set premerge = 0 (no a3m database)
-    par.premerge = 0;
+
   } else {
     dba3m_data_file = fopen(dba3m, "r");
     if (!dba3m_data_file) OpenFileError(dba3m);

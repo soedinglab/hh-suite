@@ -27,6 +27,10 @@ HH-suite 2.1.0  March 2013
   - how to visually check multiple sequence alignments
   - troubleshooting
 
+* Added option -macins to hhblits, hhsearch and hhalign that controls the
+  costs of internal gap positions in the Maximum Accuracy Algorithm. 
+  0: gap cost is half the mact value (default) 1: no gap cost, leads to very 
+  gappy alignments.
 
 _______________________________________________________________________________
 

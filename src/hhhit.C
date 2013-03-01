@@ -186,11 +186,11 @@ void Hit::DeleteBacktraceMatrix(int Nq)
 /////////////////////////////////////////////////////////////////////////////////////
 void Hit::AllocateForwardMatrix(int Nq, int Nt)
 {
-  P_MM=new(double*[Nq]);
+  P_MM=new(float*[Nq]);
   scale=new(double[Nq+1]); // need Nq+3?
   for (int i=0; i<Nq; ++i) 
     {
-      P_MM[i] = new(double[Nt]);
+      P_MM[i] = new(float[Nt]);
       if (!P_MM[i]) 
 	{
 	  fprintf(stderr,"Error in %s: out of memory while allocating row %i (out of %i) for dynamic programming matrices \n",par.argv[0],i+1,Nq);
