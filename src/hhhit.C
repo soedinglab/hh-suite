@@ -591,7 +591,7 @@ void Hit::Forward(HMM* q, HMM* t)
 	  F_MM_curr[j] = F_MI_curr[j] = F_DG_curr[j] = F_IM_curr[j] = F_GD_curr[j] = 0.0;
 	else
 	{
-	  F_MM_curr[j] = ProbFwd(q->p[i],t->p[j]) * fpow2(ScoreSS(q,t,i,j)) * Cshift;
+	  F_MM_curr[j] = ProbFwd(q->p[i],t->p[j]) * fpow2(ScoreSS(q,t,i,j)) * Cshift * scale[i] *
 	    ( pmin
 	      + F_MM_prev[j-1] * q->tr[i-1][M2M] * t->tr[j-1][M2M] // BB -> MM (BB = Begin/Begin, for local alignment)
 	      + F_GD_prev[j-1] * q->tr[i-1][M2M] * t->tr[j-1][D2M] // GD -> MM
@@ -892,9 +892,7 @@ void Hit::MACAlignment(HMM* q, HMM* t)
   double score_MAC;   // score of the best MAC alignment
   const double GAPPENALTY = 0.5*(1.0 - (double) par.macins)*par.mact;
 
-  //DEBUG////////////////////////////////////////////////////////////////////////////////////////////
-  float S[1000][2000]; //DEBUG////////////////////////////////////////////////////////////////////////////////////////////
-  //DEBUG////////////////////////////////////////////////////////////////////////////////////////////
+  // float S[1000][2000]; //DEBUG
 
   // Initialization of top row, i.e. cells (0,j)
   for (j=0; j<=t->L; ++j)
@@ -957,9 +955,7 @@ void Hit::MACAlignment(HMM* q, HMM* t)
 	      // Find maximum score; global alignment: maximize only over last row and last column
 	      if(S_curr[j]>score_MAC && (par.loc || i==q->L)) { i2=i; j2=j; score_MAC=S_curr[j]; }	      
 	      
-	      //DEBUG////////////////////////////////////////////////////////////////////////////////////////////
-	      S[i][j] = S_curr[j]; //DEBUG////////////////////////////////////////////////////////////////////////////////////////////
-	      //DEBUG////////////////////////////////////////////////////////////////////////////////////////////
+	      // S[i][j] = S_curr[j]; //DEBUG
 
 	    } // end if 
 	  
@@ -973,32 +969,32 @@ void Hit::MACAlignment(HMM* q, HMM* t)
     } // end for i
   
 
-  // DEBUG
-  if (!strncmp(t->name,"UP20|QED",8))
-	{
-	  printf("\nTemplate=%-12.12s  i=%-4i j=%-4i score=%6.3f  irep=%i, Pforward=%6.3f\n",t->name,i2,j2,score_MAC,irep,Pforward);
-      printf("\nP_MM  ");
-      for (j=0; j<=j2; ++j) printf("%3i   ",j);
-      printf("\n");
-      for (i=0; i<=i2; ++i) 
-	{
-	  printf("%2i:    ",i);
- 	  for (j=0; j<=j2; ++j) 
-	    printf("%5.2f ",P_MM[i][j]);
-	  printf("\n");
-	}
-      printf("\nScore  ");
-      for (j=0; j<=j2; ++j) printf("%3i   ",j);
-      printf("\n");
-      for (i=0; i<=i2; ++i) 
-	{
-	  printf("%2i:    ",i);
- 	  for (j=0; j<=j2; ++j) 
-	    printf("%5.2f ",S[i][j]);
-	  printf("\n");
-	}
-      printf("***************\n");
-    }
+  // // DEBUG
+  // if (!strncmp(t->name,"UP20|QED",8))
+  // 	{
+  // 	  printf("\nTemplate=%-12.12s  i=%-4i j=%-4i score=%6.3f  irep=%i, Pforward=%6.3f\n",t->name,i2,j2,score_MAC,irep,Pforward);
+  //     printf("\nP_MM  ");
+  //     for (j=0; j<=j2; ++j) printf("%3i   ",j);
+  //     printf("\n");
+  //     for (i=0; i<=i2; ++i) 
+  // 	{
+  // 	  printf("%2i:    ",i);
+  // 	  for (j=0; j<=j2; ++j) 
+  // 	    printf("%5.2f ",P_MM[i][j]);
+  // 	  printf("\n");
+  // 	}
+  //     printf("\nScore  ");
+  //     for (j=0; j<=j2; ++j) printf("%3i   ",j);
+  //     printf("\n");
+  //     for (i=0; i<=i2; ++i) 
+  // 	{
+  // 	  printf("%2i:    ",i);
+  // 	  for (j=0; j<=j2; ++j) 
+  // 	    printf("%5.2f ",S[i][j]);
+  // 	  printf("\n");
+  // 	}
+  //     printf("***************\n");
+  //   }
 
   return;
 }

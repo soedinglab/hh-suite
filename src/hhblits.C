@@ -1314,7 +1314,7 @@ void perform_realign(char *dbfiles[], int ndb)
 
   if (print_elapsed) ElapsedTimeSinceLastCall("(prepare realign without reallocating/reseting forward/backwad matrices)");
 
-  // (Re)allocate memory for forward and backward matrix
+  // (Re)allocate memory for forward matrix
   for (bin=0; bin<bins; bin++)
     {
       // Free previously allocated memory (delete and reallocate, since Lmax may have increased)
@@ -1325,7 +1325,7 @@ void perform_realign(char *dbfiles[], int ndb)
 
       bin_status[bin] = FREE;
     }
-  // // If the above reallocation and reseting to 0 is time-critical, it could be avoided by 
+  // // If the above reallocation and resetting to 0 is time-critical, it could be avoided by 
   // // replacing the above block with this block: (JS)
   // int Lmaxprev = 0;
   // if (hit[bin]->forward_allocated)  
