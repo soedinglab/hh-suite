@@ -976,24 +976,24 @@ void Hit::MACAlignment(HMM* q, HMM* t)
   // DEBUG
   if (!strncmp(t->name,"UP20|QED",8))
 	{
-	  printf("\nTemplate=%-12.12s  i=%-4i j=%-4i score=%6.3f  Pforward=%6.3f\n",t->name,i2,j2,score_MAC,Pforward);
+	  printf("\nTemplate=%-12.12s  i=%-4i j=%-4i score=%6.3f  irep=%i, Pforward=%6.3f\n",t->name,i2,j2,score_MAC,irep,Pforward);
       printf("\nP_MM  ");
-      for (j=0; j<=t->L; ++j) printf("%3i   ",j);
+      for (j=0; j<=j2; ++j) printf("%3i   ",j);
       printf("\n");
-      for (i=0; i<=q->L; ++i) 
+      for (i=0; i<=i2; ++i) 
 	{
 	  printf("%2i:    ",i);
- 	  for (j=0; j<=t->L; ++j) 
+ 	  for (j=0; j<=j2; ++j) 
 	    printf("%5.2f ",P_MM[i][j]);
 	  printf("\n");
 	}
       printf("\nScore  ");
-      for (j=0; j<=t->L; ++j) printf("%3i   ",j);
+      for (j=0; j<=j2; ++j) printf("%3i   ",j);
       printf("\n");
-      for (i=0; i<=q->L; ++i) 
+      for (i=0; i<=i2; ++i) 
 	{
 	  printf("%2i:    ",i);
- 	  for (j=0; j<=t->L; ++j) 
+ 	  for (j=0; j<=j2; ++j) 
 	    printf("%5.2f ",S[i][j]);
 	  printf("\n");
 	}
