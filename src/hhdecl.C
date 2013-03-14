@@ -462,7 +462,7 @@ void Parameters::SetDefaults()
   ssgapi=4;                // max. number of inside-integer(ii); gap-open-penalty= -ii*ssgapd
 
   loc=1;                   // local vs. global alignment as default
-  altali=2;                // find up to two (possibly overlapping) subalignments
+  altali=4;                // find up to four (possibly overlapping) subalignments // JS:02 Mar 13: changed from 2 to avoid loosing domain predictions of repeated modules
   forward=0;               // 0: Viterbi algorithm; 1: Viterbi+stochastic sampling; 3:Maximum Accuracy (MAC) algorithm
   realign=1;               // realign with MAC algorithm
 
