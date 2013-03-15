@@ -1155,7 +1155,7 @@ void prefilter_db()
 
       if (count_dbs >= par.maxnumdb) 
 	{
-	  fprintf(stderr,"WARNING: Number of hits passing 2nd prefilter (reduced from %6i to allowed maximum of %i).\n", (int)hits.size(),par.maxnumdb);
+	  fprintf(stderr,"WARNING: Number of hits passing 2nd prefilter reduced from %6i to allowed maximum of %i!\n", (int)hits.size(),par.maxnumdb);
 	  fprintf(stderr,"You can increase the allowed maximum using the -maxfilt <max> option.\n\n");
 	  break;
 	}

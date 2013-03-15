@@ -1009,12 +1009,13 @@ void Hit::Backtrace(HMM* q, HMM* t)
   step=0;         // steps through the matrix correspond to alignment columns (from 1 to nsteps)
   //  state=MM;       // state with maximum score must be MM state  // already set at the end of Viterbi()
   i=i2; j=j2;     // last aligned pair is (i2,j2)
-  while (state)   // while (state!=STOP)  because STOP=0
+  while (state && i>0 && j>0)   // while (state!=STOP)  because STOP=0
     {
       step++;
       states[step] = state;
       this->i[step] = i;
       this->j[step] = j;
+
       // Exclude cells in direct neighbourhood from all further alignments
       for (int ii=imax(i-2,1); ii<=imin(i+2,q->L); ++ii)
 	cell_off[ii][j]=1;     
@@ -1040,7 +1041,8 @@ void Hit::Backtrace(HMM* q, HMM* t)
 	  if (0x40 & btr[i--][j]) state = MM;
 	  break;
 	default:
-	  fprintf(stderr,"Error in %s: unallowed state value %i occurred during backtracing at step %i, (i,j)=(%i,%i)\n",par.argv[0],state,step,i,j);
+	  fprintf(stderr,"Error in %s: unallowed state value %i occurred during backtracing at step %i, (i,j)=(%i,%i) with template %s\n",par.argv[0],state,step,i,j,t->name);
+	  fprintf(stderr,"Dumping alignment and terminating:\n");
 	  state=0;
 	  v=4;
 	  break;
@@ -1049,6 +1051,14 @@ void Hit::Backtrace(HMM* q, HMM* t)
  
   i1 = this->i[step];
   j1 = this->j[step];
+  if (state!=0) 
+    {
+      fprintf(stderr,"Error in %s: reached  (i,j)=(%i,%i) in state value %i at  at step %i  with template %s during backtracing,\n",par.argv[0],i,j,state,step,t->name);
+      fprintf(stderr,"Dumping alignment and terminating:\n");
+      state=0;
+      v=4;
+    }
+
   states[step] = MM;  // first state (STOP state) is set to MM state
   nsteps=step; 
   
@@ -1104,7 +1114,7 @@ void Hit::Backtrace(HMM* q, HMM* t)
   //   printf("%-10.10s lamda=%-9f  score=%-9f  logPval=%-9g\n",name,t->lamda,score,logPvalt);
   
 
-  //DEBUG: Print out Viterbi path
+  //DEBUG: Print out Viterbi path and exit
   if (v>=4) 
     {
       printf("NAME=%7.7s score=%7.3f  score_ss=%7.3f\n",name,score,score_ss);
