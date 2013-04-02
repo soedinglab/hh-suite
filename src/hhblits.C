@@ -52,6 +52,8 @@
 //     Note by J. Soeding: Michael Farrar died unexpectedly in December 2010. 
 //     Many thanks posthumously for your great code!
 
+#include <map>
+
 #define PTHREAD
 #define MAIN
 #define HHBLITS
@@ -130,6 +132,10 @@ cs::ContextLibrary<cs::AA> *cs_lib;
 #include "list.C"        // list data structure
 #include "hash.C"        // hash data structure
 #include "hhdecl.C"      // Constants, global variables, struct Parameters
+
+std::map<std::string, unsigned char*> columnStateSequences;
+ColumnStateScoring* columnStateScoring;
+
 #include "hhutil.C"      // MatchChr, InsertChr, aa2i, i2aa, log2, fast_log2, ScopID, WriteToScreen,
 #include "hhmatrices.C"  // BLOSUM50, GONNET, HSDM
 
@@ -342,6 +348,7 @@ void help(char all=0)
   printf(" -neff [1,inf]  target diversity of multiple sequence alignment (default=off)   \n");
   printf("\n");
   printf("HMM-HMM alignment options:                                                       \n");
+  printf(" -usecs         use column states of the templates in the database for scoring   \n");
   printf(" -norealign     do NOT realign displayed hits with MAC algorithm (def=realign)   \n");
   printf(" -mact [0,1[    posterior probability threshold for MAC re-alignment (def=%.3f)  \n",par.mact);
   printf("                Parameter controls alignment greediness: 0:global >0.1:local     \n");
@@ -351,6 +358,7 @@ void help(char all=0)
   printf(" -alt <int>     show up to this many significant alternative alignments(def=%i)  \n",par.altali);
   printf(" -premerge <int> merge <int> hits to query MSA before aligning remaining hits (def=%i)\n",par.premerge);
   printf(" -shift [-1,1]  profile-profile score offset (def=%-.2f)                         \n",par.shift);
+  printf(" -corr [0,1]    weight of term for pair correlations (def=%.2f)                \n",par.corr);
   printf(" -ssm {0,..,4}  0:   no ss scoring                                             \n");
   printf("                1,2: ss scoring after or during alignment  [default=%1i]         \n",par.ssm);
   printf("                3,4: ss scoring after or during alignment, predicted vs. predicted\n");
@@ -649,6 +657,10 @@ void help(char all=0)
       else if (!strcmp(argv[i],"-nocontxt")) par.nocontxt=1;
       else if (!strcmp(argv[i],"-csb") && (i<argc-1)) par.csb=atof(argv[++i]);
       else if (!strcmp(argv[i],"-csw") && (i<argc-1)) par.csw=atof(argv[++i]);
+      else if (!strcmp(argv[i],"-corr") && (i<argc-1)) par.corr=atof(argv[++i]);
+      else if (!strcmp(argv[i], "-usecs")) {
+        par.useCSScoring = true;
+      }
       else cerr<<endl<<"WARNING: Ignoring unknown option "<<argv[i]<<" ...\n";
       if (v>=4) cout<<i<<"  "<<argv[i]<<endl; //PRINT
     } // end of for-loop for command line input
@@ -1857,7 +1869,6 @@ void perform_realign(char *dbfiles[], int ndb)
   delete[](array_plist_phits); 
 }
 
-
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //// MAIN PROGRAM
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1925,7 +1936,9 @@ int main(int argc, char **argv)
       if (!strcmp(par.cs_library,""))
 	{help(); cerr<<endl<<"Error in "<<program_name<<": column state library (see -cslib)\n"; exit(4);}
     }
-  if (par.loc==0 && num_rounds>=2 && v>=1) cerr<<"WARNING: using -global alignment for iterative searches is deprecated since non-homologous sequence segments can easily enter the MSA and corrupt it.\n";
+  if (par.loc == 0 && num_rounds >= 2 && v >= 1)
+    cerr
+        << "WARNING: using -global alignment for iterative searches is deprecated since non-homologous sequence segments can easily enter the MSA and corrupt it.\n";
   if (num_rounds < 1) num_rounds=1; 
   else if (num_rounds > 8) 
     {
@@ -2137,6 +2150,19 @@ int main(int argc, char **argv)
   if (print_elapsed) ElapsedTimeSinceLastCall("(finished init)");
 
 
+  if(par.useCSScoring) {
+    columnStateScoring = new ColumnStateScoring();
+    columnStateScoring->number_column_states = cs::AS219::kSize;
+    columnStateScoring->query_length = q->L;
+    columnStateScoring->substitutionScores = new float*[q->L + 1];
+    for(int i = 0; i <= q->L; i++){
+      columnStateScoring->substitutionScores[i] = new float[cs::AS219::kSize];
+    }
+  }
+  else {
+    columnStateScoring = NULL;
+  }
+
   //////////////////////////////////////////////////////////////////////////////////
   // Main loop overs search iterations
   //////////////////////////////////////////////////////////////////////////////////
@@ -2198,6 +2224,25 @@ int main(int argc, char **argv)
       printf("HMMs passed 2nd prefilter (gapped profile-profile alignment)   : %6i\n", (ndb_new+ndb_old));
       printf("HMMs passed 2nd prefilter and not found in previous iterations : %6i\n", ndb_new);
       printf("Scoring %i HMMs using HMM-HMM Viterbi alignment\n", ndb_new);
+    }
+
+    //precalculate column scores when using -usecs
+    if(par.useCSScoring) {
+      for (int i = 1; i <= q->L; ++i) {
+        for (int k = 0; k < columnStateScoring->number_column_states; ++k) {
+          float sum = 0;
+          for (int a = 0; a < 20; ++a) {
+            sum += (q->p[i-1][a] * cs_lib->operator [](k).probs[0][a] / q->pav[a]);
+          }
+          sum = flog2(sum);
+
+          //Fitting of cs scores to non-heuristic scores
+          sum = 0.6862403 * sum + 0.0342321 * pow(sum,2) + 0.0002257 * pow(sum,3) + 0.0006802;
+
+          columnStateScoring->substitutionScores[i-1][k] = fpow2(sum);
+        }
+      }
+      //precalculateScores(q, columnStateScoring.number_column_states, columnStateScoring.substitutionScores);
     }
 
     // Main Viterbi HMM-HMM search

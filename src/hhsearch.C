@@ -51,6 +51,7 @@
 #include <errno.h>    // perror()
 #include <cassert>
 #include <stdexcept>
+#include <map>
 
 #ifdef PTHREAD
 #include <pthread.h>  // POSIX pthread functions and data structures
@@ -98,6 +99,11 @@ using std::ofstream;
 #include "hash.C"        // hash data structure
 
 #include "hhdecl.C"      // Constants, global variables, struct Parameters
+
+std::map<std::string, unsigned char*> columnStateSequences;
+ColumnStateScoring* columnStateScoring;
+
+
 #include "hhutil.C"      // MatchChr, InsertChr, aa2i, i2aa, log2, fast_log2, ScopID, WriteToScreen,
 #include "hhmatrices.C"  // BLOSUM50, GONNET, HSDM
 

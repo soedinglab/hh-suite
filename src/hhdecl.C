@@ -98,6 +98,14 @@ EXTERN struct Early_Stopping {
 // Class declarations
 /////////////////////////////////////////////////////////////////////////////////////
 
+//container for the scores used for cs scoring
+struct ColumnStateScoring {
+  float** substitutionScores; //[i][j]; i: query; j:column states
+  int query_length;
+  int number_column_states;
+};
+
+
 // Pseudocounts
 namespace Pseudocounts {
 enum Admix {
@@ -308,6 +316,9 @@ public:
   int idummy;
   float fdummy;
 
+  bool useCSScoring;
+  char cs_template_file[NAMELEN];
+
   void SetDefaultPaths(char *program_path);
   void SetDefaults();
   Parameters();
@@ -514,7 +525,7 @@ void Parameters::SetDefaults()
   Ndiff_db=Ndiff;        
 
   // Initialize strings
-%  strcpy(infile,"stdin");
+//  strcpy(infile,"stdin");
   strcpy(infile,"");
   strcpy(outfile,"");
   strcpy(pairwisealisfile,"");
@@ -526,6 +537,8 @@ void Parameters::SetDefaults()
   strcpy(psifile,"");
   strcpy(alitabfile,"");
   exclstr=NULL;
+  useCSScoring=false;
+  strcpy(cs_template_file, "");
 
   // parameters for context-specific pseudocounts
   csb = 0.85;
