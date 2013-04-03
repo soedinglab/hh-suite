@@ -2031,6 +2031,8 @@ int main(int argc, char **argv)
       omp_threads=threads=MAXTHREADS;
       if (v>=1) fprintf(stderr,"WARNING: number of CPUs set to maximum value of %i\n",MAXTHREADS);
     }
+  else
+    omp_threads=threads;
 
   // Set OpenMP threads
 #ifdef _OPENMP
