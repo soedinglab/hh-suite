@@ -53,6 +53,7 @@ install:
 	install src/cstranslate $(INSTALL_LIB_BIN_DIR)/cstranslate
 	mkdir -p $(INSTALL_DATA_DIR)
 	install -m 0644 data/context_data.lib $(INSTALL_DATA_DIR)/context_data.lib
+	install -m 0644 data/context_data.crf $(INSTALL_DATA_DIR)/context_data.crf
 	install -m 0644 data/cs219.lib        $(INSTALL_DATA_DIR)/cs219.lib
 	install -m 0644 data/do_not_delete    $(INSTALL_DATA_DIR)/do_not_delete
 	install -m 0644 data/do_not_delete.phr $(INSTALL_DATA_DIR)/do_not_delete.phr
@@ -75,7 +76,8 @@ deinstall:
 	rm -f $(INSTALL_DIR)/bin/hhblits $(INSTALL_DIR)/bin/hhalign \
 		$(INSTALL_DIR)/bin/hhconsensus $(INSTALL_DIR)/bin/hhfilter $(INSTALL_DIR)/bin/hhmake $(INSTALL_DIR)/bin/hhsearch
 	rm -f $(INSTALL_DATA_DIR)/context_data.lib $(INSTALL_DATA_DIR)/cs219.lib $(INSTALL_DATA_DIR)/do_not_delete \
-		$(INSTALL_DATA_DIR)/do_not_delete.phr $(INSTALL_DATA_DIR)/do_not_delete.pin $(INSTALL_DATA_DIR)/do_not_delete.psq
+		$(INSTALL_DATA_DIR)/do_not_delete.phr $(INSTALL_DATA_DIR)/do_not_delete.pin $(INSTALL_DATA_DIR)/do_not_delete.psq \
+		$(INSTALL_DATA_DIR)/context_data.crf
 	rm -f $(INSTALL_SCRIPTS_DIR)/Align.pm $(INSTALL_SCRIPTS_DIR)/HHPaths.pm $(INSTALL_SCRIPTS_DIR)/splitfasta.pl \
 		$(INSTALL_SCRIPTS_DIR)/addss.pl $(INSTALL_SCRIPTS_DIR)/create_profile_from_hhm.pl \
 		$(INSTALL_SCRIPTS_DIR)/create_profile_from_hmmer.pl $(INSTALL_SCRIPTS_DIR)/hhmakemodel.pl \
