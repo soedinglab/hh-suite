@@ -691,7 +691,7 @@ void PerformViterbiByWorker(int bin)
 #endif
      
       stringstream ss_tmp;
-      ss_tmp << hit[bin]->name << "__" << hit[bin]->irep;
+      ss_tmp << hit[bin]->file << "__" << hit[bin]->irep;
 
       if (previous_hits->Contains((char*)ss_tmp.str().c_str()))
 	{
@@ -1132,10 +1132,10 @@ void RescoreWithViterbiKeepAlignment(int db_size)
 	  //printf("Viterbi hit %s   q: %i-%i   t: %i-%i\n",hit_cur.name, hit_cur.i1, hit_cur.i2, hit_cur.j1, hit_cur.j2);
 	  int* block;
 	  int counter;
-	  if (par.block_shading->Contains(hit_cur.name))
+	  if (par.block_shading->Contains(hit_cur.file))
 	    {
-	      block = par.block_shading->Show(hit_cur.name); 
-	      counter = par.block_shading_counter->Remove(hit_cur.name);
+	      block = par.block_shading->Show(hit_cur.file); 
+	      counter = par.block_shading_counter->Remove(hit_cur.file);
 	    }
 	  else
 	    {
@@ -1146,9 +1146,9 @@ void RescoreWithViterbiKeepAlignment(int db_size)
 	  block[counter++] = hit_cur.i2;
 	  block[counter++] = hit_cur.j1;
 	  block[counter++] = hit_cur.j2;
-	  par.block_shading_counter->Add(hit_cur.name,counter);
-	  if (!par.block_shading->Contains(hit_cur.name))
-	    par.block_shading->Add(hit_cur.name,block);
+	  par.block_shading_counter->Add(hit_cur.file,counter);
+	  if (!par.block_shading->Contains(hit_cur.file))
+	    par.block_shading->Add(hit_cur.file,block);
 	  // printf("Add to block shading   key: %s    data:",hit_cur.name);
 	  // for (int i = 0; i < counter; i++)
 	  //   printf(" %i,",block[i]);
@@ -1240,10 +1240,10 @@ void perform_realign(char *dbfiles[], int ndb)
 	  //printf("Viterbi hit %s   q: %i-%i   t: %i-%i\n",hit_cur.name, hit_cur.i1, hit_cur.i2, hit_cur.j1, hit_cur.j2);
 	  int* block;
 	  int counter;
-	  if (par.block_shading->Contains(hit_cur.name))
+	  if (par.block_shading->Contains(hit_cur.file))
 	    {
-	      block = par.block_shading->Show(hit_cur.name);
-	      counter = par.block_shading_counter->Remove(hit_cur.name);
+	      block = par.block_shading->Show(hit_cur.file);
+	      counter = par.block_shading_counter->Remove(hit_cur.file);
 	    }
 	  else
 	    {
@@ -1254,9 +1254,9 @@ void perform_realign(char *dbfiles[], int ndb)
 	  block[counter++] = hit_cur.i2;
 	  block[counter++] = hit_cur.j1;
 	  block[counter++] = hit_cur.j2;
-	  par.block_shading_counter->Add(hit_cur.name,counter);
-	  if (!par.block_shading->Contains(hit_cur.name))
-	    par.block_shading->Add(hit_cur.name,block);
+	  par.block_shading_counter->Add(hit_cur.file,counter);
+	  if (!par.block_shading->Contains(hit_cur.file))
+	    par.block_shading->Add(hit_cur.file,block);
 	  // printf("Add to block shading in realign   key: %s    data:",hit_cur.name);
 	  // for (int i = 0; i < counter; i++)
 	  // 	printf(" %i,",block[i]);
@@ -1554,7 +1554,7 @@ void perform_realign(char *dbfiles[], int ndb)
 	  Qali.FrequenciesAndTransitions(q);
 
 	  stringstream ss_tmp;
-	  ss_tmp << hit[bin]->name << "__" << hit[bin]->irep;
+	  ss_tmp << hit[bin]->file << "__" << hit[bin]->irep;
 	  premerged_hits->Add((char*)ss_tmp.str().c_str());
 
 	  if (par.notags) q->NeutralizeTags();
@@ -2180,9 +2180,10 @@ int main(int argc, char **argv)
     // Prefiltering
     ////////////////////////////////////////////
 
-    if (par.prefilter)
+    if (par.prefilter) {
       if (v>=2) printf("Prefiltering database\n");
       prefilter_db();  // in hhprefilter.C
+    }
     
     if (print_elapsed) ElapsedTimeSinceLastCall("(prefiltering)"); 
 
@@ -2273,7 +2274,7 @@ int main(int argc, char **argv)
 		if (hit_cur.Eval > par.e) continue; // E-value too large
 		if (hit_cur.matched_cols < MINCOLS_REALIGN) continue; // leave out too short alignments
 		stringstream ss_tmp;
-		ss_tmp << hit_cur.name << "__" << hit_cur.irep;
+		ss_tmp << hit_cur.file << "__" << hit_cur.irep;
 		if (previous_hits->Contains((char*)ss_tmp.str().c_str())) continue;  // Already in alignment
 
 		// Add number of sequences in this cluster to total found
@@ -2375,7 +2376,7 @@ int main(int argc, char **argv)
 	    if (hit_cur.Eval > 100.0*par.e) break; // E-value much too large
 	    if (hit_cur.Eval > par.e) continue; // E-value too large
 	    stringstream ss_tmp;
-	    ss_tmp << hit_cur.name << "__" << hit_cur.irep;
+	    ss_tmp << hit_cur.file << "__" << hit_cur.irep;
 	    if (previous_hits->Contains((char*)ss_tmp.str().c_str())) continue;  // Already in alignment
 
 	    // Add number of sequences in this cluster to total found
@@ -2406,7 +2407,7 @@ int main(int argc, char **argv)
       {
 	hit_cur = hitlist.ReadNext(); 
 	char strtmp[NAMELEN+6];
-	sprintf(strtmp,"%s__%i%c",hit_cur.name,hit_cur.irep,'\0');
+	sprintf(strtmp,"%s__%i%c",hit_cur.file,hit_cur.irep,'\0');
 	if (!already_seen_filter || hit_cur.Eval > par.e || previous_hits->Contains(strtmp))
 	  hit_cur.Delete(); // Delete hit object (deep delete with Hit::Delete())
 	else
@@ -2415,7 +2416,7 @@ int main(int argc, char **argv)
 	// // Old version by Michael => Delete
 	// hit_cur = hitlist.ReadNext();
 	// stringstream ss_tmp;
-	// ss_tmp << hit_cur.name << "__" << hit_cur.irep;
+	// ss_tmp << hit_cur.file << "__" << hit_cur.irep;
 	// if (!already_seen_filter || hit_cur.Eval > par.e || previous_hits->Contains((char*)ss_tmp.str().c_str()))
 	//   hit_cur.Delete(); // Delete hit object (deep delete with Hit::Delete())
 	// else
@@ -2545,12 +2546,12 @@ int main(int argc, char **argv)
   
   if (par.prefilter)
     {
-      free(X);
       free(length);
       free(first);
-      for (int n = 0; n < num_dbs; n++)
+      for (size_t n = 0; n < num_dbs; n++)
 	delete[](dbnames[n]);
       delete[](dbnames);
+      fclose(db_data_file);
     }
 
   DeletePseudocountsEngine();
