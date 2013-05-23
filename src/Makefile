@@ -14,14 +14,14 @@ endif
 
 ifdef ICC
   CXX = env LANG=C icc
-  CXXFLAGS = -fast -Wall -fno-strict-aliasing -finline-functions -funroll-loops -fp-model fast=2 -fast-transcendentals -wd981 -wd383 -wd2259 -wd1572 -D HH_SSE3 -I$(CS_DIR) -I$(FFINDEX_DIR)
+  CXXFLAGS += -fast -Wall -fno-strict-aliasing -finline-functions -funroll-loops -fp-model fast=2 -fast-transcendentals -wd981 -wd383 -wd2259 -wd1572 -D HH_SSE3 -I$(CS_DIR) -I$(FFINDEX_DIR)
   HHSEARCH_LIBS = -lpthread -lrt
   HHBLITS_LIBS = -lpthread -lrt -openmp
   CS_LIBS = -openmp
   OBJECT_LIBS = -openmp
 else # ifndef ICC
   CXX = g++
-  CXXFLAGS = -O3 -Wall -Wno-vla -Wno-deprecated -Wno-char-subscripts -fno-strict-aliasing -I$(CS_DIR) $(BITS_FLAG) -I$(FFINDEX_DIR) -fopenmp
+  CXXFLAGS += -O3 -Wall -Wno-vla -Wno-deprecated -Wno-char-subscripts -fno-strict-aliasing -I$(CS_DIR) $(BITS_FLAG) -I$(FFINDEX_DIR) -fopenmp
   HHSEARCH_LIBS = -lpthread
   HHBLITS_LIBS = -lpthread -fopenmp
   CS_LIBS = -fopenmp
@@ -53,7 +53,7 @@ else # ifndef ICC
   endif
 endif # ifndef ICC
 
-CPP = $(CXX) $(CXXFLAGS)
+CPP = $(CXX) $(CPPFLAGS) $(CXXFLAGS) $(LDFLAGS)
 CPP_VALGRIND = $(CXX) -g $(CXXFLAGS)
 
 
