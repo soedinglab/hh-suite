@@ -310,7 +310,9 @@ public:
   int prefilter_score_offset;
   int prefilter_bit_factor;
   double prefilter_evalue_thresh;
+  double prefilter_evalue_coarse_thresh;
   int preprefilter_smax_thresh;
+  int prefilter_min_alis;
 
   float wstruc;          // weight of structure scores in hhalign
   int idummy;
@@ -514,6 +516,8 @@ void Parameters::SetDefaults()
   prefilter_score_offset = 50;
   prefilter_bit_factor = 4;
   prefilter_evalue_thresh = 1000;
+  prefilter_evalue_coarse_thresh = 100000;
+  prefilter_min_alis = 1000;
   preprefilter_smax_thresh = 10;
 
   // For filtering database alignments in HHsearch and HHblits 

@@ -1083,7 +1083,7 @@ void prefilter_db() {
     evalue = factor * length[prefiltered_hits[n]]
         * fpow2(-score / par.prefilter_bit_factor);
 
-    if (evalue < par.prefilter_evalue_thresh) {
+    if (evalue < par.prefilter_evalue_coarse_thresh) {
 #pragma omp critical
       hits.push_back(pair<double, int>(evalue, prefiltered_hits[n]));
     }
@@ -1095,6 +1095,10 @@ void prefilter_db() {
   count_dbs = 0;
   
   for (it = hits.begin(); it < hits.end(); it++) {
+    if ((*it).first > par.prefilter_evalue_thresh && count_dbs >= par.prefilter_min_alis) {
+      break;
+    }
+
     backtrace_hits[count_dbs++] = (*it).second;
 
     // Add hit to dbfiles
