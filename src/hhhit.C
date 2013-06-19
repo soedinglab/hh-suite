@@ -428,7 +428,12 @@ void Hit::Viterbi(HMM* q, HMM* t, float** Sstruc) {
       for (j = jmin; j <= jmax; ++j) {
         Si[j] = flog2(columnStateScoring->substitutionScores[i][csSeq[j]]);
       }
+
+//      for(int j = jmin; j <= jmax; j++) {
+//        std::cout << Si[j] << "\t" << Score(q->p[i], t->p[j]) << std::endl;
+//      }
     }
+
 
 
     for (j = jmin; j <= jmax; ++j) // Loop through template positions j

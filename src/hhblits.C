@@ -2228,8 +2228,8 @@ int main(int argc, char **argv)
 
     //precalculate column scores when using -usecs
     if(par.useCSScoring) {
-      for (int i = 1; i <= q->L; ++i) {
-        for (int k = 0; k < columnStateScoring->number_column_states; ++k) {
+      for(int i = 1; i <= q->L+1; ++i) {
+        for(int k = 0; k < columnStateScoring->number_column_states; ++k) {
           float sum = 0;
           for (int a = 0; a < 20; ++a) {
             sum += (q->p[i-1][a] * cs_lib->operator [](k).probs[0][a] / q->pav[a]);
