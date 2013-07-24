@@ -69,8 +69,10 @@ HMM::HMM(int maxseqdis, int maxres)
   for (int i=0; i<maxres; i++) g[i]=new(float[NAA]);
   // for (int i=0; i<maxres; i++) p[i]=new(float[NAA]);
   // for (int i=0; i<maxres; i++) tr[i]=new(float[NTRANS]);
-  for (int i=0; i<maxres; i++) p[i]=(float*) memalign(16,NAA*sizeof(float));  // align memory on 16b boundaries for SSE2
-  for (int i=0; i<maxres; i++) tr[i]=(float*) memalign(16,NTRANS*sizeof(float));
+  for (int i=0; i<maxres; i++) 
+    p[i]=(float*) memalign(16,NAA*sizeof(float),"p[i] of profile HMM in HMM constructor");  // align memory on 16b boundaries for SSE2
+  for (int i=0; i<maxres; i++) 
+    tr[i]=(float*) memalign(16,NTRANS*sizeof(float),"tr[i] of profile HMM in HMM constructor");
 
   //   for (int i=0; i<maxres; i++) tr_lin[i]=new(float[NTRANS]);
   L=0;

@@ -372,32 +372,31 @@ void CalculateSS(HMM* q) {
 // Write alignment in tab format (option -atab)
 /////////////////////////////////////////////////////////////////////////////////////
 void WriteToAlifile(FILE* alitabf, Hit* hit) {
-  if (par.forward == 2 || par.realign) {
-    if (hit->nss_dssp >= 0) {
-      // secondary structure determined by dssp 0:-  1:H  2:E  3:C  4:S  5:T  6:G  7:B
-      fprintf(alitabf, "    i     j  score     SS  probab  dssp\n");
-      for (int step = hit->nsteps; step >= 1; step--)
-        if (hit->states[step] >= MM)
-          fprintf(alitabf, "%5i %5i %6.2f %6.2f %7.4f %5c\n", hit->i[step],
-              hit->j[step], hit->S[step], hit->S_ss[step],
-              hit->P_posterior[step], hit->seq[hit->nss_dssp][hit->j[step]]);
-    }
-    else {
-      fprintf(alitabf, "missing dssp\n");
-      fprintf(alitabf, "    i     j  score     SS  probab\n");
-      for (int step = hit->nsteps; step >= 1; step--)
-        if (hit->states[step] >= MM)
-          fprintf(alitabf, "%5i %5i %6.2f %6.2f %7.4f\n", hit->i[step],
-              hit->j[step], hit->S[step], hit->S_ss[step],
-              hit->P_posterior[step]);
-    }
-  }
-  else {
-    fprintf(alitabf, "    i     j  score     SS\n");
-    for (int step = hit->nsteps; step >= 1; step--)
-      if (hit->states[step] >= MM)
-        fprintf(alitabf, "%5i %5i %6.2f %6.2f\n", hit->i[step], hit->j[step],
-            hit->S[step], hit->S_ss[step]);
+      if (hit->P_posterior != NULL && (par.forward==2 || par.realign)) 
+	{
+	  if (hit->nss_dssp >= 0)
+	    {
+	    // secondary structure determined by dssp 0:-  1:H  2:E  3:C  4:S  5:T  6:G  7:B
+	      fprintf(alitabf,"    i     j  score     SS  probab  dssp\n");
+	      for (int step=hit->nsteps; step>=1; step--)
+		if (hit->states[step]>=MM) 
+		  fprintf(alitabf,"%5i %5i %6.2f %6.2f %7.4f %5c\n",hit->i[step],hit->j[step],hit->S[step],hit->S_ss[step],hit->P_posterior[step],hit->seq[hit->nss_dssp][hit->j[step]]);
+	    }
+	  else 
+	    {
+	      fprintf(alitabf, "missing dssp\n");
+	      fprintf(alitabf,"    i     j  score     SS  probab\n");
+	      for (int step=hit->nsteps; step>=1; step--)
+	    	if (hit->states[step]>=MM) 
+		  fprintf(alitabf,"%5i %5i %6.2f %6.2f %7.4f\n",hit->i[step],hit->j[step],hit->S[step],hit->S_ss[step],hit->P_posterior[step]);
+	    }
+	} 
+      else 
+	{
+	  fprintf(alitabf,"    i     j  score     SS\n");
+	  for (int step=hit->nsteps; step>=1; step--)
+	    if (hit->states[step]>=MM) 
+	      fprintf(alitabf,"%5i %5i %6.2f %6.2f\n",hit->i[step],hit->j[step],hit->S[step],hit->S_ss[step]);
   }
   return;
 }

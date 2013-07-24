@@ -92,14 +92,14 @@ void Sequence<Abc>::Init(std::string sequence, std::string header) {
     // First validate each character before copying
     const size_t seqlen = sequence.length();
     for (size_t i = 0; i < seqlen; ++i) {
-        if (!Abc::kValidChar[static_cast<int>(sequence[i])])
+        if (!Abc::kValidChar[static_cast<unsigned char>(sequence[i])])
             throw Exception("Invalid character with ASCII number %i at position %zu of sequence '%s'",
-                            static_cast<int>(sequence[i]), i, header_.c_str());
+                            static_cast<unsigned char>(sequence[i]), i, header_.c_str());
     }
     // Copy character sequence in packed format into sequence array
     length_ = seqlen;
     seq_ = new value_type[length_];
-    for (size_t i = 0; i < seqlen; ++i) seq_[i] = Abc::kCharToInt[static_cast<int>(sequence[i])];
+    for (size_t i = 0; i < seqlen; ++i) seq_[i] = Abc::kCharToInt[static_cast<unsigned char>(sequence[i])];
 }
 
 template<class Abc>
@@ -122,9 +122,42 @@ void Sequence<Abc>::Read(FILE* fin) {
         }
     }
     // Read sequence and stop if either a new header or delimiter is found
-    while (fgetline(buffer, kBuffSize, fin) && buffer[0] != '/' && buffer[1] != '/') {
+    while (fgetline(buffer, kBuffSize, fin) && !(buffer[0] == '/' && buffer[1] == '/')) {
         if (strscn(buffer))
             sequence.append(buffer);
+
+        c = getc(fin);
+        if (c == EOF) break;
+        ungetc(c, fin);
+        if (static_cast<char>(c) == '>') break;
+    }
+    Init(sequence, header);
+}
+
+template<>
+void Sequence<AS219>::Read(FILE* fin) {
+    delete [] seq_;
+    const size_t kBuffSize = MB;
+    char buffer[kBuffSize];
+    int c = '\0';
+    std::string header;
+    std::string sequence;
+
+    // Read header
+    while (fgetline(buffer, kBuffSize, fin)) {
+        if (!strscn(buffer)) continue;
+        if (buffer[0] == '>') {
+            header.append(buffer + 1);
+            break;
+        } else {
+            throw Exception("Sequence header does not start with '>'!");
+        }
+    }
+    // Read sequence and stop if either a new header or delimiter is found
+    while (fgets(buffer, kBuffSize, fin) != NULL) {
+        if (strscn(buffer)) {
+            sequence.append(buffer);
+        }
 
         c = getc(fin);
         if (c == EOF) break;
@@ -138,8 +171,9 @@ template<class Abc>
 void Sequence<Abc>::Write(FILE* fout, size_t width) const {
     fprintf(fout, ">%s\n", header_.c_str());
     for (size_t i = 0; i < length(); ++i) {
-        // fprintf(stdout, "%i\n", chr(i));
-        fputc(chr(i), fout);
+        unsigned char c = chr(i);
+        assert(Abc::kValidChar[c]);
+        fputc(c, fout);
         if ((i+1) % width == 0) fputc('\n', fout);
     }
     if (length() % width != 0) fputc('\n', fout);

@@ -177,16 +177,14 @@ char input_format = 0;                  // Set to 1 if input in HMMER format (ha
 
 float neffmax = 10;                     // Break if Neff > Neffmax
 
-int cpu = 2;                            // default: use 2 cores
-
 char config_file[NAMELEN];
 char infile[NAMELEN];
 char alis_basename[NAMELEN];
 char query_hhmfile[NAMELEN];             // -qhmm output file
-
 bool alitab_scop = false;                // Write only SCOP alignments in alitabfile
-
 char db_ext[NAMELEN];
+int omp_threads=2;                       // number of OpenMP threads to start
+
 
 // Needed for fast index reading
 size_t data_size;                        
@@ -200,10 +198,19 @@ char* dbhhm_data;
 ffindex_index_t* dbhhm_index = NULL;
 ffindex_index_t* dba3m_index = NULL;
 
+//database filenames
 char db_base[NAMELEN];                   // database basename
-char db[NAMELEN];                        // database with context-state sequences
-char dba3m[NAMELEN];                     // database with A3M-files
-char dbhhm[NAMELEN];                     // database with HHM-files
+char dbcs_base[NAMELEN];
+char dbcs_index_filename[NAMELEN];
+char dbcs_data_filename[NAMELEN];
+
+char dbhhm_base[NAMELEN];
+char dbhhm_index_filename[NAMELEN];
+char dbhhm_data_filename[NAMELEN];
+
+char dba3m_base[NAMELEN];
+char dba3m_index_filename[NAMELEN];
+char dba3m_data_filename[NAMELEN];
 
 char** dbfiles_new;
 char** dbfiles_old;
@@ -216,7 +223,7 @@ Hash<char>* premerged_hits;
 const int MAXTHREADS=256; // maximum number of threads (i.e. CPUs) for parallel computation
 const int MAXBINS=384;    // maximum number of bins (positions in thread queue)
 enum bin_states {FREE=0, SUBMITTED=1, RUNNING=2};
-int threads=0;            // number of threads (apart from the main thread which reads from the databases file) 0:no multithreading
+int threads=2;            // number of compute pthreads during Viterbi and Realign (apart from the main thread which reads from db file) and # OpenMP threads; 0:no multithreading
 int bins;                 // number of bins; jobs gets allocated to a FREE bin were they are waiting for execution by a thread
 char bin_status[MAXBINS]; // The status for each bin is FREE, SUBMITTED, or RUNNING
 int jobs_running;         // number of active jobs, i.e. number of bins set to RUNNING
@@ -350,8 +357,10 @@ void help(char all=0)
   printf("HMM-HMM alignment options:                                                       \n");
   printf(" -usecs         use column states of the templates in the database for scoring   \n");
   printf(" -norealign     do NOT realign displayed hits with MAC algorithm (def=realign)   \n");
-  printf(" -mact [0,1[    posterior probability threshold for MAC re-alignment (def=%.3f)  \n",par.mact);
-  printf("                Parameter controls alignment greediness: 0:global >0.1:local     \n");
+  printf(" -mact [0,1[    posterior prob threshold for MAC realignment controlling greedi- \n");
+  printf("                ness at alignment ends: 0:global >0.1:local (default=%.2f)       \n",par.mact);
+  printf(" -macins [0,1[  controls the cost of internal gap positions in the MAC algorithm.\n");
+  printf("                0:dense alignments  1:gappy alignments (default=%.2f)\n",par.macins);
   printf(" -glob/-loc     use global/local alignment mode for searching/ranking (def=local)\n");
   if (all) {
   printf(" -realign_max <int>  realign max. <int> hits (default=%i)                        \n",par.realign_max);  
@@ -406,13 +415,13 @@ void help(char all=0)
   printf(" -neffmax ]1,20] skip further search iterations when diversity Neff of query MSA \n");
   printf("                becomes larger than neffmax (default=%.1f)\n",neffmax); 
 #ifdef PTHREAD
-  printf(" -cpu <int>     number of CPUs to use (for shared memory SMPs) (default=%i)      \n",cpu);
+  printf(" -cpu <int>     number of CPUs to use (for shared memory SMPs) (default=%i)      \n",threads);
 #endif
   if (all) {
   printf(" -scores <file> write scores for all pairwise comparisions to file               \n");
   printf(" -atab   <file> write all alignments in tabular layout to file                   \n");
   printf(" -maxres <int>  max number of HMM columns (def=%5i)             \n",par.maxres);
-  printf(" -maxmem [1,inf[ max available memory in GB (def=%.1f)          \n",par.maxmem);
+  printf(" -maxmem [1,inf[ limit memory for realignment (in GB) (def=%.1f)          \n",par.maxmem);
   } 
 #ifndef PTHREAD
   printf("(The -cpu option is inactive since HHblits was not compiled with POSIX thread support)\n");
@@ -645,13 +654,14 @@ void help(char all=0)
 	par.maxres=atoi(argv[++i]);
 	par.maxcol=2*par.maxres;
       }
-      else if (!strncmp(argv[i],"-glo",3)) {par.loc=0; if (par.mact>0.35 && par.mact<0.351) {par.mact=0;} }
+      else if (!strncmp(argv[i],"-glo",3)) {par.loc=0; if (par.mact>0.35 && par.mact<0.3502) {par.mact=0;} }
       else if (!strncmp(argv[i],"-loc",4)) par.loc=1;
       else if (!strncmp(argv[i],"-alt",4) && (i<argc-1)) par.altali=atoi(argv[++i]);
       else if (!strcmp(argv[i],"-shift") && (i<argc-1)) par.shift=atof(argv[++i]);
       else if ((!strcmp(argv[i],"-mact") || !strcmp(argv[i],"-mapt")) && (i<argc-1)) par.mact=atof(argv[++i]);
+      else if (!strcmp(argv[i],"-macins") && (i<argc-1)) par.macins=atof(argv[++i]);
       else if (!strcmp(argv[i],"-scwin") && (i<argc-1)) {par.columnscore=5; par.half_window_size_local_aa_bg_freqs = imax(1,atoi(argv[++i]));}
-      else if (!strncmp(argv[i],"-cpu",4) && (i<argc-1)) { threads=atoi(argv[++i]); cpu = threads;}
+      else if (!strncmp(argv[i],"-cpu",4) && (i<argc-1)) { threads=atoi(argv[++i]);}
       else if (!strcmp(argv[i],"-maxmem") && (i<argc-1)) {par.maxmem=atof(argv[++i]);}
       else if (!strncmp(argv[i],"-premerge",9) && (i<argc-1)) par.premerge=atoi(argv[++i]);
       else if (!strcmp(argv[i],"-nocontxt")) par.nocontxt=1;
@@ -702,7 +712,7 @@ void PerformViterbiByWorker(int bin)
 #endif
      
       stringstream ss_tmp;
-      ss_tmp << hit[bin]->name << "__" << hit[bin]->irep;
+      ss_tmp << hit[bin]->file << "__" << hit[bin]->irep;
 
       if (previous_hits->Contains((char*)ss_tmp.str().c_str()))
 	{
@@ -1143,10 +1153,10 @@ void RescoreWithViterbiKeepAlignment(int db_size)
 	  //printf("Viterbi hit %s   q: %i-%i   t: %i-%i\n",hit_cur.name, hit_cur.i1, hit_cur.i2, hit_cur.j1, hit_cur.j2);
 	  int* block;
 	  int counter;
-	  if (par.block_shading->Contains(hit_cur.name))
+	  if (par.block_shading->Contains(hit_cur.file))
 	    {
-	      block = par.block_shading->Show(hit_cur.name); 
-	      counter = par.block_shading_counter->Remove(hit_cur.name);
+	      block = par.block_shading->Show(hit_cur.file); 
+	      counter = par.block_shading_counter->Remove(hit_cur.file);
 	    }
 	  else
 	    {
@@ -1157,9 +1167,9 @@ void RescoreWithViterbiKeepAlignment(int db_size)
 	  block[counter++] = hit_cur.i2;
 	  block[counter++] = hit_cur.j1;
 	  block[counter++] = hit_cur.j2;
-	  par.block_shading_counter->Add(hit_cur.name,counter);
-	  if (!par.block_shading->Contains(hit_cur.name))
-	    par.block_shading->Add(hit_cur.name,block);
+	  par.block_shading_counter->Add(hit_cur.file,counter);
+	  if (!par.block_shading->Contains(hit_cur.file))
+	    par.block_shading->Add(hit_cur.file,block);
 	  // printf("Add to block shading   key: %s    data:",hit_cur.name);
 	  // for (int i = 0; i < counter; i++)
 	  //   printf(" %i,",block[i]);
@@ -1201,8 +1211,8 @@ void perform_realign(char *dbfiles[], int ndb)
   int nhits=0;
   int N_aligned=0;
 
-  // Longest allowable length of database HMM (backtrace: 5 chars, fwd: 1 double, bwd: 1 double 
-  long int Lmaxmem=((par.maxmem-0.5)*1024*1024*1024)/(2*sizeof(double)+8)/q->L/bins;
+  // Longest allowable length of database HMM (backtrace: 5 chars, fwd, bwd: 1 double
+  long int Lmaxmem=(par.maxmem*1024*1024*1024)/sizeof(double)/q->L/bins;
   long int Lmax=0;      // length of longest HMM to be realigned
     
   par.block_shading->Reset();
@@ -1214,7 +1224,7 @@ void perform_realign(char *dbfiles[], int ndb)
   // phash_plist_realignhitpos->Show(dbfile) is pointer to list with template indices and their ftell positions.
   // This list can be sorted by ftellpos to access one template after the other efficiently during realignment
   Hash< List<Realign_hitpos>* >* phash_plist_realignhitpos;
-  phash_plist_realignhitpos = new Hash< List<Realign_hitpos>* > (30031,NULL);
+  phash_plist_realignhitpos = new Hash< List<Realign_hitpos>* > (100031,NULL);
   
   // Some templates have several (suboptimal) alignments in hitlist. For realignment, we need to efficiently 
   // access all hit objects in hitlist belonging to one template (because we don't want to read templates twice)
@@ -1251,10 +1261,10 @@ void perform_realign(char *dbfiles[], int ndb)
 	  //printf("Viterbi hit %s   q: %i-%i   t: %i-%i\n",hit_cur.name, hit_cur.i1, hit_cur.i2, hit_cur.j1, hit_cur.j2);
 	  int* block;
 	  int counter;
-	  if (par.block_shading->Contains(hit_cur.name))
+	  if (par.block_shading->Contains(hit_cur.file))
 	    {
-	      block = par.block_shading->Show(hit_cur.name);
-	      counter = par.block_shading_counter->Remove(hit_cur.name);
+	      block = par.block_shading->Show(hit_cur.file);
+	      counter = par.block_shading_counter->Remove(hit_cur.file);
 	    }
 	  else
 	    {
@@ -1265,9 +1275,9 @@ void perform_realign(char *dbfiles[], int ndb)
 	  block[counter++] = hit_cur.i2;
 	  block[counter++] = hit_cur.j1;
 	  block[counter++] = hit_cur.j2;
-	  par.block_shading_counter->Add(hit_cur.name,counter);
-	  if (!par.block_shading->Contains(hit_cur.name))
-	    par.block_shading->Add(hit_cur.name,block);
+	  par.block_shading_counter->Add(hit_cur.file,counter);
+	  if (!par.block_shading->Contains(hit_cur.file))
+	    par.block_shading->Add(hit_cur.file,block);
 	  // printf("Add to block shading in realign   key: %s    data:",hit_cur.name);
 	  // for (int i = 0; i < counter; i++)
 	  // 	printf(" %i,",block[i]);
@@ -1304,6 +1314,8 @@ void perform_realign(char *dbfiles[], int ndb)
 
       nhits++;
     }
+  if (v>=2)
+      printf("Realigning %i HMM-HMM alignments using Maximum Accuracy algorithm\n",nhits);
 
   if (Lmax>Lmaxmem)
     {
@@ -1313,7 +1325,7 @@ void perform_realign(char *dbfiles[], int ndb)
 	  cerr<<"WARNING: Realigning sequences only up to length "<<Lmaxmem<<"."<<endl;
 	  cerr<<"This is genarally unproboblematic but may lead to slightly sub-optimal alignments for longer sequences."<<endl;
  	  cerr<<"You can increase available memory using the -maxmem <GB> option (currently "<<par.maxmem<<" GB)."<<endl; // still to be implemented
-	  cerr<<"The maximum length realignable is approximately (maxmem-0.5GB)/query_length/(cpus+1)/24B."<<endl;
+	  cerr<<"The maximum length realignable is approximately maxmem/query_length/(cpus+1)/8B."<<endl;
 	}
     }
   
@@ -1325,24 +1337,22 @@ void perform_realign(char *dbfiles[], int ndb)
 
   if (print_elapsed) ElapsedTimeSinceLastCall("(prepare realign without reallocating/reseting forward/backwad matrices)");
 
-  // (Re)allocate memory for forward and backward matrix
+  // (Re)allocate memory for forward matrix
   for (bin=0; bin<bins; bin++)
     {
       // Free previously allocated memory (delete and reallocate, since Lmax may have increased)
       if (hit[bin]->forward_allocated) hit[bin]->DeleteForwardMatrix(q->L+2);
-      if (hit[bin]->backward_allocated) hit[bin]->DeleteBackwardMatrix(q->L+2);
       
-      // Allocate memory for matrices and set to 0
+      // Allocate memory for matrix and set to 0
       hit[bin]->AllocateForwardMatrix(q->L+2,Lmax+1);
-      hit[bin]->AllocateBackwardMatrix(q->L+2,Lmax+1);
 
       bin_status[bin] = FREE;
     }
-  // // If the above reallocation and reseting to 0 is time-critical, it could be avoided by 
+  // // If the above reallocation and resetting to 0 is time-critical, it could be avoided by 
   // // replacing the above block with this block: (JS)
   // int Lmaxprev = 0;
   // if (hit[bin]->forward_allocated)  
-  //   Lmaxprev = sizeof(hit[bin]->F_MM[0]) / sizeof(hit[bin]->F_MM[0][0]);
+  //   Lmaxprev = sizeof(hit[bin]->P_MM[0]) / sizeof(hit[bin]->P_MM[0][0]);
   // for (bin=0; bin<bins; bin++)
   //   {
   //     if (!hit[bin]->forward_allocated)  hit[bin]->AllocateForwardMatrix(q->L+2,Lmax+1);
@@ -1351,22 +1361,13 @@ void perform_realign(char *dbfiles[], int ndb)
   // 	  hit[bin]->DeleteForwardMatrix(q->L+2);
   // 	  hit[bin]->AllocateForwardMatrix(q->L+2,Lmax+1);
   // 	}
-  //     if (!hit[bin]->backward_allocated) hit[bin]->AllocateBackwardMatrix(q->L+2,Lmax+1);
-  //     else if (Lmaxprev<Lmax) 
-  // 	{ 
-  // 	  hit[bin]->DeleteBackwardMatrix(q->L+2);
-  // 	  hit[bin]->AllocateBackwardMatrix(q->L+2,Lmax+1);
-  // 	}
   //     bin_status[bin] = FREE;
   //   }
   // // This is just an idea. This code would need to be tested!!! 
-  // // First, it would need to be tested whether reseting F_MM and B_MM to 0 during the allocation is needed at all.
+  // // First, it would need to be tested whether reseting P_MM to 0 during the allocation is needed at all.
   
   if (print_elapsed) ElapsedTimeSinceLastCall("(reallocate/reset forward/backwad matrices)");
   // if (print_elapsed) ElapsedTimeSinceLastCall("(prepare realign)");
-
-  if (v>=2)
-      printf("Realigning %i HMMs using HMM-HMM Maximum Accuracy algorithm\n",phash_plist_realignhitpos->Size());
 
   v1=v;
   if (v>0 && v<=3) v=1; else v-=2;  // Supress verbose output during iterative realignment and realignment
@@ -1382,16 +1383,19 @@ void perform_realign(char *dbfiles[], int ndb)
       bin=0;
       nhits=0;
       hitlist.Reset();
+
       while (!hitlist.End() && nhits<par.premerge)
 	{
 	  hit_cur = hitlist.ReadNext();
-	  if (nhits>=imax(par.B,par.Z)) break;
-	  if (nhits>=imax(par.b,par.z) && hit_cur.Probab < par.p) break;
-	  if (nhits>=imax(par.b,par.z) && hit_cur.Eval > par.E) continue;
+	  if (hit_cur.Eval > par.e) // JS: removed bug on 13 Feb 13 due to which premerged hits with E-value > par.e were not realigned
+	    {
+	      if (nhits>=imax(par.B,par.Z)) break;
+	      if (nhits>=imax(par.b,par.z) && hit_cur.Probab < par.p) break;
+	      if (nhits>=imax(par.b,par.z) && hit_cur.Eval > par.E) continue;
+	    }
 	  nhits++;
 
-	  if (hit_cur.L>Lmaxmem) continue;  // Don't align to long sequences due to memory limit
-	  if (hit_cur.Eval > par.e) continue; // Don't align hits with an E-value below the inclusion threshold
+	  if (hit_cur.L>Lmaxmem) continue;  // Don't align too long sequences due to memory limit
 
 	  // Open HMM database file dbfiles[idb]
 	  FILE* dbf;
@@ -1571,7 +1575,7 @@ void perform_realign(char *dbfiles[], int ndb)
 	  Qali.FrequenciesAndTransitions(q);
 
 	  stringstream ss_tmp;
-	  ss_tmp << hit[bin]->name << "__" << hit[bin]->irep;
+	  ss_tmp << hit[bin]->file << "__" << hit[bin]->irep;
 	  premerged_hits->Add((char*)ss_tmp.str().c_str());
 
 	  if (par.notags) q->NeutralizeTags();
@@ -1836,7 +1840,6 @@ void perform_realign(char *dbfiles[], int ndb)
   while (!hitlist.End())
     {
       hit_cur = hitlist.ReadNext();
-      //printf("Deleting alignment of %s with length %i? irep=%i nhits=%-2i  par.B=%-3i  par.Z=%-3i par.e=%.2g par.b=%-3i  par.z=%-3i par.p=%.2g\n",hit_cur.name,hit_cur.matched_cols,hit_cur.irep,nhits,par.B,par.Z,par.e,par.b,par.z,par.p);
 
       if (nhits > par.realign_max && nhits>=imax(par.B,par.Z)) break;
       if (hit_cur.Eval > par.e)
@@ -1848,6 +1851,8 @@ void perform_realign(char *dbfiles[], int ndb)
 
       if (hit_cur.matched_cols < MINCOLS_REALIGN)
 	{
+	  // printf("Deleting alignment of %s with length %i? irep=%i nhits=%-2i  par.B=%-3i  par.Z=%-3i par.e=%.2g par.b=%-3i  par.z=%-3i par.p=%.2g\n",hit_cur.name,hit_cur.matched_cols,hit_cur.irep,nhits,par.B,par.Z,par.e,par.b,par.z,par.p);
+	  
 	  if (v>=3) printf("Deleting alignment of %s with length %i\n",hit_cur.name,hit_cur.matched_cols);
 	  hitlist.Delete().Delete();               // delete the list record and hit object
 	  // // Make sure only realigned alignments get displayed! JS: Why? better unrealigned than none.
@@ -1950,39 +1955,49 @@ int main(int argc, char **argv)
   if (! (num_rounds > 1 || *par.alnfile || *par.psifile || *par.hhmfile || *alis_basename) ) par.premerge=0; 
   
   // No outfile given? Name it basename.hhm
-  if (!*par.outfile)      // outfile not given? Name it basename.hhm
-    {
-      RemoveExtension(par.outfile,par.infile);
-      strcat(par.outfile,".hhr");
-      if (v>=2) cout<<"Search results will be written to "<<par.outfile<<"\n";
-    }
+  if (!*par.outfile) {     // outfile not given? Name it basename.hhm
+    RemoveExtension(par.outfile,par.infile);
+    strcat(par.outfile,".hhr");
+    if (v>=2) cout<<"Search results will be written to "<<par.outfile<<"\n";
+  }
 
   // Set databases
-  strcpy(db,db_base);
-  strcat(db,".cs219");
+  strcpy(dbcs_base, db_base);
+  strcat(dbcs_base, "_cs219");
+  strcpy(dbcs_index_filename, dbcs_base);
+  strcat(dbcs_index_filename, ".ffindex");
+  strcpy(dbcs_data_filename, dbcs_base);
+  strcat(dbcs_data_filename, ".ffdata");
 
-  strcpy(dbhhm,db_base);
-  strcat(dbhhm,"_hhm_db");
+  strcpy(dbhhm_base, db_base);
+  strcat(dbhhm_base, "_hhm");
+  strcpy(dbhhm_index_filename, dbhhm_base);
+  strcat(dbhhm_index_filename, ".ffindex");
+  strcpy(dbhhm_data_filename, dbhhm_base);
+  strcat(dbhhm_data_filename, ".ffdata");
 
-  strcpy(dba3m,db_base);
-  strcat(dba3m,"_a3m_db");
+  strcpy(dba3m_base, db_base);
+  strcat(dba3m_base, "_a3m");
+  strcpy(dba3m_index_filename, dba3m_base);
+  strcat(dba3m_index_filename, ".ffindex");
+  strcpy(dba3m_data_filename, dba3m_base);
+  strcat(dba3m_data_filename, ".ffdata");
 
-  fin = fopen(dba3m, "r");
-  if (fin) { // opening file successful?
+  fin = fopen(dba3m_data_filename, "r");
+  if (fin) {
     fclose(fin);
-  } else {   // unsuccessful
-    if(errno == EOVERFLOW)
-    {
+  } else {
+    if(errno == EOVERFLOW) {
       cerr << endl;
-      cerr <<"Error in "<< program_name <<": A3M database  "<<dba3m<<" too big (>2GB on 32bit system?):"<< endl;
+      cerr <<"Error in "<< program_name <<": A3M database  "<< dba3m_data_filename <<" too big (>2GB on 32bit system?):"<< endl;
       exit(errno);
     }
-    if (num_rounds > 1 ||*par.alnfile || *par.psifile || *par.hhmfile || *alis_basename)
-      {
-	cerr<<endl<<"Error in "<<program_name<<": Could not open A3M database "<<dba3m<<", "<<strerror(errno)<<" (needed to construct result MSA)"<<endl; 
-	exit(4);
-      }
-    dba3m[0] = 0;
+
+    if (num_rounds > 1 ||*par.alnfile || *par.psifile || *par.hhmfile || *alis_basename) {
+      cerr<<endl<<"Error in "<<program_name<<": Could not open A3M database " << dba3m_data_filename << ", "<<strerror(errno)<<" (needed to construct result MSA)"<<endl;
+      exit(4);
+    }
+    dba3m_data_filename[0] = 0;
   }
 
   q = new HMM;
@@ -1999,62 +2014,57 @@ int main(int argc, char **argv)
   early_stopping->evals = new double[early_stopping->length];
 
   // Prepare index-based databases
-  char filename[NAMELEN];
-  dbhhm_data_file = fopen(dbhhm, "r");
-  if (!dbhhm_data_file) OpenFileError(dbhhm);
-  strcpy(filename, dbhhm);
-  strcat(filename, ".index");
+  dbhhm_data_file = fopen(dbhhm_data_filename, "r");
+  if (!dbhhm_data_file) OpenFileError(dbhhm_data_filename);
+
+  dbhhm_index_file = fopen(dbhhm_index_filename, "r");
+  if (!dbhhm_index_file) OpenFileError(dbhhm_index_filename);
 
   int filesize;
-  filesize = CountLinesInFile(filename); 
-
-  dbhhm_index_file = fopen(filename, "r");
-  if (!dbhhm_index_file) OpenFileError(filename);
+  filesize = CountLinesInFile(dbhhm_index_filename);
 
   dbhhm_index = ffindex_index_parse(dbhhm_index_file, filesize);
   if (dbhhm_index==NULL) {
-    cerr<<"Error in "<<par.argv[0]<<": could not read index file"<<filename<<". Is the file empty or corrupted?\n";
+    cerr<<"Error in " << par.argv[0] << ": could not read index file" << dbhhm_index_filename
+        << ". Is the file empty or corrupted?\n";
     exit(1);
   }
   dbhhm_data = ffindex_mmap_data(dbhhm_data_file, &data_size);
 
-  if (!*dba3m) {
+  if (!*dba3m_data_filename) {
     dba3m_data_file = dba3m_index_file = NULL;
     dba3m_index = NULL;
-    // set premerge = 0 (no a3m database)
-    par.premerge = 0;
   } else {
-    dba3m_data_file = fopen(dba3m, "r");
-    if (!dba3m_data_file) OpenFileError(dba3m);
-    strcpy(filename, dba3m);
-    strcat(filename, ".index");
+    dba3m_data_file = fopen(dba3m_data_filename, "r");
+    if (!dba3m_data_file) OpenFileError(dba3m_data_filename);
 
-    filesize = CountLinesInFile(filename);
+    filesize = CountLinesInFile(dba3m_index_filename);
 
-    dba3m_index_file = fopen(filename, "r");
-    if (!dba3m_index_file) OpenFileError(filename);
+    dba3m_index_file = fopen(dba3m_index_filename, "r");
+    if (!dba3m_index_file) OpenFileError(dba3m_index_filename);
 
-    dba3m_index = ffindex_index_parse(dba3m_index_file,filesize);
+    dba3m_index = ffindex_index_parse(dba3m_index_file, filesize);
     if (dba3m_index==NULL) {
-      cerr<<"Error in "<<par.argv[0]<<": could not read index file"<<filename<<". Is the file empty or corrupted?\n";
+      cerr<<"Error in "<<par.argv[0]<<": could not read index file" << dba3m_index_filename
+          << ". Is the file empty or corrupted?\n";
       exit(1);
     }
     dba3m_data = ffindex_mmap_data(dba3m_data_file, &data_size);
   }
 
   // Check for threads
-  if (threads<=1) threads=0;
-  else if (threads>MAXTHREADS)
-    {
-      threads=MAXTHREADS;
-      if (v>=1) fprintf(stderr,"WARNING: number of CPUs set to maximum value of %i\n",MAXTHREADS);
-    }
+  if (threads<=1) {threads=0; omp_threads=1;}
+  else if (threads>MAXTHREADS) {
+    omp_threads=threads=MAXTHREADS;
+    if (v>=1) fprintf(stderr,"WARNING: number of CPUs set to maximum value of %i\n",MAXTHREADS);
+  }
+  else
+    omp_threads=threads;
 
   // Set OpenMP threads
-#ifdef _OPENMP
-  cpu = imin(cpu,omp_get_max_threads());
-  omp_set_num_threads(cpu);
-#endif
+  #ifdef _OPENMP
+    omp_set_num_threads(threads);
+  #endif
   
   // Check option compatibilities
   if (par.nseqdis>MAXSEQDIS-3-par.showcons) par.nseqdis=MAXSEQDIS-3-par.showcons; //3 reserved for secondary structure
@@ -2064,6 +2074,8 @@ int main(int argc, char **argv)
   if (par.b>par.B) par.B=par.b;
   if (par.z>par.Z) par.Z=par.z;
   if (par.maxmem<1.0) {cerr<<"WARNING: setting -maxmem to its minimum allowed value of 1.0\n"; par.maxmem=1.0;}
+  if (par.mact>=1.0) par.mact=0.999; else if (par.mact<0) par.mact=0.0;
+  if (par.macins>=1.0) par.macins=0.999; else if (par.macins<0) par.macins=0.0;
 
   // Set (global variable) substitution matrix and derived matrices
   SetSubstitutionMatrix();
@@ -2103,36 +2115,33 @@ int main(int argc, char **argv)
   if (Qali.N_in - Qali.N_ss > 1) par.premerge=0;
   par.M=1; // all database MSAs must be in A3M format
 
-  if (par.allseqs) 
-    {
-      Qali_allseqs = Qali; // make a *deep* copy of Qali!
-      for(int k=0; k<Qali_allseqs.N_in; ++k) Qali_allseqs.keep[k]=1; // keep *all* sequences (reset filtering in Qali)
-    }
+  if (par.allseqs) {
+    Qali_allseqs = Qali; // make a *deep* copy of Qali!
+    for(int k=0; k<Qali_allseqs.N_in; ++k) Qali_allseqs.keep[k]=1; // keep *all* sequences (reset filtering in Qali)
+  }
 
   v=v1;
 
   if (print_elapsed) ElapsedTimeSinceLastCall("(initialize)");
   
-  if (par.prefilter)
-    {
+  if (par.prefilter) {
       // Initialize Prefiltering (Get DBsize)
       init_prefilter();
-    }
-  else // Set all HMMs in database as new_dbs
-    {
-      init_no_prefiltering();
-    }
+  }
+  // Set all HMMs in database as new_dbs
+  else {
+    init_no_prefiltering();
+  }
 
   if (print_elapsed) ElapsedTimeSinceLastCall("(init prefilter)"); 
 
   // Input parameters
-  if (v>=3)
-    {
-      cout<<"Input file       :   "<<par.infile<<"\n";
-      cout<<"Output file      :   "<<par.outfile<<"\n";
-      cout<<"Prefilter DB     :   "<<db<<"\n";
-      cout<<"HHM DB           :   "<<dbhhm<<"\n";
-    }
+  if (v>=3) {
+    cout<<"Input file       :   "<<par.infile<<"\n";
+    cout<<"Output file      :   "<<par.outfile<<"\n";
+    cout<<"Prefilter DB     :   "<< dbcs_data_filename << " " << dbcs_index_filename << "\n";
+    cout<<"HHM DB           :   "<< dbhhm_data_filename << " " << dbhhm_index_filename << "\n";
+  }
 
   // Set query columns in His-tags etc to Null model distribution
   if (par.notags) q->NeutralizeTags();
@@ -2208,9 +2217,10 @@ int main(int argc, char **argv)
     // Prefiltering
     ////////////////////////////////////////////
 
-    if (par.prefilter)
+    if (par.prefilter) {
       if (v>=2) printf("Prefiltering database\n");
       prefilter_db();  // in hhprefilter.C
+    }
     
     if (print_elapsed) ElapsedTimeSinceLastCall("(prefiltering)"); 
 
@@ -2320,7 +2330,7 @@ int main(int argc, char **argv)
 		if (hit_cur.Eval > par.e) continue; // E-value too large
 		if (hit_cur.matched_cols < MINCOLS_REALIGN) continue; // leave out too short alignments
 		stringstream ss_tmp;
-		ss_tmp << hit_cur.name << "__" << hit_cur.irep;
+		ss_tmp << hit_cur.file << "__" << hit_cur.irep;
 		if (previous_hits->Contains((char*)ss_tmp.str().c_str())) continue;  // Already in alignment
 
 		// Add number of sequences in this cluster to total found
@@ -2422,7 +2432,7 @@ int main(int argc, char **argv)
 	    if (hit_cur.Eval > 100.0*par.e) break; // E-value much too large
 	    if (hit_cur.Eval > par.e) continue; // E-value too large
 	    stringstream ss_tmp;
-	    ss_tmp << hit_cur.name << "__" << hit_cur.irep;
+	    ss_tmp << hit_cur.file << "__" << hit_cur.irep;
 	    if (previous_hits->Contains((char*)ss_tmp.str().c_str())) continue;  // Already in alignment
 
 	    // Add number of sequences in this cluster to total found
@@ -2453,7 +2463,7 @@ int main(int argc, char **argv)
       {
 	hit_cur = hitlist.ReadNext(); 
 	char strtmp[NAMELEN+6];
-	sprintf(strtmp,"%s__%i%c",hit_cur.name,hit_cur.irep,'\0');
+	sprintf(strtmp,"%s__%i%c",hit_cur.file,hit_cur.irep,'\0');
 	if (!already_seen_filter || hit_cur.Eval > par.e || previous_hits->Contains(strtmp))
 	  hit_cur.Delete(); // Delete hit object (deep delete with Hit::Delete())
 	else
@@ -2462,7 +2472,7 @@ int main(int argc, char **argv)
 	// // Old version by Michael => Delete
 	// hit_cur = hitlist.ReadNext();
 	// stringstream ss_tmp;
-	// ss_tmp << hit_cur.name << "__" << hit_cur.irep;
+	// ss_tmp << hit_cur.file << "__" << hit_cur.irep;
 	// if (!already_seen_filter || hit_cur.Eval > par.e || previous_hits->Contains((char*)ss_tmp.str().c_str()))
 	//   hit_cur.Delete(); // Delete hit object (deep delete with Hit::Delete())
 	// else
@@ -2568,9 +2578,6 @@ int main(int argc, char **argv)
       hit[bin]->DeleteBacktraceMatrix(q->L+2);
       if (hit[bin]->forward_allocated)
 	hit[bin]->DeleteForwardMatrix(q->L+2);
-      if (hit[bin]->backward_allocated)
-	hit[bin]->DeleteBackwardMatrix(q->L+2);
-
       delete hit[bin];
       delete t[bin];
     }
@@ -2595,12 +2602,12 @@ int main(int argc, char **argv)
   
   if (par.prefilter)
     {
-      free(X);
       free(length);
       free(first);
-      for (int n = 0; n < num_dbs; n++)
+      for (size_t n = 0; n < num_dbs; n++)
 	delete[](dbnames[n]);
       delete[](dbnames);
+      fclose(db_data_file);
     }
 
   DeletePseudocountsEngine();

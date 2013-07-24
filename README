@@ -22,6 +22,65 @@ Many posthumous thanks to Michael Farrar for his great code!
  Installation
 *****************************************************************************
 
+You can either compile from sources or use precompiled programs.
+
+Some distributions incorporate HH-suite on their own:
+
+Ubuntu/Debian/etc. DPKGs are provided by Laszlo Kajan:
+http://packages.debian.org/source/sid/hhsuite
+On current Debian/Ubuntu you can just install via the package manager, e.g.:
+$ apt-get install hhsuite
+
+For Archlinux you can find a PKGBUILD on aur:
+https://aur.archlinux.org/packages/hhsuite/
+
+
+*****************************************************************************
+A) Precompiled Binaries
+
+1. Dowloading
+
+Download the appropriate binaries from ftp://toolkit.genzentrum.lmu.de/HH-suite/.
+
+ - hhsuite-latest.x86_64.rpm
+   Linux x86_64 RPM for Scientific Linux 6, RHEL 6, CentOS 6
+   which might also work for Fedora and SuSE.
+   $ rpm -hvU hhsuite-latest.x86_64.rpm
+
+ - hhsuite-latest-linux-x86_64.tar.gz
+   Linux x86_64 tar.gz (any linux).
+   Just untar and use the binaries in bin/:
+   $ tar xzf hhsuite-latest-linux-x86_64.tar.gz
+
+ - hhsuite-latest-macosx.tar.gz
+   Mac OSX x86_64. This is not provided for all versions.
+   Just untar and use the binaries in bin/:
+   $ tar xzf hhsuite-latest-macosx.tar.gz
+
+2. Set paths 
+
+2.1. In your shell set environment variable HHLIB to $INSTALL_DIR/lib/hh, 
+e.g (for bash, zsh, ksh):
+
+$ export HHLIB=/usr/local/lib/hh
+
+HHsearch and HHblits look for the column state library file cs219.lib
+and the context library file context_data.lib in $HHLIB/data/. The hh-suite
+perl scripts also read HHLIB to locate 
+
+Add the location of HH-suite binaries and scripts to your search PATH variable
+$ export PATH=$PATH:<install_dir>/bin:$HHLIB/scripts
+
+
+2.2. Specify paths to BLAST, PSIPRED, PDB, DSSP etc. in 
+$INSTALL_DIR/lib/hh/scripts/HHPaths.pm
+where they are read by the perl scripst in hh-suite.
+
+
+
+*****************************************************************************
+B) Compiling from sources
+
 1. Downloading
 
 Download the sources from ftp://toolkit.genzentrum.lmu.de/HH-suite/, e.g.
@@ -36,7 +95,7 @@ $ tar -xzvf hhsuite-latest.tar.gz
 
 This will unpack the sources to hhsuite-<VERSION>.
 
-2. Compilation 
+2. Compilation
 
 The following dependencies exist: perl, libpng, libz
 

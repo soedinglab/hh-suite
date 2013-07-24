@@ -54,6 +54,7 @@ struct CSTranslateAppOptions {
         weight_center    = 1.6;
         weight_decay     = 0.85;
         weight_as        = 1000.0;
+        binary           = false;
         verbose          = true;
     }
 
@@ -91,6 +92,8 @@ struct CSTranslateAppOptions {
     double weight_decay;
     // Weight in emission calculation of abstract states
     double weight_as;
+    // Output binary sequence
+    bool binary;
     // verbose output
     bool verbose;
 };  // CSTranslateAppOptions
@@ -110,9 +113,9 @@ class CSTranslateApp : public Application {
     // Prints usage banner to stream.
     virtual void PrintUsage() const;
     // Writes abstract state sequence to outfile
-    void WriteStateSequence(const Sequence<AS219>& seq) const;
+    void WriteStateSequence(const Sequence<AS219>& seq, string outfile, bool append) const;
     // Writes abstract state profile to outfile
-    void WriteStateProfile(const CountProfile<AS219>& prof) const;
+    void WriteStateProfile(const CountProfile<AS219>& prof, string outfile, bool append) const;
 
     // Parameter wrapper
     CSTranslateAppOptions opts_;
@@ -142,11 +145,12 @@ void CSTranslateApp<Abc>::ParseOptions(GetOpt_pp& ops) {
     ops >> Option('D', "context-data", opts_.modelfile, opts_.modelfile);
     ops >> Option('p', "pc-engine", opts_.pc_engine, opts_.pc_engine);
     ops >> Option('w', "weight", opts_.weight_as, opts_.weight_as);
+    ops >> OptionPresent('b', "binary", opts_.binary);
     ops >> Option('v', "verbose", opts_.verbose, opts_.verbose);
 
     opts_.Validate();
 
-    if (strcmp(opts_.outfile.c_str(), "stdout") == 0)
+    if (opts_.outfile.compare("stdout") == 0)
         opts_.verbose = false;
 
     if (opts_.outfile.empty() && opts_.appendfile.empty())
@@ -183,54 +187,41 @@ void CSTranslateApp<Abc>::PrintOptions() const {
     fprintf(out_, "  %-30s %s (def=%-.2f)\n", "-x, --pc-admix [0,1]", "Pseudocount admix for context-specific pseudocounts", opts_.pc_admix);
     fprintf(out_, "  %-30s %s (def=%-.1f)\n", "-c, --pc-ali [0,inf[", "Constant in pseudocount calculation for alignments", opts_.pc_ali);
     fprintf(out_, "  %-30s %s (def=%-.2f)\n", "-w, --weight [0,inf[", "Weight of abstract state column in emission calculation", opts_.weight_as);
+    fprintf(out_, "  %-30s %s (def=off)\n", "-b, --binary", "Write binary instead of character sequence");
 }
 
 template<class Abc>
-void CSTranslateApp<Abc>::WriteStateSequence(const Sequence<AS219>& seq) const {
-    if (!opts_.outfile.empty()) {
-        FILE* fout;
-        if (strcmp(opts_.outfile.c_str(), "stdout") == 0)
-            fout = stdout;
-        else
-            fout = fopen(opts_.outfile.c_str(), "w");
-        if (!fout) throw Exception("Can't write to output file '%s'!", opts_.outfile.c_str());
+void CSTranslateApp<Abc>::WriteStateSequence(const Sequence<AS219>& seq, string outfile, bool append = false) const {
+    FILE* fout;
+    if (outfile.compare("stdout") == 0)
+        fout = stdout;
+    else
+        fout = fopen(outfile.c_str(), append ? "a" : "w");
+    if (!fout) throw Exception("Can't %s to file '%s'!", append ? "append" : "write", outfile.c_str());
+    if (opts_.binary) {
+        for (size_t i = 0; i < seq.length(); ++i) {
+            fputc((char)seq[i], fout);
+        }
+    } else {
         seq.Write(fout);
-        if (opts_.verbose)
-            fprintf(out_, "Wrote abstract state sequence to %s\n", opts_.outfile.c_str());
-        fclose(fout);
     }
-    if (!opts_.appendfile.empty()) {
-        FILE* fout = fopen(opts_.appendfile.c_str(), "a");
-        if (!fout) throw Exception("Can't append to file '%s'!", opts_.appendfile.c_str());
-        seq.Write(fout);
-        if (opts_.verbose)
-            fprintf(out_, "Appended abstract state sequence to %s\n", opts_.appendfile.c_str());
-        fclose(fout);
-    }
+    fclose(fout);
+    if (opts_.verbose)
+        fprintf(out_, "%s abstract state sequence to %s\n", append ? "Appended" : "Wrote", outfile.c_str());
 }
 
 template<class Abc>
-void CSTranslateApp<Abc>::WriteStateProfile(const CountProfile<AS219>& prof) const {
-    if (!opts_.outfile.empty()) {
-        FILE* fout;
-        if (strcmp(opts_.outfile.c_str(), "stdout") == 0)
-            fout = stdout;
-        else
-            fout = fopen(opts_.outfile.c_str(), "w");
-        if (!fout) throw Exception("Can't write to output file '%s'!", opts_.outfile.c_str());
-        prof.Write(fout);
-        if (opts_.verbose)
-            fprintf(out_, "Wrote abstract state count profile to %s\n", opts_.outfile.c_str());
-        fclose(fout);
-    }
-    if (!opts_.appendfile.empty()) {
-        FILE* fout = fopen(opts_.appendfile.c_str(), "a");
-        if (!fout) throw Exception("Can't append to file '%s'!", opts_.appendfile.c_str());
-        prof.Write(fout);
-        if (opts_.verbose)
-            fprintf(out_, "Appended abstract state count profile to %s\n", opts_.appendfile.c_str());
-        fclose(fout);
-    }
+void CSTranslateApp<Abc>::WriteStateProfile(const CountProfile<AS219>& prof, string outfile, bool append = false) const {
+    FILE* fout;
+    if (outfile.compare("stdout") == 0)
+        fout = stdout;
+    else
+        fout = fopen(outfile.c_str(), append ? "a" : "w");
+    if (!fout) throw Exception("Can't %s to output file '%s'!", append ? "append" : "write", outfile.c_str());
+    prof.Write(fout);
+    fclose(fout);
+    if (opts_.verbose)
+        fprintf(out_, "%s abstract state count profile to %s\n", append ? "Appended" : "Wrote", outfile.c_str());
 }
 
 char GetMatchSymbol(double pp) {
@@ -420,10 +411,21 @@ int CSTranslateApp<Abc>::Run() {
     }
 
     // Write abstract-state sequence or profile to outfile
-    if (opts_.outformat == "seq")
-        WriteStateSequence(as_seq);
-    else
-        WriteStateProfile(as_profile);
+    if (opts_.outformat == "seq") {
+        if (!opts_.outfile.empty()) {
+            WriteStateSequence(as_seq, opts_.outfile, false);
+        }
+        if (!opts_.appendfile.empty()) {
+            WriteStateSequence(as_seq, opts_.appendfile, true);
+        }
+    } else {
+        if (!opts_.outfile.empty()) {
+            WriteStateProfile(as_profile, opts_.outfile, false);
+        }
+        if (!opts_.appendfile.empty()) {
+            WriteStateProfile(as_profile, opts_.appendfile, true);
+        }
+    }
 
     return 0;
 }

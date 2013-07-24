@@ -52,6 +52,7 @@
 #include <cassert>
 #include <stdexcept>
 #include <map>
+#include <unistd.h>   // access()
 
 #ifdef PTHREAD
 #include <pthread.h>  // POSIX pthread functions and data structures
@@ -92,7 +93,6 @@ using std::ofstream;
 #include "context_library.h"
 #include "library_pseudocounts-inl.h"
 #include "crf_pseudocounts-inl.h"
-
 
 #include "util.C"        // imax, fmax, iround, iceil, ifloor, strint, strscn, strcut, substr, uprstr, uprchr, Basename etc.
 #include "list.C"        // list data structure
@@ -260,8 +260,11 @@ void help(char all=0)
   printf("\n");
   printf("HMM-HMM alignment options:                                                    \n");
   printf(" -norealign     do NOT realign displayed hits with MAC algorithm (def=realign)   \n");
-  printf(" -mact [0,1[    posterior probability threshold for MAC re-alignment (def=%.3f)\n",par.mact);
-  printf("                Parameter controls alignment greediness: 0:global >0.1:local\n");
+  printf(" -mact [0,1[    posterior prob threshold for MAC realignment controlling greedi- \n");
+  printf("                ness at alignment ends: 0:global  >0.1:local (default=%.2f)       \n",par.mact);
+  printf(" -macins [0,1[  controls the cost of internal gap positions in the MAC algorithm.\n");
+  printf("                0:dense alignments  1:gappy alignments (default=%.2f)\n",par.macins);
+  
   printf(" -glob/-loc     use global/local alignment mode for searching/ranking (def=local)\n");
 //   printf(" -vit          use Viterbi algorithm for searching/ranking (default)          \n");
 //   printf(" -mac          use Maximum Accuracy MAC algorithm for searching/ranking\n");
@@ -329,7 +332,7 @@ void help(char all=0)
   printf(" -v <int>       verbose mode: 0:no screen output  1:only warings  2: verbose   \n");
   if (all) {
   printf(" -maxres <int>  max number of HMM columns (def=%5i)             \n",par.maxres);
-  printf(" -maxmem [1,inf[ max available memory in GB (def=%.1f)          \n",par.maxmem);
+  printf(" -maxmem [1,inf[ limit memory for realignment (in GB) (def=%.1f)          \n",par.maxmem);
   printf(" -scores <file> write scores for all pairwise comparisions to file         \n");
   printf(" -calm {0,..,3} empirical score calibration of 0:query 1:template 2:both   \n");
   printf("                default 3: neural network-based estimation of EVD params   \n");
@@ -512,11 +515,10 @@ void ProcessArguments(int argc, char** argv)
       else if (!strcmp(argv[i],"-ssa") && (i<argc-1)) par.ssa=atof(argv[++i]);
       else if (!strcmp(argv[i],"-realign")) par.realign=1;
       else if (!strcmp(argv[i],"-norealign")) par.realign=0;
-      else if (!strcmp(argv[i],"-forward")) par.forward=1;
       else if (!strcmp(argv[i],"-mac") || !strcmp(argv[i],"-MAC")) par.forward=2;
       else if (!strcmp(argv[i],"-map") || !strcmp(argv[i],"-MAP")) par.forward=2;
       else if (!strcmp(argv[i],"-vit")) par.forward=0;
-      else if (!strncmp(argv[i],"-glo",3)) {par.loc=0; if (par.mact>0.35 && par.mact<0.351) {par.mact=0;} }
+      else if (!strncmp(argv[i],"-glo",3)) {par.loc=0; if (par.mact>0.35 && par.mact<0.3502) {par.mact=0;} }
       else if (!strncmp(argv[i],"-loc",4)) par.loc=1;
       else if (!strncmp(argv[i],"-alt",4) && (i<argc-1)) par.altali=atoi(argv[++i]);
       else if (!strcmp(argv[i],"-M") && (i<argc-1))
@@ -528,9 +530,11 @@ void ProcessArguments(int argc, char** argv)
       else if (!strcmp(argv[i],"-calm") && (i<argc-1)) par.calm=atoi(argv[++i]);
       else if (!strcmp(argv[i],"-shift") && (i<argc-1)) par.shift=atof(argv[++i]);
       else if ((!strcmp(argv[i],"-mact") || !strcmp(argv[i],"-mapt")) && (i<argc-1)) par.mact=atof(argv[++i]);
+      else if (!strcmp(argv[i],"-macins") && (i<argc-1)) par.macins=atof(argv[++i]);
       else if (!strcmp(argv[i],"-sc") && (i<argc-1)) par.columnscore=atoi(argv[++i]);
       else if (!strcmp(argv[i],"-scwin") && (i<argc-1)) {par.columnscore=5; par.half_window_size_local_aa_bg_freqs = imax(1,atoi(argv[++i]));}
-      else if (!strcmp(argv[i],"-def")) ;
+//      TODO: is this necessary?
+//      else if (!strcmp(argv[i],"-def")) ;
       else if (!strcmp(argv[i],"-maxres") && (i<argc-1)) {
 	par.maxres=atoi(argv[++i]);
 	par.maxcol=2*par.maxres;
@@ -570,8 +574,8 @@ void perform_realign(char *dbfiles[], int ndb)
   int nhits=0;
   int N_aligned=0;
   
-  // Longest allowable length of database HMM (backtrace: 5 chars, fwd: 1 double, bwd: 1 double 
-  long int Lmaxmem=((par.maxmem-0.5)*1024*1024*1024)/(2*sizeof(double)+8)/q->L/bins;
+  // Longest allowable length of database HMM (backtrace: 5 chars, fwd, bwd: 1 double
+  long int Lmaxmem=(par.maxmem*1024*1024*1024)/sizeof(double)/q->L/bins;
   long int Lmax=0;      // length of longest HMM to be realigned
     
   // phash_plist_realignhitpos->Show(dbfile) is pointer to list with template indices and their ftell positions.
@@ -602,7 +606,7 @@ void perform_realign(char *dbfiles[], int ndb)
 	}
 
       if (hit_cur.L>Lmax) Lmax=hit_cur.L;
-      if (hit_cur.L>Lmaxmem) {nhits++; continue;}
+      if (hit_cur.L>Lmaxmem) {nhits++; continue;} // skip HMMs that require too much memory to be realigned
 
 //    fprintf(stderr,"hit.name=%-15.15s  hit.index=%-5i hit.ftellpos=%-8i  hit.dbfile=%s\n",hit_cur.name,hit_cur.index,(unsigned int)hit_cur.ftellpos,hit_cur.dbfile);
       if (nhits>=par.premerge || hit_cur.irep>1) // realign the first premerge hits consecutively to query profile
@@ -638,9 +642,9 @@ void perform_realign(char *dbfiles[], int ndb)
       if (v>=1) 
 	{
 	  cerr<<"WARNING: Realigning sequences only up to length "<<Lmaxmem<<"."<<endl;
-	  cerr<<"This is genarally unproboblematic but may lead to slightly sub-optimal alignments for longer sequences."<<endl;
- 	  cerr<<"You can increase available memory using the -maxmem <GB> option (currently "<<par.maxmem<<" GB)."<<endl; // still to be implemented
-	  cerr<<"The maximum length realignable is approximately (maxmem-0.5GB)/query_length/(cpus+1)/24B."<<endl;
+	  cerr<<"This is genarally unproboblematic but may lead to slightly sub-optimal alignments for these sequences."<<endl;
+ 	  cerr<<"You can increase available memory using the -maxmem <GB> option (currently "<<par.maxmem<<" GB)."<<endl; 
+	  cerr<<"The maximum length realignable is approximately maxmem/query_length/(cpus+1)/8B."<<endl;
 	}
     }
   
@@ -649,11 +653,8 @@ void perform_realign(char *dbfiles[], int ndb)
   jobs_submitted = 0;
   reading_dbs=1;   // needs to be set to 1 before threads are created
   for (bin=0; bin<bins; bin++)
-    {
-      if (!hit[bin]->forward_allocated)  hit[bin]->AllocateForwardMatrix(q->L+2,Lmax+1);
-      if (!hit[bin]->backward_allocated) hit[bin]->AllocateBackwardMatrix(q->L+2,Lmax+1);
-    }
-  
+    if (!hit[bin]->forward_allocated)  hit[bin]->AllocateForwardMatrix(q->L+2,Lmax+1);
+    
   if (v>=2) printf("Realigning %i database HMMs using HMM-HMM Maximum Accuracy algorithm\n",nhits);
   v1 = v;
   if (v>0 && v<=3) v=1; else v-=2;  // Supress verbose output during iterative realignment and realignment
@@ -695,7 +696,8 @@ void perform_realign(char *dbfiles[], int ndb)
 	  if (nhits>=imax(par.b,par.z) && hit_cur.Probab < par.p) break;
 	  if (nhits>=imax(par.b,par.z) && hit_cur.Eval > par.E) continue;
 	  
-	  if (hit_cur.irep>1) continue;               // Align only the best hit of the first par.premerge templates
+	  // if (hit_cur.irep>1) continue; // Align only the best hit of the first par.premerge templates // JS 13 Feb 13: commented out since this could lead to problems with hits that are then not realigned at all and missing posterior probs => remove entirely?
+	 
 	  if (hit_cur.L>Lmaxmem) {nhits++; continue;} //Don't align to long sequences due to memory limit
 	  
 	  // Open HMM database file dbfiles[idb]
@@ -1185,6 +1187,8 @@ int main(int argc, char **argv)
   if (par.b>par.B) par.B=par.b;
   if (par.z>par.Z) par.Z=par.z;
   if (par.maxmem<1.0) {cerr<<"Warning: setting -maxmem to its minimum allowed value of 1.0\n"; par.maxmem=1.0;}
+  if (par.mact>=1.0) par.mact=0.999; else if (par.mact<0) par.mact=0.0;
+  if (par.macins>=1.0) par.macins=0.999; else if (par.macins<0) par.macins=0.0;
 
   // Input parameters
   if (v>=3)
@@ -1230,7 +1234,6 @@ int main(int argc, char **argv)
 
   if (par.forward>=1)
     {
-      if (v>=2 && par.forward==1) printf("Using Forward algorithm ...\n");
       if (v>=2 &&par.forward==2) printf("Using maximum accuracy (MAC) alignment algorithm ...\n");
     }
   else if (v>=3) printf("Using Viterbi algorithm ...\n");
@@ -1247,8 +1250,6 @@ int main(int argc, char **argv)
       hit[bin]->AllocateBacktraceMatrix(q->L+2,par.maxres); // ...with a separate dynamic programming matrix (memory!!)
       if (par.forward>=1)
         hit[bin]->AllocateForwardMatrix(q->L+2,par.maxres);
-      if (par.forward==2)
-        hit[bin]->AllocateBackwardMatrix(q->L+2,par.maxres);
 
       bin_status[bin] = FREE;
     }
@@ -1769,8 +1770,6 @@ int main(int argc, char **argv)
       hit[bin]->DeleteBacktraceMatrix(q->L+2);
       if (par.forward>=1 || par.realign)
         hit[bin]->DeleteForwardMatrix(q->L+2);
-      if (par.forward==2 || par.realign)
-        hit[bin]->DeleteBackwardMatrix(q->L+2);
       delete hit[bin];
       delete t[bin];
      }

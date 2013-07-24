@@ -9,7 +9,7 @@
 //// Constants
 /////////////////////////////////////////////////////////////////////////////////////
 
-EXTERN const char VERSION_AND_DATE[]="version 2.0.15 (June 2012)";
+EXTERN const char VERSION_AND_DATE[]="version 2.1.0-pre (XXX 2013)";
 EXTERN const char REFERENCE[]="Remmert M, Biegert A, Hauser A, and Soding J.\nHHblits: Lightning-fast iterative protein sequence searching by HMM-HMM alignment.\nNat. Methods 9:173-175 (2011).\n";
 EXTERN const char COPYRIGHT[]="(C) Johannes Soeding, Michael Remmert, Andreas Biegert, Andreas Hauser\n";
 EXTERN const int MAXSEQ=65535; //max number of sequences in input alignment (must be <~30000 on cluster nodes??)
@@ -57,7 +57,7 @@ EXTERN const int s2a[]={ 0, 4, 3, 6,13, 7, 8, 9,11,10,12, 2,14, 5, 1,15,16,19,17
 EXTERN const int a2s[]={ 0,14,11, 2, 1,13, 3, 5, 6, 7, 9, 8,10, 4,12,15,16,18,19,17,20};
 
 enum transitions {M2M,M2I,M2D,I2M,I2I,D2M,D2D}; // index for transitions within a HMM
-enum pair_states {STOP=0,SAME=1,GD=2,IM=3,DG=4,MI=5,MS=6,ML=7,SM=8,LM=9,MM=10};
+enum pair_states {STOP=0,SAME=1,GD=2,IM=3,DG=4,MI=5,MM=6};
 
 
 
@@ -242,9 +242,10 @@ public:
   int half_window_size_local_aa_bg_freqs; // half-window size to average local aa background frequencies
   float corr;             // Weight of correlations between scores with |i-j|<=4
   float shift;            // Score offset for match-match states
-  float mact;             // Score threshold (negative offset) in MAC alignment
+  double mact;            // Probability threshold (negative offset) in MAC alignment determining greediness at ends of alignment
+  double macins;          // Probability threshold (negative offset) in MAC alignment determining greediness inside the alignment
   int realign_max;        // Realign max ... hits
-  float maxmem;           // maximum available memory in GB (approximately)
+  float maxmem;           // maximum available memory in GB for realignment (approximately)
  
   char calibrate;         // calibration of query HMM?  0:no, 1:yes (write lamda,mu into query profile)
   char calm;              // derive P-values from: 0:query calibration  1:template calibration  2:both  3:Neural Network prediction
@@ -314,7 +315,6 @@ public:
   int preprefilter_smax_thresh;
   int prefilter_min_alis;
 
-  float wstruc;          // weight of structure scores in hhalign
   int idummy;
   float fdummy;
 
@@ -390,7 +390,7 @@ void Parameters::SetDefaults()
 
   // Parameter class
   maxcol=32765;            // max number of columns in sequence/MSA input files; must be <= LINELEN and >= maxres
-  maxres=15002;            // max number of states in HMM; must be <= LINELEN
+  maxres=20000;            // max number of states in HMM; must be <= LINELEN
   maxnumdb=20000;          // max number of hits allowed past prefilter
   maxnumdb_no_prefilter=20000;// max number of hits without prefiltering
 
@@ -403,7 +403,7 @@ void Parameters::SetDefaults()
   z=10;                    // min number of lines in hit list
   Z=500;                   // max number of lines in hit list
   e=1e-3f;                 // maximum E-value for inclusion in output alignment, output HMM, and PSI-BLAST checkpoint model
-  realign_max=1000;        // Realign max ... hits
+  realign_max=2000;        // Maximum number of HMM hits to realign 
   maxmem = 3.0;            // 3GB
   showcons=1;              // show consensus sequence
   showdssp=1;              // show predicted secondary structure ss_dssp
@@ -462,7 +462,8 @@ void Parameters::SetDefaults()
   ssw_realign=0.11f;       // weight of ss scoring for realign
   ssa=1.0f;                // weight of ss evolution matrix
   shift=-0.03f;            // Shift match score up
-  mact=0.3501f;            // Score threshold for MAC alignment in local mode (set to 0.3501 to track user modification)
+  mact=0.3501f;            // Probability threshold for MAC alignment in local mode for alignment ends (set to 0.3501 to track user modification)
+  macins=0.0f;             // Probability threshold for MAC alignment in local mode for internal insertions (set to 0 for greediness)
   corr=0.1f;               // Weight of correlations of scores for |i-j|<=4
 
   egq=0.0f;                // no charge for end gaps as default
@@ -474,7 +475,7 @@ void Parameters::SetDefaults()
   ssgapi=4;                // max. number of inside-integer(ii); gap-open-penalty= -ii*ssgapd
 
   loc=1;                   // local vs. global alignment as default
-  altali=2;                // find up to two (possibly overlapping) subalignments
+  altali=4;                // find up to four (possibly overlapping) subalignments // JS:02 Mar 13: changed from 2 to avoid loosing domain predictions of repeated modules
   forward=0;               // 0: Viterbi algorithm; 1: Viterbi+stochastic sampling; 3:Maximum Accuracy (MAC) algorithm
   realign=1;               // realign with MAC algorithm
 
@@ -529,8 +530,8 @@ void Parameters::SetDefaults()
   Ndiff_db=Ndiff;        
 
   // Initialize strings
-//  strcpy(infile,"stdin");
-  strcpy(infile,"");
+
+  strcpy(infile,""); // was reverted back from 'strcpy(infile,"stdin");' (to show help list when no options are given)
   strcpy(outfile,"");
   strcpy(pairwisealisfile,"");
   strcpy(scorefile,"");
@@ -548,7 +549,6 @@ void Parameters::SetDefaults()
   csb = 0.85;
   csw = 1.6;
 
-  wstruc=1.0f;             // Weight of structure score in hhalign
   idummy=0;
 
   return;

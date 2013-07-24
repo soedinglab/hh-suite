@@ -1,6 +1,6 @@
 # HHPaths.pm 
 
-#     HHsuite version 2.0.165 (January 2013)
+#     HHsuite version 2.1.0 (March 2013)
 #     (C) J. Soeding, A. Hauser 2012
 
 #     This program is free software: you can redistribute it and/or modify
@@ -28,7 +28,8 @@ package HHPaths;
 # This block can stay unmodified
 use vars qw(@ISA @EXPORT @EXPORT_OK %EXPORT_TAGS $VERSION);
 use Exporter;
-our $VERSION = "version 2.0.16 (January 2013)";
+our $v;
+our $VERSION = "version 2.0.16 (February 2013)";
 our @ISA     = qw(Exporter);
 our @EXPORT  = qw($VERSION $hhlib $hhdata $hhbin $hhscripts $execdir $datadir $ncbidir $dummydb $pdbdir $dsspdir $dssp $cs_lib $context_lib $v);
 

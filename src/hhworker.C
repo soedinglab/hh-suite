@@ -18,11 +18,11 @@ void AlignByWorker(int bin)
           if (hit[bin]->irep>1 && hit[bin]->score <= SMIN) break;
           hit[bin]->Backtrace(q,t[bin]);
         }
-      else if (par.forward==1)
-        {
-          hit[bin]->Forward(q,t[bin]);
-          hit[bin]->StochasticBacktrace(q,t[bin],1); // the 1 selects maximization instead of stochastic backtracing
-        }
+      // else if (par.forward==1)
+      //   {
+      //     hit[bin]->Forward(q,t[bin]);
+      //     hit[bin]->StochasticBacktrace(q,t[bin],1); // StochasticBacktrace was removed from HH-suite 
+      //   }
       else if (par.forward==2)
         {
           hit[bin]->Forward(q,t[bin]);

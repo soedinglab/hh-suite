@@ -6,7 +6,7 @@
 
 # (C) Johannes Soeding 2012
 
-#     HHsuite version 2.0.16 (January 2013)
+#     HHsuite version 2.0.16 (February 2013)
 #
 #     Reference: 
 #     Remmert M., Biegert A., Hauser A., and Soding J.
