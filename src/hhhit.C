@@ -28,6 +28,11 @@ using std::ofstream;
 #include "hhhitlist.h"   // class HitList
 #endif
 
+#ifdef PTHREAD
+// Mutex for the saving of matrices in hhhit (-omat)
+pthread_mutex_t matrices_saving_mutex = PTHREAD_MUTEX_INITIALIZER;
+#endif
+
 #define CALCULATE_MAX6(max, var1, var2, var3, var4, var5, var6, varb) \
   if (var1>var2) { max=var1; varb=STOP;}			          \
   else           { max=var2; varb=MM;};					\
@@ -712,6 +717,59 @@ void Hit::Forward(HMM* q, HMM* t) {
       score -= log(t->L*q->L)/LAMDA+14.; // +14.0 to get approx same mean as for -global
   }
 
+
+  //TODO: discard to function
+  if (par.printMatrices) {
+    double scale_rate;
+    double scale_prod_curr = 1.0;
+    double ffprob = 0.0;
+    double ffsum_row = 0.0;
+    double ffsum = 0.0;
+
+    matrices_ptr = new Alignment_Matrices();
+
+    matrices_ptr->irep = irep;
+    matrices_ptr->template_name = std::string(name);
+    matrices_ptr->filebasename = std::string(t->file);
+    matrices_ptr->template_length = t->L;
+    matrices_ptr->query_length = q->L;
+    matrices_ptr->reduced_posterior_matrix = NULL;
+
+    matrices_ptr->forward_profile = new float[q->L + 1];
+    for (int i = 0; i <= q->L; i++) {
+      matrices_ptr->forward_profile[i] = 0;
+    }
+
+    for (int i = 1; i <= q->L; i++) {
+      if (self)
+        jmin = imin(i + SELFEXCL + 1, t->L);
+      else
+        jmin = 1;
+      if (scale_prod_curr < DBL_MIN * 100)
+        scale_prod_curr = 0.0;
+      else
+        scale_prod_curr *= scale[i];
+
+      ffsum_row = 0.0;
+      for (int j = jmin; j <= t->L; j++) {
+        if (scale_prod_curr == 0.0)
+          scale_rate = 0.0;
+        else
+          scale_rate = (scale_prod * scale[q->L + 1]) / scale_prod_curr;
+
+        ffprob = (P_MM[i][j] / Pforward) * scale_rate;
+
+        ffsum_row += ffprob;
+        ffsum += ffprob;
+      }
+    }
+
+    if (v > 0 && fabs(ffsum - 1.0) > 0.0001)
+      fprintf(stderr, "WARNING: Sum of probablities for alignment end != 1.0 (ffsum = %f)(QUERY: %s, TEMPLATE: %s)\n",
+          ffsum, q->name, t->name);
+  }
+
+
 // Debugging output
 /*
 if (v>=4)
@@ -769,18 +827,60 @@ void Hit::Backward(HMM* q, HMM* t) {
   double B_MI_curr[t->L + 1];
 
   // Initialization of top row, i.e. cells (0,j)
-  for (int j=t->L; j>=1; j--) 
-  {
+  for (int j=t->L; j>=1; j--) {
     if (cell_off[q->L][j]) 
       P_MM[q->L][j] = B_MM_prev[j] = 0.0;
-    else 
-      {
-    B_MM_prev[j] = scale[q->L+1];
-    P_MM[q->L][j] *= scale[q->L+1]/Pforward;
-      }
+    else {
+      B_MM_prev[j] = scale[q->L+1];
+      P_MM[q->L][j] *= scale[q->L+1]/Pforward;
+    }
     B_MI_prev[j] = B_DG_prev[j] = 0.0;
   }
-  if (par.loc) pmin = scale[q->L+1]; else pmin = 0.0; // transform pmin (for local alignment) to scale of present (i'th) row
+
+  if (par.loc)
+    pmin = scale[q->L+1];
+  else
+    pmin = 0.0; // transform pmin (for local alignment) to scale of present (i'th) row
+
+
+  //backward probability calculation
+  float sum_backward = 0;
+
+  double final_scale_prod = scale[q->L + 1];
+  float actual_backward = 0.0;
+
+  if(par.printMatrices) {
+    matrices_ptr->backward_profile = new float[q->L + 1];
+    for (int i = 0; i <= q->L; i++) {
+      matrices_ptr->backward_profile[i] = 0;
+    }
+
+    for(int i = q->L - 1; i >= 1; i--) {
+      final_scale_prod *= scale[i+1];
+      if (final_scale_prod < DBL_MIN*100)
+        final_scale_prod = 0.0;
+    }
+
+    if (self)
+      jmin = imin(q->L + SELFEXCL, t->L);
+    else
+      jmin = 1;
+
+    for (int j = t->L-1; j>=jmin; j--){
+      float substitutionScore =
+          (par.useCSScoring && csSeq) ?
+              columnStateScoring->substitutionScores[q->L][csSeq[j]] :
+              ProbFwd(q->p[q->L], t->p[j]);
+
+      actual_backward += substitutionScore * fpow2(ScoreSS(q, t, q->L, j))
+          * Cshift * B_MM_curr[j] / Pforward;
+    }
+    actual_backward *= final_scale_prod / scale_prod;
+
+    matrices_ptr->backward_profile[q->L] = actual_backward;
+
+    sum_backward += actual_backward;
+  }
 
   // Backward algorithm
   // Loop through query positions i
@@ -806,6 +906,8 @@ void Hit::Backward(HMM* q, HMM* t) {
     pmin *= scale[i+1]; // transform pmin (for local alignment) to scale of present (i'th) row
     if (pmin<DBL_MIN*100)
       pmin = 0.0;
+
+    actual_backward = 0;
 
     // Loop through template positions j
     for (j=t->L-1; j>=jmin; j--) {
@@ -859,17 +961,82 @@ void Hit::Backward(HMM* q, HMM* t) {
 
       } // end else
 
+      //TODO: save backward profile
+
       // Calculate posterior probability from Forward and Backward matrix elements
       P_MM[i][j] *= B_MM_curr[j]/Pforward;
+
+      float substitutionScore =
+          (par.useCSScoring && csSeq) ?
+              columnStateScoring->substitutionScores[i][csSeq[j]] :
+              ProbFwd(q->p[i], t->p[j]);
+
+      actual_backward += substitutionScore * fpow2(ScoreSS(q, t, i, j))
+          * Cshift * B_MM_curr[j] / Pforward;
     } //end for j
+
+    actual_backward *= final_scale_prod / scale_prod;
+    sum_backward += actual_backward;
+
+    if(par.printMatrices) {
+      matrices_ptr->backward_profile[i] = actual_backward;
+    }
 
     for(int jj = 0; jj <= t->L; jj++) {
       B_MM_prev[jj] = B_MM_curr[jj];
       B_DG_prev[jj] = B_DG_curr[jj];
       B_MI_prev[jj] = B_MI_curr[jj];
     }
+
   } // end for i
   
+  //TODO: discard to function
+  //save alignment matrices
+  if (par.printMatrices) {
+    std::vector<Posterior_Triple*>* reduced_posterior_matrix = new std::vector<Posterior_Triple*>();
+    matrices_ptr->reduced_posterior_matrix = reduced_posterior_matrix;
+
+    for (int i = 1; i <= q->L; i++) {
+      for (int j = 1; j <= t->L; j++) {
+        if (P_MM[i][j] > 0.1) {
+          Posterior_Triple* p = new Posterior_Triple(i, j, P_MM[i][j]);
+          reduced_posterior_matrix->push_back(p);
+        }
+      }
+    }
+
+    #ifdef PTHREAD
+      pthread_mutex_lock(&matrices_saving_mutex);
+    #endif
+
+    for (std::vector<Alignment_Matrices*>::iterator comp_it =
+        matrices.begin(); comp_it != matrices.end(); comp_it++) {
+
+      float similarity_score = 0.0;
+
+      for (int i = 1; i <= q->L; i++) {
+        similarity_score += pow(matrices_ptr->forward_profile[i]*(*comp_it)->forward_profile[i], 0.5) +
+            pow(matrices_ptr->backward_profile[i]*(*comp_it)->backward_profile[i], 0.5);
+      }
+
+      similarity_score /= 2.0;
+      matrices_ptr->similarity_scores.push_back(similarity_score);
+    }
+
+    //save matrices of current alignment to map matrices
+    std::stringstream ss;
+    ss << this->name << "_" << this->irep;
+    std::string id = ss.str();
+    matrices_ptr->id = std::string(id);
+
+    matrices.push_back(matrices_ptr);
+
+    #ifdef PTHREAD
+      pthread_mutex_unlock(&matrices_saving_mutex);
+    #endif
+  }
+
+
   /*
   // Debugging output
   if (v>=6)

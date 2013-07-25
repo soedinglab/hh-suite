@@ -84,8 +84,12 @@ using std::ofstream;
 #include "list.C"        // list data structure
 #include "hash.C"        // hash data structure
 #include "hhdecl.C"      // Constants, global variables, struct Parameters
+
 std::map<std::string, unsigned char*> columnStateSequences;
 ColumnStateScoring* columnStateScoring;
+
+std::vector<Alignment_Matrices*> matrices;
+std::map<std::string, float> ali_probabilities;
 
 #include "hhutil.C"      // MatchChr, InsertChr, aa2i, i2aa, log2, fast_log2, ScopID, WriteToScreen,
 #include "hhmatrices.C"  // BLOSUM50, GONNET, HSDM

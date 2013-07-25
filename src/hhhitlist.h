@@ -25,6 +25,8 @@ public:
   // Print alignments of query sequences against hit sequences 
   void PrintAlignments(HMM* q, char* outfile, char outformat=0);
 
+  void PrintMatrices(HMM* q, std::string outfile);
+
   // Return a figure of merit for distinction of the score with positive from the scores with negatives
   void Optimize(HMM* q);
 

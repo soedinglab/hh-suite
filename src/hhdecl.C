@@ -96,7 +96,50 @@ EXTERN struct Early_Stopping {
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Class declarations
-/////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////
+
+struct Posterior_Triple {
+    int query_pos;
+    int template_pos;
+    float posterior_probability;
+
+    Posterior_Triple(int query_pos, int template_pos, float posterior_probability) {
+      this->query_pos = query_pos;
+      this->template_pos = template_pos;
+      this->posterior_probability = posterior_probability;
+    }
+};
+
+struct Alignment_Matrices {
+    ~Alignment_Matrices() {
+      delete[] forward_profile;
+      delete[] backward_profile;
+
+      if (reduced_posterior_matrix != NULL) {
+        for(std::vector<Posterior_Triple*>::iterator it = reduced_posterior_matrix->begin();
+            it != reduced_posterior_matrix->end(); it++) {
+          delete *it;
+        }
+        delete reduced_posterior_matrix;
+      }
+    }
+
+    std::string id;
+
+    std::string template_name;
+    std::string filebasename;
+    int irep;
+
+    int query_length;
+    int template_length;
+    float alignment_probability;
+
+    float* forward_profile;
+    float* backward_profile;
+
+    std::vector<float> similarity_scores;
+    std::vector<Posterior_Triple*>* reduced_posterior_matrix;
+};
 
 //container for the scores used for cs scoring
 struct ColumnStateScoring {
@@ -320,6 +363,10 @@ public:
 
   bool useCSScoring;
   char cs_template_file[NAMELEN];
+
+  bool printMatrices;
+  std::string matrixOutputFileName;
+  unsigned int max_number_matrices;
 
   void SetDefaultPaths(char *program_path);
   void SetDefaults();
@@ -550,6 +597,9 @@ void Parameters::SetDefaults()
   csw = 1.6;
 
   idummy=0;
+
+  printMatrices = false;
+  max_number_matrices = 100;
 
   return;
 }

@@ -618,3 +618,93 @@ inline float ScalarProd20(float* qi, float* tj)
   return res;
 #endif // end ifdef HH_SSE2
 }
+
+void float_to_8_bit(float input, unsigned char& result) {
+  const unsigned int normalization_111 = 939524096;
+  const unsigned int complete_exp_mask = 2139095040;
+  const unsigned int exp_mask = 125829120;
+  const unsigned int mant_mask = 7864320;
+
+  const unsigned int exp_shift = 19;
+  const unsigned int mant_shift = 19;
+
+  unsigned int in = *((unsigned int*)(&input));
+
+  unsigned int e = in & complete_exp_mask;
+  e -= normalization_111;
+  e = e & exp_mask;
+  e = e >> exp_shift;
+
+  unsigned int m = in & mant_mask;
+  m = m >> mant_shift;
+
+  result = e | m;
+}
+
+void bit_8_to_float(unsigned char input, float& result) {
+  const unsigned int normalization_111 = 939524096;
+  const unsigned int exp_shift = 19;
+  const unsigned int mant_shift = 19;
+
+  unsigned int m = input & 15;
+  m = m << mant_shift;
+
+  unsigned int e = input & 240;
+  e = e << exp_shift;
+  e += normalization_111;
+
+  unsigned int res = e | m;
+
+  result = *((float*)(&res));
+}
+
+void float_to_16_bit(float input, unsigned short int& result) {
+  const unsigned int normalization_63 = 536870912;
+  const unsigned int complete_exp_mask = 2139095040;
+  const unsigned int exp_mask = 528482304;
+  const unsigned int mant_mask = 8380416;
+
+  const unsigned int exp_shift = 13;
+  const unsigned int mant_shift = 13;
+
+  unsigned int in = *((unsigned int*)(&input));
+
+  unsigned int e = in & complete_exp_mask;
+  e -= normalization_63;
+  e = e & exp_mask;
+  e = e >> exp_shift;
+
+  unsigned int m = in & mant_mask;
+  m = m >> mant_shift;
+
+  result = e | m;
+}
+
+void bit_16_to_float(unsigned short int input, float& result) {
+  const unsigned int normalization_63 = 536870912;
+
+  const unsigned int exp_shift = 13;
+  const unsigned int mant_shift = 13;
+
+  unsigned int m = input & 2046;
+  m = m << mant_shift;
+
+  unsigned int e = input & 129024;
+  e = e << exp_shift;
+  e += normalization_63;
+  unsigned int res = e | m;
+
+  result = *((float*)(&res));
+}
+
+void writeU16(std::ostream& file, unsigned short int val) {
+  unsigned char bytes[2];
+
+  // extract the individual bytes from our value
+  bytes[1] = (val) & 0xFF;  // low byte
+  bytes[0] = (val >> 8) & 0xFF;  // high byte
+
+  // write those bytes to the file
+  file.write( (char*)bytes, 2 );
+}
+
