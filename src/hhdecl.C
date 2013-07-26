@@ -368,6 +368,8 @@ public:
   std::string matrixOutputFileName;
   unsigned int max_number_matrices;
 
+  int min_prefilter_hits;
+
   void SetDefaultPaths(char *program_path);
   void SetDefaults();
   Parameters();
@@ -589,8 +591,11 @@ void Parameters::SetDefaults()
   strcpy(psifile,"");
   strcpy(alitabfile,"");
   exclstr=NULL;
+
   useCSScoring=false;
   strcpy(cs_template_file, "");
+
+  min_prefilter_hits = 1000;
 
   // parameters for context-specific pseudocounts
   csb = 0.85;
