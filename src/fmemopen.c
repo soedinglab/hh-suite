@@ -5,6 +5,8 @@
  *         Based on FMem.c of Alexandre Flori (2008/10/17 AF)
  */
 
+//TODO: not used
+
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
