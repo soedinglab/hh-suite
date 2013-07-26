@@ -34,6 +34,8 @@
 //     Many thanks posthumously for your great code!
 //     Johannes
 
+#include <algorithm>
+
 #define SWAP(tmp, arg1, arg2) tmp = arg1; arg1 = arg2; arg2 = tmp;
 
 struct ali_pos {
@@ -967,8 +969,7 @@ void stripe_query_profile()
 ////////////////////////////////////////////////////////////////////////
 // Main prefilter function
 ////////////////////////////////////////////////////////////////////////
-void prefilter_db()
-{
+void prefilter_db() {
   doubled = new(Hash<char>);
   doubled->New(16381,0);
   for (int idb=0; idb<ndb_new; idb++) delete[](dbfiles_new[idb]);
@@ -989,13 +990,15 @@ void prefilter_db()
 
   stripe_query_profile();
   
-  int* prefiltered_hits = new int[par.dbsize+1];
+//  int* prefiltered_hits = new int[par.dbsize+1];
   int* backtrace_hits = new int[par.maxnumdb+1];
 
   __m128i** workspace = new(__m128i*[omp_threads]);
 
   int score;
   double evalue;
+  vector<pair<double, int> > first_prefilter;
+
   vector<pair<double, int> > hits;
 
   int thread_id = 0;
@@ -1010,175 +1013,204 @@ void prefilter_db()
   for (int i = 0; i < omp_threads; i++)
     workspace[i] = (__m128i*)memalign(16,3*(LQ+15)*sizeof(char),"the dynamic programming workspace during prefiltering");
   
-#pragma omp parallel for schedule(static) private(score, thread_id)
-  for (size_t n = 0; n < num_dbs; n++)     // Loop over all database sequences
-    {
-#ifdef _OPENMP
+  #pragma omp parallel for schedule(static) private(score, thread_id)
+  // Loop over all database sequences
+  for (size_t n = 0; n < num_dbs; n++) {
+    #ifdef _OPENMP
       thread_id = omp_get_thread_num();
-#endif
+    #endif
 
-      // Perform search step
-      score = ungapped_sse_score(qc, LQ, first[n], length[n], par.prefilter_score_offset, workspace[thread_id]);
+    // Perform search step
+    score = ungapped_sse_score(qc, LQ, first[n], length[n], par.prefilter_score_offset, workspace[thread_id]);
 
-      score = score - (int)(par.prefilter_bit_factor * (log_qlen + flog2(length[n])));
-    
-      if (score > par.preprefilter_smax_thresh)
-	{
-#pragma omp critical
-	  prefiltered_hits[count_dbs++] = n;
-	}
+    score = score - (int)(par.prefilter_bit_factor * (log_qlen + flog2(length[n])));
 
-      if (v>=2 && !(n%100000)) {cout<<"."; cout.flush();}
+    #pragma omp critical
+    first_prefilter.push_back(pair<double,int>(score, n));
 
+    if (v>=2 && !(n%100000)) {cout<<"."; cout.flush();}
+  }
+
+  //filter after calculation of ungapped sse score to include at least par.min_prefilter_hits
+  vector<pair<double, int> >::iterator it;
+
+  sort(first_prefilter.begin(), first_prefilter.end());
+  std::reverse(first_prefilter.begin(), first_prefilter.end());
+
+  vector<pair<double, int> >::iterator first_prefilter_begin_erase;
+  vector<pair<double, int> >::iterator first_prefilter_end_erase = first_prefilter.end();
+  count_dbs = 0;
+  for(it = first_prefilter.begin(); it < first_prefilter.end(); it++) {
+    if(count_dbs >= par.min_prefilter_hits && (*it).first < par.preprefilter_smax_thresh) {
+      first_prefilter_begin_erase = it;
+      break;
     }
-  if (v>=2)
-    {
-      printf("\nHMMs passed 1st prefilter (gapless profile-profile alignment)  : %6i\n", count_dbs);
-      //printf("%6i hits through preprefilter!\n", count_dbs);
+    else {
+      count_dbs++;
     }
+  }
+
+  first_prefilter.erase(first_prefilter_begin_erase, first_prefilter_end_erase);
+
+  if (v>=2) {
+    printf("\nHMMs passed 1st prefilter (gapless profile-profile alignment)  : %6i\n", count_dbs);
+  }
+
   if (print_elapsed) ElapsedTimeSinceLastCall("(ungapped preprefilter)");
   
-#pragma omp parallel for schedule(static) private(evalue, score, thread_id)
-  for (int n = 0; n < count_dbs; n++)     // Loop over all database sequences
-    {
-#ifdef _OPENMP
+  #pragma omp parallel for schedule(static) private(evalue, score, thread_id)
+  // Loop over all database sequences
+//  for (int n = 0; n < count_dbs; n++) {
+  for(it = first_prefilter.begin(); it < first_prefilter.end(); it++) {
+    #ifdef _OPENMP
       thread_id = omp_get_thread_num();
-#endif
+    #endif
 
-      // Perform search step
-      score = swStripedByte(qc, LQ, first[prefiltered_hits[n]], length[prefiltered_hits[n]], gap_init, gap_extend, workspace[thread_id], workspace[thread_id] + W, workspace[thread_id] + 2*W, par.prefilter_score_offset);
+    int n = (*it).second;
 
-      evalue = factor * length[prefiltered_hits[n]] * fpow2(-score/par.prefilter_bit_factor);
+    // Perform search step
+    score = swStripedByte(qc, LQ, first[n], length[n], gap_init, gap_extend, workspace[thread_id], workspace[thread_id] + W, workspace[thread_id] + 2*W, par.prefilter_score_offset);
 
-      if (evalue < par.prefilter_evalue_thresh)
-	{
-#pragma omp critical
-	  hits.push_back(pair<double,int>(evalue, prefiltered_hits[n]));
+    evalue = factor * length[n] * fpow2(-score/par.prefilter_bit_factor);
+
+    if (evalue < par.prefilter_evalue_coarse_thresh) {
+      #pragma omp critical
+      hits.push_back(pair<double,int>(evalue, n));
 	}
-    }
+  }
 
+  //filter after calculation of evalues to include at least par.min_prefilter_hits
   sort(hits.begin(), hits.end());
 
-  vector<pair<double, int> >::iterator it;
+  vector<pair<double, int> >::iterator second_prefilter_begin_erase;
+  vector<pair<double, int> >::iterator second_prefilter_end_erase = hits.end();
+  count_dbs = 0;
+  for(it = hits.begin(); it < hits.end(); it++) {
+    if(count_dbs >= par.min_prefilter_hits && (*it).first > par.prefilter_evalue_thresh) {
+      second_prefilter_begin_erase = it;
+      break;
+    }
+    else {
+      count_dbs++;
+    }
+  }
+
+  hits.erase(second_prefilter_begin_erase, second_prefilter_end_erase);
+
   count_dbs = 0;
   
-  for ( it=hits.begin() ; it < hits.end(); it++ )
-    {
-      backtrace_hits[count_dbs++] = (*it).second;
+  for ( it=hits.begin() ; it < hits.end(); it++ ) {
+    backtrace_hits[count_dbs++] = (*it).second;
 
-      // Add hit to dbfiles
-      char name[NAMELEN];
-      strcpy(name, dbnames[(*it).second]);
+    // Add hit to dbfiles
+    char name[NAMELEN];
+    strcpy(name, dbnames[(*it).second]);
 
-      if (par.useCSScoring) {
-        std::string id(name);
+    //save abstract states for cs-scoring
+    if (par.useCSScoring) {
+      std::string id(name);
 
-        if (columnStateSequences.find(id) == columnStateSequences.end()) {
-          unsigned char* csSeq = new unsigned char[length[(*it).second] + 1];
+      if (columnStateSequences.find(id) == columnStateSequences.end()) {
+        unsigned char* csSeq = new unsigned char[length[(*it).second] + 1];
 
-          unsigned char* seq = first[(*it).second];
-          for (int i = 0; i < length[(*it).second]; ++i) {
-            csSeq[i + 1] = seq[i];
-          }
-
-          columnStateSequences[name] = csSeq;
+        unsigned char* seq = first[(*it).second];
+        for (int i = 0; i < length[(*it).second]; ++i) {
+          csSeq[i + 1] = seq[i];
         }
+
+        columnStateSequences[name] = csSeq;
       }
+    }
 
-      char db_name[NAMELEN];
-      strcpy(db_name, name);
-      strcat(db_name,".");
-      strcat(db_name,db_ext);
+    char db_name[NAMELEN];
+    strcpy(db_name, name);
+    strcat(db_name,".");
+    strcat(db_name,db_ext);
 
-      if (! doubled->Contains(db_name))
-	{
+    if (! doubled->Contains(db_name)) {
 	  doubled->Add(db_name);
 	  // check, if DB was searched in previous rounds 
 	  strcat(name,"__1");  // irep=1
 
-	  if (previous_hits->Contains(name))
-	    {
-	      dbfiles_old[ndb_old]=new(char[strlen(db_name)+1]);
-	      strcpy(dbfiles_old[ndb_old],db_name);
-	      ndb_old++;
-	    }
-	  else 
-	    {
-	      dbfiles_new[ndb_new]=new(char[strlen(db_name)+1]);
-	      strcpy(dbfiles_new[ndb_new],db_name);
-	      ndb_new++;
-	    }
+	  if (previous_hits->Contains(name)) {
+        dbfiles_old[ndb_old]=new(char[strlen(db_name)+1]);
+        strcpy(dbfiles_old[ndb_old],db_name);
+        ndb_old++;
+	  }
+	  else {
+        dbfiles_new[ndb_new]=new(char[strlen(db_name)+1]);
+        strcpy(dbfiles_new[ndb_new],db_name);
+        ndb_new++;
+	  }
 	}
 
-      if (count_dbs >= par.maxnumdb) 
-	{
+    if (count_dbs >= par.maxnumdb) {
 	  fprintf(stderr,"WARNING: Number of hits passing 2nd prefilter reduced from %6i to allowed maximum of %i!\n", (int)hits.size(),par.maxnumdb);
 	  fprintf(stderr,"You can increase the allowed maximum using the -maxfilt <max> option.\n\n");
 	  break;
 	}
-    }
+  }
 
   if (print_elapsed) ElapsedTimeSinceLastCall("(SW prefilter)");
 
-  if (block_filter)
-    {
-      // Run SW with backtrace
-      for (int i = 0; i < omp_threads; i++) {
-	free(workspace[i]);
-	workspace[i] = (__m128i*)memalign(16,3*(LQ+7)*sizeof(short),"the dynamic programming workspace during prefiltering");
-      }
-      __m128i *qw_it = (__m128i*) qw;
+  if (block_filter) {
+    // Run SW with backtrace
+    for (int i = 0; i < omp_threads; i++) {
+      free(workspace[i]);
+      workspace[i] = (__m128i*)memalign(16,3*(LQ+7)*sizeof(short),"the dynamic programming workspace during prefiltering");
+    }
+
+    __m128i *qw_it = (__m128i*) qw;
       
-#pragma omp parallel for schedule(static) private(block, block_count, thread_id)
-      for (int n = 0; n < count_dbs; n++)     // Loop over all database sequences
-	{
-#ifdef _OPENMP
-	  thread_id = omp_get_thread_num();
-#endif
+    #pragma omp parallel for schedule(static) private(block, block_count, thread_id)
+    // Loop over all database sequences
+    for (int n = 0; n < count_dbs; n++) {
+      #ifdef _OPENMP
+        thread_id = omp_get_thread_num();
+      #endif
             
 	  // Perform backtrace, if one of the profiles has length > 2*par.block_shading_space
-	  if (LQ > 2*par.block_shading_space || length[backtrace_hits[n]] > 2*par.block_shading_space)
-	    {
-	      ali_pos *res = new ali_pos[10];
-	      
-	      // Perform search step
-	      int num_res = swStripedWord_backtrace(LQ, first[backtrace_hits[n]], length[backtrace_hits[n]], gap_init, gap_extend, qw_it, workspace[thread_id], workspace[thread_id] + Ww, workspace[thread_id] + 2*Ww, res);
-	      
-	      if (num_res > 0) 
-		{
+	  if (LQ > 2*par.block_shading_space || length[backtrace_hits[n]] > 2*par.block_shading_space) {
+        ali_pos *res = new ali_pos[10];
+
+        // Perform search step
+        int num_res = swStripedWord_backtrace(LQ, first[backtrace_hits[n]], length[backtrace_hits[n]], gap_init, gap_extend, qw_it, workspace[thread_id], workspace[thread_id] + Ww, workspace[thread_id] + 2*Ww, res);
+
+        if (num_res > 0) {
 		  char name[NAMELEN];
 		  strcpy(name,dbnames[backtrace_hits[n]]);
 		  block = new(int[400]);
 		  block_count = 0;
-		  for (int a = 0; a < num_res; a++) 
-		    {
-		      if (block_count >= 400) { continue; }
-		      // Get block of HSP
-		      block[block_count++]=res[a].q_start;
-		      block[block_count++]=res[a].q_stop;
-		      block[block_count++]=res[a].t_start;
-		      block[block_count++]=res[a].t_stop;
-		    }
-#pragma omp critical
+		  for (int a = 0; a < num_res; a++) {
+            if (block_count >= 400) { continue; }
+            // Get block of HSP
+            block[block_count++]=res[a].q_start;
+            block[block_count++]=res[a].q_stop;
+            block[block_count++]=res[a].t_start;
+            block[block_count++]=res[a].t_stop;
+		  }
+
+		  #pragma omp critical
 		  {
 		    par.block_shading->Add(name,block);
 		    par.block_shading_counter->Add(name,block_count);
 		  }
 		}
-	      delete[] res;
-	    }
-	}
-      if (print_elapsed) ElapsedTimeSinceLastCall("(SW backtrace prefilter)");
 
-      free(qw);
-    }
+	    delete[] res;
+	  }
+	}
+
+    if (print_elapsed) ElapsedTimeSinceLastCall("(SW backtrace prefilter)");
+
+    free(qw);
+  }
 
   // Free memory
   free(qc);
   for (int i = 0; i < omp_threads; i++)
     free(workspace[i]);
   delete[] workspace;
-  delete[] prefiltered_hits;
   delete[] backtrace_hits;
   if(doubled) delete doubled;
 }
