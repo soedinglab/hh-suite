@@ -1037,7 +1037,7 @@ void prefilter_db() {
   sort(first_prefilter.begin(), first_prefilter.end());
   std::reverse(first_prefilter.begin(), first_prefilter.end());
 
-  vector<pair<double, int> >::iterator first_prefilter_begin_erase;
+  vector<pair<double, int> >::iterator first_prefilter_begin_erase = first_prefilter.end();
   vector<pair<double, int> >::iterator first_prefilter_end_erase = first_prefilter.end();
   count_dbs = 0;
   for(it = first_prefilter.begin(); it < first_prefilter.end(); it++) {
@@ -1076,13 +1076,13 @@ void prefilter_db() {
     if (evalue < par.prefilter_evalue_coarse_thresh) {
       #pragma omp critical
       hits.push_back(pair<double,int>(evalue, n));
-	}
+	 }
   }
 
   //filter after calculation of evalues to include at least par.min_prefilter_hits
   sort(hits.begin(), hits.end());
 
-  vector<pair<double, int> >::iterator second_prefilter_begin_erase;
+  vector<pair<double, int> >::iterator second_prefilter_begin_erase = hits.end();
   vector<pair<double, int> >::iterator second_prefilter_end_erase = hits.end();
   count_dbs = 0;
   for(it = hits.begin(); it < hits.end(); it++) {
