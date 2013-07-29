@@ -246,13 +246,20 @@ public:
 
   char wg;                // 0: use local sequence weights   1: use local ones
 
-  Pseudocounts::Params pc;     // Pseudocounts parameters
-  Pseudocounts::Params pre_pc; // Pseudocounts parameters for prefiltering
+  Pseudocounts::Params pc_hhm_context_engine;       // Pseudocounts parameters for query hhm if context given
+  Pseudocounts::Params pc_prefilter_context_engine; // Pseudocounts parameters for prefiltering if context given
 
-  int aa_pcm;              // Admixture method
-  float aa_pca;            // Admixture parameter a
-  float aa_pcb;            // Admixture parameter b
-  float aa_pcc;            // Admixture parameter c
+  //pseudocount variables if no context is used
+  int pc_hhm_nocontext_mode;              // Admixture method
+  float pc_hhm_nocontext_a;               // Admixture parameter a
+  float pc_hhm_nocontext_b;               // Admixture parameter b
+  float pc_hhm_nocontext_c;               // Admixture parameter c
+
+  //pseudocount variables for the prefilter if no context is used
+  int pc_prefilter_nocontext_mode;           // Admixture method
+  float pc_prefilter_nocontext_a;            // Admixture parameter a
+  float pc_prefilter_nocontext_b;            // Admixture parameter b
+  float pc_prefilter_nocontext_c;            // Admixture parameter c
 
   float gapb;             // Diversity threshold for adding pseudocounts to transitions from M state
   float gapd;             // Gap open penalty factor for deletions
@@ -433,7 +440,6 @@ void Parameters::SetDefaultPaths(char *program_path)
 
 void Parameters::SetDefaults()
 {
-
   // Moved from hhdecl.C 
   v=2;
 
@@ -481,22 +487,27 @@ void Parameters::SetDefaults()
 
   matrix=0;                // Subst.matrix 0: Gonnet, 1: HSDM, 2: BLOSUM50 3: BLOSUM62
 
-  pc.admix       = Pseudocounts::HHsearchAdmix;
-  pc.pca         = 0.90;
-  pc.pcb         = 4.00;
-  pc.pcc         = 1.0;
-  pc.target_neff = 0.0;
+  pc_hhm_context_engine.admix       = Pseudocounts::HHsearchAdmix;
+  pc_hhm_context_engine.pca         = 0.90;
+  pc_hhm_context_engine.pcb         = 4.00;
+  pc_hhm_context_engine.pcc         = 1.0;
+  pc_hhm_context_engine.target_neff = 0.0;
 
-  pre_pc.admix       = Pseudocounts::CSBlastAdmix;
-  pre_pc.pca         = 0.80;
-  pre_pc.pcb         = 2.00;
-  pre_pc.pcc         = 1.0;
-  pre_pc.target_neff = 0.0;
+  pc_prefilter_context_engine.admix       = Pseudocounts::CSBlastAdmix;
+  pc_prefilter_context_engine.pca         = 0.80;
+  pc_prefilter_context_engine.pcb         = 2.00;
+  pc_prefilter_context_engine.pcc         = 1.0;
+  pc_prefilter_context_engine.target_neff = 0.0;
 
-  aa_pcm=2;
-  aa_pca=1.0f;
-  aa_pcb=1.5f;
-  aa_pcc=1.0f;
+  pc_hhm_nocontext_mode=2;
+  pc_hhm_nocontext_a=1.0f;
+  pc_hhm_nocontext_b=1.5f;
+  pc_hhm_nocontext_c=1.0f;
+
+  pc_prefilter_nocontext_mode = 2;
+  pc_prefilter_nocontext_a = 1.0f;
+  pc_prefilter_nocontext_b = 1.5f;
+  pc_prefilter_nocontext_c = 1.0f;
 
   gapb=1.0;                // default values for transition pseudocounts
   gapd=0.15;               // gap open penalty pseudocount; 0.25 corresponds to 7.1*gapf bits
@@ -627,12 +638,12 @@ public:
 EXTERN Parameters par;
 
 // cs object declarations
-cs::ContextLibrary<cs::AA>* context_lib = NULL; // Context library for pseudocounts generation
-cs::Crf<cs::AA>* crf                    = NULL; // CRF for pseudocounts generation
-cs::Pseudocounts<cs::AA>* pc            = NULL; // Pseudocounts engine
-cs::Admix* pc_admix                     = NULL; // Pseudocounts admixture method
-cs::Pseudocounts<cs::AA>* pre_pc        = NULL; // Pseudocounts engine for prefiltering
-cs::Admix* pre_pc_admix                 = NULL; // Pseudocounts admixture method for prefiltering
+cs::ContextLibrary<cs::AA>* context_lib               = NULL; // Context library for pseudocounts generation
+cs::Crf<cs::AA>* crf                                  = NULL; // CRF for pseudocounts generation
+cs::Pseudocounts<cs::AA>* pc_hhm_context_engine       = NULL; // Pseudocounts engine
+cs::Admix* pc_hhm_context_mode                        = NULL; // Pseudocounts admixture method
+cs::Pseudocounts<cs::AA>* pc_prefilter_context_engine = NULL; // Pseudocounts engine for prefiltering
+cs::Admix* pc_prefilter_context_mode                  = NULL; // Pseudocounts admixture method for prefiltering
 
 void InitializePseudocountsEngine() {
   // Prepare pseudocounts engine
@@ -645,28 +656,28 @@ void InitializePseudocountsEngine() {
   Extension(ext, par.clusterfile);
   if (strcmp(ext, "crf") == 0)  {
     crf = new cs::Crf<cs::AA>(fin);
-    pc = new cs::CrfPseudocounts<cs::AA>(*crf);
-    pre_pc = new cs::CrfPseudocounts<cs::AA>(*crf);
+    pc_hhm_context_engine = new cs::CrfPseudocounts<cs::AA>(*crf);
+    pc_prefilter_context_engine = new cs::CrfPseudocounts<cs::AA>(*crf);
   } else {
     context_lib = new cs::ContextLibrary<cs::AA>(fin);
     cs::TransformToLog(*context_lib);
-    pc = new cs::LibraryPseudocounts<cs::AA>(*context_lib, par.csw, par.csb);
-    pre_pc = new cs::LibraryPseudocounts<cs::AA>(*context_lib, par.csw, par.csb);
+    pc_hhm_context_engine = new cs::LibraryPseudocounts<cs::AA>(*context_lib, par.csw, par.csb);
+    pc_prefilter_context_engine = new cs::LibraryPseudocounts<cs::AA>(*context_lib, par.csw, par.csb);
   }
   fclose(fin);
-  pc->SetTargetNeff(par.pc.target_neff);
-  pre_pc->SetTargetNeff(par.pre_pc.target_neff);
+  pc_hhm_context_engine->SetTargetNeff(par.pc_hhm_context_engine.target_neff);
+  pc_prefilter_context_engine->SetTargetNeff(par.pc_prefilter_context_engine.target_neff);
 
   // Prepare pseudocounts admixture method
-  pc_admix = par.pc.CreateAdmix();
-  pre_pc_admix = par.pre_pc.CreateAdmix();
+  pc_hhm_context_mode = par.pc_hhm_context_engine.CreateAdmix();
+  pc_prefilter_context_mode = par.pc_prefilter_context_engine.CreateAdmix();
 }
 
 void DeletePseudocountsEngine() {
   if (context_lib != NULL) delete context_lib;
   if (crf != NULL) delete crf;
-  if (pc != NULL) delete pc;
-  if (pc_admix != NULL) delete pc_admix;
-  if (pre_pc != NULL) delete pre_pc;
-  if (pre_pc_admix != NULL) delete pre_pc_admix;
+  if (pc_hhm_context_engine != NULL) delete pc_hhm_context_engine;
+  if (pc_hhm_context_mode != NULL) delete pc_hhm_context_mode;
+  if (pc_prefilter_context_engine != NULL) delete pc_prefilter_context_engine;
+  if (pc_prefilter_context_mode != NULL) delete pc_prefilter_context_mode;
 }
