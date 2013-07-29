@@ -197,10 +197,10 @@ void ProcessArguments(int argc,char** argv)
 	  else if (!strcmp(argv[i]+7,"80")) par.matrix=80; 
 	  else cerr<<endl<<"WARNING: Ignoring unknown option "<<argv[i]<<" ...\n";
 	}
-      else if (!strcmp(argv[i],"-pcm") && (i<argc-1)) par.pc.admix=(Pseudocounts::Admix)atoi(argv[++i]);
-      else if (!strcmp(argv[i],"-pca") && (i<argc-1)) par.pc.pca=atof(argv[++i]);
-      else if (!strcmp(argv[i],"-pcb") && (i<argc-1)) par.pc.pcb=atof(argv[++i]);
-      else if (!strcmp(argv[i],"-pcc") && (i<argc-1)) par.pc.pcc=atof(argv[++i]);
+      else if (!strcmp(argv[i],"-pcm") && (i<argc-1)) par.pc_hhm_context_engine.admix=(Pseudocounts::Admix)atoi(argv[++i]);
+      else if (!strcmp(argv[i],"-pca") && (i<argc-1)) par.pc_hhm_context_engine.pca=atof(argv[++i]);
+      else if (!strcmp(argv[i],"-pcb") && (i<argc-1)) par.pc_hhm_context_engine.pcb=atof(argv[++i]);
+      else if (!strcmp(argv[i],"-pcc") && (i<argc-1)) par.pc_hhm_context_engine.pcc=atof(argv[++i]);
       else if (!strcmp(argv[i],"-gapb") && (i<argc-1)) { par.gapb=atof(argv[++i]); if (par.gapb<=0.01) par.gapb=0.01;} 
       else if (!strcmp(argv[i],"-gapd") && (i<argc-1)) par.gapd=atof(argv[++i]); 
       else if (!strcmp(argv[i],"-gape") && (i<argc-1)) par.gape=atof(argv[++i]); 
@@ -245,8 +245,8 @@ int main(int argc, char **argv)
   par.Ndiff=0;
   par.max_seqid=100;
   par.coverage=0;
-  par.pc.pca=0.0;  // no amino acid pseudocounts
-  par.aa_pca=0.0;  // no amino acid pseudocounts
+  par.pc_hhm_context_engine.pca=0.0;  // no amino acid pseudocounts
+  par.pc_hhm_nocontext_a=0.0;  // no amino acid pseudocounts
   par.gapb=0.0; // no transition pseudocounts
 
   // Make command line input globally available
@@ -316,7 +316,7 @@ int main(int argc, char **argv)
 	q->AddAminoAcidPseudocounts();
       } else {
 	// Add full context specific pseudocounts to query
-	q->AddContextSpecificPseudocounts(pc, pc_admix);
+	q->AddContextSpecificPseudocounts(pc_hhm_context_engine, pc_hhm_context_mode);
       }
     } 
   else 

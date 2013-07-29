@@ -200,6 +200,7 @@ ffindex_index_t* dba3m_index = NULL;
 
 //database filenames
 char db_base[NAMELEN];                   // database basename
+
 char dbcs_base[NAMELEN];
 char dbcs_index_filename[NAMELEN];
 char dbcs_data_filename[NAMELEN];
@@ -337,6 +338,7 @@ void help(char all=0)
   printf(" -b <int>       minimum number of alignments in alignment list (default=%i)     \n",par.b);
   printf("\n");
   printf("Prefilter options                                                               \n");
+  printf(" -cslib  <file> column state file for fast database prefiltering (default=%s)\n",par.cs_library);
   printf(" -noprefilt     disable all filter steps                                        \n");
   printf(" -noaddfilter   disable all filter steps (except for fast prefiltering)         \n");
   printf(" -nodbfilter    disable additional filtering of prefiltered HMMs                \n");
@@ -355,7 +357,7 @@ void help(char all=0)
   printf(" -neff [1,inf]  target diversity of multiple sequence alignment (default=off)   \n");
   printf("\n");
   printf("HMM-HMM alignment options:                                                       \n");
-  printf(" -usecs         use column states of the templates in the database for scoring   \n");
+  printf(" -usecs         use column states of the templates in the database for scoring depends on column state file  \n");
   printf(" -norealign     do NOT realign displayed hits with MAC algorithm (def=realign)   \n");
   printf(" -mact [0,1[    posterior prob threshold for MAC realignment controlling greedi- \n");
   printf("                ness at alignment ends: 0:global >0.1:local (default=%.2f)       \n",par.mact);
@@ -384,25 +386,58 @@ void help(char all=0)
   printf(" -egq  [0,inf[  penalty (bits) for end gaps aligned to query residues (def=%-.2f) \n",par.egq);
   printf(" -egt  [0,inf[  penalty (bits) for end gaps aligned to template residues (def=%-.2f)\n",par.egt);
   printf("\n");
+
+
   printf("Pseudocount (pc) options:                                                        \n");
-  printf(" -pcm {0,..,3}      position dependence of pc admixture 'tau' (pc mode, default=%-i) \n",par.pc.admix);
-  printf("                    0: no pseudo counts:    tau = 0                                  \n");
-  printf("                    1: constant             tau = a                                  \n");
-  printf("                    2: diversity-dependent: tau = a/(1+((Neff[i]-1)/b)^c)            \n");
-  printf("                    3: CSBlast admixture:   tau = a(1+b)/(Neff[i]+b)                 \n");
-  printf("                    (Neff[i]: number of effective seqs in local MSA around column i) \n");
-  printf(" -pca  [0,1]        overall pseudocount admixture (def=%-.1f)                        \n",par.pc.pca);
-  printf(" -pcb  [1,inf[      Neff threshold value for -pcm 2 (def=%-.1f)                      \n",par.pc.pcb);
-  printf(" -pcc  [0,3]        extinction exponent c for -pcm 2 (def=%-.1f)                     \n",par.pc.pcc);
-  printf(" -pre_pcm {0,..,3}  PREFILTER admixture (pc mode, default=%-i)                 \n",par.pre_pc.admix);
-  printf(" -pre_pca [0,1]     PREFILTER pseudocount admixture (def=%-.1f)                \n",par.pre_pc.pca);
-  printf(" -pre_pcb [1,inf[   PREFILTER threshold for Neff (def=%-.1f)                   \n",par.pre_pc.pcb);
-  printf(" -pre_pcc [0,3]     PREFILTER extinction exponent c for -pre_pcm 2 (def=%-.1f) \n",par.pre_pc.pcc);
+  printf(" Context specific hhm pseudocounts:\n");
+  printf("  -pc_hhm_contxt_mode {0,..,3}      position dependence of pc admixture 'tau' (pc mode, default=%-i) \n",par.pc_hhm_context_engine.admix);
+  printf("               0: no pseudo counts:    tau = 0                                  \n");
+  printf("               1: constant             tau = a                                  \n");
+  printf("               2: diversity-dependent: tau = a/(1+((Neff[i]-1)/b)^c)            \n");
+  printf("               3: CSBlast admixture:   tau = a(1+b)/(Neff[i]+b)                 \n");
+  printf("               (Neff[i]: number of effective seqs in local MSA around column i) \n");
+  printf("  -pc_hhm_contxt_a  [0,1]        overall pseudocount admixture (def=%-.1f)                        \n",par.pc_hhm_context_engine.pca);
+  printf("  -pc_hhm_contxt_b  [1,inf[      Neff threshold value for mode 2 (def=%-.1f)                      \n",par.pc_hhm_context_engine.pcb);
+  printf("  -pc_hhm_contxt_c  [0,3]        extinction exponent c for mode 2 (def=%-.1f)                     \n\n",par.pc_hhm_context_engine.pcc);
+
+  printf(" Context independent hhm pseudocounts (used for templates; used for query if contxt file is not available):\n");
+  printf("  -pc_hhm_nocontxt_mode {0,..,3}      position dependence of pc admixture 'tau' (pc mode, default=%-i) \n",par.pc_hhm_nocontext_mode);
+  printf("               0: no pseudo counts:    tau = 0                                  \n");
+  printf("               1: constant             tau = a                                  \n");
+  printf("               2: diversity-dependent: tau = a/(1+((Neff[i]-1)/b)^c)            \n");
+//  printf("               3: CSBlast admixture:   tau = a(1+b)/(Neff[i]+b)                 \n");
+  printf("               (Neff[i]: number of effective seqs in local MSA around column i) \n");
+  printf("  -pc_hhm_nocontxt_a  [0,1]        overall pseudocount admixture (def=%-.1f)                        \n",par.pc_hhm_nocontext_a);
+  printf("  -pc_hhm_nocontxt_b  [1,inf[      Neff threshold value for mode 2 (def=%-.1f)                      \n",par.pc_hhm_nocontext_b);
+  printf("  -pc_hhm_nocontxt_c  [0,3]        extinction exponent c for mode 2 (def=%-.1f)                     \n\n",par.pc_hhm_nocontext_c);
+
+  printf(" Context specific prefilter pseudocounts:\n");
+  printf("  -pc_prefilter_contxt_mode {0,..,3}      position dependence of pc admixture 'tau' (pc mode, default=%-i) \n",par.pc_prefilter_context_engine.admix);
+  printf("               0: no pseudo counts:    tau = 0                                  \n");
+  printf("               1: constant             tau = a                                  \n");
+  printf("               2: diversity-dependent: tau = a/(1+((Neff[i]-1)/b)^c)            \n");
+  printf("               3: CSBlast admixture:   tau = a(1+b)/(Neff[i]+b)                 \n");
+  printf("               (Neff[i]: number of effective seqs in local MSA around column i) \n");
+  printf("  -pc_prefilter_contxt_a  [0,1]        overall pseudocount admixture (def=%-.1f)                        \n",par.pc_prefilter_context_engine.pca);
+  printf("  -pc_prefilter_contxt_b  [1,inf[      Neff threshold value for mode 2 (def=%-.1f)                      \n",par.pc_prefilter_context_engine.pcb);
+  printf("  -pc_prefilter_contxt_c  [0,3]        extinction exponent c for mode 2 (def=%-.1f)                     \n\n",par.pc_prefilter_context_engine.pcc);
+
+  printf(" Context independent prefilter pseudocounts (used if context file is not available):\n");
+  printf("  -pc_prefilter_nocontxt_mode {0,..,3}      position dependence of pc admixture 'tau' (pc mode, default=%-i) \n",par.pc_prefilter_nocontext_mode);
+  printf("               0: no pseudo counts:    tau = 0                                  \n");
+  printf("               1: constant             tau = a                                  \n");
+  printf("               2: diversity-dependent: tau = a/(1+((Neff[i]-1)/b)^c)            \n");
+//  printf("               3: CSBlast admixture:   tau = a(1+b)/(Neff[i]+b)                 \n");
+  printf("               (Neff[i]: number of effective seqs in local MSA around column i) \n");
+  printf("  -pc_prefilter_nocontxt_a  [0,1]        overall pseudocount admixture (def=%-.1f)                        \n",par.pc_prefilter_nocontext_a);
+  printf("  -pc_prefilter_nocontxt_b  [1,inf[      Neff threshold value for mode 2 (def=%-.1f)                      \n",par.pc_prefilter_nocontext_b);
+  printf("  -pc_prefilter_nocontxt_c  [0,3]        extinction exponent c for mode 2 (def=%-.1f)                     \n\n",par.pc_prefilter_nocontext_c);
+
   printf("\n");
-  printf("Context-specific pseudo-counts:                                                  \n");
-  printf(" -nocontxt      use substitution-matrix instead of context-specific pseudocounts \n");
-  printf(" -contxt <file> context file for computing context-specific pseudocounts (default=%s)\n",par.clusterfile);
-  printf(" -cslib  <file> column state file for fast database prefiltering (default=%s)\n",par.cs_library);
+  printf(" Context-specific pseudo-counts:                                                  \n");
+  printf("  -nocontxt      use substitution-matrix instead of context-specific pseudocounts \n");
+  printf("  -contxt <file> context file for computing context-specific pseudocounts (default=%s)\n",par.clusterfile);
+  //should not be in the section of pseudocounts ... associated to prefiltering ... and also to usecs (by markus)
   printf("\n");
   printf("Predict secondary structure\n");
   printf(" -addss         add 2ndary structure predicted with PSIPRED to result MSA \n");
@@ -606,15 +641,29 @@ void help(char all=0)
         else if (!strcmp(argv[i],"-diff") && (i<argc-1)) par.Ndiff=atoi(argv[++i]);
         else if (!strcmp(argv[i],"-all") || !strcmp(argv[i],"-nodiff")) {par.allseqs=true;}
         else if (!strcmp(argv[i],"-neffmax") && (i<argc-1)) neffmax=atof(argv[++i]); 
-        else if ((!strcmp(argv[i],"-neff") || !strcmp(argv[i],"-Neff")) && (i<argc-1)) par.Neff=atof(argv[++i]); 
-      else if (!strcmp(argv[i],"-pcm") && (i<argc-1)) par.pc.admix=(Pseudocounts::Admix)atoi(argv[++i]);
-      else if (!strcmp(argv[i],"-pca") && (i<argc-1)) par.pc.pca=atof(argv[++i]);
-      else if (!strcmp(argv[i],"-pcb") && (i<argc-1)) par.pc.pcb=atof(argv[++i]);
-      else if (!strcmp(argv[i],"-pcc") && (i<argc-1)) par.pc.pcc=atof(argv[++i]);
-      else if (!strcmp(argv[i],"-pre_pcm") && (i<argc-1)) par.pre_pc.admix=(Pseudocounts::Admix)atoi(argv[++i]);
-      else if (!strcmp(argv[i],"-pre_pca") && (i<argc-1)) par.pre_pc.pca=atof(argv[++i]);
-      else if (!strcmp(argv[i],"-pre_pcb") && (i<argc-1)) par.pre_pc.pcb=atof(argv[++i]);
-      else if (!strcmp(argv[i],"-pre_pcc") && (i<argc-1)) par.pre_pc.pcc=atof(argv[++i]);
+        else if ((!strcmp(argv[i],"-neff") || !strcmp(argv[i],"-Neff")) && (i<argc-1)) par.Neff=atof(argv[++i]);
+
+      //pc hhm context variables
+      else if (!strcmp(argv[i],"-pc_hhm_contxt_mode") && (i<argc-1)) par.pc_hhm_context_engine.admix=(Pseudocounts::Admix)atoi(argv[++i]);
+      else if (!strcmp(argv[i],"-pc_hhm_contxt_a") && (i<argc-1)) par.pc_hhm_context_engine.pca=atof(argv[++i]);
+      else if (!strcmp(argv[i],"-pc_hhm_contxt_b") && (i<argc-1)) par.pc_hhm_context_engine.pcb=atof(argv[++i]);
+      else if (!strcmp(argv[i],"-pc_hhm_contxt_c") && (i<argc-1)) par.pc_hhm_context_engine.pcc=atof(argv[++i]);
+      //pc prefilter context variables
+      else if (!strcmp(argv[i],"-pc_prefilter_contxt_mode") && (i<argc-1)) par.pc_prefilter_context_engine.admix=(Pseudocounts::Admix)atoi(argv[++i]);
+      else if (!strcmp(argv[i],"-pc_prefilter_contxt_a") && (i<argc-1)) par.pc_prefilter_context_engine.pca=atof(argv[++i]);
+      else if (!strcmp(argv[i],"-pc_prefilter_contxt_b") && (i<argc-1)) par.pc_prefilter_context_engine.pcb=atof(argv[++i]);
+      else if (!strcmp(argv[i],"-pc_prefilter_contxt_c") && (i<argc-1)) par.pc_prefilter_context_engine.pcc=atof(argv[++i]);
+      //pc hhm nocontext variables
+      else if (!strcmp(argv[i],"-pc_hhm_nocontxt_mode") && (i<argc-1)) par.pc_hhm_nocontext_mode=atoi(argv[++i]);
+      else if (!strcmp(argv[i],"-pc_hhm_nocontxt_a") && (i<argc-1)) par.pc_hhm_nocontext_a=atof(argv[++i]);
+      else if (!strcmp(argv[i],"-pc_hhm_nocontxt_b") && (i<argc-1)) par.pc_hhm_nocontext_b=atof(argv[++i]);
+      else if (!strcmp(argv[i],"-pc_hhm_nocontxt_c") && (i<argc-1)) par.pc_hhm_nocontext_c=atof(argv[++i]);
+      //pc prefilter nocontext variables
+      else if (!strcmp(argv[i],"-pc_prefilter_nocontxt_mode") && (i<argc-1)) par.pc_prefilter_nocontext_mode = atoi(argv[++i]);
+      else if (!strcmp(argv[i],"-pre_pca") && (i<argc-1)) par.pc_hhm_nocontext_a=atof(argv[++i]);
+      else if (!strcmp(argv[i],"-pre_pcb") && (i<argc-1)) par.pc_hhm_nocontext_b=atof(argv[++i]);
+      else if (!strcmp(argv[i],"-pre_pcc") && (i<argc-1)) par.pc_hhm_nocontext_c=atof(argv[++i]);
+
       else if (!strcmp(argv[i],"-gapb") && (i<argc-1)) { par.gapb=atof(argv[++i]); if (par.gapb<=0.01) par.gapb=0.01;}
       else if (!strcmp(argv[i],"-gapd") && (i<argc-1)) par.gapd=atof(argv[++i]);
       else if (!strcmp(argv[i],"-gape") && (i<argc-1)) par.gape=atof(argv[++i]);
@@ -714,39 +763,37 @@ void PerformViterbiByWorker(int bin)
       stringstream ss_tmp;
       ss_tmp << hit[bin]->file << "__" << hit[bin]->irep;
 
-      if (previous_hits->Contains((char*)ss_tmp.str().c_str()))
-	{
-	  //printf("Previous hits contains %s!\n",(char*)ss_tmp.str().c_str());
-	  hit_cur = previous_hits->Remove((char*)ss_tmp.str().c_str());
-	  previous_hits->Add((char*)ss_tmp.str().c_str(), *(hit[bin]));
-	  
-	  // Overwrite *hit[bin] with alignment, etc. of hit_cur
-	  hit_cur.score      = hit[bin]->score;
-	  hit_cur.score_aass = hit[bin]->score_aass;
-	  hit_cur.score_ss   = hit[bin]->score_ss;
-	  hit_cur.Pval       = hit[bin]->Pval;
-	  hit_cur.Pvalt      = hit[bin]->Pvalt;
-	  hit_cur.logPval    = hit[bin]->logPval;
-	  hit_cur.logPvalt   = hit[bin]->logPvalt;
-	  hit_cur.Eval       = hit[bin]->Eval;
-	  hit_cur.logEval    = hit[bin]->logEval;
-	  hit_cur.Probab     = hit[bin]->Probab;
+      if (previous_hits->Contains((char*)ss_tmp.str().c_str())) {
+        //printf("Previous hits contains %s!\n",(char*)ss_tmp.str().c_str());
+        hit_cur = previous_hits->Remove((char*)ss_tmp.str().c_str());
+        previous_hits->Add((char*)ss_tmp.str().c_str(), *(hit[bin]));
 
-	  hitlist.Push(hit_cur);            // insert hit at beginning of list (last repeats first!)
-	  
-	}
-      else
-	{
-	  // don't save alignments which where not found in previous rounds
+        // Overwrite *hit[bin] with alignment, etc. of hit_cur
+        hit_cur.score      = hit[bin]->score;
+        hit_cur.score_aass = hit[bin]->score_aass;
+        hit_cur.score_ss   = hit[bin]->score_ss;
+        hit_cur.Pval       = hit[bin]->Pval;
+        hit_cur.Pvalt      = hit[bin]->Pvalt;
+        hit_cur.logPval    = hit[bin]->logPval;
+        hit_cur.logPvalt   = hit[bin]->logPvalt;
+        hit_cur.Eval       = hit[bin]->Eval;
+        hit_cur.logEval    = hit[bin]->logEval;
+        hit_cur.Probab     = hit[bin]->Probab;
 
-	  //printf("Don't save %s!\n",(char*)ss_tmp.str().c_str());
-	  //hitlist.Push(*(hit[bin]));          // insert hit at beginning of list (last repeats first!)
-	}
+        hitlist.Push(hit_cur);            // insert hit at beginning of list (last repeats first!)
+	  
+      }
+      else {
+        // don't save alignments which where not found in previous rounds
+
+        //printf("Don't save %s!\n",(char*)ss_tmp.str().c_str());
+        //hitlist.Push(*(hit[bin]));          // insert hit at beginning of list (last repeats first!)
+      }
 	  
 
-#ifdef PTHREAD
-      pthread_mutex_unlock(&hitlist_mutex); // unlock access to hitlist
-#endif
+      #ifdef PTHREAD
+        pthread_mutex_unlock(&hitlist_mutex); // unlock access to hitlist
+      #endif
 
       if (hit[bin]->score <= SMIN) break;  // break if score for first hit is already worse than SMIN
     }
@@ -1588,7 +1635,7 @@ void perform_realign(char *dbfiles[], int ndb)
 	    q->AddAminoAcidPseudocounts();
 	  } else {
 	    // Add full context specific pseudocounts to query
-	    q->AddContextSpecificPseudocounts(pc, pc_admix);
+	    q->AddContextSpecificPseudocounts(pc_hhm_context_engine, pc_hhm_context_mode);
 	  }
 
 	  q->CalculateAminoAcidBackground();
@@ -2069,8 +2116,8 @@ int main(int argc, char **argv)
   // Check option compatibilities
   if (par.nseqdis>MAXSEQDIS-3-par.showcons) par.nseqdis=MAXSEQDIS-3-par.showcons; //3 reserved for secondary structure
   if (par.aliwidth<20) par.aliwidth=20;
-  if (par.pc.pca<0.001) par.pc.pca=0.001; // to avoid log(0)
-  if (par.pre_pc.pca<0.001) par.pre_pc.pca=0.001; // to avoid log(0)
+  if (par.pc_hhm_context_engine.pca<0.001) par.pc_hhm_context_engine.pca=0.001; // to avoid log(0)
+  if (par.pc_prefilter_context_engine.pca<0.001) par.pc_prefilter_context_engine.pca=0.001; // to avoid log(0)
   if (par.b>par.B) par.B=par.b;
   if (par.z>par.Z) par.Z=par.z;
   if (par.maxmem<1.0) {cerr<<"WARNING: setting -maxmem to its minimum allowed value of 1.0\n"; par.maxmem=1.0;}

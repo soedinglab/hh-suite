@@ -63,7 +63,7 @@ public:
     void fillCountProfile(cs::CountProfile<cs::AA> *csProfile);
 
     // Add amino acid pseudocounts to HMM: t.p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
-    void AddAminoAcidPseudocounts(char pcm=par.aa_pcm, float pca=par.aa_pca, float pcb=par.aa_pcb, float pcc=par.aa_pcc);
+    void AddAminoAcidPseudocounts(char pcm=par.pc_hhm_nocontext_mode, float pca=par.pc_hhm_nocontext_a, float pcb=par.pc_hhm_nocontext_b, float pcc=par.pc_hhm_nocontext_c);
 
     // Calculate amino acid backround frequencies for HMM
     void CalculateAminoAcidBackground();

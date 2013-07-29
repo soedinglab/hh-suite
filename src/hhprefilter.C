@@ -844,10 +844,11 @@ void stripe_query_profile()
     // Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
     q_tmp->PreparePseudocounts();
     // Add amino acid pseudocounts to query: p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
-    q_tmp->AddAminoAcidPseudocounts(par.aa_pcm,par.aa_pca,par.aa_pcb,1);
+    q_tmp->AddAminoAcidPseudocounts(par.pc_prefilter_nocontext_mode, par.pc_prefilter_nocontext_a,
+        par.pc_prefilter_nocontext_b, par.pc_prefilter_nocontext_c);
   } else {
     // Add context specific pseudocounts (now always used, because clusterfile is necessary)
-    q_tmp->AddContextSpecificPseudocounts(pre_pc, pre_pc_admix);
+    q_tmp->AddContextSpecificPseudocounts(pc_prefilter_context_engine, pc_prefilter_context_mode);
   }
 
   q_tmp->CalculateAminoAcidBackground();

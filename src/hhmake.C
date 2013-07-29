@@ -152,41 +152,35 @@ void help(char all = 0) {
       " -M [0,100]    use FASTA: columns with fewer than X%% gaps are match states   \n");
   printf("\n");
   if (all) {
+    printf("Pseudocount (pc) options:                                                        \n");
+    printf(" Context specific hhm pseudocounts:\n");
+    printf("  -pc_hhm_contxt_mode {0,..,3}      position dependence of pc admixture 'tau' (pc mode, default=%-i) \n",par.pc_hhm_context_engine.admix);
+    printf("               0: no pseudo counts:    tau = 0                                  \n");
+    printf("               1: constant             tau = a                                  \n");
+    printf("               2: diversity-dependent: tau = a/(1+((Neff[i]-1)/b)^c)            \n");
+    printf("               3: CSBlast admixture:   tau = a(1+b)/(Neff[i]+b)                 \n");
+    printf("               (Neff[i]: number of effective seqs in local MSA around column i) \n");
+    printf("  -pc_hhm_contxt_a  [0,1]        overall pseudocount admixture (def=%-.1f)                        \n",par.pc_hhm_context_engine.pca);
+    printf("  -pc_hhm_contxt_b  [1,inf[      Neff threshold value for mode 2 (def=%-.1f)                      \n",par.pc_hhm_context_engine.pcb);
+    printf("  -pc_hhm_contxt_c  [0,3]        extinction exponent c for mode 2 (def=%-.1f)                     \n\n",par.pc_hhm_context_engine.pcc);
+
+    printf(" Context independent hhm pseudocounts (used for templates; used for query if contxt file is not available):\n");
+    printf("  -pc_hhm_nocontxt_mode {0,..,3}      position dependence of pc admixture 'tau' (pc mode, default=%-i) \n",par.pc_hhm_nocontext_mode);
+    printf("               0: no pseudo counts:    tau = 0                                  \n");
+    printf("               1: constant             tau = a                                  \n");
+    printf("               2: diversity-dependent: tau = a/(1+((Neff[i]-1)/b)^c)            \n");
+  //  printf("               3: CSBlast admixture:   tau = a(1+b)/(Neff[i]+b)                 \n");
+    printf("               (Neff[i]: number of effective seqs in local MSA around column i) \n");
+    printf("  -pc_hhm_nocontxt_a  [0,1]        overall pseudocount admixture (def=%-.1f)                        \n",par.pc_hhm_nocontext_a);
+    printf("  -pc_hhm_nocontxt_b  [1,inf[      Neff threshold value for mode 2 (def=%-.1f)                      \n",par.pc_hhm_nocontext_b);
+    printf("  -pc_hhm_nocontxt_c  [0,3]        extinction exponent c for mode 2 (def=%-.1f)                     \n\n",par.pc_hhm_nocontext_c);
     printf(
-        "Pseudocount (pc) options:                                                        \n");
+        " Context-specific pseudo-counts:                                                  \n");
     printf(
-        " -pcm {0,..,3}      position dependence of pc admixture 'tau' (pc mode, default=%-i) \n",
-        par.pc.admix);
+        "  -nocontxt      use substitution-matrix instead of context-specific pseudocounts \n");
     printf(
-        "                    0: no pseudo counts:    tau = 0                                  \n");
-    printf(
-        "                    1: constant             tau = a                                  \n");
-    printf(
-        "                    2: diversity-dependent: tau = a/(1+((Neff[i]-1)/b)^c)            \n");
-    printf(
-        "                    3: CSBlast admixture:   tau = a(1+b)/(Neff[i]+b)                 \n");
-    printf(
-        "                    (Neff[i]: number of effective seqs in local MSA around column i) \n");
-    printf(
-        " -pca  [0,1]        overall pseudocount admixture (def=%-.1f)                        \n",
-        par.pc.pca);
-    printf(
-        " -pcb  [1,inf[      Neff threshold value for -pcm 2 (def=%-.1f)                      \n",
-        par.pc.pcb);
-    printf(
-        " -pcc  [0,3]        extinction exponent c for -pcm 2 (def=%-.1f)                     \n",
-        par.pc.pcc);
-    printf("\n");
-    printf(
-        "Context-specific pseudo-counts:                                                  \n");
-    printf(
-        " -nocontxt      use substitution-matrix instead of context-specific pseudocounts \n");
-    printf(
-        " -contxt <file> context file for computing context-specific pseudocounts (default=%s)\n",
+        "  -contxt <file> context file for computing context-specific pseudocounts (default=%s)\n",
         par.clusterfile);
-    printf(
-        " -cslib  <file> column state file for fast database prefiltering (default=%s)\n",
-        par.cs_library);
     printf("\n");
   }
   printf("Example: %s -i test.a3m \n", program_name);
@@ -311,13 +305,13 @@ void ProcessArguments(int argc, char** argv) {
       par.wg = 1;
     }
     else if (!strcmp(argv[i], "-pcm") && (i < argc - 1))
-      par.pc.admix = (Pseudocounts::Admix) atoi(argv[++i]);
+      par.pc_hhm_context_engine.admix = (Pseudocounts::Admix) atoi(argv[++i]);
     else if (!strcmp(argv[i], "-pca") && (i < argc - 1))
-      par.pc.pca = atof(argv[++i]);
+      par.pc_hhm_context_engine.pca = atof(argv[++i]);
     else if (!strcmp(argv[i], "-pcb") && (i < argc - 1))
-      par.pc.pcb = atof(argv[++i]);
+      par.pc_hhm_context_engine.pcb = atof(argv[++i]);
     else if (!strcmp(argv[i], "-pcc") && (i < argc - 1))
-      par.pc.pcc = atof(argv[++i]);
+      par.pc_hhm_context_engine.pcc = atof(argv[++i]);
     else if (!strcmp(argv[i], "-gapb") && (i < argc - 1)) {
       par.gapb = atof(argv[++i]);
       if (par.gapb <= 0.01)
@@ -389,7 +383,7 @@ int main(int argc, char **argv) {
   par.M = 1;                     // match state assignment is by A2M/A3M
   par.Mgaps = 50; // above this percentage of gaps, columns are assigned to insert states
   par.matrix = 0;    // Subst.matrix 0: Gonnet, 1: HSDM, 2: BLOSUM50 3: BLOSUM62
-  par.pc.admix = (Pseudocounts::Admix) 0; // no amino acid and transition pseudocounts added
+  par.pc_hhm_context_engine.admix = (Pseudocounts::Admix) 0; // no amino acid and transition pseudocounts added
   par.gapb = 0.0; // default values for transition pseudocounts; 0.0: add no transition pseudocounts!
   par.wg = 0;               // 0: use local sequence weights   1: use local ones
 
