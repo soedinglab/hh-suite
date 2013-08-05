@@ -353,7 +353,7 @@ void Hit::Viterbi(HMM* q, HMM* t) {
     }
     else {
       for (j = jmin; j <= jmax; ++j) {
-        Si[j] = flog2(columnStateScoring->substitutionScores[i][csSeq[j]]);
+        Si[j] = fast_log2(columnStateScoring->substitutionScores[i][csSeq[j]]);
       }
     }
 
@@ -1302,7 +1302,7 @@ void Hit::Backtrace(HMM* q, HMM* t) {
         j = this->j[step];
 
         S[step] = (par.useCSScoring && csSeq) ?
-            columnStateScoring->substitutionScores[i][csSeq[j]] :
+            fast_log2(columnStateScoring->substitutionScores[i][csSeq[j]]) :
             Score(q->p[i], t->p[j]);
 
         S_ss[step] = ScoreSS(q,t,i,j,ssm);
@@ -1481,7 +1481,7 @@ void Hit::BacktraceMAC(HMM* q, HMM* t) {
         j = this->j[step];
 
         S[step] = (par.useCSScoring && csSeq) ?
-            columnStateScoring->substitutionScores[i][csSeq[j]] :
+            fast_log2(columnStateScoring->substitutionScores[i][csSeq[j]]) :
             Score(q->p[i], t->p[j]);
 
         S_ss[step] = ScoreSS(q,t,i,j,ssm);
@@ -1866,7 +1866,7 @@ void Hit::ScoreAlignment(HMM* q, HMM* t, int steps) {
   for (int step = 0; step < steps; step++) {
     float substitutionScore =
         (par.useCSScoring && csSeq) ?
-            columnStateScoring->substitutionScores[i[step]][csSeq[j[step]]] :
+            fast_log2(columnStateScoring->substitutionScores[i[step]][csSeq[j[step]]]) :
             Score(q->p[i[step]], t->p[j[step]]);
 
     if (v > 2) {
