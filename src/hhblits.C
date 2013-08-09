@@ -2337,6 +2337,9 @@ void perform_realign(char *dbfiles[], int ndb) {
 //// MAIN PROGRAM
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 int main(int argc, char **argv) {
+
+	cuticle_init();
+
   int cluster_found = 0;
   int seqs_found = 0;
   char* argv_conf[MAXOPT]; // Input arguments from .hhdefaults file (first=1: argv_conf[0] is not used)
