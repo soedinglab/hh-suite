@@ -139,9 +139,10 @@ Typ Hash<Typ>::Show(char* key)
   pslot = slot[i];
   if (!pslot) return fail;
   pslot->Reset();
-  do{
+
+  while(!pslot->End()) {
     if(!strcmp(pslot->ReadNext().key,key)) return pslot->ReadCurrent().data;
-  } while(!pslot->End());
+  }
   return fail;
 }
 
@@ -158,7 +159,7 @@ Typ* Hash<Typ>::Add(char* key, Typ data)
   pslot = slot[i];
   if (!pslot) { num_keys++; KeyLen(); slot[i]=new(Slot<Typ>); return slot[i]->Push(key_len,key,data);}
   pslot->Reset();
-  do
+  while(!pslot->End())
     {
       pairp = pslot->ReadNextAddress();
       if(!strcmp(pairp->key,key))
@@ -167,7 +168,7 @@ Typ* Hash<Typ>::Add(char* key, Typ data)
           pslot->Overwrite(*pairp);
           return &(pairp->data);
         }
-    } while(!pslot->End());
+    }
   num_keys++;
   KeyLen();
   return pslot->Push(key_len,key,data);
@@ -188,13 +189,12 @@ Typ* Hash<Typ>::Add(char* key)
   pslot = slot[i];
   if (!pslot) { num_keys++; KeyLen(); slot[i]=new(Slot<Typ>); return slot[i]->Push(key_len,key,fail);}
   pslot->Reset();
-  do
+  while(!pslot->End())
     {
       if(!strcmp(pslot->ReadNext().key,key))
-        {
           return &((pslot->ReadCurrentAddress())->data);
-        }
-    } while(!pslot->End());
+
+    } 
   num_keys++;
   KeyLen();
   return pslot->Push(key_len,key,fail);
@@ -213,7 +213,7 @@ Typ Hash<Typ>::Remove(char* key)
   pslot = slot[i];
   if (!pslot) return fail;
   pslot->Reset();
-  do
+  while(!pslot->End())
     {
       if(!strcmp(pslot->ReadNext().key,key)) 
 	{
@@ -227,7 +227,7 @@ Typ Hash<Typ>::Remove(char* key)
 	  //	  return pslot->ReadCurrent().data;
 	  return pair.data;
 	} 
-    } while(!pslot->End()); 
+    }
   return fail;
 }
 
@@ -456,9 +456,10 @@ int Hash<Typ>::Contains(char* key)
   pslot = slot[i];
   if (!pslot) return 0;
   pslot->Reset();
-  do{
-    if(!strcmp(pslot->ReadNext().key,key)) return 1;
-  } while(!pslot->End());
+  while(!pslot->End())
+  {
+    if(!strcmp(pslot->ReadNext().key,key)) return 1; 
+  }
   return 0;
 }
 

@@ -205,6 +205,9 @@ template <class Typ>
 inline Typ List<Typ>::ReadNext()
 {
   current = current->next;
+#ifdef HHDEBUG
+  if (current == tail) cerr<<"WARNING in list.C function ReadNext(): Attempting to read tail element. Urgh!"<<endl;
+#endif
   return current->data;
 }
 
@@ -214,6 +217,10 @@ inline Typ List<Typ>::ReadNext()
 template <class Typ> 
 inline Typ List<Typ>::ReadCurrent()
 {
+#ifdef HHDEBUG
+  if (current == head) cerr<<"WARNING in list.C function ReadCurrent(): Attempting to read head element. Urgh!"<<endl;
+  if (current == tail) cerr<<"WARNING in list.C function ReadCurrent(): Attempting to read tail element. Urgh!"<<endl;
+#endif
   return current->data;
 }
 
@@ -224,6 +231,9 @@ template <class Typ>
 inline Typ List<Typ>::ReadPrevious()
 {
   current = current->prev;
+#ifdef HHDEBUG
+  if (current == head) cerr<<"WARNING in list.C function ReadPrevious(): Attempting to read head element. Urgh!"<<endl;
+#endif
   return current->data;
 }
 
