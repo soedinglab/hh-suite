@@ -1640,138 +1640,35 @@ void Hit::InitializeForAlignment(HMM* q, HMM* t, bool vit) {
       }
   }
   else {
-    if (par.block_shading && !strcmp(par.block_shading_mode,"tube") && par.block_shading->Contains(t->file)) {
-      // Deactivate all cells in dynamic programming matrix
-      for (i=1; i<=q->L; ++i)
-        for (j=1; j<=t->L; ++j)
-          cell_off[i][j]=1;
-
-      int* tmp = par.block_shading->Show(t->file);
-      int counter = par.block_shading_counter->Show(t->file);
-
-      //printf("Hit %s:\n",t->name);
-
-      int m = 0;
-      while (m < counter) {
-        int i0 = tmp[m++];
-        int i1 = tmp[m++];
-        int j0 = tmp[m++];
-        int j1 = tmp[m++];
-
-        int d1 = imin(i0-j0,i1-j1) - par.block_shading_space;
-        int d2 = imax(i0-j0,i1-j1) + par.block_shading_space;
-
-        //printf("query: %i-%i   template: %i-%i    d1: %i  d2: %i\n",i0,i1,j0,j1,d1,d2);
-
-        int istart = imax(1,i0-par.block_shading_space);
-        int istop = imin(q->L,i1+par.block_shading_space);
-        int jstart = imax(1,j0-par.block_shading_space);
-        int jstop = imin(t->L,j1+par.block_shading_space);
-
-        for (i = istart; i <= istop; ++i)
-          for (j = jstart; j <= jstop; ++j)
-            if ((i-j) > d1 && (i-j) < d2)
-              cell_off[i][j]=0;
-      }
-
-      // int after = 0;
-      // for (i=1; i<=q->L; ++i)
-      //   for (j=1; j<=t->L; ++j)
-      //     {
-      //    if (cell_off[i][j]==1)
-      //      after++;
-      //     }
-      // printf("cells cross out : %i\n",after);
-      // printf("cells total     : %i\n",q->L*t->L);
-      // printf("Ersparnis       : %4.2f %%\n",(double)after/(double)(q->L*t->L)*100.0);
-
-      min_overlap = 0;
-
-      // Cross out cells that are excluded by the minimum-overlap criterion
-      // if (par.min_overlap==0)
-      //   min_overlap = imin(60, (int)(0.333f*imin(q->L,t->L))+1); // automatic minimum overlap
-      // else
-      //   min_overlap = imin(par.min_overlap, (int)(0.8f*imin(q->L,t->L)));
-
-      // for (i=0; i<min_overlap; ++i)
-      //   for (j=i-min_overlap+t->L+1; j<=t->L; ++j) // Lt-j+i>=Ovlap => j<=i-Ovlap+Lt => jmax=min{Lt,i-Ovlap+Lt}
-      //     cell_off[i][j]=1;
-      // for (i=q->L-min_overlap+1; i<=q->L; ++i)
-      //   for (j=1; j<i+min_overlap-q->L; ++j)      // Lq-i+j>=Ovlap => j>=i+Ovlap-Lq => jmin=max{1, i+Ovlap-Lq}
-      //     cell_off[i][j]=1;
-
-    }
     // Compare two different HMMs Q and T
-    else {
-      // Activate all cells in dynamic programming matrix
-      for (i=1; i<=q->L; ++i)
-        for (j=1; j<=t->L; ++j)
-          cell_off[i][j]=0;   // no other cells crossed out yet
+    // Activate all cells in dynamic programming matrix
+    for (i=1; i<=q->L; ++i)
+      for (j=1; j<=t->L; ++j)
+        cell_off[i][j]=0;   // no other cells crossed out yet
 
-      // Cross out cells that are excluded by the minimum-overlap criterion
-      if (par.min_overlap==0)
-        min_overlap = imin(60, (int)(0.333f*imin(q->L,t->L))+1); // automatic minimum overlap
-      else
-        min_overlap = imin(par.min_overlap, (int)(0.8f*imin(q->L,t->L)));
+    // Cross out cells that are excluded by the minimum-overlap criterion
+    if (par.min_overlap==0)
+      min_overlap = imin(60, (int)(0.333f*imin(q->L,t->L))+1); // automatic minimum overlap
+    else
+      min_overlap = imin(par.min_overlap, (int)(0.8f*imin(q->L,t->L)));
 
-      for (i=0; i<min_overlap; ++i)
-        for (j=i-min_overlap+t->L+1; j<=t->L; ++j) // Lt-j+i>=Ovlap => j<=i-Ovlap+Lt => jmax=min{Lt,i-Ovlap+Lt}
-          cell_off[i][j]=1;
-      for (i=q->L-min_overlap+1; i<=q->L; ++i)
-        for (j=1; j<i+min_overlap-q->L; ++j)      // Lq-i+j>=Ovlap => j>=i+Ovlap-Lq => jmin=max{1, i+Ovlap-Lq}
-          cell_off[i][j]=1;
+    for (i=0; i<min_overlap; ++i)
+      for (j=i-min_overlap+t->L+1; j<=t->L; ++j) // Lt-j+i>=Ovlap => j<=i-Ovlap+Lt => jmax=min{Lt,i-Ovlap+Lt}
+        cell_off[i][j]=1;
+    for (i=q->L-min_overlap+1; i<=q->L; ++i)
+      for (j=1; j<i+min_overlap-q->L; ++j)      // Lq-i+j>=Ovlap => j>=i+Ovlap-Lq => jmin=max{1, i+Ovlap-Lq}
+        cell_off[i][j]=1;
 
-      // Cross out rows which are contained in range given by exclstr ("3-57,238-314")
-      if (par.exclstr) {
-        char* ptr=par.exclstr;
-        int i0, i1;
-        while (1) {
-          i0 = abs(strint(ptr));
-          i1 = abs(strint(ptr));
-          if (!ptr) break;
-          for (i=i0; i<=imin(i1,q->L); ++i)
-            for (j=1; j<=t->L; ++j)
-              cell_off[i][j]=1;
-        }
-      }
-
-      // Cross out cells not contained in the range of the prefiltering in HHblits
-      if (par.block_shading && par.block_shading->Contains(t->file)) {
-        int* tmp = par.block_shading->Show(t->file);
-        int counter = par.block_shading_counter->Show(t->file);
-
-        int i0, i1, j0, j1;
-        i0 = j0 = 1000000;
-        i1 = j1 = 0;
-
-        int m = 0;
-
-        while (m < counter) {
-          i0 = imin(tmp[m++]-par.block_shading_space,i0);
-          i1 = imax(tmp[m++]+par.block_shading_space,i1);
-          j0 = imin(tmp[m++]-par.block_shading_space,j0);
-          j1 = imax(tmp[m++]+par.block_shading_space,j1);
-        }
-
-          //printf("Hit: %40s query: %i-%i   template: %i-%i \n",t->name,i0,i1,j0,j1);
-
-          //printf("cell_off in query: 1-%i\n",i0);
-        for (i=1; i<i0; ++i)
+    // Cross out rows which are contained in range given by exclstr ("3-57,238-314")
+    if (par.exclstr) {
+      char* ptr=par.exclstr;
+      int i0, i1;
+      while (1) {
+        i0 = abs(strint(ptr));
+        i1 = abs(strint(ptr));
+        if (!ptr) break;
+        for (i=i0; i<=imin(i1,q->L); ++i)
           for (j=1; j<=t->L; ++j)
-            cell_off[i][j]=1;
-          //printf("cell_off in query: %i-%i\n",i1+1,q->L);
-
-        for (i=i1+1; i<=q->L; ++i)
-          for (j=1; j<=t->L; ++j)
-            cell_off[i][j]=1;
-          //printf("cell_off in template: 1-%i\n",j0);
-
-        for (j=1; j<j0; ++j)
-          for (i=1; i<=q->L; ++i)
-            cell_off[i][j]=1;
-          //printf("cell_off in template: %i-%i\n",j1+1,t->L);
-        for (j=j1+1; j<=t->L; ++j)
-          for (i=1; i<=q->L; ++i)
             cell_off[i][j]=1;
       }
     }

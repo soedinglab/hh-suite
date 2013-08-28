@@ -350,11 +350,6 @@ public:
   bool prefilter;             // perform prefiltering in HHblits?
   bool early_stopping_filter; // Break HMM search, when the sum of the last N HMM-hit-Evalues is below threshold
 
-  Hash<int*>* block_shading;         // Cross out cells not covered by prefiltering hit in HHblits
-  Hash<int>* block_shading_counter;  // Cross out cells not covered by prefiltering hit in HHblits
-  int block_shading_space;           // space added to the rands of prefilter HSP
-  char block_shading_mode[NAMELEN];
-
   // For HHblits prefiltering with SSE2
   short prefilter_gap_open;
   short prefilter_gap_extend;
@@ -565,11 +560,6 @@ void Parameters::SetDefaults()
 
   prefilter = false;              //true in hhblits
   early_stopping_filter = false;  //true in hhblits
-
-  block_shading=NULL;
-  block_shading_counter=NULL;
-  block_shading_space = 200;
-  strcpy(block_shading_mode,"tube");
 
   // For HHblits prefiltering with SSE2
   prefilter_gap_open = 20;
