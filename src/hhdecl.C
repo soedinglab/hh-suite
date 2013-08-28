@@ -366,10 +366,6 @@ public:
   bool useCSScoring;
   char cs_template_file[NAMELEN];
 
-  bool printMatrices;
-  std::string matrixOutputFileName;
-  unsigned int max_number_matrices;
-
   int min_prefilter_hits;
 
   void SetDefaultPaths(char *program_path);
@@ -603,9 +599,6 @@ void Parameters::SetDefaults()
   csw = 1.6;
 
   idummy=0;
-
-  printMatrices = false;
-  max_number_matrices = 100;
 
   return;
 }
