@@ -737,65 +737,6 @@ void Hit::Forward(HMM* q, HMM* t) {
   return;
 }
 
-void Hit::initAlignmentMatrix(HMM* q, HMM* t) {
-  matrices_ptr = new Alignment_Matrices();
-
-  matrices_ptr->irep = irep;
-  matrices_ptr->template_name = std::string(name);
-  matrices_ptr->filebasename = std::string(t->file);
-  matrices_ptr->template_length = t->L;
-  matrices_ptr->query_length = q->L;
-  matrices_ptr->reduced_posterior_matrix = new std::vector<Posterior_Triple*>();
-
-  matrices_ptr->forward_profile = new float[q->L + 1];
-  for (int i = 0; i <= q->L; i++) {
-    matrices_ptr->forward_profile[i] = 0;
-  }
-
-  matrices_ptr->backward_profile = new float[q->L + 1];
-  for (int i = 0; i <= q->L; i++) {
-    matrices_ptr->backward_profile[i] = 0;
-  }
-
-  std::stringstream ss;
-  ss << this->name << "_" << this->irep;
-  std::string id = ss.str();
-  matrices_ptr->id = std::string(id);
-}
-
-void Hit::saveForwardProfile(double scale_prod) {
-  double scale_rate;
-  double scale_prod_curr = 1.0;
-  double ffprob = 0.0;
-  double ffsum_row = 0.0;
-
-  for (int i = 1; i <= matrices_ptr->query_length; i++) {
-    int jmin;
-    if (self)
-      jmin = imin(i + SELFEXCL + 1, matrices_ptr->template_length);
-    else
-      jmin = 1;
-    if (scale_prod_curr < DBL_MIN * 100)
-      scale_prod_curr = 0.0;
-    else
-      scale_prod_curr *= scale[i];
-
-    ffsum_row = 0.0;
-    for (int j = jmin; j <= matrices_ptr->template_length; j++) {
-      if (scale_prod_curr == 0.0)
-        scale_rate = 0.0;
-      else
-        scale_rate = (scale_prod * scale[matrices_ptr->query_length + 1]) / scale_prod_curr;
-
-      ffprob = (P_MM[i][j] / Pforward) * scale_rate;
-
-      ffsum_row += ffprob;
-    }
-
-    matrices_ptr->forward_profile[i] = ffsum_row;
-  }
-}
-
 /////////////////////////////////////////////////////////////////////////////////////
 // Compare two HMMs with Backward Algorithm (in lin-space, 2x faster), for use in MAC alignment 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -979,54 +920,6 @@ void Hit::Backward(HMM* q, HMM* t) {
    */
 
   return;
-}
-
-void Hit::savePosteriorProbabilities() {
-  for (int i = 1; i <= matrices_ptr->query_length; i++) {
-    for (int j = 1; j <= matrices_ptr->template_length; j++) {
-      if (P_MM[i][j] > 0.1) {
-        Posterior_Triple* p = new Posterior_Triple(i, j, P_MM[i][j]);
-        matrices_ptr->reduced_posterior_matrix->push_back(p);
-      }
-    }
-  }
-}
-
-void Hit::commitMatrices() {
-  if (matrices_ptr->checkProfiles()) {
-    #ifdef PTHREAD
-      pthread_mutex_lock(&matrices_saving_mutex);
-    #endif
-
-      //calculate similarities to other matrices
-    for (std::vector<Alignment_Matrices*>::iterator comp_it = matrices.begin();
-        comp_it != matrices.end(); comp_it++) {
-
-      float similarity_score = 0.0;
-
-      for (int i = 1; i <= matrices_ptr->query_length; i++) {
-        similarity_score += pow(
-            matrices_ptr->forward_profile[i] * (*comp_it)->forward_profile[i],
-            0.5)
-            + pow(
-                matrices_ptr->backward_profile[i]
-                    * (*comp_it)->backward_profile[i], 0.5);
-      }
-
-      similarity_score /= 2.0;
-      matrices_ptr->similarity_scores.push_back(similarity_score);
-    }
-
-    //save matrices of current alignment to vector matrices
-    matrices.push_back(matrices_ptr);
-
-    #ifdef PTHREAD
-      pthread_mutex_unlock(&matrices_saving_mutex);
-    #endif
-  }
-  else {
-    delete matrices_ptr;
-  }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
