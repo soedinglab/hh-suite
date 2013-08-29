@@ -152,7 +152,10 @@ private:
   void InitializeBacktrace(HMM* q, HMM* t);
   void InitializeForAlignment(HMM* q, HMM* t, bool vit=true);
   double CalcProbab();
-
+  void initAlignmentMatrix(HMM* q, HMM* t);
+  void saveForwardProfile(double scale_prod);
+  void savePosteriorProbabilities();
+  void commitMatrices();
 };
 
 

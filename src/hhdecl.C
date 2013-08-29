@@ -124,6 +124,20 @@ struct Alignment_Matrices {
       }
     }
 
+    bool checkProfiles() {
+      float forward_sum = 0.0;
+      for(int i = 1; i <= query_length; i++) {
+        forward_sum += forward_profile[i];
+      }
+
+      float backward_sum = 0.0;
+      for(int i = 1; i <= query_length; i++) {
+        backward_sum += backward_profile[i];
+      }
+
+      return fabs(backward_sum - 1.0) <= 0.0001 && fabs(forward_sum - 1.0) <= 0.0001;
+    }
+
     std::string id;
 
     std::string template_name;
