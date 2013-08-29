@@ -708,13 +708,6 @@ void Hit::Forward(HMM* q, HMM* t) {
       score -= log(t->L * q->L) / LAMDA + 14.; // +14.0 to get approx same mean as for -global
   }
 
-  //TODO: discard to function
-  if (par.printMatrices) {
-    initAlignmentMatrix(q, t);
-
-    saveForwardProfile(scale_prod);
-  }
-
 // Debugging output
   /*
    if (v>=4)
@@ -849,33 +842,6 @@ void Hit::Backward(HMM* q, HMM* t) {
   //backward probability calculation
   double final_scale_prod = scale[q->L + 1];
 
-  if (par.printMatrices) {
-    for (int i = q->L - 1; i >= 1; i--) {
-      final_scale_prod *= scale[i + 1];
-      if (final_scale_prod < DBL_MIN * 100)
-        final_scale_prod = 0.0;
-    }
-
-    if (self)
-      jmin = imin(q->L + SELFEXCL, t->L);
-    else
-      jmin = 1;
-
-    float actual_backward = 0.0;
-    for (int j = t->L - 1; j >= jmin; j--) {
-      float substitutionScore =
-          (par.useCSScoring && csSeq) ?
-              columnStateScoring->substitutionScores[q->L][csSeq[j]] :
-              ProbFwd(q->p[q->L], t->p[j]);
-
-      actual_backward += substitutionScore * fpow2(ScoreSS(q, t, q->L, j))
-          * Cshift * B_MM_curr[j] / Pforward;
-    }
-
-    actual_backward *= final_scale_prod / scale_prod;
-    matrices_ptr->backward_profile[q->L] = actual_backward;
-  }
-
   // Backward algorithm
   // Loop through query positions i
   for (i = q->L - 1; i >= 1; i--) {
@@ -964,23 +930,13 @@ void Hit::Backward(HMM* q, HMM* t) {
 
     actual_backward *= final_scale_prod / scale_prod;
 
-    if (par.printMatrices) {
-      matrices_ptr->backward_profile[i] = actual_backward;
-    }
-
-    for (int jj = 0; jj <= t->L; jj++) {
+    for(int jj = 0; jj <= t->L; jj++) {
       B_MM_prev[jj] = B_MM_curr[jj];
       B_DG_prev[jj] = B_DG_curr[jj];
       B_MI_prev[jj] = B_MI_curr[jj];
     }
   } // end for i
   
-  //save alignment matrices
-  if (par.printMatrices) {
-    savePosteriorProbabilities();
-    commitMatrices();
-  }
-
   /*
    // Debugging output
    if (v>=6)
