@@ -383,16 +383,16 @@ void Hit::Viterbi(HMM* q, HMM* t) {
         sMM_i_j += Si[j] + ScoreSS(q, t, i, j) + par.shift;
 
         sGD_i_j = max2(sMM[j - 1] + t->tr[j - 1][M2D], // MM->GD gap opening in query
-        sGD[j - 1] + t->tr[j - 1][D2D], // GD->GD gap extension in query
-        btr[i][j], 0x08);
+            sGD[j - 1] + t->tr[j - 1][D2D], // GD->GD gap extension in query
+            btr[i][j], 0x08);
         sIM_i_j = max2(sMM[j - 1] + q->tr[i][M2I] + t->tr[j - 1][M2M],
             sIM[j - 1] + q->tr[i][I2I] + t->tr[j - 1][M2M], // IM->IM gap extension in query
             btr[i][j], 0x10);
         sDG_i_j = max2(sMM[j] + q->tr[i - 1][M2D], sDG[j] + q->tr[i - 1][D2D], //gap extension (DD) in query
-        btr[i][j], 0x20);
+            btr[i][j], 0x20);
         sMI_i_j = max2(sMM[j] + q->tr[i - 1][M2M] + t->tr[j][M2I], // MM->MI gap opening M2I in template
-        sMI[j] + q->tr[i - 1][M2M] + t->tr[j][I2I], // MI->MI gap extension I2I in template
-        btr[i][j], 0x40);
+            sMI[j] + q->tr[i - 1][M2M] + t->tr[j][I2I], // MI->MI gap extension I2I in template
+            btr[i][j], 0x40);
 
         sMM_i_1_j_1 = sMM[j];
         sGD_i_1_j_1 = sGD[j];
@@ -1217,10 +1217,10 @@ void Hit::Backtrace(HMM* q, HMM* t) {
 
   // Make sure that backtracing stops when t:M1 or q:M1 is reached (Start state), e.g. sMM[i][1], or sIM[i][1] (M:MM, B:IM)
   for (i = 0; i <= q->L; ++i)
-    btr[i][1] = STOP;
+    btr[i][1] &= 0xf8;  //set last three bits (backtrace from MM) to zero
 
   for (j = 1; j <= t->L; ++j)
-    btr[1][j] = STOP;
+    btr[1][j] &= 0xf8;  //set last three bits (backtrace from MM) to zero
   
   // Back-tracing loop
   matched_cols = 0; // for each MACTH (or STOP) state matched_col is incremented by 1
@@ -1283,7 +1283,7 @@ void Hit::Backtrace(HMM* q, HMM* t) {
         par.argv[0], i, j, state, step, t->name);
     fprintf(stderr, "Dumping alignment and terminating:\n");
     state = 0;
-    v = 4;
+    v = 100;  //exit
   }
 
   states[step] = MM;  // first state (STOP state) is set to MM state
@@ -1380,8 +1380,10 @@ void Hit::Backtrace(HMM* q, HMM* t) {
           S_ss[step]);
     }
 
-    cerr << "Exiting in DEBUG output loop of BacktraceViterbi\n";
-    exit(1);
+    if(v >= 100) {
+      cerr << "Exiting in DEBUG output loop of BacktraceViterbi\n";
+      exit(1);
+    }
   }
 
   return;
@@ -1406,9 +1408,10 @@ void Hit::BacktraceMAC(HMM* q, HMM* t) {
 
   // Make sure that backtracing stops when t:M1 or q:M1 is reached (Start state), e.g. sMM[i][1], or sIM[i][1] (M:MM, B:IM)
   for (i = 0; i <= q->L; ++i)
-    b[i][1] = STOP;
+    btr[i][1] &= 0xf8;  //set last three bits (backtrace from MM) to zero
+
   for (j = 1; j <= t->L; ++j)
-    b[1][j] = STOP;
+    btr[1][j] &= 0xf8;  //set last three bits (backtrace from MM) to zero
   
   // Back-tracing loop
   // In contrast to the Viterbi-Backtracing, STOP signifies the first Match-Match state, NOT the state before the first MM state
