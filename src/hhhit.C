@@ -360,6 +360,7 @@ void Hit::Viterbi(HMM* q, HMM* t) {
 
     // Loop through template positions j
     for (j = jmin; j <= jmax; ++j) {
+      btr[i][j] = 0x00;
 
       if (cell_off[i][j]) {
         sMM_i_1_j_1 = sMM[j]; // sMM_i_1_j_1 (for j->j+1) = sMM(i-1,(j+1)-1) = sMM[j]
@@ -973,6 +974,8 @@ void Hit::MACAlignment(HMM* q, HMM* t) {
 
     // Loop through template positions j
     for (j = jmin; j <= jmax; ++j) {
+      btr[i][j] = 0x00;
+
       if (cell_off[i][j]) {
         S_curr[j] = -FLT_MIN;
         btr[i][j] = STOP;
