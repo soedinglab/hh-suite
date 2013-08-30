@@ -36,8 +36,6 @@ using std::ofstream;
 
 #include "hash.h"
 
-
-
 ////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////// Methods of class Hash ////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -45,84 +43,90 @@ using std::ofstream;
 ////////////////////////////////////////////////////////////////////////////////////////////
 //                                Private Methods
 
-
 ////////////////////////////////////////////////////////////////////////////////////////////
 //                        Constructor and Destructor of Hash
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 // Constructor of class Hash
 ////////////////////////////////////////////////////////////////////////////////////////////
-template<class Typ> 
-Hash<Typ>::Hash()
-{
-  num_keys=0; max_len=0; prev=curr=num_slots = 0; slot=NULL;
+template<class Typ>
+Hash<Typ>::Hash() {
+  num_keys = 0;
+  max_len = 0;
+  prev = curr = num_slots = 0;
+  slot = NULL;
 }
 
-template<class Typ> 
-Hash<Typ>::Hash(int nslots)
-{
-  num_keys=0; max_len=0; prev=curr=num_slots = nslots;
-  slot = new Slot<Typ>*[num_slots];             //Create array of num_slots slots
-  for (int i=0; i<num_slots; i++) slot[i]=NULL; //set pointers to NULL
+template<class Typ>
+Hash<Typ>::Hash(int nslots) {
+  num_keys = 0;
+  max_len = 0;
+  prev = curr = num_slots = nslots;
+  slot = new Slot<Typ>*[num_slots];            //Create array of num_slots slots
+  for (int i = 0; i < num_slots; i++)
+    slot[i] = NULL; //set pointers to NULL
   fail = static_cast<Typ>(0);
 }
 
-template<class Typ> 
-Hash<Typ>::Hash(int nslots, Typ f)
-{
-  num_keys=0; max_len=0; prev=curr=num_slots = nslots;
-  slot = new Slot<Typ>*[num_slots];             //Create array of num_slots slots
-  for (int i=0; i<num_slots; i++) slot[i]=NULL; //set pointers to NULL
-  fail=f;
+template<class Typ>
+Hash<Typ>::Hash(int nslots, Typ f) {
+  num_keys = 0;
+  max_len = 0;
+  prev = curr = num_slots = nslots;
+  slot = new Slot<Typ>*[num_slots];            //Create array of num_slots slots
+  for (int i = 0; i < num_slots; i++)
+    slot[i] = NULL; //set pointers to NULL
+  fail = f;
 }
-
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 // Destructor of class Hash
 // Note: if <Typ> data is a pointer to another data structure, that structure is not deleted!
 ////////////////////////////////////////////////////////////////////////////////////////////
-template<class Typ> 
-Hash<Typ>::~Hash()
-{
+template<class Typ>
+Hash<Typ>::~Hash() {
   RemoveAll();
   delete[] slot;
 }
 
-
 ////////////////////////////////////////////////////////////////////////////////////////////
 // Hash function
 ////////////////////////////////////////////////////////////////////////////////////////////
-template<class Typ> 
-inline unsigned int Hash<Typ>::HashValue(char* key)  //returns the hash value for key 
+template<class Typ>
+inline unsigned int Hash<Typ>::HashValue(char* key) //returns the hash value for key
     {
-      // Calculate a hash value by the division method: 
-      // Transform key into a natural number k = sum ( key[i]*128^(L-i) ) and calculate i= k % num_slots. 
-      // Since calculating k would lead to an overflow, i is calculated iteratively 
-      // and at each iteration the part divisible by num_slots is subtracted, i.e. (% num_slots is taken).
-      if (key==NULL) {printf("Warning from hash.C: key=NULL\n"); return 0;}
-      unsigned int i=0;     // Start of iteration: k is zero
-      char* c = key;
-      while(*c) i = ((i<<7) + *(c++)) % num_slots; 
-      key_len = c - key;
-      //cerr<<"      Hash value for \'"<<key<<"\' is "<<i<<"\n";
-      return i;
-    }
+  // Calculate a hash value by the division method:
+  // Transform key into a natural number k = sum ( key[i]*128^(L-i) ) and calculate i= k % num_slots.
+  // Since calculating k would lead to an overflow, i is calculated iteratively
+  // and at each iteration the part divisible by num_slots is subtracted, i.e. (% num_slots is taken).
+  if (key == NULL) {
+    printf("Warning from hash.C: key=NULL\n");
+    return 0;
+  }
+  unsigned int i = 0;     // Start of iteration: k is zero
+  char* c = key;
+  while (*c)
+    i = ((i << 7) + *(c++)) % num_slots;
+  key_len = c - key;
+  //cerr<<"      Hash value for \'"<<key<<"\' is "<<i<<"\n";
+  return i;
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 // Create new hash (and delete any data present)
 ////////////////////////////////////////////////////////////////////////////////////////////
-template<class Typ> 
-void Hash<Typ>::New(int nslots, Typ f)
-{
-  fail=f; 
-  RemoveAll(); 
+template<class Typ>
+void Hash<Typ>::New(int nslots, Typ f) {
+  fail = f;
+  RemoveAll();
   delete[] slot;
-  num_keys=0; max_len=0; prev=curr=num_slots = nslots;
-  slot = new Slot<Typ>*[num_slots];             //Create array of num_slots slots
-  for (int i=0; i<num_slots; i++) slot[i]=NULL; //set pointers to NULL
+  num_keys = 0;
+  max_len = 0;
+  prev = curr = num_slots = nslots;
+  slot = new Slot<Typ>*[num_slots];            //Create array of num_slots slots
+  for (int i = 0; i < num_slots; i++)
+    slot[i] = NULL; //set pointers to NULL
 }
-
-
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 //                  Methods that work with a key supplied as an argument 
@@ -130,18 +134,18 @@ void Hash<Typ>::New(int nslots, Typ f)
 ////////////////////////////////////////////////////////////////////////////////////////////
 // Return data element for key. Returns 'fail' if key does not exist 
 ////////////////////////////////////////////////////////////////////////////////////////////
-template<class Typ> 
-Typ Hash<Typ>::Show(char* key)
-{
+template<class Typ>
+Typ Hash<Typ>::Show(char* key) {
   Slot<Typ>* pslot;
   int i = HashValue(key);
 
   pslot = slot[i];
-  if (!pslot) return fail;
+  if (!pslot)
+    return fail;
   pslot->Reset();
-
-  while(!pslot->End()) {
-    if(!strcmp(pslot->ReadNext().key,key)) return pslot->ReadCurrent().data;
+  while (!pslot->End()) {
+    if (!strcmp(pslot->ReadNext().key, key))
+      return pslot->ReadCurrent().data;
   }
   return fail;
 }
@@ -150,129 +154,130 @@ Typ Hash<Typ>::Show(char* key)
 // Add/replace key/data pair to hash and return address of data element
 ////////////////////////////////////////////////////////////////////////////////////////////
 template<class Typ>
-Typ* Hash<Typ>::Add(char* key, Typ data)
-{
+Typ* Hash<Typ>::Add(char* key, Typ data) {
   Pair<Typ>* pairp;
   Slot<Typ>* pslot;
   int i = HashValue(key);
 
   pslot = slot[i];
-  if (!pslot) { num_keys++; KeyLen(); slot[i]=new(Slot<Typ>); return slot[i]->Push(key_len,key,data);}
+  if (!pslot) {
+    num_keys++;
+    KeyLen();
+    slot[i] = new (Slot<Typ> );
+    return slot[i]->Push(key_len, key, data);
+  }
   pslot->Reset();
-  while(!pslot->End())
-    {
-      pairp = pslot->ReadNextAddress();
-      if(!strcmp(pairp->key,key))
-        {
-          pairp->data=data;
-          pslot->Overwrite(*pairp);
-          return &(pairp->data);
-        }
+  while (!pslot->End()) {
+    pairp = pslot->ReadNextAddress();
+    if (!strcmp(pairp->key, key)) {
+      pairp->data = data;
+      pslot->Overwrite(*pairp);
+      return &(pairp->data);
     }
+  }
   num_keys++;
   KeyLen();
-  return pslot->Push(key_len,key,data);
+  return pslot->Push(key_len, key, data);
 }
-
-
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 // Add key to hash and return address of data element. 
 // If key exists leave data element unchanged, else set it to 'fail'.
 ////////////////////////////////////////////////////////////////////////////////////////////
 template<class Typ>
-Typ* Hash<Typ>::Add(char* key)
-{
+Typ* Hash<Typ>::Add(char* key) {
   Slot<Typ>* pslot;
   int i = HashValue(key);
 
   pslot = slot[i];
-  if (!pslot) { num_keys++; KeyLen(); slot[i]=new(Slot<Typ>); return slot[i]->Push(key_len,key,fail);}
+  if (!pslot) {
+    num_keys++;
+    KeyLen();
+    slot[i] = new (Slot<Typ> );
+    return slot[i]->Push(key_len, key, fail);
+  }
   pslot->Reset();
-  while(!pslot->End())
-    {
-      if(!strcmp(pslot->ReadNext().key,key))
-          return &((pslot->ReadCurrentAddress())->data);
-
-    } 
+  while (!pslot->End()) {
+    if (!strcmp(pslot->ReadNext().key, key)) {
+      return &((pslot->ReadCurrentAddress())->data);
+    }
+  }
   num_keys++;
   KeyLen();
-  return pslot->Push(key_len,key,fail);
+  return pslot->Push(key_len, key, fail);
 }
-
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 // Remove key from hash and return data element for key ('fail' if key does not exist)
 /////////////////////////////////////////////////////////////////////////////////////////////
-template<class Typ> 
-Typ Hash<Typ>::Remove(char* key)
-{
+template<class Typ>
+Typ Hash<Typ>::Remove(char* key) {
   Slot<Typ>* pslot;
   int i = HashValue(key);
 
   pslot = slot[i];
-  if (!pslot) return fail;
+  if (!pslot)
+    return fail;
   pslot->Reset();
-  while(!pslot->End())
-    {
-      if(!strcmp(pslot->ReadNext().key,key)) 
-	{
-	  Pair<Typ> pair = pslot->ReadCurrent();
-	  num_keys--; 
-	  pslot->Delete();
-	  // Delete key-Array
-	  delete[] pair.key;
-	  // if key was the only element in pslot then delete whole list
-	  if (pslot->Size()==0) {delete pslot; slot[i]=0;} 
-	  //	  return pslot->ReadCurrent().data;
-	  return pair.data;
-	} 
+  while (!pslot->End()) {
+    if (!strcmp(pslot->ReadNext().key, key)) {
+      Pair<Typ> pair = pslot->ReadCurrent();
+      num_keys--;
+      pslot->Delete();
+      // Delete key-Array
+      delete[] pair.key;
+      // if key was the only element in pslot then delete whole list
+      if (pslot->Size() == 0) {
+        delete pslot;
+        slot[i] = 0;
+      }
+      //	  return pslot->ReadCurrent().data;
+      return pair.data;
     }
+  }
   return fail;
 }
-
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 // Remove all keys from hash;
 // Note: if <Typ> data is a pointer to another data structure, that structure is not deleted!
 ////////////////////////////////////////////////////////////////////////////////////////////
-template<class Typ> 
-void Hash<Typ>::RemoveAll()
-{
-  for(int i=0; i<num_slots; i++) 
-    if(slot[i]) {delete slot[i]; slot[i]=NULL;}
-  num_keys=0;
-  max_len=0;
-  curr=prev=num_slots;
+template<class Typ>
+void Hash<Typ>::RemoveAll() {
+  for (int i = 0; i < num_slots; i++)
+    if (slot[i]) {
+      delete slot[i];
+      slot[i] = NULL;
+    }
+  num_keys = 0;
+  max_len = 0;
+  curr = prev = num_slots;
 }
-
-
-
-
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 //                  Methods that work with an internal "current key":
 
-
 ////////////////////////////////////////////////////////////////////////////////////////////
 // Return data of next key. Return 'fail' data and empty key if at end  
 ////////////////////////////////////////////////////////////////////////////////////////////
-template<class Typ> 
-Typ Hash<Typ>::ReadNext()
-{
+template<class Typ>
+Typ Hash<Typ>::ReadNext() {
   Pair<Typ>* pairp;
   Slot<Typ>* pslot;
 
-  if (curr>=num_slots) {return fail;}
-  pslot = slot[curr];  // current list is never empty, except when current=num_slots
-  pairp = pslot->ReadNextAddress(); 
+  if (curr >= num_slots) {
+    return fail;
+  }
+  pslot = slot[curr]; // current list is never empty, except when current=num_slots
+  pairp = pslot->ReadNextAddress();
   if (pslot->End()) {
-    prev=curr;
+    prev = curr;
     do   // move on to next non-empty list
-      {
-	if (++curr>=num_slots) return pairp->data;
-	pslot = slot[curr];
-      } while (!pslot);
+    {
+      if (++curr >= num_slots)
+        return pairp->data;
+      pslot = slot[curr];
+    } while (!pslot);
     pslot->Reset();
   }
   return pairp->data;
@@ -282,50 +287,53 @@ Typ Hash<Typ>::ReadNext()
 // Write next key into variable key and return data. Return 'fail' data and empty key if at end  
 // Attention: 'key' must have memory of at least char[MaxLen()+1] allocated!
 ////////////////////////////////////////////////////////////////////////////////////////////
-template<class Typ> 
-Typ Hash<Typ>::ReadNext(char* key)
-{
+template<class Typ>
+Typ Hash<Typ>::ReadNext(char* key) {
   Pair<Typ>* pairp;
   Slot<Typ>* pslot;
 
-  if (curr>=num_slots) {*key='\0'; return fail;}
-  pslot = slot[curr];  // current list is never empty, except when current=num_slots
-  pairp = pslot->ReadNextAddress(); 
-  strcpy(key,pairp->key);
+  if (curr >= num_slots) {
+    *key = '\0';
+    return fail;
+  }
+  pslot = slot[curr]; // current list is never empty, except when current=num_slots
+  pairp = pslot->ReadNextAddress();
+  strcpy(key, pairp->key);
   if (pslot->End()) {
-    prev=curr;
+    prev = curr;
     do   // move on to next non-empty list
-      {
-	if (++curr>=num_slots) return pairp->data;
-	pslot = slot[curr];
-      } while (!pslot);
+    {
+      if (++curr >= num_slots)
+        return pairp->data;
+      pslot = slot[curr];
+    } while (!pslot);
     pslot->Reset();
   }
   return pairp->data;
 }
 
-
-
 ////////////////////////////////////////////////////////////////////////////////////////////
 // Return data of current key 
 ////////////////////////////////////////////////////////////////////////////////////////////
-template<class Typ> 
-Typ Hash<Typ>::ReadCurrent()
-{
+template<class Typ>
+Typ Hash<Typ>::ReadCurrent() {
   Pair<Typ>* pairp;
   Slot<Typ>* pslot;
 
-  curr=prev;
-  if (curr>=num_slots) {return fail;}
-  pslot = slot[curr];  // current list is never empty, except when current=num_slots
+  curr = prev;
+  if (curr >= num_slots) {
+    return fail;
+  }
+  pslot = slot[curr]; // current list is never empty, except when current=num_slots
   Pair<Typ> pair = pslot->ReadCurrent();
-  pairp = &pair; 
+  pairp = &pair;
   if (pslot->End()) {
     do   // move on to next non-empty list
-      {
-	if (++curr>=num_slots) return pairp->data;
-	pslot = slot[curr];
-      } while (!pslot);
+    {
+      if (++curr >= num_slots)
+        return pairp->data;
+      pslot = slot[curr];
+    } while (!pslot);
     pslot->Reset();
   }
   return pairp->data;
@@ -335,24 +343,27 @@ Typ Hash<Typ>::ReadCurrent()
 // Write key last read into variable key and return data
 // Attention: 'key' must have memory of at least char[MaxLen()+1] allocated!
 ////////////////////////////////////////////////////////////////////////////////////////////
-template<class Typ> 
-Typ Hash<Typ>::ReadCurrent(char* key)
-{
+template<class Typ>
+Typ Hash<Typ>::ReadCurrent(char* key) {
   Pair<Typ>* pairp;
   Slot<Typ>* pslot;
 
-  curr=prev;
-  if (curr>=num_slots) {*key='\0'; return fail;}
-  pslot = slot[curr];  // current list is never empty, except when current=num_slots
+  curr = prev;
+  if (curr >= num_slots) {
+    *key = '\0';
+    return fail;
+  }
+  pslot = slot[curr]; // current list is never empty, except when current=num_slots
   Pair<Typ> pair = pslot->ReadCurrent();
-  pairp = &pair; 
-  strcpy(key,pairp->key);
+  pairp = &pair;
+  strcpy(key, pairp->key);
   if (pslot->End()) {
     do   // move on to next non-empty list
-      {
-	if (++curr>=num_slots) return pairp->data;
-	pslot = slot[curr];
-      } while (!pslot);
+    {
+      if (++curr >= num_slots)
+        return pairp->data;
+      pslot = slot[curr];
+    } while (!pslot);
     pslot->Reset();
   }
   return pairp->data;
@@ -361,29 +372,36 @@ Typ Hash<Typ>::ReadCurrent(char* key)
 ////////////////////////////////////////////////////////////////////////////////////////////
 // Remove current key, return data, and advance to next key (after Reset() remove first element)
 ////////////////////////////////////////////////////////////////////////////////////////////
-template<class Typ> 
-Typ Hash<Typ>::RemoveCurrent()
-{
+template<class Typ>
+Typ Hash<Typ>::RemoveCurrent() {
   Pair<Typ>* pairp;
   Slot<Typ>* pslot;
-  curr=prev;
+  curr = prev;
 
-  if (curr>=num_slots) {return fail;}
-  pslot = slot[curr];  // current list is never empty, except when current=num_slots
+  if (curr >= num_slots) {
+    return fail;
+  }
+  pslot = slot[curr]; // current list is never empty, except when current=num_slots
   Pair<Typ> pair = pslot->Delete();
-  pairp = &pair; 
+  pairp = &pair;
   num_keys--;
   // if key was the only element in pslot then delete whole list
-  if (pslot->Size()==0) {delete pslot; slot[curr]=0;}  
+  if (pslot->Size() == 0) {
+    delete pslot;
+    slot[curr] = 0;
+  }
   if (!pslot || pslot->End()) {
     do   // move on to next non-empty list
-      {
-	if (++curr>=num_slots) {prev=curr; return pairp->data;}
-	pslot = slot[curr];
-      } while (!pslot);
+    {
+      if (++curr >= num_slots) {
+        prev = curr;
+        return pairp->data;
+      }
+      pslot = slot[curr];
+    } while (!pslot);
     pslot->Reset();
   }
-  prev=curr;
+  prev = curr;
   return pairp->data;
 }
 
@@ -392,73 +410,78 @@ Typ Hash<Typ>::RemoveCurrent()
 // (After Reset() remove first element)
 // Attention: 'key' must have memory of at least char[MaxLen()+1] allocated!
 ////////////////////////////////////////////////////////////////////////////////////////////
-template<class Typ> 
-Typ Hash<Typ>::RemoveCurrent(char* key)
-{
+template<class Typ>
+Typ Hash<Typ>::RemoveCurrent(char* key) {
   Pair<Typ>* pairp;
   Slot<Typ>* pslot;
 
-  curr=prev;
-  if (curr>=num_slots) {*key='\0'; return fail;}
-  pslot = slot[curr];  // current list is never empty, except when current=num_slots
-  pairp = &(pslot->Delete()); 
-  strcpy(key,pairp->key);
+  curr = prev;
+  if (curr >= num_slots) {
+    *key = '\0';
+    return fail;
+  }
+  pslot = slot[curr]; // current list is never empty, except when current=num_slots
+  pairp = &(pslot->Delete());
+  strcpy(key, pairp->key);
   num_keys--;
   // if key was the only element in pslot then delete whole list
-  if (pslot->Size()==0) {delete pslot; slot[curr]=0;}  
+  if (pslot->Size() == 0) {
+    delete pslot;
+    slot[curr] = 0;
+  }
   if (!pslot || pslot->End()) {
     do   // move on to next non-empty list
-      {
-	if (++curr>=num_slots) {prev=curr; return pairp->data;}
-	pslot = slot[curr];
-      } while (!pslot);
+    {
+      if (++curr >= num_slots) {
+        prev = curr;
+        return pairp->data;
+      }
+      pslot = slot[curr];
+    } while (!pslot);
     pslot->Reset();
   }
-  prev=curr;
+  prev = curr;
   return pairp->data;
 }
-
-
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 // Reset current position to beginning of hash
 ////////////////////////////////////////////////////////////////////////////////////////////
-template<class Typ> 
-void Hash<Typ>::Reset()
-  {
-    curr=-1;
-    Slot<Typ>* pslot;
-    do
-      {
-	curr++;
-	if (curr>=num_slots) {prev=curr; return;}
-	pslot = slot[curr];
-      } while (!pslot);
-     pslot->Reset();
-     prev=curr;
-     return;
-  }
-
+template<class Typ>
+void Hash<Typ>::Reset() {
+  curr = -1;
+  Slot<Typ>* pslot;
+  do {
+    curr++;
+    if (curr >= num_slots) {
+      prev = curr;
+      return;
+    }
+    pslot = slot[curr];
+  } while (!pslot);
+  pslot->Reset();
+  prev = curr;
+  return;
+}
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 //            Methods that return usefull information about the data stored in Hash:
 
-
 ////////////////////////////////////////////////////////////////////////////////////////////
 // Returns 1 if the hash contains key, 0 otherwise 
 ////////////////////////////////////////////////////////////////////////////////////////////
-template<class Typ> 
-int Hash<Typ>::Contains(char* key)
-{
+template<class Typ>
+int Hash<Typ>::Contains(char* key) {
   Slot<Typ>* pslot;
   int i = HashValue(key);
 
   pslot = slot[i];
-  if (!pslot) return 0;
+  if (!pslot)
+    return 0;
   pslot->Reset();
-  while(!pslot->End())
-  {
-    if(!strcmp(pslot->ReadNext().key,key)) return 1; 
+  while (!pslot->End()) {
+    if (!strcmp(pslot->ReadNext().key, key))
+      return 1;
   }
   return 0;
 }
@@ -466,65 +489,54 @@ int Hash<Typ>::Contains(char* key)
 /////////////////////////////////////////////////////////////////////////////////////////////
 //print out list of keys and data
 /////////////////////////////////////////////////////////////////////////////////////////////
-template<class Typ> 
-void Hash<Typ>::Print()
-{
-  char key[MaxLen()+1];
+template<class Typ>
+void Hash<Typ>::Print() {
+  char key[MaxLen() + 1];
 
-  cout<<"\nPrint hash:\n";
+  cout << "\nPrint hash:\n";
   Reset();
-  while(!End()) 
-    cout<<key<<"->"<<ReadNext(key)<<"\n";
+  while (!End())
+    cout << key << "->" << ReadNext(key) << "\n";
 }
 /////////////////////////////////////////////////////////////////////////////////////////////
 //print out list of keys and data
 /////////////////////////////////////////////////////////////////////////////////////////////
-template<class Typ> 
-void Hash<Typ>::PrintKeys()
-{
-  char key[MaxLen()+1];
+template<class Typ>
+void Hash<Typ>::PrintKeys() {
+  char key[MaxLen() + 1];
 
-  cout<<"\nPrint hash-keys:\n";
+  cout << "\nPrint hash-keys:\n";
   Reset();
-  while(!End()) 
-    cout<<key<<"\n";
+  while (!End())
+    cout << key << "\n";
 }
-
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 //Print out hash with internal representation as array 
 /////////////////////////////////////////////////////////////////////////////////////////////
-template<class Typ> 
-void Hash<Typ>::DebugPrint()
-{
+template<class Typ>
+void Hash<Typ>::DebugPrint() {
   Pair<Typ>* pairp;
   Slot<Typ>* pslot;
 
-  cout<<"\n";
-  cout<<"Debug-print hash:";
-  for(int i=0; i<num_slots; i++)
-    {
-      pslot = slot[i];
-      if (pslot) 
-	{
-	  cout<<"\nhash value "<<i;
-	  pslot->Reset();
-	  while(!pslot->End())
-	    {
-	      pairp = pslot->ReadNextAddress(); 
-	      cout<<"  "<<pairp->key<<"->"<<pairp->data;
-	    }
-	}
+  cout << "\n";
+  cout << "Debug-print hash:";
+  for (int i = 0; i < num_slots; i++) {
+    pslot = slot[i];
+    if (pslot) {
+      cout << "\nhash value " << i;
+      pslot->Reset();
+      while (!pslot->End()) {
+        pairp = pslot->ReadNextAddress();
+        cout << "  " << pairp->key << "->" << pairp->data;
+      }
     }
-  cout<<"\n\n";
+  }
+  cout << "\n\n";
   return;
 }
 
-
-
 #endif /* HASH */
-
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // Main program: test class Hash
@@ -547,7 +559,7 @@ void Hash<Typ>::DebugPrint()
 //    cout<<"Size of hash="<<ihash.Size()<<"\n";
 //    ihash.DebugPrint();
 //    ihash.Print();
-   
+
 //    strcpy(key,"Some more monsters");
 //    ihash.Add(key,3);
 //    strcpy(key,"Even more monsters");
@@ -555,10 +567,9 @@ void Hash<Typ>::DebugPrint()
 //    cout<<"Size of hash="<<ihash.Size()<<"\n";
 //    cout<<"Maximum key length = "<<ihash.MaxLen()<<"\n";
 //    ihash.Print();
-   
+
 //    cout<<"ihash.Remove(\"Even more monsters\") returns "<<ihash.Remove("Even more monsters")<<"\n";
 //    ihash.Print();
-
 
 //    cout<<"ihash.Remove(\"More monsters\") returns "<<ihash.Remove("More monsters")<<"\n";
 //    ihash.Add("So many chickens",999);
@@ -567,8 +578,6 @@ void Hash<Typ>::DebugPrint()
 
 //    cout<<"So many chickens:"<<ihash.Show("So many chickens")<<"\n";
 //    cout<<"Size of hash="<<ihash.Size()<<"\n";
-
-
 
 //    ihash.Reset();
 //    while (!ihash.End())

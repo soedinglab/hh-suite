@@ -135,9 +135,6 @@ cs::ContextLibrary<cs::AA> *cs_lib;
 std::map<std::string, unsigned char*> columnStateSequences;
 ColumnStateScoring* columnStateScoring;
 
-std::vector<Alignment_Matrices*> matrices;
-std::map<std::string, float> ali_probabilities;
-
 #include "hhutil.C"      // MatchChr, InsertChr, aa2i, i2aa, log2, fast_log2, ScopID, WriteToScreen,
 #include "hhmatrices.C"  // BLOSUM50, GONNET, HSDM
 #include "hhhmm.h"       // class HMM
@@ -170,7 +167,6 @@ int v1 = v;                               // verbose mode
 int num_rounds = 2;                   // number of iterations
 bool last_round = false;                // set to true in last iteration
 bool already_seen_filter = true;       // Perform filtering of already seen HHMs
-bool block_filter = true; // Perform viterbi and forward algorithm only on unshaded tube given by prefiltering
 bool realign_old_hits = false; // Realign old hits in last round or use previous alignments
 
 char input_format = 0; // Set to 1 if input in HMMER format (has already pseudocounts)
@@ -335,8 +331,6 @@ void help(char all = 0) {
       " -o <file>      write results in standard format to file (default=<infile.hhr>)\n");
   printf(
       " -oa3m <file>   write result MSA with significant matches in a3m format\n");
-  printf(
-      " -omat <file>   write up to %i non-redundant alignment matrices\n", par.max_number_matrices);
   if (!all) {
     printf("                Analogous for -opsi and -ohhm\n");
   }
@@ -933,31 +927,22 @@ void ProcessArguments(int argc, char** argv) {
     else if (!strcmp(argv[i], "-noprefilt") || !strcmp(argv[i], "-nofilter")) {
       par.prefilter = false;
       already_seen_filter = false;
-      block_filter = false;
       par.early_stopping_filter = false;
       early_stopping->thresh = 0;
     }
     else if (!strcmp(argv[i], "-noaddfilter")) {
       already_seen_filter = false;
-      block_filter = false;
       par.early_stopping_filter = false;
       early_stopping->thresh = 0;
     }
     else if (!strcmp(argv[i], "-nodbfilter")) {
       early_stopping->thresh = 0;
     }
-    else if (!strcmp(argv[i], "-noblockfilter")) {
-      block_filter = false;
-    }
     else if (!strcmp(argv[i], "-noearlystoppingfilter")) {
       par.early_stopping_filter = false;
     }
-    else if (!strcmp(argv[i], "-block_len") && (i < argc - 1))
-      par.block_shading_space = atoi(argv[++i]);
     else if (!strcmp(argv[i], "-maxfilt") && (i < argc - 1))
       par.maxnumdb = par.maxnumdb_no_prefilter = atoi(argv[++i]);
-    else if (!strcmp(argv[i], "-shading_mode") && (i < argc - 1))
-      strcpy(par.block_shading_mode, argv[++i]);
     else if (!strcmp(argv[i], "-prepre_smax_thresh") && (i < argc - 1))
       par.preprefilter_smax_thresh = atoi(argv[++i]);
     else if (!strcmp(argv[i], "-pre_evalue_thresh") && (i < argc - 1))
@@ -1023,10 +1008,6 @@ void ProcessArguments(int argc, char** argv) {
       par.corr = atof(argv[++i]);
     else if (!strcmp(argv[i], "-usecs")) {
       par.useCSScoring = true;
-    }
-    else if (!strcmp(argv[i], "-omat") && (i < argc - 1)) {
-      par.printMatrices = true;
-      par.matrixOutputFileName.assign(argv[++i]);
     }
     else
       cerr << endl << "WARNING: Ignoring unknown option " << argv[i]
@@ -1520,11 +1501,6 @@ void RescoreWithViterbiKeepAlignment(int db_size) {
   char *dbfiles[db_size + 1];
   int ndb = 0;
 
-  par.block_shading->Reset();
-  while (!par.block_shading->End())
-    delete[] (par.block_shading->ReadNext());
-  par.block_shading->New(16381, NULL);
-
   // Get dbfiles of previous hits
   previous_hits->Reset();
   while (!previous_hits->End()) {
@@ -1533,36 +1509,6 @@ void RescoreWithViterbiKeepAlignment(int db_size) {
       dbfiles[ndb] = new (char[strlen(hit_cur.dbfile) + 1]);
       strcpy(dbfiles[ndb], hit_cur.dbfile);
       ++ndb;
-    }
-
-    // Seach only around previous HMM-HMM alignment (not the prefilter alignment as in ViterbiSearch())
-    if (block_filter) {
-      // Hash par.block_shading contains pointer to int array which is here called block.
-      //        This array contains start and stop positions of alignment for shading
-      // Hash par.block_shading_counter contains currently next free position in par.block_shading int array
-
-      //printf("Viterbi hit %s   q: %i-%i   t: %i-%i\n",hit_cur.name, hit_cur.i1, hit_cur.i2, hit_cur.j1, hit_cur.j2);
-      int* block;
-      int counter;
-      if (par.block_shading->Contains(hit_cur.file)) {
-        block = par.block_shading->Show(hit_cur.file);
-        counter = par.block_shading_counter->Remove(hit_cur.file);
-      }
-      else {
-        block = new (int[400]);
-        counter = 0;
-      }
-      block[counter++] = hit_cur.i1;
-      block[counter++] = hit_cur.i2;
-      block[counter++] = hit_cur.j1;
-      block[counter++] = hit_cur.j2;
-      par.block_shading_counter->Add(hit_cur.file, counter);
-      if (!par.block_shading->Contains(hit_cur.file))
-        par.block_shading->Add(hit_cur.file, block);
-      // printf("Add to block shading   key: %s    data:",hit_cur.name);
-      // for (int i = 0; i < counter; i++)
-      //   printf(" %i,",block[i]);
-      // printf("\n");
     }
   }
   
@@ -1604,12 +1550,6 @@ void perform_realign(char *dbfiles[], int ndb) {
       / bins;
   long int Lmax = 0;      // length of longest HMM to be realigned
 
-  par.block_shading->Reset();
-  while (!par.block_shading->End())
-    delete[] (par.block_shading->ReadNext());
-  par.block_shading->New(16381, NULL);
-  par.block_shading_counter->New(16381, 0);
-
   // phash_plist_realignhitpos->Show(dbfile) is pointer to list with template indices and their ftell positions.
   // This list can be sorted by ftellpos to access one template after the other efficiently during realignment
   Hash<List<Realign_hitpos>*>* phash_plist_realignhitpos;
@@ -1645,36 +1585,6 @@ void perform_realign(char *dbfiles[], int ndb) {
     if (hit_cur.L > Lmaxmem) {
       nhits++;
       continue;
-    }
-
-    // Seach only around viterbi hit
-    if (block_filter) {
-      // Hash par.block_shading contains pointer to int array which is here called block.
-      //        This array contains start and stop positions of alignment for shading
-      // Hash par.block_shading_counter contains currently next free position in par.block_shading int array
-      
-      //printf("Viterbi hit %s   q: %i-%i   t: %i-%i\n",hit_cur.name, hit_cur.i1, hit_cur.i2, hit_cur.j1, hit_cur.j2);
-      int* block;
-      int counter;
-      if (par.block_shading->Contains(hit_cur.file)) {
-        block = par.block_shading->Show(hit_cur.file);
-        counter = par.block_shading_counter->Remove(hit_cur.file);
-      }
-      else {
-        block = new (int[400]);
-        counter = 0;
-      }
-      block[counter++] = hit_cur.i1;
-      block[counter++] = hit_cur.i2;
-      block[counter++] = hit_cur.j1;
-      block[counter++] = hit_cur.j2;
-      par.block_shading_counter->Add(hit_cur.file, counter);
-      if (!par.block_shading->Contains(hit_cur.file))
-        par.block_shading->Add(hit_cur.file, block);
-      // printf("Add to block shading in realign   key: %s    data:",hit_cur.name);
-      // for (int i = 0; i < counter; i++)
-      //    printf(" %i,",block[i]);
-      // printf("\n");
     }
 
     //fprintf(stderr,"hit.name=%-15.15s  hit.index=%-5i hit.ftellpos=%-8i  hit.dbfile=%s\n",hit_cur.name,hit_cur.index,(unsigned int)hit_cur.ftellpos,hit_cur.dbfile);
@@ -1810,6 +1720,7 @@ void perform_realign(char *dbfiles[], int ndb) {
         RemoveExtension(filename, hit_cur.file);
         strcat(filename, ".a3m");
         if (dba3m_index_file != NULL) {
+
           dbf = ffindex_fopen_by_name(dba3m_data, dba3m_index, filename);
         }
         else {
@@ -2497,11 +2408,6 @@ int main(int argc, char **argv) {
   q = new HMM;
   q_tmp = new HMM;
 
-  par.block_shading = new Hash<int*>;
-  par.block_shading_counter = new Hash<int>;
-  par.block_shading->New(16381, NULL);
-  par.block_shading_counter->New(16381, 0);
-
   dbfiles_new = new char*[par.maxnumdb_no_prefilter + 1];
   dbfiles_old = new char*[par.maxnumdb + 1];
 
@@ -3077,11 +2983,6 @@ int main(int argc, char **argv) {
     hitlist.PrintAlignments(q, par.pairwisealisfile, par.outformat);
   }
 
-  // Print Matrices?
-  if (par.printMatrices) {
-    hitlist.PrintMatrices(q, par.matrixOutputFileName);
-  }
-
   // Write alignments in tabular layout to alitabfile
   if (*par.alitabfile)
     hitlist.WriteToAlifile(q, alitab_scop);
@@ -3170,19 +3071,27 @@ int main(int argc, char **argv) {
     delete[] (dbfiles_old[idb]);
   delete[] (dbfiles_new);
   delete[] (dbfiles_old);
-  par.block_shading->Reset();
-  while (!par.block_shading->End())
-    delete[] (par.block_shading->ReadNext());
-  delete par.block_shading;
-  delete par.block_shading_counter;
-  
+
   if (par.prefilter) {
     free(length);
     free(first);
     for (size_t n = 0; n < num_dbs; n++)
       delete[] (dbnames[n]);
-    delete[] (dbnames);
+    free(dbnames);
     fclose(db_data_file);
+  }
+
+  if (par.useCSScoring) {
+    std::map<std::string, unsigned char*>::iterator it;
+    for(it = columnStateSequences.begin(); it != columnStateSequences.end(); it++) {
+      delete [] (*it).second;
+    }
+    columnStateSequences.clear();
+
+    for (int i = 0; i <= columnStateScoring->query_length; i++) {
+      delete [] columnStateScoring->substitutionScores[i];
+    }
+    delete [] columnStateScoring->substitutionScores;
   }
 
   DeletePseudocountsEngine();
