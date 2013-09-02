@@ -331,12 +331,17 @@ int ungapped_sse_score(const unsigned char* query_profile,
 
 void extract_name_from_index(char* name, const char* index_name) {
   strcpy(name, index_name);
+  size_t end = strlen(name);
   for (size_t i = 0; i < strlen(name); ++i) {
-    if (name[i] == '.' || name[i] == '|') {
+    if (name[i] == '|') {
       name[i] = 0;
-      break;
+      return;
+    }
+    if (name[i] == '.') {
+      end = i;
     }
   }
+  name[end] = 0;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
