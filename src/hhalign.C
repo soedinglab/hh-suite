@@ -88,9 +88,6 @@ using std::ofstream;
 std::map<std::string, unsigned char*> columnStateSequences;
 ColumnStateScoring* columnStateScoring;
 
-std::vector<Alignment_Matrices*> matrices;
-std::map<std::string, float> ali_probabilities;
-
 #include "hhutil.C"      // MatchChr, InsertChr, aa2i, i2aa, log2, fast_log2, ScopID, WriteToScreen,
 #include "hhmatrices.C"  // BLOSUM50, GONNET, HSDM
 #include "hhhmm.h"       // class HMM

@@ -404,7 +404,7 @@ void init_prefilter()
     ffindex_entry_t* entry = ffindex_get_entry_by_index(db_index, n);
     first[n] = (unsigned char*)ffindex_get_data_by_entry((char*)db_data, entry);
     length[n] = entry->length - 1;
-    dbnames[n] = new char[strlen(entry->name) + 1];
+    dbnames[n] = new char[strlen(entry->name)+1];
     extract_name_from_index(dbnames[n], entry->name);
   }
 

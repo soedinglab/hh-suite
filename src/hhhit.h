@@ -138,10 +138,6 @@ class Hit
 
   /* // Merge HMM with next aligned HMM   */
   /* void MergeHMM(HMM* Q, HMM* t, float wk[]); */
-
-  Alignment_Matrices* matrices_ptr;
-
-
   
 private:
   char state;          // 0: Start/STOP state  1: MM state  2: GD state (-D)  3: IM state  4: DG state (D-)  5 MI state
@@ -152,7 +148,6 @@ private:
   void InitializeBacktrace(HMM* q, HMM* t);
   void InitializeForAlignment(HMM* q, HMM* t, bool vit=true);
   double CalcProbab();
-
 };
 
 

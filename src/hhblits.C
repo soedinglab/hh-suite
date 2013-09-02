@@ -135,9 +135,6 @@ cs::ContextLibrary<cs::AA> *cs_lib;
 std::map<std::string, unsigned char*> columnStateSequences;
 ColumnStateScoring* columnStateScoring;
 
-std::vector<Alignment_Matrices*> matrices;
-std::map<std::string, float> ali_probabilities;
-
 #include "hhutil.C"      // MatchChr, InsertChr, aa2i, i2aa, log2, fast_log2, ScopID, WriteToScreen,
 #include "hhmatrices.C"  // BLOSUM50, GONNET, HSDM
 #include "hhhmm.h"       // class HMM
@@ -334,8 +331,6 @@ void help(char all = 0) {
       " -o <file>      write results in standard format to file (default=<infile.hhr>)\n");
   printf(
       " -oa3m <file>   write result MSA with significant matches in a3m format\n");
-  printf(
-      " -omat <file>   write up to %i non-redundant alignment matrices\n", par.max_number_matrices);
   if (!all) {
     printf("                Analogous for -opsi and -ohhm\n");
   }
@@ -1013,10 +1008,6 @@ void ProcessArguments(int argc, char** argv) {
       par.corr = atof(argv[++i]);
     else if (!strcmp(argv[i], "-usecs")) {
       par.useCSScoring = true;
-    }
-    else if (!strcmp(argv[i], "-omat") && (i < argc - 1)) {
-      par.printMatrices = true;
-      par.matrixOutputFileName.assign(argv[++i]);
     }
     else
       cerr << endl << "WARNING: Ignoring unknown option " << argv[i]
@@ -2257,6 +2248,9 @@ void perform_realign(char *dbfiles[], int ndb) {
 //// MAIN PROGRAM
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 int main(int argc, char **argv) {
+
+	cuticle_init();
+
   int cluster_found = 0;
   int seqs_found = 0;
   char* argv_conf[MAXOPT]; // Input arguments from .hhdefaults file (first=1: argv_conf[0] is not used)
@@ -2987,11 +2981,6 @@ int main(int argc, char **argv) {
           << (par.outformat == 1 ? "FASTA" : par.outformat == 2 ? "A2M" : "A3M")
           << " format to " << par.pairwisealisfile << "\n";
     hitlist.PrintAlignments(q, par.pairwisealisfile, par.outformat);
-  }
-
-  // Print Matrices?
-  if (par.printMatrices) {
-    hitlist.PrintMatrices(q, par.matrixOutputFileName);
   }
 
   // Write alignments in tabular layout to alitabfile
