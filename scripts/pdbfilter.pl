@@ -94,7 +94,7 @@ my $options="";
 for (my $i=0; $i<=$#ARGV; $i++) {$options.=" $ARGV[$i]";}
 if ($options=~s/ -id\s+(\S+)//) {$idmax=$1;}
 if ($options=~s/ -cov\s+(\S+)//) {$covmin=$1;}
-if ($options=~s/ -e\s+(\S+)//)  {$Evalue=$1;}
+if ($options=~s/ -e\s+(\S+)//)  {$Evalmin=$1;}
 if ($options=~s/ -u\s+(\S+)//) {$oldfile=$1;} 
 if ($options=~s/ -v\s*(\d+)//) {$v=$1;} 
 if ($options=~s/ -v//) {$v=2;} 
