@@ -69,7 +69,8 @@ install:
 	install scripts/reformat.pl    $(INSTALL_SCRIPTS_DIR)/reformat.pl
 	install scripts/splitfasta.pl    $(INSTALL_SCRIPTS_DIR)/splitfasta.pl
 	install scripts/multithread.pl    $(INSTALL_SCRIPTS_DIR)/multithread.pl
-	install scripts/hhblitsdb.pl    $(INSTALL_SCRIPTS_DIR)/hhblitsdb.pl
+	install scripts/hhsuitedb.pl    $(INSTALL_SCRIPTS_DIR)/hhsuitedb.pl
+	install scripts/checkA3M.pl    $(INSTALL_SCRIPTS_DIR)/checkA3M.pl
 
 deinstall:
 	$(MAKE) -C lib/ffindex deinstall INSTALL_DIR=$(INSTALL_DIR)
