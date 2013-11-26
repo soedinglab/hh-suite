@@ -5,7 +5,7 @@ use warnings;
 
 if(scalar @ARGV eq 0 or $ARGV[0] eq "-h" or $ARGV[0] eq "--help") {
   print "Checks the sanity of an a3m file!\n";
-  print "USAGE: ./checkA3M.pl [a3mfile]\n";
+  print "USAGE: ./checkA3M.pl [a3mfile|stdin]\n";
   exit(0);
 }
 
@@ -13,6 +13,8 @@ my $infile = $ARGV[0];
 
 my $line_nr = 0;
 
+my $EXIT_VALUE = 0;
+my $a3m_id = "";
 my $id = "";
 my $nr = 0;
 my $seq = "";
@@ -22,8 +24,17 @@ my $first_nr_matchstates = -1;
 
 my $first_mismatch_id = 0;
 
-open IN, "<$infile";
-while(my $line = <IN>) {
+my @lines;
+if($infile eq "stdin") {
+  @lines = <STDIN>;
+}
+else {
+  open IN, "<$infile";
+  @lines = <IN>;
+  close IN;
+}
+
+foreach my $line(@lines) {
   $line_nr++;
 
   if($line =~ /^>(\S*)\s*/) {
@@ -35,9 +46,10 @@ while(my $line = <IN>) {
       }
 
       if($first_nr_matchstates ne $matchstates) {
-        print "Error: Mismatching Number of Match States!";
+        print "Error: Mismatching Number of Match States!\n";
         print "\tFirst Sequence has $first_nr_matchstates matchstates!\n";
-        print "\tSeqence Nr. $nr ($id, line $header_line) has $matchstates matchstates!\n";
+        print "\tSeqence Nr. $nr ($a3m_id, $id, line $header_line) has $matchstates matchstates!\n";
+        $EXIT_VALUE = 1;
       }
 
       my @invalid_chars = @{&checkValidAlphabet($seq)};
@@ -46,13 +58,19 @@ while(my $line = <IN>) {
 
       if(scalar @invalid_chars ne 0) {
         print "Error: Invalid characters in Seqence!\n";
-        print "\tSequence Nr. $nr ($id, line $header_line) !\n";
+        print "\tSequence Nr. $nr ($a3m_id, $id, line $header_line) !\n";
         print "\tFound invalid characters ".join(",", @invalid_chars)."!\n";
+        $EXIT_VALUE = 1;
       }
     }
 
     $header_line = $line_nr;
     $id = $1;
+    if(length($a3m_id) == 0) {
+      $a3m_id = $id;
+      $a3m_id =~ s/_consensus//;
+    }
+
     $nr++;
     $seq = "";
   }
@@ -72,9 +90,10 @@ if($seq ne "") {
   }
 
   if($first_nr_matchstates ne $matchstates) {
-    print "Error: Mismatching Number of Match States!";
+    print "Error: Mismatching Number of Match States!\n";
     print "\tFirst Sequence has $first_nr_matchstates matchstates!\n";
-    print "\tSeqence Nr. $nr ($id, line $header_line) has $matchstates matchstates!\n";
+    print "\tSeqence Nr. $nr ($a3m_id, $id, line $header_line) has $matchstates matchstates!\n";
+    $EXIT_VALUE = 1;
   }
 
   my @invalid_chars = @{&checkValidAlphabet($seq)};
@@ -83,8 +102,9 @@ if($seq ne "") {
 
   if(scalar @invalid_chars ne 0) {
     print "Error: Invalid characters in Seqence!\n";
-    print "\tSequence Nr. $nr ($id, line $header_line) !\n";
+    print "\tSequence Nr. $nr ($a3m_id, $id, line $header_line) !\n";
     print "\tFound invalid characters ".join(",", @invalid_chars)."!\n";
+    $EXIT_VALUE = 1;
   }
 }
 
@@ -93,12 +113,16 @@ close IN;
 
 
 if($line_nr eq 0) {
-  print STDERR "Error: $infile is empty!";
+  print STDERR "Error: $infile is empty!\n";
+  $EXIT_VALUE = 1;
 }
 
 if($nr eq 0) {
-  print STDERR "Error: $infile contains no headers/sequences!";
+  print STDERR "Error: $infile contains no headers/sequences!\n";
+  $EXIT_VALUE = 1;
 }
+
+exit($EXIT_VALUE);
 
 sub countMatchStates{
   my $seq = $_[0];
