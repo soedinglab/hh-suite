@@ -40,27 +40,91 @@ foreach my $line(@lines) {
   if($line =~ /^>(\S*)\s*/) {
     #process old data
     if($seq ne "") {
-      my $matchstates = &countMatchStates($seq);
-      if($first_nr_matchstates eq -1) {
-        $first_nr_matchstates = $matchstates;
+      if($id eq "ss_pred") {
+        #get length
+        my $matchstates = &countSSPredStates($seq);
+        if($first_nr_matchstates eq -1) {
+          $first_nr_matchstates = $matchstates;
+        }
+
+        if($matchstates eq 0) {
+          print "Error: Empty ss_pred in $infile!\n";
+          print "\t\n"
+        }
+
+        if($first_nr_matchstates ne $matchstates) {
+          print "Error: Mismatching Number of Match States!\n";
+          print "\tFirst Sequence has $first_nr_matchstates matchstates!\n";
+          print "\tSeqence Nr. $nr ($a3m_id, $id, line $header_line) has $matchstates matchstates!\n";
+          $EXIT_VALUE = 1;
+        }
+
+        #check alphabet
+        my @invalid_chars = @{&checkValidSSPredAlphabet($seq)};
+        @invalid_chars = @{&uniq2(@invalid_chars)};
+        @invalid_chars = @{addQuotes(@invalid_chars)};
+
+        if(scalar @invalid_chars ne 0) {
+          print "Error: Invalid characters in Seqence!\n";
+          print "\tSequence Nr. $nr ($a3m_id, $id, line $header_line) !\n";
+          print "\tFound invalid characters ".join(",", @invalid_chars)."!\n";
+          $EXIT_VALUE = 1;
+        }
       }
+      elsif($id eq "ss_conf") {
+        #get length
+        my $matchstates = &countSSConfStates($seq);
+        if($first_nr_matchstates eq -1) {
+          $first_nr_matchstates = $matchstates;
+        }
 
-      if($first_nr_matchstates ne $matchstates) {
-        print "Error: Mismatching Number of Match States!\n";
-        print "\tFirst Sequence has $first_nr_matchstates matchstates!\n";
-        print "\tSeqence Nr. $nr ($a3m_id, $id, line $header_line) has $matchstates matchstates!\n";
-        $EXIT_VALUE = 1;
+        if($matchstates eq 0) {
+          print "Error: Empty ss_conf in $infile!\n";
+          print "\t\n"
+        }
+
+        if($first_nr_matchstates ne $matchstates) {
+          print "Error: Mismatching Number of Match States!\n";
+          print "\tFirst Sequence has $first_nr_matchstates matchstates!\n";
+          print "\tSeqence Nr. $nr ($a3m_id, $id, line $header_line) has $matchstates matchstates!\n";
+          $EXIT_VALUE = 1;
+        }
+
+        #check alphabet
+        my @invalid_chars = @{&checkValidSSConfAlphabet($seq)};
+        @invalid_chars = @{&uniq2(@invalid_chars)};
+        @invalid_chars = @{addQuotes(@invalid_chars)};
+
+        if(scalar @invalid_chars ne 0) {
+          print "Error: Invalid characters in Seqence!\n";
+          print "\tSequence Nr. $nr ($a3m_id, $id, line $header_line) !\n";
+          print "\tFound invalid characters ".join(",", @invalid_chars)."!\n";
+          $EXIT_VALUE = 1;
+        }
       }
+      else {
+        my $matchstates = &countMatchStates($seq);
+        if($first_nr_matchstates eq -1) {
+          $first_nr_matchstates = $matchstates;
+        }
 
-      my @invalid_chars = @{&checkValidAlphabet($seq)};
-      @invalid_chars = @{&uniq2(@invalid_chars)};
-      @invalid_chars = @{addQuotes(@invalid_chars)};
+        if($first_nr_matchstates ne $matchstates) {
+          print "Error: Mismatching Number of Match States!\n";
+          print "\tFirst Sequence has $first_nr_matchstates matchstates!\n";
+          print "\tSeqence Nr. $nr ($a3m_id, $id, line $header_line) has $matchstates matchstates!\n";
+          $EXIT_VALUE = 1;
+        }
 
-      if(scalar @invalid_chars ne 0) {
-        print "Error: Invalid characters in Seqence!\n";
-        print "\tSequence Nr. $nr ($a3m_id, $id, line $header_line) !\n";
-        print "\tFound invalid characters ".join(",", @invalid_chars)."!\n";
-        $EXIT_VALUE = 1;
+        my @invalid_chars = @{&checkValidAlphabet($seq)};
+        @invalid_chars = @{&uniq2(@invalid_chars)};
+        @invalid_chars = @{addQuotes(@invalid_chars)};
+
+        if(scalar @invalid_chars ne 0) {
+          print "Error: Invalid characters in Seqence!\n";
+          print "\tSequence Nr. $nr ($a3m_id, $id, line $header_line) !\n";
+          print "\tFound invalid characters ".join(",", @invalid_chars)."!\n";
+          $EXIT_VALUE = 1;
+        }
       }
     }
 
@@ -135,6 +199,66 @@ sub countMatchStates{
   }
 
   return $matchstates;
+}
+
+sub countSSConfStates{
+  my $seq = $_[0];
+  my $matchstates = 0;
+  for(my $i = 0; $i < length($seq); $i++) {
+    my $char = substr($seq, $i, 1);
+    if($char =~ /^\d$/) {
+      $matchstates++;
+    }
+  }
+
+  return $matchstates;
+}
+
+sub countSSPredStates{
+  my $seq = $_[0];
+  my $matchstates = 0;
+  for(my $i = 0; $i < length($seq); $i++) {
+    my $char = substr($seq, $i, 1);
+    if($char eq 'E' or $char eq 'C' or $char eq 'H') {
+      $matchstates++;
+    }
+  }
+
+  return $matchstates;
+}
+
+sub checkValidSSConfAlphabet {
+  my $seq = $_[0];
+  my @invalid_characters = ();
+
+  for(my $i = 0; $i < length($seq); $i++) {
+    my $char = substr($seq, $i, 1);
+    if(not $char =~ /^\d$/) {
+      push(@invalid_characters, $char);
+    }
+  }
+
+  return \@invalid_characters;
+}
+
+sub checkValidSSPredAlphabet {
+  my $seq = $_[0];
+  my @invalid_characters = ();
+
+  my %valid_characters = (
+   'E', 0,
+   'C', 0,
+   'H', 0
+  );
+
+  for(my $i = 0; $i < length($seq); $i++) {
+    my $char = substr($seq, $i, 1);
+    if(! defined $valid_characters{$char} ) {
+      push(@invalid_characters, $char);
+    }
+  }
+
+  return \@invalid_characters;
 }
 
 sub checkValidAlphabet{
