@@ -193,7 +193,7 @@ sub countMatchStates{
   my $matchstates = 0;
   for(my $i = 0; $i < length($seq); $i++) {
     my $char = substr($seq, $i, 1);
-    if($char eq uc($char) or $char eq "-") {
+    if(($char eq uc($char) or $char eq "-") and $char ne "\0") {
       $matchstates++;
     }
   }
@@ -319,7 +319,8 @@ sub checkValidAlphabet{
    'w', 0, 
    'x', 0, 
    'y', 0, 
-   'z', 0
+   'z', 0,
+   '\0', 0
   );
 
 
