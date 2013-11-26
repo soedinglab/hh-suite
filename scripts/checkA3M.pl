@@ -48,14 +48,14 @@ foreach my $line(@lines) {
         }
 
         if($matchstates eq 0) {
-          print "Error: Empty ss_pred in $infile!\n";
-          print "\t\n"
+          print STDERR "Error: Empty ss_pred in $infile!\n";
+          print STDERR "\t\n"
         }
 
         if($first_nr_matchstates ne $matchstates) {
-          print "Error: Mismatching Number of Match States!\n";
-          print "\tFirst Sequence has $first_nr_matchstates matchstates!\n";
-          print "\tSeqence Nr. $nr ($a3m_id, $id, line $header_line) has $matchstates matchstates!\n";
+          print STDERR "Error: Mismatching Number of Match States!\n";
+          print STDERR "\tFirst Sequence has $first_nr_matchstates matchstates!\n";
+          print STDERR "\tSeqence Nr. $nr ($a3m_id, $id, line $header_line) has $matchstates matchstates!\n";
           $EXIT_VALUE = 1;
         }
 
@@ -65,9 +65,9 @@ foreach my $line(@lines) {
         @invalid_chars = @{addQuotes(@invalid_chars)};
 
         if(scalar @invalid_chars ne 0) {
-          print "Error: Invalid characters in Seqence!\n";
-          print "\tSequence Nr. $nr ($a3m_id, $id, line $header_line) !\n";
-          print "\tFound invalid characters ".join(",", @invalid_chars)."!\n";
+          print STDERR "Error: Invalid characters in Seqence!\n";
+          print STDERR "\tSequence Nr. $nr ($a3m_id, $id, line $header_line) !\n";
+          print STDERR "\tFound invalid characters ".join(",", @invalid_chars)."!\n";
           $EXIT_VALUE = 1;
         }
       }
@@ -79,14 +79,13 @@ foreach my $line(@lines) {
         }
 
         if($matchstates eq 0) {
-          print "Error: Empty ss_conf in $infile!\n";
-          print "\t\n"
+          print STDERR "Error: Empty ss_conf in $infile!\n";
         }
 
         if($first_nr_matchstates ne $matchstates) {
-          print "Error: Mismatching Number of Match States!\n";
-          print "\tFirst Sequence has $first_nr_matchstates matchstates!\n";
-          print "\tSeqence Nr. $nr ($a3m_id, $id, line $header_line) has $matchstates matchstates!\n";
+          print STDERR "Error: Mismatching Number of Match States!\n";
+          print STDERR "\tFirst Sequence has $first_nr_matchstates matchstates!\n";
+          print STDERR "\tSeqence Nr. $nr ($a3m_id, $id, line $header_line) has $matchstates matchstates!\n";
           $EXIT_VALUE = 1;
         }
 
@@ -96,9 +95,9 @@ foreach my $line(@lines) {
         @invalid_chars = @{addQuotes(@invalid_chars)};
 
         if(scalar @invalid_chars ne 0) {
-          print "Error: Invalid characters in Seqence!\n";
-          print "\tSequence Nr. $nr ($a3m_id, $id, line $header_line) !\n";
-          print "\tFound invalid characters ".join(",", @invalid_chars)."!\n";
+          print STDERR "Error: Invalid characters in Seqence!\n";
+          print STDERR "\tSequence Nr. $nr ($a3m_id, $id, line $header_line) !\n";
+          print STDERR "\tFound invalid characters ".join(",", @invalid_chars)."!\n";
           $EXIT_VALUE = 1;
         }
       }
@@ -109,9 +108,9 @@ foreach my $line(@lines) {
         }
 
         if($first_nr_matchstates ne $matchstates) {
-          print "Error: Mismatching Number of Match States!\n";
-          print "\tFirst Sequence has $first_nr_matchstates matchstates!\n";
-          print "\tSeqence Nr. $nr ($a3m_id, $id, line $header_line) has $matchstates matchstates!\n";
+          print STDERR "Error: Mismatching Number of Match States!\n";
+          print STDERR "\tFirst Sequence has $first_nr_matchstates matchstates!\n";
+          print STDERR "\tSeqence Nr. $nr ($a3m_id, $id, line $header_line) has $matchstates matchstates!\n";
           $EXIT_VALUE = 1;
         }
 
@@ -120,9 +119,9 @@ foreach my $line(@lines) {
         @invalid_chars = @{addQuotes(@invalid_chars)};
 
         if(scalar @invalid_chars ne 0) {
-          print "Error: Invalid characters in Seqence!\n";
-          print "\tSequence Nr. $nr ($a3m_id, $id, line $header_line) !\n";
-          print "\tFound invalid characters ".join(",", @invalid_chars)."!\n";
+          print STDERR "Error: Invalid characters in Seqence!\n";
+          print STDERR "\tSequence Nr. $nr ($a3m_id, $id, line $header_line) !\n";
+          print STDERR "\tFound invalid characters ".join(",", @invalid_chars)."!\n";
           $EXIT_VALUE = 1;
         }
       }
@@ -154,9 +153,9 @@ if($seq ne "") {
   }
 
   if($first_nr_matchstates ne $matchstates) {
-    print "Error: Mismatching Number of Match States!\n";
-    print "\tFirst Sequence has $first_nr_matchstates matchstates!\n";
-    print "\tSeqence Nr. $nr ($a3m_id, $id, line $header_line) has $matchstates matchstates!\n";
+    print STDERR "Error: Mismatching Number of Match States!\n";
+    print STDERR "\tFirst Sequence has $first_nr_matchstates matchstates!\n";
+    print STDERR "\tSeqence Nr. $nr ($a3m_id, $id, line $header_line) has $matchstates matchstates!\n";
     $EXIT_VALUE = 1;
   }
 
@@ -165,9 +164,9 @@ if($seq ne "") {
   @invalid_chars = @{addQuotes(@invalid_chars)};
 
   if(scalar @invalid_chars ne 0) {
-    print "Error: Invalid characters in Seqence!\n";
-    print "\tSequence Nr. $nr ($a3m_id, $id, line $header_line) !\n";
-    print "\tFound invalid characters ".join(",", @invalid_chars)."!\n";
+    print STDERR "Error: Invalid characters in Seqence!\n";
+    print STDERR "\tSequence Nr. $nr ($a3m_id, $id, line $header_line) !\n";
+    print STDERR "\tFound invalid characters ".join(",", @invalid_chars)."!\n";
     $EXIT_VALUE = 1;
   }
 }
@@ -320,13 +319,12 @@ sub checkValidAlphabet{
    'x', 0, 
    'y', 0, 
    'z', 0,
-   '\0', 0
   );
 
 
   for(my $i = 0; $i < length($seq); $i++) {
     my $char = substr($seq, $i, 1);
-    if(! defined $valid_characters{$char} ) {
+    if(! defined $valid_characters{$char} and $char ne "\0") {
       push(@invalid_characters, $char);
     }
   }
