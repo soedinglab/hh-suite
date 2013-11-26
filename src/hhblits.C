@@ -116,6 +116,7 @@ using std::string;
 using std::stringstream;
 using std::vector;
 using std::pair;
+
 extern "C" {
 #include <ffindex.h>     // fast index-based database reading
 }
