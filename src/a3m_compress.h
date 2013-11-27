@@ -24,10 +24,14 @@ extern "C" {
 }
 
 namespace compressed_a3m {
+  void compress_a3m(std::istream* input, ffindex_index_t* ffindex_sequence_database_index, char* ffindex_sequence_database_data, std::ostream* output);
+  void compress_sequence(std::string id, std::string sequence, ffindex_index_t* ffindex_sequence_database_index, char* ffindex_sequence_database_data, std::ostream* output);
 
-void compress_a3m(std::istream* input, ffindex_index_t* ffindex_sequence_database_index, char* ffindex_sequence_database_data, std::ostream* output);
-void compress_sequence(std::string id, std::string sequence, ffindex_index_t* ffindex_sequence_database_index, char* ffindex_sequence_database_data, std::ostream* output);
-unsigned short int get_start_pos(std::string aligned_sequence, char* full_sequence, size_t full_sequence_length);
+  void extract_a3m(char* data, size_t data_size,
+      ffindex_index_t* ffindex_sequence_database_index, char* ffindex_sequence_database_data,
+      ffindex_index_t* ffindex_header_database_index, char* ffindex_header_data, std::ostream* output);
+
+  unsigned short int get_start_pos(std::string aligned_sequence, char* full_sequence, size_t full_sequence_length);
 }
 
 std::string &rtrim(std::string &s);

@@ -58,16 +58,7 @@ void compressed_a3m::compress_a3m(std::istream* input,
         id.clear();
       }
 
-      //get id
       header = line;
-      size_t first_ws_index = line.length() - 1;
-      for (size_t index = 0; index < line.length(); index++) {
-        if (isspace(line[index])) {
-          first_ws_index = index;
-          break;
-        }
-      }
-
       id = getNameFromHeader(header);
 
       //check if consensus or sequence
@@ -95,6 +86,99 @@ void compressed_a3m::compress_a3m(std::istream* input,
           ffindex_sequence_database_index, ffindex_sequence_database_data,
           output);
     }
+  }
+}
+
+void compressed_a3m::extract_a3m(char* data, size_t data_size,
+    ffindex_index_t* ffindex_sequence_database_index, char* ffindex_sequence_database_data,
+    ffindex_index_t* ffindex_header_database_index, char* ffindex_header_database_data, std::ostream* output) {
+
+  //read stuff till compressed part
+  char last_char = '\0';
+  size_t index = 0;
+  size_t consensus_length = 0;
+  char inConsensus = 0;
+  while(!(last_char == '\n' && (*data) == ';') && index < data_size) {
+    if((*data) == '\n') {
+      inConsensus++;
+    }
+    else if(inConsensus == 1) {
+      consensus_length++;
+    }
+
+    output->put((*data));
+    last_char = (*data);
+    data++;
+    index++;
+  }
+
+  //get past ';'
+  data++;
+  index++;
+
+  while(index < data_size) {
+    unsigned int entry_index;
+    unsigned short int nr_blocks;
+    unsigned short int start_pos;
+    unsigned short int nr_matches;
+
+    char nr_insertions_deletions;
+
+    readU32(&data, entry_index);
+    index += 4;
+
+    ffindex_entry_t* sequence_entry = ffindex_get_entry_by_index(ffindex_sequence_database_index, entry_index);
+    char* sequence = ffindex_get_data_by_entry(ffindex_sequence_database_data, sequence_entry);
+    //TODO: catch errors
+
+    ffindex_entry_t* header_entry = ffindex_get_entry_by_index(ffindex_header_database_index, entry_index);
+    char* header = ffindex_get_data_by_entry(ffindex_header_database_data, header_entry);
+
+    output->write(header, header_entry->length);
+    output->put('\n');
+
+    readU16(&data, start_pos);
+    index += 2;
+
+    readU16(&data, nr_blocks);
+    index += 2;
+
+    size_t actual_pos = start_pos;
+    size_t alignment_length = 0;
+    for(unsigned short int block_index = 0; block_index < nr_blocks; block_index++) {
+      readU16(&data, nr_matches);
+      index += 2;
+
+      for(int i = 0; i < nr_matches; i++) {
+        output->put(sequence[actual_pos - 1]);
+        actual_pos++;
+        alignment_length++;
+      }
+
+      nr_insertions_deletions = (*data);
+      data++;
+      index++;
+
+      if(nr_insertions_deletions > 0) {
+        for(int i = 0; i < nr_insertions_deletions; i++) {
+          output->put(tolower(sequence[actual_pos - 1]));
+          actual_pos++;
+        }
+      }
+      else {
+        for(int i = 0; i < -nr_insertions_deletions; i++) {
+          output->put('-');
+          alignment_length++;
+        }
+      }
+    }
+
+    while(alignment_length < consensus_length) {
+      output->put('-');
+      alignment_length++;
+    }
+
+    output->put('\n');
   }
 }
 
@@ -141,19 +225,19 @@ void compressed_a3m::compress_sequence(std::string id,
   }
 
   //move to first upper case character
+//  while ((!isupper(aligned_sequence[index]) || aligned_sequence[index] == '-')
+//      && index < aligned_sequence.size()) {
+//    index++;
+//  }
+
+
+  //count blocks
   unsigned short int index = 0;
-  while ((!isupper(aligned_sequence[index]) || aligned_sequence[index] == '-')
-      && index < aligned_sequence.size()) {
-    index++;
-  }
-
-  unsigned short int first_match_index = index;
-
-  //count gaps
   unsigned short int nr_blocks = 0;
   while (index < aligned_sequence.size()) {
-    nr_blocks++;
-    while (isupper(aligned_sequence[index]) && index < aligned_sequence.size()) {
+    unsigned short int nr_matches = 0;
+    while (aligned_sequence[index] != '-' && isupper(aligned_sequence[index]) && index < aligned_sequence.size()) {
+      nr_matches++;
       index++;
     }
 
@@ -168,21 +252,23 @@ void compressed_a3m::compress_sequence(std::string id,
         && index < aligned_sequence.size()) {
       nr_gaps--;
       index++;
+    }
+
+    if(!(index == aligned_sequence.size() && nr_matches == 0)) {
+      nr_blocks++;
     }
   }
 
   writeU16(*output, nr_blocks);
 
-  index = first_match_index;
+  index = 0;
   //count gaps
   while (index < aligned_sequence.size()) {
     unsigned short int nr_matches = 0;
-    while (isupper(aligned_sequence[index]) && index < aligned_sequence.size()) {
+    while (aligned_sequence[index] != '-' && isupper(aligned_sequence[index]) && index < aligned_sequence.size()) {
       nr_matches++;
       index++;
     }
-
-    writeU16(*output, nr_matches);
 
     char nr_insertions = 0;
     while (islower(aligned_sequence[index]) && index < aligned_sequence.size()) {
@@ -197,7 +283,10 @@ void compressed_a3m::compress_sequence(std::string id,
       index++;
     }
 
-    nr_insertions > 0?output->put(nr_insertions):output->put(nr_gaps);
+    if(!(index == aligned_sequence.size() && nr_matches == 0)) {
+      writeU16(*output, nr_matches);
+      nr_insertions > 0?output->put(nr_insertions):output->put(nr_gaps);
+    }
   }
 }
 
@@ -253,8 +342,8 @@ void writeU16(std::ostream& file, uint16_t val) {
   unsigned char bytes[2];
 
   // extract the individual bytes from our value
-  bytes[1] = (val) & 0xFF;  // low byte
-  bytes[0] = (val >> 8) & 0xFF;  // high byte
+  bytes[0] = (val) & 0xFF;  // low byte
+  bytes[1] = (val >> 8) & 0xFF;  // high byte
 
   // write those bytes to the file
   file.write((char*) bytes, 2);
@@ -268,17 +357,17 @@ void readU16(char** ptr, uint16_t &result) {
   array[1] = (unsigned char) (**ptr);
   (*ptr)++;
 
-  result = array[1] | (array[0] << 8);
+  result = array[0] | (array[1] << 8);
 }
 
 void writeU32(std::ostream& file, uint32_t val) {
   unsigned char bytes[4];
 
   // extract the individual bytes from our value
-  bytes[3] = (val) & 0xFF;
-  bytes[2] = (val >> 8) & 0xFF;
-  bytes[1] = (val >> 16) & 0xFF;
-  bytes[0] = (val >> 24) & 0xFF;
+  bytes[0] = (val) & 0xFF;
+  bytes[1] = (val >> 8) & 0xFF;
+  bytes[2] = (val >> 16) & 0xFF;
+  bytes[3] = (val >> 24) & 0xFF;
 
   // write those bytes to the file
   file.write((char*) bytes, 4);
@@ -296,5 +385,5 @@ void readU32(char** ptr, uint32_t &result) {
   array[3] = (unsigned char) (**ptr);
   (*ptr)++;
 
-  result = array[3] | (array[2] << 8) << (array[1] << 16) | (array[0] << 24);
+  result = array[0] | (array[1] << 8) | (array[2] << 16) | (array[3] << 24);
 }
