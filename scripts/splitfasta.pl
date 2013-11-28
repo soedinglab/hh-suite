@@ -105,9 +105,12 @@ if ($fam) {
 	    if ($exists{$1}) {print("\nWarning: id $1 appears more than once in $infile\n");}
 	    $exists{$1}=1;
 	    my $tmp = $1;
-	    $tmp =~ s/\|/_/g;
-	    $tmp =~ s/\./_/g;
-	    $outfile="$tmp.seq";
+            $tmp =~ /^\S\S\|(\S)/;
+            my $tmpdir = $1;
+            mkdir $tmpdir;
+#	    $tmp =~ s/\|/_/g;
+#	    $tmp =~ s/\./_/g;
+	    $outfile="$tmpdir/$tmp";
 	    $sequence=$line;
 	    $n++;
 	} else {

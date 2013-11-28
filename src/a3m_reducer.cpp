@@ -1,11 +1,13 @@
 #include "a3m_compress.h"
 
+#include <sstream>
+
 void usage() {
   std::cout << "A3M_Reducer -i [inputfile|stdin] -o [outputfile|stdout] -d [ffindex_sequence_database_prefix]" << std::endl;
 }
 
 int main(int argc, char **argv) {
-  bool iflag, dflag, oflag;
+  bool iflag, dflag, oflag = false;
 
   std::string ffindex_sequence_db_prefix;
   std::string output;
@@ -76,15 +78,6 @@ int main(int argc, char **argv) {
     //TODO: throw error
   }
 
-  //prepare output stream
-  std::ostream* out;
-  if (output.compare("stdout") != 0) {
-    out = new std::ofstream(output.c_str(), std::ios::binary | std::ios::out);
-  }
-  else {
-    out = &std::cout;
-  }
-
   //prepare input stream
   std::istream* in;
   if (input.compare("stdin") != 0) {
@@ -94,7 +87,24 @@ int main(int argc, char **argv) {
     in = &std::cin;
   }
 
-  compressed_a3m::compress_a3m(in, sequence_index, sequence_data, out);
-  out->flush();
+  std::stringstream* out_buffer = new std::stringstream();
+  int ret = compressed_a3m::compress_a3m(in, sequence_index, sequence_data, out_buffer);
+
+  if(ret) {
+    //prepare output
+    if (output.compare("stdout") != 0) {
+      std::ofstream out(output.c_str(), std::ios::binary | std::ios::out);
+      out << out_buffer->str();
+      out.close();
+    }
+    else {
+      std::cout << out_buffer->str();
+    }
+    return 1;
+  }
+  else {
+    std::cerr << "Could not compress A3M! ("<< input << ")" << std::endl;
+    return 0;
+  }
 }
 

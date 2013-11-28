@@ -8,7 +8,7 @@
 #include "a3m_compress.h"
 
 
-void compressed_a3m::compress_a3m(std::istream* input,
+int compressed_a3m::compress_a3m(std::istream* input,
     ffindex_index_t* ffindex_sequence_database_index,
     char* ffindex_sequence_database_data, std::ostream* output) {
 
@@ -17,8 +17,12 @@ void compressed_a3m::compress_a3m(std::istream* input,
   std::string header;
   std::string id;
 
+  int nr_sequences = 0;
+  int nr_consensus = 0;
+
   std::string line;
   while (std::getline(*input, line)) {
+    std::cout << "klug" << line << "depp" << std::endl;
     //comment - remove comments
     if (line[0] == '#') {
       ;
@@ -46,11 +50,14 @@ void compressed_a3m::compress_a3m(std::istream* input,
           output->write(sequence.c_str(), sequence.size());
           output->put('\n');
           output->put(';');
+          nr_consensus++;
         }
         else {
-          compressed_a3m::compress_sequence(id, sequence,
+          if(compressed_a3m::compress_sequence(id, sequence,
               ffindex_sequence_database_index, ffindex_sequence_database_data,
-              output);
+              output)) {
+            nr_sequences++;
+          }
         }
 
         sequence.clear();
@@ -79,15 +86,146 @@ void compressed_a3m::compress_a3m(std::istream* input,
       output->put('\n');
       output->write(sequence.c_str(), sequence.size());
       output->put('\n');
+      nr_consensus++;
       //TODO: Warning
     }
     else {
-      compressed_a3m::compress_sequence(id, sequence,
+      if(compressed_a3m::compress_sequence(id, sequence,
           ffindex_sequence_database_index, ffindex_sequence_database_data,
-          output);
+          output)) {
+        nr_sequences++;
+      }
     }
   }
+
+  if(nr_consensus > 1) {
+    std::cerr << "More than one consensus sequence found in a3m!" << std::endl;
+    return 0;
+  }
+
+  if(nr_sequences == 0) {
+    std::cerr << "No protein sequences could be compressed in a3m!" << std::endl;
+    return 0;
+  }
+
+  return 1;
 }
+
+int compressed_a3m::compress_a3m(char* input, size_t input_size,
+    ffindex_index_t* ffindex_sequence_database_index,
+    char* ffindex_sequence_database_data, std::ostream* output) {
+
+  bool sequence_flag, consensus_flag = false;
+  std::string sequence;
+  std::string header;
+  std::string id;
+
+  int nr_sequences = 0;
+  int nr_consensus = 0;
+
+  size_t index = 0;
+  while (index < input_size) {
+    //comment - remove comments
+    if (input[index] == '#') {
+      while(input[index] != '\n' && index < input_size){
+        index++;
+      }
+    }
+    //ss_cons - remove ss annotation
+    else if(strncmp(&input[index], ">ss_pred", 8) == 0) {
+      while(index + 1 < input_size && input[index + 1] != '>' && input[index] != '\n') {
+        index++;
+      }
+    }
+    //header
+    else if (input[index] == '>') {
+      //process already possible saved sequence/consensus
+      if (id.size() != 0) {
+        if (consensus_flag) {
+          //TODO: assumption header line before other sequences
+          output->write(header.c_str(), header.size());
+          output->put('\n');
+          output->write(sequence.c_str(), sequence.size());
+          output->put('\n');
+          output->put(';');
+          nr_consensus++;
+        }
+        else {
+          if(compressed_a3m::compress_sequence(id, sequence,
+              ffindex_sequence_database_index, ffindex_sequence_database_data,
+              output)) {
+            nr_sequences++;
+          }
+        }
+
+        sequence.clear();
+        header.clear();
+        id.clear();
+      }
+
+      size_t start_index = index;
+      while(index < input_size && input[index] != '\n') {
+        index++;
+      }
+
+      //copy line without new line
+      header = std::string(&input[start_index], index - start_index);
+
+      id = getNameFromHeader(header);
+
+      //check if consensus or sequence
+      consensus_flag = isConsensus(id);
+      sequence_flag = !consensus_flag;
+    }
+    //sequence
+    else if (sequence_flag || consensus_flag) {
+      size_t start_index = index;
+      while(index + 1 < input_size && input[index + 1] != '>' && input[index] != '\0') {
+        if(input[index] == '\n') {
+          sequence += std::string(&input[start_index], index - start_index);
+          start_index = index + 1;
+        }
+        index++;
+      }
+
+      sequence += std::string(&input[start_index], index - start_index);
+    }
+
+    index++;
+  }
+
+  //process last possible saved sequence/consensus
+  if (id.size() != 0) {
+    if (consensus_flag) {
+      output->write(header.c_str(), header.size());
+      output->put('\n');
+      output->write(sequence.c_str(), sequence.size());
+      output->put('\n');
+      nr_consensus++;
+      //TODO: Warning
+    }
+    else {
+      if(compressed_a3m::compress_sequence(id, sequence,
+          ffindex_sequence_database_index, ffindex_sequence_database_data,
+          output)) {
+        nr_sequences++;
+      }
+    }
+  }
+
+  if(nr_consensus > 1) {
+    std::cerr << "More than one consensus sequence found in a3m!" << std::endl;
+    return 0;
+  }
+
+  if(nr_sequences == 0) {
+    std::cerr << "No protein sequences could be compressed in a3m!" << std::endl;
+    return 0;
+  }
+
+  return 1;
+}
+
 
 void compressed_a3m::extract_a3m(char* data, size_t data_size,
     ffindex_index_t* ffindex_sequence_database_index, char* ffindex_sequence_database_data,
@@ -182,7 +320,7 @@ void compressed_a3m::extract_a3m(char* data, size_t data_size,
   }
 }
 
-void compressed_a3m::compress_sequence(std::string id,
+int compressed_a3m::compress_sequence(std::string id,
     std::string aligned_sequence,
     ffindex_index_t* ffindex_sequence_database_index,
     char* ffindex_sequence_database_data, std::ostream* output) {
@@ -195,7 +333,7 @@ void compressed_a3m::compress_sequence(std::string id,
     //TODO: proper errors
     std::cerr << "WARNING: could not read sequence for " << id
         << " (entry not found)" << std::endl;
-    return;
+    return 0;
   }
 
   ffindex_entry_t* entry_zero = ffindex_get_entry_by_index(ffindex_sequence_database_index, 0);
@@ -207,7 +345,7 @@ void compressed_a3m::compress_sequence(std::string id,
     //TODO: proper errors
     std::cerr << "Warning: could not read sequence for " << id
         << " (data not found)" << std::endl;
-    return;
+    return 0;
   }
 
   writeU32(*output, entry_index);
@@ -215,14 +353,16 @@ void compressed_a3m::compress_sequence(std::string id,
   unsigned short int start_pos = get_start_pos(aligned_sequence, full_sequence,
       entry->length);
 
-  writeU16(*output, start_pos);
-
   if (start_pos == 0) {
     //TODO: proper errors
-    std::cerr << "WARNING: could not match aligned sequence to full sequence! ("
-        << id << ")!" << std::endl;
-    return;
+    std::cerr << "WARNING: could not match aligned sequence to full sequence! (" << id << ")!" << std::endl;
+    std::cerr << aligned_sequence << std::endl;
+    std::cerr << full_sequence << std::endl;
+    return 0;
   }
+
+  writeU16(*output, start_pos);
+
 
   //move to first upper case character
 //  while ((!isupper(aligned_sequence[index]) || aligned_sequence[index] == '-')
@@ -288,6 +428,8 @@ void compressed_a3m::compress_sequence(std::string id,
       nr_insertions > 0?output->put(nr_insertions):output->put(nr_gaps);
     }
   }
+
+  return 1;
 }
 
 //returns pos not index
