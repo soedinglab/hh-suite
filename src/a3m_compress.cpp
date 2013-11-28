@@ -7,6 +7,7 @@
 
 #include "a3m_compress.h"
 
+#include <omp.h>
 
 int compressed_a3m::compress_a3m(std::istream* input,
     ffindex_index_t* ffindex_sequence_database_index,
@@ -132,7 +133,7 @@ int compressed_a3m::compress_a3m(char* input, size_t input_size,
       }
     }
     //ss_cons - remove ss annotation
-    else if(strncmp(&input[index], ">ss_pred", 8) == 0) {
+    else if(input[index] == '>' && strncmp(&input[index], ">ss_pred", 8) == 0) {
       while(index + 1 < input_size && input[index + 1] != '>' && input[index] != '\n') {
         index++;
       }
@@ -356,20 +357,10 @@ int compressed_a3m::compress_sequence(std::string id,
   if (start_pos == 0) {
     //TODO: proper errors
     std::cerr << "WARNING: could not match aligned sequence to full sequence! (" << id << ")!" << std::endl;
-    std::cerr << aligned_sequence << std::endl;
-    std::cerr << full_sequence << std::endl;
     return 0;
   }
 
   writeU16(*output, start_pos);
-
-
-  //move to first upper case character
-//  while ((!isupper(aligned_sequence[index]) || aligned_sequence[index] == '-')
-//      && index < aligned_sequence.size()) {
-//    index++;
-//  }
-
 
   //count blocks
   unsigned short int index = 0;
@@ -477,7 +468,7 @@ std::string getNameFromHeader(std::string &header) {
 }
 
 bool isConsensus(std::string &id) {
-  return id.substr(id.length() - 10, 10) == "_consensus";
+  return id.length() > 10 && id.substr(id.length() - 10, 10) == "_consensus";
 }
 
 void writeU16(std::ostream& file, uint16_t val) {

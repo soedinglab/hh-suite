@@ -140,20 +140,15 @@ int main(int argc, char **argv) {
   size_t a3m_range_start = 0;
   size_t a3m_range_end = a3m_index->n_entries;
 
-  std::cout << "begin stuff!" << std::endl;
   // Foreach entry
-//#pragma omp parallel for
+  #pragma omp parallel for shared(a3m_index, a3m_data, ca3m_data_fh, ca3m_index_fh, ca3m_offset)
   for(size_t entry_index = a3m_range_start; entry_index < a3m_range_end; entry_index++)
   {
     //fprintf(stderr, "index %ld\n", entry_index);
     ffindex_entry_t* entry = ffindex_get_entry_by_index(a3m_index, entry_index);
     if(entry == NULL) { perror(entry->name); continue; }
 
-    std::cout << "entry: " << entry->name << std::endl;
-
     char* data = ffindex_get_data_by_entry(a3m_data, entry);
-    std::string in_string(data, entry->length + 1);
-    std::stringstream* in_buffer = new std::stringstream(in_string);
 
     std::stringstream* out_buffer = new std::stringstream();
     int ret = compressed_a3m::compress_a3m(data, entry->length, sequence_index, sequence_data, out_buffer);
@@ -161,13 +156,16 @@ int main(int argc, char **argv) {
     if(ret) {
       std::string out_string = out_buffer->str();
 
-      ffindex_insert_memory(ca3m_data_fh, ca3m_index_fh, &ca3m_offset, const_cast<char*>(out_string.c_str()), out_string.size(), entry->name);
+      #pragma omp critical
+      {
+        ffindex_insert_memory(ca3m_data_fh, ca3m_index_fh, &ca3m_offset, const_cast<char*>(out_string.c_str()), out_string.size(), entry->name);
+      }
+
     }
     else {
       std::cerr << "Could not compress A3M! ("<< entry->name << ")" << std::endl;
     }
 
-    delete in_buffer;
     delete out_buffer;
   }
 
