@@ -133,7 +133,7 @@ int compressed_a3m::compress_a3m(char* input, size_t input_size,
       }
     }
     //ss_cons - remove ss annotation
-    else if(input[index] == '>' && strncmp(&input[index], ">ss_pred", 8) == 0) {
+    else if(input[index] == '>' && (strncmp(&input[index], ">ss_pred", 8) == 0 || strncmp(&input[index], ">ss_conf", 8) == 0)) {
       while(index + 1 < input_size && input[index + 1] != '>' && input[index] != '\n') {
         index++;
       }
