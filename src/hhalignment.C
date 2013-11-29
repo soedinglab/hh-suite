@@ -727,8 +727,12 @@ void Alignment::ReadCompressed(ffindex_entry_t* entry, char* data,
       keep[k] = 1;
     }
 
-    std::cout << header << std::endl;
-    std::cout << sequence << std::endl;
+    //TODO: Debug
+    std::cerr << header << std::endl;
+    std::cerr << sequence << std::endl;
+
+    X[k] = new char[sequence.size() + 2];
+    I[k] = new short unsigned int[sequence.size() + 2];
 
     seq[k] = new char[sequence.size() + 2];
     size_t copy_pos = 1;
