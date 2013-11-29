@@ -665,26 +665,26 @@ void Alignment::ReadCompressed(ffindex_entry_t* entry, char* data,
 
     ffindex_entry_t* sequence_entry = ffindex_get_entry_by_index(ffindex_sequence_database_index, entry_index);
     if(sequence_entry == NULL) {
-    	std::cerr << "Could not fetch sequence entry: " << entry_index << std::endl;
+    	std::cerr << "Could not fetch sequence entry: " << entry_index << " for alignment " << entry->name << std::endl;
     	exit(1);
     }
 
     char* sequence_data = ffindex_get_data_by_entry(ffindex_sequence_database_data, sequence_entry);
     if(sequence_data == NULL) {
-    	std::cerr << "Could not fetch sequence data: " << entry_index << std::endl;
+    	std::cerr << "Could not fetch sequence data: " << entry_index << " for alignment " << entry->name << std::endl;
     	exit(1);
     }
 
 
     ffindex_entry_t* header_entry = ffindex_get_entry_by_index(ffindex_header_database_index, entry_index);
     if(header_entry == NULL) {
-		std::cerr << "Could not fetch header entry: " << entry_index << std::endl;
+		std::cerr << "Could not fetch header entry: " << entry_index << " for alignment " << entry->name << std::endl;
 		exit(1);
     }
 
     char* header_data = ffindex_get_data_by_entry(ffindex_header_database_data, header_entry);
     if(header_data == NULL) {
-		std::cerr << "Could not fetch header data: " << entry_index << std::endl;
+		std::cerr << "Could not fetch header data: " << entry_index << " for alignment " << entry->name << std::endl;
 		exit(1);
     }
 
@@ -703,7 +703,7 @@ void Alignment::ReadCompressed(ffindex_entry_t* entry, char* data,
       index += 2;
 
       for(int i = 0; i < nr_matches; i++) {
-        sequence += sequence[actual_pos - 1];
+        sequence += sequence_data[actual_pos - 1];
         actual_pos++;
         alignment_length++;
       }
@@ -714,13 +714,13 @@ void Alignment::ReadCompressed(ffindex_entry_t* entry, char* data,
 
       if(nr_insertions_deletions > 0) {
         for(int i = 0; i < nr_insertions_deletions; i++) {
-          sequence_data += tolower(sequence[actual_pos - 1]);
+          sequence += tolower(sequence_data[actual_pos - 1]);
           actual_pos++;
         }
       }
       else {
         for(int i = 0; i < -nr_insertions_deletions; i++) {
-          sequence_data += '-';
+          sequence += '-';
           alignment_length++;
         }
       }
