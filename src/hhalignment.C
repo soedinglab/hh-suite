@@ -664,11 +664,29 @@ void Alignment::ReadCompressed(ffindex_entry_t* entry, char* data,
     index += 4;
 
     ffindex_entry_t* sequence_entry = ffindex_get_entry_by_index(ffindex_sequence_database_index, entry_index);
+    if(sequence_entry == NULL) {
+    	std::cerr << "Could not fetch sequence entry: " << entry_index << std::endl;
+    	exit(1);
+    }
+
     char* sequence_data = ffindex_get_data_by_entry(ffindex_sequence_database_data, sequence_entry);
-    //TODO: catch errors
+    if(sequence_data == NULL) {
+    	std::cerr << "Could not fetch sequence data: " << entry_index << std::endl;
+    	exit(1);
+    }
+
 
     ffindex_entry_t* header_entry = ffindex_get_entry_by_index(ffindex_header_database_index, entry_index);
+    if(header_entry == NULL) {
+		std::cerr << "Could not fetch header entry: " << entry_index << std::endl;
+		exit(1);
+    }
+
     char* header_data = ffindex_get_data_by_entry(ffindex_header_database_data, header_entry);
+    if(header_data == NULL) {
+		std::cerr << "Could not fetch header data: " << entry_index << std::endl;
+		exit(1);
+    }
 
     header = std::string(header_data, header_entry->length);
 
