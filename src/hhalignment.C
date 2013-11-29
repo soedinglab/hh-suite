@@ -571,10 +571,13 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline) {
   return;
 }
 
-void Alignment::ReadCompressed(FILE* inf, char infile[],
+void Alignment::ReadCompressed(ffindex_entry_t* entry, char* data,
     ffindex_index_t* ffindex_sequence_database_index, char* ffindex_sequence_database_data,
     ffindex_index_t* ffindex_header_database_index, char* ffindex_header_database_data) {
-  RemoveExtension(file, infile); //copy rootname (w/o path) of infile into file variable of class object
+
+  RemoveExtension(file, entry->name);
+  size_t data_size = entry->length;
+  size_t index = 0;
 
   kss_dssp = ksa_dssp = kss_pred = kss_conf = kfirst = -1;
   n_display = 0;
@@ -585,8 +588,6 @@ void Alignment::ReadCompressed(FILE* inf, char infile[],
   // Index of sequence being read currently (first=0)
   int k = 0;
 
-  rewind(inf);
-
   char last_char = '\0';
   char inConsensus = 0;
   size_t consensus_length = 0;
@@ -594,27 +595,28 @@ void Alignment::ReadCompressed(FILE* inf, char infile[],
   std::string header = "";
   std::string sequence = "";
 
-  //read consensus
-  char c = 'A';
-  while((c = fgetc(inf))) {
-    if(last_char == '\n' && c == ';') {
-      break;
-    }
-    if(c == '\n') {
+  while(!(last_char == '\n' && (*data) == ';') && index < data_size) {
+    if((*data) == '\n') {
       inConsensus++;
     }
     else {
-      if(inConsensus == 0) {
-        header += c;
-      }
-      else if(inConsensus == 1) {
-        sequence += c;
-        consensus_length++;
-      }
+    	if (inConsensus == 0) {
+    		header += (*data);
+		}
+		else if(inConsensus == 1) {
+			sequence += (*data);
+		  consensus_length++;
+		}
     }
 
-    last_char = c;
+    last_char = (*data);
+    data++;
+    index++;
   }
+
+  //get past ';'
+  data++;
+  index++;
 
   //process consensus
   display[k] = 2;
@@ -648,26 +650,18 @@ void Alignment::ReadCompressed(FILE* inf, char infile[],
 
   k++;
 
-  //read and process compressed part
-  while(feof(inf) == 0) {
-    std::cout << "reading compressed" << std::endl;
-    if (k >= MAXSEQ - 1) {
-      if (v >= 1 && k >= MAXSEQ)
-        cerr << endl << "WARNING: maximum number " << MAXSEQ
-            << " of sequences exceeded in file " << infile << "\n";
-      break;
-    }
+  while(index < data_size) {
+    sequence.clear();
 
-    unsigned int entry_index;
+	unsigned int entry_index;
     unsigned short int nr_blocks;
     unsigned short int start_pos;
     unsigned short int nr_matches;
 
-    sequence = "";
-
     char nr_insertions_deletions;
 
-    readU32(inf, entry_index);
+    readU32(&data, entry_index);
+    index += 4;
 
     ffindex_entry_t* sequence_entry = ffindex_get_entry_by_index(ffindex_sequence_database_index, entry_index);
     char* sequence_data = ffindex_get_data_by_entry(ffindex_sequence_database_data, sequence_entry);
@@ -675,36 +669,40 @@ void Alignment::ReadCompressed(FILE* inf, char infile[],
 
     ffindex_entry_t* header_entry = ffindex_get_entry_by_index(ffindex_header_database_index, entry_index);
     char* header_data = ffindex_get_data_by_entry(ffindex_header_database_data, header_entry);
-    //TODO: catch errors
 
-    header = std::string(header_data, header_entry->length) + '\n';
+    header = std::string(header_data, header_entry->length);
 
-    readU16(inf, start_pos);
+    readU16(&data, start_pos);
+    index += 2;
 
-    readU16(inf, nr_blocks);
+    readU16(&data, nr_blocks);
+    index += 2;
 
     size_t actual_pos = start_pos;
     size_t alignment_length = 0;
     for(unsigned short int block_index = 0; block_index < nr_blocks; block_index++) {
-      readU16(inf, nr_matches);
+      readU16(&data, nr_matches);
+      index += 2;
 
       for(int i = 0; i < nr_matches; i++) {
-        sequence += sequence_data[actual_pos - 1];
+        sequence += sequence[actual_pos - 1];
         actual_pos++;
         alignment_length++;
       }
 
-      nr_insertions_deletions = getc(inf);
+      nr_insertions_deletions = (*data);
+      data++;
+      index++;
 
       if(nr_insertions_deletions > 0) {
         for(int i = 0; i < nr_insertions_deletions; i++) {
-          sequence += tolower(sequence_data[actual_pos - 1]);
+          sequence_data += tolower(sequence[actual_pos - 1]);
           actual_pos++;
         }
       }
       else {
         for(int i = 0; i < -nr_insertions_deletions; i++) {
-          sequence += '-';
+          sequence_data += '-';
           alignment_length++;
         }
       }
@@ -752,8 +750,7 @@ void Alignment::ReadCompressed(FILE* inf, char infile[],
 
   // Warn if there are only special sequences but no master sequence (consensus seq given if keep[kfirst]==0)
   if (kfirst < 0 || (N_in - N_ss - (keep[kfirst] == 0 ? 1 : 0)) == 0) {
-    fprintf(stderr, "Error in %s: MSA file %s contains no master sequence!\n",
-        program_name, infile);
+    fprintf(stderr, "Error in %s: MSA file %s contains no master sequence!\n", program_name, entry->name);
     exit(1);
   }
 
@@ -783,7 +780,7 @@ void Alignment::ReadCompressed(FILE* inf, char infile[],
   if (v == 0)
     return;
   if (v >= 2)
-    cout << "Read " << infile << " with " << N_in << " sequences\n";
+    cout << "Read " << entry->name << " with " << N_in << " sequences\n";
   if (v >= 3)
     cout << "Query sequence for alignment has number " << kfirst
         << " (0 is first)\n";

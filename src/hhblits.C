@@ -1292,44 +1292,36 @@ void DoViterbiSearch(char *dbfiles[], int ndb, bool alignByWorker = true) {
     }
 
     // Open HMM database
-    FILE* dbf;
+    FILE* dbf = NULL;
     char filename[NAMELEN];
     strcpy(filename, dbfiles[idb]);
 
     //TODO
-    if (use_compressed_a3m) {
-      RemoveExtension(filename, dbfiles[idb]);
-      strcat(filename, ".a3m");
-      dbf = ffindex_fopen_by_name(dbca3m_data, dbca3m_index, filename);
-      if (dbf == NULL) {
-        OpenFileError(dbfiles[idb]);
-      }
-    }
-    else {
-      dbf = ffindex_fopen_by_name(dbhhm_data, dbhhm_index, dbfiles[idb]);
-      if (dbf == NULL) {
-        RemoveExtension(filename, dbfiles[idb]);
-        strcat(filename, ".a3m");
-        if (dba3m_index_file == NULL) {
-          cerr << endl << "Error opening " << filename
-              << ": A3M database missing\n";
-          exit(4);
-        }
-        dbf = ffindex_fopen_by_name(dba3m_data, dba3m_index, filename);
-        if (dbf == NULL) {
-          RemoveExtension(filename, dbfiles[idb]);
-          strcat(filename, ".hmm");
-          if (dbhhm_index_file == NULL) {
-            cerr << endl << "Error opening " << dbfiles[idb]
-                << ": HHM database missing\n";
-            exit(4);
-          }
-          dbf = ffindex_fopen_by_name(dbhhm_data, dbhhm_index, filename);
-          if (dbf == NULL)
-            OpenFileError(dbfiles[idb]);
-        }
-      }
-    }
+//    if (!use_compressed_a3m) {
+//      dbf = ffindex_fopen_by_name(dbhhm_data, dbhhm_index, dbfiles[idb]);
+//      if (dbf == NULL) {
+//        RemoveExtension(filename, dbfiles[idb]);
+//        strcat(filename, ".a3m");
+//        if (dba3m_index_file == NULL) {
+//          cerr << endl << "Error opening " << filename
+//              << ": A3M database missing\n";
+//          exit(4);
+//        }
+//        dbf = ffindex_fopen_by_name(dba3m_data, dba3m_index, filename);
+//        if (dbf == NULL) {
+//          RemoveExtension(filename, dbfiles[idb]);
+//          strcat(filename, ".hmm");
+//          if (dbhhm_index_file == NULL) {
+//            cerr << endl << "Error opening " << dbfiles[idb]
+//                << ": HHM database missing\n";
+//            exit(4);
+//          }
+//          dbf = ffindex_fopen_by_name(dbhhm_data, dbhhm_index, filename);
+//          if (dbf == NULL)
+//            OpenFileError(dbfiles[idb]);
+//        }
+//      }
+//    }
 
     // Submit jobs if bin is free
     if (jobs_submitted + jobs_running < bins) {
@@ -1346,8 +1338,6 @@ void DoViterbiSearch(char *dbfiles[], int ndb, bool alignByWorker = true) {
         exit(6);
       }
       hit[bin]->index = N_searched;          // give hit a unique index for HMM
-      hit[bin]->ftellpos = ftell(dbf); // record position in dbfile of next HMM to be read
-      //      fprintf(stderr,"dbfile=%-40.40s  index=%-5i  ftellpos=%i\n",dbfiles[idb],N_searched,(int) hit[bin]->ftellpos);
 
       char path[NAMELEN];
       Pathname(path, dbfiles[idb]);
@@ -1355,8 +1345,23 @@ void DoViterbiSearch(char *dbfiles[], int ndb, bool alignByWorker = true) {
       ///////////////////////////////////////////////////
       // Read next HMM from database file
       if (use_compressed_a3m) {
+        RemoveExtension(filename, dbfiles[idb]);
+        strcat(filename, ".a3m");
+        ffindex_entry_t* entry = ffindex_get_entry_by_name(dbca3m_index, filename);
+
+        if (entry == NULL) {
+          OpenFileError(entry->name);
+        }
+
+        char* data = ffindex_get_data_by_entry(dbca3m_data, entry);
+
+        if (data == NULL) {
+          OpenFileError(entry->name);
+        }
+
+    	hit[bin]->ftellpos = entry->offset;
         Alignment tali;
-        tali.ReadCompressed(dbf, filename, dbuniprot_sequence_index,
+        tali.ReadCompressed(entry, data, dbuniprot_sequence_index,
             dbuniprot_sequence_data, dbuniprot_header_index,
             dbuniprot_header_data);
 
@@ -1372,6 +1377,31 @@ void DoViterbiSearch(char *dbfiles[], int ndb, bool alignByWorker = true) {
         format[bin] = 0;
       }
       else {
+        dbf = ffindex_fopen_by_name(dbhhm_data, dbhhm_index, dbfiles[idb]);
+        if (dbf == NULL) {
+          RemoveExtension(filename, dbfiles[idb]);
+          strcat(filename, ".a3m");
+          if (dba3m_index_file == NULL) {
+            cerr << endl << "Error opening " << filename
+                << ": A3M database missing\n";
+            exit(4);
+          }
+          dbf = ffindex_fopen_by_name(dba3m_data, dba3m_index, filename);
+          if (dbf == NULL) {
+            RemoveExtension(filename, dbfiles[idb]);
+            strcat(filename, ".hmm");
+            if (dbhhm_index_file == NULL) {
+              cerr << endl << "Error opening " << dbfiles[idb]
+                  << ": HHM database missing\n";
+              exit(4);
+            }
+            dbf = ffindex_fopen_by_name(dbhhm_data, dbhhm_index, filename);
+            if (dbf == NULL)
+              OpenFileError(dbfiles[idb]);
+          }
+        }
+
+        hit[bin]->ftellpos = ftell(dbf); // record position in dbfile of next HMM to be read
 
         if (!fgetline(line, LINELEN, dbf)) {
           continue;
@@ -1514,7 +1544,8 @@ void DoViterbiSearch(char *dbfiles[], int ndb, bool alignByWorker = true) {
     }
 #endif
 
-    fclose(dbf);
+    if(dbf != NULL && !use_compressed_a3m)
+      fclose(dbf);
   }
 
   // Finished searching all database HHMs
@@ -2110,16 +2141,16 @@ void perform_realign(char *dbfiles[], int ndb) {
 
     //TODO:
     // Open HMM database file dbfiles[idb]
-    FILE* dbf;
+    FILE* dbf = NULL;
     char filename[NAMELEN];
     strcpy(filename, dbfiles[idb]);
 
-    if (use_compressed_a3m) {
-      RemoveExtension(filename, dbfiles[idb]);
-      strcat(filename, ".a3m");
-      dbf = ffindex_fopen_by_name(dbca3m_data, dbca3m_index, filename);
-    }
-    else {
+    if (!use_compressed_a3m) {
+//      RemoveExtension(filename, dbfiles[idb]);
+//      strcat(filename, ".a3m");
+//      dbf = ffindex_fopen_by_name(dbca3m_data, dbca3m_index, filename);
+//    }
+//    else {
       dbf = ffindex_fopen_by_name(dbhhm_data, dbhhm_index, dbfiles[idb]);
       if (dbf == NULL) {
         char filename[NAMELEN];
@@ -2134,10 +2165,10 @@ void perform_realign(char *dbfiles[], int ndb) {
           exit(4);
         }
       }
-    }
 
-    if (dbf == NULL)
-      OpenFileError(dbfiles[idb]);
+      if (dbf == NULL)
+        OpenFileError(dbfiles[idb]);
+    }
 
     read_from_db = 1;
 
@@ -2164,7 +2195,7 @@ void perform_realign(char *dbfiles[], int ndb) {
         Realign_hitpos hitpos_curr = phash_plist_realignhitpos->Show(
             dbfiles[idb])->ReadNext();
         hit[bin]->index = hitpos_curr.index; // give hit[bin] a unique index for HMM
-        fseek(dbf, hitpos_curr.ftellpos, SEEK_SET); // start to read at ftellpos for template
+//TODO: check, but believe to be unnecessary        fseek(dbf, hitpos_curr.ftellpos, SEEK_SET); // start to read at ftellpos for template
 
         // Give hit[bin] the pointer to the list of pointers to hitlist elements of same template (for realignment)
         hit[bin]->plist_phits = array_plist_phits[hitpos_curr.index];
@@ -2175,8 +2206,22 @@ void perform_realign(char *dbfiles[], int ndb) {
         Pathname(path, dbfiles[idb]);
 
         if (use_compressed_a3m) {
+          RemoveExtension(filename, dbfiles[idb]);
+          strcat(filename, ".a3m");
+          ffindex_entry_t* entry = ffindex_get_entry_by_name(dbca3m_index, filename);
+
+          if (entry == NULL) {
+            OpenFileError(entry->name);
+          }
+
+          char* data = ffindex_get_data_by_entry(dbca3m_data, entry);
+
+          if (data == NULL) {
+            OpenFileError(entry->name);
+          }
+
           Alignment tali;
-          tali.ReadCompressed(dbf, filename, dbuniprot_sequence_index,
+          tali.ReadCompressed(entry, data, dbuniprot_sequence_index,
               dbuniprot_sequence_data, dbuniprot_header_index,
               dbuniprot_header_data);
 
@@ -2337,7 +2382,8 @@ void perform_realign(char *dbfiles[], int ndb) {
     // End while(1)
     ///////////////////////////////////////////////////////////////////////////////////////
 
-    fclose(dbf);
+    if(dbf != NULL && !use_compressed_a3m)
+      fclose(dbf);
   }
   reading_dbs = 0;
   
@@ -3060,13 +3106,35 @@ int main(int argc, char **argv) {
           strcat(ta3mfile, ".a3m");
 
           // Reading in next db MSA and merging it onto Qali
-          FILE* ta3mf;
+          //TODO:
           Alignment Tali;
-          ta3mf = ffindex_fopen_by_name(dba3m_data, dba3m_index, ta3mfile);
-          if (ta3mf == NULL)
-            OpenFileError(ta3mfile);
-          Tali.Read(ta3mf, ta3mfile); // Read template alignment into Tali
-          fclose(ta3mf);
+          if(use_compressed_a3m) {
+            ffindex_entry_t* entry = ffindex_get_entry_by_name(dbca3m_index, ta3mfile);
+
+            if (entry == NULL) {
+              OpenFileError(entry->name);
+            }
+
+            char* data = ffindex_get_data_by_entry(dbca3m_data, entry);
+
+            if (data == NULL) {
+              OpenFileError(entry->name);
+            }
+
+          	hit[bin]->ftellpos = entry->offset;
+            Alignment tali;
+            tali.ReadCompressed(entry, data, dbuniprot_sequence_index,
+                dbuniprot_sequence_data, dbuniprot_header_index,
+                dbuniprot_header_data);
+          }
+          else {
+			  FILE* ta3mf;
+			  ta3mf = ffindex_fopen_by_name(dba3m_data, dba3m_index, ta3mfile);
+			  if (ta3mf == NULL)
+				OpenFileError(ta3mfile);
+			  Tali.Read(ta3mf, ta3mfile); // Read template alignment into Tali
+			  fclose(ta3mf);
+          }
           Tali.Compress(ta3mfile); // Filter database alignment
           if (par.allseqs) // need to keep *all* sequences in Qali_allseqs? => merge before filtering
             Qali_allseqs.MergeMasterSlave(hit_cur, Tali, ta3mfile);

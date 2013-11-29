@@ -1138,22 +1138,28 @@ inline float frand() {
   return rand() / (RAND_MAX + 1.0);
 }
 
-void readU16(FILE* input, uint16_t &result) {
+void readU16(char** ptr, uint16_t &result) {
   unsigned char array[2];
 
-  array[0] = (unsigned char)getc(input);
-  array[1] = (unsigned char)getc(input);
+  array[0] = (unsigned char) (**ptr);
+  (*ptr)++;
+  array[1] = (unsigned char) (**ptr);
+  (*ptr)++;
 
   result = array[0] | (array[1] << 8);
 }
 
-void readU32(FILE* input, uint32_t &result) {
+void readU32(char** ptr, uint32_t &result) {
   unsigned char array[4];
 
-  array[0] = (unsigned char) getc(input);
-  array[1] = (unsigned char) getc(input);
-  array[2] = (unsigned char) getc(input);
-  array[3] = (unsigned char) getc(input);
+  array[0] = (unsigned char) (**ptr);
+  (*ptr)++;
+  array[1] = (unsigned char) (**ptr);
+  (*ptr)++;
+  array[2] = (unsigned char) (**ptr);
+  (*ptr)++;
+  array[3] = (unsigned char) (**ptr);
+  (*ptr)++;
 
   result = array[0] | (array[1] << 8) | (array[2] << 16) | (array[3] << 24);
 }
