@@ -576,7 +576,7 @@ void Alignment::ReadCompressed(ffindex_entry_t* entry, char* data,
     ffindex_index_t* ffindex_header_database_index, char* ffindex_header_database_data) {
 
   RemoveExtension(file, entry->name);
-  size_t data_size = entry->length;
+  size_t data_size = entry->length - 1;
   size_t index = 0;
 
   kss_dssp = ksa_dssp = kss_pred = kss_conf = kfirst = -1;
