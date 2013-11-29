@@ -493,6 +493,15 @@ void readU16(char** ptr, uint16_t &result) {
   result = array[0] | (array[1] << 8);
 }
 
+void readU16(FILE* input, uint16_t &result) {
+  unsigned char array[2];
+
+  array[0] = (unsigned char)getc(input);
+  array[1] = (unsigned char)getc(input);
+
+  result = array[0] | (array[1] << 8);
+}
+
 void writeU32(std::ostream& file, uint32_t val) {
   unsigned char bytes[4];
 
@@ -517,6 +526,17 @@ void readU32(char** ptr, uint32_t &result) {
   (*ptr)++;
   array[3] = (unsigned char) (**ptr);
   (*ptr)++;
+
+  result = array[0] | (array[1] << 8) | (array[2] << 16) | (array[3] << 24);
+}
+
+void readU32(FILE* input, uint32_t &result) {
+  unsigned char array[4];
+
+  array[0] = (unsigned char) getc(input);
+  array[1] = (unsigned char) getc(input);
+  array[2] = (unsigned char) getc(input);
+  array[3] = (unsigned char) getc(input);
 
   result = array[0] | (array[1] << 8) | (array[2] << 16) | (array[3] << 24);
 }

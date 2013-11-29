@@ -571,6 +571,226 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline) {
   return;
 }
 
+void Alignment::ReadCompressed(FILE* inf, char infile[],
+    ffindex_index_t* ffindex_sequence_database_index, char* ffindex_sequence_database_data,
+    ffindex_index_t* ffindex_header_database_index, char* ffindex_header_database_data) {
+  RemoveExtension(file, infile); //copy rootname (w/o path) of infile into file variable of class object
+
+  kss_dssp = ksa_dssp = kss_pred = kss_conf = kfirst = -1;
+  n_display = 0;
+  N_in = 0;
+  N_filtered = 0;
+  N_ss = 0;
+
+  // Index of sequence being read currently (first=0)
+  int k = 0;
+
+  rewind(inf);
+
+  char last_char = '\0';
+  char inConsensus = 0;
+  size_t consensus_length = 0;
+
+  std::string header = "";
+  std::string sequence = "";
+
+  //read consensus
+  char c = 'A';
+  while((c = fgetc(inf))) {
+    if(last_char == '\n' && c == ';') {
+      break;
+    }
+    if(c == '\n') {
+      inConsensus++;
+    }
+    else {
+      if(inConsensus == 0) {
+        header += c;
+      }
+      else if(inConsensus == 1) {
+        sequence += c;
+        consensus_length++;
+      }
+    }
+
+    last_char = c;
+  }
+
+  //process consensus
+  display[k] = 2;
+  keep[k] = 0;
+  n_display++;
+  kfirst = k;
+
+  X[k] = new char[sequence.size() + 2];
+  I[k] = new short unsigned int[sequence.size() + 2];
+
+  seq[k] = new char[sequence.size() + 2];
+  int copy_pos = 1;
+  for (size_t string_pos = 0; string_pos < sequence.size(); string_pos++) {
+    if (aa2i(sequence[string_pos]) >= 0) {
+      seq[k][copy_pos++] = sequence[string_pos];
+    }
+  }
+  seq[k][copy_pos] = '\0';  //Ensure that cur_seq ends with a '\0' character
+
+  char* cur_name = strscn(const_cast<char*>(header.c_str() + 1));
+  sname[k] = new char[strlen(cur_name) + 1];
+  strcpy(sname[k], cur_name);
+
+  if (v && copy_pos >= par.maxcol - 1) {
+    std::cerr << std::endl << "WARNING: maximum number of residues " << par.maxcol - 2
+        << " exceeded in sequence " << sname[k] << std::endl;
+  }
+
+  std::cout << header << std::endl;
+  std::cout << sequence << std::endl;
+
+  k++;
+
+  //read and process compressed part
+  while(feof(inf) == 0) {
+    std::cout << "reading compressed" << std::endl;
+    if (k >= MAXSEQ - 1) {
+      if (v >= 1 && k >= MAXSEQ)
+        cerr << endl << "WARNING: maximum number " << MAXSEQ
+            << " of sequences exceeded in file " << infile << "\n";
+      break;
+    }
+
+    unsigned int entry_index;
+    unsigned short int nr_blocks;
+    unsigned short int start_pos;
+    unsigned short int nr_matches;
+
+    sequence = "";
+
+    char nr_insertions_deletions;
+
+    readU32(inf, entry_index);
+
+    ffindex_entry_t* sequence_entry = ffindex_get_entry_by_index(ffindex_sequence_database_index, entry_index);
+    char* sequence_data = ffindex_get_data_by_entry(ffindex_sequence_database_data, sequence_entry);
+    //TODO: catch errors
+
+    ffindex_entry_t* header_entry = ffindex_get_entry_by_index(ffindex_header_database_index, entry_index);
+    char* header_data = ffindex_get_data_by_entry(ffindex_header_database_data, header_entry);
+    //TODO: catch errors
+
+    header = std::string(header_data, header_entry->length) + '\n';
+
+    readU16(inf, start_pos);
+
+    readU16(inf, nr_blocks);
+
+    size_t actual_pos = start_pos;
+    size_t alignment_length = 0;
+    for(unsigned short int block_index = 0; block_index < nr_blocks; block_index++) {
+      readU16(inf, nr_matches);
+
+      for(int i = 0; i < nr_matches; i++) {
+        sequence += sequence_data[actual_pos - 1];
+        actual_pos++;
+        alignment_length++;
+      }
+
+      nr_insertions_deletions = getc(inf);
+
+      if(nr_insertions_deletions > 0) {
+        for(int i = 0; i < nr_insertions_deletions; i++) {
+          sequence += tolower(sequence_data[actual_pos - 1]);
+          actual_pos++;
+        }
+      }
+      else {
+        for(int i = 0; i < -nr_insertions_deletions; i++) {
+          sequence += '-';
+          alignment_length++;
+        }
+      }
+    }
+
+    while(alignment_length < consensus_length) {
+      sequence += '-';
+      alignment_length++;
+    }
+
+    //process sequence with header
+    if (par.mark == 0) {
+      display[k] = keep[k] = 1;
+      n_display++;
+    }
+    else if (par.mark == 1) {
+      display[k] = keep[k] = 1;
+      n_display++;
+    }
+    else {
+      display[k] = 0;
+      keep[k] = 1;
+    }
+
+    std::cout << header << std::endl;
+    std::cout << sequence << std::endl;
+
+    seq[k] = new char[sequence.size() + 2];
+    size_t copy_pos = 1;
+    for (size_t string_pos = 0; string_pos < sequence.size(); string_pos++) {
+      if (aa2i(sequence[string_pos]) >= 0) {
+        seq[k][copy_pos++] = sequence[string_pos];
+      }
+    }
+    seq[k][copy_pos] = '\0';  //Ensure that cur_seq ends with a '\0' character
+
+    char* cur_name = strscn(const_cast<char*>(header.c_str() + 1));
+    sname[k] = new char[strlen(cur_name) + 1];
+    strcpy(sname[k], cur_name);
+
+    k++;
+  }
+
+  N_in = k;
+
+  // Warn if there are only special sequences but no master sequence (consensus seq given if keep[kfirst]==0)
+  if (kfirst < 0 || (N_in - N_ss - (keep[kfirst] == 0 ? 1 : 0)) == 0) {
+    fprintf(stderr, "Error in %s: MSA file %s contains no master sequence!\n",
+        program_name, infile);
+    exit(1);
+  }
+
+  // Set name, longname, fam
+  // longname, name and family were not set by '#...' line yet -> extract from first sequence
+  if (!*name) {
+    char* ptr;
+    strncpy(longname, sname[kfirst], DESCLEN - 1); // longname is name of first sequence
+    longname[DESCLEN - 1] = '\0';
+    strncpy(name, sname[kfirst], NAMELEN - 1); // Shortname is first word of longname...
+    name[NAMELEN - 1] = '\0';
+    ptr = strcut(name);                  // ...until first white-space character
+    if (ptr && islower(ptr[0]) && ptr[1] == '.' && isdigit(ptr[2])) //Scop family code present as second word?
+        {
+      lwrstr(name);                        // Transform upper case to lower case
+      strcut(ptr); // Non-white-space characters until next white-space character..
+      strcpy(fam, ptr);                       // ...are the SCOP familiy code
+    }
+    else if (name[0] == 'P' && name[1] == 'F' && isdigit(name[2])
+        && isdigit(name[3])) //Pfam code
+            {
+      strcpy(fam, name);                      // set family name = Pfam code
+    }
+  }
+
+  // Checking for warning messages
+  if (v == 0)
+    return;
+  if (v >= 2)
+    cout << "Read " << infile << " with " << N_in << " sequences\n";
+  if (v >= 3)
+    cout << "Query sequence for alignment has number " << kfirst
+        << " (0 is first)\n";
+
+  return;
+}
+
 /////////////////////////////////////////////////////////////////////////////////////
 // Convert ASCII in seq[k][l] to int (0-20) in X[k][i], throw out all insert states, record their number in I[k][i]
 // and store sequences to be displayed in seq[k]

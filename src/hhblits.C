@@ -132,7 +132,6 @@ cs::ContextLibrary<cs::AA> *cs_lib;
 #include "list.C"        // list data structure
 #include "hash.C"        // hash data structure
 #include "hhdecl.C"      // Constants, global variables, struct Parameters
-
 std::map<std::string, unsigned char*> columnStateSequences;
 ColumnStateScoring* columnStateScoring;
 
@@ -182,20 +181,8 @@ bool alitab_scop = false;            // Write only SCOP alignments in alitabfile
 char db_ext[NAMELEN];
 int omp_threads = 2;                       // number of OpenMP threads to start
 
-// Needed for fast index reading
-size_t data_size;
-FILE *dba3m_data_file;
-FILE *dba3m_index_file;
-FILE *dbhhm_data_file;
-FILE *dbhhm_index_file;
-
-char* dba3m_data;
-char* dbhhm_data;
-ffindex_index_t* dbhhm_index = NULL;
-ffindex_index_t* dba3m_index = NULL;
-
 //database filenames
-char db_base[NAMELEN];                   // database basename
+char db_base[NAMELEN];
 char dbcs_base[NAMELEN];
 char dbcs_index_filename[NAMELEN];
 char dbcs_data_filename[NAMELEN];
@@ -207,6 +194,49 @@ char dbhhm_data_filename[NAMELEN];
 char dba3m_base[NAMELEN];
 char dba3m_index_filename[NAMELEN];
 char dba3m_data_filename[NAMELEN];
+
+//compressed a3m stuff
+bool use_compressed_a3m;
+char dbca3m_base[NAMELEN];
+char dbca3m_index_filename[NAMELEN];
+char dbca3m_data_filename[NAMELEN];
+
+char dbuniprot_base[NAMELEN];
+char dbuniprot_header_index_filename[NAMELEN];
+char dbuniprot_header_data_filename[NAMELEN];
+char dbuniprot_sequence_index_filename[NAMELEN];
+char dbuniprot_sequence_data_filename[NAMELEN];
+
+// Needed for fast index reading
+size_t data_size;
+FILE *dba3m_data_file;
+FILE *dba3m_index_file;
+ffindex_index_t* dba3m_index = NULL;
+char* dba3m_data;
+
+FILE *dbhhm_data_file;
+FILE *dbhhm_index_file;
+ffindex_index_t* dbhhm_index = NULL;
+char* dbhhm_data;
+
+// compressed a3m stuff
+size_t ca3m_data_offset;
+FILE* dbca3m_data_file;
+FILE* dbca3m_index_file;
+ffindex_index_t* dbca3m_index = NULL;
+char* dbca3m_data;
+
+size_t uniprot_header_data_offset;
+FILE* dbuniprot_header_data_file;
+FILE* dbuniprot_header_index_file;
+ffindex_index_t* dbuniprot_header_index = NULL;
+char* dbuniprot_header_data;
+
+size_t uniprot_sequence_data_offset;
+FILE* dbuniprot_sequence_data_file;
+FILE* dbuniprot_sequence_index_file;
+ffindex_index_t* dbuniprot_sequence_index = NULL;
+char* dbuniprot_sequence_data;
 
 char** dbfiles_new;
 char** dbfiles_old;
@@ -271,7 +301,6 @@ inline int PickBin(char status);
 // Include hhworker.C and hhprefilter.C here, because it needs some of the above variables
 #include "hhworker.C"      // functions: AlignByWorker, RealignByWorker, WorkerLoop
 #include "hhprefilter.C"   // some prefilter functions
-
 /////////////////////////////////////////////////////////////////////////////////////
 // Help functions
 /////////////////////////////////////////////////////////////////////////////////////
@@ -487,55 +516,112 @@ void help(char all = 0) {
         " -egt  [0,inf[  penalty (bits) for end gaps aligned to template residues (def=%-.2f)\n",
         par.egt);
     printf("\n");
-    printf("Pseudocount (pc) options:                                                        \n");
+    printf(
+        "Pseudocount (pc) options:                                                        \n");
     printf(" Context specific hhm pseudocounts:\n");
-    printf("  -pc_hhm_contxt_mode {0,..,3}      position dependence of pc admixture 'tau' (pc mode, default=%-i) \n",par.pc_hhm_context_engine.admix);
-    printf("               0: no pseudo counts:    tau = 0                                  \n");
-    printf("               1: constant             tau = a                                  \n");
-    printf("               2: diversity-dependent: tau = a/(1+((Neff[i]-1)/b)^c)            \n");
-    printf("               3: CSBlast admixture:   tau = a(1+b)/(Neff[i]+b)                 \n");
-    printf("               (Neff[i]: number of effective seqs in local MSA around column i) \n");
-    printf("  -pc_hhm_contxt_a  [0,1]        overall pseudocount admixture (def=%-.1f)                        \n",par.pc_hhm_context_engine.pca);
-    printf("  -pc_hhm_contxt_b  [1,inf[      Neff threshold value for mode 2 (def=%-.1f)                      \n",par.pc_hhm_context_engine.pcb);
-    printf("  -pc_hhm_contxt_c  [0,3]        extinction exponent c for mode 2 (def=%-.1f)                     \n\n",par.pc_hhm_context_engine.pcc);
+    printf(
+        "  -pc_hhm_contxt_mode {0,..,3}      position dependence of pc admixture 'tau' (pc mode, default=%-i) \n",
+        par.pc_hhm_context_engine.admix);
+    printf(
+        "               0: no pseudo counts:    tau = 0                                  \n");
+    printf(
+        "               1: constant             tau = a                                  \n");
+    printf(
+        "               2: diversity-dependent: tau = a/(1+((Neff[i]-1)/b)^c)            \n");
+    printf(
+        "               3: CSBlast admixture:   tau = a(1+b)/(Neff[i]+b)                 \n");
+    printf(
+        "               (Neff[i]: number of effective seqs in local MSA around column i) \n");
+    printf(
+        "  -pc_hhm_contxt_a  [0,1]        overall pseudocount admixture (def=%-.1f)                        \n",
+        par.pc_hhm_context_engine.pca);
+    printf(
+        "  -pc_hhm_contxt_b  [1,inf[      Neff threshold value for mode 2 (def=%-.1f)                      \n",
+        par.pc_hhm_context_engine.pcb);
+    printf(
+        "  -pc_hhm_contxt_c  [0,3]        extinction exponent c for mode 2 (def=%-.1f)                     \n\n",
+        par.pc_hhm_context_engine.pcc);
 
-    printf(" Context independent hhm pseudocounts (used for templates; used for query if contxt file is not available):\n");
-    printf("  -pc_hhm_nocontxt_mode {0,..,3}      position dependence of pc admixture 'tau' (pc mode, default=%-i) \n",par.pc_hhm_nocontext_mode);
-    printf("               0: no pseudo counts:    tau = 0                                  \n");
-    printf("               1: constant             tau = a                                  \n");
-    printf("               2: diversity-dependent: tau = a/(1+((Neff[i]-1)/b)^c)            \n");
-  //  printf("               3: CSBlast admixture:   tau = a(1+b)/(Neff[i]+b)                 \n");
-    printf("               (Neff[i]: number of effective seqs in local MSA around column i) \n");
-    printf("  -pc_hhm_nocontxt_a  [0,1]        overall pseudocount admixture (def=%-.1f)                        \n",par.pc_hhm_nocontext_a);
-    printf("  -pc_hhm_nocontxt_b  [1,inf[      Neff threshold value for mode 2 (def=%-.1f)                      \n",par.pc_hhm_nocontext_b);
-    printf("  -pc_hhm_nocontxt_c  [0,3]        extinction exponent c for mode 2 (def=%-.1f)                     \n\n",par.pc_hhm_nocontext_c);
+    printf(
+        " Context independent hhm pseudocounts (used for templates; used for query if contxt file is not available):\n");
+    printf(
+        "  -pc_hhm_nocontxt_mode {0,..,3}      position dependence of pc admixture 'tau' (pc mode, default=%-i) \n",
+        par.pc_hhm_nocontext_mode);
+    printf(
+        "               0: no pseudo counts:    tau = 0                                  \n");
+    printf(
+        "               1: constant             tau = a                                  \n");
+    printf(
+        "               2: diversity-dependent: tau = a/(1+((Neff[i]-1)/b)^c)            \n");
+    //  printf("               3: CSBlast admixture:   tau = a(1+b)/(Neff[i]+b)                 \n");
+    printf(
+        "               (Neff[i]: number of effective seqs in local MSA around column i) \n");
+    printf(
+        "  -pc_hhm_nocontxt_a  [0,1]        overall pseudocount admixture (def=%-.1f)                        \n",
+        par.pc_hhm_nocontext_a);
+    printf(
+        "  -pc_hhm_nocontxt_b  [1,inf[      Neff threshold value for mode 2 (def=%-.1f)                      \n",
+        par.pc_hhm_nocontext_b);
+    printf(
+        "  -pc_hhm_nocontxt_c  [0,3]        extinction exponent c for mode 2 (def=%-.1f)                     \n\n",
+        par.pc_hhm_nocontext_c);
 
     printf(" Context specific prefilter pseudocounts:\n");
-    printf("  -pc_prefilter_contxt_mode {0,..,3}      position dependence of pc admixture 'tau' (pc mode, default=%-i) \n",par.pc_prefilter_context_engine.admix);
-    printf("               0: no pseudo counts:    tau = 0                                  \n");
-    printf("               1: constant             tau = a                                  \n");
-    printf("               2: diversity-dependent: tau = a/(1+((Neff[i]-1)/b)^c)            \n");
-    printf("               3: CSBlast admixture:   tau = a(1+b)/(Neff[i]+b)                 \n");
-    printf("               (Neff[i]: number of effective seqs in local MSA around column i) \n");
-    printf("  -pc_prefilter_contxt_a  [0,1]        overall pseudocount admixture (def=%-.1f)                        \n",par.pc_prefilter_context_engine.pca);
-    printf("  -pc_prefilter_contxt_b  [1,inf[      Neff threshold value for mode 2 (def=%-.1f)                      \n",par.pc_prefilter_context_engine.pcb);
-    printf("  -pc_prefilter_contxt_c  [0,3]        extinction exponent c for mode 2 (def=%-.1f)                     \n\n",par.pc_prefilter_context_engine.pcc);
+    printf(
+        "  -pc_prefilter_contxt_mode {0,..,3}      position dependence of pc admixture 'tau' (pc mode, default=%-i) \n",
+        par.pc_prefilter_context_engine.admix);
+    printf(
+        "               0: no pseudo counts:    tau = 0                                  \n");
+    printf(
+        "               1: constant             tau = a                                  \n");
+    printf(
+        "               2: diversity-dependent: tau = a/(1+((Neff[i]-1)/b)^c)            \n");
+    printf(
+        "               3: CSBlast admixture:   tau = a(1+b)/(Neff[i]+b)                 \n");
+    printf(
+        "               (Neff[i]: number of effective seqs in local MSA around column i) \n");
+    printf(
+        "  -pc_prefilter_contxt_a  [0,1]        overall pseudocount admixture (def=%-.1f)                        \n",
+        par.pc_prefilter_context_engine.pca);
+    printf(
+        "  -pc_prefilter_contxt_b  [1,inf[      Neff threshold value for mode 2 (def=%-.1f)                      \n",
+        par.pc_prefilter_context_engine.pcb);
+    printf(
+        "  -pc_prefilter_contxt_c  [0,3]        extinction exponent c for mode 2 (def=%-.1f)                     \n\n",
+        par.pc_prefilter_context_engine.pcc);
 
-    printf(" Context independent prefilter pseudocounts (used if context file is not available):\n");
-    printf("  -pc_prefilter_nocontxt_mode {0,..,3}      position dependence of pc admixture 'tau' (pc mode, default=%-i) \n",par.pc_prefilter_nocontext_mode);
-    printf("               0: no pseudo counts:    tau = 0                                  \n");
-    printf("               1: constant             tau = a                                  \n");
-    printf("               2: diversity-dependent: tau = a/(1+((Neff[i]-1)/b)^c)            \n");
-  //  printf("               3: CSBlast admixture:   tau = a(1+b)/(Neff[i]+b)                 \n");
-    printf("               (Neff[i]: number of effective seqs in local MSA around column i) \n");
-    printf("  -pc_prefilter_nocontxt_a  [0,1]        overall pseudocount admixture (def=%-.1f)                        \n",par.pc_prefilter_nocontext_a);
-    printf("  -pc_prefilter_nocontxt_b  [1,inf[      Neff threshold value for mode 2 (def=%-.1f)                      \n",par.pc_prefilter_nocontext_b);
-    printf("  -pc_prefilter_nocontxt_c  [0,3]        extinction exponent c for mode 2 (def=%-.1f)                     \n\n",par.pc_prefilter_nocontext_c);
+    printf(
+        " Context independent prefilter pseudocounts (used if context file is not available):\n");
+    printf(
+        "  -pc_prefilter_nocontxt_mode {0,..,3}      position dependence of pc admixture 'tau' (pc mode, default=%-i) \n",
+        par.pc_prefilter_nocontext_mode);
+    printf(
+        "               0: no pseudo counts:    tau = 0                                  \n");
+    printf(
+        "               1: constant             tau = a                                  \n");
+    printf(
+        "               2: diversity-dependent: tau = a/(1+((Neff[i]-1)/b)^c)            \n");
+    //  printf("               3: CSBlast admixture:   tau = a(1+b)/(Neff[i]+b)                 \n");
+    printf(
+        "               (Neff[i]: number of effective seqs in local MSA around column i) \n");
+    printf(
+        "  -pc_prefilter_nocontxt_a  [0,1]        overall pseudocount admixture (def=%-.1f)                        \n",
+        par.pc_prefilter_nocontext_a);
+    printf(
+        "  -pc_prefilter_nocontxt_b  [1,inf[      Neff threshold value for mode 2 (def=%-.1f)                      \n",
+        par.pc_prefilter_nocontext_b);
+    printf(
+        "  -pc_prefilter_nocontxt_c  [0,3]        extinction exponent c for mode 2 (def=%-.1f)                     \n\n",
+        par.pc_prefilter_nocontext_c);
 
     printf("\n");
-    printf(" Context-specific pseudo-counts:                                                  \n");
-    printf("  -nocontxt      use substitution-matrix instead of context-specific pseudocounts \n");
-    printf("  -contxt <file> context file for computing context-specific pseudocounts (default=%s)\n",par.clusterfile);
+    printf(
+        " Context-specific pseudo-counts:                                                  \n");
+    printf(
+        "  -nocontxt      use substitution-matrix instead of context-specific pseudocounts \n");
+    printf(
+        "  -contxt <file> context file for computing context-specific pseudocounts (default=%s)\n",
+        par.clusterfile);
     //should not be in the section of pseudocounts ... associated to prefiltering ... and also to usecs (by markus)
     printf("\n");
     printf("Predict secondary structure\n");
@@ -874,25 +960,42 @@ void ProcessArguments(int argc, char** argv) {
         && (i < argc - 1))
       par.Neff = atof(argv[++i]);
     //pc hhm context variables
-    else if (!strcmp(argv[i],"-pc_hhm_contxt_mode") && (i<argc-1)) par.pc_hhm_context_engine.admix=(Pseudocounts::Admix)atoi(argv[++i]);
-    else if (!strcmp(argv[i],"-pc_hhm_contxt_a") && (i<argc-1)) par.pc_hhm_context_engine.pca=atof(argv[++i]);
-    else if (!strcmp(argv[i],"-pc_hhm_contxt_b") && (i<argc-1)) par.pc_hhm_context_engine.pcb=atof(argv[++i]);
-    else if (!strcmp(argv[i],"-pc_hhm_contxt_c") && (i<argc-1)) par.pc_hhm_context_engine.pcc=atof(argv[++i]);
+    else if (!strcmp(argv[i], "-pc_hhm_contxt_mode") && (i < argc - 1))
+      par.pc_hhm_context_engine.admix = (Pseudocounts::Admix) atoi(argv[++i]);
+    else if (!strcmp(argv[i], "-pc_hhm_contxt_a") && (i < argc - 1))
+      par.pc_hhm_context_engine.pca = atof(argv[++i]);
+    else if (!strcmp(argv[i], "-pc_hhm_contxt_b") && (i < argc - 1))
+      par.pc_hhm_context_engine.pcb = atof(argv[++i]);
+    else if (!strcmp(argv[i], "-pc_hhm_contxt_c") && (i < argc - 1))
+      par.pc_hhm_context_engine.pcc = atof(argv[++i]);
     //pc prefilter context variables
-    else if (!strcmp(argv[i],"-pc_prefilter_contxt_mode") && (i<argc-1)) par.pc_prefilter_context_engine.admix=(Pseudocounts::Admix)atoi(argv[++i]);
-    else if (!strcmp(argv[i],"-pc_prefilter_contxt_a") && (i<argc-1)) par.pc_prefilter_context_engine.pca=atof(argv[++i]);
-    else if (!strcmp(argv[i],"-pc_prefilter_contxt_b") && (i<argc-1)) par.pc_prefilter_context_engine.pcb=atof(argv[++i]);
-    else if (!strcmp(argv[i],"-pc_prefilter_contxt_c") && (i<argc-1)) par.pc_prefilter_context_engine.pcc=atof(argv[++i]);
+    else if (!strcmp(argv[i], "-pc_prefilter_contxt_mode") && (i < argc - 1))
+      par.pc_prefilter_context_engine.admix = (Pseudocounts::Admix) atoi(
+          argv[++i]);
+    else if (!strcmp(argv[i], "-pc_prefilter_contxt_a") && (i < argc - 1))
+      par.pc_prefilter_context_engine.pca = atof(argv[++i]);
+    else if (!strcmp(argv[i], "-pc_prefilter_contxt_b") && (i < argc - 1))
+      par.pc_prefilter_context_engine.pcb = atof(argv[++i]);
+    else if (!strcmp(argv[i], "-pc_prefilter_contxt_c") && (i < argc - 1))
+      par.pc_prefilter_context_engine.pcc = atof(argv[++i]);
     //pc hhm nocontext variables
-    else if (!strcmp(argv[i],"-pc_hhm_nocontxt_mode") && (i<argc-1)) par.pc_hhm_nocontext_mode=atoi(argv[++i]);
-    else if (!strcmp(argv[i],"-pc_hhm_nocontxt_a") && (i<argc-1)) par.pc_hhm_nocontext_a=atof(argv[++i]);
-    else if (!strcmp(argv[i],"-pc_hhm_nocontxt_b") && (i<argc-1)) par.pc_hhm_nocontext_b=atof(argv[++i]);
-    else if (!strcmp(argv[i],"-pc_hhm_nocontxt_c") && (i<argc-1)) par.pc_hhm_nocontext_c=atof(argv[++i]);
+    else if (!strcmp(argv[i], "-pc_hhm_nocontxt_mode") && (i < argc - 1))
+      par.pc_hhm_nocontext_mode = atoi(argv[++i]);
+    else if (!strcmp(argv[i], "-pc_hhm_nocontxt_a") && (i < argc - 1))
+      par.pc_hhm_nocontext_a = atof(argv[++i]);
+    else if (!strcmp(argv[i], "-pc_hhm_nocontxt_b") && (i < argc - 1))
+      par.pc_hhm_nocontext_b = atof(argv[++i]);
+    else if (!strcmp(argv[i], "-pc_hhm_nocontxt_c") && (i < argc - 1))
+      par.pc_hhm_nocontext_c = atof(argv[++i]);
     //pc prefilter nocontext variables
-    else if (!strcmp(argv[i],"-pc_prefilter_nocontxt_mode") && (i<argc-1)) par.pc_prefilter_nocontext_mode = atoi(argv[++i]);
-    else if (!strcmp(argv[i],"-pre_pca") && (i<argc-1)) par.pc_hhm_nocontext_a=atof(argv[++i]);
-    else if (!strcmp(argv[i],"-pre_pcb") && (i<argc-1)) par.pc_hhm_nocontext_b=atof(argv[++i]);
-    else if (!strcmp(argv[i],"-pre_pcc") && (i<argc-1)) par.pc_hhm_nocontext_c=atof(argv[++i]);
+    else if (!strcmp(argv[i], "-pc_prefilter_nocontxt_mode") && (i < argc - 1))
+      par.pc_prefilter_nocontext_mode = atoi(argv[++i]);
+    else if (!strcmp(argv[i], "-pre_pca") && (i < argc - 1))
+      par.pc_hhm_nocontext_a = atof(argv[++i]);
+    else if (!strcmp(argv[i], "-pre_pcb") && (i < argc - 1))
+      par.pc_hhm_nocontext_b = atof(argv[++i]);
+    else if (!strcmp(argv[i], "-pre_pcc") && (i < argc - 1))
+      par.pc_hhm_nocontext_c = atof(argv[++i]);
 
     else if (!strcmp(argv[i], "-gapb") && (i < argc - 1)) {
       par.gapb = atof(argv[++i]);
@@ -1031,14 +1134,14 @@ inline int PickBin(char status) {
 
 ///////////////////////////////////////////////////////////////////////////////////////
 //// Do the pairwise comparison of q and t[bin] for the database search
-//// Combination of RealignByWorker and AlignByWorker: 
-//// Picks hits found in previous iterations and recalculates Viterbi scores using 
+//// Combination of RealignByWorker and AlignByWorker:
+//// Picks hits found in previous iterations and recalculates Viterbi scores using
 //// query profile from last iteration while KEEPING original (MAC) alignment.
 //////////////////////////////////////////////////////////////////////////////////////
 void PerformViterbiByWorker(int bin) {
   // Prepare q ant t and compare
   PrepareTemplateHMM(q, t[bin], format[bin]);
-
+  
   // Do HMM-HMM comparison
   for (hit[bin]->irep = 1; hit[bin]->irep <= par.altali; hit[bin]->irep++) {
     // Break, if no previous_hit with irep is found
@@ -1107,7 +1210,7 @@ void ReadQueryA3MFile() {
   RemoveExtension(qa3mfile, par.infile);
   strcat(qa3mfile, ".a3m");
   FILE* qa3mf = fopen(qa3mfile, "r");
-  
+
   if (!qa3mf) {
     // <query>.a3m does not exist => extract query MSA from representative sequences in HHM
     if (v >= 1 && input_format == 0)  // HHM format
@@ -1192,27 +1295,39 @@ void DoViterbiSearch(char *dbfiles[], int ndb, bool alignByWorker = true) {
     FILE* dbf;
     char filename[NAMELEN];
     strcpy(filename, dbfiles[idb]);
-    dbf = ffindex_fopen_by_name(dbhhm_data, dbhhm_index, dbfiles[idb]);
-    if (dbf == NULL) {
+
+    //TODO
+    if (use_compressed_a3m) {
       RemoveExtension(filename, dbfiles[idb]);
       strcat(filename, ".a3m");
-      if (dba3m_index_file == NULL) {
-        cerr << endl << "Error opening " << filename
-            << ": A3M database missing\n";
-        exit(4);
+      dbf = ffindex_fopen_by_name(dbca3m_data, dbca3m_index, filename);
+      if (dbf == NULL) {
+        OpenFileError(dbfiles[idb]);
       }
-      dbf = ffindex_fopen_by_name(dba3m_data, dba3m_index, filename);
+    }
+    else {
+      dbf = ffindex_fopen_by_name(dbhhm_data, dbhhm_index, dbfiles[idb]);
       if (dbf == NULL) {
         RemoveExtension(filename, dbfiles[idb]);
-        strcat(filename, ".hmm");
-        if (dbhhm_index_file == NULL) {
-          cerr << endl << "Error opening " << dbfiles[idb]
-              << ": HHM database missing\n";
+        strcat(filename, ".a3m");
+        if (dba3m_index_file == NULL) {
+          cerr << endl << "Error opening " << filename
+              << ": A3M database missing\n";
           exit(4);
         }
-        dbf = ffindex_fopen_by_name(dbhhm_data, dbhhm_index, filename);
-        if (dbf == NULL)
-          OpenFileError(dbfiles[idb]);
+        dbf = ffindex_fopen_by_name(dba3m_data, dba3m_index, filename);
+        if (dbf == NULL) {
+          RemoveExtension(filename, dbfiles[idb]);
+          strcat(filename, ".hmm");
+          if (dbhhm_index_file == NULL) {
+            cerr << endl << "Error opening " << dbfiles[idb]
+                << ": HHM database missing\n";
+            exit(4);
+          }
+          dbf = ffindex_fopen_by_name(dbhhm_data, dbhhm_index, filename);
+          if (dbf == NULL)
+            OpenFileError(dbfiles[idb]);
+        }
       }
     }
 
@@ -1239,41 +1354,14 @@ void DoViterbiSearch(char *dbfiles[], int ndb, bool alignByWorker = true) {
 
       ///////////////////////////////////////////////////
       // Read next HMM from database file
-      if (!fgetline(line, LINELEN, dbf)) {
-        continue;
-      }
-      while (strscn(line) == NULL)
-        fgetline(line, LINELEN, dbf); // skip lines that contain only white space
-
-      if (!strncmp(line, "HMMER3", 6))      // read HMMER3 format
-          {
-        format[bin] = 1;
-        t[bin]->ReadHMMer3(dbf, filename);
-        par.hmmer_used = true;
-      }
-      else if (!strncmp(line, "HMMER", 5))      // read HMMER format
-          {
-        format[bin] = 1;
-        t[bin]->ReadHMMer(dbf, filename);
-        par.hmmer_used = true;
-      }
-      else if (!strncmp(line, "HH", 2))    // read HHM format
-          {
-        format[bin] = 0;
-        t[bin]->Read(dbf, path);
-      }
-      else if (!strncmp(line, "NAME", 4)) // The following lines are for backward compatibility of HHM format version 1.2 with 1.1
-          {
-        fseek(dbf, hit[bin]->ftellpos, SEEK_SET); // rewind to beginning of line
-        format[bin] = 0;
-        t[bin]->Read(dbf, path);
-      }
-      else if (line[0] == '#' || line[0] == '>')           // read a3m alignment
-          {
+      if (use_compressed_a3m) {
         Alignment tali;
-        tali.Read(dbf, filename, line);
+        tali.ReadCompressed(dbf, filename, dbuniprot_sequence_index,
+            dbuniprot_sequence_data, dbuniprot_header_index,
+            dbuniprot_header_data);
+
         tali.Compress(filename);
-        //              qali.FilterForDisplay(par.max_seqid,par.coverage,par.qid,par.qsc,par.nseqdis);
+
         tali.N_filtered = tali.Filter(par.max_seqid_db, par.coverage_db,
             par.qid_db, par.qsc_db, par.Ndiff_db);
         char wg = par.wg;
@@ -1284,19 +1372,67 @@ void DoViterbiSearch(char *dbfiles[], int ndb, bool alignByWorker = true) {
         format[bin] = 0;
       }
       else {
-        cerr << endl << "Error in " << program_name
-            << ": unrecognized HMM file format in \'" << dbfiles[idb]
-            << "\'. \n";
-        cerr << "Context:\n'" << line << "\n";
-        fgetline(line, LINELEN, dbf);
-        cerr << line << "\n";
-        fgetline(line, LINELEN, dbf);
-        cerr << line << "'\n";
-        exit(1);
+
+        if (!fgetline(line, LINELEN, dbf)) {
+          continue;
+        }
+
+        while (strscn(line) == NULL)
+          fgetline(line, LINELEN, dbf); // skip lines that contain only white space
+
+        if (!strncmp(line, "HMMER3", 6))      // read HMMER3 format
+            {
+          format[bin] = 1;
+          t[bin]->ReadHMMer3(dbf, filename);
+          par.hmmer_used = true;
+        }
+        else if (!strncmp(line, "HMMER", 5))      // read HMMER format
+            {
+          format[bin] = 1;
+          t[bin]->ReadHMMer(dbf, filename);
+          par.hmmer_used = true;
+        }
+        else if (!strncmp(line, "HH", 2))    // read HHM format
+            {
+          format[bin] = 0;
+          t[bin]->Read(dbf, path);
+        }
+        else if (!strncmp(line, "NAME", 4)) // The following lines are for backward compatibility of HHM format version 1.2 with 1.1
+            {
+          fseek(dbf, hit[bin]->ftellpos, SEEK_SET); // rewind to beginning of line
+          format[bin] = 0;
+          t[bin]->Read(dbf, path);
+        }
+        else if (line[0] == '#' || line[0] == '>')         // read a3m alignment
+            {
+          Alignment tali;
+          tali.Read(dbf, filename, line);
+          tali.Compress(filename);
+          //              qali.FilterForDisplay(par.max_seqid,par.coverage,par.qid,par.qsc,par.nseqdis);
+          tali.N_filtered = tali.Filter(par.max_seqid_db, par.coverage_db,
+              par.qid_db, par.qsc_db, par.Ndiff_db);
+          char wg = par.wg;
+          par.wg = 1; // use global weights
+          t[bin]->name[0] = t[bin]->longname[0] = t[bin]->fam[0] = '\0';
+          tali.FrequenciesAndTransitions(t[bin]);
+          par.wg = wg; //reset global weights
+          format[bin] = 0;
+        }
+        else {
+          cerr << endl << "Error in " << program_name
+              << ": unrecognized HMM file format in \'" << dbfiles[idb]
+              << "\'. \n";
+          cerr << "Context:\n'" << line << "\n";
+          fgetline(line, LINELEN, dbf);
+          cerr << line << "\n";
+          fgetline(line, LINELEN, dbf);
+          cerr << line << "'\n";
+          exit(1);
+        }
       }
+
       if (v >= 4)
-        printf("Aligning with %s\n", t[bin]->name);  /////////////////////v>=4
-      ///////////////////////////////////////////////////
+        printf("Aligning with %s\n", t[bin]->name);
 
       hit[bin]->dbfile = new (char[strlen(dbfiles[idb]) + 1]);
       strcpy(hit[bin]->dbfile, dbfiles[idb]); // record db file name from which next HMM is read
@@ -1927,7 +2063,8 @@ void perform_realign(char *dbfiles[], int ndb) {
       }
       else {
         // Add full context specific pseudocounts to query
-        q->AddContextSpecificPseudocounts(pc_hhm_context_engine, pc_hhm_context_mode);
+        q->AddContextSpecificPseudocounts(pc_hhm_context_engine,
+            pc_hhm_context_mode);
       }
 
       q->CalculateAminoAcidBackground();
@@ -1971,22 +2108,34 @@ void perform_realign(char *dbfiles[], int ndb) {
     // This list is now sorted by ftellpos in ascending order to access one template after the other efficiently
     phash_plist_realignhitpos->Show(dbfiles[idb])->SortList();
 
+    //TODO:
     // Open HMM database file dbfiles[idb]
     FILE* dbf;
-    dbf = ffindex_fopen_by_name(dbhhm_data, dbhhm_index, dbfiles[idb]);
-    if (dbf == NULL) {
-      char filename[NAMELEN];
+    char filename[NAMELEN];
+    strcpy(filename, dbfiles[idb]);
+
+    if (use_compressed_a3m) {
       RemoveExtension(filename, dbfiles[idb]);
       strcat(filename, ".a3m");
-      if (dba3m_index_file != NULL) {
-        dbf = ffindex_fopen_by_name(dba3m_data, dba3m_index, filename);
-      }
-      else {
-        cerr << endl << "Error opening " << dbfiles[idb]
-            << ": A3M database missing\n";
-        exit(4);
+      dbf = ffindex_fopen_by_name(dbca3m_data, dbca3m_index, filename);
+    }
+    else {
+      dbf = ffindex_fopen_by_name(dbhhm_data, dbhhm_index, dbfiles[idb]);
+      if (dbf == NULL) {
+        char filename[NAMELEN];
+        RemoveExtension(filename, dbfiles[idb]);
+        strcat(filename, ".a3m");
+        if (dba3m_index_file != NULL) {
+          dbf = ffindex_fopen_by_name(dba3m_data, dba3m_index, filename);
+        }
+        else {
+          cerr << endl << "Error opening " << dbfiles[idb]
+              << ": A3M database missing\n";
+          exit(4);
+        }
       }
     }
+
     if (dbf == NULL)
       OpenFileError(dbfiles[idb]);
 
@@ -2025,43 +2174,12 @@ void perform_realign(char *dbfiles[], int ndb) {
         char path[NAMELEN];
         Pathname(path, dbfiles[idb]);
 
-        ///////////////////////////////////////////////////
-        // Read next HMM from database file
-        if (!fgetline(line, LINELEN, dbf)) {
-          fprintf(stderr, "Error in %s: end of file %s reached prematurely!\n",
-              par.argv[0], dbfiles[idb]);
-          exit(1);
-        }
-        while (strscn(line) == NULL && fgetline(line, LINELEN, dbf)) {
-        } // skip lines that contain only white space
-
-        if (!strncmp(line, "HMMER3", 5))      // read HMMER3 format
-            {
-          format[bin] = 1;
-          read_from_db = t[bin]->ReadHMMer3(dbf, dbfiles[idb]);
-          par.hmmer_used = true;
-        }
-        else if (!strncmp(line, "HMMER", 5))      // read HMMER format
-            {
-          format[bin] = 1;
-          read_from_db = t[bin]->ReadHMMer(dbf, dbfiles[idb]);
-          par.hmmer_used = true;
-        }
-        else if (!strncmp(line, "HH", 2))     // read HHM format
-            {
-          format[bin] = 0;
-          read_from_db = t[bin]->Read(dbf, path);
-        }
-        else if (!strncmp(line, "NAME", 4)) // The following lines are for backward compatibility of HHM format version 1.2 with 1.1
-            {
-          format[bin] = 0;
-          fseek(dbf, hitpos_curr.ftellpos, SEEK_SET); // rewind to beginning of line
-          read_from_db = t[bin]->Read(dbf, path);
-        }
-        else if (line[0] == '#' || line[0] == '>')         // read a3m alignment
-            {
+        if (use_compressed_a3m) {
           Alignment tali;
-          tali.Read(dbf, dbfiles[idb], line);
+          tali.ReadCompressed(dbf, filename, dbuniprot_sequence_index,
+              dbuniprot_sequence_data, dbuniprot_header_index,
+              dbuniprot_header_data);
+
           tali.Compress(dbfiles[idb]);
           // qali.FilterForDisplay(par.max_seqid,par.coverage,par.qid,par.qsc,par.nseqdis);
           tali.N_filtered = tali.Filter(par.max_seqid_db, par.coverage_db,
@@ -2071,15 +2189,63 @@ void perform_realign(char *dbfiles[], int ndb) {
           format[bin] = 0;
         }
         else {
-          cerr << endl << "Error in " << program_name
-              << ": unrecognized HMM file format in \'" << dbfiles[idb]
-              << "\'. \n";
-          cerr << "Context:\n'" << line << "\n";
-          fgetline(line, LINELEN, dbf);
-          cerr << line << "\n";
-          fgetline(line, LINELEN, dbf);
-          cerr << line << "'\n";
-          exit(1);
+          ///////////////////////////////////////////////////
+          // Read next HMM from database file
+          if (!fgetline(line, LINELEN, dbf)) {
+            fprintf(stderr,
+                "Error in %s: end of file %s reached prematurely!\n",
+                par.argv[0], dbfiles[idb]);
+            exit(1);
+          }
+          while (strscn(line) == NULL && fgetline(line, LINELEN, dbf)) {
+          } // skip lines that contain only white space
+
+          if (!strncmp(line, "HMMER3", 5))      // read HMMER3 format
+              {
+            format[bin] = 1;
+            read_from_db = t[bin]->ReadHMMer3(dbf, dbfiles[idb]);
+            par.hmmer_used = true;
+          }
+          else if (!strncmp(line, "HMMER", 5))      // read HMMER format
+              {
+            format[bin] = 1;
+            read_from_db = t[bin]->ReadHMMer(dbf, dbfiles[idb]);
+            par.hmmer_used = true;
+          }
+          else if (!strncmp(line, "HH", 2))     // read HHM format
+              {
+            format[bin] = 0;
+            read_from_db = t[bin]->Read(dbf, path);
+          }
+          else if (!strncmp(line, "NAME", 4)) // The following lines are for backward compatibility of HHM format version 1.2 with 1.1
+              {
+            format[bin] = 0;
+            fseek(dbf, hitpos_curr.ftellpos, SEEK_SET); // rewind to beginning of line
+            read_from_db = t[bin]->Read(dbf, path);
+          }
+          else if (line[0] == '#' || line[0] == '>')       // read a3m alignment
+              {
+            Alignment tali;
+            tali.Read(dbf, dbfiles[idb], line);
+            tali.Compress(dbfiles[idb]);
+            // qali.FilterForDisplay(par.max_seqid,par.coverage,par.qid,par.qsc,par.nseqdis);
+            tali.N_filtered = tali.Filter(par.max_seqid_db, par.coverage_db,
+                par.qid_db, par.qsc_db, par.Ndiff_db);
+            t[bin]->name[0] = t[bin]->longname[0] = t[bin]->fam[0] = '\0';
+            tali.FrequenciesAndTransitions(t[bin]);
+            format[bin] = 0;
+          }
+          else {
+            cerr << endl << "Error in " << program_name
+                << ": unrecognized HMM file format in \'" << dbfiles[idb]
+                << "\'. \n";
+            cerr << "Context:\n'" << line << "\n";
+            fgetline(line, LINELEN, dbf);
+            cerr << line << "\n";
+            fgetline(line, LINELEN, dbf);
+            cerr << line << "'\n";
+            exit(1);
+          }
         }
 
         if (read_from_db == 2)
@@ -2250,7 +2416,7 @@ void perform_realign(char *dbfiles[], int ndb) {
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 int main(int argc, char **argv) {
 
-	cuticle_init();
+  cuticle_init();
 
   int cluster_found = 0;
   int seqs_found = 0;
@@ -2384,23 +2550,36 @@ int main(int argc, char **argv) {
   strcpy(dba3m_data_filename, dba3m_base);
   strcat(dba3m_data_filename, ".ffdata");
 
-  fin = fopen(dba3m_data_filename, "r");
-  if (fin) {
-    fclose(fin);
-  }
-  else {
-    if (errno == EOVERFLOW) {
-      cerr << endl;
-      cerr << "Error in " << program_name << ": A3M database  "
-          << dba3m_data_filename << " too big (>2GB on 32bit system?):" << endl;
-      exit(errno);
-    }
+  strcpy(dbca3m_base, db_base);
+  strcat(dbca3m_base, "_ca3m");
+  strcpy(dbca3m_index_filename, dbca3m_base);
+  strcat(dbca3m_index_filename, ".ffindex");
+  strcpy(dbca3m_data_filename, dbca3m_base);
+  strcat(dbca3m_data_filename, ".ffdata");
 
+  strcpy(dbuniprot_header_index_filename, db_base);
+  strcat(dbuniprot_header_index_filename, "_header.ffindex");
+  strcpy(dbuniprot_header_data_filename, db_base);
+  strcat(dbuniprot_header_data_filename, "_header.ffdata");
+  strcpy(dbuniprot_sequence_index_filename, db_base);
+  strcat(dbuniprot_sequence_index_filename, "_sequence.ffindex");
+  strcpy(dbuniprot_sequence_data_filename, db_base);
+  strcat(dbuniprot_sequence_data_filename, "_sequence.ffdata");
+
+  if (file_exists(dbca3m_index_filename) && file_exists(dbca3m_data_filename)
+      && file_exists(dbuniprot_header_index_filename)
+      && file_exists(dbuniprot_header_data_filename)
+      && file_exists(dbuniprot_sequence_index_filename)
+      && file_exists(dbuniprot_sequence_data_filename)) {
+    use_compressed_a3m = true;
+  }
+  else if (!(file_exists(dba3m_data_filename)
+      && file_exists(dba3m_index_filename))) {
     if (num_rounds > 1 || *par.alnfile || *par.psifile || *par.hhmfile
         || *alis_basename) {
       cerr << endl << "Error in " << program_name
-          << ": Could not open A3M database " << dba3m_data_filename << ", "
-          << strerror(errno) << " (needed to construct result MSA)" << endl;
+          << ": Could not open A3M database " << dba3m_data_filename
+          << " (needed to construct result MSA)" << endl;
       exit(4);
     }
     dba3m_data_filename[0] = 0;
@@ -2414,48 +2593,121 @@ int main(int argc, char **argv) {
 
   early_stopping->evals = new double[early_stopping->length];
 
-  // Prepare index-based databases
-  dbhhm_data_file = fopen(dbhhm_data_filename, "r");
-  if (!dbhhm_data_file)
-    OpenFileError(dbhhm_data_filename);
+  //TODO
+  if (use_compressed_a3m) {
+    //ca3m database
+    dbca3m_data_file = fopen(dbca3m_data_filename, "r");
+    dbca3m_index_file = fopen(dbca3m_index_filename, "r");
 
-  dbhhm_index_file = fopen(dbhhm_index_filename, "r");
-  if (!dbhhm_index_file)
-    OpenFileError(dbhhm_index_filename);
+    if(dbca3m_data_file == NULL) {
+      OpenFileError(dbca3m_data_filename);
+    }
 
-  int filesize;
-  filesize = CountLinesInFile(dbhhm_index_filename);
+    if(dbca3m_index_file == NULL) {
+      OpenFileError(dbca3m_index_filename);
+    }
 
-  dbhhm_index = ffindex_index_parse(dbhhm_index_file, filesize);
-  if (dbhhm_index == NULL) {
-    cerr << "Error in " << par.argv[0] << ": could not read index file"
-        << dbhhm_index_filename << ". Is the file empty or corrupted?\n";
-    exit(1);
-  }
-  dbhhm_data = ffindex_mmap_data(dbhhm_data_file, &data_size);
+    size_t ca3m_data_size = CountLinesInFile(dbca3m_index_filename);
 
-  if (!*dba3m_data_filename) {
-    dba3m_data_file = dba3m_index_file = NULL;
-    dba3m_index = NULL;
-  }
-  else {
-    dba3m_data_file = fopen(dba3m_data_filename, "r");
-    if (!dba3m_data_file)
-      OpenFileError(dba3m_data_filename);
-
-    filesize = CountLinesInFile(dba3m_index_filename);
-
-    dba3m_index_file = fopen(dba3m_index_filename, "r");
-    if (!dba3m_index_file)
-      OpenFileError(dba3m_index_filename);
-
-    dba3m_index = ffindex_index_parse(dba3m_index_file, filesize);
-    if (dba3m_index == NULL) {
+    dbca3m_index = ffindex_index_parse(dbca3m_index_file, ca3m_data_size);
+    if (dbca3m_index == NULL) {
       cerr << "Error in " << par.argv[0] << ": could not read index file"
-          << dba3m_index_filename << ". Is the file empty or corrupted?\n";
+          << dbca3m_index_filename << ". Is the file empty or corrupted?\n";
       exit(1);
     }
-    dba3m_data = ffindex_mmap_data(dba3m_data_file, &data_size);
+
+    dbca3m_data = ffindex_mmap_data(dbca3m_data_file, &ca3m_data_offset);
+
+    //uniprot sequences database
+    dbuniprot_sequence_data_file = fopen(dbuniprot_sequence_data_filename, "r");
+    dbuniprot_sequence_index_file = fopen(dbuniprot_sequence_index_filename, "r");
+
+    if(dbuniprot_sequence_data_file == NULL) {
+      OpenFileError(dbuniprot_sequence_data_filename);
+    }
+
+    if(dbuniprot_sequence_index_file == NULL) {
+      OpenFileError(dbuniprot_sequence_index_filename);
+    }
+
+    size_t uniprot_sequence_data_size = CountLinesInFile(dbuniprot_sequence_index_filename);
+
+    dbuniprot_sequence_index = ffindex_index_parse(dbuniprot_sequence_index_file, uniprot_sequence_data_size);
+    if (dbuniprot_sequence_index == NULL) {
+      cerr << "Error in " << par.argv[0] << ": could not read index file"
+          << dbuniprot_sequence_index_filename << ". Is the file empty or corrupted?\n";
+      exit(1);
+    }
+
+    dbuniprot_sequence_data = ffindex_mmap_data(dbuniprot_sequence_data_file, &uniprot_sequence_data_offset);
+
+    //uniprot sequences database
+    dbuniprot_header_data_file = fopen(dbuniprot_header_data_filename, "r");
+    dbuniprot_header_index_file = fopen(dbuniprot_header_index_filename, "r");
+
+    if(dbuniprot_header_data_file == NULL) {
+      OpenFileError(dbuniprot_header_data_filename);
+    }
+
+    if(dbuniprot_header_index_file == NULL) {
+      OpenFileError(dbuniprot_header_index_filename);
+    }
+
+    size_t uniprot_header_data_size = CountLinesInFile(dbuniprot_header_index_filename);
+
+    dbuniprot_header_index = ffindex_index_parse(dbuniprot_header_index_file, uniprot_header_data_size);
+    if (dbuniprot_header_index == NULL) {
+      cerr << "Error in " << par.argv[0] << ": could not read index file"
+          << dbuniprot_sequence_index_filename << ". Is the file empty or corrupted?\n";
+      exit(1);
+    }
+
+    dbuniprot_header_data = ffindex_mmap_data(dbuniprot_header_data_file, &uniprot_header_data_offset);
+  }
+  else {
+    // Prepare index-based databases
+    dbhhm_data_file = fopen(dbhhm_data_filename, "r");
+    if (!dbhhm_data_file)
+      OpenFileError(dbhhm_data_filename);
+
+    dbhhm_index_file = fopen(dbhhm_index_filename, "r");
+    if (!dbhhm_index_file)
+      OpenFileError(dbhhm_index_filename);
+
+    int filesize;
+    filesize = CountLinesInFile(dbhhm_index_filename);
+
+    dbhhm_index = ffindex_index_parse(dbhhm_index_file, filesize);
+    if (dbhhm_index == NULL) {
+      cerr << "Error in " << par.argv[0] << ": could not read index file"
+          << dbhhm_index_filename << ". Is the file empty or corrupted?\n";
+      exit(1);
+    }
+    dbhhm_data = ffindex_mmap_data(dbhhm_data_file, &data_size);
+
+    if (!*dba3m_data_filename) {
+      dba3m_data_file = dba3m_index_file = NULL;
+      dba3m_index = NULL;
+    }
+    else {
+      dba3m_data_file = fopen(dba3m_data_filename, "r");
+      if (!dba3m_data_file)
+        OpenFileError(dba3m_data_filename);
+
+      filesize = CountLinesInFile(dba3m_index_filename);
+
+      dba3m_index_file = fopen(dba3m_index_filename, "r");
+      if (!dba3m_index_file)
+        OpenFileError(dba3m_index_filename);
+
+      dba3m_index = ffindex_index_parse(dba3m_index_file, filesize);
+      if (dba3m_index == NULL) {
+        cerr << "Error in " << par.argv[0] << ": could not read index file"
+            << dba3m_index_filename << ". Is the file empty or corrupted?\n";
+        exit(1);
+      }
+      dba3m_data = ffindex_mmap_data(dba3m_data_file, &data_size);
+    }
   }
 
   // Check for threads
@@ -2478,15 +2730,30 @@ int main(int argc, char **argv) {
 #endif
   
   // Check option compatibilities
-  if (par.nseqdis>MAXSEQDIS-3-par.showcons) par.nseqdis=MAXSEQDIS-3-par.showcons; //3 reserved for secondary structure
-  if (par.aliwidth<20) par.aliwidth=20;
-  if (par.pc_hhm_context_engine.pca<0.001) par.pc_hhm_context_engine.pca=0.001; // to avoid log(0)
-  if (par.pc_prefilter_context_engine.pca<0.001) par.pc_prefilter_context_engine.pca=0.001; // to avoid log(0)
-  if (par.b>par.B) par.B=par.b;
-  if (par.z>par.Z) par.Z=par.z;
-  if (par.maxmem<1.0) {cerr<<"WARNING: setting -maxmem to its minimum allowed value of 1.0\n"; par.maxmem=1.0;}
-  if (par.mact>=1.0) par.mact=0.999; else if (par.mact<0) par.mact=0.0;
-  if (par.macins>=1.0) par.macins=0.999; else if (par.macins<0) par.macins=0.0;
+  if (par.nseqdis > MAXSEQDIS - 3 - par.showcons)
+    par.nseqdis = MAXSEQDIS - 3 - par.showcons; //3 reserved for secondary structure
+  if (par.aliwidth < 20)
+    par.aliwidth = 20;
+  if (par.pc_hhm_context_engine.pca < 0.001)
+    par.pc_hhm_context_engine.pca = 0.001; // to avoid log(0)
+  if (par.pc_prefilter_context_engine.pca < 0.001)
+    par.pc_prefilter_context_engine.pca = 0.001; // to avoid log(0)
+  if (par.b > par.B)
+    par.B = par.b;
+  if (par.z > par.Z)
+    par.Z = par.z;
+  if (par.maxmem < 1.0) {
+    cerr << "WARNING: setting -maxmem to its minimum allowed value of 1.0\n";
+    par.maxmem = 1.0;
+  }
+  if (par.mact >= 1.0)
+    par.mact = 0.999;
+  else if (par.mact < 0)
+    par.mact = 0.0;
+  if (par.macins >= 1.0)
+    par.macins = 0.999;
+  else if (par.macins < 0)
+    par.macins = 0.0;
 
   // Set (global variable) substitution matrix and derived matrices
   SetSubstitutionMatrix();
@@ -3084,15 +3351,16 @@ int main(int argc, char **argv) {
 
   if (par.useCSScoring) {
     std::map<std::string, unsigned char*>::iterator it;
-    for(it = columnStateSequences.begin(); it != columnStateSequences.end(); it++) {
-      delete [] (*it).second;
+    for (it = columnStateSequences.begin(); it != columnStateSequences.end();
+        it++) {
+      delete[] (*it).second;
     }
     columnStateSequences.clear();
 
     for (int i = 0; i <= columnStateScoring->query_length; i++) {
-      delete [] columnStateScoring->substitutionScores[i];
+      delete[] columnStateScoring->substitutionScores[i];
     }
-    delete [] columnStateScoring->substitutionScores;
+    delete[] columnStateScoring->substitutionScores;
   }
 
   DeletePseudocountsEngine();

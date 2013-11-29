@@ -32,6 +32,9 @@ public:
 
   // Read alignment into X (uncompressed) in ASCII characters
   void Read(FILE* inf, char infile[NAMELEN], char* line=NULL);
+  void ReadCompressed(FILE* inf, char infile[],
+      ffindex_index_t* ffindex_sequence_database_index, char* ffindex_sequence_database_data,
+      ffindex_index_t* ffindex_header_database_index, char* ffindex_header_database_data);
 
   // Read sequences from HHM-file into X (uncompressed) in ASCII characters
   void GetSeqsFromHMM(HMM* q);
