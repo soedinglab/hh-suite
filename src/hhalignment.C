@@ -645,9 +645,6 @@ void Alignment::ReadCompressed(ffindex_entry_t* entry, char* data,
         << " exceeded in sequence " << sname[k] << std::endl;
   }
 
-  std::cout << header << std::endl;
-  std::cout << sequence << std::endl;
-
   k++;
 
   while(index < data_size) {
@@ -726,6 +723,8 @@ void Alignment::ReadCompressed(ffindex_entry_t* entry, char* data,
       }
     }
 
+	std::cout << sequence << std::endl;
+
     while(alignment_length < consensus_length) {
       sequence += '-';
       alignment_length++;
@@ -744,10 +743,6 @@ void Alignment::ReadCompressed(ffindex_entry_t* entry, char* data,
       display[k] = 0;
       keep[k] = 1;
     }
-
-    //TODO: Debug
-    std::cerr << header << std::endl;
-    std::cerr << sequence << std::endl;
 
     X[k] = new char[sequence.size() + 2];
     I[k] = new short unsigned int[sequence.size() + 2];
@@ -768,6 +763,7 @@ void Alignment::ReadCompressed(ffindex_entry_t* entry, char* data,
     k++;
   }
 
+  exit(0);
   N_in = k;
 
   // Warn if there are only special sequences but no master sequence (consensus seq given if keep[kfirst]==0)

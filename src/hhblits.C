@@ -1350,13 +1350,24 @@ void DoViterbiSearch(char *dbfiles[], int ndb, bool alignByWorker = true) {
         ffindex_entry_t* entry = ffindex_get_entry_by_name(dbca3m_index, filename);
 
         if (entry == NULL) {
-          OpenFileError(entry->name);
+          for(size_t index = 0; index < dbca3m_index->n_entries; index++) {
+            ffindex_entry_t* comp_entry = ffindex_get_entry_by_index(dbca3m_index, index);
+            if(strcmp(comp_entry->name, filename) == 0) {
+              std::cerr << "found entry manually!" << std::endl;
+              exit(1);
+            }
+          }
+          std::cerr << "Could not fetch entry for a3m " << filename << "!" << std::endl;
+          continue;
+          OpenFileError(filename);
         }
 
         char* data = ffindex_get_data_by_entry(dbca3m_data, entry);
 
         if (data == NULL) {
-          OpenFileError(entry->name);
+          std::cerr << "Could not fetch data for a3m " << filename << "!" << std::endl;
+          continue;
+          OpenFileError(filename);
         }
 
     	hit[bin]->ftellpos = entry->offset;
@@ -3112,18 +3123,16 @@ int main(int argc, char **argv) {
             ffindex_entry_t* entry = ffindex_get_entry_by_name(dbca3m_index, ta3mfile);
 
             if (entry == NULL) {
-              OpenFileError(entry->name);
+              OpenFileError(ta3mfile);
             }
 
             char* data = ffindex_get_data_by_entry(dbca3m_data, entry);
 
             if (data == NULL) {
-              OpenFileError(entry->name);
+              OpenFileError(ta3mfile);
             }
 
-          	hit[bin]->ftellpos = entry->offset;
-            Alignment tali;
-            tali.ReadCompressed(entry, data, dbuniprot_sequence_index,
+            Tali.ReadCompressed(entry, data, dbuniprot_sequence_index,
                 dbuniprot_sequence_data, dbuniprot_header_index,
                 dbuniprot_header_data);
           }
@@ -3372,14 +3381,30 @@ int main(int argc, char **argv) {
   // Clean up 
   ////////////////////////////////////////////////////
 
-  fclose(dbhhm_data_file);
-  fclose(dbhhm_index_file);
-  if (dba3m_index_file != NULL) {
-    fclose(dba3m_data_file);
-    fclose(dba3m_index_file);
+  if(use_compressed_a3m) {
+    fclose(dbca3m_data_file);
+    fclose(dbca3m_index_file);
+    fclose(dbuniprot_header_data_file);
+    fclose(dbuniprot_header_index_file);
+    fclose(dbuniprot_sequence_data_file);
+    fclose(dbuniprot_sequence_index_file);
+    free(dbca3m_index);
+    free(dbuniprot_sequence_index);
+    free(dbuniprot_header_index);
   }
-  free(dbhhm_index);
-  free(dba3m_index);
+  else {
+    fclose(dbhhm_data_file);
+    fclose(dbhhm_index_file);
+
+    if (dba3m_index_file != NULL) {
+      fclose(dba3m_data_file);
+      fclose(dba3m_index_file);
+    }
+
+    free(dbhhm_index);
+    free(dba3m_index);
+  }
+
   
   // Delete memory for dynamic programming matrix
   for (bin = 0; bin < bins; bin++) {
