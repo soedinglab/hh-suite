@@ -650,7 +650,7 @@ void Alignment::ReadCompressed(ffindex_entry_t* entry, char* data,
   while(index < data_size) {
     sequence.clear();
 
-	unsigned int entry_index;
+    unsigned int entry_index;
     unsigned short int nr_blocks;
     unsigned short int start_pos;
     unsigned short int nr_matches;
@@ -723,12 +723,12 @@ void Alignment::ReadCompressed(ffindex_entry_t* entry, char* data,
       }
     }
 
-	std::cout << sequence << std::endl;
-
+    
     while(alignment_length < consensus_length) {
       sequence += '-';
       alignment_length++;
     }
+
 
     //process sequence with header
     if (par.mark == 0) {
@@ -763,7 +763,6 @@ void Alignment::ReadCompressed(ffindex_entry_t* entry, char* data,
     k++;
   }
 
-  exit(0);
   N_in = k;
 
   // Warn if there are only special sequences but no master sequence (consensus seq given if keep[kfirst]==0)

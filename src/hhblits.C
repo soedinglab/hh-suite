@@ -1279,6 +1279,7 @@ void DoViterbiSearch(char *dbfiles[], int ndb, bool alignByWorker = true) {
     early_stopping->evals[a] = 1.0;
   }
 
+
   // For all the databases comming through prefilter
   for (int idb = 0; idb < ndb; idb++) {
     // Check early stopping filter
@@ -1350,13 +1351,6 @@ void DoViterbiSearch(char *dbfiles[], int ndb, bool alignByWorker = true) {
         ffindex_entry_t* entry = ffindex_get_entry_by_name(dbca3m_index, filename);
 
         if (entry == NULL) {
-          for(size_t index = 0; index < dbca3m_index->n_entries; index++) {
-            ffindex_entry_t* comp_entry = ffindex_get_entry_by_index(dbca3m_index, index);
-            if(strcmp(comp_entry->name, filename) == 0) {
-              std::cerr << "found entry manually!" << std::endl;
-              exit(1);
-            }
-          }
           std::cerr << "Could not fetch entry for a3m " << filename << "!" << std::endl;
           continue;
           OpenFileError(filename);

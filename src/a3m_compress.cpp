@@ -23,7 +23,6 @@ int compressed_a3m::compress_a3m(std::istream* input,
 
   std::string line;
   while (std::getline(*input, line)) {
-    std::cout << "klug" << line << "depp" << std::endl;
     //comment - remove comments
     if (line[0] == '#') {
       ;
@@ -273,7 +272,7 @@ void compressed_a3m::extract_a3m(char* data, size_t data_size,
     ffindex_entry_t* header_entry = ffindex_get_entry_by_index(ffindex_header_database_index, entry_index);
     char* header = ffindex_get_data_by_entry(ffindex_header_database_data, header_entry);
 
-    output->write(header, header_entry->length);
+    output->write(header, header_entry->length - 1);
     output->put('\n');
 
     readU16(&data, start_pos);
@@ -349,8 +348,6 @@ int compressed_a3m::compress_sequence(std::string id,
     return 0;
   }
 
-  writeU32(*output, entry_index);
-
   unsigned short int start_pos = get_start_pos(aligned_sequence, full_sequence,
       entry->length);
 
@@ -360,6 +357,7 @@ int compressed_a3m::compress_sequence(std::string id,
     return 0;
   }
 
+  writeU32(*output, entry_index);
   writeU16(*output, start_pos);
 
   //count blocks
@@ -468,7 +466,7 @@ std::string getNameFromHeader(std::string &header) {
 }
 
 bool isConsensus(std::string &id) {
-  return id.length() > 10 && id.substr(id.length() - 10, 10) == "_consensus";
+  return id.length() > 11 && id.substr(id.length() - 10, 10) == "_consensus";
 }
 
 void writeU16(std::ostream& file, uint16_t val) {
