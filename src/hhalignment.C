@@ -842,7 +842,7 @@ void Alignment::Compress(const char infile[]) {
 
   // Too few match states?
   if (par.M == 1) {
-    int match_states = strcount(seq[kfirst], 'A', 'Z')
+    int match_states = strcount(seq[kfirst] + 1, 'A', 'Z')
         + strcount(seq[kfirst] + 1, '-', '-');
     if (match_states < 6) {
       if (N_in - N_ss <= 1) {
