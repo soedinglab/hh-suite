@@ -364,26 +364,34 @@ int compressed_a3m::compress_sequence(std::string id,
   unsigned short int index = 0;
   unsigned short int nr_blocks = 0;
   while (index < aligned_sequence.size()) {
-    unsigned short int nr_matches = 0;
+    int nr_matches = 0;
     while (aligned_sequence[index] != '-' && isupper(aligned_sequence[index]) && index < aligned_sequence.size()) {
       nr_matches++;
       index++;
     }
 
-    char nr_insertions = 0;
+    int nr_insertions = 0;
     while (islower(aligned_sequence[index]) && index < aligned_sequence.size()) {
       nr_insertions++;
       index++;
     }
 
-    char nr_gaps = 0;
+    int nr_gaps = 0;
     while (nr_insertions == 0 && aligned_sequence[index] == '-'
         && index < aligned_sequence.size()) {
-      nr_gaps--;
+      nr_gaps++;
       index++;
     }
 
-    if(!(index == aligned_sequence.size() && nr_matches == 0)) {
+    while(nr_gaps != 0 || nr_insertions != 0 || nr_matches != 0) {
+      if(index == aligned_sequence.size() && nr_matches == 0 && nr_insertions == 0) {
+        break;
+      }
+
+      nr_matches -= std::min(nr_matches, USHRT_MAX);
+      nr_gaps -= std::min(nr_gaps, SCHAR_MAX);
+      nr_insertions -= std::min(nr_insertions, SCHAR_MAX);
+
       nr_blocks++;
     }
   }
@@ -393,28 +401,39 @@ int compressed_a3m::compress_sequence(std::string id,
   index = 0;
   //count gaps
   while (index < aligned_sequence.size()) {
-    unsigned short int nr_matches = 0;
+    int nr_matches = 0;
     while (aligned_sequence[index] != '-' && isupper(aligned_sequence[index]) && index < aligned_sequence.size()) {
       nr_matches++;
       index++;
     }
 
-    char nr_insertions = 0;
+    int nr_insertions = 0;
     while (islower(aligned_sequence[index]) && index < aligned_sequence.size()) {
       nr_insertions++;
       index++;
     }
 
-    char nr_gaps = 0;
-    while (nr_insertions == 0 && aligned_sequence[index] == '-'
-        && index < aligned_sequence.size()) {
-      nr_gaps--;
+    int nr_gaps = 0;
+    while (nr_insertions == 0 && aligned_sequence[index] == '-' && index < aligned_sequence.size()) {
+      nr_gaps++;
       index++;
     }
 
-    if(!(index == aligned_sequence.size() && nr_matches == 0)) {
-      writeU16(*output, nr_matches);
-      nr_insertions > 0?output->put(nr_insertions):output->put(nr_gaps);
+    while(nr_gaps != 0 || nr_insertions != 0 || nr_matches != 0) {
+      if(index == aligned_sequence.size() && nr_matches == 0 && nr_insertions == 0) {
+        break;
+      }
+
+      unsigned short print_matches = std::min(nr_matches, USHRT_MAX);
+      char print_gaps = std::min(nr_gaps, SCHAR_MAX);
+      char print_insertions = std::min(nr_insertions, SCHAR_MAX);
+
+      nr_matches -= print_matches;
+      nr_gaps -= print_gaps;
+      nr_insertions -= print_insertions;
+
+      writeU16(*output, print_matches);
+      print_insertions > 0?output->put(print_insertions):output->put((-1)*print_gaps);
     }
   }
 

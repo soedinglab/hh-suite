@@ -18,7 +18,7 @@
 #include <algorithm>
 #include <stdint.h>
 #include <cstring>
-
+#include <climits>
 
 extern "C" {
   #include <ffindex.h>     // fast index-based database reading
