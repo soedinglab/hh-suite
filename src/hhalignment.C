@@ -572,8 +572,14 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline) {
 }
 
 void Alignment::ReadCompressed(ffindex_entry_t* entry, char* data,
-    ffindex_index_t* ffindex_sequence_database_index, char* ffindex_sequence_database_data,
-    ffindex_index_t* ffindex_header_database_index, char* ffindex_header_database_data) {
+    ffindex_index_t* ffindex_sequence_database_index,
+    char* ffindex_sequence_database_data,
+    ffindex_index_t* ffindex_header_database_index,
+    char* ffindex_header_database_data) {
+
+  char cur_seq[par.maxcol];
+  cur_seq[0] = ' ';
+  char cur_header[NAMELEN];
 
   RemoveExtension(file, entry->name);
   size_t data_size = entry->length - 1;
@@ -591,28 +597,27 @@ void Alignment::ReadCompressed(ffindex_entry_t* entry, char* data,
   char last_char = '\0';
   char inConsensus = 0;
   size_t consensus_length = 0;
+  size_t name_length = 0;
 
-  std::string header = "";
-  std::string sequence = "";
-
-  while(!(last_char == '\n' && (*data) == ';') && index < data_size) {
-    if((*data) == '\n') {
+  while (!(last_char == '\n' && (*data) == ';') && index < data_size) {
+    if ((*data) == '\n') {
       inConsensus++;
     }
     else {
-    	if (inConsensus == 0) {
-    		header += (*data);
-		}
-		else if(inConsensus == 1) {
-			sequence += (*data);
-		  consensus_length++;
-		}
+      if (inConsensus == 0) {
+        cur_header[name_length++] = (*data);
+      }
+      else if (inConsensus == 1) {
+        cur_seq[++consensus_length] = (*data);
+      }
     }
 
     last_char = (*data);
     data++;
     index++;
   }
+  cur_seq[consensus_length + 1] = '\0';
+  cur_header[name_length] = '\0';
 
   //get past ';'
   data++;
@@ -624,32 +629,31 @@ void Alignment::ReadCompressed(ffindex_entry_t* entry, char* data,
   n_display++;
   kfirst = k;
 
-  X[k] = new char[sequence.size() + 2];
-  I[k] = new short unsigned int[sequence.size() + 2];
+  X[k] = new char[consensus_length + 2];
+  I[k] = new short unsigned int[consensus_length + 2];
 
-  seq[k] = new char[sequence.size() + 2];
+  seq[k] = new char[consensus_length + 2];
+  seq[k][0] = ' ';
   int copy_pos = 1;
-  for (size_t string_pos = 0; string_pos < sequence.size(); string_pos++) {
-    if (aa2i(sequence[string_pos]) >= 0) {
-      seq[k][copy_pos++] = sequence[string_pos];
+  for (size_t string_pos = 1; string_pos <= consensus_length; string_pos++) {
+    if (aa2i(cur_seq[string_pos]) >= 0) {
+      seq[k][copy_pos++] = cur_seq[string_pos];
     }
   }
   seq[k][copy_pos] = '\0';  //Ensure that cur_seq ends with a '\0' character
 
-  char* cur_name = strscn(const_cast<char*>(header.c_str() + 1));
+  char* cur_name = strscn(cur_header + 1);
   sname[k] = new char[strlen(cur_name) + 1];
   strcpy(sname[k], cur_name);
 
   if (v && copy_pos >= par.maxcol - 1) {
-    std::cerr << std::endl << "WARNING: maximum number of residues " << par.maxcol - 2
-        << " exceeded in sequence " << sname[k] << std::endl;
+    std::cerr << std::endl << "WARNING: maximum number of residues "
+        << par.maxcol - 2 << " exceeded in sequence " << sname[k] << std::endl;
   }
 
   k++;
 
-  while(index < data_size) {
-    sequence.clear();
-
+  while (index < data_size) {
     unsigned int entry_index;
     unsigned short int nr_blocks;
     unsigned short int start_pos;
@@ -660,32 +664,37 @@ void Alignment::ReadCompressed(ffindex_entry_t* entry, char* data,
     readU32(&data, entry_index);
     index += 4;
 
-    ffindex_entry_t* sequence_entry = ffindex_get_entry_by_index(ffindex_sequence_database_index, entry_index);
-    if(sequence_entry == NULL) {
-    	std::cerr << "Could not fetch sequence entry: " << entry_index << " for alignment " << entry->name << std::endl;
-    	exit(1);
+    ffindex_entry_t* sequence_entry = ffindex_get_entry_by_index(
+        ffindex_sequence_database_index, entry_index);
+    if (sequence_entry == NULL) {
+      std::cerr << "Could not fetch sequence entry: " << entry_index
+          << " for alignment " << entry->name << std::endl;
+      exit(1);
     }
 
-    char* sequence_data = ffindex_get_data_by_entry(ffindex_sequence_database_data, sequence_entry);
-    if(sequence_data == NULL) {
-    	std::cerr << "Could not fetch sequence data: " << entry_index << " for alignment " << entry->name << std::endl;
-    	exit(1);
+    char* sequence_data = ffindex_get_data_by_entry(
+        ffindex_sequence_database_data, sequence_entry);
+    if (sequence_data == NULL) {
+      std::cerr << "Could not fetch sequence data: " << entry_index
+          << " for alignment " << entry->name << std::endl;
+      exit(1);
     }
 
-
-    ffindex_entry_t* header_entry = ffindex_get_entry_by_index(ffindex_header_database_index, entry_index);
-    if(header_entry == NULL) {
-		std::cerr << "Could not fetch header entry: " << entry_index << " for alignment " << entry->name << std::endl;
-		exit(1);
+    ffindex_entry_t* header_entry = ffindex_get_entry_by_index(
+        ffindex_header_database_index, entry_index);
+    if (header_entry == NULL) {
+      std::cerr << "Could not fetch header entry: " << entry_index
+          << " for alignment " << entry->name << std::endl;
+      exit(1);
     }
 
-    char* header_data = ffindex_get_data_by_entry(ffindex_header_database_data, header_entry);
-    if(header_data == NULL) {
-		std::cerr << "Could not fetch header data: " << entry_index << " for alignment " << entry->name << std::endl;
-		exit(1);
+    char* header_data = ffindex_get_data_by_entry(ffindex_header_database_data,
+        header_entry);
+    if (header_data == NULL) {
+      std::cerr << "Could not fetch header data: " << entry_index
+          << " for alignment " << entry->name << std::endl;
+      exit(1);
     }
-
-    header = std::string(header_data, header_entry->length);
 
     readU16(&data, start_pos);
     index += 2;
@@ -695,12 +704,14 @@ void Alignment::ReadCompressed(ffindex_entry_t* entry, char* data,
 
     size_t actual_pos = start_pos;
     size_t alignment_length = 0;
-    for(unsigned short int block_index = 0; block_index < nr_blocks; block_index++) {
+    size_t alignment_index = 1;
+    for (unsigned short int block_index = 0; block_index < nr_blocks;
+        block_index++) {
       readU16(&data, nr_matches);
       index += 2;
 
-      for(int i = 0; i < nr_matches; i++) {
-        sequence += sequence_data[actual_pos - 1];
+      for (int i = 0; i < nr_matches; i++) {
+        cur_seq[alignment_index++] = sequence_data[actual_pos - 1];
         actual_pos++;
         alignment_length++;
       }
@@ -709,26 +720,26 @@ void Alignment::ReadCompressed(ffindex_entry_t* entry, char* data,
       data++;
       index++;
 
-      if(nr_insertions_deletions > 0) {
-        for(int i = 0; i < nr_insertions_deletions; i++) {
-          sequence += tolower(sequence_data[actual_pos - 1]);
+      if (nr_insertions_deletions > 0) {
+        for (int i = 0; i < nr_insertions_deletions; i++) {
+          cur_seq[alignment_index++] = tolower(sequence_data[actual_pos - 1]);
           actual_pos++;
         }
       }
       else {
-        for(int i = 0; i < -nr_insertions_deletions; i++) {
-          sequence += '-';
+        for (int i = 0; i < -nr_insertions_deletions; i++) {
+          cur_seq[alignment_index++] = '-';
           alignment_length++;
         }
       }
     }
-
     
-    while(alignment_length < consensus_length) {
-      sequence += '-';
+    while (alignment_length < consensus_length) {
+      cur_seq[alignment_index++] = '-';
       alignment_length++;
     }
 
+    cur_seq[alignment_index] = '\0';
 
     //process sequence with header
     if (par.mark == 0) {
@@ -744,19 +755,20 @@ void Alignment::ReadCompressed(ffindex_entry_t* entry, char* data,
       keep[k] = 1;
     }
 
-    X[k] = new char[sequence.size() + 2];
-    I[k] = new short unsigned int[sequence.size() + 2];
+    X[k] = new char[alignment_index + 1];
+    I[k] = new short unsigned int[alignment_index + 1];
 
-    seq[k] = new char[sequence.size() + 2];
+    seq[k] = new char[alignment_index + 1];
+    seq[k][0] = ' ';
     size_t copy_pos = 1;
-    for (size_t string_pos = 0; string_pos < sequence.size(); string_pos++) {
-      if (aa2i(sequence[string_pos]) >= 0) {
-        seq[k][copy_pos++] = sequence[string_pos];
+    for (size_t string_pos = 1; string_pos < alignment_index; string_pos++) {
+      if (aa2i(cur_seq[string_pos]) >= 0) {
+        seq[k][copy_pos++] = cur_seq[string_pos];
       }
     }
     seq[k][copy_pos] = '\0';  //Ensure that cur_seq ends with a '\0' character
 
-    char* cur_name = strscn(const_cast<char*>(header.c_str() + 1));
+    char* cur_name = strscn(header_data + 1);
     sname[k] = new char[strlen(cur_name) + 1];
     strcpy(sname[k], cur_name);
 
@@ -767,7 +779,8 @@ void Alignment::ReadCompressed(ffindex_entry_t* entry, char* data,
 
   // Warn if there are only special sequences but no master sequence (consensus seq given if keep[kfirst]==0)
   if (kfirst < 0 || (N_in - N_ss - (keep[kfirst] == 0 ? 1 : 0)) == 0) {
-    fprintf(stderr, "Error in %s: MSA file %s contains no master sequence!\n", program_name, entry->name);
+    fprintf(stderr, "Error in %s: MSA file %s contains no master sequence!\n",
+        program_name, entry->name);
     exit(1);
   }
 
@@ -1219,6 +1232,7 @@ void Alignment::Compress(const char infile[]) {
     cerr << endl << "Error in " << par.argv[0] << ": sequences in " << infile
         << " do not all have the same number of columns, \ne.g. first sequence and sequence "
         << sname[unequal_lengths] << ".\n";
+
     if (par.M == 1)
       cerr
           << ".\nCheck input format for '-M a2m' option and consider using '-M first' or '-M 50'\n";
@@ -1538,11 +1552,9 @@ int Alignment::Filter2(char keep[], int coverage, int qid, float qsc,
       ksort[k] = k;
     QSortInt(nres, ksort, kfirst + 1, N_in - 1, -1); //Sort sequences after kfirst (query) in descending order
   }
-  for (kk = 0; kk < N_in; ++kk){
+  for (kk = 0; kk < N_in; ++kk) {
     inkk[kk] = in[ksort[kk]];
   }
-
-
 
   // Initialize N[i], idmax[i], idprev[i]
   for (i = 1; i < first[kfirst]; ++i)
@@ -2050,7 +2062,7 @@ void Alignment::FrequenciesAndTransitions(HMM* q, char* in, bool time) {
   else // N_filtered==1
   {
     //use first useful sequence (MM,JS 24.11.2013: removed bug that used consensus seq instead of first real seq)
-    for (k=0; k< N_in; k++)
+    for (k = 0; k < N_in; k++)
       if (in[k])
         break;
 

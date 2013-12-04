@@ -1297,33 +1297,6 @@ void DoViterbiSearch(char *dbfiles[], int ndb, bool alignByWorker = true) {
     char filename[NAMELEN];
     strcpy(filename, dbfiles[idb]);
 
-    //TODO
-//    if (!use_compressed_a3m) {
-//      dbf = ffindex_fopen_by_name(dbhhm_data, dbhhm_index, dbfiles[idb]);
-//      if (dbf == NULL) {
-//        RemoveExtension(filename, dbfiles[idb]);
-//        strcat(filename, ".a3m");
-//        if (dba3m_index_file == NULL) {
-//          cerr << endl << "Error opening " << filename
-//              << ": A3M database missing\n";
-//          exit(4);
-//        }
-//        dbf = ffindex_fopen_by_name(dba3m_data, dba3m_index, filename);
-//        if (dbf == NULL) {
-//          RemoveExtension(filename, dbfiles[idb]);
-//          strcat(filename, ".hmm");
-//          if (dbhhm_index_file == NULL) {
-//            cerr << endl << "Error opening " << dbfiles[idb]
-//                << ": HHM database missing\n";
-//            exit(4);
-//          }
-//          dbf = ffindex_fopen_by_name(dbhhm_data, dbhhm_index, filename);
-//          if (dbf == NULL)
-//            OpenFileError(dbfiles[idb]);
-//        }
-//      }
-//    }
-
     // Submit jobs if bin is free
     if (jobs_submitted + jobs_running < bins) {
 
@@ -1345,6 +1318,7 @@ void DoViterbiSearch(char *dbfiles[], int ndb, bool alignByWorker = true) {
 
       ///////////////////////////////////////////////////
       // Read next HMM from database file
+      //TODO
       if (use_compressed_a3m) {
         RemoveExtension(filename, dbfiles[idb]);
         strcat(filename, ".a3m");
