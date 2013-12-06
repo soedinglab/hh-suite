@@ -329,21 +329,6 @@ int ungapped_sse_score(const unsigned char* query_profile,
   return score;
 }
 
-void extract_name_from_index(char* name, const char* index_name) {
-  strcpy(name, index_name);
-  size_t end = strlen(name);
-  for (size_t i = 0; i < strlen(name); ++i) {
-    if (name[i] == '|') {
-      name[i] = 0;
-      return;
-    }
-    if (name[i] == '.') {
-      end = i;
-    }
-  }
-  name[end] = 0;
-}
-
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Pull out all names from prefilter db file and copy into dbfiles_new for full HMM-HMM comparison
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -365,16 +350,27 @@ void init_no_prefiltering()
 
   for (size_t n = 0; n < num_dbs; n++) {
     ffindex_entry_t* entry = ffindex_get_entry_by_index(db_index, n);
-    char name[NAMELEN];
-    extract_name_from_index(name, entry->name);
-    strcat(name,".");
-    strcat(name,db_ext);
-    dbfiles_new[n] = new char[strlen(name) + 1];
-    strcpy(dbfiles_new[n], name);
+    dbfiles_new[n] = new char[strlen(entry->name) + 1];
+    strcpy(dbfiles_new[n], entry->name);
   }
   ndb_new = num_dbs;
 
   if (v>=2) cout << "Searching " << ndb_new << " database HHMs without prefiltering" << endl;
+}
+
+void checkCSFormat(size_t nr_checks) {
+  for(size_t n = 0; n < std::min(nr_checks, num_dbs); n++) {
+    if(first[n][0] == '>') {
+      nr_checks--;
+    }
+  }
+
+  if(nr_checks == 0) {
+    std::cerr << "Error: Your cs database is in an old format!" << std::endl;
+    std::cerr << "\tThis format is no longer supportet!" << std::endl;
+    std::cerr << "\tCorrespond to the user manual!" << std::endl;
+    exit(1);
+  }
 }
 
 //////////////////////////////////////////////////////////////
@@ -405,10 +401,13 @@ void init_prefilter()
     first[n] = (unsigned char*)ffindex_get_data_by_entry((char*)db_data, entry);
     length[n] = entry->length - 1;
     dbnames[n] = new char[strlen(entry->name)+1];
-    extract_name_from_index(dbnames[n], entry->name);
+    strcpy(dbnames[n], entry->name);
   }
 
   free(db_index);
+
+  //check if cs219 format is new binary format
+  checkCSFormat(5);
 
   if (v>=2) {
     printf("Searching %zu column state sequences.\n", num_dbs);
@@ -704,8 +703,6 @@ void prefilter_db() {
 
     char db_name[NAMELEN];
     strcpy(db_name, name);
-    strcat(db_name,".");
-    strcat(db_name,db_ext);
 
     if (! doubled->Contains(db_name)) {
 	  doubled->Add(db_name);

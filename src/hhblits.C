@@ -1190,27 +1190,21 @@ void DoViterbiSearch(char *dbfiles[], int ndb, bool alignByWorker = true) {
 
     // Open HMM database
     FILE* dbf;
-    char filename[NAMELEN];
-    strcpy(filename, dbfiles[idb]);
     dbf = ffindex_fopen_by_name(dbhhm_data, dbhhm_index, dbfiles[idb]);
     if (dbf == NULL) {
-      RemoveExtension(filename, dbfiles[idb]);
-      strcat(filename, ".a3m");
       if (dba3m_index_file == NULL) {
-        cerr << endl << "Error opening " << filename
+        cerr << endl << "Error opening " << dbfiles[idb]
             << ": A3M database missing\n";
         exit(4);
       }
-      dbf = ffindex_fopen_by_name(dba3m_data, dba3m_index, filename);
+      dbf = ffindex_fopen_by_name(dba3m_data, dba3m_index, dbfiles[idb]);
       if (dbf == NULL) {
-        RemoveExtension(filename, dbfiles[idb]);
-        strcat(filename, ".hmm");
         if (dbhhm_index_file == NULL) {
           cerr << endl << "Error opening " << dbfiles[idb]
               << ": HHM database missing\n";
           exit(4);
         }
-        dbf = ffindex_fopen_by_name(dbhhm_data, dbhhm_index, filename);
+        dbf = ffindex_fopen_by_name(dbhhm_data, dbhhm_index, dbfiles[idb]);
         if (dbf == NULL)
           OpenFileError(dbfiles[idb]);
       }
@@ -1248,13 +1242,13 @@ void DoViterbiSearch(char *dbfiles[], int ndb, bool alignByWorker = true) {
       if (!strncmp(line, "HMMER3", 6))      // read HMMER3 format
           {
         format[bin] = 1;
-        t[bin]->ReadHMMer3(dbf, filename);
+        t[bin]->ReadHMMer3(dbf, dbfiles[idb]);
         par.hmmer_used = true;
       }
       else if (!strncmp(line, "HMMER", 5))      // read HMMER format
           {
         format[bin] = 1;
-        t[bin]->ReadHMMer(dbf, filename);
+        t[bin]->ReadHMMer(dbf, dbfiles[idb]);
         par.hmmer_used = true;
       }
       else if (!strncmp(line, "HH", 2))    // read HHM format
@@ -1271,8 +1265,8 @@ void DoViterbiSearch(char *dbfiles[], int ndb, bool alignByWorker = true) {
       else if (line[0] == '#' || line[0] == '>')           // read a3m alignment
           {
         Alignment tali;
-        tali.Read(dbf, filename, line);
-        tali.Compress(filename);
+        tali.Read(dbf, dbfiles[idb], line);
+        tali.Compress(dbfiles[idb]);
         //              qali.FilterForDisplay(par.max_seqid,par.coverage,par.qid,par.qsc,par.nseqdis);
         tali.N_filtered = tali.Filter(par.max_seqid_db, par.coverage_db,
             par.qid_db, par.qsc_db, par.Ndiff_db);
@@ -1713,16 +1707,13 @@ void perform_realign(char *dbfiles[], int ndb) {
       if (hit_cur.L > Lmaxmem)
         continue;  // Don't align too long sequences due to memory limit
 
+      //TODO
       // Open HMM database file dbfiles[idb]
       FILE* dbf;
       dbf = ffindex_fopen_by_name(dbhhm_data, dbhhm_index, hit_cur.dbfile);
       if (dbf == NULL) {
-        char filename[NAMELEN];
-        RemoveExtension(filename, hit_cur.file);
-        strcat(filename, ".a3m");
         if (dba3m_index_file != NULL) {
-
-          dbf = ffindex_fopen_by_name(dba3m_data, dba3m_index, filename);
+          dbf = ffindex_fopen_by_name(dba3m_data, dba3m_index, hit_cur.file);
         }
         else {
           cerr << endl << "Error opening " << hit_cur.dbfile
@@ -1730,6 +1721,7 @@ void perform_realign(char *dbfiles[], int ndb) {
           exit(4);
         }
       }
+
       if (dbf == NULL)
         OpenFileError(hit_cur.dbfile);
 
@@ -1866,25 +1858,21 @@ void perform_realign(char *dbfiles[], int ndb) {
       if (hit[bin]->matched_cols < MINCOLS_REALIGN)
         continue;
 
+      //TODO
       // Read a3m alignment of hit and merge with Qali according to Q-T-alignment in hit[bin]
-      char ta3mfile[NAMELEN];
-      //strcpy(ta3mfile,hit[bin]->file); // copy filename including path but without extension
-      RemoveExtension(ta3mfile, hit[bin]->dbfile);
-      strcat(ta3mfile, ".a3m");
-
       // Reading in next db MSA and merging it onto Qali
       Alignment Tali;
-      FILE* ta3mf = ffindex_fopen_by_name(dba3m_data, dba3m_index, ta3mfile);
+      FILE* ta3mf = ffindex_fopen_by_name(dba3m_data, dba3m_index, hit[bin]->dbfile);
       if (ta3mf == NULL)
-        OpenFileError(ta3mfile);
-      Tali.Read(ta3mf, ta3mfile); // Read template alignment into Tali
+        OpenFileError(hit[bin]->dbfile);
+      Tali.Read(ta3mf, hit[bin]->dbfile); // Read template alignment into Tali
       fclose(ta3mf);
-      Tali.Compress(ta3mfile); // Filter database alignment
+      Tali.Compress(hit[bin]->dbfile); // Filter database alignment
       if (par.allseqs) // need to keep *all* sequences in Qali_allseqs? => merge before filtering
-        Qali_allseqs.MergeMasterSlave(*hit[bin], Tali, ta3mfile);
+        Qali_allseqs.MergeMasterSlave(*hit[bin], Tali, hit[bin]->dbfile);
       Tali.N_filtered = Tali.Filter(par.max_seqid_db, par.coverage_db,
           par.qid_db, par.qsc_db, par.Ndiff_db);
-      Qali.MergeMasterSlave(*hit[bin], Tali, ta3mfile);
+      Qali.MergeMasterSlave(*hit[bin], Tali, hit[bin]->dbfile);
 
       // //?????????????????????????????
       // // JS: Reading the db MSA twice for par.all seems pretty inefficient!!!!!!!!!!!
@@ -1971,15 +1959,13 @@ void perform_realign(char *dbfiles[], int ndb) {
     // This list is now sorted by ftellpos in ascending order to access one template after the other efficiently
     phash_plist_realignhitpos->Show(dbfiles[idb])->SortList();
 
+    //TODO
     // Open HMM database file dbfiles[idb]
     FILE* dbf;
     dbf = ffindex_fopen_by_name(dbhhm_data, dbhhm_index, dbfiles[idb]);
     if (dbf == NULL) {
-      char filename[NAMELEN];
-      RemoveExtension(filename, dbfiles[idb]);
-      strcat(filename, ".a3m");
       if (dba3m_index_file != NULL) {
-        dbf = ffindex_fopen_by_name(dba3m_data, dba3m_index, filename);
+        dbf = ffindex_fopen_by_name(dba3m_data, dba3m_index, dbfiles[idb]);
       }
       else {
         cerr << endl << "Error opening " << dbfiles[idb]
@@ -2760,8 +2746,6 @@ int main(int argc, char **argv) {
 
       // If new hits found, merge hits to query alignment
       if (new_hits != 0) {
-        char ta3mfile[NAMELEN];
-
         if (v >= 1)
           printf("Merging hits to query profile\n");
 
@@ -2788,24 +2772,22 @@ int main(int argc, char **argv) {
           if (premerged_hits->Contains((char*) ss_tmp.str().c_str()))
             continue;
 
+          //TODO
           // Read a3m alignment of hit from <file>.a3m file
-          RemoveExtension(ta3mfile, hit_cur.dbfile);
-          strcat(ta3mfile, ".a3m");
-
           // Reading in next db MSA and merging it onto Qali
           FILE* ta3mf;
           Alignment Tali;
-          ta3mf = ffindex_fopen_by_name(dba3m_data, dba3m_index, ta3mfile);
+          ta3mf = ffindex_fopen_by_name(dba3m_data, dba3m_index, hit_cur.dbfile);
           if (ta3mf == NULL)
-            OpenFileError(ta3mfile);
-          Tali.Read(ta3mf, ta3mfile); // Read template alignment into Tali
+            OpenFileError(hit_cur.dbfile);
+          Tali.Read(ta3mf, hit_cur.dbfile); // Read template alignment into Tali
           fclose(ta3mf);
-          Tali.Compress(ta3mfile); // Filter database alignment
+          Tali.Compress(hit_cur.dbfile); // Filter database alignment
           if (par.allseqs) // need to keep *all* sequences in Qali_allseqs? => merge before filtering
-            Qali_allseqs.MergeMasterSlave(hit_cur, Tali, ta3mfile);
+            Qali_allseqs.MergeMasterSlave(hit_cur, Tali, hit_cur.dbfile);
           Tali.N_filtered = Tali.Filter(par.max_seqid_db, par.coverage_db,
               par.qid_db, par.qsc_db, par.Ndiff_db);
-          Qali.MergeMasterSlave(hit_cur, Tali, ta3mfile);
+          Qali.MergeMasterSlave(hit_cur, Tali, hit_cur.dbfile);
 
           // //?????????????????????????????
           // // JS: Reading the db MSA twice for par.all seems pretty inefficient!!!!!!!!!!!
