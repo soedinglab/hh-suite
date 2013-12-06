@@ -388,7 +388,7 @@ int compressed_a3m::compress_sequence(std::string id,
         break;
       }
 
-      nr_matches -= std::min(nr_matches, USHRT_MAX);
+      nr_matches -= std::min(nr_matches, SCHAR_MAX);
       nr_gaps -= std::min(nr_gaps, SCHAR_MAX);
       nr_insertions -= std::min(nr_insertions, SCHAR_MAX);
 
@@ -424,7 +424,7 @@ int compressed_a3m::compress_sequence(std::string id,
         break;
       }
 
-      unsigned short print_matches = std::min(nr_matches, USHRT_MAX);
+      char print_matches = std::min(nr_matches, SCHAR_MAX);
       char print_gaps = std::min(nr_gaps, SCHAR_MAX);
       char print_insertions = std::min(nr_insertions, SCHAR_MAX);
 
@@ -432,7 +432,7 @@ int compressed_a3m::compress_sequence(std::string id,
       nr_gaps -= print_gaps;
       nr_insertions -= print_insertions;
 
-      writeU16(*output, print_matches);
+      output->put(print_matches);
       print_insertions > 0?output->put(print_insertions):output->put((-1)*print_gaps);
     }
   }
