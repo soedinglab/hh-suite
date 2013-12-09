@@ -258,9 +258,6 @@ void compressed_a3m::extract_a3m(char* data, size_t data_size,
     unsigned int entry_index;
     unsigned short int nr_blocks;
     unsigned short int start_pos;
-    unsigned short int nr_matches;
-
-    char nr_insertions_deletions;
 
     readU32(&data, entry_index);
     index += 4;
@@ -284,8 +281,9 @@ void compressed_a3m::extract_a3m(char* data, size_t data_size,
     size_t actual_pos = start_pos;
     size_t alignment_length = 0;
     for(unsigned short int block_index = 0; block_index < nr_blocks; block_index++) {
-      readU16(&data, nr_matches);
-      index += 2;
+      unsigned char nr_matches = (unsigned char)(*data);
+      data++;
+      index++;
 
       for(int i = 0; i < nr_matches; i++) {
         output->put(sequence[actual_pos - 1]);
@@ -293,7 +291,7 @@ void compressed_a3m::extract_a3m(char* data, size_t data_size,
         alignment_length++;
       }
 
-      nr_insertions_deletions = (*data);
+      char nr_insertions_deletions = (*data);
       data++;
       index++;
 

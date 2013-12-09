@@ -657,9 +657,6 @@ void Alignment::ReadCompressed(ffindex_entry_t* entry, char* data,
     unsigned int entry_index;
     unsigned short int nr_blocks;
     unsigned short int start_pos;
-    unsigned short int nr_matches;
-
-    char nr_insertions_deletions;
 
     readU32(&data, entry_index);
     index += 4;
@@ -707,8 +704,9 @@ void Alignment::ReadCompressed(ffindex_entry_t* entry, char* data,
     size_t alignment_index = 1;
     for (unsigned short int block_index = 0; block_index < nr_blocks;
         block_index++) {
-      readU16(&data, nr_matches);
-      index += 2;
+      unsigned char nr_matches = (unsigned char)(*data);
+      data++;
+      index++;
 
       for (int i = 0; i < nr_matches; i++) {
         cur_seq[alignment_index++] = sequence_data[actual_pos - 1];
@@ -716,7 +714,7 @@ void Alignment::ReadCompressed(ffindex_entry_t* entry, char* data,
         alignment_length++;
       }
 
-      nr_insertions_deletions = (*data);
+      char nr_insertions_deletions = (*data);
       data++;
       index++;
 
