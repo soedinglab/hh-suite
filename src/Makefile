@@ -118,7 +118,7 @@ hhalign_valgrind: hhalign.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
 	  $(CPP_VALGRIND) hhalign.C -o hhalign_valgrind $(CS_OBJECTS) $(HHALIGN_LIBS) $(OBJECT_LIBS)
 
 hhfilter: hhfilter.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
-	  $(CPP) hhfilter.C -o hhfilter $(CS_OBJECTS) $(OBJECT_LIBS)
+	  $(CPP) hhfilter.C -o hhfilter $(CS_OBJECTS) $(OBJECT_LIBS) $(FFINDEX_DIR)/libffindex.a
 
 hhfilter_static: hhfilter.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
 	  $(CPP) -static hhfilter.C -o hhfilter $(CS_OBJECTS) $(OBJECT_LIBS)

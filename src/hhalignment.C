@@ -32,6 +32,10 @@ using std::ofstream;
 #include "hhhmm.h"
 #endif
 
+extern "C" {
+#include <ffindex.h>     // fast index-based database reading
+}
+
 /////////////////////////////////////////////////////////////////////////////////////
 // Class Alignment
 /////////////////////////////////////////////////////////////////////////////////////
@@ -1473,6 +1477,8 @@ int Alignment::Filter2(char keep[], int coverage, int qid, float qsc,
     int seqid1, int seqid2, int Ndiff) {
   // In the beginnning, keep[k] is 1 for all regular amino acid sequences and 0 for all others (ss_conf, ss_pred,...)
   // In the end, keep[k] will be 1 for all regular representative sequences kept in the alignment, 0 for all others
+  // Sequences with keep[k] = 2 will cannot be filtered out and will remain in the alignment.
+  // If a consensus sequence exists it has k = kfirst and keep[k] = 0, since it should not enter into the profile calculation.
   char* in = new (char[N_in + 1]); // in[k]=1: seq k has been accepted; in[k]=0: seq k has not yet been accepted at current seqid
   char* inkk = new (char[N_in + 1]); // inkk[k]=1 iff in[ksort[k]]=1 else 0;
   int* Nmax = new (int[L + 2]); // position-dependent maximum-sequence-identity threshold for filtering? (variable used in former version was idmax)
@@ -1500,13 +1506,14 @@ int Alignment::Filter2(char keep[], int coverage, int qid, float qsc,
   int n;                    // number of sequences accepted so far
 
   // Initialize in[k]
-  for (n = k = 0; k < N_in; ++k)
+  for (n = k = 0; k < N_in; ++k) {
     if (keep[k] == 2) {
       in[k] = 2;
       n++;
     }
     else
       in[k] = 0;
+  }
 
   // Determine first[k], last[k]?
   if (first == NULL) {
@@ -1596,11 +1603,17 @@ int Alignment::Filter2(char keep[], int coverage, int qid, float qsc,
             gapq = 0;
             qsc_sum += S[(int) X[kfirst][i]][(int) X[k][i]];
           }
+          else if (X[kfirst][i] == ANY)
+            // Treat score of X with other amino acid as 0.0
+            continue;
           else if (gapq++)
-            qsc_sum -= PLTY_GAPEXTD;
+           qsc_sum -= PLTY_GAPEXTD;
           else
             qsc_sum -= PLTY_GAPOPEN;
         }
+        else if (X[k][i] == ANY)
+          // Treat score of X with other amino acid as 0.0
+          continue;
         else if (X[kfirst][i] < 20) {
           gapq = 0;
           if (gapk++)
@@ -1634,12 +1647,32 @@ int Alignment::Filter2(char keep[], int coverage, int qid, float qsc,
 //      printf("  qsc=%6.2f     qid=%6.2f  \n",qsc_sum/nres[k],100.0*(1.0-(float)(diff)/nres[k]));
   }
 
-  if (seqid1 > seqid2) {
-    for (n = k = 0; k < N_in; ++k)
-      if (keep[k] > 0)
-        n++;
-    return n;
+  // If no sequence left, issue warning and put back first real sequence into alignment
+  for (n = k = 0; k < N_in; ++k)
+    if (keep[k] > 0) n++;
+  if (n==0) {
+    for (k = 0; k < N_in; k++) {
+      if(display[k] != 2) {
+        keep[k] = 1;
+        break;
+      }
+    }
+    if (keep[k] == 1) {
+      if (v>=2) cerr<<endl<<"WARNING from "<<program_name<<": Filtering removed all sequences in alignment "<<name<<". Inserting back first sequence.\n";
+    }
+    else if (display[kfirst] == 2) { // the only sequence in the alignment is the consensus sequence :-(
+      if (v>=1) cerr<<endl<<"WARNING from "<<program_name<<": Alignment "<<name<<" contains no sequence except consensus sequence. Using consensus sequence for searching.\n";
+    }
+    else {
+      const char unknown[] = "'unknown'";
+      char details[100];
+      sprintf(details, "The alingment %s does not contain any sequences.", name);
+      FormatError(unknown, details);
+    }
   }
+
+  // If min required seqid larger than max required seqid, return here without doing pairwise seqid filtering
+  if (seqid1 > seqid2) return n;
 
   // Successively increment idmax[i] at positons where N[i]<Ndiff
   seqid = seqid1;
@@ -2060,14 +2093,17 @@ void Alignment::FrequenciesAndTransitions(HMM* q, char* in, bool time) {
   else // N_filtered==1
   {
     //use first useful sequence (MM,JS 24.11.2013: removed bug that used consensus seq instead of first real seq)
-    for (k = 0; k < N_in; k++)
-      if (in[k])
+    for (k = 0; k < N_in; k++) {
+      if (in[k]) {
         break;
+      }
+    }
 
     X[k][0] = X[k][L + 1] = ANY; // (to avoid unallowed access within loop)
     q->Neff_HMM = 1.0f;
-    for (i = 0; i <= L + 1; ++i) // for all positions i in alignment
-        {
+
+    // for all positions i in alignment
+    for (i = 0; i <= L + 1; ++i) {
       q->Neff_M[i] = 1.0f;
       q->Neff_I[i] = q->Neff_D[i] = 0.0f;
       for (a = 0; a < 20; ++a)

@@ -1,5 +1,10 @@
 // hhalignment.hHMM&
 
+
+extern "C" {
+#include <ffindex.h>     // fast index-based database reading
+}
+
 class Alignment
 {
 public:
