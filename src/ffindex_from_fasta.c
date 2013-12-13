@@ -128,12 +128,7 @@ int main(int argn, char **argv)
         name[seq_id_length++] = *(fasta_data + fasta_offset);
       }
 
-      if(input == '\n') {
-        entry[entry_length] = '\0';
-      }
-      else {
-        entry[entry_length++] = input;
-      }
+      entry[entry_length++] = input;
 
       fasta_offset++;
     }
