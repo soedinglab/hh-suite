@@ -107,7 +107,7 @@ if ($fam) {
 	    my $tmp = $1;
 	    $tmp =~ s/\|/_/g;
 	    $tmp =~ s/\./_/g;
-	    $outfile="$tmp.seq";
+	    $outfile="$tmp.$ext";
 	    $sequence=$line;
 	    $n++;
 	} else {

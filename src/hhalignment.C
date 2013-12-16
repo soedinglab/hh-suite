@@ -32,6 +32,10 @@ using std::ofstream;
 #include "hhhmm.h"
 #endif
 
+extern "C" {
+#include <ffindex.h>     // fast index-based database reading
+}
+
 /////////////////////////////////////////////////////////////////////////////////////
 // Class Alignment
 /////////////////////////////////////////////////////////////////////////////////////
@@ -571,6 +575,251 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline) {
   return;
 }
 
+void Alignment::ReadCompressed(ffindex_entry_t* entry, char* data,
+    ffindex_index_t* ffindex_sequence_database_index,
+    char* ffindex_sequence_database_data,
+    ffindex_index_t* ffindex_header_database_index,
+    char* ffindex_header_database_data) {
+
+  char cur_seq[par.maxcol];
+  cur_seq[0] = ' ';
+  char cur_header[NAMELEN];
+
+  RemoveExtension(file, entry->name);
+  size_t data_size = entry->length - 1;
+  size_t index = 0;
+
+  kss_dssp = ksa_dssp = kss_pred = kss_conf = kfirst = -1;
+  n_display = 0;
+  N_in = 0;
+  N_filtered = 0;
+  N_ss = 0;
+
+  // Index of sequence being read currently (first=0)
+  int k = 0;
+
+  char last_char = '\0';
+  char inConsensus = 0;
+  size_t consensus_length = 0;
+  size_t name_length = 0;
+
+  while (!(last_char == '\n' && (*data) == ';') && index < data_size) {
+    if ((*data) == '\n') {
+      inConsensus++;
+    }
+    else {
+      if (inConsensus == 0) {
+        cur_header[name_length++] = (*data);
+      }
+      else if (inConsensus == 1) {
+        cur_seq[++consensus_length] = (*data);
+      }
+    }
+
+    last_char = (*data);
+    data++;
+    index++;
+  }
+  cur_seq[consensus_length + 1] = '\0';
+  cur_header[name_length] = '\0';
+
+  //get past ';'
+  data++;
+  index++;
+
+  //process consensus
+  display[k] = 2;
+  keep[k] = 0;
+  n_display++;
+  kfirst = k;
+
+  X[k] = new char[consensus_length + 2];
+  I[k] = new short unsigned int[consensus_length + 2];
+
+  seq[k] = new char[consensus_length + 2];
+  seq[k][0] = ' ';
+  int copy_pos = 1;
+  for (size_t string_pos = 1; string_pos <= consensus_length; string_pos++) {
+    if (aa2i(cur_seq[string_pos]) >= 0) {
+      seq[k][copy_pos++] = cur_seq[string_pos];
+    }
+  }
+  seq[k][copy_pos] = '\0';  //Ensure that cur_seq ends with a '\0' character
+
+  char* cur_name = strscn(cur_header + 1);
+  sname[k] = new char[strlen(cur_name) + 1];
+  strcpy(sname[k], cur_name);
+
+  if (v && copy_pos >= par.maxcol - 1) {
+    std::cerr << std::endl << "WARNING: maximum number of residues "
+        << par.maxcol - 2 << " exceeded in sequence " << sname[k] << std::endl;
+  }
+
+  k++;
+
+  while (index < data_size) {
+    unsigned int entry_index;
+    unsigned short int nr_blocks;
+    unsigned short int start_pos;
+
+    readU32(&data, entry_index);
+    index += 4;
+
+    ffindex_entry_t* sequence_entry = ffindex_get_entry_by_index(
+        ffindex_sequence_database_index, entry_index);
+    if (sequence_entry == NULL) {
+      std::cerr << "Could not fetch sequence entry: " << entry_index
+          << " for alignment " << entry->name << std::endl;
+      exit(1);
+    }
+
+    char* sequence_data = ffindex_get_data_by_entry(
+        ffindex_sequence_database_data, sequence_entry);
+    if (sequence_data == NULL) {
+      std::cerr << "Could not fetch sequence data: " << entry_index
+          << " for alignment " << entry->name << std::endl;
+      exit(1);
+    }
+
+    ffindex_entry_t* header_entry = ffindex_get_entry_by_index(
+        ffindex_header_database_index, entry_index);
+    if (header_entry == NULL) {
+      std::cerr << "Could not fetch header entry: " << entry_index
+          << " for alignment " << entry->name << std::endl;
+      exit(1);
+    }
+
+    char* header_data = ffindex_get_data_by_entry(ffindex_header_database_data,
+        header_entry);
+    if (header_data == NULL) {
+      std::cerr << "Could not fetch header data: " << entry_index
+          << " for alignment " << entry->name << std::endl;
+      exit(1);
+    }
+
+    readU16(&data, start_pos);
+    index += 2;
+
+    readU16(&data, nr_blocks);
+    index += 2;
+
+    size_t actual_pos = start_pos;
+    size_t alignment_length = 0;
+    size_t alignment_index = 1;
+    for (unsigned short int block_index = 0; block_index < nr_blocks;
+        block_index++) {
+      unsigned char nr_matches = (unsigned char)(*data);
+      data++;
+      index++;
+
+      for (int i = 0; i < nr_matches; i++) {
+        cur_seq[alignment_index++] = sequence_data[actual_pos - 1];
+        actual_pos++;
+        alignment_length++;
+      }
+
+      char nr_insertions_deletions = (*data);
+      data++;
+      index++;
+
+      if (nr_insertions_deletions > 0) {
+        for (int i = 0; i < nr_insertions_deletions; i++) {
+          cur_seq[alignment_index++] = tolower(sequence_data[actual_pos - 1]);
+          actual_pos++;
+        }
+      }
+      else {
+        for (int i = 0; i < -nr_insertions_deletions; i++) {
+          cur_seq[alignment_index++] = '-';
+          alignment_length++;
+        }
+      }
+    }
+    
+    while (alignment_length < consensus_length) {
+      cur_seq[alignment_index++] = '-';
+      alignment_length++;
+    }
+
+    cur_seq[alignment_index] = '\0';
+
+    //process sequence with header
+    if (par.mark == 0) {
+      display[k] = keep[k] = 1;
+      n_display++;
+    }
+    else if (par.mark == 1) {
+      display[k] = keep[k] = 1;
+      n_display++;
+    }
+    else {
+      display[k] = 0;
+      keep[k] = 1;
+    }
+
+    X[k] = new char[alignment_index + 1];
+    I[k] = new short unsigned int[alignment_index + 1];
+
+    seq[k] = new char[alignment_index + 1];
+    seq[k][0] = ' ';
+    size_t copy_pos = 1;
+    for (size_t string_pos = 1; string_pos < alignment_index; string_pos++) {
+      if (aa2i(cur_seq[string_pos]) >= 0) {
+        seq[k][copy_pos++] = cur_seq[string_pos];
+      }
+    }
+    seq[k][copy_pos] = '\0';  //Ensure that cur_seq ends with a '\0' character
+
+    char* cur_name = strscn(header_data + 1);
+    sname[k] = new char[strlen(cur_name) + 1];
+    strcpy(sname[k], cur_name);
+
+    k++;
+  }
+
+  N_in = k;
+
+  // Warn if there are only special sequences but no master sequence (consensus seq given if keep[kfirst]==0)
+  if (kfirst < 0 || (N_in - N_ss - (keep[kfirst] == 0 ? 1 : 0)) == 0) {
+    fprintf(stderr, "Error in %s: MSA file %s contains no master sequence!\n",
+        program_name, entry->name);
+    exit(1);
+  }
+
+  // Set name, longname, fam
+  // longname, name and family were not set by '#...' line yet -> extract from first sequence
+  if (!*name) {
+    char* ptr;
+    strncpy(longname, sname[kfirst], DESCLEN - 1); // longname is name of first sequence
+    longname[DESCLEN - 1] = '\0';
+    strncpy(name, sname[kfirst], NAMELEN - 1); // Shortname is first word of longname...
+    name[NAMELEN - 1] = '\0';
+    ptr = strcut(name);                  // ...until first white-space character
+    if (ptr && islower(ptr[0]) && ptr[1] == '.' && isdigit(ptr[2])) //Scop family code present as second word?
+        {
+      lwrstr(name);                        // Transform upper case to lower case
+      strcut(ptr); // Non-white-space characters until next white-space character..
+      strcpy(fam, ptr);                       // ...are the SCOP familiy code
+    }
+    else if (name[0] == 'P' && name[1] == 'F' && isdigit(name[2])
+        && isdigit(name[3])) //Pfam code
+            {
+      strcpy(fam, name);                      // set family name = Pfam code
+    }
+  }
+
+  // Checking for warning messages
+  if (v == 0)
+    return;
+  if (v >= 2)
+    cout << "Read " << entry->name << " with " << N_in << " sequences\n";
+  if (v >= 3)
+    cout << "Query sequence for alignment has number " << kfirst
+        << " (0 is first)\n";
+
+  return;
+}
+
 /////////////////////////////////////////////////////////////////////////////////////
 // Convert ASCII in seq[k][l] to int (0-20) in X[k][i], throw out all insert states, record their number in I[k][i]
 // and store sequences to be displayed in seq[k]
@@ -608,7 +857,7 @@ void Alignment::Compress(const char infile[]) {
 
   // Too few match states?
   if (par.M == 1) {
-    int match_states = strcount(seq[kfirst], 'A', 'Z')
+    int match_states = strcount(seq[kfirst] + 1, 'A', 'Z')
         + strcount(seq[kfirst] + 1, '-', '-');
     if (match_states < 6) {
       if (N_in - N_ss <= 1) {
@@ -985,6 +1234,7 @@ void Alignment::Compress(const char infile[]) {
     cerr << endl << "Error in " << par.argv[0] << ": sequences in " << infile
         << " do not all have the same number of columns, \ne.g. first sequence and sequence "
         << sname[unequal_lengths] << ".\n";
+
     if (par.M == 1)
       cerr
           << ".\nCheck input format for '-M a2m' option and consider using '-M first' or '-M 50'\n";
@@ -1227,6 +1477,8 @@ int Alignment::Filter2(char keep[], int coverage, int qid, float qsc,
     int seqid1, int seqid2, int Ndiff) {
   // In the beginnning, keep[k] is 1 for all regular amino acid sequences and 0 for all others (ss_conf, ss_pred,...)
   // In the end, keep[k] will be 1 for all regular representative sequences kept in the alignment, 0 for all others
+  // Sequences with keep[k] = 2 will cannot be filtered out and will remain in the alignment.
+  // If a consensus sequence exists it has k = kfirst and keep[k] = 0, since it should not enter into the profile calculation.
   char* in = new (char[N_in + 1]); // in[k]=1: seq k has been accepted; in[k]=0: seq k has not yet been accepted at current seqid
   char* inkk = new (char[N_in + 1]); // inkk[k]=1 iff in[ksort[k]]=1 else 0;
   int* Nmax = new (int[L + 2]); // position-dependent maximum-sequence-identity threshold for filtering? (variable used in former version was idmax)
@@ -1254,13 +1506,14 @@ int Alignment::Filter2(char keep[], int coverage, int qid, float qsc,
   int n;                    // number of sequences accepted so far
 
   // Initialize in[k]
-  for (n = k = 0; k < N_in; ++k)
+  for (n = k = 0; k < N_in; ++k) {
     if (keep[k] == 2) {
       in[k] = 2;
       n++;
     }
     else
       in[k] = 0;
+  }
 
   // Determine first[k], last[k]?
   if (first == NULL) {
@@ -1304,11 +1557,9 @@ int Alignment::Filter2(char keep[], int coverage, int qid, float qsc,
       ksort[k] = k;
     QSortInt(nres, ksort, kfirst + 1, N_in - 1, -1); //Sort sequences after kfirst (query) in descending order
   }
-  for (kk = 0; kk < N_in; ++kk){
+  for (kk = 0; kk < N_in; ++kk) {
     inkk[kk] = in[ksort[kk]];
   }
-
-
 
   // Initialize N[i], idmax[i], idprev[i]
   for (i = 1; i < first[kfirst]; ++i)
@@ -1352,11 +1603,17 @@ int Alignment::Filter2(char keep[], int coverage, int qid, float qsc,
             gapq = 0;
             qsc_sum += S[(int) X[kfirst][i]][(int) X[k][i]];
           }
+          else if (X[kfirst][i] == ANY)
+            // Treat score of X with other amino acid as 0.0
+            continue;
           else if (gapq++)
-            qsc_sum -= PLTY_GAPEXTD;
+           qsc_sum -= PLTY_GAPEXTD;
           else
             qsc_sum -= PLTY_GAPOPEN;
         }
+        else if (X[k][i] == ANY)
+          // Treat score of X with other amino acid as 0.0
+          continue;
         else if (X[kfirst][i] < 20) {
           gapq = 0;
           if (gapk++)
@@ -1390,12 +1647,32 @@ int Alignment::Filter2(char keep[], int coverage, int qid, float qsc,
 //      printf("  qsc=%6.2f     qid=%6.2f  \n",qsc_sum/nres[k],100.0*(1.0-(float)(diff)/nres[k]));
   }
 
-  if (seqid1 > seqid2) {
-    for (n = k = 0; k < N_in; ++k)
-      if (keep[k] > 0)
-        n++;
-    return n;
+  // If no sequence left, issue warning and put back first real sequence into alignment
+  for (n = k = 0; k < N_in; ++k)
+    if (keep[k] > 0) n++;
+  if (n==0) {
+    for (k = 0; k < N_in; k++) {
+      if(display[k] != 2) {
+        keep[k] = 1;
+        break;
+      }
+    }
+    if (keep[k] == 1) {
+      if (v>=2) cerr<<endl<<"WARNING from "<<program_name<<": Filtering removed all sequences in alignment "<<name<<". Inserting back first sequence.\n";
+    }
+    else if (display[kfirst] == 2) { // the only sequence in the alignment is the consensus sequence :-(
+      if (v>=1) cerr<<endl<<"WARNING from "<<program_name<<": Alignment "<<name<<" contains no sequence except consensus sequence. Using consensus sequence for searching.\n";
+    }
+    else {
+      const char unknown[] = "'unknown'";
+      char details[100];
+      sprintf(details, "The alingment %s does not contain any sequences.", name);
+      FormatError(unknown, details);
+    }
   }
+
+  // If min required seqid larger than max required seqid, return here without doing pairwise seqid filtering
+  if (seqid1 > seqid2) return n;
 
   // Successively increment idmax[i] at positons where N[i]<Ndiff
   seqid = seqid1;
@@ -1816,14 +2093,17 @@ void Alignment::FrequenciesAndTransitions(HMM* q, char* in, bool time) {
   else // N_filtered==1
   {
     //use first useful sequence (MM,JS 24.11.2013: removed bug that used consensus seq instead of first real seq)
-    for (k=0; k< N_in; k++)
-      if (in[k])
+    for (k = 0; k < N_in; k++) {
+      if (in[k]) {
         break;
+      }
+    }
 
     X[k][0] = X[k][L + 1] = ANY; // (to avoid unallowed access within loop)
     q->Neff_HMM = 1.0f;
-    for (i = 0; i <= L + 1; ++i) // for all positions i in alignment
-        {
+
+    // for all positions i in alignment
+    for (i = 0; i <= L + 1; ++i) {
       q->Neff_M[i] = 1.0f;
       q->Neff_I[i] = q->Neff_D[i] = 0.0f;
       for (a = 0; a < 20; ++a)

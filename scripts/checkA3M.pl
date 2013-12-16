@@ -17,6 +17,7 @@ my $EXIT_VALUE = 0;
 my $a3m_id = "";
 my $id = "";
 my $nr = 0;
+my $nr_consensus = 0;
 my $seq = "";
 my $header_line = 0;
 
@@ -134,6 +135,10 @@ foreach my $line(@lines) {
       $a3m_id =~ s/_consensus//;
     }
 
+    if($id =~ s/_consensus//) {
+      $nr_consensus++;
+    }
+
     $nr++;
     $seq = "";
   }
@@ -180,8 +185,13 @@ if($line_nr eq 0) {
   $EXIT_VALUE = 1;
 }
 
-if($nr eq 0) {
+if(($nr - $nr_consensus) eq 0) {
   print STDERR "Error: $infile contains no headers/sequences!\n";
+  $EXIT_VALUE = 1;
+}
+
+if($nr_consensus > 2) {
+  print STDERR "Error: $infile contains several headers!\n";
   $EXIT_VALUE = 1;
 }
 
