@@ -109,7 +109,7 @@ hhmake_static: hhmake.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
 	$(CPP) -static hhmake.C -o hhmake $(CS_OBJECTS) $(OBJECT_LIBS)
 
 hhalign: hhalign.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
-	 $(CPP) hhalign.C -o hhalign $(CS_OBJECTS) $(HHALIGN_LIBS) $(OBJECT_LIBS)
+	 $(CPP) hhalign.C -o hhalign $(CS_OBJECTS) $(HHALIGN_LIBS) $(OBJECT_LIBS) $(FFINDEX_DIR)/libffindex.a
 
 hhalign_static: hhalign.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
 	 $(CPP) -static hhalign.C -o hhalign $(CS_OBJECTS) $(HHALIGN_LIBS) $(OBJECT_LIBS)

@@ -1847,21 +1847,23 @@ void perform_realign(char *dbfiles[], int ndb) {
         continue;  // Don't align too long sequences due to memory limit
 
       // Open HMM database file dbfiles[idb]
-      FILE* dbf;
-      dbf = ffindex_fopen_by_name(dbhhm_data, dbhhm_index, hit_cur.dbfile);
-      if (dbf == NULL) {
-        if (dba3m_index_file != NULL) {
-          dbf = ffindex_fopen_by_name(dba3m_data, dba3m_index, hit_cur.file);
+      FILE* dbf = NULL;
+      if (!use_compressed_a3m) {
+        dbf = ffindex_fopen_by_name(dbhhm_data, dbhhm_index, hit_cur.dbfile);
+        if (dbf == NULL) {
+          if (dba3m_index_file != NULL) {
+            dbf = ffindex_fopen_by_name(dba3m_data, dba3m_index, hit_cur.dbfile);
+          }
+          else {
+            cerr << endl << "Error opening " << hit_cur.dbfile
+                << ": A3M database missing\n";
+            exit(4);
+          }
         }
-        else {
-          cerr << endl << "Error opening " << hit_cur.dbfile
-              << ": A3M database missing\n";
-          exit(4);
-        }
-      }
 
-      if (dbf == NULL)
-        OpenFileError(hit_cur.dbfile);
+        if (dbf == NULL)
+          OpenFileError(hit_cur.dbfile);
+      }
 
       read_from_db = 1;
 
@@ -1878,43 +1880,27 @@ void perform_realign(char *dbfiles[], int ndb) {
 
       ///////////////////////////////////////////////////
       // Read next HMM from database file
-      if (!fgetline(line, LINELEN, dbf)) {
-        fprintf(stderr, "Error in %s: end of file %s reached prematurely!\n",
-            par.argv[0], hit_cur.dbfile);
-        exit(1);
-      }
-      while (strscn(line) == NULL && fgetline(line, LINELEN, dbf)) {
-      } // skip lines that contain only white space
 
-      if (!strncmp(line, "HMMER3", 5))      // read HMMER3 format
-          {
-        format[bin] = 1;
-        read_from_db = t[bin]->ReadHMMer3(dbf, hit_cur.dbfile);
-        par.hmmer_used = true;
-      }
-      else if (!strncmp(line, "HMMER", 5))      // read HMMER format
-          {
-        format[bin] = 1;
-        read_from_db = t[bin]->ReadHMMer(dbf, hit_cur.dbfile);
-        par.hmmer_used = true;
-      }
-      else if (!strncmp(line, "HH", 2))     // read HHM format
-          {
-        format[bin] = 0;
-        read_from_db = t[bin]->Read(dbf, path);
-      }
-      else if (!strncmp(line, "NAME", 4)) // The following lines are for backward compatibility of HHM format version 1.2 with 1.1
-          {
-        format[bin] = 0;
-        fseek(dbf, hit_cur.ftellpos, SEEK_SET); // rewind to beginning of line
-        read_from_db = t[bin]->Read(dbf, path);
-      }
-      else if (line[0] == '#' || line[0] == '>')           // read a3m alignment
-          {
+      if (use_compressed_a3m) {
+        ffindex_entry_t* entry = ffindex_get_entry_by_name(dbca3m_index, hit_cur.dbfile);
+
+        if (entry == NULL) {
+          OpenFileError(hit_cur.dbfile);
+        }
+
+        char* data = ffindex_get_data_by_entry(dbca3m_data, entry);
+
+        if (data == NULL) {
+          OpenFileError(entry->name);
+        }
+
         Alignment tali;
-        tali.Read(dbf, hit_cur.dbfile, line);
+        tali.ReadCompressed(entry, data, dbuniprot_sequence_index,
+            dbuniprot_sequence_data, dbuniprot_header_index,
+            dbuniprot_header_data);
+
         tali.Compress(hit_cur.dbfile);
-        //              qali.FilterForDisplay(par.max_seqid,par.coverage,par.qid,par.qsc,par.nseqdis);
+        // qali.FilterForDisplay(par.max_seqid,par.coverage,par.qid,par.qsc,par.nseqdis);
         tali.N_filtered = tali.Filter(par.max_seqid_db, par.coverage_db,
             par.qid_db, par.qsc_db, par.Ndiff_db);
         t[bin]->name[0] = t[bin]->longname[0] = t[bin]->fam[0] = '\0';
@@ -1922,17 +1908,62 @@ void perform_realign(char *dbfiles[], int ndb) {
         format[bin] = 0;
       }
       else {
-        cerr << endl << "Error in " << program_name
-            << ": unrecognized HMM file format in \'" << hit_cur.dbfile
-            << "\'. \n";
-        cerr << "Context:\n'" << line << "\n";
-        fgetline(line, LINELEN, dbf);
-        cerr << line << "\n";
-        fgetline(line, LINELEN, dbf);
-        cerr << line << "'\n";
-        exit(1);
+        if (!fgetline(line, LINELEN, dbf)) {
+          fprintf(stderr, "Error in %s: end of file %s reached prematurely!\n",
+              par.argv[0], hit_cur.dbfile);
+          exit(1);
+        }
+        while (strscn(line) == NULL && fgetline(line, LINELEN, dbf)) {
+        } // skip lines that contain only white space
+
+        if (!strncmp(line, "HMMER3", 5))      // read HMMER3 format
+            {
+          format[bin] = 1;
+          read_from_db = t[bin]->ReadHMMer3(dbf, hit_cur.dbfile);
+          par.hmmer_used = true;
+        }
+        else if (!strncmp(line, "HMMER", 5))      // read HMMER format
+            {
+          format[bin] = 1;
+          read_from_db = t[bin]->ReadHMMer(dbf, hit_cur.dbfile);
+          par.hmmer_used = true;
+        }
+        else if (!strncmp(line, "HH", 2))     // read HHM format
+            {
+          format[bin] = 0;
+          read_from_db = t[bin]->Read(dbf, path);
+        }
+        else if (!strncmp(line, "NAME", 4)) // The following lines are for backward compatibility of HHM format version 1.2 with 1.1
+            {
+          format[bin] = 0;
+          fseek(dbf, hit_cur.ftellpos, SEEK_SET); // rewind to beginning of line
+          read_from_db = t[bin]->Read(dbf, path);
+        }
+        else if (line[0] == '#' || line[0] == '>')           // read a3m alignment
+            {
+          Alignment tali;
+          tali.Read(dbf, hit_cur.dbfile, line);
+          tali.Compress(hit_cur.dbfile);
+          //              qali.FilterForDisplay(par.max_seqid,par.coverage,par.qid,par.qsc,par.nseqdis);
+          tali.N_filtered = tali.Filter(par.max_seqid_db, par.coverage_db,
+              par.qid_db, par.qsc_db, par.Ndiff_db);
+          t[bin]->name[0] = t[bin]->longname[0] = t[bin]->fam[0] = '\0';
+          tali.FrequenciesAndTransitions(t[bin]);
+          format[bin] = 0;
+        }
+        else {
+          cerr << endl << "Error in " << program_name
+              << ": unrecognized HMM file format in \'" << hit_cur.dbfile
+              << "\'. \n";
+          cerr << "Context:\n'" << line << "\n";
+          fgetline(line, LINELEN, dbf);
+          cerr << line << "\n";
+          fgetline(line, LINELEN, dbf);
+          cerr << line << "'\n";
+          exit(1);
+        }
+        fclose(dbf);
       }
-      fclose(dbf);
 
       if (read_from_db != 1) {
         cerr << "Error in " << par.argv[0] << ": wrong format while reading \'"
