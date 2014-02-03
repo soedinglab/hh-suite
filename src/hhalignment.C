@@ -595,8 +595,6 @@ void Alignment::ReadCompressed(ffindex_entry_t* entry, char* data,
   N_filtered = 0;
   N_ss = 0;
 
-  // Index of sequence being read currently (first=0)
-  int k = 0;
 
   char last_char = '\0';
   char inConsensus = 0;
@@ -627,6 +625,8 @@ void Alignment::ReadCompressed(ffindex_entry_t* entry, char* data,
   data++;
   index++;
 
+  // Index of sequence being read currently (first=0)
+  int k = 0;
   //process consensus
   display[k] = 2;
   keep[k] = 0;
