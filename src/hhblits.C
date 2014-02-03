@@ -2194,7 +2194,7 @@ void perform_realign(char *dbfiles[], int ndb) {
         Realign_hitpos hitpos_curr = phash_plist_realignhitpos->Show(
             dbfiles[idb])->ReadNext();
         hit[bin]->index = hitpos_curr.index; // give hit[bin] a unique index for HMM
-//TODO: check, but believe to be unnecessary        fseek(dbf, hitpos_curr.ftellpos, SEEK_SET); // start to read at ftellpos for template
+        fseek(dbf, hitpos_curr.ftellpos, SEEK_SET); // start to read at ftellpos for template
 
         // Give hit[bin] the pointer to the list of pointers to hitlist elements of same template (for realignment)
         hit[bin]->plist_phits = array_plist_phits[hitpos_curr.index];
