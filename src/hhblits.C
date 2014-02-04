@@ -3236,13 +3236,13 @@ int main(int argc, char **argv) {
           "Number of effective sequences of resulting query HMM: Neff = %4.2f\n",
           q->Neff_HMM);
 
-    if (q->Neff_HMM > neffmax && round < num_rounds) {
+    if (v>=2 && q->Neff_HMM > neffmax && round < num_rounds) {
       printf(
           "Diversity is above threshold (%4.2f). Stop searching! (Change threshold using -neffmax <float>.)\n",
           neffmax);
     }
 
-    if (Qali.N_in >= MAXSEQ)
+    if (v>=2 && Qali.N_in >= MAXSEQ)
       printf(
           "Maximun number of sequences in query alignment reached (%i). Stop searching!\n",
           MAXSEQ);
