@@ -472,11 +472,27 @@ std::string& rtrim(std::string &s) {
 
 std::string getNameFromHeader(std::string &header) {
   size_t first_ws_index = header.length();
+
+  size_t first_pipe_index = header.length();
+  size_t second_pipe_index = header.length();
+
   for (size_t index = 0; index < header.length(); index++) {
-    if (isspace(header[index])) {
+    if (header[index] == '|') {
+      if(first_pipe_index == header.length()) {
+        first_pipe_index = index;
+      }
+      else if(second_pipe_index == header.length()) {
+        second_pipe_index = index;
+      }
+    }
+    else if (isspace(header[index])) {
       first_ws_index = index;
       break;
     }
+  }
+
+  if(first_pipe_index != header.length() && second_pipe_index != header.length()) {
+    return header.substr(first_pipe_index + 1, second_pipe_index - first_pipe_index - 1);
   }
 
   return header.substr(1, first_ws_index - 1);

@@ -2967,7 +2967,7 @@ int main(int argc, char **argv) {
     if (print_elapsed)
       ElapsedTimeSinceLastCall("(prefiltering)");
 
-    if (ndb_new == 0) {
+    if (v >= 2 && ndb_new == 0) {
       printf("No HMMs pass prefilter => Stop searching!\n");
       break;
     }
