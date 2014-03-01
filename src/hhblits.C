@@ -1870,7 +1870,9 @@ void perform_realign(char *dbfiles[], int ndb) {
       // Forward stream position to start of next database HMM to be realigned
       hit[bin]->index = hit_cur.index; // give hit a unique index for HMM
       hit[bin]->ftellpos = hit_cur.ftellpos;
-      fseek(dbf, hit_cur.ftellpos, SEEK_SET);
+		if(!use_compressed_a3m) {
+      	fseek(dbf, hit_cur.ftellpos, SEEK_SET);
+		}
       hit[bin]->dbfile = new (char[strlen(hit_cur.dbfile) + 1]);
       strcpy(hit[bin]->dbfile, hit_cur.dbfile); // record db file name from which next HMM is read
       hit[bin]->irep = 1; // Needed for min_overlap calculation in InitializeForAlignment in hhhit.C
@@ -2194,7 +2196,9 @@ void perform_realign(char *dbfiles[], int ndb) {
         Realign_hitpos hitpos_curr = phash_plist_realignhitpos->Show(
             dbfiles[idb])->ReadNext();
         hit[bin]->index = hitpos_curr.index; // give hit[bin] a unique index for HMM
-        fseek(dbf, hitpos_curr.ftellpos, SEEK_SET); // start to read at ftellpos for template
+        if(!use_compressed_a3m) {
+          fseek(dbf, hitpos_curr.ftellpos, SEEK_SET); // start to read at ftellpos for template
+        }
 
         // Give hit[bin] the pointer to the list of pointers to hitlist elements of same template (for realignment)
         hit[bin]->plist_phits = array_plist_phits[hitpos_curr.index];
