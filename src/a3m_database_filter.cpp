@@ -121,7 +121,6 @@ int main(int argc, char **argv) {
   std::string line;
   while (std::getline(infile, line)) {
     std::string item = line.substr(0, line.length());
-    std::cout << item << std::endl;
     filter.insert(item);
   }
 
@@ -176,8 +175,6 @@ int main(int argc, char **argv) {
           nr_sequences++;
           passedFilter = true;
         }
-
-        std::cout << nr_sequences << "\t" << id << "\t" << passedFilter << std::endl;
 
         if(passedFilter ||
             consensus_flag ||
