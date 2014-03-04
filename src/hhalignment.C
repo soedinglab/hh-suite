@@ -595,6 +595,43 @@ void Alignment::ReadCompressed(ffindex_entry_t* entry, char* data,
   N_filtered = 0;
   N_ss = 0;
 
+  // Commentary line?
+  if ((*data) == '#' && !name[0]) {
+    //skip #
+    index++;
+    data++;
+
+    //skip first white spaces
+    while(isspace(*data) && index < data_size) {
+      index++;
+      data++;
+    }
+
+    //copy name in name and complete header in longname
+    size_t longname_index = 0;
+    size_t name_index = 0;
+    size_t count_ws = 0;
+    while((*data) != '\n' && index < data_size) {
+      if(isspace(*data)) {
+        count_ws++;
+        if(count_ws == 1) {
+          name[name_index++] = '\0';
+        }
+      }
+
+      if(count_ws == 0) {
+        name[name_index++] = (*data);
+      }
+
+      longname[longname_index++] = (*data);
+
+      data++;
+      index++;
+    }
+    longname[longname_index] = '\0';
+
+    readCommentLine = '1';
+  }
 
   char last_char = '\0';
   char inConsensus = 0;
