@@ -165,10 +165,10 @@ int main(int argc, char **argv) {
 
         std::string short_id = getShortIdFromHeader(header);
 
-        while(index < entry->length && data[index] != '>') {
+        while(index < entry->length - 1 && data[index] != '>') {
           index++;
         }
-        if(data[index] == '>') {
+        if(data[index] == '>' || data[index] == '\0') {
           index--;
         }
 
@@ -197,6 +197,9 @@ int main(int argc, char **argv) {
       {
         ffindex_insert_memory(oa3m_data_fh, oa3m_index_fh, &oa3m_offset, const_cast<char*>(out_string.c_str()), out_string.size(), entry->name);
       }
+    }
+    else {
+      std::cerr << "Warning: no sequences left for cluster " << entry->name << std::endl;
     }
 
     delete out_buffer;
