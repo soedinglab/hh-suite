@@ -127,8 +127,16 @@ int compressed_a3m::compress_a3m(char* input, size_t input_size,
   while (index < input_size) {
     //comment - remove comments
     if (input[index] == '#') {
-      while(input[index] != '\n' && index < input_size){
-        index++;
+      if(index == 0) {
+        while(input[index] != '\n' && index < input_size) {
+          output->put(input[index++]);
+        }
+        output->put('\n');
+      }
+      else {
+        while(input[index] != '\n' && index < input_size) {
+          index++;
+        }
       }
     }
     //ss_cons - remove ss annotation
