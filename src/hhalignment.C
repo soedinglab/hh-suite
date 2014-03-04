@@ -631,6 +631,10 @@ void Alignment::ReadCompressed(ffindex_entry_t* entry, char* data,
     longname[longname_index] = '\0';
 
     readCommentLine = '1';
+
+    //skip new line after commentary line
+    data++;
+    index++;
   }
 
   char last_char = '\0';
