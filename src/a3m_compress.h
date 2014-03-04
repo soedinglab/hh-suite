@@ -41,6 +41,7 @@ namespace compressed_a3m {
 std::string &rtrim(std::string &s);
 
 std::string getNameFromHeader(std::string &header);
+std::string getShortIdFromHeader(std::string &header);
 bool isConsensus(std::string &id);
 
 void writeU16(std::ostream& file, uint16_t);

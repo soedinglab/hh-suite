@@ -163,6 +163,8 @@ int main(int argc, char **argv) {
         std::string id = getNameFromHeader(header);
         bool consensus_flag = isConsensus(id);
 
+        std::string short_id = getShortIdFromHeader(header);
+
         while(index < entry->length && data[index] != '>') {
           index++;
         }
@@ -171,17 +173,17 @@ int main(int argc, char **argv) {
         }
 
         bool passedFilter = false;
-        if(filter.find(id) != filter.end()) {
+        if(filter.find(short_id) != filter.end()) {
           nr_sequences++;
           passedFilter = true;
         }
 
         if(passedFilter ||
             consensus_flag ||
-            header.compare("ss_dssp") == 0 ||
-            header.compare("sa_dssp") == 0 ||
-            header.compare("ss_pred") == 0 ||
-            header.compare("ss_conf") == 0) {
+            id.compare("ss_dssp") == 0 ||
+            id.compare("sa_dssp") == 0 ||
+            id.compare("ss_pred") == 0 ||
+            id.compare("ss_conf") == 0) {
           std::string seq = std::string(&data[start_index], index - start_index);
           out_buffer->write(seq.c_str(), seq.size());
           out_buffer->put('\n');
