@@ -94,7 +94,7 @@ hhsearch_valgrind: hhsearch.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
 	  $(CPP_VALGRIND) hhsearch.C -o hhsearch_valgrind $(CS_OBJECTS) $(HHSEARCH_LIBS) $(OBJECT_LIBS)
 
 hhblits: hhblits.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
-	 $(CPP) hhblits.C -o hhblits $(CS_OBJECTS) $(HHBLITS_LIBS)  $(OBJECT_LIBS) $(FFINDEX_DIR)/libffindex.a
+	 $(CPP) -g hhblits.C -o hhblits $(CS_OBJECTS) $(HHBLITS_LIBS)  $(OBJECT_LIBS) $(FFINDEX_DIR)/libffindex.a
 
 hhblits_static: hhblits.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
 	 $(CPP) -static hhblits.C -o hhblits $(CS_OBJECTS) $(HHBLITS_LIBS)  $(OBJECT_LIBS) $(FFINDEX_DIR)/libffindex.a
