@@ -279,7 +279,8 @@ public:
   int M;                  // Match state assignment by  1:upper/lower case  2:percentage rule  3:marked sequence
   char matrix;            // Subst.matrix 0: Gonnet, 1: HSDM, 2: BLOSUM50
 
-  char wg;                // 0: use local sequence weights   1: use local ones
+  bool nofilter;
+  char wg;                // 0: use local sequence weights   1: use global ones
 
   Pseudocounts::Params pc_hhm_context_engine;       // Pseudocounts parameters for query hhm if context given
   Pseudocounts::Params pc_prefilter_context_engine; // Pseudocounts parameters for prefiltering if context given
@@ -509,7 +510,8 @@ void Parameters::SetDefaults()
   calibrate=0;             // default: no calibration
   calm=3;                  // derive P-values from: 0:query calibration  1:template calibration  2:both  3:Neural Network prediction
 
-  wg=0;                    // 0: use local sequence weights   1: use local ones
+  wg = 0;                    // 0: use local sequence weights   1: use global ones
+  nofilter = false;         //filter the sequences in the database clusters
 
   matrix=0;                // Subst.matrix 0: Gonnet, 1: HSDM, 2: BLOSUM50 3: BLOSUM62
 
@@ -627,7 +629,7 @@ void Parameters::SetDefaults()
   useCSScoring=false;
   strcpy(cs_template_file, "");
 
-  min_prefilter_hits = 1000;
+  min_prefilter_hits = 100;
 
   // parameters for context-specific pseudocounts
   csb = 0.85;

@@ -1496,6 +1496,58 @@ inline int Alignment::Filter(int max_seqid, int coverage, int qid, float qsc,
   return Filter2(keep, coverage, qid, qsc, 20, max_seqid, N);
 }
 
+int Alignment::NoFilter() {
+  determineSequenceStartsAndEnds();
+  determineNumberOfResiduesPerSequence();
+
+  int n = 0;
+  for (int k = 0; k < N_in; ++k)
+    if (keep[k] > 0) n++;
+
+  return n;
+}
+
+void Alignment::determineSequenceStartsAndEnds() {
+  // Determine first[k], last[k]
+  if (first == NULL) {
+    first = new (int[N_in]);             // first non-gap position in sequence k
+    last = new (int[N_in]);              // last  non-gap position in sequence k
+
+    for (int k = 0; k < N_in; ++k) {
+      int i;
+      for (i = 1; i <= L; ++i)
+        if (X[k][i] < NAA)
+          break;
+      first[k] = i;
+      for (int i = L; i >= 1; i--)
+        if (X[k][i] < NAA)
+          break;
+      last[k] = i;
+    }
+  }
+}
+
+void Alignment::determineNumberOfResiduesPerSequence() {
+  if(sizeof(nres) < N_in * sizeof(int)) {
+    delete[] nres;
+    nres = NULL;
+  }
+
+  // Determine number of residues nres[k]
+  if (nres == NULL) {
+    nres = new (int[N_in]);
+    for (int k = 0; k < N_in; ++k) {
+      int nr = 0;
+      for (int i = first[k]; i <= last[k]; ++i)
+        if (X[k][i] < NAA)
+          nr++;
+      nres[k] = nr;
+      if (nr == 0)
+        keep[k] = 0;
+    }
+  }
+}
+
 /////////////////////////////////////////////////////////////////////////////////////
 // Select set of representative sequences in the multiple sequence alignment
 // Filter criteria:
@@ -1556,40 +1608,8 @@ int Alignment::Filter2(char keep[], int coverage, int qid, float qsc,
       in[k] = 0;
   }
 
-  // Determine first[k], last[k]?
-  if (first == NULL) {
-    first = new (int[N_in]);             // first non-gap position in sequence k
-    last = new (int[N_in]);              // last  non-gap position in sequence k
-    for (k = 0; k < N_in; ++k) // do this for ALL sequences, not only those with in[k]==1 (since in[k] may be display[k])
-        {
-      for (i = 1; i <= L; ++i)
-        if (X[k][i] < NAA)
-          break;
-      first[k] = i;
-      for (i = L; i >= 1; i--)
-        if (X[k][i] < NAA)
-          break;
-      last[k] = i;
-    }
-  }
-
-  // Determine number of residues nres[k]?
-  if (nres == NULL || sizeof(nres) < N_in * sizeof(int)) {
-    if (nres)
-      delete[] nres;
-    nres = new (int[N_in]);
-    for (k = 0; k < N_in; ++k) // do this for ALL sequences, not only those with in[k]==1 (since in[k] may be display[k])
-        {
-      int nr = 0;
-      for (i = first[k]; i <= last[k]; ++i)
-        if (X[k][i] < NAA)
-          nr++;
-      nres[k] = nr;
-      //printf("%20.20s nres=%3i  first=%3i  last=%3i\n",sname[k],nr,first[k],last[k]);
-      if (nr == 0)
-        keep[k] = 0;
-    }
-  }
+  determineSequenceStartsAndEnds();
+  determineNumberOfResiduesPerSequence();
 
   // Sort sequences according to length; afterwards, nres[ksort[kk]] is sorted by size
   if (ksort == NULL) {
@@ -1875,36 +1895,8 @@ int Alignment::FilterWithCoreHMM(char in[], float coresc, HMM* qcore) {
   for (i = 1; i <= L; ++i)
     logodds[i] = new (float[21]);
 
-  // Determine first[k], last[k]?
-  if (first == NULL) {
-    first = new (int[N_in]); // first non-gap position in sequence k
-    last = new (int[N_in]); // last  non-gap position in sequence k
-    for (k = 0; k < N_in; ++k) // do this for ALL sequences, not only those with in[k]==1 (since in[k] may be display[k])
-        {
-      for (i = 1; i <= L; ++i)
-        if (X[k][i] < NAA)
-          break;
-      first[k] = i;
-      for (i = L; i >= 1; i--)
-        if (X[k][i] < NAA)
-          break;
-      last[k] = i;
-    }
-  }
-
-  // Determine number of residues nres[k]?
-  if (nres == NULL) {
-    nres = new (int[N_in]);
-    for (k = 0; k < N_in; ++k) // do this for ALL sequences, not only those with in[k]==1 (since in[k] may be display[k])
-        {
-      int nr = 0;
-      for (i = first[k]; i <= last[k]; ++i)
-        if (X[k][i] < NAA)
-          nr++;
-      nres[k] = nr;
-      //    printf("%20.20s nres=%3i  first=%3i  last=%3i\n",sname[k],nr,f,l);
-    }
-  }
+  determineSequenceStartsAndEnds();
+  determineNumberOfResiduesPerSequence();
 
   // Precalculate the log-odds for qcore
   for (i = 1; i <= L; ++i) {
@@ -2126,7 +2118,13 @@ void Alignment::FrequenciesAndTransitions(HMM* q, char* in, bool time) {
     for (k = 0; k < N_in; ++k)
       X[k][L + 1] = ENDGAP;  // does it have an influence?
 
-    Amino_acid_frequencies_and_transitions_from_M_state(q, in); // use subalignments of seqs with residue in i
+    if(par.wg == 1) {
+      Amino_acid_frequencies_and_transitions_from_M_state_global(q, in); // use subalignments of seqs with residue in i
+    }
+    else {
+      Amino_acid_frequencies_and_transitions_from_M_state_local(q, in); // use subalignments of seqs with residue in i
+    }
+
     Transitions_from_I_state(q, in); // use subalignments of seqs with insert in i
     Transitions_from_D_state(q, in); // use subalignments of seqs with delete in i. Must be last of these three calls if par.wg==1!
     //if (time) { ElapsedTimeSinceLastCall("Do pos-specific sequence weighting and calculate amino acid frequencies and transitions"); }
@@ -2384,12 +2382,12 @@ void Alignment::FrequenciesAndTransitions(HMM* q, char* in, bool time) {
   return;
 }
 
+/*
 /////////////////////////////////////////////////////////////////////////////////////
 // Calculate freqs q->f[i][a] and transitions q->tr[i][a] (a=MM,MI,MD) with pos-specific subalignments
 // Pos-specific weights are calculated like in "GetPositionSpecificWeights()"
 /////////////////////////////////////////////////////////////////////////////////////
-void Alignment::Amino_acid_frequencies_and_transitions_from_M_state(HMM* q,
-    char* in) {
+void Alignment::Amino_acid_frequencies_and_transitions_from_M_state(HMM* q, char* in) {
   // Calculate position-dependent weights wi[k] for each i.
   // For calculation of weights in column i use sub-alignment
   // over sequences which have a *residue* in column i (no gap, no end gap)
@@ -2422,6 +2420,7 @@ void Alignment::Amino_acid_frequencies_and_transitions_from_M_state(HMM* q,
   // Initialization
   q->Neff_HMM = 0.0f;
   Neff[0] = 0.0; // if the first column has no residues (i.e. change==0), Neff[i]=Neff[i-1]=Neff[0]
+
   n = new (int*[L + 2]);
   for (j = 1; j <= L; ++j)
     n[j] = new (int[NAA + 3]);
@@ -2435,7 +2434,6 @@ void Alignment::Amino_acid_frequencies_and_transitions_from_M_state(HMM* q,
       {
 
     if (par.wg == 0) {
-
       change = 0;
       // Check all sequences k and update n[j][a] and ri[j] if necessary
       for (k = 0; k < N_in; ++k) {
@@ -2509,10 +2507,9 @@ void Alignment::Amino_acid_frequencies_and_transitions_from_M_state(HMM* q,
               Neff[i] -= fj[a] * fast_log2(fj[a]);
         }
         if (ncol > 0)
-          Neff[i] = pow(2.0, Neff[i] / ncol);
+          Neff[i] = fpow2(Neff[i] / ncol);
         else
           Neff[i] = 1.0;
-
       }
 
       else //no update was necessary; copy values for i-1
@@ -2548,9 +2545,9 @@ void Alignment::Amino_acid_frequencies_and_transitions_from_M_state(HMM* q,
     } // end for(k)
     // Normalize and take log
     sum = q->tr[i][M2M] + q->tr[i][M2I] + q->tr[i][M2D] + FLT_MIN;
-    q->tr[i][M2M] = log2(q->tr[i][M2M] / sum);
-    q->tr[i][M2I] = log2(q->tr[i][M2I] / sum);
-    q->tr[i][M2D] = log2(q->tr[i][M2D] / sum);
+    q->tr[i][M2M] = fast_log2(q->tr[i][M2M] / sum);
+    q->tr[i][M2I] = fast_log2(q->tr[i][M2I] / sum);
+    q->tr[i][M2D] = fast_log2(q->tr[i][M2D] / sum);
 
 //       for (k=0; k<N_in; ++k) if (in[k]) w[k][i]=wi[k];
   }
@@ -2581,11 +2578,11 @@ void Alignment::Amino_acid_frequencies_and_transitions_from_M_state(HMM* q,
       for (a = 0; a < 20; ++a)
         if (q->f[i][a] > 1E-10)
           sum -= q->f[i][a] * fast_log2(q->f[i][a]);
-      q->Neff_HMM += pow(2.0, sum);
+      q->Neff_HMM += fpow2(sum);
     }
     q->Neff_HMM /= L;
     float Nlim = fmax(10.0, q->Neff_HMM + 1.0);    // limiting Neff
-    float scale = log2((Nlim - q->Neff_HMM) / (Nlim - 1.0)); // for calculating Neff for those seqs with inserts at specific pos
+    float scale = fast_log2((Nlim - q->Neff_HMM) / (Nlim - 1.0)); // for calculating Neff for those seqs with inserts at specific pos
     for (i = 1; i <= L; ++i) {
       float w_M = -1.0 / N_filtered;
       for (k = 0; k < N_in; ++k)
@@ -2610,6 +2607,319 @@ void Alignment::Amino_acid_frequencies_and_transitions_from_M_state(HMM* q,
   }
   
   return;
+}
+*/
+
+void Alignment::Amino_acid_frequencies_and_transitions_from_M_state_local(HMM* q, char* in) {
+  // Calculate position-dependent weights wi[k] for each i.
+  // For calculation of weights in column i use sub-alignment
+  // over sequences which have a *residue* in column i (no gap, no end gap)
+  // and over columns where none of these sequences has an end gap.
+  // This is done by updating the arrays n[j][a] at each step i-1->i while letting i run from 1 to L.
+  // n[j][a] = number of occurences of amino acid a at column j of the subalignment,
+  //        => only columns with n[j][ENDGAP]=0 are contained in the subalignment!
+  // If no sequences enter or leave the subalignment at the step i-1 -> i (i.e. change=0)
+  // then the old values wi[k], Neff[i-1], and ncol are used for the new position i.
+  // Index a can be an amino acid (0-19), ANY=20, GAP=21, or ENDGAP=22
+
+  float wi[MAXSEQ];               // weight of sequence k in column i, calculated from subalignment i
+  float Neff[par.maxres];         // diversity of subalignment i
+  int nseqi = 0;                  // number of sequences in subalignment i
+  int ncol = 0;                   // number of columns j that contribute to Neff[i]
+  float fj[NAA + 3];              // to calculate entropy
+
+  // Initialization
+  q->Neff_HMM = 0.0f;
+  Neff[0] = 0.0; // if the first column has no residues (i.e. change==0), Neff[i]=Neff[i-1]=Neff[0]
+
+  q->reset_aa_frequencies();
+  q->reset_transistion_probabilities();
+
+  int** n = new (int*[L + 2]);
+  for (int j = 1; j <= L; ++j) {
+    n[j] = new (int[NAA + 3]);
+    for (int a = 0; a < NAA + 3; ++a) {
+      n[j][a] = 0;
+    }
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////
+  // Main loop through alignment columns
+  for (int i = 1; i <= L; ++i) {// Calculate wi[k] at position i as well as Neff[i]
+    char change = 0;
+    // Check all sequences k and update n[j][a] and ri[j] if necessary
+    for (int k = 0; k < N_in; ++k) {
+      if (!in[k])
+        continue;
+      if (X[k][i - 1] >= ANY && X[k][i] < ANY) { // ... if sequence k was NOT included in i-1 and has to be included for column i
+        change = 1;
+        nseqi++;
+        for (int j = 1; j <= L; ++j)
+          n[j][(int) X[k][j]]++;
+      }
+      else if (X[k][i - 1] < ANY && X[k][i] >= ANY) { // ... if sequence k WAS included in i-1 and has to be thrown out for column i
+        change = 1;
+        nseqi--;
+        for (int j = 1; j <= L; ++j)
+          n[j][(int) X[k][j]]--;
+      }
+    } //end for (k)
+    nseqs[i] = nseqi;
+
+    // If subalignment changed: update weights wi[k] and Neff[i]
+    if (change) {
+      // Initialize weights and numbers of residues for subalignment i
+      ncol = 0;
+      for (int k = 0; k < N_in; ++k)
+        wi[k] = 1E-8; // for pathological alignments all wi[k] can get 0;
+
+      // sum wi[k] over all columns j and sequences k of subalignment
+      for (int j = 1; j <= L; ++j) {
+        //  do at least a fraction MAXENDGAPFRAC of sequences in subalignment contain an end gap in j?
+        if (n[j][ENDGAP] > MAXENDGAPFRAC * nseqi)
+          continue;
+        int naa = 0;
+        for (int a = 0; a < 20; ++a)
+          if (n[j][a])
+            naa++;
+        if (naa == 0)
+          continue;
+        ncol++;
+        for (int k = 0; k < N_in; ++k) {
+          if (in[k] && X[k][i] < ANY && X[k][j] < ANY) {
+            //if (!n[j][ (int)X[k][j]]) {fprintf(stderr,"Error in "<<par.argv[0]<<": Mi=%i: n[%i][X[%i]]=0! (X[%i]=%i)\n",i,j,k,k,X[k][j]);}
+            wi[k] += 1.0 / float(n[j][(int) X[k][j]] * naa);
+          }
+        }
+      }
+
+      // Check whether number of columns in subalignment is sufficient
+      if (ncol < NCOLMIN)
+        // Take global weights
+        for (int k = 0; k < N_in; ++k)
+          if (in[k] && X[k][i] < ANY)
+            wi[k] = wg[k];
+          else
+            wi[k] = 0.0;
+
+      // Calculate Neff[i]
+      Neff[i] = 0.0;
+      for (int j = 1; j <= L; ++j) {
+        //  do at least a fraction MAXENDGAPFRA of sequences in subalignment contain an end gap in j?
+        if (n[j][ENDGAP] > MAXENDGAPFRAC * nseqi)
+          continue;
+        for (int a = 0; a < 20; ++a)
+          fj[a] = 0;
+        for (int k = 0; k < N_in; ++k)
+          if (in[k] && X[k][i] < ANY && X[k][j] < ANY)
+            fj[(int) X[k][j]] += wi[k];
+        NormalizeTo1(fj, NAA);
+        for (int a = 0; a < 20; ++a)
+          if (fj[a] > 1E-10)
+            Neff[i] -= fj[a] * fast_log2(fj[a]);
+      }
+      if (ncol > 0)
+        Neff[i] = fpow2(Neff[i] / ncol);
+      else
+        Neff[i] = 1.0;
+    }
+    else //no update was necessary; copy values for i-1
+    {
+      Neff[i] = Neff[i - 1];
+    }
+
+    // Calculate amino acid frequencies q->f[i][a] from weights wi[k]
+    calculate_amino_acid_frequencies_from_weights(q, i, wi, in);
+
+    // Calculate transition probabilities from M state
+    calculate_transition_probabilities_from_M_state(q, i, wi, in);
+  }
+  // end loop through alignment columns i
+  //////////////////////////////////////////////////////////////////////////////////////////////
+
+
+  q->tr[0][M2M] = 0;
+  q->tr[0][M2I] = -100000;
+  q->tr[0][M2D] = -100000;
+
+  q->tr[L][M2M] = 0;
+  q->tr[L][M2I] = -100000;
+  q->tr[L][M2D] = -100000;
+
+  q->Neff_M[0] = 99.999; // Neff_av[0] is used for calculation of transition pseudocounts for the start state
+
+  // Set emission probabilities of zero'th (begin) state and L+1st (end) state to background probabilities
+  for (int a = 0; a < 20; ++a)
+    q->f[0][a] = q->f[L + 1][a] = pb[a];
+
+  // Assign Neff_M[i] and calculate average over alignment, Neff_M[0]
+  for (int i = 1; i <= L; ++i) {
+    float sum = 0.0f;
+    for (int a = 0; a < 20; ++a)
+      if (q->f[i][a] > 1E-10)
+        sum -= q->f[i][a] * fast_log2(q->f[i][a]);
+    q->Neff_HMM += fpow2(sum);
+  }
+
+  q->Neff_HMM /= L;
+  float Nlim = fmax(10.0, q->Neff_HMM + 1.0);    // limiting Neff
+  float scale = fast_log2((Nlim - q->Neff_HMM) / (Nlim - 1.0)); // for calculating Neff for those seqs with inserts at specific pos
+  for (int i = 1; i <= L; ++i) {
+    float w_M = -1.0 / N_filtered;
+    for (int k = 0; k < N_in; ++k)
+      if (in[k] && X[k][i] <= ANY)
+        w_M += wg[k];
+    if (w_M < 0)
+      q->Neff_M[i] = 1.0;
+    else
+      q->Neff_M[i] = Nlim - (Nlim - 1.0) * fpow2(scale * w_M);
+  }
+
+  // delete n[][]
+  for (int j = 1; j <= L; ++j)
+    delete[] (n[j]);
+  delete[] (n);
+
+  return;
+}
+
+
+void Alignment::Amino_acid_frequencies_and_transitions_from_M_state_global(HMM* q, char* in) {
+  q->reset_aa_frequencies();
+  calculate_amino_acid_frequencies_from_weights(q, wg, in);
+
+  q->reset_transistion_probabilities();
+  calculate_transition_probabilities_from_M_state(q, wg, in);
+
+  q->tr[0][M2M] = 0;
+  q->tr[0][M2I] = -100000;
+  q->tr[0][M2D] = -100000;
+
+  q->tr[L][M2M] = 0;
+  q->tr[L][M2I] = -100000;
+  q->tr[L][M2D] = -100000;
+
+  calculate_Neff(q, wg, in);
+
+  return;
+}
+
+void Alignment::calculate_Neff(HMM* q, float* wg, char* in) {
+  q->Neff_HMM = 0.0f;
+
+  // Neff_av[0] is used for calculation of transition pseudocounts for the start state
+  q->Neff_M[0] = 99.999;
+
+  // Assign Neff_M[i] and calculate average over alignment
+  for (int i = 1; i <= L; ++i) {
+    float sum = 0.0f;
+    for (int a = 0; a < 20; ++a)
+      if (q->f[i][a] > 1E-10)
+        sum -= q->f[i][a] * fast_log2(q->f[i][a]);
+    q->Neff_HMM += fpow2(sum);
+  }
+
+  q->Neff_HMM /= L;
+  // limiting Neff
+  float Nlim = fmax(10.0, q->Neff_HMM + 1.0);
+  // for calculating Neff for those seqs with inserts at specific pos
+  float scale = fast_log2((Nlim - q->Neff_HMM) / (Nlim - 1.0));
+
+  for (int i = 1; i <= L; ++i) {
+    float w_M = -1.0 / N_filtered;
+    for (int k = 0; k < N_in; ++k)
+      if (in[k] && X[k][i] <= ANY)
+        w_M += wg[k];
+
+    if (w_M < 0)
+      q->Neff_M[i] = 1.0;
+    else
+      q->Neff_M[i] = Nlim - (Nlim - 1.0) * fpow2(scale * w_M);
+  }
+}
+
+void Alignment::calculate_amino_acid_frequencies_from_weights(HMM* q, float* wg, char* in) {
+  // Calculate amino acid frequencies q->f[i][a] from weights wi[k]
+  for (int k = 0; k < N_in; ++k){
+    if (!in[k])
+      continue;
+
+    for (int i = 1; i <= L; ++i) {
+      q->f[i][(int) X[k][i]] += wg[k];
+    }
+  }
+
+  // Normalize amino acid frequencies
+  for(int i = 1; i <= L; i++) {
+    NormalizeTo1(q->f[i], NAA, pb);
+  }
+}
+
+void Alignment::calculate_amino_acid_frequencies_from_weights(HMM* q, int i, float* wg, char* in) {
+  for (int k = 0; k < N_in; ++k){
+    if (!in[k])
+      continue;
+
+    q->f[i][(int) X[k][i]] += wg[k];
+  }
+
+  NormalizeTo1(q->f[i], NAA, pb);
+}
+
+void Alignment::calculate_transition_probabilities_from_M_state(HMM* q, float* wg, char* in) {
+  // Calculate transition probabilities from M state
+  for (int k = 0; k < N_in; ++k) {
+    if (!in[k])
+      continue;
+
+    for(int i = 1; i <= L; ++i) {
+      //current state is M
+      if (X[k][i] < ANY) {
+        //next state is I
+        if (I[k][i])
+          q->tr[i][M2I] += wg[k];
+        //next state is M
+        else if (X[k][i + 1] <= ANY)
+          q->tr[i][M2M] += wg[k];
+        //next state is D
+        else if (X[k][i + 1] == GAP)
+          q->tr[i][M2D] += wg[k];
+      }
+    }
+  }
+
+  //normalize and log-transform transition probabilities
+  for(int i = 1; i <= L; i++) {
+    float sum = q->tr[i][M2M] + q->tr[i][M2I] + q->tr[i][M2D] + FLT_MIN;
+    q->tr[i][M2M] = fast_log2(q->tr[i][M2M] / sum);
+    q->tr[i][M2I] = fast_log2(q->tr[i][M2I] / sum);
+    q->tr[i][M2D] = fast_log2(q->tr[i][M2D] / sum);
+  }
+}
+
+void Alignment::calculate_transition_probabilities_from_M_state(HMM* q, int i, float* wg, char* in) {
+  for (int k = 0; k < N_in; ++k) {
+    if (!in[k])
+      continue;
+    //current state is M
+    if (X[k][i] < ANY) {
+      //next state is I
+      if (I[k][i])
+        q->tr[i][M2I] += wg[k];
+      //next state is M
+      else if (X[k][i + 1] <= ANY)
+        q->tr[i][M2M] += wg[k];
+      //next state is D
+      else if (X[k][i + 1] == GAP)
+        q->tr[i][M2D] += wg[k];
+    }
+  }
+
+  //normalize and log-transform transition probabilities
+  float sum = q->tr[i][M2M] + q->tr[i][M2I] + q->tr[i][M2D] + FLT_MIN;
+  q->tr[i][M2M] = fast_log2(q->tr[i][M2M] / sum);
+  q->tr[i][M2I] = fast_log2(q->tr[i][M2I] / sum);
+  q->tr[i][M2D] = fast_log2(q->tr[i][M2D] / sum);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////

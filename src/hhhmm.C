@@ -210,6 +210,23 @@ HMM& HMM::operator=(HMM& q)
   return (HMM&) (*this);
 }
 
+void HMM::reset_aa_frequencies() {
+  for (int i = 1; i <= L; ++i) {
+    for (int a = 0; a < 20; ++a) {
+      f[i][a] = 0;
+    }
+  }
+
+  for (int a = 0; a < 20; ++a)
+    f[0][a] = f[L + 1][a] = pb[a];
+}
+
+void HMM::reset_transistion_probabilities(){
+  for(int i = 1; i <= L; ++i) {
+    tr[i][M2M] = tr[i][M2D] = tr[i][M2I] = 0.0;
+  }
+}
+
 
 /////////////////////////////////////////////////////////////////////////////////////
 //// Read an HMM from an HHsearch .hhm file; return 0 at end of file

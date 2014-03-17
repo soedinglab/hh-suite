@@ -51,7 +51,10 @@ public:
   // Apply sequence identity filter
   inline int FilterForDisplay(int max_seqid, int coverage=0, int qid=0, float qsc=0, int N=0);
   inline int Filter(int max_seqid, int coverage=0, int qid=0, float qsc=0, int N=0);
+  int NoFilter();
   int Filter2(char keep[], int coverage, int qid, float qsc, int seqid1, int seqid2, int Ndiff);
+  void determineNumberOfResiduesPerSequence();
+  void determineSequenceStartsAndEnds();
 
   void FilterNeff();
   float filter_by_qsc(float qsc, char* dummy);
@@ -60,7 +63,16 @@ public:
   void FrequenciesAndTransitions(HMM* q, char* in=NULL, bool time=false);
 
   // Calculate freqs q.f[i][a] and transitions q.tr[i][a] (a=MM,MI,MD) with pos-specific subalignments
-  void Amino_acid_frequencies_and_transitions_from_M_state(HMM* q, char* in);
+  void Amino_acid_frequencies_and_transitions_from_M_state_global(HMM* q, char* in);
+  void Amino_acid_frequencies_and_transitions_from_M_state_local(HMM* q, char* in);
+  void calculate_Neff(HMM* q, float* wk, char* in);
+
+  void calculate_amino_acid_frequencies_from_weights(HMM* q, float* wg, char* in);
+  void calculate_amino_acid_frequencies_from_weights(HMM* q, int i, float* wk, char* in);
+
+  void calculate_transition_probabilities_from_M_state(HMM* q, float* wk, char* in);
+  void calculate_transition_probabilities_from_M_state(HMM* q, int i, float* wk, char* in);
+
 
   // Calculate transitions q.tr[i][a] (a=DM,DD) with pos-specific subalignments
   void Transitions_from_D_state(HMM* q, char* in);
