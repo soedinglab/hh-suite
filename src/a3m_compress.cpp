@@ -244,6 +244,22 @@ void compressed_a3m::extract_a3m(char* data, size_t data_size,
   size_t index = 0;
   size_t consensus_length = 0;
   char inConsensus = 0;
+
+  //handle commentary line
+  if((*data) == '#') {
+    while ((*data) != '\n') {
+      output->put((*data));
+      last_char = (*data);
+      data++;
+      index++;
+    }
+
+    output->put('\n');
+    last_char = '\n';
+    data++;
+    index++;
+  }
+
   while(!(last_char == '\n' && (*data) == ';') && index < data_size) {
     if((*data) == '\n') {
       inConsensus++;
