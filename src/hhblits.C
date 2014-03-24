@@ -2102,7 +2102,7 @@ void perform_realign(char *dbfiles[], int ndb) {
         Qali_allseqs.MergeMasterSlave(*hit[bin], Tali, hit[bin]->dbfile);
 
       if(par.nofilter) {
-        Tali.N_filtered = Tali.N_in;
+        Tali.N_filtered = Tali.NoFilter();
       }
       else {
         Tali.N_filtered = Tali.Filter(par.max_seqid_db, par.coverage_db,
