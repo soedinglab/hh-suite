@@ -903,9 +903,11 @@ void Alignment::Compress(const char infile[]) {
     if (match_states < 6) {
       if (N_in - N_ss <= 1) {
         par.M = 3; // if only single sequence in input file, use par.M=3 (match states by first seq)
-        fprintf(stderr,
-            "WARNING: single sequence in file %s contains only %i match_states! Switching to option -M first\n seq=%s\n",
-            infile, match_states, seq[kfirst]);
+        if(v >= 2) {
+          fprintf(stderr,
+              "WARNING: single sequence in file %s contains only %i match_states! Switching to option -M first\n seq=%s\n",
+              infile, match_states, seq[kfirst]);
+        }
       }
       else if (v >= 1)
         fprintf(stderr,
@@ -3485,9 +3487,11 @@ void Alignment::MergeMasterSlave(Hit& hit, Alignment& Tali, char* ta3mfile) {
     if (!Tali.keep[k])
       continue;
     if (N_in >= MAXSEQ) {
-      fprintf(stderr,
-          "WARNING in %s: maximum number of %i sequences exceeded while reading %s. Skipping all following sequences of this MSA\n",
-          program_name, MAXSEQ, ta3mfile);
+      if(v >= 2) {
+        fprintf(stderr,
+            "WARNING in %s: maximum number of %i sequences exceeded while reading %s. Skipping all following sequences of this MSA\n",
+            program_name, MAXSEQ, ta3mfile);
+      }
       break;
     }
     cur_seq[0] = ' ';     // 0'th position not used
