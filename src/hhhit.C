@@ -1281,8 +1281,8 @@ void Hit::BacktraceMAC(HMM* q, HMM* t) {
     step = 1;
     this->i[step] = i;
     this->j[step] = j;
-    alt_i->Push(i);
-    alt_j->Push(j);
+//    alt_i->Push(i);
+//    alt_j->Push(j);
     state = STOP;
   }
   else {
@@ -1291,8 +1291,8 @@ void Hit::BacktraceMAC(HMM* q, HMM* t) {
       states[step] = state = b[i][j];
       this->i[step] = i;
       this->j[step] = j;
-      alt_i->Push(i);
-      alt_j->Push(j);
+//      alt_i->Push(i);
+//      alt_j->Push(j);
       // Exclude cells in direct neighbourhood from all further alignments
       for (int ii = imax(i - 2, 1); ii <= imin(i + 2, q->L); ++ii)
         cell_off[ii][j] = 1;

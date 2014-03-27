@@ -63,15 +63,16 @@ public:
   void FrequenciesAndTransitions(HMM* q, char* in=NULL, bool time=false);
 
   // Calculate freqs q.f[i][a] and transitions q.tr[i][a] (a=MM,MI,MD) with pos-specific subalignments
-  void Amino_acid_frequencies_and_transitions_from_M_state_global(HMM* q, char* in);
-  void Amino_acid_frequencies_and_transitions_from_M_state_local(HMM* q, char* in);
-  void calculate_Neff(HMM* q, float* wk, char* in);
-
-  void calculate_amino_acid_frequencies_from_weights(HMM* q, float* wg, char* in);
-  void calculate_amino_acid_frequencies_from_weights(HMM* q, int i, float* wk, char* in);
-
-  void calculate_transition_probabilities_from_M_state(HMM* q, float* wk, char* in);
-  void calculate_transition_probabilities_from_M_state(HMM* q, int i, float* wk, char* in);
+  void Amino_acid_frequencies_and_transitions_from_M_state(HMM* q, char* in);
+//  void Amino_acid_frequencies_and_transitions_from_M_state_global(HMM* q, char* in);
+//  void Amino_acid_frequencies_and_transitions_from_M_state_local(HMM* q, char* in);
+//  void calculate_Neff(HMM* q, float* wk, char* in);
+//
+//  void calculate_amino_acid_frequencies_from_weights(HMM* q, float* wg, char* in);
+//  void calculate_amino_acid_frequencies_from_weights(HMM* q, int i, float* wk, char* in);
+//
+//  void calculate_transition_probabilities_from_M_state(HMM* q, float* wk, char* in);
+//  void calculate_transition_probabilities_from_M_state(HMM* q, int i, float* wk, char* in);
 
 
   // Calculate transitions q.tr[i][a] (a=DM,DD) with pos-specific subalignments

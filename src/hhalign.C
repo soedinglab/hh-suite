@@ -1413,7 +1413,7 @@ int main(int argc, char **argv) {
       hit.Backtrace(q, t);
     }
     else if (par.forward == 2)   // generate forward alignment
-        {
+    {
       hit.Forward(q, t);
       hit.Backward(q, t);
       hit.MACAlignment(q, t);
