@@ -360,6 +360,8 @@ void help(char all = 0) {
   printf(
       " -o <file>      write results in standard format to file (default=<infile.hhr>)\n");
   printf(
+      " -ored <file>   write filtered and wiggled alignments in standard format to file\n");
+  printf(
       " -oa3m <file>   write result MSA with significant matches in a3m format\n");
   if (!all) {
     printf("                Analogous for -opsi and -ohhm\n");
@@ -490,8 +492,6 @@ void help(char all = 0) {
         par.ssw);
     printf(
         " -wg            use global sequence weighting for realignment!                   \n");
-    printf(
-        " -nofilter      don't filter the sequences in the clusters in the database!      \n");
     printf("\n");
     printf(
         "Gap cost options:                                                                \n");
@@ -756,6 +756,16 @@ void ProcessArguments(int argc, char** argv) {
       }
       else
         strcpy(par.outfile, argv[i]);
+    }
+    else if (!strcmp(argv[i], "-ored")) {
+      if (++i >= argc || argv[i][0] == '-') {
+        help();
+        cerr << endl << "Error in " << program_name
+            << ": no output file following -o\n";
+        exit(4);
+      }
+      else
+        strcpy(par.reduced_outfile, argv[i]);
     }
     else if (!strcmp(argv[i], "-oa3m")) {
       if (++i >= argc || argv[i][0] == '-') {
@@ -1081,9 +1091,6 @@ void ProcessArguments(int argc, char** argv) {
     else if (!strcmp(argv[i], "-wg")) {
       par.wg = 1;
     }
-    else if(!strcmp(argv[i], "-nofilter")) {
-      par.nofilter = true;
-    }
     else if (!strcmp(argv[i], "-maxres") && (i < argc - 1)) {
       par.maxres = atoi(argv[++i]);
       par.maxcol = 2 * par.maxres;
@@ -1354,13 +1361,8 @@ void DoViterbiSearch(char *dbfiles[], int ndb, bool alignByWorker = true) {
 
         tali.Compress(dbfiles[idb]);
 
-        if(par.nofilter) {
-          tali.N_filtered = tali.NoFilter();
-        }
-        else {
-          tali.N_filtered = tali.Filter(par.max_seqid_db, par.coverage_db,
-              par.qid_db, par.qsc_db, par.Ndiff_db);
-        }
+        tali.N_filtered = tali.Filter(par.max_seqid_db, par.coverage_db,
+		  par.qid_db, par.qsc_db, par.Ndiff_db);
 
         char wg = par.wg;
         par.wg = 1; // use global weights
@@ -1426,13 +1428,8 @@ void DoViterbiSearch(char *dbfiles[], int ndb, bool alignByWorker = true) {
           tali.Read(dbf, dbfiles[idb], line);
           tali.Compress(dbfiles[idb]);
 
-          if(par.nofilter) {
-            tali.N_filtered = tali.NoFilter();
-          }
-          else {
-            tali.N_filtered = tali.Filter(par.max_seqid_db, par.coverage_db,
-                par.qid_db, par.qsc_db, par.Ndiff_db);
-          }
+          tali.N_filtered = tali.Filter(par.max_seqid_db, par.coverage_db,
+              par.qid_db, par.qsc_db, par.Ndiff_db);
 
           char wg = par.wg;
           par.wg = 1; // use global weights
@@ -1930,13 +1927,8 @@ void perform_realign(char *dbfiles[], int ndb) {
 
         tali.Compress(hit_cur.dbfile);
 
-        if(par.nofilter) {
-          tali.N_filtered = tali.NoFilter();
-        }
-        else {
-          tali.N_filtered = tali.Filter(par.max_seqid_db, par.coverage_db,
-              par.qid_db, par.qsc_db, par.Ndiff_db);
-        }
+        tali.N_filtered = tali.Filter(par.max_seqid_db, par.coverage_db,
+            par.qid_db, par.qsc_db, par.Ndiff_db);
 
         t[bin]->name[0] = t[bin]->longname[0] = t[bin]->fam[0] = '\0';
         tali.FrequenciesAndTransitions(t[bin]);
@@ -1980,13 +1972,8 @@ void perform_realign(char *dbfiles[], int ndb) {
           tali.Read(dbf, hit_cur.dbfile, line);
           tali.Compress(hit_cur.dbfile);
 
-          if(par.nofilter) {
-            tali.N_filtered = tali.NoFilter();
-          }
-          else {
-            tali.N_filtered = tali.Filter(par.max_seqid_db, par.coverage_db,
-                par.qid_db, par.qsc_db, par.Ndiff_db);
-          }
+          tali.N_filtered = tali.Filter(par.max_seqid_db, par.coverage_db,
+              par.qid_db, par.qsc_db, par.Ndiff_db);
 
           t[bin]->name[0] = t[bin]->longname[0] = t[bin]->fam[0] = '\0';
           tali.FrequenciesAndTransitions(t[bin]);
@@ -2101,13 +2088,8 @@ void perform_realign(char *dbfiles[], int ndb) {
       if (par.allseqs) // need to keep *all* sequences in Qali_allseqs? => merge before filtering
         Qali_allseqs.MergeMasterSlave(*hit[bin], Tali, hit[bin]->dbfile);
 
-      if(par.nofilter) {
-        Tali.N_filtered = Tali.NoFilter();
-      }
-      else {
-        Tali.N_filtered = Tali.Filter(par.max_seqid_db, par.coverage_db,
-            par.qid_db, par.qsc_db, par.Ndiff_db);
-      }
+      Tali.N_filtered = Tali.Filter(par.max_seqid_db, par.coverage_db,
+          par.qid_db, par.qsc_db, par.Ndiff_db);
 
       Qali.MergeMasterSlave(*hit[bin], Tali, hit[bin]->dbfile);
 
@@ -2259,13 +2241,8 @@ void perform_realign(char *dbfiles[], int ndb) {
 
           tali.Compress(dbfiles[idb]);
 
-          if(par.nofilter) {
-            tali.N_filtered = tali.NoFilter();
-          }
-          else {
-            tali.N_filtered = tali.Filter(par.max_seqid_db, par.coverage_db,
-                par.qid_db, par.qsc_db, par.Ndiff_db);
-          }
+          tali.N_filtered = tali.Filter(par.max_seqid_db, par.coverage_db,
+              par.qid_db, par.qsc_db, par.Ndiff_db);
 
           t[bin]->name[0] = t[bin]->longname[0] = t[bin]->fam[0] = '\0';
           tali.FrequenciesAndTransitions(t[bin]);
@@ -2312,13 +2289,8 @@ void perform_realign(char *dbfiles[], int ndb) {
             tali.Read(dbf, dbfiles[idb], line);
             tali.Compress(dbfiles[idb]);
 
-            if(par.nofilter) {
-              tali.N_filtered = tali.NoFilter();
-            }
-            else {
-              tali.N_filtered = tali.Filter(par.max_seqid_db, par.coverage_db,
-                  par.qid_db, par.qsc_db, par.Ndiff_db);
-            }
+            tali.N_filtered = tali.Filter(par.max_seqid_db, par.coverage_db,
+                par.qid_db, par.qsc_db, par.Ndiff_db);
 
             t[bin]->name[0] = t[bin]->longname[0] = t[bin]->fam[0] = '\0';
             tali.FrequenciesAndTransitions(t[bin]);
@@ -2533,9 +2505,7 @@ void reduceRedundancyOfHitList(int n_redundancy, int query_length, HitList& hitl
     }
 
     if(length_actual_contribution > 0.5 * length_actual_coverage) {
-      //TODO: real copy needed?
       reducedHitList.Insert(hit_cur);
-      std::cerr << hit_cur.name << std::endl;
 
       //update coverage
       for(int alignment_index = 1; alignment_index <= hit_cur.nsteps; alignment_index++) {
@@ -2545,19 +2515,16 @@ void reduceRedundancyOfHitList(int n_redundancy, int query_length, HitList& hitl
       }
     }
   }
-
-  std::cout << "Number of total Hits: " << total << std::endl;
 }
 
 void recalculateAlignmentsForDifferentQSC(HitList& hitlist, Alignment& Qali, char inputformat, float* qsc, size_t nqsc, HitList& recalculated_hitlist) {
   q->Log2LinTransitionProbs(1.0); // transform transition freqs to lin space if not already done
-  int nhits = 0;
-  int N_aligned = 0;
 
-  // Longest allowable length of database HMM (backtrace: 5 chars, fwd, bwd: 1 double
-  long int Lmaxmem = (par.maxmem * 1024 * 1024 * 1024) / sizeof(double) / q->L / bins;
-  long int Lmax = 0;      // length of longest HMM to be realigned
-
+  char v1 = v;
+  if (v > 0 && v <= 3)
+    v = 1;
+  else
+    v -= 2; // Supress verbose output during iterative realignment and realignment
 
   Alignment qali;
   qali = Qali;
@@ -2566,7 +2533,7 @@ void recalculateAlignmentsForDifferentQSC(HitList& hitlist, Alignment& Qali, cha
   recalculated_hitlist.Reset();
 
   //qsc should be called in ascending order
-  for(int qsc_index = 0; qsc_index < nqsc; qsc_index++) {
+  for(size_t qsc_index = 0; qsc_index < nqsc; qsc_index++) {
     float actual_qsc = qsc[qsc_index];
 
     const int COV_ABS = 25;
@@ -2580,7 +2547,6 @@ void recalculateAlignmentsForDifferentQSC(HitList& hitlist, Alignment& Qali, cha
     hitlist.Reset();
     while (!hitlist.End()) {
       Hit hit_ref = hitlist.ReadNext();
-      std::cout << "DEPP: " << hit_ref.dbfile << std::endl;
       FILE* dbf = NULL;
 
       if (!use_compressed_a3m) {
@@ -2704,13 +2670,13 @@ void recalculateAlignmentsForDifferentQSC(HitList& hitlist, Alignment& Qali, cha
       if (read_from_db == 0)
         break;     // finished reading HMMs
 
-      PrepareTemplateHMM(q,t,format);
+      PrepareTemplateHMM(q, t,format);
       t->Log2LinTransitionProbs(1.0);
 
       Hit hit;
       hit.AllocateForwardMatrix(q->L + 2, par.maxres + 1);
       hit.AllocateBacktraceMatrix(q->L + 2, par.maxres + 1);
-      hit.irep = qsc_index + 1;
+      hit.irep = 1;
       hit.self = 0;
 
       hit.dbfile = new (char[strlen(hit_ref.dbfile) + 1]);
@@ -2732,10 +2698,11 @@ void recalculateAlignmentsForDifferentQSC(HitList& hitlist, Alignment& Qali, cha
       hit.BacktraceMAC(q, t);
 
       // Overwrite *hit[bin] with Viterbi scores, Probabilities etc. of hit_cur
-      hit.score      = hit_ref.score;
-      hit.score_ss   = hit_ref.score_ss;
-      hit.score_aass = hit_ref.score_aass;
-      hit.score_sort = hit_ref.score_sort;
+      //TODO???
+//      hit.score      = hit_ref.score;
+//      hit.score_ss   = hit_ref.score_ss;
+//      hit.score_aass = hit_ref.score_aass;
+//      hit.score_sort = hit_ref.score_sort;
       hit.Pval       = hit_ref.Pval;
       hit.Pvalt      = hit_ref.Pvalt;
       hit.logPval    = hit_ref.logPval;
@@ -2753,37 +2720,9 @@ void recalculateAlignmentsForDifferentQSC(HitList& hitlist, Alignment& Qali, cha
     }
   }
 
-  recalculated_hitlist.CalculatePvalues(q);
-  recalculated_hitlist.CalculateHHblitsEvalues(q);
-
   reading_dbs = 0;
-}
 
-void deleteShortAlignments(HitList& hitlist) {
-  int nhits = 0;
-  hitlist.Reset();
-  while (!hitlist.End()) {
-    hit_cur = hitlist.ReadNext();
-
-    if (nhits > par.realign_max && nhits >= imax(par.B, par.Z))
-      break;
-    if (hit_cur.Eval > par.e) {
-      if (nhits >= imax(par.B, par.Z))
-        continue;
-      if (nhits >= imax(par.b, par.z) && hit_cur.Probab < par.p)
-        continue;
-      if (nhits >= imax(par.b, par.z) && hit_cur.Eval > par.E)
-        continue;
-    }
-
-    if (hit_cur.matched_cols < MINCOLS_REALIGN) {
-      if (v >= 3)
-        printf("Deleting alignment of %s with length %i\n", hit_cur.name,
-            hit_cur.matched_cols);
-      hitlist.Delete().Delete();        // delete the list record and hit object
-    }
-    nhits++;
-  }
+  v = v1;
 }
 
 void uniqueHitlist(HitList& hitlist) {
@@ -2806,19 +2745,17 @@ void uniqueHitlist(HitList& hitlist) {
 
 void wiggleQSC(HitList& hitlist, int n_redundancy, Alignment& Qali, char inputformat, int query_length, float* qsc, size_t nqsc, HitList& reducedFinalHitList) {
   HitList* reducedHitList = new HitList();
-  HitList* wiggledHitList = new HitList();
+//  HitList* wiggledHitList = new HitList();
 
   //filter by 2*n_redundancy
-  std::cerr << "First coarse reduction:" << std::endl;
   reduceRedundancyOfHitList(2*n_redundancy, query_length, hitlist, *reducedHitList);
 
   //recalculate alignments for different qsc and choose best alignment for each template
-  recalculateAlignmentsForDifferentQSC(*reducedHitList, Qali, inputformat, qsc, nqsc, *wiggledHitList);
-  uniqueHitlist(*wiggledHitList);
+  recalculateAlignmentsForDifferentQSC(*reducedHitList, Qali, inputformat, qsc, nqsc, reducedFinalHitList);//*wiggledHitList);
+//  uniqueHitlist(*wiggledHitList);
 
   //filter by n_redundancy
-  std::cerr << "Second fine reduction:" << std::endl;
-  reduceRedundancyOfHitList(n_redundancy, query_length, *wiggledHitList, reducedFinalHitList);
+//  reduceRedundancyOfHitList(n_redundancy, query_length, *wiggledHitList, reducedFinalHitList);
 }
 
 
@@ -3666,23 +3603,31 @@ int main(int argc, char **argv) {
   if (*par.alitabfile)
     hitlist.WriteToAlifile(q, alitab_scop);
 
-  //TODO
-  HitList reducedHitlist;
-  float qscs [5] = {0, -20, 0, 0.1, 0.2};
-  wiggleQSC(hitlist, 5, Qali, input_format, q->L, qscs, 4, reducedHitlist);
+  if(strlen(par.reduced_outfile) != 0) {
+	HitList reducedHitlist;
+	float qscs [4] = {-20, 0, 0.1, 0.2};
+	wiggleQSC(hitlist, 5, Qali, input_format, q->L, qscs, 4, reducedHitlist);
+
+	reducedHitlist.N_searched = hitlist.N_searched;
+	reducedHitlist.PrintHitList(q_tmp, par.outfile);
+	reducedHitlist.PrintAlignments(q_tmp, par.outfile);
+
+    reducedHitlist.PrintHitList(q_tmp, par.reduced_outfile);
+	reducedHitlist.PrintAlignments(q_tmp, par.reduced_outfile);
+  }
+
 
   // Print summary listing of hits
   if (v >= 3)
     printf("Printing hit list ...\n");
-  reducedHitlist.PrintHitList(q_tmp, par.outfile);//TODO
+  hitlist.PrintHitList(q_tmp, par.outfile);
 
   // Write only hit list to screen?
   if (v == 2 && strcmp(par.outfile, "stdout"))
     WriteToScreen(par.outfile, 109); // write only hit list to screen
 
-  //TODO
   // Print alignments of query sequences against hit sequences
-  reducedHitlist.PrintAlignments(q_tmp, par.outfile);
+  hitlist.PrintAlignments(q_tmp, par.outfile);
 
   // Write whole output file to screen? (max 10000 lines)
   if (v >= 3 && strcmp(par.outfile, "stdout"))

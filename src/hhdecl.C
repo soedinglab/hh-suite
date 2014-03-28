@@ -238,6 +238,7 @@ public:
 
   char infile[NAMELEN];   // input filename
   char outfile[NAMELEN];  // output filename
+  char reduced_outfile[NAMELEN];
   char pairwisealisfile[NAMELEN]; // output filename with pairwise alignments
   char alnfile[NAMELEN];  // name of output alignment file in A3M format (for iterative search)
   char hhmfile[NAMELEN];  // name of output HHM file for (iterative search)
@@ -279,7 +280,6 @@ public:
   int M;                  // Match state assignment by  1:upper/lower case  2:percentage rule  3:marked sequence
   char matrix;            // Subst.matrix 0: Gonnet, 1: HSDM, 2: BLOSUM50
 
-  bool nofilter;
   char wg;                // 0: use local sequence weights   1: use global ones
 
   Pseudocounts::Params pc_hhm_context_engine;       // Pseudocounts parameters for query hhm if context given
@@ -511,7 +511,6 @@ void Parameters::SetDefaults()
   calm=3;                  // derive P-values from: 0:query calibration  1:template calibration  2:both  3:Neural Network prediction
 
   wg = 0;                    // 0: use local sequence weights   1: use global ones
-  nofilter = false;         //filter the sequences in the database clusters
 
   matrix=0;                // Subst.matrix 0: Gonnet, 1: HSDM, 2: BLOSUM50 3: BLOSUM62
 
@@ -616,6 +615,7 @@ void Parameters::SetDefaults()
 
   strcpy(infile,""); // was reverted back from 'strcpy(infile,"stdin");' (to show help list when no options are given)
   strcpy(outfile,"");
+  strcpy(reduced_outfile, "");
   strcpy(pairwisealisfile,"");
   strcpy(scorefile,"");
   strcpy(indexfile,""); 

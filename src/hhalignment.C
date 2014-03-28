@@ -1498,17 +1498,6 @@ inline int Alignment::Filter(int max_seqid, int coverage, int qid, float qsc,
   return Filter2(keep, coverage, qid, qsc, 20, max_seqid, N);
 }
 
-int Alignment::NoFilter() {
-  determineSequenceStartsAndEnds();
-  determineNumberOfResiduesPerSequence();
-
-  int n = 0;
-  for (int k = 0; k < N_in; ++k)
-    if (keep[k] > 0) n++;
-
-  return n;
-}
-
 void Alignment::determineSequenceStartsAndEnds() {
   // Determine first[k], last[k]
   if (first == NULL) {

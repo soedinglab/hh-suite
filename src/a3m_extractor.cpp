@@ -9,12 +9,15 @@
 
 void usage() {
   std::cout
-      << "A3M_Extractor -i [inputfile|stdin] -o [outputfile|stdout] -d [ffindex_sequence_database_prefix] -q [ffindex_header_database_prefix]"
+      << "a3m_extractor -i [inputfile|stdin] -o [outputfile|stdout] -d [ffindex_sequence_database_prefix] -q [ffindex_header_database_prefix]"
       << std::endl;
 }
 
 int main(int argc, char **argv) {
-  bool iflag, dflag, oflag, qflag = false;
+  bool iflag = false;
+  bool dflag = false;
+  bool oflag = false;
+  bool qflag = false;
 
   std::string ffindex_sequence_db_prefix;
   std::string ffindex_header_db_prefix;

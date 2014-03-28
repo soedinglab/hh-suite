@@ -13,7 +13,8 @@ int compressed_a3m::compress_a3m(std::istream* input,
     ffindex_index_t* ffindex_sequence_database_index,
     char* ffindex_sequence_database_data, std::ostream* output) {
 
-  bool sequence_flag, consensus_flag = false;
+  bool sequence_flag = false;
+  bool consensus_flag = false;
   std::string sequence;
   std::string header;
   std::string id;
@@ -31,13 +32,13 @@ int compressed_a3m::compress_a3m(std::istream* input,
     else if (line.substr(0, 8) == ">ss_cons") {
       //TODO: assumption just one line
       getline(*input, line);
-      sequence_flag, consensus_flag = false;
+      sequence_flag = consensus_flag = false;
     }
     //ss_pred - remove ss annotation
     else if (line.substr(0, 8) == ">ss_pred") {
       //TODO: assumption just one line
       getline(*input, line);
-      sequence_flag, consensus_flag = false;
+      sequence_flag = consensus_flag = false;
     }
     //header
     else if (line[0] == '>') {
@@ -115,7 +116,8 @@ int compressed_a3m::compress_a3m(char* input, size_t input_size,
     ffindex_index_t* ffindex_sequence_database_index,
     char* ffindex_sequence_database_data, std::ostream* output) {
 
-  bool sequence_flag, consensus_flag = false;
+  bool sequence_flag = false;
+  bool consensus_flag = false;
   std::string sequence;
   std::string header;
   std::string id;

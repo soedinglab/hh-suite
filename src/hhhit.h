@@ -60,8 +60,8 @@ class Hit
   int nsteps;           // index for last step in Viterbi path; (first=1)
   int* i;               // i[step] = query match state at step of Viterbi path
   int* j;               // j[step] = template match state at step of Viterbi path
-  List<int>* alt_i;      // Path of alternative alignments (query positions)
-  List<int>* alt_j;      // Path of alternative alignments (template positions)
+  std::vector<int>* alt_i; // Path of alternative alignments (query positions)
+  std::vector<int>* alt_j; // Path of alternative alignments (template positions)
   char* states;         // state at step of Viterbi path  0: Start  1: M(MM)  2: A(-D)  3: B(IM)  4: C(D-)  5 D(MI)
   float* S;             // S[step] = match-match score contribution at alignment step
   float* S_ss;          // S_ss[step] = secondary structure score contribution

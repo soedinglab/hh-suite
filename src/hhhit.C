@@ -84,8 +84,6 @@ Hit::Hit() {
   btr = NULL;
   self = 0;
   i = j = NULL;
-  // alt_i = new List<int>();
-  // alt_j = new List<int>();
   alt_i = alt_j = NULL;
   states = NULL;
   S = S_ss = P_posterior = NULL;
@@ -514,16 +512,15 @@ void Hit::Forward(HMM* q, HMM* t) {
 
     // Mask previous found alternative alignments
     if (alt_i && alt_j) {
-      alt_i->Reset();
-      alt_j->Reset();
-      while (!alt_i->End()) {
-        i = alt_i->ReadNext();
-        j = alt_j->ReadNext();
+      for(size_t index = 0; index < alt_i->size(); index++) {
+        i = alt_i->operator [](index);
+        j = alt_j->operator [](index);
 
         for (int ii = imax(i - 2, 1); ii <= imin(i + 2, q->L); ++ii)
           cell_off[ii][j] = 1;
         for (int jj = imax(j - 2, 1); jj <= imin(j + 2, t->L); ++jj)
           cell_off[i][jj] = 1;
+
       }
     }
 
@@ -1281,8 +1278,8 @@ void Hit::BacktraceMAC(HMM* q, HMM* t) {
     step = 1;
     this->i[step] = i;
     this->j[step] = j;
-//    alt_i->Push(i);
-//    alt_j->Push(j);
+    alt_i->push_back(i);
+    alt_j->push_back(j);
     state = STOP;
   }
   else {
@@ -1291,8 +1288,8 @@ void Hit::BacktraceMAC(HMM* q, HMM* t) {
       states[step] = state = b[i][j];
       this->i[step] = i;
       this->j[step] = j;
-//      alt_i->Push(i);
-//      alt_j->Push(j);
+      alt_i->push_back(i);
+      alt_j->push_back(j);
       // Exclude cells in direct neighbourhood from all further alignments
       for (int ii = imax(i - 2, 1); ii <= imin(i + 2, q->L); ++ii)
         cell_off[ii][j] = 1;
@@ -1447,10 +1444,8 @@ void Hit::InitializeForAlignment(HMM* q, HMM* t, bool vit) {
   }
   else {
     if (irep == 1) {
-      //    if (alt_i && alt_i->Size()>0) delete alt_i;
-      alt_i = new List<int>();
-      //    if (alt_j && alt_j->Size()>0) delete alt_j;
-      alt_j = new List<int>();
+      alt_i = new std::vector<int>();
+      alt_j = new std::vector<int>();
     }
   }
 
