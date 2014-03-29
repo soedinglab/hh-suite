@@ -167,7 +167,7 @@ void Alignment<Abc>::ReadFastaFlavors(FILE* fin, std::vector<std::string>& heade
     int c = '\0';
     while (!feof(fin)) {
         // Read header
-        while (fgetline(buffer, kBufferSize, fin)) {
+        while (cs::fgetline(buffer, kBufferSize, fin)) {
             if (!strscn(buffer)) continue;
             if (buffer[0] == '#') {
                 name_ = std::string(buffer + 1);
@@ -178,7 +178,7 @@ void Alignment<Abc>::ReadFastaFlavors(FILE* fin, std::vector<std::string>& heade
                     c = getc(fin);
                     ungetc(c, fin);
                     if (c == '>') break;
-                    fgetline(buffer, kBufferSize, fin);
+                    cs::fgetline(buffer, kBufferSize, fin);
                   }
                   continue;
                 }
@@ -192,7 +192,7 @@ void Alignment<Abc>::ReadFastaFlavors(FILE* fin, std::vector<std::string>& heade
 
         // Read sequence
         seqs.push_back("");
-        while (fgetline(buffer, kBufferSize, fin)) {
+        while (cs::fgetline(buffer, kBufferSize, fin)) {
             seqs.back().append(buffer);
 
             c = getc(fin);
@@ -221,7 +221,7 @@ void Alignment<Abc>::ReadPsi(FILE* fin, std::vector<std::string>& headers, std::
     size_t n = 0;      // sequence number of first block
     size_t k = 0;      // sequence index to zero for first block
 
-    while (fgetline(buffer, kBufferSize, fin)) {
+    while (cs::fgetline(buffer, kBufferSize, fin)) {
         if (buffer[0] == '/' && buffer[1] == '/') break;
 
         // Start of new block

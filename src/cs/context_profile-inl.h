@@ -84,23 +84,23 @@ void ContextProfile<Abc>::Read(FILE* fin) {
         throw Exception("Stream does not start with class id 'ContextProfile'!");
 
     char buffer[KB];
-    fgetline(buffer, KB, fin);
+    cs::fgetline(buffer, KB, fin);
     if (strstr(buffer, "NAME")) {
         name = ReadString(buffer, "NAME", "Unable to parse context profile 'NAME'!");
-        fgetline(buffer, KB, fin);
+        cs::fgetline(buffer, KB, fin);
     }
     prior = ReadDouble(buffer, "PRIOR", "Unable to parse context profile 'PRIOR'!");
-    fgetline(buffer, KB, fin);
+    cs::fgetline(buffer, KB, fin);
     if (strstr(buffer, "COLOR")) {
         std::string coldef;
         coldef = ReadString(buffer, "COLOR", "Unable to parse context profile 'COLOR'!");
         color = Color(coldef);
-        fgetline(buffer, KB, fin);
+        cs::fgetline(buffer, KB, fin);
     }
     is_log = ReadBool(buffer, "ISLOG", "Unable to parse context profile 'ISLOG'!");
-    fgetline(buffer, KB, fin);
+    cs::fgetline(buffer, KB, fin);
     size_t  len = ReadInt(buffer, "LENG", "Unable to parse context profile 'LENG'!");
-    fgetline(buffer, KB, fin);
+    cs::fgetline(buffer, KB, fin);
     size_t nalph = ReadInt(buffer, "ALPH", "Unable to parse context profile 'ALPH'!");
     if (is_log) prior = log(prior);
     assert(len & 1);
@@ -115,8 +115,8 @@ void ContextProfile<Abc>::Read(FILE* fin) {
     const char* ptr = buffer;
     const size_t center = (len - 1) / 2;
     size_t i = 0;
-    fgetline(buffer, KB, fin);  // skip alphabet description line
-    while (fgetline(buffer, KB, fin) && buffer[0] != '/' && buffer[1] != '/') {
+    cs::fgetline(buffer, KB, fin);  // skip alphabet description line
+    while (cs::fgetline(buffer, KB, fin) && buffer[0] != '/' && buffer[1] != '/') {
         ptr = buffer;
         i = strtoi(ptr) - 1;
         assert(i < len);

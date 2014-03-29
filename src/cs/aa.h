@@ -17,6 +17,8 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "globals.h"
+
 #ifndef CS_AA_H_
 #define CS_AA_H_
 

@@ -51,11 +51,8 @@
 //     Note by J. Soeding: Michael Farrar died unexpectedly in December 2010. 
 //     Many thanks posthumously for your great code!
 
-#include <map>
 
 #define PTHREAD
-#define MAIN
-#define HHBLITS
 // #define HHDEBUG
 // #define DEBUG_THREADS
 // #define WINDOWS
@@ -76,6 +73,7 @@
 #include <errno.h>    // perror(), strerror(errno)
 #include <cassert>
 #include <stdexcept>
+#include <map>
 
 #ifdef PTHREAD
 #include <pthread.h>  // POSIX pthread functions and data structures
@@ -86,25 +84,6 @@
 #endif
 
 #include <sys/time.h>
-
-#ifdef HH_SSE41
-#include <tmmintrin.h>   // SSSE3
-#include <smmintrin.h>   // SSE4.1
-#define HH_SSE3
-#endif
-
-#ifdef HH_SSE3
-#include <pmmintrin.h>   // SSE3
-#define HH_SSE2
-#endif
-
-#ifdef HH_SSE2
-#ifndef __SUNPRO_C
-#include <emmintrin.h>   // SSE2
-#else
-#include <sunmedia_intrin.h>
-#endif
-#endif
 
 using std::cout;
 using std::cerr;
@@ -121,35 +100,27 @@ extern "C" {
 #include <ffindex.h>     // fast index-based database reading
 }
 
-#include "cs.h"          // context-specific pseudocounts
+#include "cs.h"
 #include "context_library.h"
 #include "library_pseudocounts-inl.h"
 #include "crf_pseudocounts-inl.h"
 #include "abstract_state_matrix.h"
 cs::ContextLibrary<cs::AA> *cs_lib;
 
-#include "util.C"        // imax, fmax, iround, iceil, ifloor, strint, strscn, strcut, substr, uprstr, uprchr, Basename etc.
-#include "list.C"        // list data structure
-#include "hash.C"        // hash data structure
-#include "hhdecl.C"      // Constants, global variables, struct Parameters
-std::map<std::string, unsigned char*> columnStateSequences;
-ColumnStateScoring* columnStateScoring;
+#include "hhdecl.h"
+#include "list.h"
+#include "hash.h"
+#include "util.h"
+#include "hhutil.h"
 
-#include "hhutil.C"      // MatchChr, InsertChr, aa2i, i2aa, log2, fast_log2, ScopID, WriteToScreen,
-#include "hhmatrices.C"  // BLOSUM50, GONNET, HSDM
+#include "hhmatrices.cpp"
 #include "hhhmm.h"       // class HMM
 #include "hhhit.h"       // class Hit
 #include "hhalignment.h" // class Alignment
 #include "hhhalfalignment.h" // class HalfAlignment
 #include "hhfullalignment.h" // class FullAlignment
 #include "hhhitlist.h"   // class Hit
-#include "hhhmm.C"       // class HMM
-#include "hhalignment.C" // class Alignment
-#include "hhhit.C"       // class Hit
-#include "hhhalfalignment.C" // class HalfAlignment
-#include "hhfullalignment.C" // class FullAlignment
-#include "hhhitlist.C"   // class HitList
-#include "hhfunc.C"      // some functions common to hh programs
+#include "hhfunc.cpp"      // some functions common to hh programs
 /////////////////////////////////////////////////////////////////////////////////////
 // Global variables
 ////////////////////////////////////////////////////////////////////////////////////
@@ -206,6 +177,8 @@ char dbuniprot_header_index_filename[NAMELEN];
 char dbuniprot_header_data_filename[NAMELEN];
 char dbuniprot_sequence_index_filename[NAMELEN];
 char dbuniprot_sequence_data_filename[NAMELEN];
+
+Early_Stopping* early_stopping = NULL;
 
 // Needed for fast index reading
 size_t data_size;
@@ -299,8 +272,8 @@ pthread_cond_t finished_job = PTHREAD_COND_INITIALIZER;
 inline int PickBin(char status);
 
 // Include hhworker.C and hhprefilter.C here, because it needs some of the above variables
-#include "hhworker.C"      // functions: AlignByWorker, RealignByWorker, WorkerLoop
-#include "hhprefilter.C"   // some prefilter functions
+#include "hhworker.cpp"      // functions: AlignByWorker, RealignByWorker, WorkerLoop
+#include "hhprefilter.cpp"   // some prefilter functions
 /////////////////////////////////////////////////////////////////////////////////////
 // Help functions
 /////////////////////////////////////////////////////////////////////////////////////
@@ -448,8 +421,6 @@ void help(char all = 0) {
   printf("\n");
   printf(
       "HMM-HMM alignment options:                                                       \n");
-  printf(
-      " -usecs         use column states of the templates in the database for scoring   \n");
   printf(
       " -norealign     do NOT realign displayed hits with MAC algorithm (def=realign)   \n");
   printf(
@@ -629,7 +600,7 @@ void help(char all = 0) {
     printf(
         "  -contxt <file> context file for computing context-specific pseudocounts (default=%s)\n",
         par.clusterfile);
-    //should not be in the section of pseudocounts ... associated to prefiltering ... and also to usecs (by markus)
+    //should not be in the section of pseudocounts ... associated to prefiltering
     printf("\n");
     printf("Predict secondary structure\n");
     printf(
@@ -1132,9 +1103,6 @@ void ProcessArguments(int argc, char** argv) {
       par.csw = atof(argv[++i]);
     else if (!strcmp(argv[i], "-corr") && (i < argc - 1))
       par.corr = atof(argv[++i]);
-    else if (!strcmp(argv[i], "-usecs")) {
-      par.useCSScoring = true;
-    }
     else
       cerr << endl << "WARNING: Ignoring unknown option " << argv[i]
           << " ...\n";
@@ -1271,7 +1239,7 @@ void ReadQueryA3MFile() {
 
     // Copy names from query HMM (don't use name of master sequence of MSA)
     delete[] Qali.longname;
-    Qali.longname = new (char[strlen(q->longname) + 1]);
+    Qali.longname = new char[strlen(q->longname) + 1];
     strcpy(Qali.longname, q->longname);
     strcpy(Qali.name, q->name);
     strcpy(Qali.fam, q->fam);
@@ -1454,7 +1422,7 @@ void DoViterbiSearch(char *dbfiles[], int ndb, bool alignByWorker = true) {
       if (v >= 4)
         printf("Aligning with %s\n", t[bin]->name);
 
-      hit[bin]->dbfile = new (char[strlen(dbfiles[idb]) + 1]);
+      hit[bin]->dbfile = new char[strlen(dbfiles[idb]) + 1];
       strcpy(hit[bin]->dbfile, dbfiles[idb]); // record db file name from which next HMM is read
 
       ++N_searched;
@@ -1664,7 +1632,7 @@ void RescoreWithViterbiKeepAlignment(int db_size) {
   while (!previous_hits->End()) {
     hit_cur = previous_hits->ReadNext();
     if (hit_cur.irep == 1) {
-      dbfiles[ndb] = new (char[strlen(hit_cur.dbfile) + 1]);
+      dbfiles[ndb] = new char[strlen(hit_cur.dbfile) + 1];
       strcpy(dbfiles[ndb], hit_cur.dbfile);
       ++ndb;
     }
@@ -1897,7 +1865,7 @@ void perform_realign(char *dbfiles[], int ndb) {
 		if(!use_compressed_a3m) {
       	fseek(dbf, hit_cur.ftellpos, SEEK_SET);
 		}
-      hit[bin]->dbfile = new (char[strlen(hit_cur.dbfile) + 1]);
+      hit[bin]->dbfile = new char[strlen(hit_cur.dbfile) + 1];
       strcpy(hit[bin]->dbfile, hit_cur.dbfile); // record db file name from which next HMM is read
       hit[bin]->irep = 1; // Needed for min_overlap calculation in InitializeForAlignment in hhhit.C
 
@@ -2115,7 +2083,7 @@ void perform_realign(char *dbfiles[], int ndb) {
         // Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
         q->PreparePseudocounts();
         // Add amino acid pseudocounts to query: p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
-        q->AddAminoAcidPseudocounts();
+        q->AddAminoAcidPseudocounts(par.pc_hhm_nocontext_mode, par.pc_hhm_nocontext_a, par.pc_hhm_nocontext_b, par.pc_hhm_nocontext_c);
       }
       else {
         // Add full context specific pseudocounts to query
@@ -2129,7 +2097,7 @@ void perform_realign(char *dbfiles[], int ndb) {
             par.half_window_size_local_aa_bg_freqs);
 
       // Transform transition freqs to lin space if not already done
-      q->AddTransitionPseudocounts();
+      q->AddTransitionPseudocounts(par.gapd, par.gape, par.gapf, par.gapg, par.gaph, par.gapi, par.gapb);
       q->Log2LinTransitionProbs(1.0); // transform transition freqs to lin space if not already done
 
     }
@@ -2317,7 +2285,7 @@ void perform_realign(char *dbfiles[], int ndb) {
           fprintf(stderr, "Realigning with %s\n", t[bin]->name);
         ///////////////////////////////////////////////////
 
-        hit[bin]->dbfile = new (char[strlen(dbfiles[idb]) + 1]);
+        hit[bin]->dbfile = new char[strlen(dbfiles[idb]) + 1];
         strcpy(hit[bin]->dbfile, dbfiles[idb]); // record db file name from which next HMM is read
 
         N_aligned++;
@@ -2679,7 +2647,7 @@ void recalculateAlignmentsForDifferentQSC(HitList& hitlist, Alignment& Qali, cha
       hit.irep = 1;
       hit.self = 0;
 
-      hit.dbfile = new (char[strlen(hit_ref.dbfile) + 1]);
+      hit.dbfile = new char[strlen(hit_ref.dbfile) + 1];
       strcpy(hit.dbfile, hit_ref.dbfile); // record db file name from which next HMM is read
 
       hit.i1 = hit_ref.i1;
@@ -2765,9 +2733,6 @@ void wiggleQSC(HitList& hitlist, int n_redundancy, Alignment& Qali, char inputfo
 //// MAIN PROGRAM
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 int main(int argc, char **argv) {
-
-  cuticle_init();
-
   int cluster_found = 0;
   int seqs_found = 0;
   char* argv_conf[MAXOPT]; // Input arguments from .hhdefaults file (first=1: argv_conf[0] is not used)
@@ -3196,23 +3161,10 @@ int main(int argc, char **argv) {
     hit[bin] = new Hit; // Each bin has an object of type Hit allocated ...
     hit[bin]->AllocateBacktraceMatrix(q->L + 2, par.maxres); // ...with a separate dynamic programming matrix (memory!!)
   }
-  format = new (int[bins]);
+  format = new int[bins];
 
   if (print_elapsed)
     ElapsedTimeSinceLastCall("(finished init)");
-
-  if (par.useCSScoring) {
-    columnStateScoring = new ColumnStateScoring();
-    columnStateScoring->number_column_states = cs::AS219::kSize;
-    columnStateScoring->query_length = q->L;
-    columnStateScoring->substitutionScores = new float*[q->L + 1];
-    for (int i = 0; i <= q->L; i++) {
-      columnStateScoring->substitutionScores[i] = new float[cs::AS219::kSize];
-    }
-  }
-  else {
-    columnStateScoring = NULL;
-  }
 
   //////////////////////////////////////////////////////////////////////////////////
   // Main loop overs search iterations
@@ -3290,27 +3242,6 @@ int main(int argc, char **argv) {
       printf("Scoring %i HMMs using HMM-HMM Viterbi alignment\n", ndb_new);
     }
 
-    //precalculate column scores when using -usecs
-    if (par.useCSScoring) {
-      for (int i = 1; i <= q->L + 1; ++i) {
-        for (int k = 0; k < columnStateScoring->number_column_states; ++k) {
-          float sum = 0;
-          for (int a = 0; a < 20; ++a) {
-            sum += (q->p[i - 1][a] * cs_lib->operator [](k).probs[0][a]
-                / q->pav[a]);
-          }
-          sum = flog2(sum);
-
-          //Fitting of cs scores to non-heuristic scores
-          sum = 0.6862403 * sum + 0.0342321 * pow(sum, 2)
-              + 0.0002257 * pow(sum, 3) + 0.0006802;
-
-          columnStateScoring->substitutionScores[i - 1][k] = fpow2(sum);
-        }
-      }
-      //precalculateScores(q, columnStateScoring.number_column_states, columnStateScoring.substitutionScores);
-    }
-
     // Main Viterbi HMM-HMM search
     // Starts with empty hitlist (hits of previous iterations were deleted) and creates a hitlist with the hits of this iteration
     ViterbiSearch(dbfiles_new, ndb_new, (ndb_new + ndb_old));
@@ -3342,7 +3273,7 @@ int main(int argc, char **argv) {
         ViterbiSearch(dbfiles_old, ndb_old, (ndb_new + ndb_old));
         // Add dbfiles_old to dbfiles_new for realign
         for (int a = 0; a < ndb_old; a++) {
-          dbfiles_new[ndb_new] = new (char[strlen(dbfiles_old[a]) + 1]);
+          dbfiles_new[ndb_new] = new char[strlen(dbfiles_old[a]) + 1];
           strcpy(dbfiles_new[ndb_new], dbfiles_old[a]);
           ndb_new++;
         }
@@ -3603,18 +3534,18 @@ int main(int argc, char **argv) {
   if (*par.alitabfile)
     hitlist.WriteToAlifile(q, alitab_scop);
 
-  if(strlen(par.reduced_outfile) != 0) {
-	HitList reducedHitlist;
-	float qscs [4] = {-20, 0, 0.1, 0.2};
-	wiggleQSC(hitlist, 5, Qali, input_format, q->L, qscs, 4, reducedHitlist);
-
-	reducedHitlist.N_searched = hitlist.N_searched;
-	reducedHitlist.PrintHitList(q_tmp, par.outfile);
-	reducedHitlist.PrintAlignments(q_tmp, par.outfile);
-
-    reducedHitlist.PrintHitList(q_tmp, par.reduced_outfile);
-	reducedHitlist.PrintAlignments(q_tmp, par.reduced_outfile);
-  }
+//  if(strlen(par.reduced_outfile) != 0) {
+//	HitList reducedHitlist;
+//	float qscs [4] = {-20, 0, 0.1, 0.2};
+//	wiggleQSC(hitlist, 5, Qali, input_format, q->L, qscs, 4, reducedHitlist);
+//
+//	reducedHitlist.N_searched = hitlist.N_searched;
+//	reducedHitlist.PrintHitList(q_tmp, par.outfile);
+//	reducedHitlist.PrintAlignments(q_tmp, par.outfile);
+//
+//    reducedHitlist.PrintHitList(q_tmp, par.reduced_outfile);
+//	reducedHitlist.PrintAlignments(q_tmp, par.reduced_outfile);
+//  }
 
 
   // Print summary listing of hits
@@ -3725,20 +3656,6 @@ int main(int argc, char **argv) {
       delete[] (dbnames[n]);
     free(dbnames);
     fclose(db_data_file);
-  }
-
-  if (par.useCSScoring) {
-    std::map<std::string, unsigned char*>::iterator it;
-    for (it = columnStateSequences.begin(); it != columnStateSequences.end();
-        it++) {
-      delete[] (*it).second;
-    }
-    columnStateSequences.clear();
-
-    for (int i = 0; i <= columnStateScoring->query_length; i++) {
-      delete[] columnStateScoring->substitutionScores[i];
-    }
-    delete[] columnStateScoring->substitutionScores;
   }
 
   DeletePseudocountsEngine();

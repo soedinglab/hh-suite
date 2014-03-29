@@ -1,6 +1,17 @@
 /////////////////////////////////////////////////////////////////////////////////////
 // Class representing a2m/a3m-formatted alignment corresponding to one HMM
 /////////////////////////////////////////////////////////////////////////////////////
+
+
+#include "hhhit.h"
+
+#ifndef HHHALFALIGNMENT_H
+#define HHHALFALIGNMENT_H
+
+#include <cstdlib>
+#include <iostream>
+
+
 class HalfAlignment
 {
 public:
@@ -77,3 +88,4 @@ private:
 };
 
 
+#endif

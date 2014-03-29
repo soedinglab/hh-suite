@@ -181,7 +181,7 @@ inline bool ReadBool(const char* line,
 // Returns true iff next non-blank line in file 'fp' contains string 'id'.
 inline bool StreamStartsWith(FILE* fp, const char* id) {
   char buffer[KB];
-  while (fgetline(buffer, KB, fp)) if (strscn(buffer)) break;
+  while (cs::fgetline(buffer, KB, fp)) if (strscn(buffer)) break;
   return strstr(buffer, id) == buffer;
 }
 

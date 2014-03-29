@@ -1,33 +1,6 @@
 // hhfullalignment.C
 
-#ifndef MAIN
-#define MAIN
-#include <iostream>   // cin, cout, cerr
-#include <fstream>    // ofstream, ifstream 
-#include <stdio.h>    // printf
-#include <stdlib.h>   // exit
-#include <string>     // strcmp, strstr
-#include <math.h>     // sqrt, pow
-#include <limits.h>   // INT_MIN
-#include <float.h>    // FLT_MIN
-#include <time.h>     // clock
-#include <ctype.h>    // islower, isdigit etc
-using std::ios;
-using std::ifstream;
-using std::ofstream;
-using std::cout;
-using std::cerr;
-using std::endl;
-#include "util.C"     // imax, fmax, iround, iceil, ifloor, strint, strscn, strcut, substr, uprstr, uprchr, Basename etc.
-#include "list.h"     // list data structure
-#include "hash.h"     // hash data structure
-#include "hhdecl.C"      // constants, class 
-#include "hhutil.C"      // imax, fmax, iround, iceil, ifloor, strint, strscn, strcut, substr, uprstr, uprchr, Basename etc.
-#include "hhhmm.h"       // class HMM
-#include "hhalignment.h" // class Alignment
-#include "hhhit.h"
-#include "hhhalfalignment.h"
-#endif
+#include "hhfullalignment.h"
 
 /////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////

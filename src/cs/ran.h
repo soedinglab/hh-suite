@@ -19,6 +19,10 @@
 
 #include "utils.h"
 
+#ifndef RAN_H_
+#define RAN_H_
+
+
 namespace cs {
 
 // Implementation of the highest quality recommended random number generator
@@ -73,3 +77,5 @@ struct Gaussian : public Ran {
 };
 
 }  // namespace cs
+
+#endif

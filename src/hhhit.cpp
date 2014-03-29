@@ -1,32 +1,13 @@
 // hhhit.C
 
-#ifndef MAIN
-#define MAIN
-#include <iostream>   // cin, cout, cerr
-#include <fstream>    // ofstream, ifstream 
-#include <stdio.h>    // printf
+#include "hhhit.h"
+
 using std::cout;
 using std::cerr;
 using std::endl;
 using std::ios;
 using std::ifstream;
 using std::ofstream;
-#include <stdlib.h>   // exit
-#include <string>     // strcmp, strstr
-#include <math.h>     // sqrt, pow
-#include <limits.h>   // INT_MIN
-#include <float.h>    // FLT_MIN
-#include <time.h>     // clock
-#include <ctype.h>    // islower, isdigit etc
-#include "util.C"     // imax, fmax, iround, iceil, ifloor, strint, strscn, strcut, substr, uprstr, uprchr, Basename etc.
-#include "list.h"     // list data structure
-#include "hash.h"     // hash data structure
-#include "hhdecl.C"      // constants, class 
-#include "hhutil.C"      // imax, fmax, iround, iceil, ifloor, strint, strscn, strcut, substr, uprstr, uprchr, Basename etc.
-#include "hhhmm.h"       // class HMM
-#include "hhalignment.h" // class Alignment
-#include "hhhitlist.h"   // class HitList
-#endif
 
 #ifdef PTHREAD
 // Mutex for the saving of matrices in hhhit (-omat)
@@ -49,30 +30,6 @@ pthread_mutex_t matrices_saving_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 // Generate random number in [0,1[
 #define frand() ((float) rand()/(RAND_MAX+1.0))
-
-// Function declarations
-inline float max2(const float& xMM, const float& xX, char& b,
-    unsigned char bit);
-inline int pickprob2(const double& xMM, const double& xX, const int& state);
-inline int pickprob3_GD(const double& xMM, const double& xDG,
-    const double& xGD);
-inline int pickprob3_IM(const double& xMM, const double& xMI,
-    const double& xIM);
-inline int pickprob6(const double& x0, const double& xMM, const double& xGD,
-    const double& xIM, const double& xDG, const double& xMI);
-inline int pickmax2(const double& xMM, const double& xX, const int& state);
-inline int pickmax3_GD(const double& xMM, const double& xDG, const double& xGD);
-inline int pickmax3_IM(const double& xMM, const double& xMI, const double& xIM);
-inline int pickmax6(const double& x0, const double& xMM, const double& xGD,
-    const double& xIM, const double& xDG, const double& xMI);
-inline double Pvalue(double x, double a[]);
-inline double Pvalue(float x, float lamda, float mu);
-inline double logPvalue(float x, float lamda, float mu);
-inline double logPvalue(float x, double a[]);
-inline double Probab();
-#ifdef HH_SSE2
-inline __m128 _mm_flog2_ps(__m128 X); // Fast SSE2 log2 for four floats
-#endif
 
 /////////////////////////////////////////////////////////////////////////////////////
 //// Constructor
@@ -152,11 +109,11 @@ void Hit::Delete() {
 /////////////////////////////////////////////////////////////////////////////////////
 void Hit::AllocateBacktraceMatrix(int Nq, int Nt) {
   int i;
-  btr = new (char*[Nq]);
-  cell_off = new (char*[Nq]);
+  btr = new char*[Nq];
+  cell_off = new char*[Nq];
   for (i = 0; i < Nq; ++i) {
-    btr[i] = new (char[Nt]);
-    cell_off[i] = new (char[Nt]);
+    btr[i] = new char[Nt];
+    cell_off[i] = new char[Nt];
     if (!btr[i] || !cell_off[i]) {
       fprintf(stderr,
           "Error in %s: out of memory while allocating row %i (out of %i) for dynamic programming matrices \n",
@@ -185,10 +142,10 @@ void Hit::DeleteBacktraceMatrix(int Nq) {
 //// Allocate/delete memory for Forward dynamic programming matrix
 /////////////////////////////////////////////////////////////////////////////////////
 void Hit::AllocateForwardMatrix(int Nq, int Nt) {
-  P_MM = new (float*[Nq]);
-  scale = new (double[Nq + 1]); // need Nq+3?
+  P_MM = new float*[Nq];
+  scale = new double[Nq + 1]; // need Nq+3?
   for (int i = 0; i < Nq; ++i) {
-    P_MM[i] = new (float[Nt]);
+    P_MM[i] = new float[Nt];
     if (!P_MM[i]) {
       fprintf(stderr,
           "Error in %s: out of memory while allocating row %i (out of %i) for dynamic programming matrices \n",
@@ -219,8 +176,8 @@ void Hit::DeleteForwardMatrix(int Nq) {
 //// Allocate/delete memory for indices by given alignment
 /////////////////////////////////////////////////////////////////////////////////////
 void Hit::AllocateIndices(int len) {
-  i = new (int[len]);
-  j = new (int[len]);
+  i = new int[len];
+  j = new int[len];
 }
 
 void Hit::DeleteIndices() {
@@ -267,12 +224,6 @@ void Hit::Viterbi(HMM* q, HMM* t) {
   // The last 3 bits store the previous state for the MM state, the successively higher bits are for GD, IM, DG, MI states:
   // btr[i][j] = 0|MI|DG|IM|GD|MM = 0|1|1|1|1|111
 
-  unsigned char* csSeq = NULL;
-  if (par.useCSScoring) {
-    std::string id(t->name);
-    csSeq = columnStateSequences[id];
-  }
-  
   // Variable declarations
   float __attribute__((aligned(16))) Si[par.maxres]; // sMM[i][j] = score of best alignment up to indices (i,j) ending in (Match,Match)
   float sMM[par.maxres]; // sMM[i][j] = score of best alignment up to indices (i,j) ending in (Match,Match)
@@ -338,7 +289,6 @@ void Hit::Viterbi(HMM* q, HMM* t) {
     sIM[jmin - 1] = sMI[jmin - 1] = sDG[jmin - 1] = sGD[jmin - 1] = -FLT_MAX; // initialize at (i,jmin-1)
 
     // Precalculate amino acid profile-profile scores
-    if (!par.useCSScoring || !csSeq) {
 #ifdef HH_SSE2
       for (j=jmin; j<=jmax; ++j)
       Si[j] = ProbFwd(q->p[i],t->p[j]);
@@ -349,12 +299,6 @@ void Hit::Viterbi(HMM* q, HMM* t) {
       for (j = jmin; j <= jmax; ++j)
         Si[j] = Score(q->p[i], t->p[j]);
 #endif
-    }
-    else {
-      for (j = jmin; j <= jmax; ++j) {
-        Si[j] = fast_log2(columnStateScoring->substitutionScores[i][csSeq[j]]);
-      }
-    }
 
     // Loop through template positions j
     for (j = jmin; j <= jmax; ++j) {
@@ -435,12 +379,6 @@ void Hit::Viterbi(HMM* q, HMM* t) {
 // Compare two HMMs with Forward Algorithm in lin-space (~ 2x faster than in log-space)
 /////////////////////////////////////////////////////////////////////////////////////
 void Hit::Forward(HMM* q, HMM* t) {
-  unsigned char* csSeq = NULL;
-  if (par.useCSScoring) {
-    std::string id(t->name);
-    csSeq = columnStateSequences[id];
-  }
-
   // Variable declarations
   int i, j;      // query and template match state indices
   double pmin = (par.loc ? 1.0 : 0.0); // used to distinguish between SW and NW algorithms in maximization
@@ -548,8 +486,6 @@ void Hit::Forward(HMM* q, HMM* t) {
           0.0;
     else {
       float substitutionScore =
-          (par.useCSScoring && csSeq) ?
-              columnStateScoring->substitutionScores[1][csSeq[j]] :
               ProbFwd(q->p[1], t->p[j]);
 
       F_MM_prev[j] = P_MM[1][j] = substitutionScore * fpow2(ScoreSS(q, t, 1, j))
@@ -584,8 +520,6 @@ void Hit::Forward(HMM* q, HMM* t) {
           F_GD_curr[jmin] = 0.0;
     else {
       float substitutionScore =
-          (par.useCSScoring && csSeq) ?
-              columnStateScoring->substitutionScores[i][csSeq[jmin]] :
               ProbFwd(q->p[i], t->p[jmin]);
 
       F_MM_curr[jmin] = scale_prod * substitutionScore
@@ -613,8 +547,6 @@ void Hit::Forward(HMM* q, HMM* t) {
             F_GD_curr[j] = 0.0;
       else {
         float substitutionScore =
-            (par.useCSScoring && csSeq) ?
-                columnStateScoring->substitutionScores[i][csSeq[j]] :
                 ProbFwd(q->p[i], t->p[j]);
 
         F_MM_curr[j] = substitutionScore * fpow2(ScoreSS(q, t, i, j)) * Cshift
@@ -739,12 +671,6 @@ void Hit::Forward(HMM* q, HMM* t) {
 // Compare two HMMs with Backward Algorithm (in lin-space, 2x faster), for use in MAC alignment 
 /////////////////////////////////////////////////////////////////////////////////////
 void Hit::Backward(HMM* q, HMM* t) {
-  unsigned char* csSeq = NULL;
-  if (par.useCSScoring) {
-    std::string id(t->name);
-    csSeq = columnStateSequences[id];
-  }
-
   // Variable declarations
   int i, j;      // query and template match state indices
   double pmin; // this is the scaled 1 in the SW algorithm that represents a starting alignment
@@ -821,8 +747,6 @@ void Hit::Backward(HMM* q, HMM* t) {
             B_MI_curr[j] = 0.0;
       else {
         float substitutionScore =
-            (par.useCSScoring && csSeq) ?
-                columnStateScoring->substitutionScores[i + 1][csSeq[j + 1]] :
                 ProbFwd(q->p[i + 1], t->p[j + 1]);
 
         double pmatch = B_MM_prev[j + 1] * substitutionScore
@@ -859,8 +783,6 @@ void Hit::Backward(HMM* q, HMM* t) {
 
       //save backward profile
       float substitutionScore =
-          (par.useCSScoring && csSeq) ?
-              columnStateScoring->substitutionScores[i][csSeq[j]] :
               ProbFwd(q->p[i], t->p[j]);
 
       actual_backward += substitutionScore * fpow2(ScoreSS(q, t, i, j)) * Cshift
@@ -1053,12 +975,6 @@ void Hit::MACAlignment(HMM* q, HMM* t) {
 void Hit::Backtrace(HMM* q, HMM* t) {
   // Trace back trough the matrices bXY[i][j] until first match state is found (STOP-state)
 
-  unsigned char* csSeq = NULL;
-  if (par.useCSScoring) {
-    std::string id(t->name);
-    csSeq = columnStateSequences[id];
-  }
-
   int step; // counts steps in path through 5-layered dynamic programming matrix
   int i, j;       // query and template match state indices
 
@@ -1139,8 +1055,8 @@ void Hit::Backtrace(HMM* q, HMM* t) {
   nsteps = step;
   
   // Allocate new space for alignment scores
-  S = new (float[nsteps + 1]);
-  S_ss = new (float[nsteps + 1]);
+  S = new float[nsteps + 1];
+  S_ss = new float[nsteps + 1];
   if (!S_ss)
     MemoryError("space for HMM-HMM alignments");
 
@@ -1155,8 +1071,6 @@ void Hit::Backtrace(HMM* q, HMM* t) {
         j = this->j[step];
 
         S[step] =
-            (par.useCSScoring && csSeq) ?
-                fast_log2(columnStateScoring->substitutionScores[i][csSeq[j]]) :
                 Score(q->p[i], t->p[j]);
 
         S_ss[step] = ScoreSS(q, t, i, j, ssm);
@@ -1243,12 +1157,7 @@ void Hit::Backtrace(HMM* q, HMM* t) {
 /////////////////////////////////////////////////////////////////////////////////////
 void Hit::BacktraceMAC(HMM* q, HMM* t) {
   // Trace back trough the matrix b[i][j] until STOP state is found
-  unsigned char* csSeq = NULL;
-  if (par.useCSScoring) {
-    std::string id(t->name);
-    csSeq = columnStateSequences[id];
-  }
-  
+
   char** b = btr;  // define alias for backtracing matrix
   int step; // counts steps in path through 5-layered dynamic programming matrix
   int i, j;       // query and template match state indices
@@ -1328,9 +1237,9 @@ void Hit::BacktraceMAC(HMM* q, HMM* t) {
   nsteps = step;
 
   // Allocate new space for alignment scores
-  S = new (float[nsteps + 1]);
-  S_ss = new (float[nsteps + 1]);
-  P_posterior = new (float[nsteps + 1]);
+  S = new float[nsteps + 1];
+  S_ss = new float[nsteps + 1];
+  P_posterior = new float[nsteps + 1];
 
   if (!P_posterior)
     MemoryError("space for HMM-HMM alignments");
@@ -1348,8 +1257,6 @@ void Hit::BacktraceMAC(HMM* q, HMM* t) {
         j = this->j[step];
 
         S[step] =
-            (par.useCSScoring && csSeq) ?
-                fast_log2(columnStateScoring->substitutionScores[i][csSeq[j]]) :
                 Score(q->p[i], t->p[j]);
 
         S_ss[step] = ScoreSS(q, t, i, j, ssm);
@@ -1553,9 +1460,9 @@ void Hit::InitializeForAlignment(HMM* q, HMM* t, bool vit) {
 /////////////////////////////////////////////////////////////////////////////////////
 void Hit::InitializeBacktrace(HMM* q, HMM* t) {
   //Copy information about template profile to hit and reset template pointers to avoid destruction
-  longname = new (char[strlen(t->longname) + 1]);
-  name = new (char[strlen(t->name) + 1]);
-  file = new (char[strlen(t->file) + 1]);
+  longname = new char[strlen(t->longname) + 1];
+  name = new char[strlen(t->name) + 1];
+  file = new char[strlen(t->file) + 1];
   if (!file)
     MemoryError(
         "space for alignments with database HMMs. \nNote that all alignments have to be kept in memory");
@@ -1568,13 +1475,13 @@ void Hit::InitializeBacktrace(HMM* q, HMM* t) {
   strcpy(file, t->file);
 
   // Allocate new space
-  this->i = new (int[i2 + j2 + 2]);
-  this->j = new (int[i2 + j2 + 2]);
-  states = new (char[i2 + j2 + 2]);
+  this->i = new int[i2 + j2 + 2];
+  this->j = new int[i2 + j2 + 2];
+  states = new char[i2 + j2 + 2];
   S = S_ss = P_posterior = NULL;
 
-  sname = new (char*[t->n_display]);
-  seq = new (char*[t->n_display]);
+  sname = new char*[t->n_display];
+  seq = new char*[t->n_display];
   if (!sname || !seq)
     MemoryError(
         "space for alignments with database HMMs.\nNote that all sequences for display have to be kept in memory");
@@ -1590,14 +1497,14 @@ void Hit::InitializeBacktrace(HMM* q, HMM* t) {
   else {
     // Make deep copy for all further alignments
     for (int k = 0; k < t->n_display; k++) {
-      sname[k] = new (char[strlen(t->sname[k]) + 1]);
-      seq[k] = new (char[strlen(t->seq[k]) + 1]);
+      sname[k] = new char[strlen(t->sname[k]) + 1];
+      seq[k] = new char[strlen(t->seq[k]) + 1];
       strcpy(sname[k], t->sname[k]);
       strcpy(seq[k], t->seq[k]);
     }
     if (dbfile) {
       char* ptr = dbfile;
-      dbfile = new (char[strlen(ptr) + 1]);
+      dbfile = new char[strlen(ptr) + 1];
       strcpy(dbfile, ptr);
     }
   }
@@ -1626,18 +1533,9 @@ void Hit::InitializeBacktrace(HMM* q, HMM* t) {
 
 // Calculate score for a given alignment
 void Hit::ScoreAlignment(HMM* q, HMM* t, int steps) {
-  unsigned char* csSeq = NULL;
-  if (par.useCSScoring) {
-    std::string id(t->name);
-    csSeq = columnStateSequences[id];
-  }
-
   score = 0;
   for (int step = 0; step < steps; step++) {
     float substitutionScore =
-        (par.useCSScoring && csSeq) ?
-            fast_log2(
-                columnStateScoring->substitutionScores[i[step]][csSeq[j[step]]]) :
             Score(q->p[i[step]], t->p[j[step]]);
 
     if (v > 2) {
@@ -1647,271 +1545,4 @@ void Hit::ScoreAlignment(HMM* q, HMM* t, int steps) {
     }
     score += substitutionScore;
   }
-}
-
-//Calculate score between columns i and j of two HMMs (query and template)
-inline float Hit::Score(float* qi, float* tj) {
-  return fast_log2(ProbFwd(qi, tj));
-}
-
-// Calculate score between columns i and j of two HMMs (query and template)
-inline float Hit::ProbFwd(float* qi, float* tj) {
-  return ScalarProd20(qi, tj); //
-}
-
-// Calculate secondary structure score between columns i and j of two HMMs (query and template)
-inline float Hit::ScoreSS(HMM* q, HMM* t, int i, int j, int ssm) {
-  switch (ssm) //SS scoring during alignment 
-  {
-    case 0: // no SS scoring during alignment 
-      return 0.0;
-    case 1: // t has dssp information, q has psipred information 
-      return par.ssw
-          * S73[(int) t->ss_dssp[j]][(int) q->ss_pred[i]][(int) q->ss_conf[i]];
-    case 2: // q has dssp information, t has psipred information 
-      return par.ssw
-          * S73[(int) q->ss_dssp[i]][(int) t->ss_pred[j]][(int) t->ss_conf[j]];
-    case 3: // q has dssp information, t has psipred information 
-      return par.ssw
-          * S33[(int) q->ss_pred[i]][(int) q->ss_conf[i]][(int) t->ss_pred[j]][(int) t->ss_conf[j]];
-      //     case 4: // q has dssp information, t has dssp information 
-      //       return par.ssw*S77[ (int)t->ss_dssp[j]][ (int)t->ss_conf[j]];
-  }
-  return 0.0;
-}
-
-// Calculate secondary structure score between columns i and j of two HMMs (query and template)
-inline float Hit::ScoreSS(HMM* q, HMM* t, int i, int j) {
-  return ScoreSS(q, t, i, j, ssm2);
-}
-
-// /////////////////////////////////////////////////////////////////////////////////////
-// //// Function for Viterbi()
-// /////////////////////////////////////////////////////////////////////////////////////
-// inline float max2(const float& xMM, const float& xX, char& b) 
-// {
-//   if (xMM>xX) { b=MM; return xMM;} else { b=SAME;  return xX;}
-// }
-inline float max2(const float& xMM, const float& xSAME, char& b,
-    const unsigned char bit) {
-  if (xMM > xSAME) {
-    b |= bit;
-    return xMM;
-  }
-  else { /* b |= 0x00!*/
-    return xSAME;
-  }
-}
-
-/////////////////////////////////////////////////////////////////////////////////////
-// Functions for StochasticBacktrace()
-/////////////////////////////////////////////////////////////////////////////////////
-
-inline int pickprob2(const double& xMM, const double& xX, const int& state) {
-  if ((xMM + xX) * frand() < xMM)
-    return MM;
-  else
-    return state;
-}
-inline int pickprob3_GD(const double& xMM, const double& xDG,
-    const double& xGD) {
-  double x = (xMM + xDG + xGD) * frand();
-  if (x < xMM)
-    return MM;
-  else if (x < xMM + xDG)
-    return DG;
-  else
-    return GD;
-}
-inline int pickprob3_IM(const double& xMM, const double& xMI,
-    const double& xIM) {
-  double x = (xMM + xMI + xIM) * frand();
-  if (x < xMM)
-    return MM;
-  else if (x < xMM + xMI)
-    return MI;
-  else
-    return IM;
-}
-inline int pickprob6(const double& x0, const double& xMM, const double& xGD,
-    const double& xIM, const double& xDG, const double& xMI) {
-  double x = (x0 + xMM + xGD + xIM + xDG + xMI) * frand();
-  x -= xMM;
-  if (x < 0)
-    return MM;
-  x -= x0;
-  if (x < 0)
-    return STOP;
-  x -= xGD;
-  if (x < 0)
-    return GD;
-  x -= xIM;
-  if (x < 0)
-    return IM;
-  if (x < xDG)
-    return DG;
-  else
-    return MI;
-}
-
-inline int pickmax2(const double& xMM, const double& xX, const int& state) {
-  if (xMM > xX)
-    return MM;
-  else
-    return state;
-}
-inline int pickmax3_GD(const double& xMM, const double& xDG,
-    const double& xGD) {
-  char state;
-  double x;
-  if (xMM > xDG) {
-    state = MM;
-    x = xMM;
-  }
-  else {
-    state = DG;
-    x = xDG;
-  }
-  if (xGD > x) {
-    state = GD;
-    x = xGD;
-  }
-  return state;
-}
-inline int pickmax3_IM(const double& xMM, const double& xMI,
-    const double& xIM) {
-  char state;
-  double x;
-  if (xMM > xMI) {
-    state = MM;
-    x = xMM;
-  }
-  else {
-    state = MI;
-    x = xMI;
-  }
-  if (xIM > x) {
-    state = IM;
-    x = xIM;
-  }
-  return state;
-}
-inline int pickmax6(const double& x0, const double& xMM, const double& xGD,
-    const double& xIM, const double& xDG, const double& xMI) {
-  char state;
-  double x;
-  if (x0 > xMM) {
-    state = STOP;
-    x = x0;
-  }
-  else {
-    state = MM;
-    x = xMM;
-  }
-  if (xGD > x) {
-    state = GD;
-    x = xGD;
-  }
-  if (xIM > x) {
-    state = IM;
-    x = xIM;
-  }
-  if (xDG > x) {
-    state = DG;
-    x = xDG;
-  }
-  if (xMI > x) {
-    state = MI;
-    x = xMI;
-  }
-  return state;
-}
-
-/////////////////////////////////////////////////////////////////////////////////////
-//// Functions that calculate P-values and probabilities 
-/////////////////////////////////////////////////////////////////////////////////////
-
-//// Evaluate the CUMULATIVE extreme value distribution at point x
-//// p(s)ds = lamda * exp{ -exp[-lamda*(s-mu)] - lamda*(s-mu) } ds = exp( -exp(-x) - x) dx = p(x) dx
-//// => P(s>S) = integral_-inf^inf {p(x) dx}  = 1 - exp{ -exp[-lamda*(S-mu)] }
-inline double Pvalue(double x, double a[]) {
-  //a[0]=lamda, a[1]=mu
-  double h = a[0] * (x - a[1]);
-  return (h > 10) ? exp(-h) : double(1.0) - exp(-exp(-h));
-}
-
-inline double Pvalue(float x, float lamda, float mu) {
-  double h = lamda * (x - mu);
-  return (h > 10) ? exp(-h) : (double(1.0) - exp(-exp(-h)));
-}
-
-inline double logPvalue(float x, float lamda, float mu) {
-  double h = lamda * (x - mu);
-  return (h > 10) ? -h :
-         (h < -2.5) ? -exp(-exp(-h)) : log((double(1.0) - exp(-exp(-h))));
-}
-
-inline double logPvalue(float x, double a[]) {
-  double h = a[0] * (x - a[1]);
-  return (h > 10) ? -h :
-         (h < -2.5) ? -exp(-exp(-h)) : log((double(1.0) - exp(-exp(-h))));
-}
-
-// Calculate probability of true positive : p_TP(score)/( p_TP(score)+p_FP(score) )
-// TP: same superfamily OR MAXSUB score >=0.1
-inline double Hit::CalcProbab() {
-  double s = -score_aass;
-  double t;
-  if (s > 200)
-    return 100.0;
-  if (par.loc) {
-    if (par.ssm && (ssm1 || ssm2) && par.ssw > 0) {
-      // local with SS
-      const double a = sqrt(6000.0);
-      const double b = 2.0 * 2.5;
-      const double c = sqrt(0.12);
-      const double d = 2.0 * 32.0;
-      t = a * exp(-s / b) + c * exp(-s / d);
-    }
-    else {
-      // local no SS
-      const double a = sqrt(4000.0);
-      const double b = 2.0 * 2.5;
-      const double c = sqrt(0.15);
-      const double d = 2.0 * 34.0;
-      t = a * exp(-s / b) + c * exp(-s / d);
-    }
-  }
-  else {
-    if (par.ssm > 0 && par.ssw > 0) {
-      // global with SS
-      const double a = sqrt(4000.0);
-      const double b = 2.0 * 3.0;
-      const double c = sqrt(0.13);
-      const double d = 2.0 * 34.0;
-      t = a * exp(-s / b) + c * exp(-s / d);
-    }
-    else {
-      // global no SS
-      const double a = sqrt(6000.0);
-      const double b = 2.0 * 2.5;
-      const double c = sqrt(0.10);
-      const double d = 2.0 * 37.0;
-      t = a * exp(-s / b) + c * exp(-s / d);
-    }
-
-  }
-
-  return 100.0 / (1.0 + t * t); // ??? JS Jul'12
-}
-
-// Calculate Evalue, score_aass, Proba from logPval and score_ss
-inline void Hit::CalcEvalScoreProbab(int N_searched, float lamda) {
-  Eval = exp(logPval + log(N_searched));
-  logEval = logPval + log(N_searched);
-  // P-value = 1 - exp(-exp(-lamda*(Saa-mu))) => -lamda*(Saa-mu) = log(-log(1-Pvalue))
-  score_aass = (logPval < -10.0 ? logPval : log(-log(1 - Pval))) / 0.45
-      - fmin(lamda * score_ss, fmax(0.0, 0.2 * (score - 8.0))) / 0.45 - 3.0;
-  score_sort = score_aass;
-  Probab = CalcProbab();
 }

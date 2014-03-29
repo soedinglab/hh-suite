@@ -154,7 +154,7 @@ void PrepareQueryHMM(char& input_format, HMM* q) {
   // Was query an HHsearch formatted file or MSA (no pseudocounts added yet)?
   if (input_format == 0) {
     // Add transition pseudocounts to query -> q->p[i][a]
-    q->AddTransitionPseudocounts();
+    q->AddTransitionPseudocounts(par.gapd, par.gape, par.gapf, par.gapg, par.gaph, par.gapi, par.gapb);
 
     // Compute substitutino matrix pseudocounts?
     if (par.nocontxt) {
@@ -196,7 +196,7 @@ void PrepareTemplateHMM(HMM* q, HMM* t, int format) {
   // HHM format
   if (format == 0) {
     // Add transition pseudocounts to template
-    t->AddTransitionPseudocounts();
+    t->AddTransitionPseudocounts(par.gapd, par.gape, par.gapf, par.gapg, par.gaph, par.gapi, par.gapb);
 
     // Don't use CS-pseudocounts because of runtime!!!
     // Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
@@ -223,7 +223,7 @@ void PrepareTemplateHMM(HMM* q, HMM* t, int format) {
 
   // Factor Null model into HMM t
   // ATTENTION! t->p[i][a] is divided by pnul[a] (for reasons of efficiency) => do not reuse t->p
-  t->IncludeNullModelInHMM(q, t); // Can go BEFORE the loop if not dependent on template
+  t->IncludeNullModelInHMM(q, t, par.columnscore); // Can go BEFORE the loop if not dependent on template
 
   return;
 }

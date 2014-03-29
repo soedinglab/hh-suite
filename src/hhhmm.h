@@ -1,11 +1,24 @@
 // hhhmm.h
 
+
+#ifndef HHHMM_H_
+#define HHHMM_H_
+
+#include <iostream>
+#include "util.h"
+
+//from cs
+#include "pseudocounts.h"
+#include "aa.h"
+#include "hhdecl.h"
+#include "hhutil.h"
+
 class CSCounts;
 
 class HMM
 {
 public:
-    HMM(int maxseqdis=MAXSEQDIS, int maxres=par.maxres);
+    HMM(int maxseqdis=MAXSEQDIS, int maxres=MAXRES);
     ~HMM();
     HMM& operator=(HMM&);
 
@@ -51,7 +64,7 @@ public:
     int ReadHMMer3(FILE* dbf, char* filestr=NULL);
 
     // Add transition pseudocounts to HMM
-    void AddTransitionPseudocounts(float gapd=par.gapd, float gape=par.gape, float gapf=par.gapf, float gapg=par.gapg, float gaph=par.gaph, float gapi=par.gapi, float gapb=par.gapb);
+    void AddTransitionPseudocounts(float gapd, float gape, float gapf, float gapg, float gaph, float gapi, float gapb);
 
     // Generate an amino acid frequency matrix g[][] with full pseudocount admixture (tau=1)
     void PreparePseudocounts();
@@ -63,7 +76,7 @@ public:
     void fillCountProfile(cs::CountProfile<cs::AA> *csProfile);
 
     // Add amino acid pseudocounts to HMM: t.p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
-    void AddAminoAcidPseudocounts(char pcm=par.pc_hhm_nocontext_mode, float pca=par.pc_hhm_nocontext_a, float pcb=par.pc_hhm_nocontext_b, float pcc=par.pc_hhm_nocontext_c);
+    void AddAminoAcidPseudocounts(char pcm, float pca, float pcb, float pcc);
 
     // Calculate amino acid backround frequencies for HMM
     void CalculateAminoAcidBackground();
@@ -75,7 +88,7 @@ public:
     void DivideBySqrtOfLocalBackgroundFreqs(const int D);
 
     // Factor Null model into HMM t
-    void IncludeNullModelInHMM(HMM* q, HMM* t, int columnscore=par.columnscore);
+    void IncludeNullModelInHMM(HMM* q, HMM* t, int columnscore);
 
     // Write HMM to output file
     void WriteToFile(char* outfile);
@@ -126,7 +139,7 @@ public:
     // Utility for Read()
     int Warning(FILE* dbf, char line[], char name[])
     {
-        if (v) cerr<<"\nWARNING in "<<program_name<<": could not read line\n\'"<<line<<"\'\nin HMM "<<name<<" in "<<file<<"\n";
+        if (v) std::cerr<<"\nWARNING in "<<program_name<<": could not read line\n\'"<<line<<"\'\nin HMM "<<name<<" in "<<file<<"\n";
         while (fgetline(line,LINELEN,dbf) && !(line[0]=='/' && line[1]=='/'));
         if (line) return 2;  //return status: skip HMM
         return 0;            //return status: end of database file
@@ -136,3 +149,5 @@ public:
     friend class Alignment;
     friend class CSCounts;
 };
+
+#endif

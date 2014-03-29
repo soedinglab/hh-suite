@@ -1,5 +1,25 @@
 // hhhitlist.h
 
+#include <iostream>   // cin, cout, cerr
+#include <fstream>    // ofstream, ifstream
+#include <stdio.h>    // printf
+#include <stdlib.h>   // exit
+#include <string>     // strcmp, strstr
+#include <math.h>     // sqrt, pow
+#include <limits.h>   // INT_MIN
+#include <float.h>    // FLT_MIN
+#include <time.h>     // clock
+#include <ctype.h>    // islower, isdigit etc
+
+#include "hhhitlist-inl.h"
+#include "hhhit.h"
+#include "list.h"
+#include "hash.h"
+#include "hhfullalignment.h"
+
+#ifndef HHHITLIST_H
+#define HHHITLIST_H
+
 /////////////////////////////////////////////////////////////////////////////////////
 // HitList is a list of hits of type Hit which can be operated upon by several anaylsis methods 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -87,3 +107,4 @@ public:
 
 };
 
+#endif

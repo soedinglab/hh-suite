@@ -27,6 +27,10 @@
 #include <sys/time.h>
 
 #include <sstream>
+#include <vector>
+#include <math.h>
+#include <cstdarg>
+#include <cfloat>
 
 namespace cs {
 
@@ -81,20 +85,6 @@ inline int SIGN(const T& a) {
 template<class T>
 inline void SWAP(T &a, T &b) {
   T dum=a; a=b; b=dum;
-}
-
-inline bool isnan(double x) { return x != x; }
-
-inline bool isnan(float x) { return x != x; }
-
-// Returns the base 2 logarithm of x.
-inline float log2(float x) {
-  return 1.442695041f * log(x);
-}
-
-// Returns the base 2 logarithm of x.
-inline double log2(double x) {
-  return 1.442695041 * log(x);
 }
 
 // Round to the nearest integer.

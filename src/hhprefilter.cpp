@@ -36,6 +36,9 @@
 
 #include <algorithm>
 
+#ifndef HHPREFILTER_C
+#define HHPREFILTER_C
+
 #define SWAP(tmp, arg1, arg2) tmp = arg1; arg1 = arg2; arg2 = tmp;
 
 struct ali_pos {
@@ -555,7 +558,7 @@ void stripe_query_profile()
 // Main prefilter function
 ////////////////////////////////////////////////////////////////////////
 void prefilter_db() {
-  doubled = new(Hash<char>);
+  doubled = new Hash<char>;
   doubled->New(16381,0);
   for (int idb=0; idb<ndb_new; idb++) delete[](dbfiles_new[idb]);
   for (int idb=0; idb<ndb_old; idb++) delete[](dbfiles_old[idb]);
@@ -572,7 +575,7 @@ void prefilter_db() {
 //  int* prefiltered_hits = new int[par.dbsize+1];
   int* backtrace_hits = new int[par.maxnumdb+1];
 
-  __m128i** workspace = new(__m128i*[omp_threads]);
+  __m128i** workspace = new __m128i*[omp_threads];
 
   int score;
   double evalue;
@@ -685,22 +688,6 @@ void prefilter_db() {
     char name[NAMELEN];
     strcpy(name, dbnames[(*it).second]);
 
-    //save abstract states for cs-scoring
-    if (par.useCSScoring) {
-      std::string id(name);
-
-      if (columnStateSequences.find(id) == columnStateSequences.end()) {
-        unsigned char* csSeq = new unsigned char[length[(*it).second] + 1];
-
-        unsigned char* seq = first[(*it).second];
-        for (int i = 0; i < length[(*it).second]; ++i) {
-          csSeq[i + 1] = seq[i];
-        }
-
-        columnStateSequences[name] = csSeq;
-      }
-    }
-
     char db_name[NAMELEN];
     strcpy(db_name, name);
 
@@ -710,12 +697,12 @@ void prefilter_db() {
 	  strcat(name,"__1");  // irep=1
 
 	  if (previous_hits->Contains(name)) {
-        dbfiles_old[ndb_old]=new(char[strlen(db_name)+1]);
+        dbfiles_old[ndb_old]=new char[strlen(db_name)+1];
         strcpy(dbfiles_old[ndb_old],db_name);
         ndb_old++;
 	  }
 	  else {
-        dbfiles_new[ndb_new]=new(char[strlen(db_name)+1]);
+        dbfiles_new[ndb_new]=new char[strlen(db_name)+1];
         strcpy(dbfiles_new[ndb_new],db_name);
         ndb_new++;
 	  }
@@ -740,4 +727,6 @@ void prefilter_db() {
   delete[] backtrace_hits;
   if(doubled) delete doubled;
 }
+
+#endif
 ////////////////////////////////////////////////////////////////////////

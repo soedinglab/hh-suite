@@ -58,9 +58,9 @@ void Crf<Abc>::Read(FILE* fin) {
 
     char buffer[KB];
     size_t size = 0;
-    if (fgetline(buffer, KB, fin))
+    if (cs::fgetline(buffer, KB, fin))
         size = ReadInt(buffer, "SIZE", "Unable to parse CRF 'SIZE'!");
-    if (fgetline(buffer, KB, fin))
+    if (cs::fgetline(buffer, KB, fin))
         wlen_ = ReadInt(buffer, "LENG", "Unable to parse CRF 'LENG'!");
 
     // Read context states

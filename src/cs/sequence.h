@@ -17,6 +17,8 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <cstdint>
+
 #ifndef CS_SEQUENCE_H_
 #define CS_SEQUENCE_H_
 

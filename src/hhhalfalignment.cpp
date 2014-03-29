@@ -1,32 +1,6 @@
 // hhfullalignment.C
 
-#ifndef MAIN
-#define MAIN
-#include <iostream>   // cin, cout, cerr
-#include <fstream>    // ofstream, ifstream 
-#include <stdio.h>    // printf
-#include <stdlib.h>   // exit
-#include <string>     // strcmp, strstr
-#include <math.h>     // sqrt, pow
-#include <limits.h>   // INT_MIN
-#include <float.h>    // FLT_MIN
-#include <time.h>     // clock
-#include <ctype.h>    // islower, isdigit etc
-using std::ios;
-using std::ifstream;
-using std::ofstream;
-using std::cout;
-using std::cerr;
-using std::endl;
-#include "util.C"     // imax, fmax, iround, iceil, ifloor, strint, strscn, strcut, substr, uprstr, uprchr, Basename etc.
-#include "list.h"     // list data structure
-#include "hash.h"     // hash data structure
-#include "hhdecl.C"      // constants, class 
-#include "hhutil.C"      // imax, fmax, iround, iceil, ifloor, strint, strscn, strcut, substr, uprstr, uprchr, Basename etc.
-#include "hhhmm.h"       // class HMM
-#include "hhalignment.h" // class Alignment
-#include "hhhit.h"
-#endif
+#include "hhhalfalignment.h"
 
 /////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////
@@ -43,10 +17,10 @@ HalfAlignment::HalfAlignment(int maxseqdis)
   n=0; 
   sname=seq=NULL; 
   nss_dssp = nss_pred = nss_conf = nsa_dssp = ncons= -1;
-  h = new(int[maxseqdis]);   //h[k] = next position of sequence k to be written
-  s = new(char*[maxseqdis]);  //s[k][h] = character in column h, sequence k of output alignment
-  l = new(int*[maxseqdis]);   //counts non-gap residues: l[k][i] = index of last residue AT OR BEFORE match state i in seq k
-  m = new(int*[maxseqdis]);   //counts positions:        m[k][i] = position of match state i in string seq[k]  
+  h = new int[maxseqdis];   //h[k] = next position of sequence k to be written
+  s = new char*[maxseqdis];  //s[k][h] = character in column h, sequence k of output alignment
+  l = new int*[maxseqdis];   //counts non-gap residues: l[k][i] = index of last residue AT OR BEFORE match state i in seq k
+  m = new int*[maxseqdis];   //counts positions:        m[k][i] = position of match state i in string seq[k]
   if (!h || !s || !l || !m) MemoryError("space for formatting HMM-HMM alignment");
 }
 
@@ -133,7 +107,7 @@ void HalfAlignment::Set(char* name, char** seq_in, char** sname_in, int n_in, in
       m[k][i]=mm;   //set m[k][L+1]
      if ((i-1)!=L && !warned) 
 	{
-	  cerr<<"WARNING: sequence "<<sname[k]<<" in HMM "<<name<<" has "<<i<<" match states but should have "<<L<<"\n"; 
+	  std::cerr<<"WARNING: sequence "<<sname[k]<<" in HMM "<<name<<" has "<<i<<" match states but should have "<<L<<"\n";
 	  warned=1;
 	}
     }
@@ -358,7 +332,7 @@ void HalfAlignment::Print(char* alnfile, char* commentname, const char format[])
   int k;      //counts sequences
   int omitted=0; // counts number of sequences with no residues in match states
   FILE *outf;
-  char* tmp_name = new(char[NAMELEN]);
+  char* tmp_name = new char[NAMELEN];
   if (strcmp(alnfile,"stdout"))
     {
       if (par.append) outf=fopen(alnfile,"a"); else outf=fopen(alnfile,"w");
@@ -366,7 +340,7 @@ void HalfAlignment::Print(char* alnfile, char* commentname, const char format[])
     } 
   else
     outf = stdout;
-  if (v>=3) cout<<"Writing alignment to "<<alnfile<<"\n";
+  if (v>=3) std::cout<<"Writing alignment to "<<alnfile<<"\n";
 
   if (!format || strcmp(format,"psi"))
     {

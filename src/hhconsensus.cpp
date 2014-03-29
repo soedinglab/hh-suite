@@ -306,14 +306,14 @@ int main(int argc, char **argv)
   if (input_format == 0)
     {
       // Transform transition freqs to lin space if not already done
-      q->AddTransitionPseudocounts();
+      q->AddTransitionPseudocounts(par.gapd, par.gape, par.gapf, par.gapg, par.gaph, par.gapi, par.gapb);
       
       // Comput substitution matrix pseudocounts
       if (par.nocontxt) { 
 	// Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
 	q->PreparePseudocounts();
 	// Add amino acid pseudocounts to query: p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
-	q->AddAminoAcidPseudocounts();
+	q->AddAminoAcidPseudocounts(par.pc_hhm_nocontext_mode, par.pc_hhm_nocontext_a, par.pc_hhm_nocontext_b, par.pc_hhm_nocontext_c);
       } else {
 	// Add full context specific pseudocounts to query
 	q->AddContextSpecificPseudocounts(pc_hhm_context_engine, pc_hhm_context_mode);
@@ -321,7 +321,7 @@ int main(int argc, char **argv)
     } 
   else 
     {
-      q->AddAminoAcidPseudocounts(0);
+      q->AddAminoAcidPseudocounts(0, par.pc_hhm_nocontext_a, par.pc_hhm_nocontext_b, par.pc_hhm_nocontext_c);
     }
   
   q->CalculateAminoAcidBackground();

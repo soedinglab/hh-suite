@@ -1,6 +1,12 @@
 /////////////////////////////////////////////////////////////////////////////////////
 // Class for output alignment of query against template sequences
 /////////////////////////////////////////////////////////////////////////////////////
+
+#include "hhhalfalignment.h"
+
+#ifndef HHFULLALIGNMENT_H
+#define HHFULLALIGNMENT_H
+
 class FullAlignment
 {
 public:
@@ -27,3 +33,5 @@ private:
   char ScoreChr(float S) {return S<-1.5?'=':(S<-0.5?'-':(S<0.5?'.':(S<1.5?'+':'|')));}
   char PosteriorChr(float PP) {return 48+imax(0,imin(9,(int)(10.0*PP)));}
 };
+
+#endif

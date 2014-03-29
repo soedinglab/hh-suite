@@ -1,9 +1,30 @@
-// hhalignment.hHMM&
+// hhalignment.h
+
+#include <iostream>   // cin, cout, cerr
+#include <fstream>    // ofstream, ifstream
+#include <stdio.h>    // printf
+#include <stdlib.h>   // exit
+#include <string>     // strcmp, strstr
+#include <math.h>     // sqrt, pow
+#include <limits.h>   // INT_MIN
+#include <float.h>    // FLT_MIN
+#include <time.h>     // clock
+#include <ctype.h>    // islower, isdigit etc
+#include <cstring>
+
+#include "hhdecl.h"
+#include "hhhmm.h"
+#include "hhhit.h"
+#include "util.h"
+#include "hhutil.h"
 
 
 extern "C" {
 #include <ffindex.h>     // fast index-based database reading
 }
+
+#ifndef HHALIGNMENT_H_
+#define HHALIGNMENT_H_
 
 class Alignment
 {
@@ -31,7 +52,7 @@ public:
 
   char* keep;             // keep[k]=1 if sequence is included in amino acid frequencies; 0 otherwise (first=0)
 
-  Alignment(int maxseq=MAXSEQ, int maxres=par.maxres);
+  Alignment(int maxseq=MAXSEQ, int maxres=MAXRES);
   ~Alignment();
   Alignment& operator=(Alignment&);
 
@@ -49,8 +70,8 @@ public:
   void Compress(const char infile[NAMELEN]);
 
   // Apply sequence identity filter
-  inline int FilterForDisplay(int max_seqid, int coverage=0, int qid=0, float qsc=0, int N=0);
-  inline int Filter(int max_seqid, int coverage=0, int qid=0, float qsc=0, int N=0);
+  int FilterForDisplay(int max_seqid, int coverage=0, int qid=0, float qsc=0, int N=0);
+  int Filter(int max_seqid, int coverage=0, int qid=0, float qsc=0, int N=0);
   int Filter2(char keep[], int coverage, int qid, float qsc, int seqid1, int seqid2, int Ndiff);
   void determineNumberOfResiduesPerSequence();
   void determineSequenceStartsAndEnds();
@@ -109,3 +130,5 @@ private:
   int FilterWithCoreHMM(char in[], float coresc, HMM* qcore);
   
 };
+
+#endif

@@ -31,15 +31,15 @@ void CrfState<Abc>::Read(FILE* fin) {
         throw Exception("Stream does not start with class id 'CrfState'!");
 
     char buffer[KB];
-    fgetline(buffer, KB, fin);
+    cs::fgetline(buffer, KB, fin);
     if (strstr(buffer, "NAME")) {
         name = ReadString(buffer, "NAME", "Unable to parse CRF state 'NAME'!");
-        fgetline(buffer, KB, fin);
+        cs::fgetline(buffer, KB, fin);
     }
     bias_weight = ReadDouble(buffer, "BIAS", "Unable to parse CRF state 'BIAS'!");
-    fgetline(buffer, KB, fin);
+    cs::fgetline(buffer, KB, fin);
     size_t len = ReadInt(buffer, "LENG", "Unable to parse CRF state 'LENG'!");
-    fgetline(buffer, KB, fin);
+    cs::fgetline(buffer, KB, fin);
     size_t nalph = ReadInt(buffer, "ALPH", "Unable to parse CRF state 'ALPH'!");
     assert(len & 1);
     if (nalph != Abc::kSize)
@@ -52,8 +52,8 @@ void CrfState<Abc>::Read(FILE* fin) {
     // Read context weights and pseudocount weights
     const char* ptr = buffer;
     size_t i = 0;
-    fgetline(buffer, KB, fin);  // skip alphabet description line
-    while (fgetline(buffer, KB, fin) && buffer[0] != '/' && buffer[1] != '/') {
+    cs::fgetline(buffer, KB, fin);  // skip alphabet description line
+    while (cs::fgetline(buffer, KB, fin) && buffer[0] != '/' && buffer[1] != '/') {
         ptr = buffer;
         if (buffer[0] != 'P' && buffer[1] != 'C') {
             i = strtoi(ptr) - 1;

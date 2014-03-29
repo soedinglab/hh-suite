@@ -17,8 +17,11 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <vector>
+
 #ifndef CS_BLAST_HITS_H_
 #define CS_BLAST_HITS_H_
+
 
 namespace cs {
 

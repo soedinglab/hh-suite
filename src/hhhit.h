@@ -1,13 +1,45 @@
 // hhhit.h
+#ifndef HHHIT_H_
+#define HHHIT_H_
+
+#include <iostream>   // cin, cout, cerr
+#include <fstream>    // ofstream, ifstream
+#include <stdio.h>    // printf
+#include <stdlib.h>   // exit
+#include <string>     // strcmp, strstr
+#include <math.h>     // sqrt, pow
+#include <limits.h>   // INT_MIN
+#include <float.h>    // FLT_MIN
+#include <time.h>     // clock
+#include <ctype.h>    // islower, isdigit etc
+#include <vector>
+
+#ifdef HH_SSE41
+#include <tmmintrin.h>   // SSSE3
+#include <smmintrin.h>   // SSE4.1
+#define HH_SSE3
+#endif
 
 #ifdef HH_SSE3
-#ifdef __SUNPRO_C
-#include <sunmedia_intrin.h>
+#include <pmmintrin.h>   // SSE3
+#define HH_SSE2
+#endif
+
+#ifdef HH_SSE2
+#ifndef __SUNPRO_C
+#include <emmintrin.h>   // SSE2
 #else
-#include <emmintrin.h>
-#include <pmmintrin.h>
+#include <sunmedia_intrin.h>
 #endif
 #endif
+
+#include "list.h"
+#include "hhhmm.h"
+#include "hhdecl.h"
+#include "hhutil.h"
+#include "util.h"
+
+#include "hhhit-inl.h"
 
 /////////////////////////////////////////////////////////////////////////////////////
 // // Describes an alignment of two profiles. Used as list element in Hits : List<Hit> 
@@ -115,17 +147,41 @@ class Hit
   // Trace back MAC alignment of two profiles based on matrix btr[][]
   void BacktraceMAC(HMM* q, HMM* t);
 
-  // Calculate secondary structure score between columns i and j of two HMMs (query and template)
-  inline float ScoreSS(HMM* q, HMM* t, int i, int j, int ssm);
+  // Calculate score between columns i and j of two HMMs (query and template)
+  inline float ProbFwd(float* qi, float* tj) {
+    return ScalarProd20(qi, tj); //
+  }
+
+  //Calculate score between columns i and j of two HMMs (query and template)
+  inline float Score(float* qi, float* tj) {
+    return fast_log2(ProbFwd(qi, tj));
+  }
 
   // Calculate secondary structure score between columns i and j of two HMMs (query and template)
-  inline float ScoreSS(HMM* q, HMM* t, int i, int j);
+  inline float ScoreSS(HMM* q, HMM* t, int i, int j, int ssm) {
+    switch (ssm) //SS scoring during alignment
+    {
+      case 0: // no SS scoring during alignment
+        return 0.0;
+      case 1: // t has dssp information, q has psipred information
+        return par.ssw
+            * S73[(int) t->ss_dssp[j]][(int) q->ss_pred[i]][(int) q->ss_conf[i]];
+      case 2: // q has dssp information, t has psipred information
+        return par.ssw
+            * S73[(int) q->ss_dssp[i]][(int) t->ss_pred[j]][(int) t->ss_conf[j]];
+      case 3: // q has dssp information, t has psipred information
+        return par.ssw
+            * S33[(int) q->ss_pred[i]][(int) q->ss_conf[i]][(int) t->ss_pred[j]][(int) t->ss_conf[j]];
+        //     case 4: // q has dssp information, t has dssp information
+        //       return par.ssw*S77[ (int)t->ss_dssp[j]][ (int)t->ss_conf[j]];
+    }
+    return 0.0;
+  }
 
-  // Calculate in log2 space the amino acid similarity score between columns i and j of two HMMs (query and template)
-  inline float Score(float* qi, float* tj);
-
-  // Calculate in lin space the amino acid similarity score between columns i and j of two HMMs (query and template)
-  inline float ProbFwd(float* qi, float* tj);
+  // Calculate secondary structure score between columns i and j of two HMMs (query and template)
+  inline float ScoreSS(HMM* q, HMM* t, int i, int j) {
+    return ScoreSS(q, t, i, j, ssm2);
+  }
 
   // Calculate score for a given alignment
   void ScoreAlignment(HMM* q, HMM* t, int steps);
@@ -134,7 +190,16 @@ class Hit
   int operator<(const Hit& hit2)  {return score_sort<hit2.score_sort;}
 
   // Calculate Evalue, score_aass, Proba from logPval and score_ss
-  void CalcEvalScoreProbab(int N_searched, float lamda);
+  // Calculate Evalue, score_aass, Proba from logPval and score_ss
+  inline void CalcEvalScoreProbab(int N_searched, float lamda) {
+    Eval = exp(logPval + log(N_searched));
+    logEval = logPval + log(N_searched);
+    // P-value = 1 - exp(-exp(-lamda*(Saa-mu))) => -lamda*(Saa-mu) = log(-log(1-Pvalue))
+    score_aass = (logPval < -10.0 ? logPval : log(-log(1 - Pval))) / 0.45
+        - fmin(lamda * score_ss, fmax(0.0, 0.2 * (score - 8.0))) / 0.45 - 3.0;
+    score_sort = score_aass;
+    Probab = CalcProbab();
+  }
 
   /* // Merge HMM with next aligned HMM   */
   /* void MergeHMM(HMM* Q, HMM* t, float wk[]); */
@@ -147,7 +212,55 @@ private:
 
   void InitializeBacktrace(HMM* q, HMM* t);
   void InitializeForAlignment(HMM* q, HMM* t, bool vit=true);
-  double CalcProbab();
+
+  // Calculate probability of true positive : p_TP(score)/( p_TP(score)+p_FP(score) )
+  // TP: same superfamily OR MAXSUB score >=0.1
+  inline double CalcProbab() {
+    double s = -score_aass;
+    double t;
+    if (s > 200)
+      return 100.0;
+    if (par.loc) {
+      if (par.ssm && (ssm1 || ssm2) && par.ssw > 0) {
+        // local with SS
+        const double a = sqrt(6000.0);
+        const double b = 2.0 * 2.5;
+        const double c = sqrt(0.12);
+        const double d = 2.0 * 32.0;
+        t = a * exp(-s / b) + c * exp(-s / d);
+      }
+      else {
+        // local no SS
+        const double a = sqrt(4000.0);
+        const double b = 2.0 * 2.5;
+        const double c = sqrt(0.15);
+        const double d = 2.0 * 34.0;
+        t = a * exp(-s / b) + c * exp(-s / d);
+      }
+    }
+    else {
+      if (par.ssm > 0 && par.ssw > 0) {
+        // global with SS
+        const double a = sqrt(4000.0);
+        const double b = 2.0 * 3.0;
+        const double c = sqrt(0.13);
+        const double d = 2.0 * 34.0;
+        t = a * exp(-s / b) + c * exp(-s / d);
+      }
+      else {
+        // global no SS
+        const double a = sqrt(6000.0);
+        const double b = 2.0 * 2.5;
+        const double c = sqrt(0.10);
+        const double d = 2.0 * 37.0;
+        t = a * exp(-s / b) + c * exp(-s / d);
+      }
+
+    }
+
+    return 100.0 / (1.0 + t * t); // ??? JS Jul'12
+  }
+
 };
 
 
@@ -157,5 +270,4 @@ double logPvalue(float x, float lamda, float mu);
 double logPvalue(float x, double a[]);
 
 
-
-
+#endif

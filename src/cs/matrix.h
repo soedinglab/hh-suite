@@ -25,6 +25,7 @@
 #include <valarray>
 #include <numeric>
 #include <algorithm>
+#include <iomanip>
 
 using std::valarray;
 

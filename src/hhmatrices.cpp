@@ -1,32 +1,13 @@
 // Substitution matrices and their background frequencies
 
+#ifndef HHMATRICES_C_
+#define HHMATRICES_C_
+
 // The following background frequencies were calculated by the formula pa = (P[a,b]/(pa*pb))^(-1) * (1,...,1)
 // For the Blousum50-matrix this becomes  pb[a]= SUM_(b=1,20) (2^(BLOSUM50[a,b]/3))^(-1) 
 //                     A    R    N    D    C    Q    E    G    H    I    L     K    M    F    P    S    T    W    Y    V 
 // Gonnet            7.68,5.14,4.02,5.41,1.89,3.27,5.99,7.56,3.69,5.06,10.01,5.97,2.20,3.50,4.54,4.67,7.12,1.25,3.95,7.28
 // BLOSUM50          8.24,6.24,4.46,4.77,2.03,2.90,6.78,6.69,2.53,6.89,10.7 ,5.04,1.49,4.93,3.97,5.95,6.13,1.34,3.45,6.28
-
-#ifndef MAIN
-#include <iostream>   // cin, cout, cerr
-#include <fstream>    // ofstream, ifstream
-#include <cstdio>     // printf
-#include <stdlib.h>   // exit
-#include <time.h>     // clock
-#include <math.h>     // sqrt, pow
-#include <limits.h>   // INT_MIN
-#include <float.h>    // FLT_MIN
-
-#include "cs.h"          // context-specific pseudocounts
-#include "context_library.h"
-#include "library_pseudocounts-inl.h"
-#include "util.C"        // imax, fmax, iround, iceil, ifloor, strint, strscn, strcut, substr, uprstr, uprchr, Basename etc.
-#include "list.C"        // list data structure
-#include "hash.C"        // hash data structure
-#include "hhdecl.C"      // Constants, global variables, struct Parameters
-#include "hhutil.C"      // MatchChr, InsertChr, aa2i, i2aa, log2, fast_log2, ScopID, WriteToScreen,
-#endif
-
-
 const float Gonnet[]={
 //  A     R     N     D     C     Q     E     G     H     I     L     K     M     F     P     S     T     W     Y     V 
  10227, 3430, 2875, 3869, 1625, 2393, 4590, 6500, 2352, 3225, 5819, 4172, 1435, 1579, 3728, 4610, 6264,  418, 1824, 5709, // A
@@ -485,5 +466,4 @@ void SetSecStrucSubstitutionMatrix()
 	  }  
 }
 
-
-
+#endif

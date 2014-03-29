@@ -20,11 +20,11 @@
 #ifndef CS_CONTEXT_LIBRARY_INL_H_
 #define CS_CONTEXT_LIBRARY_INL_H_
 
-#include "context_library.h"
-
 #include "abstract_state_matrix-inl.h"
 #include "context_profile-inl.h"
 #include "pseudocounts-inl.h"
+#include "context_library.h"
+#include "ran.h"
 
 namespace cs {
 
@@ -60,9 +60,9 @@ void ContextLibrary<Abc>::Read(FILE* fin) {
 
   char buffer[KB];
   size_t size = 0;
-  if (fgetline(buffer, KB, fin))
+  if (cs::fgetline(buffer, KB, fin))
     size = ReadInt(buffer, "SIZE", "Unable to parse context library 'SIZE'!");
-  if (fgetline(buffer, KB, fin))
+  if (cs::fgetline(buffer, KB, fin))
     wlen_ = ReadInt(buffer, "LENG", "Unable to parse context library 'LENG'!");
 
   // Read context profiles

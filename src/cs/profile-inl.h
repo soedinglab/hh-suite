@@ -21,6 +21,7 @@
 #define CS_PROFILE_INL_H_
 
 #include "profile.h"
+#include <cstring>
 
 namespace cs {
 

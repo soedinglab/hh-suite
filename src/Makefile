@@ -25,7 +25,7 @@ ifdef ICC
   OBJECT_LIBS = -openmp
 else # ifndef ICC
   CXX = g++
-  CXXFLAGS += -g -O3 -Wall -Wno-vla -Wno-deprecated -Wno-char-subscripts -fno-strict-aliasing -I$(CS_DIR) $(BITS_FLAG) -I$(FFINDEX_DIR) -fopenmp
+  CXXFLAGS += -g -std=c++11 -O3 -Wall -Wno-vla -Wno-deprecated -Wno-char-subscripts -fno-strict-aliasing -I$(CS_DIR) $(BITS_FLAG) -I$(FFINDEX_DIR) -fopenmp
   HHSEARCH_LIBS = -lpthread
   HHBLITS_LIBS = -lpthread -fopenmp
   CS_LIBS = -fopenmp
@@ -61,7 +61,7 @@ CPP = $(CXX) $(CPPFLAGS) $(CXXFLAGS) $(LDFLAGS)
 CPP_VALGRIND = $(CXX) -g $(CXXFLAGS)
 
 
-SOURCES = hhsearch.C hhhitlist.C hhhit.C hhalignment.C hhhmm.C hhmatrices.C hhdecl.C hhfunc.C hhprefilter.C hhworker.C hhfullalignment.C hhhalfalignment.C hhutil.C util.C hash.C list.C
+SOURCES = hhsearch.cpp hhhitlist.cpp hhhit.cpp hhalignment.cpp hhhmm.cpp hhmatrices.cpp hhdecl.cpp hhfunc.cpp hhprefilter.cpp hhworker.cpp hhfullalignment.cpp hhhalfalignment.cpp hhutil.cpp util.cpp hash.cpp list.cpp
 
 CS_SOURCES_WITH_APPS = $(filter-out $(wildcard $(CS_DIR)/*test*.cc), $(wildcard $(CS_DIR)/*.cc))
 CS_SOURCES = $(filter-out $(wildcard $(CS_DIR)/*app.cc), $(CS_SOURCES_WITH_APPS))
@@ -97,8 +97,8 @@ hhsearch_static: hhsearch.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
 hhsearch_valgrind: hhsearch.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
 	$(CPP_VALGRIND) hhsearch.C -o hhsearch_valgrind $(CS_OBJECTS) $(HHSEARCH_LIBS) $(OBJECT_LIBS)
 
-hhblits: hhblits.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
-	$(CPP) -g hhblits.C -o hhblits $(CS_OBJECTS) $(HHBLITS_LIBS)  $(OBJECT_LIBS) $(FFINDEX_DIR)/libffindex.a
+hhblits: hhblits.cpp hhalignment.o hhfullalignment.o hhhalfalignment.o hhhitlist.o hhhmm.o hhdecl.o hhhit.o hhutil.o util.o $(CS_OBJECTS)
+	$(CPP) -g hhblits.cpp -o hhblits hhalignment.o hhfullalignment.o hhhalfalignment.o hhhitlist.o hhhmm.o hhdecl.o hhhit.o hhutil.o util.o $(CS_OBJECTS) $(HHBLITS_LIBS) $(OBJECT_LIBS) $(FFINDEX_DIR)/libffindex.a
 
 hhblits_static: hhblits.C $(SOURCES) $(HEADERS) $(CS_OBJECTS)
 	$(CPP) -static hhblits.C -o hhblits $(CS_OBJECTS) $(HHBLITS_LIBS)  $(OBJECT_LIBS) $(FFINDEX_DIR)/libffindex.a

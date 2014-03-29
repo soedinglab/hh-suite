@@ -24,6 +24,9 @@
 
 #include "blast_hits.h"
 #include "sequence.h"
+#include "globals.h"
+#include "matrix.h"
+#include "vector.h"
 
 namespace cs {
 
@@ -47,6 +50,53 @@ enum AlignmentFormat {
 // A container class for multiple sequence alignments.
 template<class Abc>
 class Alignment {
+	private:
+	  // Row major matrix with sequences in integer representation.
+	  Matrix<uint8_t> seqs_;
+	  // Array with indices of all columns [0,1,2,...,num_cols-1].
+	  std::valarray<size_t> col_idx_;
+	  // Array with indices of match columns.
+	  std::valarray<size_t> match_idx_;
+	  // Array mask indicating match and insert columns.
+	  std::valarray<bool> is_match_;
+	  // Headers of sequences in the alignment.
+	  std::vector<std::string> headers_;
+	  // Name of the alignment as given by comment line in FASTA file
+	  std::string name_;
+
+	  // Buffer size for reading
+	  static const size_t kBufferSize = MB;
+
+	  // Initializes alignment with given headers and sequences.
+	  void Init(const std::vector<std::string>& headers, const std::vector<std::string>& seqs);
+
+	  // Resize the sequence matrix and header vector to given dimensions.
+	  void Resize(size_t num_seqs, size_t num_cols);
+
+	  // Fills match_idx__ with the indices of all match columns.
+	  void SetMatchIndices();
+
+	  // Reads an alignment in FASTA format.
+	  void ReadFasta(FILE* fin, std::vector<std::string>& headers, std::vector<std::string>& seqs);
+
+	  // Reads an alignment in A2M format from given stream.
+	  void ReadA2M(FILE* fin, std::vector<std::string>& headers, std::vector<std::string>& seqs);
+
+	  // Reads an alignment in A3M format from given stream.
+	  void ReadA3M(FILE* fin, std::vector<std::string>& headers, std::vector<std::string>& seqs);
+
+	  // Helper method that reads a FASTA, A2M, or A3M formatted alignment.
+	  void ReadFastaFlavors(FILE* fin, std::vector<std::string>& headers, std::vector<std::string>& seqs);
+
+	  // Reads an alignment in PSI format.
+	  void ReadPsi(FILE* fin, std::vector<std::string>& headers, std::vector<std::string>& seqs);
+
+	  // Writes the alignment in FASTA, A2M, or A3M format to output stream.
+	  void WriteFastaFlavors(FILE* fout, AlignmentFormat format, size_t width = 100) const;
+
+	  // Writes the alignment in CLUSTAL or PSI format to output stream.
+	  void WriteClustalFlavors(FILE* fout, AlignmentFormat format, size_t width = 100) const;
+
   public:
     // Constructs alignment from multi FASTA formatted alignment read from input
     // stream.
@@ -143,52 +193,6 @@ class Alignment {
     // Prints the Alignment in A2M format for debugging.
     friend std::ostream& operator<< <> (std::ostream& out, const Alignment<Abc>& ali);
 
-  private:
-    // Buffer size for reading
-    static const size_t kBufferSize = MB;
-
-    // Initializes alignment with given headers and sequences.
-    void Init(const std::vector<std::string>& headers, const std::vector<std::string>& seqs);
-
-    // Resize the sequence matrix and header vector to given dimensions.
-    void Resize(size_t num_seqs, size_t num_cols);
-
-    // Fills match_idx__ with the indices of all match columns.
-    void SetMatchIndices();
-
-    // Reads an alignment in FASTA format.
-    void ReadFasta(FILE* fin, std::vector<std::string>& headers, std::vector<std::string>& seqs);
-
-    // Reads an alignment in A2M format from given stream.
-    void ReadA2M(FILE* fin, std::vector<std::string>& headers, std::vector<std::string>& seqs);
-
-    // Reads an alignment in A3M format from given stream.
-    void ReadA3M(FILE* fin, std::vector<std::string>& headers, std::vector<std::string>& seqs);
-
-    // Helper method that reads a FASTA, A2M, or A3M formatted alignment.
-    void ReadFastaFlavors(FILE* fin, std::vector<std::string>& headers, std::vector<std::string>& seqs);
-
-    // Reads an alignment in PSI format.
-    void ReadPsi(FILE* fin, std::vector<std::string>& headers, std::vector<std::string>& seqs);
-
-    // Writes the alignment in FASTA, A2M, or A3M format to output stream.
-    void WriteFastaFlavors(FILE* fout, AlignmentFormat format, size_t width = 100) const;
-
-    // Writes the alignment in CLUSTAL or PSI format to output stream.
-    void WriteClustalFlavors(FILE* fout, AlignmentFormat format, size_t width = 100) const;
-
-    // Row major matrix with sequences in integer representation.
-    Matrix<uint8_t> seqs_;
-    // Array with indices of all columns [0,1,2,...,num_cols-1].
-    std::valarray<size_t> col_idx_;
-    // Array with indices of match columns.
-    std::valarray<size_t> match_idx_;
-    // Array mask indicating match and insert columns.
-    std::valarray<bool> is_match_;
-    // Headers of sequences in the alignment.
-    std::vector<std::string> headers_;
-    // Name of the alignment as given by comment line in FASTA file
-    std::string name_;
 };  // Alignment
 
 

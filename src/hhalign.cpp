@@ -80,9 +80,9 @@ using std::ofstream;
 #include "library_pseudocounts-inl.h"
 #include "crf_pseudocounts-inl.h"
 
-#include "util.C"        // imax, fmax, iround, iceil, ifloor, strint, strscn, strcut, substr, uprstr, uprchr, Basename etc.
+#include "util.h"        // imax, fmax, iround, iceil, ifloor, strint, strscn, strcut, substr, uprstr, uprchr, Basename etc.
 #include "list.C"        // list data structure
-#include "hash.C"        // hash data structure
+#include "hash.cpp"        // hash data structure
 #include "hhdecl.C"      // Constants, global variables, struct Parameters
 
 std::map<std::string, unsigned char*> columnStateSequences;

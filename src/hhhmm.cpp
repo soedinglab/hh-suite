@@ -1,44 +1,6 @@
 // hhhmm.C
 
-#ifndef MAIN
-#define MAIN
-#include <iostream>   // cin, cout, cerr
-#include <fstream>    // ofstream, ifstream
-#include <stdio.h>    // printf
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::ios;
-using std::ifstream;
-using std::ofstream;
-#include <stdlib.h>   // exit
-#include <string>     // strcmp, strstr
-#include <math.h>     // sqrt, pow
-#include <limits.h>   // INT_MIN
-#include <float.h>    // FLT_MIN
-#include <time.h>     // clock
-#include <ctype.h>    // islower, isdigit etc
-#include "cs.h"          // context-specific pseudocounts
-#include "context_library.h"
-#include "library_pseudocounts-inl.h"
-
-
-#include "util.C"        // imax, fmax, iround, iceil, ifloor, strint, strscn, strcut, substr, uprstr, uprchr, Basename etc.
-#include "list.C"        // list data structure
-#include "hash.C"        // hash data structure
-
-#include "hhdecl.C"      // Constants, global variables, struct Parameters
-#include "hhutil.C"      // MatchChr, InsertChr, aa2i, i2aa, log2, fast_log2, ScopID, WriteToScreen,
-#include "hhmatrices.C"  // BLOSUM50, GONNET, HSDM
-
-#include "hhhmm.h"       // class Hit
-#include "hhhit.h"       // class Hit
-#include "hhalignment.h" // class Alignment
-#include "hhhalfalignment.h" // class HalfAlignment
-#include "hhfullalignment.h" // class FullAlignment
-#include "hhhitlist.h"   // class Hit
-#endif
-
+#include "hhhmm.h"
 
 /////////////////////////////////////////////////////////////////////////////////////
 //// Class HMM
@@ -64,23 +26,17 @@ HMM::HMM(int maxseqdis, int maxres)
   g = new float*[maxres];         // f[i][a] = prob of finding amino acid a in column i WITH pseudocounts
   p = new float*[maxres];         // p[i][a] = prob of finding amino acid a in column i WITH OPTIMUM pseudocounts
   tr = new float*[maxres];        // log2 of transition probabilities M2M M2I M2D I2M I2I D2M D2D
-  //   tr_lin = new float*[maxres];  // linear transition probabilities M2M M2I M2D I2M I2I D2M D2D
-  for (int i=0; i<maxres; i++) f[i]=new(float[NAA+3]);
-  for (int i=0; i<maxres; i++) g[i]=new(float[NAA]);
-  // for (int i=0; i<maxres; i++) p[i]=new(float[NAA]);
-  // for (int i=0; i<maxres; i++) tr[i]=new(float[NTRANS]);
+  for (int i=0; i<maxres; i++) f[i]=new float[NAA+3];
+  for (int i=0; i<maxres; i++) g[i]=new float[NAA];
   for (int i=0; i<maxres; i++) 
     p[i]=(float*) memalign(16,NAA*sizeof(float),"p[i] of profile HMM in HMM constructor");  // align memory on 16b boundaries for SSE2
   for (int i=0; i<maxres; i++) 
     tr[i]=(float*) memalign(16,NTRANS*sizeof(float),"tr[i] of profile HMM in HMM constructor");
 
-  //   for (int i=0; i<maxres; i++) tr_lin[i]=new(float[NTRANS]);
   L=0;
   Neff_HMM=0;
   n_display=n_seqs=N_in=N_filtered=0;
   nss_dssp=nsa_dssp=nss_pred=nss_conf=nfirst=ncons=-1;
-  //   lamda_hash.New(37,0.0); // Set size and NULL element for hash
-  //   mu_hash.New(37,0.0);    // Set size and NULL element for hash
   lamda=0.0; mu=0.0;
   name[0]=longname[0]=fam[0]='\0';
   trans_lin=0; // transition probs in log space
@@ -168,12 +124,12 @@ HMM& HMM::operator=(HMM& q)
   n_display=q.n_display;
   n_seqs=q.n_seqs;
   for (int k=0; k<n_seqs; k++) {
-    sname[k]=new(char[strlen(q.sname[k])+1]);
+    sname[k]=new char[strlen(q.sname[k])+1];
     if (!sname[k]) MemoryError("array of names for sequences to display");
     strcpy(sname[k],q.sname[k]);
   }
   for (int k=0; k<n_seqs; k++) {
-    seq[k]=new(char[strlen(q.seq[k])+1]);
+    seq[k]=new char[strlen(q.seq[k])+1];
     if (!seq[k]) MemoryError("array of names for sequences to display");
     strcpy(seq[k],q.seq[k]);
   }
@@ -289,7 +245,7 @@ int HMM::Read(FILE* dbf, char* path)
               strcpy(longname,"undefined");
               strcpy(name,"undefined");
             }
-          if (v>=4) cout<<"Reading in HMM "<<name<<":\n";
+          if (v>=4) std::cout<<"Reading in HMM "<<name<<":\n";
         }
 
       else if (!strcmp("FAM",str3))
@@ -351,12 +307,12 @@ int HMM::Read(FILE* dbf, char* path)
           k=-1;
           while (fgetline(line,LINELEN-1,dbf) && line[0]!='#')
             {
-              if (v>=4) cout<<"Read from file:"<<line<<"\n"; //DEBUG
+              if (v>=4) std::cout<<"Read from file:"<<line<<"\n"; //DEBUG
               if (line[0]=='>') //line contains sequence name
                 {
                   if (k>=MAXSEQDIS-1) //maximum number of allowable sequences exceeded
                     {
-		      if (v>=2) cerr<<"WARNING in "<<program_name<<": number of sequences in "<<file<<" exceeds maximum allowed number of "<<MAXSEQDIS<<". Skipping sequences.\n";
+		      if (v>=2) std::cerr<<"WARNING in "<<program_name<<": number of sequences in "<<file<<" exceeds maximum allowed number of "<<MAXSEQDIS<<". Skipping sequences.\n";
 		      while (fgetline(line,LINELEN-1,dbf) && line[0]!='#'); 
 		      break;
 		    }
@@ -376,14 +332,14 @@ int HMM::Read(FILE* dbf, char* path)
 
                   //If this is not the first sequence then store residues of previous sequence
                   if (k>0) {
-                    seq[k-1]=new(char[strlen(cur_seq)+1]);
+                    seq[k-1]=new char[strlen(cur_seq)+1];
                     if (!seq[k-1]) MemoryError("array of sequences to display");
                     strcpy(seq[k-1],cur_seq);
                   }
 
                   // store sequence name
                   strcut(line+1); //find next white-space character and overwrite it with end-of-string character
-                  sname[k] = new (char[strlen(line+1)+1]); //+1 for terminating '\0'
+                  sname[k] = new char[strlen(line+1)+1]; //+1 for terminating '\0'
                   if (!sname[k]) MemoryError("array of names for sequences to display");
                   strcpy(sname[k],line+1);           //store sequence name in **name
                   l=1; i=1;
@@ -392,7 +348,7 @@ int HMM::Read(FILE* dbf, char* path)
                 {
                   if (k==-1)
                     {
-                      cerr<<endl<<"WARNING: Ignoring following line while reading HMM"<<name<<":\n\'"<<line<<"\'\n";
+                      std::cerr<<std::endl<<"WARNING: Ignoring following line while reading HMM"<<name<<":\n\'"<<line<<"\'\n";
                       continue;
                     }
 
@@ -411,7 +367,7 @@ int HMM::Read(FILE* dbf, char* path)
                               l++;
                             }
                           else if (v && ss2i(line[h])==-2)
-                            cerr<<endl<<"WARNING: ignoring invalid symbol \'"<<line[h]<<"\' at pos. "<<h<<" in line '"<<line<<"' of HMM "<<name<<"\n";
+                            std::cerr<<std::endl<<"WARNING: ignoring invalid symbol \'"<<line[h]<<"\' at pos. "<<h<<" in line '"<<line<<"' of HMM "<<name<<"\n";
                           h++;
                         }
                     }
@@ -427,7 +383,7 @@ int HMM::Read(FILE* dbf, char* path)
                               l++;
                             }
                           else if (v && sa2i(line[h])==-2)
-                            cerr<<endl<<"WARNING: ignoring invalid symbol \'"<<line[h]<<"\' at pos. "<<h<<" in line '"<<line<<"' of HMM "<<name<<"\n";
+                            std::cerr<<std::endl<<"WARNING: ignoring invalid symbol \'"<<line[h]<<"\' at pos. "<<h<<" in line '"<<line<<"' of HMM "<<name<<"\n";
                           h++;
                         }
                     }
@@ -443,7 +399,7 @@ int HMM::Read(FILE* dbf, char* path)
                               l++;
                             }
                           else if (v && ss2i(line[h])==-2)
-                            cerr<<endl<<"WARNING: ignoring invalid symbol \'"<<line[h]<<"\' at pos. "<<h<<" in line '"<<line<<"' of HMM "<<name<<"\n";
+                            std::cerr<<std::endl<<"WARNING: ignoring invalid symbol \'"<<line[h]<<"\' at pos. "<<h<<" in line '"<<line<<"' of HMM "<<name<<"\n";
                           h++;
                         }
                     }
@@ -458,7 +414,7 @@ int HMM::Read(FILE* dbf, char* path)
                               l++;
                             }
                           else if (v && cf2i(line[h])==-2)
-                            cerr<<endl<<"WARNING: ignoring invalid symbol \'"<<line[h]<<"\' at pos. "<<h<<" in line '"<<line<<"' of HMM "<<name<<"\n";
+                            std::cerr<<std::endl<<"WARNING: ignoring invalid symbol \'"<<line[h]<<"\' at pos. "<<h<<" in line '"<<line<<"' of HMM "<<name<<"\n";
                           h++;
                         }
                     }
@@ -469,7 +425,7 @@ int HMM::Read(FILE* dbf, char* path)
                           if (aa2i(line[h])>=0 && line[h]!='.') // ignore '.' and white-space characters ' ', \t and \n (aa2i()==-1)
                             {cur_seq[l]=line[h]; l++;}
                           else if (aa2i(line[h])==-2 && v)
-                            cerr<<endl<<"WARNING: ignoring invalid symbol \'"<<line[h]<<"\' at pos. "<<h<<" in line '"<<line<<"' of HMM "<<name<<"\n";
+                            std::cerr<<std::endl<<"WARNING: ignoring invalid symbol \'"<<line[h]<<"\' at pos. "<<h<<" in line '"<<line<<"' of HMM "<<name<<"\n";
                           h++;
                         }
                     }
@@ -484,7 +440,7 @@ int HMM::Read(FILE* dbf, char* path)
 
           //If this is not the first sequence some residues have already been read in
           if (k>=0) {
-            seq[k]=new(char[strlen(cur_seq)+1]);
+            seq[k]=new char[strlen(cur_seq)+1];
             if (!seq[k]) MemoryError("array of sequences to display");
             strcpy(seq[k],cur_seq);
           }
@@ -497,13 +453,13 @@ int HMM::Read(FILE* dbf, char* path)
               for (k=0; k<n_display; k++)
                 {
                   int j;
-                  cout<<">"<<sname[k]<<"(k="<<k<<")\n";
-                  if      (k==nss_dssp) {for (j=1; j<=L; j++) cout<<char(i2ss(ss_dssp[j]));}
-                  else if (k==nsa_dssp) {for (j=1; j<=L; j++) cout<<char(i2sa(sa_dssp[j]));}
-                  else if (k==nss_pred) {for (j=1; j<=L; j++) cout<<char(i2ss(ss_pred[j]));}
-                  else if (k==nss_conf) {for (j=1; j<=L; j++) cout<<int(ss_conf[j]-1);}
-                  else                  {for (j=1; j<=L; j++) cout<<seq[k][j];}
-                  cout<<"\n";
+                  std::cout<<">"<<sname[k]<<"(k="<<k<<")\n";
+                  if      (k==nss_dssp) {for (j=1; j<=L; j++) std::cout<<char(i2ss(ss_dssp[j]));}
+                  else if (k==nsa_dssp) {for (j=1; j<=L; j++) std::cout<<char(i2sa(sa_dssp[j]));}
+                  else if (k==nss_pred) {for (j=1; j<=L; j++) std::cout<<char(i2ss(ss_pred[j]));}
+                  else if (k==nss_conf) {for (j=1; j<=L; j++) std::cout<<int(ss_conf[j]-1);}
+                  else                  {for (j=1; j<=L; j++) std::cout<<seq[k][j];}
+                  std::cout<<"\n";
                 }
             }
 
@@ -564,12 +520,12 @@ int HMM::Read(FILE* dbf, char* path)
               if (v && next_i!=prev_i+1)
                 if (++warn<=5)
                   {
-                    cerr<<endl<<"WARNING: in HMM "<<name<<" state "<<prev_i<<" is followed by state "<<next_i<<"\n";
-                    if (warn==5) cerr<<endl<<"WARNING: further warnings while reading HMMs will be suppressed.\n";
+                    std::cerr<<std::endl<<"WARNING: in HMM "<<name<<" state "<<prev_i<<" is followed by state "<<next_i<<"\n";
+                    if (warn==5) std::cerr<<std::endl<<"WARNING: further warnings while reading HMMs will be suppressed.\n";
                   }
               if (i>L)
                 {
-                  cerr<<endl<<"WARNING: in HMM "<<name<<" there are more columns than the stated length "<<L<<". Skipping HMM\n";
+                  std::cerr<<std::endl<<"WARNING: in HMM "<<name<<" there are more columns than the stated length "<<L<<". Skipping HMM\n";
                   return 2;
                 }
               if (i>par.maxres-2)
@@ -614,7 +570,7 @@ int HMM::Read(FILE* dbf, char* path)
             }
           if (line[0]=='/' && line[1]=='/') break;
         }
-      else if (v) cerr<<endl<<"WARNING: Ignoring line\n\'"<<line<<"\'\nin HMM "<<name<<"\n";
+      else if (v) std::cerr<<std::endl<<"WARNING: Ignoring line\n\'"<<line<<"\'\nin HMM "<<name<<"\n";
 
     } //while(getline)
 
@@ -625,10 +581,10 @@ int HMM::Read(FILE* dbf, char* path)
   //   mu    = mu_hash.Show(par.Key());
   if (lamda && v>=3) printf("HMM %s is already calibrated: lamda=%-5.3f, mu=%-5.2f\n",name,lamda,mu);
 
-  if (v && i!=L) cerr<<endl<<"WARNING: in HMM "<<name<<" there are only "<<i<<" columns while the stated length is "<<L<<"\n";
-  if (v && i>par.maxres-2) {i=par.maxres-2; cerr<<endl<<"WARNING: maximum number "<<par.maxres-2<<" of residues exceeded while reading HMM "<<name<<"\n";}
-  if (v && !i)  cerr<<endl<<"WARNING: HMM "<<name<<" contains no match states. Check the alignment that gave rise to this HMM.\n";
-  if (v>=2) cout<<"Read in HMM "<<name<<" with "<<L<<" match states and effective number of sequences = "<<Neff_HMM<<"\n";
+  if (v && i!=L) std::cerr<<std::endl<<"WARNING: in HMM "<<name<<" there are only "<<i<<" columns while the stated length is "<<L<<"\n";
+  if (v && i>par.maxres-2) {i=par.maxres-2; std::cerr<<std::endl<<"WARNING: maximum number "<<par.maxres-2<<" of residues exceeded while reading HMM "<<name<<"\n";}
+  if (v && !i)  std::cerr<<std::endl<<"WARNING: HMM "<<name<<" contains no match states. Check the alignment that gave rise to this HMM.\n";
+  if (v>=2) std::cout<<"Read in HMM "<<name<<" with "<<L<<" match states and effective number of sequences = "<<Neff_HMM<<"\n";
   L = i;
 
   // Set emission probabilities of zero'th (begin) state and L+1st (end) state to background probabilities
@@ -686,7 +642,7 @@ int HMM::ReadHMMer(FILE* dbf, char* filestr)
           ptr=strscn(line+4);             // advance to first non-white-space character
           strmcpy(name,ptr,NAMELEN-1);    // copy full name to name
           strcut(name);                   // ...cut after first word...
-          if (v>=4) cout<<"Reading in HMM "<<name<<":\n";
+          if (v>=4) std::cout<<"Reading in HMM "<<name<<":\n";
         }
 
       else if (!strcmp("ACC ",str4))
@@ -735,8 +691,8 @@ int HMM::ReadHMMer(FILE* dbf, char* filestr)
           if (nsa_dssp<0)
             {
               nsa_dssp=k++;
-              seq[nsa_dssp] = new(char[par.maxres+2]);
-              sname[nsa_dssp] = new(char[15]);
+              seq[nsa_dssp] = new char[par.maxres+2];
+              sname[nsa_dssp] = new char[15];
               strcpy(seq[nsa_dssp]," ");
               strcpy(sname[nsa_dssp],"sa_dssp");
 
@@ -756,8 +712,8 @@ int HMM::ReadHMMer(FILE* dbf, char* filestr)
           if (nss_pred<0)
             {
               nss_pred=k++;
-              seq[nss_pred] = new(char[par.maxres+2]);
-              sname[nss_pred] = new(char[15]);
+              seq[nss_pred] = new char[par.maxres+2];
+              sname[nss_pred] = new char[15];
               strcpy(seq[nss_pred]," ");
               strcpy(sname[nss_pred],"ss_pred");
 
@@ -777,8 +733,8 @@ int HMM::ReadHMMer(FILE* dbf, char* filestr)
           if (nss_conf<0)
             {
               nss_conf=k++;
-              seq[nss_conf] = new(char[par.maxres+2]);
-              sname[nss_conf] = new(char[15]);
+              seq[nss_conf] = new char[par.maxres+2];
+              sname[nss_conf] = new char[15];
               strcpy(seq[nss_conf]," ");
               strcpy(sname[nss_conf],"ss_conf");
             }
@@ -821,7 +777,7 @@ int HMM::ReadHMMer(FILE* dbf, char* filestr)
           if (lamda<0)
             {
               if (v>=2 && ignore_hmmer_cal==0)
-                cerr<<endl<<"WARNING: some HMMs have been calibrated with HMMER's 'hmmcalibrate'. These calibrations will be ignored\n";
+                std::cerr<<std::endl<<"WARNING: some HMMs have been calibrated with HMMER's 'hmmcalibrate'. These calibrations will be ignored\n";
               ignore_hmmer_cal=1;
               mu = lamda = 0.0;
             }
@@ -851,8 +807,8 @@ int HMM::ReadHMMer(FILE* dbf, char* filestr)
 
           // Prepare to store DSSP states (if there are none, delete afterwards)
           nss_dssp=k++;
-          seq[nss_dssp] = new(char[par.maxres+2]);
-          sname[nss_dssp] = new(char[15]);
+          seq[nss_dssp] = new char[par.maxres+2];
+          sname[nss_dssp] = new char[15];
           strcpy(sname[nss_dssp],"ss_dssp");
 
           /////////////////////////////////////////////////////////////////////////////////////
@@ -869,16 +825,16 @@ int HMM::ReadHMMer(FILE* dbf, char* filestr)
               if (v && next_i!=prev_i+1)
                 if (++warn<5)
                   {
-                    cerr<<endl<<"WARNING: in HMM "<<name<<" state "<<prev_i<<" is followed by state "<<next_i<<"\n";
-                    if (warn==5) cerr<<endl<<"WARNING: further warnings while reading HMMs will be suppressed.\n";
+                    std::cerr<<std::endl<<"WARNING: in HMM "<<name<<" state "<<prev_i<<" is followed by state "<<next_i<<"\n";
+                    if (warn==5) std::cerr<<std::endl<<"WARNING: further warnings while reading HMMs will be suppressed.\n";
                   }
               if (i>L)
                 {
-                  cerr<<endl<<"WARNING: in HMM "<<name<<" there are more columns than the stated length "<<L<<". Skipping columns.\n";
+                  std::cerr<<std::endl<<"WARNING: in HMM "<<name<<" there are more columns than the stated length "<<L<<". Skipping columns.\n";
                   break;
                 }
               if (i>L && v)
-                cerr<<endl<<"WARNING: in HMM "<<name<<" there are more columns than the stated length "<<L<<"\n";
+                std::cerr<<std::endl<<"WARNING: in HMM "<<name<<" there are more columns than the stated length "<<L<<"\n";
               if (i>=par.maxres-2)
                 {
                   fgetline(line,LINELEN-1,dbf); // Skip two lines
@@ -987,9 +943,9 @@ int HMM::ReadHMMer(FILE* dbf, char* filestr)
   //   mu    = mu_hash.Show(par.Key());
   if (lamda && v>=2) printf("HMM %s is already calibrated: lamda=%-5.3f, mu=%-5.2f\n",name,lamda,mu);
 
-  if (v && i!=L) cerr<<endl<<"WARNING: in HMM "<<name<<" there are only "<<i<<" columns while the stated length is "<<L<<"\n";
-  if (v && i>=par.maxres-2) {i=par.maxres-2; cerr<<endl<<"WARNING: maximum number "<<par.maxres-2<<" of residues exceeded while reading HMM "<<name<<"\n";}
-  if (v && !i)  cerr<<endl<<"WARNING: HMM "<<name<<" contains no match states. Check the alignment that gave rise to this HMM.\n";
+  if (v && i!=L) std::cerr<<std::endl<<"WARNING: in HMM "<<name<<" there are only "<<i<<" columns while the stated length is "<<L<<"\n";
+  if (v && i>=par.maxres-2) {i=par.maxres-2; std::cerr<<std::endl<<"WARNING: maximum number "<<par.maxres-2<<" of residues exceeded while reading HMM "<<name<<"\n";}
+  if (v && !i)  std::cerr<<std::endl<<"WARNING: HMM "<<name<<" contains no match states. Check the alignment that gave rise to this HMM.\n";
   L = i;
 
   if (strlen(longname)>0) strcat(longname," ");
@@ -1023,14 +979,14 @@ int HMM::ReadHMMer(FILE* dbf, char* filestr)
   // Copy query (first sequence) and consensus  residues?
   if (par.showcons)
     {
-      sname[k]=new(char[10]);
+      sname[k]=new char[10];
       strcpy(sname[k],"Consensus");
-      sname[k+1]=new(char[strlen(longname)+1]);
+      sname[k+1]=new char[strlen(longname)+1];
       strcpy(sname[k+1],longname);
-      seq[k]=new(char[L+2]);
+      seq[k]=new char[L+2];
       seq[k][0]=' ';
       seq[k][L+1]='\0';
-      seq[k+1]=new(char[L+2]);
+      seq[k+1]=new char[L+2];
       seq[k+1][0]=' ';
       seq[k+1][L+1]='\0';
       for (i=1; i<=L; ++i)
@@ -1048,9 +1004,9 @@ int HMM::ReadHMMer(FILE* dbf, char* filestr)
     }
   else
     {
-      sname[k]=new(char[strlen(longname)+1]);
+      sname[k]=new char[strlen(longname)+1];
       strcpy(sname[k],longname);
-      seq[k]=new(char[L+2]);
+      seq[k]=new char[L+2];
       seq[k][0]=' ';
       seq[k][L+1]='\0';
     }
@@ -1092,7 +1048,7 @@ int HMM::ReadHMMer(FILE* dbf, char* filestr)
   Neff_M[L+1]=1.0f;
   Neff_I[L+1]=Neff_D[L+1]=0.0f;
   if (v>=2)
-    cout<<"Read in HMM "<<name<<" with "<<L<<" match states and effective number of sequences = "<<Neff_HMM<<"\n";
+    std::cout<<"Read in HMM "<<name<<" with "<<L<<" match states and effective number of sequences = "<<Neff_HMM<<"\n";
 
   // Set emission probabilities of zero'th (begin) state and L+1st (end) state to background probabilities
   for (a=0; a<20; ++a) f[0][a]=f[L+1][a]=pb[a];
@@ -1145,7 +1101,7 @@ int HMM::ReadHMMer3(FILE* dbf, char* filestr)
           ptr=strscn(line+4);             // advance to first non-white-space character
           strmcpy(name,ptr,NAMELEN-1);      // copy full name to name
           strcut(name);                   // ...cut after first word...
-          if (v>=4) cout<<"Reading in HMM "<<name<<":\n";
+          if (v>=4) std::cout<<"Reading in HMM "<<name<<":\n";
         }
 
       else if (!strcmp("ACC ",str4))
@@ -1198,8 +1154,8 @@ int HMM::ReadHMMer3(FILE* dbf, char* filestr)
           if (nsa_dssp<0)
             {
               nsa_dssp=k++;
-              seq[nsa_dssp] = new(char[par.maxres+2]);
-              sname[nsa_dssp] = new(char[15]);
+              seq[nsa_dssp] = new char[par.maxres+2];
+              sname[nsa_dssp] = new char[15];
               strcpy(seq[nsa_dssp]," ");
               strcpy(sname[nsa_dssp],"sa_dssp");
 
@@ -1219,8 +1175,8 @@ int HMM::ReadHMMer3(FILE* dbf, char* filestr)
           if (nss_pred<0)
             {
               nss_pred=k++;
-              seq[nss_pred] = new(char[par.maxres+2]);
-              sname[nss_pred] = new(char[15]);
+              seq[nss_pred] = new char[par.maxres+2];
+              sname[nss_pred] = new char[15];
               strcpy(seq[nss_pred]," ");
               strcpy(sname[nss_pred],"ss_pred");
 
@@ -1240,8 +1196,8 @@ int HMM::ReadHMMer3(FILE* dbf, char* filestr)
           if (nss_conf<0)
             {
               nss_conf=k++;
-              seq[nss_conf] = new(char[par.maxres+2]);
-              sname[nss_conf] = new(char[15]);
+              seq[nss_conf] = new char[par.maxres+2];
+              sname[nss_conf] = new char[15];
               strcpy(seq[nss_conf]," ");
               strcpy(sname[nss_conf],"ss_conf");
             }
@@ -1311,8 +1267,8 @@ int HMM::ReadHMMer3(FILE* dbf, char* filestr)
 	  
           // Prepare to store DSSP states (if there are none, delete afterwards)
           nss_dssp=k++;
-          seq[nss_dssp] = new(char[par.maxres+2]);
-          sname[nss_dssp] = new(char[15]);
+          seq[nss_dssp] = new char[par.maxres+2];
+          sname[nss_dssp] = new char[15];
           strcpy(sname[nss_dssp],"ss_dssp");
 
 	  /////////////////////////////////////////////////////////////////////////////////////
@@ -1329,16 +1285,16 @@ int HMM::ReadHMMer3(FILE* dbf, char* filestr)
               if (v && next_i!=prev_i+1)
                 if (++warn<5)
                   {
-                    cerr<<endl<<"WARNING: in HMM "<<name<<" state "<<prev_i<<" is followed by state "<<next_i<<"\n";
-                    if (warn==5) cerr<<endl<<"WARNING: further warnings while reading HMMs will be suppressed.\n";
+                    std::cerr<<std::endl<<"WARNING: in HMM "<<name<<" state "<<prev_i<<" is followed by state "<<next_i<<"\n";
+                    if (warn==5) std::cerr<<std::endl<<"WARNING: further warnings while reading HMMs will be suppressed.\n";
                   }
               if (i>L)
                 {
-                  cerr<<endl<<"WARNING: in HMM "<<name<<" there are more columns than the stated length "<<L<<". Skipping columns.\n";
+                  std::cerr<<std::endl<<"WARNING: in HMM "<<name<<" there are more columns than the stated length "<<L<<". Skipping columns.\n";
                    break;
                 }
               if (i>L && v)
-                cerr<<endl<<"WARNING: in HMM "<<name<<" there are more columns than the stated length "<<L<<"\n";
+                std::cerr<<std::endl<<"WARNING: in HMM "<<name<<" there are more columns than the stated length "<<L<<"\n";
               if (i>=par.maxres-2)
                 {
                   fgetline(line,LINELEN-1,dbf); // Skip two lines
@@ -1449,9 +1405,9 @@ int HMM::ReadHMMer3(FILE* dbf, char* filestr)
 
   if (L==0) return 0; //End of db file -> stop reading in
 
-  if (v && i!=L) cerr<<endl<<"WARNING: in HMM "<<name<<" there are only "<<i<<" columns while the stated length is "<<L<<"\n";
-  if (v && i>=par.maxres-2) {i=par.maxres-2; cerr<<endl<<"WARNING: maximum number "<<par.maxres-2<<" of residues exceeded while reading HMM "<<name<<"\n";}
-  if (v && !i)  cerr<<endl<<"WARNING: HMM "<<name<<" contains no match states. Check the alignment that gave rise to this HMM.\n";
+  if (v && i!=L) std::cerr<<std::endl<<"WARNING: in HMM "<<name<<" there are only "<<i<<" columns while the stated length is "<<L<<"\n";
+  if (v && i>=par.maxres-2) {i=par.maxres-2; std::cerr<<std::endl<<"WARNING: maximum number "<<par.maxres-2<<" of residues exceeded while reading HMM "<<name<<"\n";}
+  if (v && !i)  std::cerr<<std::endl<<"WARNING: HMM "<<name<<" contains no match states. Check the alignment that gave rise to this HMM.\n";
   L = i;
 
   if (strlen(longname)>0) strcat(longname," ");
@@ -1485,14 +1441,14 @@ int HMM::ReadHMMer3(FILE* dbf, char* filestr)
   // Copy query (first sequence) and consensus  residues?
   if (par.showcons)
     {
-      sname[k]=new(char[10]);
+      sname[k]=new char[10];
       strcpy(sname[k],"Consensus");
-      sname[k+1]=new(char[strlen(longname)+1]);
+      sname[k+1]=new char[strlen(longname)+1];
       strcpy(sname[k+1],longname);
-      seq[k]=new(char[L+2]);
+      seq[k]=new char[L+2];
       seq[k][0]=' ';
       seq[k][L+1]='\0';
-      seq[k+1]=new(char[L+2]);
+      seq[k+1]=new char[L+2];
       seq[k+1][0]=' ';
       seq[k+1][L+1]='\0';
       for (i=1; i<=L; ++i)
@@ -1510,9 +1466,9 @@ int HMM::ReadHMMer3(FILE* dbf, char* filestr)
     }
   else
     {
-      sname[k]=new(char[strlen(longname)+1]);
+      sname[k]=new char[strlen(longname)+1];
       strcpy(sname[k],longname);
-      seq[k]=new(char[L+2]);
+      seq[k]=new char[L+2];
       seq[k][0]=' ';
       seq[k][L+1]='\0';
     }
@@ -1557,7 +1513,7 @@ int HMM::ReadHMMer3(FILE* dbf, char* filestr)
   Neff_I[L+1]=Neff_D[L+1]=0.0f;
 
   if (v>=2)
-    cout<<"Read in HMM "<<name<<" with "<<L<<" match states and effective number of sequences = "<<Neff_HMM<<"\n";
+    std::cout<<"Read in HMM "<<name<<" with "<<L<<" match states and effective number of sequences = "<<Neff_HMM<<"\n";
 
   ///////////////////////////////////////////////////////////////////
 
@@ -1776,19 +1732,19 @@ void HMM::AddAminoAcidPseudocounts(char pcm, float pca, float pcb, float pcc)
       switch (pcm)
         {
         case 0:
-          cout<<"No pseudocounts added (-pcm 0)\n";
+          std::cout<<"No pseudocounts added (-pcm 0)\n";
           return;
         case 1:
-          cout<<"Adding constant AA pseudocount admixture of "<<pca<<" to HMM "<<name<<"\n";
+          std::cout<<"Adding constant AA pseudocount admixture of "<<pca<<" to HMM "<<name<<"\n";
           break;
         case 2:
-          cout<<"Adding divergence-dependent AA pseudocounts (-pcm 2) with admixture of "
+          std::cout<<"Adding divergence-dependent AA pseudocounts (-pcm 2) with admixture of "
               <<fmin(1.0, pca/(1. + Neff_HMM/pcb ) )<<" to HMM "<<name<<"\n";
           break;
         } //end switch (pcm)
       if (v>=4)
         {
-          cout<<"\nAmino acid frequencies WITHOUT pseudocounts:\n       A    R    N    D    C    Q    E    G    H    I    L    K    M    F    P    S    T    W    Y    V\n";
+          std::cout<<"\nAmino acid frequencies WITHOUT pseudocounts:\n       A    R    N    D    C    Q    E    G    H    I    L    K    M    F    P    S    T    W    Y    V\n";
           for (i=1; i<=L; ++i)
             {
               printf("%3i:  ",i);
@@ -1800,7 +1756,7 @@ void HMM::AddAminoAcidPseudocounts(char pcm, float pca, float pcb, float pcc)
                 }
               printf("  sum=%5.3f\n",sum);
             }
-          cout<<"\nAmino acid frequencies WITH pseudocounts:\n       A    R    N    D    C    Q    E    G    H    I    L    K    M    F    P    S    T    W    Y    V\n";
+          std::cout<<"\nAmino acid frequencies WITH pseudocounts:\n       A    R    N    D    C    Q    E    G    H    I    L    K    M    F    P    S    T    W    Y    V\n";
           for (i=1; i<=L; ++i)
             {
               printf("%3i:  ",i);
@@ -1823,7 +1779,7 @@ void HMM::AddAminoAcidPseudocounts(char pcm, float pca, float pcb, float pcc)
 /////////////////////////////////////////////////////////////////////////////////////
 void HMM::DivideBySqrtOfLocalBackgroundFreqs(const int D) // 2*D+1 is window size
 {
-  if (divided_by_local_bg_freqs) {cerr<<"WARNING: already divided probs by local aa frequencies!\n"; return;}
+  if (divided_by_local_bg_freqs) {std::cerr<<"WARNING: already divided probs by local aa frequencies!\n"; return;}
   divided_by_local_bg_freqs=1;
 
   int i;                     // query and template match state indices
@@ -1832,7 +1788,7 @@ void HMM::DivideBySqrtOfLocalBackgroundFreqs(const int D) // 2*D+1 is window siz
   float fac=1.0/(2.0*(float) D + 1.0 + pc );  // 1 / window size 
 
   float** pnul = new float*[L+1];  // null model probabilities   
-  for (i=0; i<=L; ++i) pnul[i] = new(float[NAA]);
+  for (i=0; i<=L; ++i) pnul[i] = new float[NAA];
   for (a=0; a<NAA; ++a) pnul[0][a] = pc*pb[a];
 
   // HMM shorter than window length? => average over entire length L
@@ -1877,8 +1833,8 @@ void HMM::DivideBySqrtOfLocalBackgroundFreqs(const int D) // 2*D+1 is window siz
   
   if (v>=3)
     {
-      cout<<"\nLocal amino acid background frequencies\n";
-      cout<<"         A    R    N    D    C    Q    E    G    H    I    L    K    M    F    P    S    T    W    Y    V  sum\n";
+      std::cout<<"\nLocal amino acid background frequencies\n";
+      std::cout<<"         A    R    N    D    C    Q    E    G    H    I    L    K    M    F    P    S    T    W    Y    V  sum\n";
       for (i=1; i<=L; ++i)
 	{
 	  printf("%-5i ",i);
@@ -1969,13 +1925,13 @@ void HMM::IncludeNullModelInHMM(HMM* q, HMM* t, int columnscore )
 
   if (v>=4)
     {
-      cout<<"\nAverage amino acid frequencies\n";
-      cout<<"         A    R    N    D    C    Q    E    G    H    I    L    K    M    F    P    S    T    W    Y    V\n";
-      cout<<"Q:    ";
+      std::cout<<"\nAverage amino acid frequencies\n";
+      std::cout<<"         A    R    N    D    C    Q    E    G    H    I    L    K    M    F    P    S    T    W    Y    V\n";
+      std::cout<<"Q:    ";
       for (a=0; a<20; ++a) printf("%4.1f ",100*q->pav[a]);
-      cout<<"\nT:    ";
+      std::cout<<"\nT:    ";
       for (a=0; a<20; ++a) printf("%4.1f ",100*t->pav[a]);
-      cout<<"\npb:   ";
+      std::cout<<"\npb:   ";
       for (a=0; a<20; ++a) printf("%4.1f ",100*pb[a]);
     }
  
@@ -2017,7 +1973,7 @@ void HMM::WriteToFile(char* outfile)
     }
   else
     outf = stdout;
-  if (v>=2) cout<<"Writing HMM to "<<outfile<<"\n";
+  if (v>=2) std::cout<<"Writing HMM to "<<outfile<<"\n";
 
   //   fprintf(outf,"HHsearch HHM format 1.5\n");
   fprintf(outf,"HHsearch 1.5\n");         // format specification
@@ -2038,7 +1994,7 @@ void HMM::WriteToFile(char* outfile)
   fprintf(outf,"\n");
 
   // print out date stamp
-  time_t* tp=new(time_t);
+  time_t* tp=new time_t;
   *tp=time(NULL);
   fprintf(outf,"DATE  %s",ctime(tp));
   delete tp;
@@ -2111,17 +2067,17 @@ void HMM::WriteToFile(char* outfile)
 /////////////////////////////////////////////////////////////////////////////////////
 void HMM::InsertCalibration(char* infile)
 {
-  char* line =  new(char[LINELEN]);    // input line
-  char** lines = new(char*[3*L+100000]);
+  char* line =  new char[LINELEN];    // input line
+  char** lines = new char*[3*L+100000];
   int nline=0;
   int l;
   char done=0;   // inserted new 'EVD mu sigma' line?
 
   // Read from infile all lines and insert the EVD line with lamda and mu coefficients
-  ifstream inf;
-  inf.open(infile, ios::in);
+  std::ifstream inf;
+  inf.open(infile, std::ios::in);
   if (!inf) OpenFileError(infile);
-  if (v>=2) cout<<"Recording calibration coefficients in "<<infile<<"\n";
+  if (v>=2) std::cout<<"Recording calibration coefficients in "<<infile<<"\n";
 
   while (inf.getline(line,LINELEN) && !(line[0]=='/' && line[1]=='/') && nline<2*par.maxres)
     {
@@ -2135,12 +2091,12 @@ void HMM::InsertCalibration(char* infile)
       if (!done && (!strncmp("SEQ",line,3) || !strncmp("HMM",line,3)) && (isspace(line[3]) || line[3]=='\0'))
         {
           done=1;
-          lines[nline]=new(char[128]);
+          lines[nline]=new char[128];
           if (!lines[nline]) MemoryError("space to read in HHM file for calibration");
           sprintf(lines[nline],"EVD   %-7.4f %-7.4f",lamda,mu);
           nline++;
         }
-      lines[nline]=new(char[strlen(line)+1]);
+      lines[nline]=new char[strlen(line)+1];
       if (!lines[nline]) MemoryError("space to read in HHM file for calibration");
       strcpy (lines[nline],line);
       nline++;
@@ -2150,8 +2106,8 @@ void HMM::InsertCalibration(char* infile)
   // Write to infile all lines
   FILE* infout=fopen(infile,"w");
   if (!infout) {
-    cerr<<endl<<"WARNING in "<<program_name<<": no calibration coefficients written to "<<infile<<":\n";
-    cerr<<"Could not open file for writing.\n";
+    std::cerr<<std::endl<<"WARNING in "<<program_name<<": no calibration coefficients written to "<<infile<<":\n";
+    std::cerr<<"Could not open file for writing.\n";
     return;
   }
   for (l=0; l<nline; l++) {fprintf(infout,"%s\n",lines[l]); delete[] lines[l];}
@@ -2239,7 +2195,7 @@ void HMM::AddSSPrediction(char seq_pred[], char seq_conf[])
 
   if ((int)strlen(seq_pred)!=L+1)
     {
-      cerr<<"WARNING: Could not add secondary struture prediction - unequal length!\n";
+      std::cerr<<"WARNING: Could not add secondary struture prediction - unequal length!\n";
       return;
     }
 
@@ -2264,17 +2220,17 @@ void HMM::AddSSPrediction(char seq_pred[], char seq_conf[])
       if (nfirst >= 0) { nfirst += 2; }
 
       nss_pred=0;
-      seq[nss_pred]=new(char[L+2]);
+      seq[nss_pred]=new char[L+2];
       strcpy(seq[nss_pred],seq_pred);
       for (i=0; i<strlen(seq_pred); i++) ss_pred[i]=ss2i(seq_pred[i]);
-      sname[nss_pred]=new(char[50]);
+      sname[nss_pred]=new char[50];
       strcpy(sname[nss_pred],"ss_pred PSIPRED predicted secondary structure");
 
       nss_conf=1;
-      seq[nss_conf]=new(char[L+2]);
+      seq[nss_conf]=new char[L+2];
       strcpy(seq[nss_conf],seq_conf);
       for (i=0; i<strlen(seq_conf); i++) ss_conf[i]=cf2i(seq_conf[i]);
-      sname[nss_conf]=new(char[50]);
+      sname[nss_conf]=new char[50];
       strcpy(sname[nss_conf],"ss_conf PSIPRED confidence values");
       n_display += 2;
       n_seqs += 2;

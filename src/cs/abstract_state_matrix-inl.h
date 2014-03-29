@@ -34,8 +34,8 @@ AbstractStateMatrix<AS>::AbstractStateMatrix(std::string matrixfile)
     throw Exception("Can't read abstract state matrix '%s'!", matrixfile.c_str());
 
   // Determine number of contexts
-  fgetline(buffer, MB, fin);  // skip alphabet description line
-  while (fgetline(buffer, KB, fin))
+  cs::fgetline(buffer, MB, fin);  // skip alphabet description line
+  while (cs::fgetline(buffer, KB, fin))
     if (strscn(buffer)) num_contexts_++;
 
   // Resize and assign matrices and vectors
@@ -47,8 +47,8 @@ AbstractStateMatrix<AS>::AbstractStateMatrix(std::string matrixfile)
   rewind(fin);
   const char* ptr = NULL;
   size_t k = 0;
-  fgetline(buffer, MB, fin);  // skip alphabet description line
-  while (fgetline(buffer, KB, fin)) {
+  cs::fgetline(buffer, MB, fin);  // skip alphabet description line
+  while (cs::fgetline(buffer, KB, fin)) {
     ptr = buffer;
     for (size_t s = 0; s < AS::kSize; ++s)
       q_[k][s] = strtof(ptr);

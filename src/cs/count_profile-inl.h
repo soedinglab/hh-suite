@@ -65,13 +65,13 @@ void CountProfile<Abc>::Read(FILE* fin) {
       throw Exception("Stream does not start with class id 'CountProfile'!");
 
   char buffer[KB];
-  fgetline(buffer, KB, fin);
+  cs::fgetline(buffer, KB, fin);
   if (strstr(buffer, "NAME")) {
     name = ReadString(buffer, "NAME", "Unable to parse count profile 'NAME'!");
-    fgetline(buffer, KB, fin);
+    cs::fgetline(buffer, KB, fin);
   }
   size_t len = ReadInt(buffer, "LENG", "Unable to parse count profile 'LENG'!");
-  fgetline(buffer, KB, fin);
+  cs::fgetline(buffer, KB, fin);
   size_t nalph = ReadInt(buffer, "ALPH", "Unable to parse count profile 'ALPH'!");
   if (nalph != Abc::kSize)
     throw Exception("Alphabet size of serialized count profile should be %d "
@@ -84,8 +84,8 @@ void CountProfile<Abc>::Read(FILE* fin) {
   // Read counts and effective number of sequences for each column
   size_t i = 0;
   const char* ptr = buffer;
-  fgetline(buffer, KB, fin);  // skip alphabet description line
-  while (fgetline(buffer, KB, fin) && buffer[0] != '/' && buffer[1] != '/') {
+  cs::fgetline(buffer, KB, fin);  // skip alphabet description line
+  while (cs::fgetline(buffer, KB, fin) && buffer[0] != '/' && buffer[1] != '/') {
     ptr = buffer;
     i = strtoi(ptr) - 1;
     assert(i < len);

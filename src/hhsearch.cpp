@@ -94,16 +94,16 @@ using std::ofstream;
 #include "library_pseudocounts-inl.h"
 #include "crf_pseudocounts-inl.h"
 
-#include "util.C"        // imax, fmax, iround, iceil, ifloor, strint, strscn, strcut, substr, uprstr, uprchr, Basename etc.
+#include "util.h"        // imax, fmax, iround, iceil, ifloor, strint, strscn, strcut, substr, uprstr, uprchr, Basename etc.
 #include "list.C"        // list data structure
-#include "hash.C"        // hash data structure
+#include "hash.cpp"        // hash data structure
 
-#include "hhdecl.C"      // Constants, global variables, struct Parameters
+#include "hhdecl.h"      // Constants, global variables, struct Parameters
 
 std::map<std::string, unsigned char*> columnStateSequences;
 ColumnStateScoring* columnStateScoring;
 
-#include "hhutil.C"      // MatchChr, InsertChr, aa2i, i2aa, log2, fast_log2, ScopID, WriteToScreen,
+#include "hhutil.h"      // MatchChr, InsertChr, aa2i, i2aa, log2, fast_log2, ScopID, WriteToScreen,
 #include "hhmatrices.C"  // BLOSUM50, GONNET, HSDM
 
 #include "hhhmm.h"       // class Hit
@@ -845,7 +845,7 @@ void perform_realign(char *dbfiles[], int ndb)
 	    // Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
 	    q->PreparePseudocounts();
 	    // Add amino acid pseudocounts to query: p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
-	    q->AddAminoAcidPseudocounts();
+	    q->AddAminoAcidPseudocounts(par.pc_hhm_nocontext_mode, par.pc_hhm_nocontext_a, par.pc_hhm_nocontext_b, par.pc_hhm_nocontext_c);
 	  } else {
 	    // Generate an amino acid frequency matrix from f[i][a] with full context specific pseudocount admixture (tau=1) -> g[i][a]
 	    // q->PrepareContextSpecificPseudocounts(); //OLD
@@ -853,7 +853,7 @@ void perform_realign(char *dbfiles[], int ndb)
 	  }
 	  
 	  // Transform transition freqs to lin space if not already done
-	  q->AddTransitionPseudocounts();
+	  q->AddTransitionPseudocounts(par.gapd, par.gape, par.gapf, par.gapg, par.gaph, par.gapi, par.gapb);
 	  q->Log2LinTransitionProbs(1.0); // transform transition freqs to lin space if not already done
 	  
 	  q->CalculateAminoAcidBackground();

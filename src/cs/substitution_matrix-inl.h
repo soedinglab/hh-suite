@@ -21,6 +21,8 @@
 #define CS_SUBSTITUTION_MATRIX_INL_H_
 
 #include "substitution_matrix.h"
+#include "log.h"
+#include "utils.h"
 
 namespace cs {
 
