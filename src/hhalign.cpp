@@ -26,7 +26,6 @@
 //     Nat. Methods, epub Dec 25, doi: 10.1038/NMETH.1818 (2011).
 
 ////#define WINDOWS
-#define MAIN
 
 #include <iostream>   // cin, cout, cerr
 #include <fstream>    // ofstream, ifstream
@@ -45,28 +44,6 @@
 #include <map>
 
 #include <sys/time.h>
-//#include <new>
-//#include "efence.h"
-//#include "efence.c"
-
-#ifdef HH_SSE41
-#include <tmmintrin.h>   // SSSE3
-#include <smmintrin.h>   // SSE4.1
-#define HH_SSE3
-#endif
-
-#ifdef HH_SSE3
-#include <pmmintrin.h>   // SSE3
-#define HH_SSE2
-#endif
-
-#ifdef HH_SSE2
-#ifndef __SUNPRO_C
-#include <emmintrin.h>   // SSE2
-#else
-#include <sunmedia_intrin.h>
-#endif
-#endif
 
 using std::cout;
 using std::cerr;
@@ -81,28 +58,19 @@ using std::ofstream;
 #include "crf_pseudocounts-inl.h"
 
 #include "util.h"        // imax, fmax, iround, iceil, ifloor, strint, strscn, strcut, substr, uprstr, uprchr, Basename etc.
-#include "list.C"        // list data structure
-#include "hash.cpp"        // hash data structure
-#include "hhdecl.C"      // Constants, global variables, struct Parameters
+#include "list.h"        // list data structure
+#include "hash.h"        // hash data structure
+#include "hhdecl.h"      // Constants, global variables, struct Parameters
 
-std::map<std::string, unsigned char*> columnStateSequences;
-ColumnStateScoring* columnStateScoring;
-
-#include "hhutil.C"      // MatchChr, InsertChr, aa2i, i2aa, log2, fast_log2, ScopID, WriteToScreen,
-#include "hhmatrices.C"  // BLOSUM50, GONNET, HSDM
+#include "hhutil.h"      // MatchChr, InsertChr, aa2i, i2aa, log2, fast_log2, ScopID, WriteToScreen,
+#include "hhmatrices.cpp"  // BLOSUM50, GONNET, HSDM
 #include "hhhmm.h"       // class HMM
 #include "hhhit.h"       // class Hit
 #include "hhalignment.h" // class Alignment
 #include "hhhalfalignment.h" // class HalfAlignment
 #include "hhfullalignment.h" // class FullAlignment
 #include "hhhitlist.h"   // class Hit
-#include "hhhmm.C"       // class HMM
-#include "hhalignment.C" // class Alignment
-#include "hhhit.C"       // class Hit 
-#include "hhhalfalignment.C" // class HalfAlignment
-#include "hhfullalignment.C" // class FullAlignment
-#include "hhhitlist.C"   // class HitList
-#include "hhfunc.C"      // some functions common to hh programs
+#include "hhfunc.cpp"      // some functions common to hh programs
 #ifdef HH_PNG
 #include "pngwriter.h"   //PNGWriter (http://pngwriter.sourceforge.net/)
 #include "pngwriter.cc"  //PNGWriter (http://pngwriter.sourceforge.net/)
@@ -975,50 +943,12 @@ void ProcessArguments(int argc, char** argv) {
       else
         strcpy(par.clusterfile, argv[i]);
     }
-    else if (!strcmp(argv[i], "-cs_t")) {
-      if (++i >= argc || argv[i][0] == '-') {
-        help();
-        cerr << endl << "Error in " << program_name
-            << ": no cs file following -cs_template\n";
-        exit(4);
-      }
-      else {
-        strcpy(par.cs_template_file, argv[i]);
-        par.useCSScoring = true;
-      }
-    }
     else
       cerr << endl << "WARNING: Ignoring unknown option " << argv[i]
           << " ...\n";
     if (v >= 4)
       cout << i << "  " << argv[i] << endl; //PRINT
   } // end of for-loop for command line input
-}
-
-void addTemplateCSToColumnStateSequences() {
-  unsigned char* cs_seq = new unsigned char[par.maxres];
-  std::string template_name = t->name;
-
-  FILE* fh = NULL;
-  fh = fopen(par.cs_template_file, "rb");
-  if (!fh)
-    OpenFileError(par.cs_template_file);
-
-  char line[LINELEN] = "";
-  int pos = 1;
-
-  while (fgets(line, LINELEN, fh)) {
-    if (line[0] == '>') {
-    }
-    else {
-      unsigned char* c = (unsigned char*) line;
-      while (*c != '\n') {
-        cs_seq[pos++] = (unsigned char) (cs::AS219::kCharToInt[*c++]);
-      }
-    }
-  }
-
-  columnStateSequences[template_name] = cs_seq;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////
@@ -1250,7 +1180,7 @@ int main(int argc, char **argv) {
     hit.self = 1;
 
     // Factor Null model into HMM t
-    t->IncludeNullModelInHMM(q, t);
+    t->IncludeNullModelInHMM(q, t, par.columnscore);
   }
   // Read template alignment/HMM t and add pseudocounts
   else {
@@ -1258,47 +1188,6 @@ int main(int argc, char **argv) {
     char input_format = 0;
     ReadQueryFile(par.tfile, input_format, t);
     PrepareTemplateHMM(q, t, input_format);
-  }
-
-  if (par.useCSScoring) {
-    addTemplateCSToColumnStateSequences();
-    columnStateScoring = new ColumnStateScoring();
-    columnStateScoring->number_column_states = cs::AS219::kSize;
-    columnStateScoring->query_length = q->L;
-    columnStateScoring->substitutionScores = new float*[q->L + 1];
-    for (int i = 0; i <= q->L; i++) {
-      columnStateScoring->substitutionScores[i] = new float[cs::AS219::kSize];
-    }
-
-    cs::ContextLibrary<cs::AA> *cs_lib;
-    FILE* fin = fopen(par.cs_library, "r");
-    if (!fin)
-      OpenFileError(par.cs_library);
-    cs_lib = new cs::ContextLibrary<cs::AA>(fin);
-    fclose(fin);
-    cs::TransformToLin(*cs_lib);
-
-    for (int i = 1; i <= q->L; ++i) {
-      for (int k = 0; k < columnStateScoring->number_column_states; ++k) {
-        float sum = 0;
-        for (int a = 0; a < 20; ++a) {
-          sum += (q->p[i - 1][a] * cs_lib->operator [](k).probs[0][a]
-              / q->pav[a]);
-        }
-        sum = flog2(sum);
-
-        //Fitting of cs scores to non-heuristic scores
-        sum = 0.6862403 * sum + 0.0342321 * pow(sum, 2)
-            + 0.0002257 * pow(sum, 3) + 0.0006802;
-
-        columnStateScoring->substitutionScores[i - 1][k] = fpow2(sum);
-      }
-    }
-
-    delete cs_lib;
-  }
-  else {
-    columnStateScoring = NULL;
   }
 
   //////////////////////////////////////////////////////////////

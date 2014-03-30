@@ -1,4 +1,4 @@
-// hhblits.C:
+// hhblits.cpp:
 // Iterative search for a multiple alignment in a profile HMM database
 //
 // Error codes: 0: ok  1: file format error  2: file access error  3: memory error  4: command line error  6: internal logic error  7: internal numeric error

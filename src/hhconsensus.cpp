@@ -1,8 +1,5 @@
-// hhconsensus.C: read A3M/FASTA file and calculate consensus sequence 
-// Compile with g++ hhconsensus.C -o hhconsensus -O3 -static -fno-strict-aliasing -L/home/soeding/programs/electric-fence-2.1.13/
+// hhconsensus.cpp: read A3M/FASTA file and calculate consensus sequence
 
-////#define WINDOWS
-#define MAIN
 #include <iostream>   // cin, cout, cerr
 #include <fstream>    // ofstream, ifstream
 #include <cstdio>     // printf
@@ -17,29 +14,6 @@
 #include <errno.h>    // perror()
 #include <cassert>
 #include <stdexcept>
-
-//#include <new>
-//#include "efence.h"
-//#include "efence.c"
-
-#ifdef HH_SSE41
-#include <tmmintrin.h>   // SSSE3
-#include <smmintrin.h>   // SSE4.1
-#define HH_SSE3
-#endif
-
-#ifdef HH_SSE3
-#include <pmmintrin.h>   // SSE3
-#define HH_SSE2
-#endif
-
-#ifdef HH_SSE2
-#ifndef __SUNPRO_C
-#include <emmintrin.h>   // SSE2
-#else
-#include <sunmedia_intrin.h>
-#endif
-#endif
 
 using std::cout;
 using std::cerr;
@@ -56,20 +30,17 @@ using std::ofstream;
 #include "list.h"        // list data structure
 #include "hash.h"        // hash data structure
 
-#include "util.C"        // imax, fmax, iround, iceil, ifloor, strint, strscn, strcut, substr, uprstr, uprchr, Basename etc.
-#include "hhdecl.C"      // Constants, global variables, struct Parameters
-#include "hhutil.C"      // MatchChr, InsertChr, aa2i, i2aa, log2, fast_log2, ScopID, WriteToScreen,
-#include "hhmatrices.C"  // BLOSUM50, GONNET, HSDM
+#include "util.h"        // imax, fmax, iround, iceil, ifloor, strint, strscn, strcut, substr, uprstr, uprchr, Basename etc.
+#include "hhdecl.h"      // Constants, global variables, struct Parameters
+#include "hhutil.h"      // MatchChr, InsertChr, aa2i, i2aa, log2, fast_log2, ScopID, WriteToScreen,
+#include "hhmatrices.cpp"  // BLOSUM50, GONNET, HSDM
 
 #include "hhhmm.h"       // class HMM
 #include "hhhit.h"       // class Hit
 #include "hhalignment.h" // class Alignment
 #include "hhhalfalignment.h" // class HalfAlignment
 
-#include "hhhmm.C"       // class HMM
-#include "hhalignment.C" // class Alignment
-#include "hhhalfalignment.C" // class HalfAlignment
-#include "hhfunc.C"      // some functions common to hh programs
+#include "hhfunc.cpp"      // some functions common to hh programs
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Global variables 

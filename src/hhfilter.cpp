@@ -22,7 +22,6 @@
 //     HHblits: Lightning-fast iterative protein sequence searching by HMM-HMM alignment.
 //     Nat. Methods, epub Dec 25, doi: 10.1038/NMETH.1818 (2011).
 
-#define MAIN
 #include <iostream>   // cin, cout, cerr
 #include <fstream>    // ofstream, ifstream
 #include <stdio.h>    // printf
@@ -35,25 +34,6 @@
 #include <errno.h>    // perror(), strerror(errno)
 #include <ctype.h>    // islower, isdigit etc
 #include <cassert>
-
-#ifdef HH_SSE41
-#include <tmmintrin.h>   // SSSE3
-#include <smmintrin.h>   // SSE4.1
-#define HH_SSE3
-#endif
-
-#ifdef HH_SSE3
-#include <pmmintrin.h>   // SSE3
-#define HH_SSE2
-#endif
-
-#ifdef HH_SSE2
-#ifndef __SUNPRO_C
-#include <emmintrin.h>   // SSE2
-#else
-#include <sunmedia_intrin.h>
-#endif
-#endif
 
 using std::cout;
 using std::cerr;
@@ -69,16 +49,14 @@ using std::ofstream;
 
 #include "list.h"        // list data structure
 #include "hash.h"        // hash data structure
-#include "util.C"        // imax, fmax, iround, iceil, ifloor, strint, strscn, strcut, substr, uprstr, uprchr, Basename etc.
-#include "hhdecl.C"      // Constants, global variables, struct Parameters
-#include "hhutil.C"      // MatchChr, InsertChr, aa2i, i2aa, log2, fast_log2, ScopID, WriteToScreen,
-#include "hhmatrices.C"  // BLOSUM50, GONNET, HSDM
+#include "util.h"        // imax, fmax, iround, iceil, ifloor, strint, strscn, strcut, substr, uprstr, uprchr, Basename etc.
+#include "hhdecl.h"      // Constants, global variables, struct Parameters
+#include "hhutil.h"      // MatchChr, InsertChr, aa2i, i2aa, log2, fast_log2, ScopID, WriteToScreen,
+#include "hhmatrices.cpp"  // BLOSUM50, GONNET, HSDM
 #include "hhhmm.h"       // class HMM
 #include "hhhit.h"       // class Hit
 #include "hhalignment.h" // class Alignment
-#include "hhhmm.C"       // class HMM
-#include "hhalignment.C" // class Alignment
-#include "hhfunc.C"      // some functions common to hh programs
+#include "hhfunc.cpp"      // some functions common to hh programs
 /////////////////////////////////////////////////////////////////////////////////////
 // Exit function
 /////////////////////////////////////////////////////////////////////////////////////

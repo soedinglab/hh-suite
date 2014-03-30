@@ -1,4 +1,4 @@
-// hhsearch.C:
+// hhsearch.cpp:
 // Search for a multiple alignment (transformed into HMM) in a profile HMM database
 
 // Error codes: 0: ok  1: file format error  2: file access error  3: memory error  4: command line error  6: internal logic error  7: internal numeric error
@@ -59,28 +59,6 @@
 #endif
 
 #include <sys/time.h>
-//#include <new>
-//#include "efence.h"
-//#include "efence.c"
-
-#ifdef HH_SSE41
-#include <tmmintrin.h>   // SSSE3
-#include <smmintrin.h>   // SSE4.1
-#define HH_SSE3
-#endif
-
-#ifdef HH_SSE3
-#include <pmmintrin.h>   // SSE3
-#define HH_SSE2
-#endif
-
-#ifdef HH_SSE2
-#ifndef __SUNPRO_C
-#include <emmintrin.h>   // SSE2
-#else
-#include <sunmedia_intrin.h>
-#endif
-#endif
 
 using std::cout;
 using std::cerr;
@@ -95,31 +73,22 @@ using std::ofstream;
 #include "crf_pseudocounts-inl.h"
 
 #include "util.h"        // imax, fmax, iround, iceil, ifloor, strint, strscn, strcut, substr, uprstr, uprchr, Basename etc.
-#include "list.C"        // list data structure
-#include "hash.cpp"        // hash data structure
+#include "list.h"        // list data structure
+#include "hash.h"        // hash data structure
 
 #include "hhdecl.h"      // Constants, global variables, struct Parameters
 
-std::map<std::string, unsigned char*> columnStateSequences;
-ColumnStateScoring* columnStateScoring;
-
 #include "hhutil.h"      // MatchChr, InsertChr, aa2i, i2aa, log2, fast_log2, ScopID, WriteToScreen,
-#include "hhmatrices.C"  // BLOSUM50, GONNET, HSDM
+#include "hhmatrices.cpp"  // BLOSUM50, GONNET, HSDM
 
-#include "hhhmm.h"       // class Hit
+#include "hhhmm.h"       // class HMM
 #include "hhhit.h"       // class Hit
 #include "hhalignment.h" // class Alignment
 #include "hhhalfalignment.h" // class HalfAlignment
 #include "hhfullalignment.h" // class FullAlignment
 #include "hhhitlist.h"   // class Hit
 
-#include "hhhmm.C"       // class HMM
-#include "hhalignment.C" // class Alignment
-#include "hhhit.C"       // class Hit
-#include "hhhalfalignment.C" // class HalfAlignment
-#include "hhfullalignment.C" // class FullAlignment
-#include "hhhitlist.C"   // class HitList
-#include "hhfunc.C"      // some functions common to hh programs
+#include "hhfunc.cpp"      // some functions common to hh programs
 
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -138,6 +107,8 @@ int jobs_running;         // number of active jobs, i.e. number of bins set to R
 int jobs_submitted;       // number of submitted jobs, i.e. number of bins set to SUBMITTED
 char reading_dbs;         // 1: still HMMs to read in a database;  0: finshed reading all HMMs, no db left
 const char DEBUG_THREADS=0; // Debugging flag
+
+Early_Stopping* early_stopping = NULL;
 
 HMM* q = new HMM;         // Create query HMM with maximum of par.maxres match states
 HMM* t[MAXBINS];          // Each bin has a template HMM allocated that was read from the database file
@@ -188,7 +159,7 @@ inline int PickBin(char status)
 }
 
 // Include hhworker.C here, because it needs some of the above variables
-#include "hhworker.C"      // functions: AlignByWorker, RealignByWorker, WorkerLoop
+#include "hhworker.cpp"      // functions: AlignByWorker, RealignByWorker, WorkerLoop
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Help functions
