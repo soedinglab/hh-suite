@@ -381,19 +381,16 @@ void help(char all = 0) {
     printf(
         "Prefilter options                                                               \n");
     printf(
-        " -noprefilt                disable all filter steps                                        \n");
+        " -noprefilt     disable all filter steps                                        \n");
     printf(
-        " -noaddfilter              disable all filter steps (except for fast prefiltering)         \n");
+        " -noaddfilter   disable all filter steps (except for fast prefiltering)         \n");
     printf(
-        " -nodbfilter               disable additional filtering of prefiltered HMMs                \n");
+        " -nodbfilter    disable additional filtering of prefiltered HMMs                \n");
     printf(
-        " -noblockfilter            search complete matrix in Viterbi                               \n");
+        " -noblockfilter search complete matrix in Viterbi                               \n");
     printf(
-        " -maxfilt                  max number of hits allowed to pass 2nd prefilter (default=%i)   \n",
+        " -maxfilt       max number of hits allowed to pass 2nd prefilter (default=%i)  \n",
         par.maxnumdb);
-    printf(
-        " -min_prefilter_hits       min number of hits to pass prefilter (default=%i)               \n",
-        par.min_prefilter_hits);
     printf("\n");
   }
   printf(
@@ -461,8 +458,6 @@ void help(char all = 0) {
     printf(
         " -ssw [0,1]     weight of ss score  (def=%-.2f)                                  \n",
         par.ssw);
-    printf(
-        " -wg            use global sequence weighting for realignment!                   \n");
     printf("\n");
     printf(
         "Gap cost options:                                                                \n");
@@ -1016,7 +1011,7 @@ void ProcessArguments(int argc, char** argv) {
       early_stopping->length = atoi(argv[++i]);
     else if (!strcmp(argv[i], "-filtercut") && (i < argc - 1))
       early_stopping->thresh = (double) atof(argv[++i]);
-    else if (!strcmp(argv[i], "-noprefilt")) {
+    else if (!strcmp(argv[i], "-noprefilt") || !strcmp(argv[i], "-nofilter")) {
       par.prefilter = false;
       already_seen_filter = false;
       par.early_stopping_filter = false;
@@ -1035,8 +1030,6 @@ void ProcessArguments(int argc, char** argv) {
     }
     else if (!strcmp(argv[i], "-maxfilt") && (i < argc - 1))
       par.maxnumdb = par.maxnumdb_no_prefilter = atoi(argv[++i]);
-    else if (!strcmp(argv[i], "-min_prefilter_hits") && (i < argc - 1))
-      par.min_prefilter_hits = atoi(argv[++i]);
     else if (!strcmp(argv[i], "-prepre_smax_thresh") && (i < argc - 1))
       par.preprefilter_smax_thresh = atoi(argv[++i]);
     else if (!strcmp(argv[i], "-pre_evalue_thresh") && (i < argc - 1))
@@ -1059,9 +1052,6 @@ void ProcessArguments(int argc, char** argv) {
       par.ssm = atoi(argv[++i]);
     else if (!strcmp(argv[i], "-ssw") && (i < argc - 1))
       par.ssw = atof(argv[++i]);
-    else if (!strcmp(argv[i], "-wg")) {
-      par.wg = 1;
-    }
     else if (!strcmp(argv[i], "-maxres") && (i < argc - 1)) {
       par.maxres = atoi(argv[++i]);
       par.maxcol = 2 * par.maxres;
@@ -1330,8 +1320,7 @@ void DoViterbiSearch(char *dbfiles[], int ndb, bool alignByWorker = true) {
         tali.Compress(dbfiles[idb]);
 
         tali.N_filtered = tali.Filter(par.max_seqid_db, par.coverage_db,
-		  par.qid_db, par.qsc_db, par.Ndiff_db);
-
+            par.qid_db, par.qsc_db, par.Ndiff_db);
         char wg = par.wg;
         par.wg = 1; // use global weights
         t[bin]->name[0] = t[bin]->longname[0] = t[bin]->fam[0] = '\0';
@@ -1395,10 +1384,9 @@ void DoViterbiSearch(char *dbfiles[], int ndb, bool alignByWorker = true) {
           Alignment tali;
           tali.Read(dbf, dbfiles[idb], line);
           tali.Compress(dbfiles[idb]);
-
+          //              qali.FilterForDisplay(par.max_seqid,par.coverage,par.qid,par.qsc,par.nseqdis);
           tali.N_filtered = tali.Filter(par.max_seqid_db, par.coverage_db,
               par.qid_db, par.qsc_db, par.Ndiff_db);
-
           char wg = par.wg;
           par.wg = 1; // use global weights
           t[bin]->name[0] = t[bin]->longname[0] = t[bin]->fam[0] = '\0';
@@ -1894,10 +1882,9 @@ void perform_realign(char *dbfiles[], int ndb) {
             dbuniprot_header_data);
 
         tali.Compress(hit_cur.dbfile);
-
+        // qali.FilterForDisplay(par.max_seqid,par.coverage,par.qid,par.qsc,par.nseqdis);
         tali.N_filtered = tali.Filter(par.max_seqid_db, par.coverage_db,
             par.qid_db, par.qsc_db, par.Ndiff_db);
-
         t[bin]->name[0] = t[bin]->longname[0] = t[bin]->fam[0] = '\0';
         tali.FrequenciesAndTransitions(t[bin]);
         format[bin] = 0;
@@ -1939,10 +1926,9 @@ void perform_realign(char *dbfiles[], int ndb) {
           Alignment tali;
           tali.Read(dbf, hit_cur.dbfile, line);
           tali.Compress(hit_cur.dbfile);
-
+          //              qali.FilterForDisplay(par.max_seqid,par.coverage,par.qid,par.qsc,par.nseqdis);
           tali.N_filtered = tali.Filter(par.max_seqid_db, par.coverage_db,
               par.qid_db, par.qsc_db, par.Ndiff_db);
-
           t[bin]->name[0] = t[bin]->longname[0] = t[bin]->fam[0] = '\0';
           tali.FrequenciesAndTransitions(t[bin]);
           format[bin] = 0;
@@ -2055,11 +2041,24 @@ void perform_realign(char *dbfiles[], int ndb) {
       Tali.Compress(hit[bin]->dbfile); // Filter database alignment
       if (par.allseqs) // need to keep *all* sequences in Qali_allseqs? => merge before filtering
         Qali_allseqs.MergeMasterSlave(*hit[bin], Tali, hit[bin]->dbfile);
-
       Tali.N_filtered = Tali.Filter(par.max_seqid_db, par.coverage_db,
           par.qid_db, par.qsc_db, par.Ndiff_db);
-
       Qali.MergeMasterSlave(*hit[bin], Tali, hit[bin]->dbfile);
+
+      // //?????????????????????????????
+      // // JS: Reading the db MSA twice for par.all seems pretty inefficient!!!!!!!!!!!
+      // FILE* ta3mf;
+      // ta3mf = ffindex_fopen(dba3m_data, dba3m_index, ta3mfile);
+      // if (ta3mf == NULL) OpenFileError(ta3mfile);
+      // Qali.MergeMasterSlave(*hit[bin],ta3mfile, ta3mf);
+      // fclose(ta3mf);
+      // if (par.allseqs)
+      //   {
+      //     ta3mf = ffindex_fopen(dba3m_data, dba3m_index, ta3mfile);
+      //     Qali_allseqs.MergeMasterSlave(*hit[bin],ta3mfile, ta3mf, false); // filter db MSA = false
+      //     fclose(ta3mf);
+      //   }
+      // //?????????????????????????????
 
       // Convert ASCII to int (0-20),throw out all insert states, record their number in I[k][i]
       Qali.Compress("merged A3M file");
@@ -2208,10 +2207,9 @@ void perform_realign(char *dbfiles[], int ndb) {
               dbuniprot_header_data);
 
           tali.Compress(dbfiles[idb]);
-
+          // qali.FilterForDisplay(par.max_seqid,par.coverage,par.qid,par.qsc,par.nseqdis);
           tali.N_filtered = tali.Filter(par.max_seqid_db, par.coverage_db,
               par.qid_db, par.qsc_db, par.Ndiff_db);
-
           t[bin]->name[0] = t[bin]->longname[0] = t[bin]->fam[0] = '\0';
           tali.FrequenciesAndTransitions(t[bin]);
           format[bin] = 0;
@@ -2256,10 +2254,9 @@ void perform_realign(char *dbfiles[], int ndb) {
             Alignment tali;
             tali.Read(dbf, dbfiles[idb], line);
             tali.Compress(dbfiles[idb]);
-
+            // qali.FilterForDisplay(par.max_seqid,par.coverage,par.qid,par.qsc,par.nseqdis);
             tali.N_filtered = tali.Filter(par.max_seqid_db, par.coverage_db,
                 par.qid_db, par.qsc_db, par.Ndiff_db);
-
             t[bin]->name[0] = t[bin]->longname[0] = t[bin]->fam[0] = '\0';
             tali.FrequenciesAndTransitions(t[bin]);
             format[bin] = 0;
@@ -3537,6 +3534,21 @@ int main(int argc, char **argv) {
           Tali.N_filtered = Tali.Filter(par.max_seqid_db, par.coverage_db,
               par.qid_db, par.qsc_db, par.Ndiff_db);
           Qali.MergeMasterSlave(hit_cur, Tali, hit_cur.dbfile);
+
+          // //?????????????????????????????
+          // // JS: Reading the db MSA twice for par.all seems pretty inefficient!!!!!!!!!!!
+          // FILE* ta3mf;
+          // ta3mf = ffindex_fopen(dba3m_data, dba3m_index, ta3mfile);
+          // if (ta3mf == NULL) OpenFileError(ta3mfile);
+          // Qali.MergeMasterSlave(hit_cur,ta3mfile, ta3mf);
+          // fclose(ta3mf);
+          // if (par.allseqs)
+          //   {
+          //     ta3mf = ffindex_fopen(dba3m_data, dba3m_index, ta3mfile);
+          //     Qali_allseqs.MergeMasterSlave(hit_cur,ta3mfile, ta3mf, false); // filter db MSA = false
+          //     fclose(ta3mf);
+          //   }
+          // //?????????????????????????????
 
           if (Qali.N_in >= MAXSEQ)
             break; // Maximum number of sequences reached

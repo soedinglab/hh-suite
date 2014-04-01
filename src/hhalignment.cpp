@@ -1476,47 +1476,6 @@ int Alignment::Filter(int max_seqid, int coverage, int qid, float qsc,
   return Filter2(keep, coverage, qid, qsc, 20, max_seqid, N);
 }
 
-void Alignment::determineSequenceStartsAndEnds() {
-  // Determine first[k], last[k]
-  if (first == NULL) {
-    first = new int[N_in];             // first non-gap position in sequence k
-    last = new int[N_in];              // last  non-gap position in sequence k
-
-    for (int k = 0; k < N_in; ++k) {
-      int i;
-      for (i = 1; i <= L; ++i)
-        if (X[k][i] < NAA)
-          break;
-      first[k] = i;
-      for (int i = L; i >= 1; i--)
-        if (X[k][i] < NAA)
-          break;
-      last[k] = i;
-    }
-  }
-}
-
-void Alignment::determineNumberOfResiduesPerSequence() {
-  if(sizeof(nres) < N_in * sizeof(int)) {
-    delete[] nres;
-    nres = NULL;
-  }
-
-  // Determine number of residues nres[k]
-  if (nres == NULL) {
-    nres = new int[N_in];
-    for (int k = 0; k < N_in; ++k) {
-      int nr = 0;
-      for (int i = first[k]; i <= last[k]; ++i)
-        if (X[k][i] < NAA)
-          nr++;
-      nres[k] = nr;
-      if (nr == 0)
-        keep[k] = 0;
-    }
-  }
-}
-
 /////////////////////////////////////////////////////////////////////////////////////
 // Select set of representative sequences in the multiple sequence alignment
 // Filter criteria:
@@ -1577,8 +1536,40 @@ int Alignment::Filter2(char keep[], int coverage, int qid, float qsc,
       in[k] = 0;
   }
 
-  determineSequenceStartsAndEnds();
-  determineNumberOfResiduesPerSequence();
+  // Determine first[k], last[k]?
+  if (first == NULL) {
+    first = new (int[N_in]);             // first non-gap position in sequence k
+    last = new (int[N_in]);              // last  non-gap position in sequence k
+    for (k = 0; k < N_in; ++k) // do this for ALL sequences, not only those with in[k]==1 (since in[k] may be display[k])
+        {
+      for (i = 1; i <= L; ++i)
+        if (X[k][i] < NAA)
+          break;
+      first[k] = i;
+      for (i = L; i >= 1; i--)
+        if (X[k][i] < NAA)
+          break;
+      last[k] = i;
+    }
+  }
+
+  // Determine number of residues nres[k]?
+  if (nres == NULL || sizeof(nres) < N_in * sizeof(int)) {
+    if (nres)
+      delete[] nres;
+    nres = new (int[N_in]);
+    for (k = 0; k < N_in; ++k) // do this for ALL sequences, not only those with in[k]==1 (since in[k] may be display[k])
+        {
+      int nr = 0;
+      for (i = first[k]; i <= last[k]; ++i)
+        if (X[k][i] < NAA)
+          nr++;
+      nres[k] = nr;
+      //printf("%20.20s nres=%3i  first=%3i  last=%3i\n",sname[k],nr,first[k],last[k]);
+      if (nr == 0)
+        keep[k] = 0;
+    }
+  }
 
   // Sort sequences according to length; afterwards, nres[ksort[kk]] is sorted by size
   if (ksort == NULL) {
@@ -1864,8 +1855,36 @@ int Alignment::FilterWithCoreHMM(char in[], float coresc, HMM* qcore) {
   for (i = 1; i <= L; ++i)
     logodds[i] = new float[21];
 
-  determineSequenceStartsAndEnds();
-  determineNumberOfResiduesPerSequence();
+  // Determine first[k], last[k]?
+  if (first == NULL) {
+    first = new (int[N_in]); // first non-gap position in sequence k
+    last = new (int[N_in]); // last  non-gap position in sequence k
+    for (k = 0; k < N_in; ++k) // do this for ALL sequences, not only those with in[k]==1 (since in[k] may be display[k])
+        {
+      for (i = 1; i <= L; ++i)
+        if (X[k][i] < NAA)
+          break;
+      first[k] = i;
+      for (i = L; i >= 1; i--)
+        if (X[k][i] < NAA)
+          break;
+      last[k] = i;
+    }
+  }
+
+  // Determine number of residues nres[k]?
+  if (nres == NULL) {
+    nres = new (int[N_in]);
+    for (k = 0; k < N_in; ++k) // do this for ALL sequences, not only those with in[k]==1 (since in[k] may be display[k])
+        {
+      int nr = 0;
+      for (i = first[k]; i <= last[k]; ++i)
+        if (X[k][i] < NAA)
+          nr++;
+      nres[k] = nr;
+      //    printf("%20.20s nres=%3i  first=%3i  last=%3i\n",sname[k],nr,f,l);
+    }
+  }
 
   // Precalculate the log-odds for qcore
   for (i = 1; i <= L; ++i) {
@@ -2088,7 +2107,6 @@ void Alignment::FrequenciesAndTransitions(HMM* q, char* in, bool time) {
       X[k][L + 1] = ENDGAP;  // does it have an influence?
 
     Amino_acid_frequencies_and_transitions_from_M_state(q, in); // use subalignments of seqs with residue in i
-
     Transitions_from_I_state(q, in); // use subalignments of seqs with insert in i
     Transitions_from_D_state(q, in); // use subalignments of seqs with delete in i. Must be last of these three calls if par.wg==1!
     //if (time) { ElapsedTimeSinceLastCall("Do pos-specific sequence weighting and calculate amino acid frequencies and transitions"); }
@@ -2346,12 +2364,12 @@ void Alignment::FrequenciesAndTransitions(HMM* q, char* in, bool time) {
   return;
 }
 
-
 /////////////////////////////////////////////////////////////////////////////////////
 // Calculate freqs q->f[i][a] and transitions q->tr[i][a] (a=MM,MI,MD) with pos-specific subalignments
 // Pos-specific weights are calculated like in "GetPositionSpecificWeights()"
 /////////////////////////////////////////////////////////////////////////////////////
-void Alignment::Amino_acid_frequencies_and_transitions_from_M_state(HMM* q, char* in) {
+void Alignment::Amino_acid_frequencies_and_transitions_from_M_state(HMM* q,
+    char* in) {
   // Calculate position-dependent weights wi[k] for each i.
   // For calculation of weights in column i use sub-alignment
   // over sequences which have a *residue* in column i (no gap, no end gap)
@@ -2398,6 +2416,7 @@ void Alignment::Amino_acid_frequencies_and_transitions_from_M_state(HMM* q, char
       {
 
     if (par.wg == 0) {
+
       change = 0;
       // Check all sequences k and update n[j][a] and ri[j] if necessary
       for (k = 0; k < N_in; ++k) {
@@ -2471,9 +2490,10 @@ void Alignment::Amino_acid_frequencies_and_transitions_from_M_state(HMM* q, char
               Neff[i] -= fj[a] * fast_log2(fj[a]);
         }
         if (ncol > 0)
-          Neff[i] = fpow2(Neff[i] / ncol);
+          Neff[i] = pow(2.0, Neff[i] / ncol);
         else
           Neff[i] = 1.0;
+
       }
 
       else //no update was necessary; copy values for i-1
@@ -2509,9 +2529,9 @@ void Alignment::Amino_acid_frequencies_and_transitions_from_M_state(HMM* q, char
     } // end for(k)
     // Normalize and take log
     sum = q->tr[i][M2M] + q->tr[i][M2I] + q->tr[i][M2D] + FLT_MIN;
-    q->tr[i][M2M] = fast_log2(q->tr[i][M2M] / sum);
-    q->tr[i][M2I] = fast_log2(q->tr[i][M2I] / sum);
-    q->tr[i][M2D] = fast_log2(q->tr[i][M2D] / sum);
+    q->tr[i][M2M] = log2(q->tr[i][M2M] / sum);
+    q->tr[i][M2I] = log2(q->tr[i][M2I] / sum);
+    q->tr[i][M2D] = log2(q->tr[i][M2D] / sum);
 
 //       for (k=0; k<N_in; ++k) if (in[k]) w[k][i]=wi[k];
   }
@@ -2542,11 +2562,11 @@ void Alignment::Amino_acid_frequencies_and_transitions_from_M_state(HMM* q, char
       for (a = 0; a < 20; ++a)
         if (q->f[i][a] > 1E-10)
           sum -= q->f[i][a] * fast_log2(q->f[i][a]);
-      q->Neff_HMM += fpow2(sum);
+      q->Neff_HMM += pow(2.0, sum);
     }
     q->Neff_HMM /= L;
     float Nlim = fmax(10.0, q->Neff_HMM + 1.0);    // limiting Neff
-    float scale = fast_log2((Nlim - q->Neff_HMM) / (Nlim - 1.0)); // for calculating Neff for those seqs with inserts at specific pos
+    float scale = log2((Nlim - q->Neff_HMM) / (Nlim - 1.0)); // for calculating Neff for those seqs with inserts at specific pos
     for (i = 1; i <= L; ++i) {
       float w_M = -1.0 / N_filtered;
       for (k = 0; k < N_in; ++k)
@@ -2572,7 +2592,6 @@ void Alignment::Amino_acid_frequencies_and_transitions_from_M_state(HMM* q, char
   
   return;
 }
-
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Calculate transitions q->tr[i][a] (a=DM,DD) with pos-specific subalignments

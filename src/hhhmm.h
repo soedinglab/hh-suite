@@ -114,9 +114,6 @@ public:
     // Rescale rate matrices P[a][b], R[a][b] according to HMM av. aa composition in pav[a]
     void RescaleMatrix();
 
-    void reset_aa_frequencies();
-    void reset_transistion_probabilities();
-
     // Needed for SSE2 prefiltering with HHblits with amino acid alphabet
     float** p;                // p[i][a] = prob of finding amino acid a in column i WITH OPTIMUM pseudocounts
     float pav[NAA];           // pav[a] = average freq of amino acids in HMM (including subst matrix pseudocounts)
