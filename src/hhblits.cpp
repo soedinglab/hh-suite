@@ -1248,6 +1248,130 @@ void ReadQueryA3MFile() {
   }
 }
 
+void getTemplateA3M(char* entry_name, long& ftellpos, Alignment& tali) {
+  if(use_compressed_a3m) {
+    ffindex_entry_t* entry = ffindex_get_entry_by_name(dbca3m_index, entry_name);
+
+    if (entry == NULL) {
+      std::cerr << "Could not fetch entry for a3m " << entry_name << "!" << std::endl;
+      exit(4);
+    }
+
+    char* data = ffindex_get_data_by_entry(dbca3m_data, entry);
+
+    if (data == NULL) {
+      std::cerr << "Could not fetch data for a3m " << entry_name << "!" << std::endl;
+      exit(4);
+    }
+
+    ftellpos = entry->offset;
+    tali.ReadCompressed(entry, data, dbuniprot_sequence_index,
+        dbuniprot_sequence_data, dbuniprot_header_index,
+        dbuniprot_header_data);
+  }
+  else {
+    FILE* dbf = ffindex_fopen_by_name(dba3m_data, dba3m_index, entry_name);
+
+    if (dbf == NULL) {
+      cerr << endl << "Error: opening A3M " << entry_name << std::endl;
+      if (dba3m_index_file == NULL) {
+        cerr << endl << "Error: A3M database missing" << std::endl;
+      }
+      exit(4);
+    }
+
+    ftellpos = ftell(dbf);
+
+    if (!fgetline(line, LINELEN, dbf)) {
+      std::cerr << "this should not happen!" << std::endl;
+      //TODO: throw error
+    }
+
+    while (strscn(line) == NULL)
+      fgetline(line, LINELEN, dbf); // skip lines that contain only white space
+
+    tali.Read(dbf, entry_name, line);
+    fclose(dbf);
+  }
+
+  tali.Compress(entry_name);
+}
+
+void getTemplateA3M(char* entry_name, char use_global_weights, long& ftellpos, int& format, HMM* t) {
+  Alignment tali;
+  getTemplateA3M(entry_name, ftellpos, tali);
+  tali.N_filtered = tali.Filter(par.max_seqid_db, par.coverage_db,
+      par.qid_db, par.qsc_db, par.Ndiff_db);
+  t->name[0] = t->longname[0] = t->fam[0] = '\0';
+  tali.FrequenciesAndTransitions(t, use_global_weights);
+
+  format = 0;
+}
+
+void getTemplateHMM(char* entry_name, char use_global_weights, long& ftellpos, int& format, HMM* t) {
+  if (!use_compressed_a3m) {
+    FILE* dbf = ffindex_fopen_by_name(dbhhm_data, dbhhm_index, entry_name);
+
+    if(dbf != NULL) {
+      ftellpos = ftell(dbf); // record position in dbfile of next HMM to be read
+
+      if (!fgetline(line, LINELEN, dbf)) {
+        std::cerr << "this should not happen!" << std::endl;
+        //TODO: throw error
+      }
+
+      while (strscn(line) == NULL)
+        fgetline(line, LINELEN, dbf); // skip lines that contain only white space
+
+      if (!strncmp(line, "HMMER3", 6))      // read HMMER3 format
+          {
+        format = 1;
+        t->ReadHMMer3(dbf, entry_name);
+        par.hmmer_used = true;
+      }
+      else if (!strncmp(line, "HMMER", 5))      // read HMMER format
+          {
+        format = 1;
+        t->ReadHMMer(dbf, entry_name);
+        par.hmmer_used = true;
+      }
+      else if (!strncmp(line, "HH", 2))    // read HHM format
+      {
+        char path[NAMELEN];
+        Pathname(path, entry_name);
+
+        format = 0;
+        t->Read(dbf, path);
+      }
+  //    else if (!strncmp(line, "NAME", 4)) // The following lines are for backward compatibility of HHM format version 1.2 with 1.1
+  //    {
+  //      char path[NAMELEN];
+  //      Pathname(path, dbfiles[idb]);
+  //
+  //      fseek(dbf, hit[bin]->ftellpos, SEEK_SET); // rewind to beginning of line
+  //      format = 0;
+  //      t->Read(dbf, path);
+  //    }
+      else {
+        cerr << endl << "Error in " << program_name
+            << ": unrecognized HMM file format in \'" << entry_name
+            << "\'. \n";
+        cerr << "Context:\n'" << line << "\n";
+        fgetline(line, LINELEN, dbf);
+        cerr << line << "\n";
+        fgetline(line, LINELEN, dbf);
+        cerr << line << "'\n";
+        exit(1);
+      }
+
+      fclose(dbf);
+      return;
+    }
+  }
+
+  getTemplateA3M(entry_name, use_global_weights, ftellpos, format, t);
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Perform Viterbi HMM-HMM search on all db HMM names in dbfiles
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1277,9 +1401,6 @@ void DoViterbiSearch(char *dbfiles[], int ndb, bool alignByWorker = true) {
       break;
     }
 
-    // Open HMM database
-    FILE* dbf = NULL;
-
     // Submit jobs if bin is free
     if (jobs_submitted + jobs_running < bins) {
 
@@ -1296,117 +1417,7 @@ void DoViterbiSearch(char *dbfiles[], int ndb, bool alignByWorker = true) {
       }
       hit[bin]->index = N_searched;          // give hit a unique index for HMM
 
-      char path[NAMELEN];
-      Pathname(path, dbfiles[idb]);
-
-      ///////////////////////////////////////////////////
-      // Read next HMM from database file
-      if (use_compressed_a3m) {
-        ffindex_entry_t* entry = ffindex_get_entry_by_name(dbca3m_index, dbfiles[idb]);
-
-        if (entry == NULL) {
-          std::cerr << "Could not fetch entry for a3m " << dbfiles[idb] << "!" << std::endl;
-          continue;
-        }
-
-        char* data = ffindex_get_data_by_entry(dbca3m_data, entry);
-
-        if (data == NULL) {
-          std::cerr << "Could not fetch data for a3m " << dbfiles[idb] << "!" << std::endl;
-          continue;
-        }
-
-    	hit[bin]->ftellpos = entry->offset;
-        Alignment tali;
-        tali.ReadCompressed(entry, data, dbuniprot_sequence_index,
-            dbuniprot_sequence_data, dbuniprot_header_index,
-            dbuniprot_header_data);
-
-        tali.Compress(dbfiles[idb]);
-
-        tali.N_filtered = tali.Filter(par.max_seqid_db, par.coverage_db,
-            par.qid_db, par.qsc_db, par.Ndiff_db);
-        t[bin]->name[0] = t[bin]->longname[0] = t[bin]->fam[0] = '\0';
-        //TODO: forced global weights
-        tali.FrequenciesAndTransitions(t[bin], 1);
-        format[bin] = 0;
-      }
-      else {
-        dbf = ffindex_fopen_by_name(dbhhm_data, dbhhm_index, dbfiles[idb]);
-        if (dbf == NULL) {
-          if (dba3m_index_file == NULL) {
-            cerr << endl << "Error opening " << dbfiles[idb] << ": A3M database missing\n";
-            exit(4);
-          }
-          dbf = ffindex_fopen_by_name(dba3m_data, dba3m_index, dbfiles[idb]);
-          if (dbf == NULL) {
-            if (dbhhm_index_file == NULL) {
-              cerr << endl << "Error opening " << dbfiles[idb] << ": HHM database missing\n";
-              exit(4);
-            }
-            dbf = ffindex_fopen_by_name(dbhhm_data, dbhhm_index, dbfiles[idb]);
-            if (dbf == NULL)
-              OpenFileError(dbfiles[idb]);
-          }
-        }
-
-        hit[bin]->ftellpos = ftell(dbf); // record position in dbfile of next HMM to be read
-
-        if (!fgetline(line, LINELEN, dbf)) {
-          continue;
-        }
-
-        while (strscn(line) == NULL)
-          fgetline(line, LINELEN, dbf); // skip lines that contain only white space
-
-        if (!strncmp(line, "HMMER3", 6))      // read HMMER3 format
-            {
-          format[bin] = 1;
-          t[bin]->ReadHMMer3(dbf, dbfiles[idb]);
-          par.hmmer_used = true;
-        }
-        else if (!strncmp(line, "HMMER", 5))      // read HMMER format
-            {
-          format[bin] = 1;
-          t[bin]->ReadHMMer(dbf, dbfiles[idb]);
-          par.hmmer_used = true;
-        }
-        else if (!strncmp(line, "HH", 2))    // read HHM format
-            {
-          format[bin] = 0;
-          t[bin]->Read(dbf, path);
-        }
-        else if (!strncmp(line, "NAME", 4)) // The following lines are for backward compatibility of HHM format version 1.2 with 1.1
-            {
-          fseek(dbf, hit[bin]->ftellpos, SEEK_SET); // rewind to beginning of line
-          format[bin] = 0;
-          t[bin]->Read(dbf, path);
-        }
-        else if (line[0] == '#' || line[0] == '>')         // read a3m alignment
-        {
-          Alignment tali;
-          tali.Read(dbf, dbfiles[idb], line);
-          tali.Compress(dbfiles[idb]);
-          //              qali.FilterForDisplay(par.max_seqid,par.coverage,par.qid,par.qsc,par.nseqdis);
-          tali.N_filtered = tali.Filter(par.max_seqid_db, par.coverage_db,
-              par.qid_db, par.qsc_db, par.Ndiff_db);
-          t[bin]->name[0] = t[bin]->longname[0] = t[bin]->fam[0] = '\0';
-          //TODO: forced global weights
-          tali.FrequenciesAndTransitions(t[bin], 1);
-          format[bin] = 0;
-        }
-        else {
-          cerr << endl << "Error in " << program_name
-              << ": unrecognized HMM file format in \'" << dbfiles[idb]
-              << "\'. \n";
-          cerr << "Context:\n'" << line << "\n";
-          fgetline(line, LINELEN, dbf);
-          cerr << line << "\n";
-          fgetline(line, LINELEN, dbf);
-          cerr << line << "'\n";
-          exit(1);
-        }
-      }
+      getTemplateHMM(dbfiles[idb], 1, hit[bin]->ftellpos, format[bin], t[bin]);
 
       if (v >= 4)
         printf("Aligning with %s\n", t[bin]->name);
@@ -1490,9 +1501,6 @@ void DoViterbiSearch(char *dbfiles[], int ndb, bool alignByWorker = true) {
       rc = pthread_mutex_unlock(&bin_status_mutex);
     }
 #endif
-
-    if(dbf != NULL && !use_compressed_a3m)
-      fclose(dbf);
   }
 
   // Finished searching all database HHMs
@@ -1578,7 +1586,6 @@ void ViterbiSearch(char *dbfiles[], int ndb, int db_size) {
   // Calculate E-values as combination of P-value for Viterbi HMM-HMM comparison and prefilter E-value: E = Ndb P (Epre/Ndb)^alpha
   if (par.prefilter)
     hitlist.CalculateHHblitsEvalues(q);
-
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1827,133 +1834,13 @@ void perform_realign(char *dbfiles[], int ndb) {
       if (hit_cur.L > Lmaxmem)
         continue;  // Don't align too long sequences due to memory limit
 
-      // Open HMM database file dbfiles[idb]
-      FILE* dbf = NULL;
-      if (!use_compressed_a3m) {
-        dbf = ffindex_fopen_by_name(dbhhm_data, dbhhm_index, hit_cur.dbfile);
-        if (dbf == NULL) {
-          if (dba3m_index_file != NULL) {
-            dbf = ffindex_fopen_by_name(dba3m_data, dba3m_index, hit_cur.dbfile);
-          }
-          else {
-            cerr << endl << "Error opening " << hit_cur.dbfile
-                << ": A3M database missing\n";
-            exit(4);
-          }
-        }
-
-        if (dbf == NULL)
-          OpenFileError(hit_cur.dbfile);
-      }
-
-      read_from_db = 1;
-
       // Forward stream position to start of next database HMM to be realigned
       hit[bin]->index = hit_cur.index; // give hit a unique index for HMM
-      hit[bin]->ftellpos = hit_cur.ftellpos;
-		if(!use_compressed_a3m) {
-      	fseek(dbf, hit_cur.ftellpos, SEEK_SET);
-		}
       hit[bin]->dbfile = new char[strlen(hit_cur.dbfile) + 1];
       strcpy(hit[bin]->dbfile, hit_cur.dbfile); // record db file name from which next HMM is read
       hit[bin]->irep = 1; // Needed for min_overlap calculation in InitializeForAlignment in hhhit.C
 
-      char path[NAMELEN];
-      Pathname(path, hit_cur.dbfile);
-
-      ///////////////////////////////////////////////////
-      // Read next HMM from database file
-
-      if (use_compressed_a3m) {
-        ffindex_entry_t* entry = ffindex_get_entry_by_name(dbca3m_index, hit_cur.dbfile);
-
-        if (entry == NULL) {
-          OpenFileError(hit_cur.dbfile);
-        }
-
-        char* data = ffindex_get_data_by_entry(dbca3m_data, entry);
-
-        if (data == NULL) {
-          OpenFileError(entry->name);
-        }
-
-        Alignment tali;
-        tali.ReadCompressed(entry, data, dbuniprot_sequence_index,
-            dbuniprot_sequence_data, dbuniprot_header_index,
-            dbuniprot_header_data);
-
-        tali.Compress(hit_cur.dbfile);
-        // qali.FilterForDisplay(par.max_seqid,par.coverage,par.qid,par.qsc,par.nseqdis);
-        tali.N_filtered = tali.Filter(par.max_seqid_db, par.coverage_db,
-            par.qid_db, par.qsc_db, par.Ndiff_db);
-        t[bin]->name[0] = t[bin]->longname[0] = t[bin]->fam[0] = '\0';
-        tali.FrequenciesAndTransitions(t[bin], par.wg);
-        format[bin] = 0;
-      }
-      else {
-        if (!fgetline(line, LINELEN, dbf)) {
-          fprintf(stderr, "Error in %s: end of file %s reached prematurely!\n",
-              par.argv[0], hit_cur.dbfile);
-          exit(1);
-        }
-        while (strscn(line) == NULL && fgetline(line, LINELEN, dbf)) {
-        } // skip lines that contain only white space
-
-        if (!strncmp(line, "HMMER3", 5))      // read HMMER3 format
-            {
-          format[bin] = 1;
-          read_from_db = t[bin]->ReadHMMer3(dbf, hit_cur.dbfile);
-          par.hmmer_used = true;
-        }
-        else if (!strncmp(line, "HMMER", 5))      // read HMMER format
-            {
-          format[bin] = 1;
-          read_from_db = t[bin]->ReadHMMer(dbf, hit_cur.dbfile);
-          par.hmmer_used = true;
-        }
-        else if (!strncmp(line, "HH", 2))     // read HHM format
-            {
-          format[bin] = 0;
-          read_from_db = t[bin]->Read(dbf, path);
-        }
-        else if (!strncmp(line, "NAME", 4)) // The following lines are for backward compatibility of HHM format version 1.2 with 1.1
-            {
-          format[bin] = 0;
-          fseek(dbf, hit_cur.ftellpos, SEEK_SET); // rewind to beginning of line
-          read_from_db = t[bin]->Read(dbf, path);
-        }
-        else if (line[0] == '#' || line[0] == '>')           // read a3m alignment
-            {
-          Alignment tali;
-          tali.Read(dbf, hit_cur.dbfile, line);
-          tali.Compress(hit_cur.dbfile);
-          //              qali.FilterForDisplay(par.max_seqid,par.coverage,par.qid,par.qsc,par.nseqdis);
-          tali.N_filtered = tali.Filter(par.max_seqid_db, par.coverage_db,
-              par.qid_db, par.qsc_db, par.Ndiff_db);
-          t[bin]->name[0] = t[bin]->longname[0] = t[bin]->fam[0] = '\0';
-          tali.FrequenciesAndTransitions(t[bin], par.wg);
-          format[bin] = 0;
-        }
-        else {
-          cerr << endl << "Error in " << program_name
-              << ": unrecognized HMM file format in \'" << hit_cur.dbfile
-              << "\'. \n";
-          cerr << "Context:\n'" << line << "\n";
-          fgetline(line, LINELEN, dbf);
-          cerr << line << "\n";
-          fgetline(line, LINELEN, dbf);
-          cerr << line << "'\n";
-          exit(1);
-        }
-        fclose(dbf);
-      }
-
-      if (read_from_db != 1) {
-        cerr << "Error in " << par.argv[0] << ": wrong format while reading \'"
-            << hit_cur.dbfile << ". Reached end of file while reading HMM "
-            << hit_cur.name << " \n";
-        exit(1);
-      }
+      getTemplateHMM(hit_cur.dbfile, par.wg, hit[bin]->ftellpos, format[bin], t[bin]);
 
       if (v >= 2)
         fprintf(stderr, "Realigning with %s ***** \n", t[bin]->name);
@@ -2013,53 +1900,16 @@ void perform_realign(char *dbfiles[], int ndb) {
       // Read a3m alignment of hit and merge with Qali according to Q-T-alignment in hit[bin]
       // Reading in next db MSA and merging it onto Qali
       Alignment Tali;
-      if(use_compressed_a3m) {
-        ffindex_entry_t* entry = ffindex_get_entry_by_name(dbca3m_index, hit[bin]->dbfile);
+      long ftellpos;
+      getTemplateA3M(hit[bin]->dbfile, ftellpos, Tali);
 
-        if (entry == NULL) {
-          OpenFileError(hit[bin]->dbfile);
-        }
-
-        char* data = ffindex_get_data_by_entry(dbca3m_data, entry);
-
-        if (data == NULL) {
-          OpenFileError(hit[bin]->dbfile);
-        }
-
-        Tali.ReadCompressed(entry, data, dbuniprot_sequence_index,
-            dbuniprot_sequence_data, dbuniprot_header_index,
-            dbuniprot_header_data);
-      }
-      else {
-        FILE* ta3mf;
-        ta3mf = ffindex_fopen_by_name(dba3m_data, dba3m_index, hit[bin]->dbfile);
-        if (ta3mf == NULL)
-          OpenFileError(hit[bin]->dbfile);
-        Tali.Read(ta3mf, hit[bin]->dbfile); // Read template alignment into Tali
-        fclose(ta3mf);
-      }
-
-      Tali.Compress(hit[bin]->dbfile); // Filter database alignment
       if (par.allseqs) // need to keep *all* sequences in Qali_allseqs? => merge before filtering
         Qali_allseqs.MergeMasterSlave(*hit[bin], Tali, hit[bin]->dbfile);
+
       Tali.N_filtered = Tali.Filter(par.max_seqid_db, par.coverage_db,
           par.qid_db, par.qsc_db, par.Ndiff_db);
-      Qali.MergeMasterSlave(*hit[bin], Tali, hit[bin]->dbfile);
 
-      // //?????????????????????????????
-      // // JS: Reading the db MSA twice for par.all seems pretty inefficient!!!!!!!!!!!
-      // FILE* ta3mf;
-      // ta3mf = ffindex_fopen(dba3m_data, dba3m_index, ta3mfile);
-      // if (ta3mf == NULL) OpenFileError(ta3mfile);
-      // Qali.MergeMasterSlave(*hit[bin],ta3mfile, ta3mf);
-      // fclose(ta3mf);
-      // if (par.allseqs)
-      //   {
-      //     ta3mf = ffindex_fopen(dba3m_data, dba3m_index, ta3mfile);
-      //     Qali_allseqs.MergeMasterSlave(*hit[bin],ta3mfile, ta3mf, false); // filter db MSA = false
-      //     fclose(ta3mf);
-      //   }
-      // //?????????????????????????????
+      Qali.MergeMasterSlave(*hit[bin], Tali, hit[bin]->dbfile);
 
       // Convert ASCII to int (0-20),throw out all insert states, record their number in I[k][i]
       Qali.Compress("merged A3M file");
@@ -2099,7 +1949,6 @@ void perform_realign(char *dbfiles[], int ndb) {
       // Transform transition freqs to lin space if not already done
       q->AddTransitionPseudocounts(par.gapd, par.gape, par.gapf, par.gapg, par.gaph, par.gapi, par.gapb);
       q->Log2LinTransitionProbs(1.0); // transform transition freqs to lin space if not already done
-
     }
   }
   
@@ -2132,26 +1981,6 @@ void perform_realign(char *dbfiles[], int ndb) {
     // This list is now sorted by ftellpos in ascending order to access one template after the other efficiently
     phash_plist_realignhitpos->Show(dbfiles[idb])->SortList();
 
-    // Open HMM database file dbfiles[idb]
-    FILE* dbf = NULL;
-
-    if (!use_compressed_a3m) {
-      dbf = ffindex_fopen_by_name(dbhhm_data, dbhhm_index, dbfiles[idb]);
-      if (dbf == NULL) {
-        if (dba3m_index_file != NULL) {
-          dbf = ffindex_fopen_by_name(dba3m_data, dba3m_index, dbfiles[idb]);
-        }
-        else {
-          cerr << endl << "Error opening " << dbfiles[idb]
-              << ": A3M database missing\n";
-          exit(4);
-        }
-      }
-
-      if (dbf == NULL)
-        OpenFileError(dbfiles[idb]);
-    }
-
     read_from_db = 1;
 
     ///////////////////////////////////////////////////////////////////////////////////////
@@ -2177,114 +2006,25 @@ void perform_realign(char *dbfiles[], int ndb) {
         Realign_hitpos hitpos_curr = phash_plist_realignhitpos->Show(
             dbfiles[idb])->ReadNext();
         hit[bin]->index = hitpos_curr.index; // give hit[bin] a unique index for HMM
-        if(!use_compressed_a3m) {
-          fseek(dbf, hitpos_curr.ftellpos, SEEK_SET); // start to read at ftellpos for template
-        }
 
         // Give hit[bin] the pointer to the list of pointers to hitlist elements of same template (for realignment)
         hit[bin]->plist_phits = array_plist_phits[hitpos_curr.index];
 
         // fprintf(stderr,"dbfile=%-40.40s  index=%-5i  ftellpos=%l\n",dbfiles[idb],hitpos_curr.index,hitpos_curr.ftellpos);
 
-        char path[NAMELEN];
-        Pathname(path, dbfiles[idb]);
-
-        if (use_compressed_a3m) {
-          ffindex_entry_t* entry = ffindex_get_entry_by_name(dbca3m_index, dbfiles[idb]);
-
-          if (entry == NULL) {
-            OpenFileError(dbfiles[idb]);
-          }
-
-          char* data = ffindex_get_data_by_entry(dbca3m_data, entry);
-
-          if (data == NULL) {
-            OpenFileError(entry->name);
-          }
-
-          Alignment tali;
-          tali.ReadCompressed(entry, data, dbuniprot_sequence_index,
-              dbuniprot_sequence_data, dbuniprot_header_index,
-              dbuniprot_header_data);
-
-          tali.Compress(dbfiles[idb]);
-          // qali.FilterForDisplay(par.max_seqid,par.coverage,par.qid,par.qsc,par.nseqdis);
-          tali.N_filtered = tali.Filter(par.max_seqid_db, par.coverage_db,
-              par.qid_db, par.qsc_db, par.Ndiff_db);
-          t[bin]->name[0] = t[bin]->longname[0] = t[bin]->fam[0] = '\0';
-          tali.FrequenciesAndTransitions(t[bin], par.wg);
-          format[bin] = 0;
-        }
-        else {
-          ///////////////////////////////////////////////////
-          // Read next HMM from database file
-          if (!fgetline(line, LINELEN, dbf)) {
-            fprintf(stderr,
-                "Error in %s: end of file %s reached prematurely!\n",
-                par.argv[0], dbfiles[idb]);
-            exit(1);
-          }
-          while (strscn(line) == NULL && fgetline(line, LINELEN, dbf)) {
-          } // skip lines that contain only white space
-
-          if (!strncmp(line, "HMMER3", 5))      // read HMMER3 format
-              {
-            format[bin] = 1;
-            read_from_db = t[bin]->ReadHMMer3(dbf, dbfiles[idb]);
-            par.hmmer_used = true;
-          }
-          else if (!strncmp(line, "HMMER", 5))      // read HMMER format
-              {
-            format[bin] = 1;
-            read_from_db = t[bin]->ReadHMMer(dbf, dbfiles[idb]);
-            par.hmmer_used = true;
-          }
-          else if (!strncmp(line, "HH", 2))     // read HHM format
-              {
-            format[bin] = 0;
-            read_from_db = t[bin]->Read(dbf, path);
-          }
-          else if (!strncmp(line, "NAME", 4)) // The following lines are for backward compatibility of HHM format version 1.2 with 1.1
-              {
-            format[bin] = 0;
-            fseek(dbf, hitpos_curr.ftellpos, SEEK_SET); // rewind to beginning of line
-            read_from_db = t[bin]->Read(dbf, path);
-          }
-          else if (line[0] == '#' || line[0] == '>')       // read a3m alignment
-              {
-            Alignment tali;
-            tali.Read(dbf, dbfiles[idb], line);
-            tali.Compress(dbfiles[idb]);
-            // qali.FilterForDisplay(par.max_seqid,par.coverage,par.qid,par.qsc,par.nseqdis);
-            tali.N_filtered = tali.Filter(par.max_seqid_db, par.coverage_db,
-                par.qid_db, par.qsc_db, par.Ndiff_db);
-            t[bin]->name[0] = t[bin]->longname[0] = t[bin]->fam[0] = '\0';
-            tali.FrequenciesAndTransitions(t[bin], par.wg);
-            format[bin] = 0;
-          }
-          else {
-            cerr << endl << "Error in " << program_name
-                << ": unrecognized HMM file format in \'" << dbfiles[idb]
-                << "\'. \n";
-            cerr << "Context:\n'" << line << "\n";
-            fgetline(line, LINELEN, dbf);
-            cerr << line << "\n";
-            fgetline(line, LINELEN, dbf);
-            cerr << line << "'\n";
-            exit(1);
-          }
-        }
+        hit[bin]->dbfile = new char[strlen(dbfiles[idb]) + 1];
+        strcpy(hit[bin]->dbfile, dbfiles[idb]); // record db file name from which next HMM is read
+        getTemplateHMM(dbfiles[idb], par.wg, hit[bin]->ftellpos, format[bin], t[bin]);
 
         if (read_from_db == 2)
           continue;  // skip current HMM or reached end of database
-        if (read_from_db == 0)
+        if (read_from_db == 0) {
+          std::cerr << "========= STOPP ==========" << std::endl;
           break;     // finished reading HMMs
+        }
         if (v >= 2)
           fprintf(stderr, "Realigning with %s\n", t[bin]->name);
         ///////////////////////////////////////////////////
-
-        hit[bin]->dbfile = new char[strlen(dbfiles[idb]) + 1];
-        strcpy(hit[bin]->dbfile, dbfiles[idb]); // record db file name from which next HMM is read
 
         N_aligned++;
         if (v1 >= 2 && !(N_aligned % 10)) {
@@ -2363,9 +2103,6 @@ void perform_realign(char *dbfiles[], int ndb) {
     }
     // End while(1)
     ///////////////////////////////////////////////////////////////////////////////////////
-
-    if(dbf != NULL && !use_compressed_a3m)
-      fclose(dbf);
   }
   reading_dbs = 0;
   
@@ -2502,140 +2239,20 @@ void recalculateAlignmentsForDifferentQSC(HitList& hitlist, Alignment& Qali, cha
   for(size_t qsc_index = 0; qsc_index < nqsc; qsc_index++) {
     float actual_qsc = qsc[qsc_index];
 
-    v = 2;
-    std::cout << "================================= qsc " << actual_qsc << std::endl;
     qali.Compress("filtered A3M file");
     qali.N_filtered = qali.Filter(par.max_seqid, cov_tot, par.qid, actual_qsc, par.Ndiff);
     qali.FrequenciesAndTransitions(q, par.wg, NULL, false);
     PrepareQueryHMM(inputformat, q);
-    v = 0;
 
     hitlist.Reset();
     while (!hitlist.End()) {
       Hit hit_ref = hitlist.ReadNext();
-      FILE* dbf = NULL;
-
-      if (!use_compressed_a3m) {
-        dbf = ffindex_fopen_by_name(dbhhm_data, dbhhm_index, hit_ref.dbfile);
-        if (dbf == NULL) {
-          if (dba3m_index_file != NULL) {
-            dbf = ffindex_fopen_by_name(dba3m_data, dba3m_index, hit_ref.dbfile);
-          }
-          else {
-            cerr << endl << "Error opening " << hit_ref.dbfile << ": A3M database missing\n";
-            exit(4);
-          }
-        }
-
-        if (dbf == NULL)
-          OpenFileError(hit_ref.dbfile);
-      }
-
-      read_from_db = 1;
-
-      if(!use_compressed_a3m) {
-        fseek(dbf, hit_ref.ftellpos, SEEK_SET); // start to read at ftellpos for template
-      }
-
-      char path[NAMELEN];
-      Pathname(path, hit_cur.dbfile);
 
       HMM* t = new HMM();
 
-      char format;
-      if (use_compressed_a3m) {
-        ffindex_entry_t* entry = ffindex_get_entry_by_name(dbca3m_index, hit_ref.dbfile);
-
-        if (entry == NULL) {
-          OpenFileError(hit_ref.dbfile);
-        }
-
-        char* data = ffindex_get_data_by_entry(dbca3m_data, entry);
-
-        if (data == NULL) {
-          OpenFileError(entry->name);
-        }
-
-        Alignment tali;
-        tali.ReadCompressed(entry, data, dbuniprot_sequence_index,
-            dbuniprot_sequence_data, dbuniprot_header_index,
-            dbuniprot_header_data);
-
-        tali.Compress(hit_ref.dbfile);
-
-        tali.N_filtered = tali.Filter(par.max_seqid_db, par.coverage_db,
-            par.qid_db, actual_qsc, par.Ndiff_db);
-
-        t->name[0] = t->longname[0] = t->fam[0] = '\0';
-        tali.FrequenciesAndTransitions(t, par.wg);
-        format = 0;
-      }
-      else {
-        ///////////////////////////////////////////////////
-        // Read next HMM from database file
-        if (!fgetline(line, LINELEN, dbf)) {
-          fprintf(stderr,
-              "Error in %s: end of file %s reached prematurely!\n",
-              par.argv[0], hit_cur.dbfile);
-          exit(1);
-        }
-        while (strscn(line) == NULL && fgetline(line, LINELEN, dbf)) {
-        } // skip lines that contain only white space
-
-        if (!strncmp(line, "HMMER3", 5))      // read HMMER3 format
-        {
-          format = 1;
-          read_from_db = t->ReadHMMer3(dbf, hit_ref.dbfile);
-          par.hmmer_used = true;
-        }
-        else if (!strncmp(line, "HMMER", 5))      // read HMMER format
-            {
-          format = 1;
-          read_from_db = t->ReadHMMer(dbf, hit_ref.dbfile);
-          par.hmmer_used = true;
-        }
-        else if (!strncmp(line, "HH", 2))     // read HHM format
-            {
-          format = 0;
-          read_from_db = t->Read(dbf, path);
-        }
-        else if (!strncmp(line, "NAME", 4)) // The following lines are for backward compatibility of HHM format version 1.2 with 1.1
-        {
-          format = 0;
-          fseek(dbf, hit_ref.ftellpos, SEEK_SET); // rewind to beginning of line
-          read_from_db = t->Read(dbf, path);
-        }
-        else if (line[0] == '#' || line[0] == '>')       // read a3m alignment
-        {
-          Alignment tali;
-          tali.Read(dbf, hit_ref.dbfile, line);
-          tali.Compress(hit_ref.dbfile);
-
-          tali.N_filtered = tali.Filter(par.max_seqid_db, par.coverage_db,
-              par.qid_db, actual_qsc, par.Ndiff_db);
-          std::cout << tali.name << "\t" << tali.N_filtered << std::endl;
-
-          t->name[0] = t->longname[0] = t->fam[0] = '\0';
-          tali.FrequenciesAndTransitions(t, par.wg);
-          format = 0;
-        }
-        else {
-          cerr << endl << "Error in " << program_name
-              << ": unrecognized HMM file format in \'" << hit_cur.dbfile
-              << "\'. \n";
-          cerr << "Context:\n'" << line << "\n";
-          fgetline(line, LINELEN, dbf);
-          cerr << line << "\n";
-          fgetline(line, LINELEN, dbf);
-          cerr << line << "'\n";
-          exit(1);
-        }
-      }
-
-      if (read_from_db == 2)
-        continue;  // skip current HMM or reached end of database
-      if (read_from_db == 0)
-        break;     // finished reading HMMs
+      int format;
+      long ftellpos;
+      getTemplateHMM(hit_cur.dbfile, 1, ftellpos, format, t);
 
       PrepareTemplateHMM(q, t, format);
 
@@ -2658,9 +2275,6 @@ void recalculateAlignmentsForDifferentQSC(HitList& hitlist, Alignment& Qali, cha
         realigned_viterbi_hitlist.Push(hit);
       }
 
-      if(dbf != NULL && !use_compressed_a3m)
-        fclose(dbf);
-
       delete t;
     }
 
@@ -2673,133 +2287,12 @@ void recalculateAlignmentsForDifferentQSC(HitList& hitlist, Alignment& Qali, cha
     realigned_viterbi_hitlist.Reset();
     while (!realigned_viterbi_hitlist.End()) {
       Hit hit_ref = realigned_viterbi_hitlist.ReadNext();
-//    hitlist.Reset();
-//    while(!hitlist.End()) {
-//      Hit hit_ref = hitlist.ReadNext();
-
-      FILE* dbf = NULL;
-
-      if (!use_compressed_a3m) {
-        dbf = ffindex_fopen_by_name(dbhhm_data, dbhhm_index, hit_ref.dbfile);
-        if (dbf == NULL) {
-          if (dba3m_index_file != NULL) {
-            dbf = ffindex_fopen_by_name(dba3m_data, dba3m_index, hit_ref.dbfile);
-          }
-          else {
-            cerr << endl << "Error opening " << hit_ref.dbfile << ": A3M database missing\n";
-            exit(4);
-          }
-        }
-
-        if (dbf == NULL)
-          OpenFileError(hit_ref.dbfile);
-      }
-
-      read_from_db = 1;
-
-      if(!use_compressed_a3m) {
-        fseek(dbf, hit_ref.ftellpos, SEEK_SET); // start to read at ftellpos for template
-      }
-
-      char path[NAMELEN];
-      Pathname(path, hit_cur.dbfile);
 
       HMM* t = new HMM();
 
-      char format;
-      if (use_compressed_a3m) {
-        ffindex_entry_t* entry = ffindex_get_entry_by_name(dbca3m_index, hit_ref.dbfile);
-
-        if (entry == NULL) {
-          OpenFileError(hit_ref.dbfile);
-        }
-
-        char* data = ffindex_get_data_by_entry(dbca3m_data, entry);
-
-        if (data == NULL) {
-          OpenFileError(entry->name);
-        }
-
-        Alignment tali;
-        tali.ReadCompressed(entry, data, dbuniprot_sequence_index,
-            dbuniprot_sequence_data, dbuniprot_header_index,
-            dbuniprot_header_data);
-
-        tali.Compress(hit_ref.dbfile);
-
-        tali.N_filtered = tali.Filter(par.max_seqid_db, par.coverage_db,
-            par.qid_db, actual_qsc, par.Ndiff_db);
-
-        t->name[0] = t->longname[0] = t->fam[0] = '\0';
-        tali.FrequenciesAndTransitions(t, par.wg);
-        format = 0;
-      }
-      else {
-        ///////////////////////////////////////////////////
-        // Read next HMM from database file
-        if (!fgetline(line, LINELEN, dbf)) {
-          fprintf(stderr,
-              "Error in %s: end of file %s reached prematurely!\n",
-              par.argv[0], hit_cur.dbfile);
-          exit(1);
-        }
-        while (strscn(line) == NULL && fgetline(line, LINELEN, dbf)) {
-        } // skip lines that contain only white space
-
-        if (!strncmp(line, "HMMER3", 5))      // read HMMER3 format
-        {
-          format = 1;
-          read_from_db = t->ReadHMMer3(dbf, hit_ref.dbfile);
-          par.hmmer_used = true;
-        }
-        else if (!strncmp(line, "HMMER", 5))      // read HMMER format
-        {
-          format = 1;
-          read_from_db = t->ReadHMMer(dbf, hit_ref.dbfile);
-          par.hmmer_used = true;
-        }
-        else if (!strncmp(line, "HH", 2))     // read HHM format
-            {
-          format = 0;
-          read_from_db = t->Read(dbf, path);
-        }
-        else if (!strncmp(line, "NAME", 4)) // The following lines are for backward compatibility of HHM format version 1.2 with 1.1
-        {
-          format = 0;
-          fseek(dbf, hit_ref.ftellpos, SEEK_SET); // rewind to beginning of line
-          read_from_db = t->Read(dbf, path);
-        }
-        else if (line[0] == '#' || line[0] == '>')       // read a3m alignment
-        {
-          Alignment tali;
-          tali.Read(dbf, hit_ref.dbfile, line);
-          tali.Compress(hit_ref.dbfile);
-
-          tali.N_filtered = tali.Filter(par.max_seqid_db, par.coverage_db,
-              par.qid_db, actual_qsc, par.Ndiff_db);
-          std::cout << "mac: " << tali.name << "\t" << tali.N_filtered << std::endl;
-
-          t->name[0] = t->longname[0] = t->fam[0] = '\0';
-          tali.FrequenciesAndTransitions(t, par.wg);
-          format = 0;
-        }
-        else {
-          cerr << endl << "Error in " << program_name
-              << ": unrecognized HMM file format in \'" << hit_cur.dbfile
-              << "\'. \n";
-          cerr << "Context:\n'" << line << "\n";
-          fgetline(line, LINELEN, dbf);
-          cerr << line << "\n";
-          fgetline(line, LINELEN, dbf);
-          cerr << line << "'\n";
-          exit(1);
-        }
-      }
-
-      if (read_from_db == 2)
-        continue;  // skip current HMM or reached end of database
-      if (read_from_db == 0)
-        break;     // finished reading HMMs
+      int format;
+      long ftellpos;
+      getTemplateHMM(hit_ref.dbfile, par.wg, ftellpos, format, t);
 
       PrepareTemplateHMM(q, t,format);
       t->Log2LinTransitionProbs(1.0);
@@ -2843,10 +2336,9 @@ void recalculateAlignmentsForDifferentQSC(HitList& hitlist, Alignment& Qali, cha
 
       hit.DeleteForwardMatrix(q->L + 2);
 
-      recalculated_hitlist.Insert(hit);
-
-      if(dbf != NULL && !use_compressed_a3m)
-        fclose(dbf);
+      if(hit.matched_cols >= MINCOLS_REALIGN) {
+        recalculated_hitlist.Insert(hit);
+      }
 
       delete t;
     }
@@ -2857,7 +2349,6 @@ void recalculateAlignmentsForDifferentQSC(HitList& hitlist, Alignment& Qali, cha
     }
   }
 
-  reading_dbs = 0;
   v = v1;
 }
 
@@ -3508,52 +2999,14 @@ int main(int argc, char **argv) {
           // Read a3m alignment of hit from <file>.a3m file
           // Reading in next db MSA and merging it onto Qali
           Alignment Tali;
-          if(use_compressed_a3m) {
-            ffindex_entry_t* entry = ffindex_get_entry_by_name(dbca3m_index, hit_cur.dbfile);
+          long ftellpos;
+          getTemplateA3M(hit_cur.dbfile, ftellpos, Tali);
 
-            if (entry == NULL) {
-              OpenFileError(hit_cur.dbfile);
-            }
-
-            char* data = ffindex_get_data_by_entry(dbca3m_data, entry);
-
-            if (data == NULL) {
-              OpenFileError(hit_cur.dbfile);
-            }
-
-            Tali.ReadCompressed(entry, data, dbuniprot_sequence_index,
-                dbuniprot_sequence_data, dbuniprot_header_index,
-                dbuniprot_header_data);
-          }
-          else {
-            FILE* ta3mf;
-            ta3mf = ffindex_fopen_by_name(dba3m_data, dba3m_index, hit_cur.dbfile);
-            if (ta3mf == NULL)
-              OpenFileError(hit_cur.dbfile);
-              Tali.Read(ta3mf, hit_cur.dbfile); // Read template alignment into Tali
-              fclose(ta3mf);
-          }
-          Tali.Compress(hit_cur.dbfile); // Filter database alignment
           if (par.allseqs) // need to keep *all* sequences in Qali_allseqs? => merge before filtering
             Qali_allseqs.MergeMasterSlave(hit_cur, Tali, hit_cur.dbfile);
           Tali.N_filtered = Tali.Filter(par.max_seqid_db, par.coverage_db,
               par.qid_db, par.qsc_db, par.Ndiff_db);
           Qali.MergeMasterSlave(hit_cur, Tali, hit_cur.dbfile);
-
-          // //?????????????????????????????
-          // // JS: Reading the db MSA twice for par.all seems pretty inefficient!!!!!!!!!!!
-          // FILE* ta3mf;
-          // ta3mf = ffindex_fopen(dba3m_data, dba3m_index, ta3mfile);
-          // if (ta3mf == NULL) OpenFileError(ta3mfile);
-          // Qali.MergeMasterSlave(hit_cur,ta3mfile, ta3mf);
-          // fclose(ta3mf);
-          // if (par.allseqs)
-          //   {
-          //     ta3mf = ffindex_fopen(dba3m_data, dba3m_index, ta3mfile);
-          //     Qali_allseqs.MergeMasterSlave(hit_cur,ta3mfile, ta3mf, false); // filter db MSA = false
-          //     fclose(ta3mf);
-          //   }
-          // //?????????????????????????????
 
           if (Qali.N_in >= MAXSEQ)
             break; // Maximum number of sequences reached
