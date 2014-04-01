@@ -74,14 +74,14 @@ public:
   int Filter(int max_seqid, int coverage=0, int qid=0, float qsc=0, int N=0);
   int Filter2(char keep[], int coverage, int qid, float qsc, int seqid1, int seqid2, int Ndiff);
 
-  void FilterNeff();
-  float filter_by_qsc(float qsc, char* dummy);
+  void FilterNeff(char use_global_weights);
+  float filter_by_qsc(float qsc, char use_global_weights, char* dummy);
 
   // Calculate AA frequencies q.p[i][a] and transition probabilities q.tr[i][a] from alignment
-  void FrequenciesAndTransitions(HMM* q, char* in=NULL, bool time=false);
+  void FrequenciesAndTransitions(HMM* q, char use_global_weights, char* in=NULL, bool time=false);
 
   // Calculate freqs q.f[i][a] and transitions q.tr[i][a] (a=MM,MI,MD) with pos-specific subalignments
-  void Amino_acid_frequencies_and_transitions_from_M_state(HMM* q, char* in);
+  void Amino_acid_frequencies_and_transitions_from_M_state(HMM* q, char use_global_weights, char* in);
 
   // Calculate transitions q.tr[i][a] (a=DM,DD) with pos-specific subalignments
   void Transitions_from_D_state(HMM* q, char* in);
@@ -108,7 +108,7 @@ public:
   void AddSSPrediction(char seq_pred[], char seq_conf[]);
 
   // Determine matrix of position-specific weights w[k][i] for multiple alignment
-  void GetPositionSpecificWeights(float* w[]);
+  void GetPositionSpecificWeights(float* w[], char use_global_weights);
 
   // Set keep[] and display[] arrays to 0 to mark seqs as non-printable
   void MarkSeqsAsNonPrintable();

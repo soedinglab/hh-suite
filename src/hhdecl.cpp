@@ -224,6 +224,7 @@ void Parameters::SetDefaults()
   prefilter_evalue_coarse_thresh = 100000;
   prefilter_min_alis = 1000;
   preprefilter_smax_thresh = 10;
+  min_prefilter_hits = 100;
 
   // For filtering database alignments in HHsearch and HHblits 
   //JS: What are these used for? They are set to the options without _db anyway.
@@ -248,7 +249,6 @@ void Parameters::SetDefaults()
   strcpy(alitabfile,"");
   exclstr=NULL;
 
-  min_prefilter_hits = 100;
 
   // parameters for context-specific pseudocounts
   csb = 0.85;

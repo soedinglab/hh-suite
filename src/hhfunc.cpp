@@ -1,7 +1,7 @@
 // hhfunc.C
 
 // Read input file (HMM, HHM, or alignment format)
-void ReadQueryFile(char* infile, char& input_format, HMM* q, Alignment* qali =
+void ReadQueryFile(char* infile, char& input_format, char use_global_weights, HMM* q, Alignment* qali =
     NULL);
 
 // Add transition and amino acid pseudocounts to query HMM, calculate aa background etc.
@@ -25,7 +25,7 @@ void WriteToAlifile(FILE* alitabf, Hit* hit);
 /////////////////////////////////////////////////////////////////////////////////////
 // Read input file (HMM, HHM, or alignment format)
 /////////////////////////////////////////////////////////////////////////////////////
-void ReadQueryFile(char* infile, char& input_format, HMM* q, Alignment* qali) {
+void ReadQueryFile(char* infile, char& input_format, char use_global_weights, HMM* q, Alignment* qali) {
   // Open query file and determine file type
   char path[NAMELEN]; // path of input file (is needed to write full path and file name to HMM FILE record)
   char line[LINELEN] = "";   // input line
@@ -122,10 +122,10 @@ void ReadQueryFile(char* infile, char& input_format, HMM* q, Alignment* qali) {
         par.qsc, par.Ndiff);
 
     if (par.Neff >= 0.999)
-      pali->FilterNeff();
+      pali->FilterNeff(use_global_weights);
 
     // Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
-    pali->FrequenciesAndTransitions(q);
+    pali->FrequenciesAndTransitions(q, use_global_weights);
     input_format = 0;
     if (qali == NULL)
       delete (pali);

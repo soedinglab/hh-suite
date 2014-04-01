@@ -1813,7 +1813,7 @@ int Alignment::Filter2(char keep[], int coverage, int qid, float qsc,
   } // End Loop over seqid
 
   if (v >= 2) {
-    printf("%i out of %i sequences passed filter (", n, N_in - N_ss);
+    printf("%i out of %i sequences passed filter (", N_in - N_ss, n);
     if (par.coverage)
       printf("%i%% min coverage, ", coverage);
     if (qid)
@@ -1963,7 +1963,7 @@ int Alignment::FilterWithCoreHMM(char in[], float coresc, HMM* qcore) {
 /////////////////////////////////////////////////////////////////////////////////////
 // Filter alignment to given diversity/Neff
 /////////////////////////////////////////////////////////////////////////////////////
-void Alignment::FilterNeff() {
+void Alignment::FilterNeff(char use_global_weights) {
   int v1 = v--;
   const float TOLX = 0.01;
   const float TOLY = 0.02;
@@ -1979,7 +1979,7 @@ void Alignment::FilterNeff() {
   int i = 1;
 
   HMM q;
-  FrequenciesAndTransitions(&q);
+  FrequenciesAndTransitions(&q, use_global_weights);
   y = y0 = q.Neff_HMM;
   if (fabs(par.Neff - y0) < TOLY) {
     v = v1;
@@ -1993,7 +1993,7 @@ void Alignment::FilterNeff() {
     return;
   }
 
-  y1 = filter_by_qsc(x1, keep_orig);
+  y1 = filter_by_qsc(x1, use_global_weights, keep_orig);
   if (fabs(par.Neff - y1) < TOLY) {
     v = v1;
     return;
@@ -2004,7 +2004,7 @@ void Alignment::FilterNeff() {
     const float w = 0.5;  // mixture coefficient 
     x = w * (0.5 * (x0 + x1))
         + (1 - w) * (x0 + (par.Neff - y0) * (x1 - x0) / (y1 - y0)); // mixture of bisection and linear interpolation
-    y = filter_by_qsc(x, keep_orig);
+    y = filter_by_qsc(x, use_global_weights, keep_orig);
     if (v >= 2)
       printf(
           " %3i  x0=%6.3f -> %6.3f     x=%6.3f -> %6.3f     x1=%6.3f -> %6.3f \n",
@@ -2026,12 +2026,12 @@ void Alignment::FilterNeff() {
   return;
 }
 
-float Alignment::filter_by_qsc(float qsc, char* keep_orig) {
+float Alignment::filter_by_qsc(float qsc, char use_global_weights, char* keep_orig) {
   HMM q;
   for (int k = 0; k < N_in; ++k)
     keep[k] = keep_orig[k];
   Filter2(keep, par.coverage, 0, qsc, par.max_seqid + 1, par.max_seqid, 0);
-  FrequenciesAndTransitions(&q); // Might be sped up by calculating wg and calling only Amino_acid_frequencies_and_transitions_from_M_state(q,in);
+  FrequenciesAndTransitions(&q, use_global_weights); // Might be sped up by calculating wg and calling only Amino_acid_frequencies_and_transitions_from_M_state(q,in);
 //   printf("qsc=%4.1f  N_filtered=%-3i  Neff=%6.3f\n",qsc,n,q->Neff_HMM);
   return q.Neff_HMM;
 }
@@ -2039,7 +2039,7 @@ float Alignment::filter_by_qsc(float qsc, char* keep_orig) {
 /////////////////////////////////////////////////////////////////////////////////////
 // Calculate AA frequencies q->p[i][a] and transition probabilities q->tr[i][a] from alignment
 /////////////////////////////////////////////////////////////////////////////////////
-void Alignment::FrequenciesAndTransitions(HMM* q, char* in, bool time) {
+void Alignment::FrequenciesAndTransitions(HMM* q, char use_global_weights, char* in, bool time) {
   int k;                // index of sequence
   int i;                // position in alignment
   int a;                // amino acid (0..19)
@@ -2106,7 +2106,7 @@ void Alignment::FrequenciesAndTransitions(HMM* q, char* in, bool time) {
     for (k = 0; k < N_in; ++k)
       X[k][L + 1] = ENDGAP;  // does it have an influence?
 
-    Amino_acid_frequencies_and_transitions_from_M_state(q, in); // use subalignments of seqs with residue in i
+    Amino_acid_frequencies_and_transitions_from_M_state(q, use_global_weights, in); // use subalignments of seqs with residue in i
     Transitions_from_I_state(q, in); // use subalignments of seqs with insert in i
     Transitions_from_D_state(q, in); // use subalignments of seqs with delete in i. Must be last of these three calls if par.wg==1!
     //if (time) { ElapsedTimeSinceLastCall("Do pos-specific sequence weighting and calculate amino acid frequencies and transitions"); }
@@ -2368,7 +2368,7 @@ void Alignment::FrequenciesAndTransitions(HMM* q, char* in, bool time) {
 // Calculate freqs q->f[i][a] and transitions q->tr[i][a] (a=MM,MI,MD) with pos-specific subalignments
 // Pos-specific weights are calculated like in "GetPositionSpecificWeights()"
 /////////////////////////////////////////////////////////////////////////////////////
-void Alignment::Amino_acid_frequencies_and_transitions_from_M_state(HMM* q,
+void Alignment::Amino_acid_frequencies_and_transitions_from_M_state(HMM* q, char use_global_weights,
     char* in) {
   // Calculate position-dependent weights wi[k] for each i.
   // For calculation of weights in column i use sub-alignment
@@ -2395,7 +2395,7 @@ void Alignment::Amino_acid_frequencies_and_transitions_from_M_state(HMM* q,
   float sum;
 
   // Global weights?
-  if (par.wg == 1)
+  if (use_global_weights == 1)
     for (k = 0; k < N_in; ++k)
       wi[k] = wg[k];
 
@@ -2415,7 +2415,7 @@ void Alignment::Amino_acid_frequencies_and_transitions_from_M_state(HMM* q,
   for (i = 1; i <= L; ++i) // Calculate wi[k] at position i as well as Neff[i]
       {
 
-    if (par.wg == 0) {
+    if (use_global_weights == 0) {
 
       change = 0;
       // Check all sequences k and update n[j][a] and ri[j] if necessary
@@ -2556,7 +2556,7 @@ void Alignment::Amino_acid_frequencies_and_transitions_from_M_state(HMM* q,
     q->f[0][a] = q->f[L + 1][a] = pb[a];
 
   // Assign Neff_M[i] and calculate average over alignment, Neff_M[0]
-  if (par.wg == 1) {
+  if (use_global_weights == 1) {
     for (i = 1; i <= L; ++i) {
       float sum = 0.0f;
       for (a = 0; a < 20; ++a)
@@ -3439,7 +3439,7 @@ void Alignment::AddSSPrediction(char seq_pred[], char seq_conf[]) {
 // Determine matrix of position-specific weights w[k][i] for multiple alignment
 // Pos-specific weights are calculated like in "Amino_acid_frequencies_and_transitions_from_M_state()"
 /////////////////////////////////////////////////////////////////////////////////////
-void Alignment::GetPositionSpecificWeights(float* w[]) {
+void Alignment::GetPositionSpecificWeights(float* w[], char use_global_weights) {
   // Calculate position-dependent weights wi[k] for each i.
   // For calculation of weights in column i use sub-alignment
   // over sequences which have a *residue* in column i (no gap, no end gap)
@@ -3462,7 +3462,7 @@ void Alignment::GetPositionSpecificWeights(float* w[]) {
   char change;  // has the set of sequences in subalignment changed? 0:no  1:yes
 
   // Global weights?
-  if (par.wg == 1) {
+  if (use_global_weights == 1) {
     for (k = 0; k < N_in; ++k)
       for (i = 1; i <= L; ++i)
         w[k][i] = wg[k];

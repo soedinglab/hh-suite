@@ -381,16 +381,19 @@ void help(char all = 0) {
     printf(
         "Prefilter options                                                               \n");
     printf(
-        " -noprefilt     disable all filter steps                                        \n");
+        " -noprefilt                disable all filter steps                                       \n");
     printf(
-        " -noaddfilter   disable all filter steps (except for fast prefiltering)         \n");
+        " -noaddfilter              disable all filter steps (except for fast prefiltering)        \n");
     printf(
-        " -nodbfilter    disable additional filtering of prefiltered HMMs                \n");
+        " -nodbfilter               disable additional filtering of prefiltered HMMs               \n");
     printf(
-        " -noblockfilter search complete matrix in Viterbi                               \n");
+        " -noblockfilter            search complete matrix in Viterbi                              \n");
     printf(
-        " -maxfilt       max number of hits allowed to pass 2nd prefilter (default=%i)  \n",
+        " -maxfilt                  max number of hits allowed to pass 2nd prefilter (default=%i)  \n",
         par.maxnumdb);
+    printf(
+        " -min_prefilter_hits       min number of hits allowed to pass 2nd prefilter (default=%i)  \n",
+        par.min_prefilter_hits);
     printf("\n");
   }
   printf(
@@ -1042,6 +1045,8 @@ void ProcessArguments(int argc, char** argv) {
       par.prefilter_gap_extend = atoi(argv[++i]);
     else if (!strcmp(argv[i], "-pre_score_offset") && (i < argc - 1))
       par.prefilter_score_offset = atoi(argv[++i]);
+    else if (!strcmp(argv[i], "-min_prefilter_hits") && (i < argc - 1))
+      par.min_prefilter_hits = atoi(argv[++i]);
     else if (!strcmp(argv[i], "-realignoldhits"))
       realign_old_hits = true;
     else if (!strcmp(argv[i], "-realign"))
@@ -1321,11 +1326,9 @@ void DoViterbiSearch(char *dbfiles[], int ndb, bool alignByWorker = true) {
 
         tali.N_filtered = tali.Filter(par.max_seqid_db, par.coverage_db,
             par.qid_db, par.qsc_db, par.Ndiff_db);
-        char wg = par.wg;
-        par.wg = 1; // use global weights
         t[bin]->name[0] = t[bin]->longname[0] = t[bin]->fam[0] = '\0';
-        tali.FrequenciesAndTransitions(t[bin]);
-        par.wg = wg; //reset global weights
+        //TODO: forced global weights
+        tali.FrequenciesAndTransitions(t[bin], 1);
         format[bin] = 0;
       }
       else {
@@ -1387,11 +1390,9 @@ void DoViterbiSearch(char *dbfiles[], int ndb, bool alignByWorker = true) {
           //              qali.FilterForDisplay(par.max_seqid,par.coverage,par.qid,par.qsc,par.nseqdis);
           tali.N_filtered = tali.Filter(par.max_seqid_db, par.coverage_db,
               par.qid_db, par.qsc_db, par.Ndiff_db);
-          char wg = par.wg;
-          par.wg = 1; // use global weights
           t[bin]->name[0] = t[bin]->longname[0] = t[bin]->fam[0] = '\0';
-          tali.FrequenciesAndTransitions(t[bin]);
-          par.wg = wg; //reset global weights
+          //TODO: forced global weights
+          tali.FrequenciesAndTransitions(t[bin], 1);
           format[bin] = 0;
         }
         else {
@@ -1886,7 +1887,7 @@ void perform_realign(char *dbfiles[], int ndb) {
         tali.N_filtered = tali.Filter(par.max_seqid_db, par.coverage_db,
             par.qid_db, par.qsc_db, par.Ndiff_db);
         t[bin]->name[0] = t[bin]->longname[0] = t[bin]->fam[0] = '\0';
-        tali.FrequenciesAndTransitions(t[bin]);
+        tali.FrequenciesAndTransitions(t[bin], par.wg);
         format[bin] = 0;
       }
       else {
@@ -1930,7 +1931,7 @@ void perform_realign(char *dbfiles[], int ndb) {
           tali.N_filtered = tali.Filter(par.max_seqid_db, par.coverage_db,
               par.qid_db, par.qsc_db, par.Ndiff_db);
           t[bin]->name[0] = t[bin]->longname[0] = t[bin]->fam[0] = '\0';
-          tali.FrequenciesAndTransitions(t[bin]);
+          tali.FrequenciesAndTransitions(t[bin], par.wg);
           format[bin] = 0;
         }
         else {
@@ -2068,7 +2069,7 @@ void perform_realign(char *dbfiles[], int ndb) {
           par.qsc, par.Ndiff);
 
       // Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
-      Qali.FrequenciesAndTransitions(q);
+      Qali.FrequenciesAndTransitions(q, par.wg);
 
       stringstream ss_tmp;
       ss_tmp << hit[bin]->file << "__" << hit[bin]->irep;
@@ -2211,7 +2212,7 @@ void perform_realign(char *dbfiles[], int ndb) {
           tali.N_filtered = tali.Filter(par.max_seqid_db, par.coverage_db,
               par.qid_db, par.qsc_db, par.Ndiff_db);
           t[bin]->name[0] = t[bin]->longname[0] = t[bin]->fam[0] = '\0';
-          tali.FrequenciesAndTransitions(t[bin]);
+          tali.FrequenciesAndTransitions(t[bin], par.wg);
           format[bin] = 0;
         }
         else {
@@ -2258,7 +2259,7 @@ void perform_realign(char *dbfiles[], int ndb) {
             tali.N_filtered = tali.Filter(par.max_seqid_db, par.coverage_db,
                 par.qid_db, par.qsc_db, par.Ndiff_db);
             t[bin]->name[0] = t[bin]->longname[0] = t[bin]->fam[0] = '\0';
-            tali.FrequenciesAndTransitions(t[bin]);
+            tali.FrequenciesAndTransitions(t[bin], par.wg);
             format[bin] = 0;
           }
           else {
@@ -2489,6 +2490,9 @@ void recalculateAlignmentsForDifferentQSC(HitList& hitlist, Alignment& Qali, cha
   else
     v -= 2; // Supress verbose output during iterative realignment and realignment
 
+  const int COV_ABS = 25;
+  int cov_tot = imax(imin((int) (COV_ABS / Qali.L * 100 + 0.5), 70), par.coverage);
+
   Alignment qali;
   qali = Qali;
   HMM* q = new HMM();
@@ -2498,13 +2502,13 @@ void recalculateAlignmentsForDifferentQSC(HitList& hitlist, Alignment& Qali, cha
   for(size_t qsc_index = 0; qsc_index < nqsc; qsc_index++) {
     float actual_qsc = qsc[qsc_index];
 
-    const int COV_ABS = 25;
-    int cov_tot = imax(imin((int) (COV_ABS / Qali.L * 100 + 0.5), 70), par.coverage);
-
+    v = 2;
+    std::cout << "================================= qsc " << actual_qsc << std::endl;
     qali.Compress("filtered A3M file");
     qali.N_filtered = qali.Filter(par.max_seqid, cov_tot, par.qid, actual_qsc, par.Ndiff);
-    qali.FrequenciesAndTransitions(q, NULL, false);
+    qali.FrequenciesAndTransitions(q, par.wg, NULL, false);
     PrepareQueryHMM(inputformat, q);
+    v = 0;
 
     hitlist.Reset();
     while (!hitlist.End()) {
@@ -2563,7 +2567,7 @@ void recalculateAlignmentsForDifferentQSC(HitList& hitlist, Alignment& Qali, cha
             par.qid_db, actual_qsc, par.Ndiff_db);
 
         t->name[0] = t->longname[0] = t->fam[0] = '\0';
-        tali.FrequenciesAndTransitions(t);
+        tali.FrequenciesAndTransitions(t, par.wg);
         format = 0;
       }
       else {
@@ -2603,16 +2607,16 @@ void recalculateAlignmentsForDifferentQSC(HitList& hitlist, Alignment& Qali, cha
         }
         else if (line[0] == '#' || line[0] == '>')       // read a3m alignment
         {
-          std::cout << "read a3m" << std::endl;
           Alignment tali;
           tali.Read(dbf, hit_ref.dbfile, line);
           tali.Compress(hit_ref.dbfile);
 
           tali.N_filtered = tali.Filter(par.max_seqid_db, par.coverage_db,
               par.qid_db, actual_qsc, par.Ndiff_db);
+          std::cout << tali.name << "\t" << tali.N_filtered << std::endl;
 
           t->name[0] = t->longname[0] = t->fam[0] = '\0';
-          tali.FrequenciesAndTransitions(t);
+          tali.FrequenciesAndTransitions(t, par.wg);
           format = 0;
         }
         else {
@@ -2633,7 +2637,7 @@ void recalculateAlignmentsForDifferentQSC(HitList& hitlist, Alignment& Qali, cha
       if (read_from_db == 0)
         break;     // finished reading HMMs
 
-      PrepareTemplateHMM(q, t,format);
+      PrepareTemplateHMM(q, t, format);
 
       Hit hit;
       hit.AllocateBacktraceMatrix(q->L + 2, par.maxres + 1);
@@ -2727,7 +2731,7 @@ void recalculateAlignmentsForDifferentQSC(HitList& hitlist, Alignment& Qali, cha
             par.qid_db, actual_qsc, par.Ndiff_db);
 
         t->name[0] = t->longname[0] = t->fam[0] = '\0';
-        tali.FrequenciesAndTransitions(t);
+        tali.FrequenciesAndTransitions(t, par.wg);
         format = 0;
       }
       else {
@@ -2749,7 +2753,7 @@ void recalculateAlignmentsForDifferentQSC(HitList& hitlist, Alignment& Qali, cha
           par.hmmer_used = true;
         }
         else if (!strncmp(line, "HMMER", 5))      // read HMMER format
-            {
+        {
           format = 1;
           read_from_db = t->ReadHMMer(dbf, hit_ref.dbfile);
           par.hmmer_used = true;
@@ -2773,9 +2777,10 @@ void recalculateAlignmentsForDifferentQSC(HitList& hitlist, Alignment& Qali, cha
 
           tali.N_filtered = tali.Filter(par.max_seqid_db, par.coverage_db,
               par.qid_db, actual_qsc, par.Ndiff_db);
+          std::cout << "mac: " << tali.name << "\t" << tali.N_filtered << std::endl;
 
           t->name[0] = t->longname[0] = t->fam[0] = '\0';
-          tali.FrequenciesAndTransitions(t);
+          tali.FrequenciesAndTransitions(t, par.wg);
           format = 0;
         }
         else {
@@ -2815,7 +2820,7 @@ void recalculateAlignmentsForDifferentQSC(HitList& hitlist, Alignment& Qali, cha
       hit.nsteps = hit_ref.nsteps;
       hit.i  = hit_ref.i;
       hit.j  = hit_ref.j;
-      hit.realign_around_viterbi = true;
+      hit.realign_around_viterbi = false;
 
       // Align q to template in *hit[bin]
       hit.Forward(q, t);
@@ -3269,7 +3274,7 @@ int main(int argc, char **argv) {
 
   // Read query input file (HHM, HMMER, or alignment format) without adding pseudocounts
   Qali.N_in = 0;
-  ReadQueryFile(par.infile, input_format, q, &Qali);
+  ReadQueryFile(par.infile, input_format, par.wg, q, &Qali);
 
   // If input file was not a sequence file (and hence a HHM or HMMER file) AND result MSA/HMM nee to be written, 
   // read in query sequences from a3m file or from representative seqs in HHM file or consensus seq in HMMER file 
@@ -3575,7 +3580,7 @@ int main(int argc, char **argv) {
       }
 
       // Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
-      Qali.FrequenciesAndTransitions(q, NULL, true);
+      Qali.FrequenciesAndTransitions(q, par.wg, NULL, true);
 
       if (par.notags)
         q->NeutralizeTags();
@@ -3718,8 +3723,8 @@ int main(int argc, char **argv) {
 
   if(strlen(par.reduced_outfile) != 0) {
 	HitList reducedHitlist;
-	float qscs [3] = {-20, 80, 100};
-	wiggleQSC(hitlist, 10, Qali, input_format, q->L, qscs, 3, reducedHitlist);
+	float qscs [4] = {-20, 0, 0.1, 0.2};
+	wiggleQSC(hitlist, 10, Qali, input_format, q->L, qscs, 4, reducedHitlist);
 
 	reducedHitlist.N_searched = hitlist.N_searched;
     reducedHitlist.PrintHitList(q_tmp, par.reduced_outfile);
