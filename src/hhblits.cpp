@@ -2486,8 +2486,6 @@ void reduceRedundancyOfHitList(int n_redundancy, int query_length, HitList& hitl
 }
 
 void recalculateAlignmentsForDifferentQSC(HitList& hitlist, Alignment& Qali, char inputformat, float* qsc, size_t nqsc, HitList& recalculated_hitlist) {
-  q->Log2LinTransitionProbs(1.0); // transform transition freqs to lin space if not already done
-
   char v1 = v;
   if (v > 0 && v <= 3)
     v = 1;
@@ -2498,9 +2496,8 @@ void recalculateAlignmentsForDifferentQSC(HitList& hitlist, Alignment& Qali, cha
   qali = Qali;
   HMM* q = new HMM();
 
-  recalculated_hitlist.Reset();
+  HitList realigned_viterbi_hitlist;
 
-  //qsc should be called in ascending order
   for(size_t qsc_index = 0; qsc_index < nqsc; qsc_index++) {
     float actual_qsc = qsc[qsc_index];
 
@@ -2515,6 +2512,170 @@ void recalculateAlignmentsForDifferentQSC(HitList& hitlist, Alignment& Qali, cha
     hitlist.Reset();
     while (!hitlist.End()) {
       Hit hit_ref = hitlist.ReadNext();
+      FILE* dbf = NULL;
+
+      if (!use_compressed_a3m) {
+        dbf = ffindex_fopen_by_name(dbhhm_data, dbhhm_index, hit_ref.dbfile);
+        if (dbf == NULL) {
+          if (dba3m_index_file != NULL) {
+            dbf = ffindex_fopen_by_name(dba3m_data, dba3m_index, hit_ref.dbfile);
+          }
+          else {
+            cerr << endl << "Error opening " << hit_ref.dbfile << ": A3M database missing\n";
+            exit(4);
+          }
+        }
+
+        if (dbf == NULL)
+          OpenFileError(hit_ref.dbfile);
+      }
+
+      read_from_db = 1;
+
+      if(!use_compressed_a3m) {
+        fseek(dbf, hit_ref.ftellpos, SEEK_SET); // start to read at ftellpos for template
+      }
+
+      char path[NAMELEN];
+      Pathname(path, hit_cur.dbfile);
+
+      HMM* t = new HMM();
+
+      char format;
+      if (use_compressed_a3m) {
+        ffindex_entry_t* entry = ffindex_get_entry_by_name(dbca3m_index, hit_ref.dbfile);
+
+        if (entry == NULL) {
+          OpenFileError(hit_ref.dbfile);
+        }
+
+        char* data = ffindex_get_data_by_entry(dbca3m_data, entry);
+
+        if (data == NULL) {
+          OpenFileError(entry->name);
+        }
+
+        Alignment tali;
+        tali.ReadCompressed(entry, data, dbuniprot_sequence_index,
+            dbuniprot_sequence_data, dbuniprot_header_index,
+            dbuniprot_header_data);
+
+        tali.Compress(hit_ref.dbfile);
+
+        tali.N_filtered = tali.Filter(par.max_seqid_db, par.coverage_db,
+            par.qid_db, actual_qsc, par.Ndiff_db);
+
+        t->name[0] = t->longname[0] = t->fam[0] = '\0';
+        tali.FrequenciesAndTransitions(t);
+        format = 0;
+      }
+      else {
+        ///////////////////////////////////////////////////
+        // Read next HMM from database file
+        if (!fgetline(line, LINELEN, dbf)) {
+          fprintf(stderr,
+              "Error in %s: end of file %s reached prematurely!\n",
+              par.argv[0], hit_cur.dbfile);
+          exit(1);
+        }
+        while (strscn(line) == NULL && fgetline(line, LINELEN, dbf)) {
+        } // skip lines that contain only white space
+
+        if (!strncmp(line, "HMMER3", 5))      // read HMMER3 format
+        {
+          format = 1;
+          read_from_db = t->ReadHMMer3(dbf, hit_ref.dbfile);
+          par.hmmer_used = true;
+        }
+        else if (!strncmp(line, "HMMER", 5))      // read HMMER format
+            {
+          format = 1;
+          read_from_db = t->ReadHMMer(dbf, hit_ref.dbfile);
+          par.hmmer_used = true;
+        }
+        else if (!strncmp(line, "HH", 2))     // read HHM format
+            {
+          format = 0;
+          read_from_db = t->Read(dbf, path);
+        }
+        else if (!strncmp(line, "NAME", 4)) // The following lines are for backward compatibility of HHM format version 1.2 with 1.1
+        {
+          format = 0;
+          fseek(dbf, hit_ref.ftellpos, SEEK_SET); // rewind to beginning of line
+          read_from_db = t->Read(dbf, path);
+        }
+        else if (line[0] == '#' || line[0] == '>')       // read a3m alignment
+        {
+          std::cout << "read a3m" << std::endl;
+          Alignment tali;
+          tali.Read(dbf, hit_ref.dbfile, line);
+          tali.Compress(hit_ref.dbfile);
+
+          tali.N_filtered = tali.Filter(par.max_seqid_db, par.coverage_db,
+              par.qid_db, actual_qsc, par.Ndiff_db);
+
+          t->name[0] = t->longname[0] = t->fam[0] = '\0';
+          tali.FrequenciesAndTransitions(t);
+          format = 0;
+        }
+        else {
+          cerr << endl << "Error in " << program_name
+              << ": unrecognized HMM file format in \'" << hit_cur.dbfile
+              << "\'. \n";
+          cerr << "Context:\n'" << line << "\n";
+          fgetline(line, LINELEN, dbf);
+          cerr << line << "\n";
+          fgetline(line, LINELEN, dbf);
+          cerr << line << "'\n";
+          exit(1);
+        }
+      }
+
+      if (read_from_db == 2)
+        continue;  // skip current HMM or reached end of database
+      if (read_from_db == 0)
+        break;     // finished reading HMMs
+
+      PrepareTemplateHMM(q, t,format);
+
+      Hit hit;
+      hit.AllocateBacktraceMatrix(q->L + 2, par.maxres + 1);
+      hit.self = 0;
+      hit.realign_around_viterbi = false;
+
+      hit.dbfile = new char[strlen(hit_ref.dbfile) + 1];
+      strcpy(hit.dbfile, hit_ref.dbfile);
+
+      for (int irep = 1; irep <= par.altali; irep++) {
+        hit.irep = irep;
+        hit.Viterbi(q, t);
+
+        if (hit.irep > 1 && hit.score <= SMIN)
+          break;
+
+        hit.Backtrace(q, t);
+        realigned_viterbi_hitlist.Push(hit);
+      }
+
+      if(dbf != NULL && !use_compressed_a3m)
+        fclose(dbf);
+
+      delete t;
+    }
+
+    realigned_viterbi_hitlist.CalculatePvalues(q);
+    realigned_viterbi_hitlist.CalculateHHblitsEvalues(q);
+
+
+    q->Log2LinTransitionProbs(1.0);
+
+    realigned_viterbi_hitlist.Reset();
+    while (!realigned_viterbi_hitlist.End()) {
+      Hit hit_ref = realigned_viterbi_hitlist.ReadNext();
+//    hitlist.Reset();
+//    while(!hitlist.End()) {
+//      Hit hit_ref = hitlist.ReadNext();
+
       FILE* dbf = NULL;
 
       if (!use_compressed_a3m) {
@@ -2666,11 +2827,10 @@ void recalculateAlignmentsForDifferentQSC(HitList& hitlist, Alignment& Qali, cha
       hit.BacktraceMAC(q, t);
 
       // Overwrite *hit[bin] with Viterbi scores, Probabilities etc. of hit_cur
-      //TODO???
-//      hit.score      = hit_ref.score;
-//      hit.score_ss   = hit_ref.score_ss;
-//      hit.score_aass = hit_ref.score_aass;
-//      hit.score_sort = hit_ref.score_sort;
+      hit.score      = hit_ref.score;
+      hit.score_ss   = hit_ref.score_ss;
+      hit.score_aass = hit_ref.score_aass;
+      hit.score_sort = hit_ref.score_sort;
       hit.Pval       = hit_ref.Pval;
       hit.Pvalt      = hit_ref.Pvalt;
       hit.logPval    = hit_ref.logPval;
@@ -2679,6 +2839,8 @@ void recalculateAlignmentsForDifferentQSC(HitList& hitlist, Alignment& Qali, cha
       hit.logEval    = hit_ref.logEval;
       hit.Probab     = hit_ref.Probab;
 
+      hit.DeleteForwardMatrix(q->L + 2);
+
       recalculated_hitlist.Insert(hit);
 
       if(dbf != NULL && !use_compressed_a3m)
@@ -2686,14 +2848,20 @@ void recalculateAlignmentsForDifferentQSC(HitList& hitlist, Alignment& Qali, cha
 
       delete t;
     }
+
+    realigned_viterbi_hitlist.Reset();
+    while (!realigned_viterbi_hitlist.End()) {
+      realigned_viterbi_hitlist.Delete().Delete();
+    }
   }
 
   reading_dbs = 0;
-
   v = v1;
 }
 
 void uniqueHitlist(HitList& hitlist) {
+  hitlist.SortList(&Hit::compare_sum_of_probs);
+
   std::set<std::string> ids;
 
   hitlist.Reset();
@@ -2713,14 +2881,16 @@ void uniqueHitlist(HitList& hitlist) {
 
 void wiggleQSC(HitList& hitlist, int n_redundancy, Alignment& Qali, char inputformat, int query_length, float* qsc, size_t nqsc, HitList& reducedFinalHitList) {
   HitList* reducedHitList = new HitList();
-//  HitList* wiggledHitList = new HitList();
+  HitList* wiggledHitList = new HitList();
 
   //filter by 2*n_redundancy
   reduceRedundancyOfHitList(2*n_redundancy, query_length, hitlist, *reducedHitList);
 
   //recalculate alignments for different qsc and choose best alignment for each template
-  recalculateAlignmentsForDifferentQSC(*reducedHitList, Qali, inputformat, qsc, nqsc, reducedFinalHitList);//*wiggledHitList);
+  recalculateAlignmentsForDifferentQSC(*reducedHitList, Qali, inputformat, qsc, nqsc, reducedFinalHitList);
 //  uniqueHitlist(*wiggledHitList);
+
+  reducedFinalHitList.SortList();
 
   //filter by n_redundancy
 //  reduceRedundancyOfHitList(n_redundancy, query_length, *wiggledHitList, reducedFinalHitList);
@@ -3534,18 +3704,15 @@ int main(int argc, char **argv) {
   if (*par.alitabfile)
     hitlist.WriteToAlifile(q, alitab_scop);
 
-//  if(strlen(par.reduced_outfile) != 0) {
-//	HitList reducedHitlist;
-//	float qscs [4] = {-20, 0, 0.1, 0.2};
-//	wiggleQSC(hitlist, 5, Qali, input_format, q->L, qscs, 4, reducedHitlist);
-//
-//	reducedHitlist.N_searched = hitlist.N_searched;
-//	reducedHitlist.PrintHitList(q_tmp, par.outfile);
-//	reducedHitlist.PrintAlignments(q_tmp, par.outfile);
-//
-//    reducedHitlist.PrintHitList(q_tmp, par.reduced_outfile);
-//	reducedHitlist.PrintAlignments(q_tmp, par.reduced_outfile);
-//  }
+  if(strlen(par.reduced_outfile) != 0) {
+	HitList reducedHitlist;
+	float qscs [3] = {-20, 80, 100};
+	wiggleQSC(hitlist, 10, Qali, input_format, q->L, qscs, 3, reducedHitlist);
+
+	reducedHitlist.N_searched = hitlist.N_searched;
+    reducedHitlist.PrintHitList(q_tmp, par.reduced_outfile);
+	reducedHitlist.PrintAlignments(q_tmp, par.reduced_outfile);
+  }
 
 
   // Print summary listing of hits
