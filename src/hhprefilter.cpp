@@ -58,9 +58,6 @@ size_t num_dbs = 0;          // number of sequences in prefilter database file
 Hash<char>* doubled;
 
 int pos;                  // 
-int block_count;          //
-char actual_hit[NAMELEN]; //
-int* block;               // int array keeping start and stop positions (i1,j1, i2,j2) of prefilter alignment
 
 FILE* db_data_file;
 unsigned char* db_data;
@@ -563,10 +560,6 @@ void prefilter_db() {
   for (int idb=0; idb<ndb_new; idb++) delete[](dbfiles_new[idb]);
   for (int idb=0; idb<ndb_old; idb++) delete[](dbfiles_old[idb]);
   ndb_new = ndb_old = 0;
-  block_count=0;
-  //block = new(int[400]);
-  block = NULL;
-  strcpy(actual_hit,"");
 
   // Prefilter with SW evalue preprefilter backtrace
 
