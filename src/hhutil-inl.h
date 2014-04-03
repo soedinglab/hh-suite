@@ -307,6 +307,15 @@ inline void fout(FILE* outf, int d)
 }
 
 
+inline void sout(std::stringstream& out, int d) {
+  if (d>=99999)
+    out << "*\t";
+  else
+    out << d << "\t";
+  return;
+}
+
+
 // Calculate scalar product between 20 dimensional float vectors qi and tj
 inline float ScalarProd20(float* qi, float* tj)
 {

@@ -3058,61 +3058,63 @@ void Alignment::WriteWithoutInsertsToFile(const char* alnfile) {
 // Write stored, filtered sequences WITH insert states (lower case) to alignment file?
 /////////////////////////////////////////////////////////////////////////////////////
 void Alignment::WriteToFile(const char* alnfile, const char format[]) {
-  FILE* alnf = NULL;
-  char* tmp_name = new char[NAMELEN];
+  std::stringstream out;
+  WriteToFile(out, format);
 
-  if (strcmp(alnfile, "stdout") != 0) {
-    if (!par.append)
-      alnf = fopen(alnfile, "w");
-    else
-      alnf = fopen(alnfile, "a");
+  if (strcmp(alnfile, "stdout") == 0) {
+    std::cout << out.str();
   }
   else {
-    alnf = stdout;
-  }
+    std::fstream outf;
+    if (par.append)
+      outf.open(alnfile, std::ios::out | std::ios::app);
+    else
+      outf.open(alnfile, std::ios::out);
 
-  if (!alnf)
-    OpenFileError(alnfile);
+    if (!outf.good())
+      OpenFileError(alnfile);
+
+    outf << out.str();
+
+    outf.close();
+  }
+}
+
+void Alignment::WriteToFile(std::stringstream& out, const char format[]) {
 
   if (!format || !strcmp(format, "a3m")) {
-    if (v >= 2)
-      cout << "Writing A3M alignment to " << alnfile << "\n";
     // If alignment name is different from that of query: write name into commentary line
     if (strncmp(longname, sname[kfirst], DESCLEN - 1) || readCommentLine == '1')
-      fprintf(alnf, "#%s\n", longname);
+      out << "#" << longname << std::endl;
     // Write ss_ lines
     for (int k = 0; k < N_in; ++k)
       if (k == kss_pred || k == kss_conf || k == kss_dssp || k == ksa_dssp)
-        fprintf(alnf, ">%s\n%s\n", sname[k], seq[k] + 1);
+        out << ">" << sname[k] << std::endl << seq[k] + 1 << std::endl;
     // Write other sequences
     for (int k = 0; k < N_in; ++k)
       if (!(k == kss_pred || k == kss_conf || k == kss_dssp || k == ksa_dssp)
           && (keep[k] || display[k] == 2)) // print if either in profile (keep[k]>0) or display is obligatory (display[k]==2)
-        fprintf(alnf, ">%s\n%s\n", sname[k], seq[k] + 1);
+        out << ">" << sname[k] << std::endl << seq[k] + 1 << std::endl;
   }
   else // PSI-BLAST format
   {
-    if (v >= 2)
-      cout << "Writing PSI-BLAST-formatted alignment to " << alnfile << "\n";
+    char line[LINELEN];
+    char tmp_name[NAMELEN];
     for (int k = 0; k < N_in; ++k) // skip sequences before kfirst!!
       if (!(k == kss_pred || k == kss_conf || k == kss_dssp || k == ksa_dssp)
           && (keep[k] || display[k] == 2)) // print if either in profile (keep[k]>0) or display is obligatory (display[k]==2)
           {
         strwrd(tmp_name, sname[k], NAMELEN);
-        fprintf(alnf, "%-20.20s ", tmp_name);
-//          for (int i=1; i<=L; ++i) fprintf(alnf,"%c",i2aa(X[k][i]));
-//          fprintf(alnf,"\n");
+
+        sprintf(line, "%-20.20s ", tmp_name);
+        out << line;
         char* ptr = seq[k];
         for (; *ptr != '\0'; ptr++)
           if (*ptr == 45 || (*ptr >= 65 && *ptr <= 90))
-            fprintf(alnf, "%c", *ptr);
-        fprintf(alnf, "\n");
+            out << *ptr;
+        out << std::endl;
       }
   }
-  
-  delete[] tmp_name;
-  if (strcmp(alnfile, "stdout"))
-    fclose(alnf);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////

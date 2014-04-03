@@ -2372,7 +2372,9 @@ void uniqueHitlist(HitList& hitlist) {
   }
 }
 
-void wiggleQSC(HitList& hitlist, int n_redundancy, Alignment& Qali, char inputformat, int query_length, float* qsc, size_t nqsc, HitList& reducedFinalHitList) {
+void wiggleQSC(HitList& hitlist, int n_redundancy, Alignment& Qali, char inputformat, float* qsc, size_t nqsc, HitList& reducedFinalHitList) {
+  int query_length = Qali.L;
+
   HitList* reducedHitList = new HitList();
   HitList* wiggledHitList = new HitList();
 
@@ -3156,17 +3158,11 @@ int main(int argc, char **argv) {
 
   // Print for each HMM: n  score  -log2(Pval)  L  name  (n=5:same name 4:same fam 3:same sf...)
   if (*par.scorefile) {
-    if (v >= 3)
-      printf("Printing scores file ...\n");
-    hitlist.PrintScoreFile(q);
+    hitlist.PrintScoreFile(q, par.scorefile);
   }
 
   // Print FASTA or A2M alignments?
   if (*par.pairwisealisfile) {
-    if (v >= 2)
-      cout << "Printing alignments in "
-          << (par.outformat == 1 ? "FASTA" : par.outformat == 2 ? "A2M" : "A3M")
-          << " format to " << par.pairwisealisfile << "\n";
     hitlist.PrintAlignments(q, par.pairwisealisfile, par.outformat);
   }
 
@@ -3177,7 +3173,7 @@ int main(int argc, char **argv) {
   if(strlen(par.reduced_outfile) != 0) {
 	HitList reducedHitlist;
 	float qscs [4] = {-20, 0, 0.1, 0.2};
-	wiggleQSC(hitlist, 10, Qali, input_format, q->L, qscs, 4, reducedHitlist);
+	wiggleQSC(hitlist, 10, Qali, input_format, qscs, 4, reducedHitlist);
 
 	reducedHitlist.N_searched = hitlist.N_searched;
     reducedHitlist.PrintHitList(q_tmp, par.reduced_outfile);

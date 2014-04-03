@@ -94,6 +94,7 @@ public:
 
   // Write alignment to alignment file
   void WriteToFile(const char* alnfile, const char format[]=NULL);
+  void WriteToFile(std::stringstream& out, const char format[]=NULL);
 
   // Read a3m slave alignment of hit from ta3mfile and merge into (query) master alignment
   void MergeMasterSlave(Hit& hit, Alignment& Tali, char* ta3mfile);

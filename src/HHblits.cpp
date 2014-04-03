@@ -2104,8 +2104,9 @@ void HHblits::uniqueHitlist(HitList& hitlist) {
 }
 
 void HHblits::wiggleQSC(HitList& hitlist, int n_redundancy, Alignment& Qali,
-    char inputformat, int query_length, float* qsc, size_t nqsc,
+    char inputformat, float* qsc, size_t nqsc,
     HitList& reducedFinalHitList) {
+  int query_length = Qali.L;
   HitList* reducedHitList = new HitList();
   //  HitList* wiggledHitList = new HitList();
 
@@ -3229,96 +3230,14 @@ void HHblits::run() {
       else
         previous_hits->Add(strtmp, hit_cur);
 
-      // // Old version by Michael => Delete
-      // hit_cur = hitlist.ReadNext();
-      // stringstream ss_tmp;
-      // ss_tmp << hit_cur.file << "__" << hit_cur.irep;
-      // if (!already_seen_filter || hit_cur.Eval > par.e || previous_hits->Contains((char*)ss_tmp.str().c_str()))
-      //   hit_cur.Delete(); // Delete hit object (deep delete with Hit::Delete())
-      // else
-      //   previous_hits->Add((char*)ss_tmp.str().c_str(), hit_cur);
-
       hitlist.Delete(); // Delete list record (flat delete)
-
     }
-  }   // end main loop overs search iterations
-  //////////////////////////////////////////////////////////////////////////////////
+  }
 
   // Warn, if HMMER files were used
   if (par.hmmer_used && v >= 1)
     fprintf(stderr,
         "WARNING: Using HMMER files results in a drastically reduced sensitivity (>10%%).\nWe recommend to use HHMs build by hhmake.\n");
-
-  // Print for each HMM: n  score  -log2(Pval)  L  name  (n=5:same name 4:same fam 3:same sf...)
-  if (*par.scorefile) {
-    if (v >= 3)
-      printf("Printing scores file ...\n");
-    hitlist.PrintScoreFile(q);
-  }
-
-  // Print FASTA or A2M alignments?
-  if (*par.pairwisealisfile) {
-    if (v >= 2)
-      cout << "Printing alignments in "
-          << (par.outformat == 1 ? "FASTA" : par.outformat == 2 ? "A2M" : "A3M")
-          << " format to " << par.pairwisealisfile << "\n";
-    hitlist.PrintAlignments(q, par.pairwisealisfile, par.outformat);
-  }
-
-  // Write alignments in tabular layout to alitabfile
-  if (*par.alitabfile)
-    hitlist.WriteToAlifile(q, alitab_scop);
-
-  if (strlen(par.reduced_outfile) != 0) {
-    HitList reducedHitlist;
-    float qscs[4] = { -20, 0, 0.1, 0.2 };
-    wiggleQSC(hitlist, 10, Qali, input_format, q->L, qscs, 4, reducedHitlist);
-
-    reducedHitlist.N_searched = hitlist.N_searched;
-    reducedHitlist.PrintHitList(q_tmp, par.reduced_outfile);
-    reducedHitlist.PrintAlignments(q_tmp, par.reduced_outfile);
-  }
-
-  // Print summary listing of hits
-  if (v >= 3)
-    printf("Printing hit list ...\n");
-  hitlist.PrintHitList(q_tmp, par.outfile);
-
-  // Write only hit list to screen?
-  if (v == 2 && strcmp(par.outfile, "stdout"))
-    WriteToScreen(par.outfile, 109); // write only hit list to screen
-
-  // Print alignments of query sequences against hit sequences
-  hitlist.PrintAlignments(q_tmp, par.outfile);
-
-  // Write whole output file to screen? (max 10000 lines)
-  if (v >= 3 && strcmp(par.outfile, "stdout"))
-    WriteToScreen(par.outfile, 10009);
-
-  // Write output PSI-BLAST-formatted alignment?
-  if (*par.psifile) {
-    if (par.allseqs)
-      Qali_allseqs.WriteToFile(par.psifile, "psi");
-    else
-      Qali.WriteToFile(par.psifile, "psi");
-  }
-
-  // Write output HHM file?
-  if (*par.hhmfile) {
-    // Add *no* amino acid pseudocounts to query. This is necessary to copy f[i][a] to p[i][a]
-    q->AddAminoAcidPseudocounts(0, 0.0, 0.0, 1.0);
-    q->CalculateAminoAcidBackground();
-
-    q->WriteToFile(par.hhmfile);
-  }
-
-  // Write output A3M alignment?
-  if (*par.alnfile) {
-    if (par.allseqs)
-      Qali_allseqs.WriteToFile(par.alnfile, "a3m");
-    else
-      Qali.WriteToFile(par.alnfile, "a3m");
-  }
 
   previous_hits->Reset();
   while (!previous_hits->End())
@@ -3328,7 +3247,87 @@ void HHblits::run() {
   delete premerged_hits;
 }
 
+HitList& HHblits::getHitList() {
+  return hitlist;
+}
+
+Alignment& HHblits::getQAli() {
+  return Qali;
+}
+
+Alignment& HHblits::getQAliAllSeq() {
+  return Qali_allseqs;
+}
+
+HMM* HHblits::getQHMM() {
+  return q;
+}
+
+HMM* HHblits::getQTempHMM() {
+  return q_tmp;
+}
+
+
 int main(int argc, char **argv) {
+  //TODO: write public print methods for hhblits
+  //TODO: run(Qali, informat)
+
   HHblits test(argc, argv);
   test.run();
+
+  if (*par.scorefile) {
+    test.getHitList().PrintScoreFile(test.getQHMM(), par.scorefile);
+  }
+
+  // Print FASTA or A2M alignments?
+  if (*par.pairwisealisfile) {
+    test.getHitList().PrintAlignments(test.getQHMM(), par.pairwisealisfile, par.outformat);
+  }
+
+  //TODO:
+//  // Write alignments in tabular layout to alitabfile
+//  if (*par.alitabfile)
+//    test.getHitList().WriteToAlifile(test.getQHMM(), alitab_scop);
+
+  //TODO:
+//  if (strlen(par.reduced_outfile) != 0) {
+//    HitList reducedHitlist;
+//    float qscs[4] = { -20, 0, 0.1, 0.2 };
+//
+//    //TODO: input format
+//    HHblits::wiggleQSC(test.getHitList(), 10, test.getQAli(), 0, qscs, 4, reducedHitlist);
+//
+//    reducedHitlist.N_searched = test.getHitList().N_searched;
+//    reducedHitlist.PrintHitList(q_tmp, par.reduced_outfile);
+//    reducedHitlist.PrintAlignments(q_tmp, par.reduced_outfile);
+//  }
+
+  if(*par.outfile) {
+    test.getHitList().PrintHHR(test.getQTempHMM(), par.outfile);
+  }
+
+  // Write output PSI-BLAST-formatted alignment?
+  if (*par.psifile) {
+    if (par.allseqs)
+      test.getQAliAllSeq().WriteToFile(par.psifile, "psi");
+    else
+      test.getQAli().WriteToFile(par.psifile, "psi");
+  }
+
+  // Write output HHM file?
+  if (*par.hhmfile) {
+    // Add *no* amino acid pseudocounts to query. This is necessary to copy f[i][a] to p[i][a]
+    test.getQHMM()->AddAminoAcidPseudocounts(0, 0.0, 0.0, 1.0);
+    test.getQHMM()->CalculateAminoAcidBackground();
+
+    test.getQHMM()->WriteToFile(par.hhmfile);
+  }
+
+  // Write output A3M alignment?
+  if (*par.alnfile) {
+    if (par.allseqs)
+      test.getQAliAllSeq().WriteToFile(par.alnfile, "a3m");
+    else
+      test.getQAli().WriteToFile(par.alnfile, "a3m");
+  }
 }

@@ -7,6 +7,8 @@
 #ifndef HHFULLALIGNMENT_H
 #define HHFULLALIGNMENT_H
 
+#include <sstream>
+
 class FullAlignment
 {
 public:
@@ -14,11 +16,11 @@ public:
   ~FullAlignment();
   void FreeMemory();
   void Build(HMM* q, Hit& hit);
-  void PrintHeader(FILE* outf, HMM* q, Hit& hit);
-  void PrintHHR(FILE* outf, Hit& hit);
-  void PrintA2M(FILE* outf, Hit& hit);
-  void PrintFASTA(FILE* outf, Hit& hit);
-  void PrintA3M(FILE* outf, Hit& hit);
+  void PrintHeader(std::stringstream& out, HMM* q, Hit& hit);
+  void PrintHHR(std::stringstream& out, Hit& hit);
+  void PrintA2M(std::stringstream& out, Hit& hit);
+  void PrintFASTA(std::stringstream& out, Hit& hit);
+  void PrintA3M(std::stringstream& out, Hit& hit);
   int identities;      // number of identical residues in query and template sequence
   float score_sim;     // substitution matrix similarity score between query and template
 

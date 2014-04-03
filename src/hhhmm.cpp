@@ -1935,114 +1935,146 @@ void HMM::IncludeNullModelInHMM(HMM* q, HMM* t, int columnscore )
 }
 
 
+void HMM::WriteToFile(char* outfile) {
+  std::stringstream out;
+  WriteToFile(out);
+
+  if (strcmp(outfile,"stdout") == 0) {
+    std::cout << out.str();
+  }
+  else {
+    std::fstream outf;
+    if (par.append)
+      outf.open(outfile, std::ios::out | std::ios::app);
+    else
+      outf.open(outfile, std::ios::out);
+
+    if (!outf.good())
+      OpenFileError(outfile);
+
+    outf << out.str();
+
+    outf.close();
+  }
+}
+
 /////////////////////////////////////////////////////////////////////////////////////
 // Write HMM to output file
 /////////////////////////////////////////////////////////////////////////////////////
-void HMM::WriteToFile(char* outfile)
+void HMM::WriteToFile(std::stringstream& out)
 {
   const int SEQLEN=100;      // number of residues per line for sequences to be displayed
-  int i,a;
+  char line[LINELEN];
 
   if (trans_lin==1) 
     InternalError("tried to write HMM file with transition pseudocounts in linear representation");
   if (divided_by_local_bg_freqs) 
     InternalError("tried to write HMM file with amino acid probabilities divided by sqrt of local background frequencies\n");
 
-  FILE *outf=NULL;
-  if (strcmp(outfile,"stdout"))
-    {
-      if (par.append) outf=fopen(outfile,"a"); else outf=fopen(outfile,"w");
-      if (!outf) OpenFileError(outfile);
-    }
-  else
-    outf = stdout;
-  if (v>=2) std::cout<<"Writing HMM to "<<outfile<<"\n";
+  // format specification
+  out << "HHsearch 1.5" << std::endl;
+  out << "NAME  " << longname << std::endl;    // name of first sequence
+  out << "FAM   " << fam << std::endl;         // family name
 
-  //   fprintf(outf,"HHsearch HHM format 1.5\n");
-  fprintf(outf,"HHsearch 1.5\n");         // format specification
-  fprintf(outf,"NAME  %s\n",longname);    // name of first sequence
-  fprintf(outf,"FAM   %s\n",fam);         // family name
-  char file_nopath[NAMELEN];
-  RemoveExtension(file, outfile);
-  RemovePath(file_nopath,file);
-  fprintf(outf,"FILE  %s\n",file_nopath); // base name of alignment file
+  //TODO
+//  char file_nopath[NAMELEN];
+//  RemoveExtension(file, outfile);
+//  RemovePath(file_nopath, file);
+//  fprintf(outf,"FILE  %s\n",file_nopath); // base name of alignment file
 
   // Print command line
-  fprintf(outf,"COM   ");
+  out << "COM   ";
   for (int i=0; i<par.argc; i++)
     if (strlen(par.argv[i])<=100)
-      fprintf(outf,"%s ",par.argv[i]);
+      out << par.argv[i] << " ";
     else
-      fprintf(outf,"<%i characters> ",(int)strlen(par.argv[i]));
-  fprintf(outf,"\n");
+      out << "<" << strlen(par.argv[i]) << " characters> ";
+  out << std::endl;
 
   // print out date stamp
   time_t* tp=new time_t;
   *tp=time(NULL);
-  fprintf(outf,"DATE  %s",ctime(tp));
+  out << "DATE  " << ctime(tp);
   delete tp;
 
   // Print out some statistics of alignment
-  fprintf(outf,"LENG  %i match states, %i columns in multiple alignment\n",L,l[L]);
-  fprintf(outf,"FILT  %i out of %i sequences passed filter (-id %i -cov %i -qid %i -qsc %.2f -diff %i)\n",N_filtered,N_in,par.max_seqid,par.coverage,par.qid,par.qsc,par.Ndiff);
-  fprintf(outf,"NEFF  %-4.1f\n",Neff_HMM);
-  if (has_pseudocounts) { fprintf(outf,"PCT   true\n"); }
+  out << "LENG  " << L << " match states, " << l[L] << " columns in multiple alignment\n" << std::endl;
+  out << "FILT  " << N_filtered << " out of " << N_in << " sequences passed filter (-id " << par.max_seqid << " -cov " << par.coverage << " -qid " << par.qid << " -qsc " << par.qsc << " -diff " <<  par.Ndiff << ")" << std::endl;
+  sprintf(line, "NEFF  %-4.1f\n", Neff_HMM);
+  out << line;
+
+  if (has_pseudocounts) {
+    out << "PCT   true\n";
+  }
 
   // Print selected sequences from alignment (including secondary structure and confidence values, if known)
-  fprintf(outf,"SEQ\n");
-  for (int n=0; n<n_display; n++)
-    {
-      fprintf(outf,">%s\n",sname[n]);
-      //first sequence character starts at 1; 0 not used.
-      for(unsigned int j=0; j<strlen(seq[n]+1); j+=SEQLEN) fprintf(outf,"%-.*s\n",SEQLEN,seq[n]+1+j);
+  out << "SEQ" << std::endl;
+  for (int n=0; n<n_display; n++) {
+    out << ">" << sname[n] << std::endl;
+    //first sequence character starts at 1; 0 not used.
+    for(unsigned int j=0; j<strlen(seq[n]+1); j+=SEQLEN) {
+      sprintf(line,"%-.*s\n",SEQLEN,seq[n]+1+j);
+      out << line;
     }
-  fprintf(outf,"#\n");
+  }
+  out << "#" << std::endl;
 
   // print null model background probabilities from substitution matrix
-  fprintf(outf,"NULL   ");
-  for (a=0; a<20; ++a) fout(outf,-iround(fast_log2(pb[s2a[a]])*HMMSCALE ));
-  fprintf(outf,"\n");
+  out << "NULL   ";
+  for (int a=0; a<20; ++a)
+    sout(out, -iround(fast_log2(pb[s2a[a]])*HMMSCALE));
+  out << std::endl;
 
   // print table header line with amino acids
-  fprintf(outf,"HMM    ");
-  for (a=0; a<20; ++a) fprintf(outf,"%1c\t",i2aa(s2a[a]));
-  fprintf(outf,"\n");
+  out << "HMM    ";
+  for (int a=0; a<20; ++a) {
+    out << i2aa(s2a[a]) << "\t";
+  }
+  out << std::endl;
 
   // print table header line with state transitions
-  fprintf(outf,"       M->M\tM->I\tM->D\tI->M\tI->I\tD->M\tD->D\tNeff\tNeff_I\tNeff_D\n");
+  out << "       M->M\tM->I\tM->D\tI->M\tI->I\tD->M\tD->D\tNeff\tNeff_I\tNeff_D" << std::endl;
 
   // print out transition probabilities from begin state (virtual match state)
-  fprintf(outf,"       ");
-  for (a=0; a<=D2D; ++a) fout(outf,-iround(tr[0][a]*HMMSCALE));
-  fout(outf,iround(Neff_M[0]*HMMSCALE));
-  fout(outf,iround(Neff_I[0]*HMMSCALE));
-  fout(outf,iround(Neff_D[0]*HMMSCALE));
-  fprintf(outf,"\n");
+  out << "       ";
+  for (int a=0; a<=D2D; ++a)
+    sout(out,-iround(tr[0][a]*HMMSCALE));
+
+  sout(out, iround(Neff_M[0]*HMMSCALE));
+  sout(out, iround(Neff_I[0]*HMMSCALE));
+  sout(out, iround(Neff_D[0]*HMMSCALE));
+  out << std::endl;
 
   // Start loop for printing HMM columns
   int h=1;
-  for (i=1; i<=L; ++i)
-    {
+  for (int i=1; i<=L; ++i) {
+    while(islower(seq[nfirst][h]) && seq[nfirst][h])
+      h++;
 
-      while(islower(seq[nfirst][h]) && seq[nfirst][h]) h++;
-      fprintf(outf,"%1c %-4i ",seq[nfirst][h++],i);
+    sprintf(line,"%1c %-4i ",seq[nfirst][h++],i);
+    out << line;
 
-      // Print emission probabilities for match state
-      for (a=0; a<20; ++a) fout(outf,-iround(fast_log2(p[i][s2a[a]])*HMMSCALE ));
-      fprintf(outf,"%-i",l[i]);
-      fprintf(outf,"\n");
+    // Print emission probabilities for match state
+    for (int a=0; a<20; ++a) {
+      sout(out, -iround(fast_log2(p[i][s2a[a]])*HMMSCALE));
+    }
 
-      // Print transition probabilities
-      fprintf(outf,"       ");
-      for (a=0; a<=D2D; ++a) fout(outf,-iround(tr[i][a]*HMMSCALE));
-      fout(outf,iround(Neff_M[i]*HMMSCALE));
-      fout(outf,iround(Neff_I[i]*HMMSCALE));
-      fout(outf,iround(Neff_D[i]*HMMSCALE));
-      fprintf(outf,"\n\n");
-    } // end for(i)-loop for printing HMM columns
+    sprintf(line, "%-i", l[i]);
+    out << line;
+    out << std::endl;
 
-  fprintf(outf,"//\n");
-  if(strcmp(outfile,"stdout")) fclose(outf);
+    // Print transition probabilities
+    out << "       ";
+    for (int a=0; a<=D2D; ++a) {
+      sout(out, -iround(tr[i][a]*HMMSCALE));
+    }
+    sout(out, iround(Neff_M[i]*HMMSCALE));
+    sout(out, iround(Neff_I[i]*HMMSCALE));
+    sout(out, iround(Neff_D[i]*HMMSCALE));
+
+    out << std::endl << std::endl;
+  }
+  out << "//" << std::endl;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////

@@ -92,6 +92,7 @@ public:
 
     // Write HMM to output file
     void WriteToFile(char* outfile);
+    void WriteToFile(std::stringstream& outfile);
 
     // Insert calibration line 'EVD   lamda   mu      hashvalue' into HMM file
     void InsertCalibration(char* infile);

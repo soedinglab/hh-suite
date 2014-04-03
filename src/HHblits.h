@@ -84,6 +84,12 @@ public:
 	void Init(int argc, char** argv);
 	void Reset();
 
+	HitList& getHitList();
+	Alignment& getQAli();
+	Alignment& getQAliAllSeq();
+	HMM* getQHMM();
+	HMM* getQTempHMM();
+
 	void SetDatabase(char* db_base);
 	void run();
 
@@ -221,15 +227,15 @@ private:
 	void RescoreWithViterbiKeepAlignment(int db_size, Hash<Hit>* previous_hits);
 	void perform_realign(char *dbfiles[], int ndb, Hash<char>* premerged_hits);
 
+    void wiggleQSC(HitList& hitlist, int n_redundancy, Alignment& Qali,
+            char inputformat, float* qsc, size_t nqsc,
+            HitList& reducedFinalHitList);
 	void reduceRedundancyOfHitList(int n_redundancy, int query_length,
 			HitList& hitlist, HitList& reducedHitList);
 	void recalculateAlignmentsForDifferentQSC(HitList& hitlist, Alignment& Qali,
 			char inputformat, float* qsc, size_t nqsc,
 			HitList& recalculated_hitlist);
 	void uniqueHitlist(HitList& hitlist);
-	void wiggleQSC(HitList& hitlist, int n_redundancy, Alignment& Qali,
-			char inputformat, int query_length, float* qsc, size_t nqsc,
-			HitList& reducedFinalHitList);
 
 	//Worker
 	void AlignByWorker(int bin);

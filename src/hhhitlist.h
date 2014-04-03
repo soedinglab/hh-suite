@@ -10,6 +10,7 @@
 #include <float.h>    // FLT_MIN
 #include <time.h>     // clock
 #include <ctype.h>    // islower, isdigit etc
+#include <sstream>
 
 #include "hhhitlist-inl.h"
 #include "hhhit.h"
@@ -40,16 +41,23 @@ public:
   ~HitList() {if (blast_logPvals) delete blast_logPvals;}
 
   // Print summary listing of hits
+  void PrintHitList(HMM* q, std::stringstream& out);
   void PrintHitList(HMM* q, char* outfile);
 
   // Print alignments of query sequences against hit sequences 
-  void PrintAlignments(HMM* q, char* outfile, char outformat=0);
+  void PrintAlignments(HMM* q, char* outfile, char outformat = 0);
+  void PrintAlignments(HMM* q, std::stringstream& out, char outformat = 0);
+
+  void PrintHHR(HMM* q, char* outfile);
+  void PrintHHR(HMM* q, std::stringstream& out);
 
   // Return a figure of merit for distinction of the score with positive from the scores with negatives
   void Optimize(HMM* q);
 
   // Print score distribution into file score_dist
-  void PrintScoreFile(HMM* q);
+  void PrintScoreFile(HMM* q, char* outputfile);
+  void PrintScoreFile(HMM* q, std::stringstream& outputstream);
+
   
   // Write alignments in tabular output
   void WriteToAlifile(HMM* q, bool scop_only=false);

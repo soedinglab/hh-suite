@@ -18,59 +18,47 @@ using std::endl;
 /////////////////////////////////////////////////////////////////////////////////////
 // Print summary listing of hits
 /////////////////////////////////////////////////////////////////////////////////////
-void HitList::PrintHitList(HMM* q, char* outfile) {
-  Hit hit;
+void HitList::PrintHitList(HMM* q, std::stringstream& out) {
   int nhits = 0;
 
-  FILE* outf = NULL;
-  if (strcmp(outfile, "stdout")) {
-    outf = fopen(outfile, "w");
-    if (!outf)
-      OpenFileError(outfile);
-  }
-  else
-    outf = stdout;
+  out << "Query         " << q->longname << std::endl;
+  out << "Match_columns " << q->L << std::endl;
+  out << "No_of_seqs    " << q->N_filtered << " out of " << q->N_in << std::endl;
+  out << "Neff          " << q->Neff_HMM << std::endl;
+  out << "Searched_HMMs " << N_searched << std::endl;
 
-  fprintf(outf, "Query         %s\n", q->longname);
-//  fprintf(outf,"Family        %s\n",q->fam); 
-  fprintf(outf, "Match_columns %i\n", q->L);
-  fprintf(outf, "No_of_seqs    %i out of %i\n", q->N_filtered, q->N_in);
-  fprintf(outf, "Neff          %-4.1f\n", q->Neff_HMM);
-  fprintf(outf, "Searched_HMMs %i\n", N_searched);
-  
   // Print date stamp
   time_t* tp = new (time_t);
   *tp = time(NULL);
-  fprintf(outf, "Date          %s", ctime(tp));
+
+  out << "Date          " << ctime(tp);
   delete (tp);
-  
+
   // Print command line
-  fprintf(outf, "Command       ");
+  out << "Command       ";
   for (int i = 0; i < par.argc; i++)
     if (strlen(par.argv[i]) <= par.maxdbstrlen)
-      fprintf(outf, "%s ", par.argv[i]);
+      out << par.argv[i] << " ";
     else
-      fprintf(outf, "<%i characters> ", (int) strlen(par.argv[i]));
-  fprintf(outf, "\n\n");
+      out << "<" << strlen(par.argv[i]) << "characters> ";
+  out << std::endl << std::endl;
 
-#ifdef WINDOWS   
-  fprintf(outf," No Hit                             Prob  E-value  P-value  Score    SS Cols Query HMM  Template HMM\n");
+#ifdef WINDOWS
+  out << " No Hit                             Prob  E-value  P-value  Score    SS Cols Query HMM  Template HMM" << std::endl;
 #else
-  fprintf(outf,
-      " No Hit                             Prob E-value P-value  Score    SS Cols Query HMM  Template HMM\n");
+  out << " No Hit                             Prob E-value P-value  Score    SS Cols Query HMM  Template HMM" << std::endl;
 #endif
 
+  char line[LINELEN];
   Reset();
-  while (!End()) // print hit list
-  {
-    hit = ReadNext();
+  while (!End()) {
+    Hit hit = ReadNext();
     if (nhits >= par.Z)
       break;       //max number of lines reached?
     if (nhits >= par.z && hit.Probab < par.p)
       break;
     if (nhits >= par.z && hit.Eval > par.E)
       continue;
-//       if (hit.matched_cols <=1) continue; // adding this might get to intransparent... analogous statement in PrintAlignments
     nhits++;
 
     char Estr[10];
@@ -78,17 +66,13 @@ void HitList::PrintHitList(HMM* q, char* outfile) {
     char str[NAMELEN];
     sprintf(str, "%3i %-30.30s    ", nhits, hit.longname);
 
-// #ifdef WINDOWS      
-// 	 fprintf(outf,"%-34.34s %5.1f %8.2G %8.2G %6.1f %5.1f %4i ",str,hit.Probab,hit.Eval,hit.Pval,hit.score,hit.score_ss,hit.matched_cols);
-// #else
-// 	 fprintf(outf,"%-34.34s %5.1f %7.2G %7.2G %6.1f %5.1f %4i ",str,hit.Probab,hit.Eval,hit.Pval,hit.score,hit.score_ss,hit.matched_cols);
-// #endif
-#ifdef WINDOWS      
+#ifdef WINDOWS
     if (hit.Eval>=1E-99) sprintf(Estr,"%8.2G",hit.Eval);
     else sprintf(Estr,"%8.1E",hit.Eval);
     if (hit.Pval>=1E-99) sprintf(Pstr,"%8.2G",hit.Pval);
     else sprintf(Pstr,"%8.1E",hit.Pval);
-    fprintf(outf,"%-34.34s %5.1f %8s %8s ",str,hit.Probab,Estr,Pstr);
+    sprintf(line,"%-34.34s %5.1f %8s %8s ",str,hit.Probab,Estr,Pstr);
+    out << line;
 #else
     if (hit.Eval >= 1E-99)
       sprintf(Estr, "%7.2G", hit.Eval);
@@ -98,84 +82,133 @@ void HitList::PrintHitList(HMM* q, char* outfile) {
       sprintf(Pstr, "%7.2G", hit.Pval);
     else
       sprintf(Pstr, "%7.0E", hit.Pval);
-    fprintf(outf, "%-34.34s %5.1f %7s %7s ", str, hit.Probab, Estr, Pstr);
+    sprintf(line, "%-34.34s %5.1f %7s %7s ", str, hit.Probab, Estr, Pstr);
+    out << line;
 #endif
 
     // Needed for long sequences (more than 5 digits in length)
     sprintf(str, "%6.1f", hit.score);
-    fprintf(outf, "%-6.6s %5.1f %4i %4i-%-4i %4i-%-4i(%i)\n", str, hit.score_ss,
+    sprintf(line, "%-6.6s %5.1f %4i %4i-%-4i %4i-%-4i(%i)\n", str, hit.score_ss,
         hit.matched_cols, hit.i1, hit.i2, hit.j1, hit.j2, hit.L);
-  } //end print hit list
+    out << line;
+  }
 
-  fprintf(outf, "\n");
-  if (strcmp(outfile, "stdout"))
-    fclose(outf);
+  out << std::endl;
+}
+
+void HitList::PrintHitList(HMM* q, char* outfile) {
+  std::stringstream out;
+  PrintHitList(q, out);
+
+  if (strcmp(outfile, "stdout") == 0) {
+    std::cout << out.str();
+  }
+  else {
+    std::ofstream outf(outfile);
+    if (!outf)
+      OpenFileError(outfile);
+
+    outf << out.str();
+
+    outf.close();
+  }
+}
+
+void HitList::PrintHHR(HMM* q, char* outfile) {
+  std::stringstream out;
+  PrintHHR(q, out);
+
+  if (strcmp(outfile, "stdout") == 0) {
+    std::cout << out.str();
+  }
+  else {
+    std::ofstream outf(outfile);
+
+    if (!outf)
+      OpenFileError(outfile);
+
+    outf << out.str();
+    outf.close();
+  }
+}
+
+void HitList::PrintHHR(HMM* q, std::stringstream& out) {
+  PrintHitList(q, out);
+  PrintAlignments(q, out, 0);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Print alignments of query sequences against hit sequences 
 /////////////////////////////////////////////////////////////////////////////////////
 void HitList::PrintAlignments(HMM* q, char* outfile, char outformat) {
-  Hit hit;
+  std::stringstream out;
+  PrintAlignments(q, out, outformat);
+
+  if (strcmp(outfile, "stdout") == 0) {
+    std::cout << out.str();
+  }
+  else {
+    std::fstream outf;
+    if (outformat == 0) {
+      outf.open(outfile, std::ios::out | std::ios::app);
+    }
+    else
+      outf.open(outfile, std::ios::out);
+
+    if (!outf.good())
+      OpenFileError(outfile);
+
+    outf << out.str();
+    outf.close();
+  }
+}
+
+void HitList::PrintAlignments(HMM* q, std::stringstream& out, char outformat) {
   FullAlignment qt_ali(par.nseqdis + 10); // maximum 10 annotation (pseudo) sequences (ss_dssp, sa_dssp, ss_pred, ss_conf, consens,...)
   int nhits = 0;
 
-  FILE* outf = NULL;
-  if (strcmp(outfile, "stdout")) {
-    if (outformat == 0)
-      outf = fopen(outfile, "a"); //append to summary hitlist
-    else
-      outf = fopen(outfile, "w"); //open for writing
-    if (!outf)
-      OpenFileError(outfile);
-  }
-  else
-    outf = stdout;
-
   Reset();
-  while (!End()) // print hit list
-  {
+  while (!End()) {
     if (nhits >= par.B)
-      break;       //max number of lines reached?
-    hit = ReadNext();
+      break;
+    Hit hit = ReadNext();
     if (nhits >= par.b && hit.Probab < par.p)
       break;
     if (nhits >= par.b && hit.Eval > par.E)
       continue;
-//       if (hit.matched_cols <=1) continue; // adding this might get to intransparent... analogous statement in PrintHitlist and hhalign.C
     nhits++;
 
     // Build double alignment of query against template sequences
     qt_ali.Build(q, hit);
 
     // Print out alignment
-    if (outformat == 0) // HHR format
-        {
-      fprintf(outf, "No %-3i\n", nhits);
-      qt_ali.PrintHeader(outf, q, hit);
-      qt_ali.PrintHHR(outf, hit);
-    }
-    else if (outformat == 1) // FASTA format
-        {
-      fprintf(outf, "# No %-3i\n", nhits);
-      qt_ali.PrintFASTA(outf, hit);
-    }
-    else if (outformat == 2) // A2M format
-        {
-      fprintf(outf, "# No %-3i\n", nhits);
-      qt_ali.PrintA2M(outf, hit);
-    }
-    else // A3m format
+    // HHR format
+    out << "No " << nhits << std::endl;
+    if (outformat == 0)
     {
-      fprintf(outf, "# No %-3i\n", nhits);
-      qt_ali.PrintA3M(outf, hit);
+      qt_ali.PrintHeader(out, q, hit);
+      qt_ali.PrintHHR(out, hit);
+    }
+    // FASTA format
+    else if (outformat == 1)
+    {
+      qt_ali.PrintFASTA(out, hit);
+    }
+    // A2M format
+    else if (outformat == 2)
+    {
+      qt_ali.PrintA2M(out, hit);
+    }
+    // A3m format
+    else
+    {
+      qt_ali.PrintA3M(out, hit);
     }
 
     qt_ali.FreeMemory();
   }
-  if (strcmp(outfile, "stdout"))
-    fclose(outf);
 }
+
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Return the ROC_5 score for optimization (changed 28.3.08 by Michael & Johannes)
@@ -220,43 +253,51 @@ void HitList::Optimize(HMM* q) {
 /////////////////////////////////////////////////////////////////////////////////////
 // Print score distribution into file score_dist
 /////////////////////////////////////////////////////////////////////////////////////
-void HitList::PrintScoreFile(HMM* q) {
-  int i = 0, n;
-  FILE* scoref = NULL;
-  Hit hit;
+void HitList::PrintScoreFile(HMM* q, char* outputfile) {
+  std::stringstream outbuffer;
+  PrintScoreFile(q, outbuffer);
+
+  if (strcmp(outputfile, "stdout") == 0) {
+    std::cout << outbuffer.str();
+  }
+  else {
+    std::ofstream out(outputfile);
+    if (!out.good()) {
+      std::cerr << "WARNING from " << par.argv[0] << ": could not open \'" << outputfile << std::endl;
+      return;
+    }
+
+    out << outbuffer.str();
+
+    out.close();
+  }
+}
+
+void HitList::PrintScoreFile(HMM* q, std::stringstream& outbuffer) {
   Hash<int> twice(10000); // make sure only one hit per HMM is listed
   twice.Null(-1);
 
-  if (strcmp(par.scorefile, "stdout")) {
-    scoref = fopen(par.scorefile, "w");
-    if (!scoref) {
-      cerr << endl << "WARNING from " << par.argv[0] << ": could not open \'"
-          << par.scorefile << "\'\n";
-      return;
-    }
-  }
-  else
-    scoref = stdout;
   Reset();
-  fprintf(scoref, "NAME  %s\n", q->longname);
-  fprintf(scoref, "FAM   %s\n", q->fam);
-  fprintf(scoref, "FILE  %s\n", q->file);
-  fprintf(scoref, "LENG  %i\n", q->L);
-  fprintf(scoref, "\n");
-//fprintf(scoref,"TARGET      REL LEN COL LOG-PVA   S-TOT     MS NALI\n");
+  outbuffer << "NAME  " << q->longname << std::endl;
+  outbuffer << "FAM   " << q->fam << std::endl;
+  outbuffer << "FILE  " << q->file << std::endl;
+  outbuffer << "LENG  " << q->L << std::endl;
 
 //For hhformat, the PROBAB field has to start at position 41 !!
-//                ----+----1----+----2----+----3----+----4----+---- 
-  fprintf(scoref,
-      "TARGET                FAMILY   REL  LEN  COL  LOG-PVA  S-AASS PROBAB  SCORE  LOG-EVAL\n");
+//                ----+----1----+----2----+----3----+----4----+----
+  outbuffer << "TARGET                FAMILY   REL  LEN  COL  LOG-PVA  S-AASS PROBAB  SCORE  LOG-EVAL\n";
   //              d153l__               5 185 185  287.82  464.22 100.00 
   //              d1qsaa2               3 168 124  145.55  239.22  57.36
+
+  int i = 0;
   while (!End()) {
     i++;
-    hit = ReadNext();
+    Hit hit = ReadNext();
     if (twice[hit.name] == 1)
       continue; // better hit with same HMM has been listed already
     twice.Add(hit.name, 1);
+
+    int n;
     //if template and query are from the same superfamily
     if (!strcmp(hit.name, q->name))
       n = 5;
@@ -270,11 +311,15 @@ void HitList::PrintScoreFile(HMM* q) {
       n = 1;
     else
       n = 0;
-    fprintf(scoref, "%-20s %-10s %1i %5i %3i %8.3f %7.2f %6.2f %7.2f %8.3f\n",
-        hit.name, hit.fam, n, hit.L, hit.matched_cols, -1.443 * hit.logPval,
-        -hit.score_aass, hit.Probab, hit.score, -1.443 * hit.logEval);
+
+    char line[LINELEN];
+
+    sprintf(line, "%-20s %-10s %1i %5i %3i %8.3f %7.2f %6.2f %7.2f %8.3f\n",
+            hit.name, hit.fam, n, hit.L, hit.matched_cols, -1.443 * hit.logPval,
+            -hit.score_aass, hit.Probab, hit.score, -1.443 * hit.logEval);
+
+    outbuffer << line;
   }
-  fclose(scoref);
 }
 
 void HitList::WriteToAlifile(HMM* q, bool scop_only) {
