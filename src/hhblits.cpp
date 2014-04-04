@@ -53,12 +53,26 @@
  */
 
 #include <stdio.h>
+#include <iostream>
 #include "HHblits.h"
 #include "hhdecl.h"
 
 int main(int argc, char **argv) {
   HHblits hhblits(argc, argv);
-  FILE* inf = fopen(par.infile, "r");
+
+  FILE* inf;
+  if(strcmp(par.infile, "stdin") == 0) {
+	  inf = stdin;
+  }
+  else {
+	  inf = fopen(par.infile, "r");
+  }
+
+  if(!inf) {
+	  std::cerr << "Input file (" << par.infile << ") could not be opened!" << std::endl;
+	  exit(1);
+  }
+
   hhblits.run(inf, par.infile);
 
   hhblits.writeHHRFile(par.outfile);

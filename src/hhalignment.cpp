@@ -852,6 +852,8 @@ void Alignment::Compress(const char infile[]) {
   int unequal_lengths = 0; //k: seq k doesn't have same number of match states as seq 0 => WARNING
   static short unsigned int h[MAXSEQ]; //points to next character in seq[k] to be written
 
+  int M = par.M;
+
   // for (k=0;k<N_in; ++k) printf("k=%i >%s\n%s\n",k,sname[k],seq[k]); // DEBUG
   
   // Initialize
@@ -861,26 +863,26 @@ void Alignment::Compress(const char infile[]) {
   }
 
   if (v >= 3) {
-    if (par.M == 1)
+    if (M == 1)
       cout
           << "Using match state assignment by capital letters (a2m/a3m format)\n";
-    else if (par.M == 2)
+    else if (M == 2)
       cout << "Using percentage-rule match state assignment\n";
-    else if (par.M == 3)
+    else if (M == 3)
       cout << "Using residues of first sequence as match states\n";
   }
 
   // Warn, if there are gaps in a single sequence
-  if (v >= 1&& N_in-N_ss==1 && par.M!= 2 && strchr(seq[kfirst]+1,'-')!=NULL)fprintf(
+  if (v >= 1&& N_in-N_ss==1 && M!= 2 && strchr(seq[kfirst]+1,'-')!=NULL)fprintf(
     stderr, "WARNING: File %s has a single sequence containing gaps, which will be ignored.\nIf you want to treat the gaps as match states, use the '-M 100' option.\n",infile);
 
   // Too few match states?
-  if (par.M == 1) {
+  if (M == 1) {
     int match_states = strcount(seq[kfirst] + 1, 'A', 'Z')
         + strcount(seq[kfirst] + 1, '-', '-');
     if (match_states < 6) {
       if (N_in - N_ss <= 1) {
-        par.M = 3; // if only single sequence in input file, use par.M=3 (match states by first seq)
+        M = 3; // if only single sequence in input file, use M=3 (match states by first seq)
         if(v >= 2) {
           fprintf(stderr,
               "WARNING: single sequence in file %s contains only %i match_states! Switching to option -M first\n seq=%s\n",
@@ -895,7 +897,7 @@ void Alignment::Compress(const char infile[]) {
   }
 
   // Create matrices X and I with amino acids represented by integer numbers
-  switch (par.M) {
+  switch (M) {
 
     /////////////////////////////////////////////////////////////////////////////////////
     // a2m/a3m format: match states capital case, inserts lower case, delete states '-', inserted gaps '.'
@@ -1256,7 +1258,7 @@ void Alignment::Compress(const char infile[]) {
         << " do not all have the same number of columns, \ne.g. first sequence and sequence "
         << sname[unequal_lengths] << ".\n";
 
-    if (par.M == 1)
+    if (M == 1)
       cerr
           << ".\nCheck input format for '-M a2m' option and consider using '-M first' or '-M 50'\n";
 
