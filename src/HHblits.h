@@ -164,7 +164,7 @@ private:
 	char dba3m_data_filename[NAMELEN];
 
 	//compressed a3m stuff
-	bool use_compressed_a3m;
+	bool use_compressed_a3m = false;
 	char dbca3m_base[NAMELEN];
 	char dbca3m_index_filename[NAMELEN];
 	char dbca3m_data_filename[NAMELEN];

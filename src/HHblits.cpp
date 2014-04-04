@@ -1409,7 +1409,7 @@ void HHblits::DoViterbiSearch(char *dbfiles[], int ndb, Hash<Hit>* previous_hits
   }
 
   // For all the databases comming through prefilter
-  #pragma omp parallel for
+  #pragma omp parallel for schedule(dynamic, 5)
   for (int idb = 0; idb < ndb; idb++) {
     // Allocate free bin (no need to lock, since slave processes cannot change FREE to other status)
     int bin = omp_get_thread_num();
@@ -1772,7 +1772,7 @@ void HHblits::perform_realign(char *dbfiles[], int ndb, Hash<char>* premerged_hi
   //////////////////////////////////////////////////////////////////////////////////
 
   // Read all HMMs whose position is given in phash_plist_realignhitpos
-  #pragma omp parallel for
+  #pragma omp parallel for schedule(dynamic, 5)
   for (int idb = 0; idb < ndb; idb++) {
     // Can we skip dbfiles[idb] because it contains no template to be realigned?
     if (!phash_plist_realignhitpos->Contains(dbfiles[idb]))
@@ -1910,6 +1910,8 @@ void HHblits::reduceRedundancyOfHitList(int n_redundancy, int query_length,
       }
     }
   }
+
+  delete[] coverage;
 }
 
 void HHblits::recalculateAlignmentsForDifferentQSC(HitList& hitlist,
@@ -1971,6 +1973,8 @@ void HHblits::recalculateAlignmentsForDifferentQSC(HitList& hitlist,
         realigned_viterbi_hitlist.Push(hit);
       }
 
+      hit.DeleteBacktraceMatrix(q->L + 2);
+
       delete t;
     }
 
@@ -2030,6 +2034,7 @@ void HHblits::recalculateAlignmentsForDifferentQSC(HitList& hitlist,
       hit.Probab = hit_ref.Probab;
 
       hit.DeleteForwardMatrix(q->L + 2);
+      hit.DeleteBacktraceMatrix(q->L + 2);
 
       if (hit.matched_cols >= MINCOLS_REALIGN) {
         recalculated_hitlist.Insert(hit);
@@ -2043,6 +2048,8 @@ void HHblits::recalculateAlignmentsForDifferentQSC(HitList& hitlist,
       realigned_viterbi_hitlist.Delete().Delete();
     }
   }
+
+  delete q;
 
   v = v1;
 }
@@ -2532,6 +2539,8 @@ void HHblits::stripe_query_profile() {
     }
   }
 
+  free(qw);
+
   for (i = 0; i < LQ + 1; ++i)
     free(query_profile[i]);
   delete[] query_profile;
@@ -2944,21 +2953,22 @@ void HHblits::run(FILE* query_fh, char* query_path) {
     *q_tmp = *q;
 
     // Write query HHM file? (not the final HMM, which will be written to par.hhmfile)
-    if (*query_hhmfile) {
-      v1 = v;
-      if (v > 0 && v <= 3)
-        v = 1;
-      else
-        v -= 2;
-
-      // Add *no* amino acid pseudocounts to query. This is necessary to copy f[i][a] to p[i][a]
-      q->AddAminoAcidPseudocounts(0, 0.0, 0.0, 1.0);
-      q->CalculateAminoAcidBackground();
-
-      q->WriteToFile(query_hhmfile);
-
-      v = v1;
-    }
+    //TODO
+//    if (*query_hhmfile) {
+//      v1 = v;
+//      if (v > 0 && v <= 3)
+//        v = 1;
+//      else
+//        v -= 2;
+//
+//      // Add *no* amino acid pseudocounts to query. This is necessary to copy f[i][a] to p[i][a]
+//      q->AddAminoAcidPseudocounts(0, 0.0, 0.0, 1.0);
+//      q->CalculateAminoAcidBackground();
+//
+//      q->WriteToFile(query_hhmfile);
+//
+//      v = v1;
+//    }
 
     PrepareQueryHMM(input_format, q);
 
