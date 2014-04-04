@@ -62,15 +62,15 @@ CPP_VALGRIND = $(CXX) -g $(CXXFLAGS)
 
 
 SOURCES = hhsearch.cpp hhhitlist.cpp hhhit.cpp hhalignment.cpp hhhmm.cpp hhmatrices.cpp hhdecl.cpp hhfunc.cpp hhprefilter.cpp hhworker.cpp hhfullalignment.cpp hhhalfalignment.cpp hhutil.cpp util.cpp hash.cpp list.cpp
-HH_OBJECTS = hhalignment.o hhfullalignment.o hhhalfalignment.o hhhitlist.o hhhmm.o hhdecl.o hhhit.o hhutil.o util.o
+HH_OBJECTS = hhalignment.o hhfullalignment.o hhhalfalignment.o hhhitlist.o hhhmm.o hhdecl.o hhhit.o hhutil.o util.o HHblits.o hhfunc.o hhmatrices.o
 
 CS_SOURCES_WITH_APPS = $(filter-out $(wildcard $(CS_DIR)/*test*.cc), $(wildcard $(CS_DIR)/*.cc))
 CS_SOURCES = $(filter-out $(wildcard $(CS_DIR)/*app.cc), $(CS_SOURCES_WITH_APPS))
 CS_OBJECTS = $(patsubst %.cc, %.o, $(CS_SOURCES))
 
-HEADERS = hhhitlist.h hhhit.h hhalignment.h hhhmm.h hhfullalignment.h hhfullalignment.h hash.h list.h
+HEADERS = hhhitlist.h hhhit.h hhalignment.h hhhmm.h hhfullalignment.h hhfullalignment.h hash.h list.h hhfunc.h hhmatrices.h
 
-TARGETS = hhblits hhsearch hhmake hhalign hhfilter hhconsensus cstranslate a3m_extractor a3m_reducer a3m_database_filter ffindex_from_fasta ffindex_from_fasta_with_split 
+TARGETS = hhblits hhblits_mpi hhsearch hhmake hhalign hhfilter hhconsensus cstranslate a3m_extractor a3m_reducer a3m_database_filter ffindex_from_fasta ffindex_from_fasta_with_split 
 TARGETS_STATIC = hhblits_static hhsearch_static hhmake_static hhalign_static hhfilter_static hhconsensus_static cstranslate_static
 TARGETS_VALGRIND = hhblits_valgrind hhsearch_valgrind hhalign_valgrind
 
@@ -93,22 +93,22 @@ hhsearch: hhsearch.cpp $(HH_OBJECTS) $(SOURCES) $(HEADERS) $(CS_OBJECTS)
 	$(CPP) hhsearch.cpp -o hhsearch $(HH_OBJECTS) $(CS_OBJECTS) $(HHSEARCH_LIBS) $(OBJECT_LIBS) $(FFINDEX_DIR)/libffindex.a
 
 hhsearch_static: hhsearch.cpp $(HH_OBJECTS) $(SOURCES) $(HEADERS) $(CS_OBJECTS)
-	$(CPP) -static hhsearch.C -o hhsearch $(HH_OBJECTS) $(CS_OBJECTS) $(HHSEARCH_LIBS) $(OBJECT_LIBS)
+	$(CPP) -static hhsearch.cpp -o hhsearch $(HH_OBJECTS) $(CS_OBJECTS) $(HHSEARCH_LIBS) $(OBJECT_LIBS)
 
 hhsearch_valgrind: hhsearch.cpp $(HH_OBJECTS) $(SOURCES) $(HEADERS) $(CS_OBJECTS)
-	$(CPP_VALGRIND) hhsearch.C -o hhsearch_valgrind $(HH_OBJECTS) $(CS_OBJECTS) $(HHSEARCH_LIBS) $(OBJECT_LIBS)
+	$(CPP_VALGRIND) hhsearch.cpp -o hhsearch_valgrind $(HH_OBJECTS) $(CS_OBJECTS) $(HHSEARCH_LIBS) $(OBJECT_LIBS)
 
 hhblits: hhblits.cpp $(HH_OBJECTS) $(CS_OBJECTS)
 	$(CPP) -g hhblits.cpp -o hhblits $(HH_OBJECTS) $(CS_OBJECTS) $(HHBLITS_LIBS) $(OBJECT_LIBS) $(FFINDEX_DIR)/libffindex.a
 
-HHblits: HHblits.cpp $(HH_OBJECTS) $(CS_OBJECTS)
-	$(CPP) -g HHblits.cpp -o HHblits  $(HH_OBJECTS) $(CS_OBJECTS) $(HHBLITS_LIBS) $(OBJECT_LIBS) $(FFINDEX_DIR)/libffindex.a
-
+hhblits_mpi: hhblits_mpi.cpp $(HH_OBJECTS) $(CS_OBJECTS)
+	mpic++ $(CXXFLAGS) -g hhblits_mpi.cpp -o hhblits_mpi $(HH_OBJECTS) $(CS_OBJECTS) $(HHBLITS_LIBS) $(OBJECT_LIBS) $(FFINDEX_DIR)/libffindex.a
+	
 hhblits_static: hhblits.cpp $(HH_OBJECTS) $(SOURCES) $(HEADERS) $(CS_OBJECTS)
 	$(CPP) -static hhblits.cpp -o hhblits $(HH_OBJECTS) $(CS_OBJECTS) $(HHBLITS_LIBS)  $(OBJECT_LIBS) $(FFINDEX_DIR)/libffindex.a
 
 hhblits_valgrind: hhblits.cpp $(HH_OBJECTS) $(SOURCES) $(HEADERS)$(CS_OBJECTS)
-	$(CPP_VALGRIND) hhblits.C -o hhblits_valgrind $(HH_OBJECTS) $(CS_OBJECTS) $(HHBLITS_LIBS)  $(OBJECT_LIBS) $(FFINDEX_DIR)/libffindex.a
+	$(CPP_VALGRIND) hhblits.cpp -o hhblits_valgrind $(HH_OBJECTS) $(CS_OBJECTS) $(HHBLITS_LIBS)  $(OBJECT_LIBS) $(FFINDEX_DIR)/libffindex.a
 
 hhmake: hhmake.cpp $(HH_OBJECTS) $(SOURCES) $(HEADERS) $(CS_OBJECTS)
 	$(CPP) hhmake.cpp -o hhmake $(HH_OBJECTS) $(CS_OBJECTS) $(OBJECT_LIBS) $(FFINDEX_DIR)/libffindex.a

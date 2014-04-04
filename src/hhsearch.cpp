@@ -79,7 +79,7 @@ using std::ofstream;
 #include "hhdecl.h"      // Constants, global variables, struct Parameters
 
 #include "hhutil.h"      // MatchChr, InsertChr, aa2i, i2aa, log2, fast_log2, ScopID, WriteToScreen,
-#include "hhmatrices.cpp"  // BLOSUM50, GONNET, HSDM
+#include "hhmatrices.h"  // BLOSUM50, GONNET, HSDM
 
 #include "hhhmm.h"       // class HMM
 #include "hhhit.h"       // class Hit
@@ -88,7 +88,7 @@ using std::ofstream;
 #include "hhfullalignment.h" // class FullAlignment
 #include "hhhitlist.h"   // class Hit
 
-#include "hhfunc.cpp"      // some functions common to hh programs
+#include "hhfunc.h"      // some functions common to hh programs
 
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -732,10 +732,9 @@ void perform_realign(char *dbfiles[], int ndb)
 	      Alignment tali;
 	      tali.Read(dbf,hit_cur.dbfile,line);
 	      tali.Compress(hit_cur.dbfile);
-//            qali.FilterForDisplay(par.max_seqid,par.coverage,par.qid,par.qsc,par.nseqdis);
 	      tali.N_filtered = tali.Filter(par.max_seqid_db,par.coverage_db,par.qid_db,par.qsc_db,par.Ndiff_db);
 	      t[bin]->name[0]=t[bin]->longname[0]=t[bin]->fam[0]='\0';
-	      tali.FrequenciesAndTransitions(t[bin]);
+	      tali.FrequenciesAndTransitions(t[bin], par.wg);
 	      format[bin] = 0;
 	    }
 	  else {
@@ -809,7 +808,7 @@ void perform_realign(char *dbfiles[], int ndb)
 	  Qali.N_filtered = Qali.Filter(par.max_seqid,par.coverage,par.qid,par.qsc,par.Ndiff);
 	  
 	  // Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
-	  Qali.FrequenciesAndTransitions(q);
+	  Qali.FrequenciesAndTransitions(q, par.wg);
 	  
 	  // Comput substitution matrix pseudocounts
 	  if (par.nocontxt) { 
@@ -932,7 +931,7 @@ void perform_realign(char *dbfiles[], int ndb)
 		  // qali.FilterForDisplay(par.max_seqid,par.coverage,par.qid,par.qsc,par.nseqdis);
 		  tali.N_filtered = tali.Filter(par.max_seqid_db,par.coverage_db,par.qid_db,par.qsc_db,par.Ndiff_db);
 		  t[bin]->name[0]=t[bin]->longname[0]=t[bin]->fam[0]='\0';
-		  tali.FrequenciesAndTransitions(t[bin]);
+		  tali.FrequenciesAndTransitions(t[bin], par.wg);
 		  format[bin] = 0;
 		}
 	      else {
@@ -1060,7 +1059,7 @@ void perform_realign(char *dbfiles[], int ndb)
   // Print for each HMM: n  score  -log2(Pval)  L  name  (n=5:same name 4:same fam 3:same sf...)
   if (*par.scorefile) {
     if (v>=3) printf("Printing scores file ...\n");
-    hitlist.PrintScoreFile(q);
+    hitlist.PrintScoreFile(q, par.outfile);
   }
   
   
@@ -1194,7 +1193,8 @@ int main(int argc, char **argv)
 
   // Read input file (HMM, HHM, or alignment format), and add pseudocounts etc.
   char input_format=0;
-  ReadQueryFile(par.infile,input_format,q); 
+  Alignment qali;
+  ReadQueryFile(par.infile, input_format, par.wg, q, &qali);
   PrepareQueryHMM(input_format,q);
 
 //  // Rescale matrix according to query aa composition? (Two iterations are sufficient)
@@ -1394,7 +1394,7 @@ int main(int argc, char **argv)
                   tali.N_filtered = tali.Filter(par.max_seqid_db,par.coverage_db,par.qid_db,par.qsc_db,par.Ndiff_db);
                   char wg=par.wg; par.wg=1; // use global weights
                   t[bin]->name[0]=t[bin]->longname[0]=t[bin]->fam[0]='\0';
-                  tali.FrequenciesAndTransitions(t[bin]);
+                  tali.FrequenciesAndTransitions(t[bin], par.wg);
                   par.wg=wg; //reset global weights
                   format[bin] = 0;
                 }
@@ -1701,8 +1701,8 @@ int main(int argc, char **argv)
           RemovePathAndExtension(Qali.file,par.hhmfile);
 
           // Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
-	  HMM* Q = new HMM; // output HMM: generated from Qali
-          Qali.FrequenciesAndTransitions(Q);
+          HMM* Q = new HMM; // output HMM: generated from Qali
+          Qali.FrequenciesAndTransitions(Q, par.wg);
 
           // Add *no* amino acid pseudocounts to query. This is necessary to copy f[i][a] to p[i][a]
           Q->AddAminoAcidPseudocounts(0, 0.0, 0.0, 1.0);

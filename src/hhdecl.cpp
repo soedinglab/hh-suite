@@ -236,19 +236,21 @@ void Parameters::SetDefaults()
 
   // Initialize strings
 
-  strcpy(infile,""); // was reverted back from 'strcpy(infile,"stdin");' (to show help list when no options are given)
-  strcpy(outfile,"");
+  strcpy(infile, ""); // was reverted back from 'strcpy(infile,"stdin");' (to show help list when no options are given)
+  strcpy(outfile, "");
   strcpy(reduced_outfile, "");
-  strcpy(pairwisealisfile,"");
-  strcpy(scorefile,"");
-  strcpy(indexfile,""); 
-  strcpy(wfile,"");
-  strcpy(alnfile,"");
-  strcpy(hhmfile,"");
-  strcpy(psifile,"");
-  strcpy(alitabfile,"");
+  strcpy(pairwisealisfile, "");
+  strcpy(scorefile, "");
+  strcpy(indexfile, "");
+  strcpy(wfile, "");
+  strcpy(alnfile, "");
+  strcpy(hhmfile, "");
+  strcpy(psifile, "");
+  strcpy(alitabfile, "");
+  strcpy(alisbasename, "");
   exclstr=NULL;
 
+  n_redundancy = 10;
 
   // parameters for context-specific pseudocounts
   csb = 0.85;

@@ -60,7 +60,8 @@ public:
 
   
   // Write alignments in tabular output
-  void WriteToAlifile(HMM* q, bool scop_only=false);
+  void WriteToAlifile(HMM* q, char* alitabfile, bool scop_only=false);
+  void WriteToAlifile(HMM* q, std::stringstream& out, bool scop_only=false);
 
   // Log likelihood for fitting the EVD to the score distribution
   double LogLikelihoodEVD(double* v);

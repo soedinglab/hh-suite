@@ -63,14 +63,14 @@ using std::ofstream;
 #include "hhdecl.h"      // Constants, global variables, struct Parameters
 
 #include "hhutil.h"      // MatchChr, InsertChr, aa2i, i2aa, log2, fast_log2, ScopID, WriteToScreen,
-#include "hhmatrices.cpp"  // BLOSUM50, GONNET, HSDM
+#include "hhmatrices.h"  // BLOSUM50, GONNET, HSDM
 #include "hhhmm.h"       // class HMM
 #include "hhhit.h"       // class Hit
 #include "hhalignment.h" // class Alignment
 #include "hhhalfalignment.h" // class HalfAlignment
 #include "hhfullalignment.h" // class FullAlignment
 #include "hhhitlist.h"   // class Hit
-#include "hhfunc.cpp"      // some functions common to hh programs
+#include "hhfunc.h"      // some functions common to hh programs
 #ifdef HH_PNG
 #include "pngwriter.h"   //PNGWriter (http://pngwriter.sourceforge.net/)
 #include "pngwriter.cc"  //PNGWriter (http://pngwriter.sourceforge.net/)
@@ -1158,7 +1158,7 @@ int main(int argc, char **argv) {
 
   // Read input file (HMM, HHM, or alignment format), and add pseudocounts etc.
   char input_format = 0;
-  ReadQueryFile(par.infile, input_format, q, &qali);
+  ReadQueryFile(par.infile, input_format, par.wg, q, &qali);
   PrepareQueryHMM(input_format, q);
 
   // Set query columns in His-tags etc to Null model distribution
@@ -1186,7 +1186,8 @@ int main(int argc, char **argv) {
   else {
     // Read input file (HMM, HHM, or alignment format), and add pseudocounts etc.
     char input_format = 0;
-    ReadQueryFile(par.tfile, input_format, t);
+    Alignment tali;
+    ReadQueryFile(par.tfile, input_format, par.wg, t, &tali);
     PrepareTemplateHMM(q, t, input_format);
   }
 

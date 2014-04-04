@@ -1,150 +1,121 @@
 // hhfunc.C
 
-// Read input file (HMM, HHM, or alignment format)
-void ReadQueryFile(char* infile, char& input_format, char use_global_weights, HMM* q, Alignment* qali =
-    NULL);
-
-// Add transition and amino acid pseudocounts to query HMM, calculate aa background etc.
-void PrepareQueryHMM(char& input_format, HMM* q);
-
-// Do precalculations for q and t to prepare comparison
-void PrepareTemplateHMM(HMM* q, HMM* t, int format);
-
-// Calculate secondary structure prediction with PSIPRED
-void CalculateSS(char *ss_pred, char *ss_conf, char *tmpfile);
-
-// Calculate secondary structure for given HMM and return prediction
-void CalculateSS(HMM* q, char *ss_pred, char *ss_conf);
-
-// Calculate secondary structure for given HMM
-void CalculateSS(HMM* q);
-
-// Write alignment in tab format (option -atab)
-void WriteToAlifile(FILE* alitabf, Hit* hit);
+#include "hhfunc.h"
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Read input file (HMM, HHM, or alignment format)
 /////////////////////////////////////////////////////////////////////////////////////
+void ReadQueryFile(FILE* inf, char& input_format, char use_global_weights, HMM* q, Alignment* qali, char infile[]) {
+	char line[LINELEN];
+
+	if (!fgetline(line, LINELEN, inf)) {
+	    std::cerr << std::endl << "Error in " << program_name << ": " << infile
+	        << " is empty!\n";
+	    exit(4);
+	  }
+	  while (strscn(line) == NULL)
+	    fgetline(line, LINELEN, inf); // skip lines that contain only white space
+
+	  // Is infile a HMMER file?
+	  if (!strncmp(line, "HMMER", 5)) {
+	    // Uncomment this line to allow HMMER2/HMMER3 models as queries:
+	    std::cerr << "Error: Use of HMMER format as input will result in severe loss of sensitivity!\n";
+	    exit(4);
+	  }
+	  // ... or is it an hhm file?
+	  else if (!strncmp(line, "NAME", 4) || !strncmp(line, "HH", 2)) {
+		char path[NAMELEN];
+		Pathname(path, infile);
+
+
+	    if (v >= 2)
+	      std::cout << "Query file is in HHM format\n";
+
+	    // Rewind to beginning of line and read query hhm file
+	    rewind(inf);
+	    q->Read(inf, path);
+	    input_format = 0;
+
+	    if (v >= 1 && input_format == 0)  // HHM format
+	      printf(
+	          "Extracting representative sequences from %s to merge later with matched database sequences\n",
+	          par.infile);
+
+	    qali->GetSeqsFromHMM(q);
+	    qali->Compress(par.infile);
+	  }
+	  // ... or is it an alignment file
+	  else if (line[0] == '#' || line[0] == '>')         // read sequence/alignment
+	      {
+	    if (par.calibrate) {
+	      printf("\nError in %s: only HHM files can be calibrated.\n",
+	          program_name);
+	      printf(
+	          "Build an HHM file from your alignment with 'hhmake -i %s' and rerun hhsearch with the hhm file\n\n",
+	          infile);
+	      exit(1);
+	    }
+
+	    if (v >= 2 && strcmp(infile, "stdin"))
+	      std::cout << infile << " is in A2M, A3M or FASTA format\n";
+
+	    // Read alignment from infile into matrix X[k][l] as ASCII (and supply first line as extra argument)
+	    qali->Read(inf, infile, line);
+
+	    // Convert ASCII to int (0-20),throw out all insert states, record their number in I[k][i]
+	    // and store marked sequences in name[k] and seq[k]
+	    qali->Compress(infile);
+
+	    // Sort out the nseqdis most dissimilar sequences for display in the output alignments
+	    qali->FilterForDisplay(par.max_seqid, par.coverage, par.qid, par.qsc,
+	        par.nseqdis);
+
+	    // Remove sequences with seq. identity larger than seqid percent (remove the shorter of two)
+	    qali->N_filtered = qali->Filter(par.max_seqid, par.coverage, par.qid,
+	        par.qsc, par.Ndiff);
+
+	    if (par.Neff >= 0.999)
+	    	qali->FilterNeff(use_global_weights);
+
+	    // Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
+	    qali->FrequenciesAndTransitions(q, use_global_weights);
+	    input_format = 0;
+	  }
+	  else {
+	    std::cerr << std::endl << "Error in " << program_name
+	        << ": unrecognized input file format in \'" << infile << "\'\n";
+	    std::cerr << "line = " << line << "\n";
+	    exit(1);
+	  }
+
+	  if (v >= 2 && input_format == 0 && q->Neff_HMM > 11.0)
+	    fprintf(stderr,
+	        "WARNING: MSA %s looks too diverse (Neff=%.1f>11). Better check it with an alignment viewer for non-homologous segments. Also consider building the MSA with hhblits using the - option to limit MSA diversity.\n",
+	        q->name, q->Neff_HMM);
+}
+
 void ReadQueryFile(char* infile, char& input_format, char use_global_weights, HMM* q, Alignment* qali) {
   // Open query file and determine file type
   char path[NAMELEN]; // path of input file (is needed to write full path and file name to HMM FILE record)
-  char line[LINELEN] = "";   // input line
   FILE* inf = NULL;
-  if (strcmp(infile, "stdin")) {
-    inf = fopen(infile, "r");
-    if (!inf)
-      OpenFileError(infile);
-    Pathname(path, infile);
-  }
-  else {
+  if (strcmp(infile, "stdin") == 0) {
     inf = stdin;
     if (v >= 2)
       printf(
           "Reading HMM / multiple alignment from standard input ...\n(To get a help list instead, quit and type %s -h.)\n",
           program_name);
-    *path = '\0';
-  }
-  
-  if (!fgetline(line, LINELEN, inf)) {
-    cerr << endl << "Error in " << program_name << ": " << infile
-        << " is empty!\n";
-    exit(4);
-  }
-  while (strscn(line) == NULL)
-    fgetline(line, LINELEN, inf); // skip lines that contain only white space
-
-  // Is infile a HMMER file?
-  if (!strncmp(line, "HMMER", 5)) {
-    // Uncomment this line to allow HMMER2/HMMER3 models as queries:
-    cerr
-        << "Error: Use of HMMER format as input will result in severe loss of sensitivity!\n";
-    exit(4);
-
-    // Read query HMMER file
-    rewind(inf);
-    if (!strncmp(line, "HMMER3", 6)) {
-      if (v >= 3)
-        cout << "Query file is in HMMER3 format\n";
-      q->ReadHMMer3(inf, path);
-    }
-    else {
-      if (v >= 3)
-        cout << "Query file is in HMMER format\n";
-      q->ReadHMMer(inf, path);
-    }
-    input_format = 1;
-    par.hmmer_used = true;
-  }
-  
-  // ... or is it an hhm file?
-  else if (!strncmp(line, "NAME", 4) || !strncmp(line, "HH", 2)) {
-    if (v >= 2)
-      cout << "Query file is in HHM format\n";
-
-    // Rewind to beginning of line and read query hhm file
-    rewind(inf);
-    q->Read(inf, path);
-    input_format = 0;
-  }
-  // ... or is it an alignment file
-  else if (line[0] == '#' || line[0] == '>')         // read sequence/alignment
-      {
-    Alignment* pali;
-    if (qali == NULL)
-      pali = new (Alignment);
-    else
-      pali = qali;
-    if (par.calibrate) {
-      printf("\nError in %s: only HHM files can be calibrated.\n",
-          program_name);
-      printf(
-          "Build an HHM file from your alignment with 'hhmake -i %s' and rerun hhsearch with the hhm file\n\n",
-          infile);
-      exit(1);
-    }
-
-    if (v >= 2 && strcmp(infile, "stdin"))
-      cout << infile << " is in A2M, A3M or FASTA format\n";
-
-    // Read alignment from infile into matrix X[k][l] as ASCII (and supply first line as extra argument)
-    pali->Read(inf, infile, line);
-
-    // Convert ASCII to int (0-20),throw out all insert states, record their number in I[k][i]
-    // and store marked sequences in name[k] and seq[k]
-    pali->Compress(infile);
-
-    // Sort out the nseqdis most dissimilar sequences for display in the output alignments
-    pali->FilterForDisplay(par.max_seqid, par.coverage, par.qid, par.qsc,
-        par.nseqdis);
-
-    // Remove sequences with seq. identity larger than seqid percent (remove the shorter of two)
-    pali->N_filtered = pali->Filter(par.max_seqid, par.coverage, par.qid,
-        par.qsc, par.Ndiff);
-
-    if (par.Neff >= 0.999)
-      pali->FilterNeff(use_global_weights);
-
-    // Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
-    pali->FrequenciesAndTransitions(q, use_global_weights);
-    input_format = 0;
-    if (qali == NULL)
-      delete (pali);
+    path[0] = '\0';
   }
   else {
-    cerr << endl << "Error in " << program_name
-        << ": unrecognized input file format in \'" << infile << "\'\n";
-    cerr << "line = " << line << "\n";
-    exit(1);
+    inf = fopen(infile, "r");
+    if (!inf)
+      OpenFileError(infile);
+    Pathname(path, infile);
   }
-
-  if (v >= 2 && input_format == 0 && q->Neff_HMM > 11.0)
-    fprintf(stderr,
-        "WARNING: MSA %s looks too diverse (Neff=%.1f>11). Better check it with an alignment viewer for non-homologous segments. Also consider building the MSA with hhblits using the - option to limit MSA diversity.\n",
-        q->name, q->Neff_HMM);
+  
+  ReadQueryFile(inf, input_format, use_global_weights, q, qali, infile);
 
   fclose(inf);
-  
-  return;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -186,7 +157,6 @@ void PrepareQueryHMM(char& input_format, HMM* q) {
   
   if (par.forward >= 1)
     q->Log2LinTransitionProbs(1.0);
-  return;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -303,14 +273,14 @@ void CalculateSS(char *ss_pred, char *ss_conf, char *tmpfile) {
 void CalculateSS(HMM* q, char *ss_pred, char *ss_conf) {
 
   if (q->divided_by_local_bg_freqs) {
-    cerr
+    std::cerr
         << "WARNING: Can not add predicted secondary structure when using column score 5!\n";
     return;
   }
 
   char tmpfile[] = "/tmp/HHsuite_CaluclateSS_XXXXXX";
   if (mkstemp(tmpfile) == -1) {
-    cerr << "Error: Could not create tmp file " << tmpfile << "!\n";
+    std::cerr << "Error: Could not create tmp file " << tmpfile << "!\n";
     exit(4);
   }
   

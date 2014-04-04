@@ -138,7 +138,7 @@ void HitList::PrintHHR(HMM* q, std::stringstream& out) {
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
-// Print alignments of query sequences against hit sequences 
+// Print alignments of query sequences against hit sequences
 /////////////////////////////////////////////////////////////////////////////////////
 void HitList::PrintAlignments(HMM* q, char* outfile, char outformat) {
   std::stringstream out;
@@ -222,7 +222,7 @@ void HitList::Optimize(HMM* q) {
   int sfam = 0;   // number of hits from same suporfamily (at current threshold)
   int not_sfam = 0;      // number of hits not from same superfamily
   Hit hit;
-  
+
   SortList();
   Reset();
   while (!End()) {
@@ -286,7 +286,7 @@ void HitList::PrintScoreFile(HMM* q, std::stringstream& outbuffer) {
 //For hhformat, the PROBAB field has to start at position 41 !!
 //                ----+----1----+----2----+----3----+----4----+----
   outbuffer << "TARGET                FAMILY   REL  LEN  COL  LOG-PVA  S-AASS PROBAB  SCORE  LOG-EVAL\n";
-  //              d153l__               5 185 185  287.82  464.22 100.00 
+  //              d153l__               5 185 185  287.82  464.22 100.00
   //              d1qsaa2               3 168 124  145.55  239.22  57.36
 
   int i = 0;
@@ -322,37 +322,53 @@ void HitList::PrintScoreFile(HMM* q, std::stringstream& outbuffer) {
   }
 }
 
-void HitList::WriteToAlifile(HMM* q, bool scop_only) {
-  Hit hit;
-  int i = 0, n;
+void HitList::WriteToAlifile(HMM* q, char* alitabfile, bool scop_only) {
+	std::stringstream out;
+	WriteToAlifile(q, out, scop_only);
+
+  if (strcmp(alitabfile, "stdout") == 0) {
+	  std::cout << out.str();
+  }
+  else {
+    std::ofstream alitabf(alitabfile);
+
+    if (!alitabf.good())
+    	OpenFileError(alitabfile);
+
+    alitabf << out.str();
+
+    alitabf.close();
+  }
+}
+
+void HitList::WriteToAlifile(HMM* q, std::stringstream& out, bool scop_only) {
   Hash<int> twice(10000); // make sure only one hit per HMM is listed
   twice.Null(-1);
-  FILE* alitabf = NULL;
-  if (strcmp(par.alitabfile, "stdout"))
-    alitabf = fopen(par.alitabfile, "w");
-  else
-    alitabf = stdout;
-  if (!alitabf)
-    OpenFileError(par.alitabfile);
 
-  fprintf(alitabf, "NAME  %s\n", q->longname);
-  fprintf(alitabf, "FAM   %s\n", q->fam);
-  fprintf(alitabf, "FILE  %s\n", q->file);
-  fprintf(alitabf, "LENG  %i\n", q->L);
-  fprintf(alitabf, "\n");
+  char line[LINELEN];
 
+  out << "NAME  " <<  q->longname << std::endl;
+  out << "FAM   " << q->fam << std::endl;
+  out << "FILE  " << q->file << std::endl;
+  out << "LENG  " << q->L << std::endl;
+  out << std::endl;
+
+  int i = 0;
   Reset();
   while (!End()) {
     i++;
-    hit = ReadNext();
+    Hit hit = ReadNext();
     if (scop_only
         && (!strncmp(hit.name, "cl|", 3) || !strncmp(hit.name, "UP20|", 5)
             || !strncmp(hit.name, "NR20|", 5)))
       continue;
+
     if (twice[hit.name] == 1)
       continue; // better hit with same HMM has been listed already
     twice.Add(hit.name, 1);
+
     //if template and query are from the same superfamily
+    int n;
     if (!strcmp(hit.name, q->name))
       n = 5;
     else if (!strcmp(hit.fam, q->fam))
@@ -367,32 +383,42 @@ void HitList::WriteToAlifile(HMM* q, bool scop_only) {
       n = 0;
 
     if (hit.P_posterior != NULL) {
-      fprintf(alitabf,
+      sprintf(line,
           "\nHit %3i (%-20s %-10s Rel: %i  LOG-PVA: %6.2f  LOG-EVAL: %6.2f  Score: %6.2f  Probab: %6.2f):\n    i     j  score     SS  probab\n",
           i, hit.name, hit.fam, n, -1.443 * hit.logPval, -1.443 * hit.logEval,
           hit.score, hit.Probab);
-      for (int step = hit.nsteps; step >= 1; step--)
-        if (hit.states[step] >= MM)
-          fprintf(alitabf, "%5i %5i %6.2f %6.2f %7.4f\n", hit.i[step],
+      out << line;
+
+      for (int step = hit.nsteps; step >= 1; step--) {
+        if (hit.states[step] >= MM) {
+          sprintf(line, "%5i %5i %6.2f %6.2f %7.4f\n", hit.i[step],
               hit.j[step], hit.S[step], hit.S_ss[step], hit.P_posterior[step]);
+          out << line;
+        }
+      }
     }
     else {
-      fprintf(alitabf,
+      sprintf(line,
           "\nHit %3i (%-20s %-10s Rel: %i  LOG-PVA: %6.2f  LOG-EVAL: %6.2f  Score: %6.2f  Probab: %6.2f):\n    i     j  score     SS\n",
           i, hit.name, hit.fam, n, -1.443 * hit.logPval, -1.443 * hit.logEval,
           hit.score, hit.Probab);
-      for (int step = hit.nsteps; step >= 1; step--)
-        if (hit.states[step] >= MM)
-          fprintf(alitabf, "%5i %5i %6.2f %6.2f\n", hit.i[step], hit.j[step],
+      out << line;
+
+      for (int step = hit.nsteps; step >= 1; step--) {
+        if (hit.states[step] >= MM) {
+          sprintf(line, "%5i %5i %6.2f %6.2f\n", hit.i[step], hit.j[step],
               hit.S[step], hit.S_ss[step]);
+          out << line;
+        }
+      }
     }
   }
-  fclose(alitabf);
 }
+
 
 /////////////////////////////////////////////////////////////////////////////////////
 //// Evaluate the *negative* log likelihood of the data at the vertex v = (lamda,mu)
-////    p(s) = lamda * exp{ -exp[-lamda*(s-mu)] - lamda*(s-mu) } = lamda * exp( -exp(-x) - x) 
+////    p(s) = lamda * exp{ -exp[-lamda*(s-mu)] - lamda*(s-mu) } = lamda * exp( -exp(-x) - x)
 /////////////////////////////////////////////////////////////////////////////////////
 double HitList::LogLikelihoodEVD(double* v) {
   double sum = 0.0, sumw = 0.0;
@@ -403,7 +429,7 @@ double HitList::LogLikelihoodEVD(double* v) {
   }
   return sum - sumw * log(v[0]);
 }
-// Static wrapper-function for calling the nonstatic member function LogLikelihoodEVD() 
+// Static wrapper-function for calling the nonstatic member function LogLikelihoodEVD()
 // ( see http://www.newty.de/fpt/callback.html#member )
 double HitList::LogLikelihoodEVD_static(void* pt2hitlist, double* v) {
   HitList* mySelf = (HitList*) pt2hitlist; // explicitly cast to a pointer to Hitlist
@@ -411,7 +437,7 @@ double HitList::LogLikelihoodEVD_static(void* pt2hitlist, double* v) {
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
-//// Subroutine to FindMin: try new point given by highest point ihigh and fac and replace ihigh if it is lower 
+//// Subroutine to FindMin: try new point given by highest point ihigh and fac and replace ihigh if it is lower
 /////////////////////////////////////////////////////////////////////////////////////
 double HitList::TryPoint(const int ndim, double* p, double* y, double* psum,
     int ihigh, double fac, double (*Func)(void* pt2hitlist, double* v)) {
@@ -421,7 +447,7 @@ double HitList::TryPoint(const int ndim, double* p, double* y, double* psum,
   double fac1 = (1. - fac) / ndim;
   double fac2 = fac - fac1;
   double ptry[ndim];   //new point to try out
-  double ytry;         //function value of new point 
+  double ytry;         //function value of new point
   int j;               //index for the ndim parameters
 
   for (j = 0; j < ndim; j++)
@@ -463,7 +489,7 @@ float HitList::FindMin(const int ndim, double* p, double* y, double tol,
     for (i = 1; i < ndim + 1; i++)
       psum[j] += p[i * ndim + j];
   }
-  
+
   // Repeat finding better points in simplex until rtol<tol
   while (1) {
     // Find indices for highest, next highest and lowest point
@@ -555,7 +581,7 @@ float HitList::FindMin(const int ndim, double* p, double* y, double tol,
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
-//// Do a maximum likelihod fit of the scores with an EV distribution with parameters lamda and mu 
+//// Do a maximum likelihod fit of the scores with an EV distribution with parameters lamda and mu
 /////////////////////////////////////////////////////////////////////////////////////
 void HitList::MaxLikelihoodEVD(HMM* q, int nbest) {
   double tol = 1E-6; // Maximum relative tolerance when minimizing -log(P)/N (~likelihood)
@@ -732,7 +758,7 @@ void HitList::MaxLikelihoodEVD(HMM* q, int nbest) {
     vertex[0] = LAMDA_GLOB;
     vertex[1] = mu;
   }
-  
+
   // Set lamda and mu of profile
   q->lamda = vertex[0];
   q->mu = vertex[1];
@@ -752,7 +778,7 @@ void HitList::MaxLikelihoodEVD(HMM* q, int nbest) {
 
 
 /////////////////////////////////////////////////////////////////////////////////////
-//// Calculate HHblits composite E-values 
+//// Calculate HHblits composite E-values
 /////////////////////////////////////////////////////////////////////////////////////
 void HitList::CalculateHHblitsEvalues(HMM* q) {
   Hit hit;
@@ -806,7 +832,7 @@ void HitList::CalculatePvalues(HMM* q) {
           q->Neff_HMM / 10.0, hit.Neff_HMM / 10.0);
       mu = mu_NN(log(q->L) / log1000, log(hit.L) / log1000, q->Neff_HMM / 10.0,
           hit.Neff_HMM / 10.0);
-// 	  if (v>=3 && nhits++<20) 
+// 	  if (v>=3 && nhits++<20)
 // 	     printf("hit=%-10.10s Lq=%-4i  Lt=%-4i  Nq=%5.2f  Nt=%5.2f  =>  lamda=%-6.3f  mu=%-6.3f\n",hit.name,q->L,hit.L,q->Neff_HMM,hit.Neff_HMM,lamda,mu);
     }
     hit.logPval = logPvalue(hit.score, lamda, mu);

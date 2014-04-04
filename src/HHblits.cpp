@@ -65,12 +65,19 @@ HHblits::~HHblits() {
 
     fclose(db_data_file);
   }
+
+  delete[] dbfiles_new;
+  delete[] dbfiles_old;
 }
 
 void HHblits::Init(int argc, char **argv) {
   par.premerge = 3;
   par.Ndiff = 1000;
   par.prefilter = true;
+
+  // all database MSAs must be in A3M format
+  par.M = 1;
+
   strcpy(par.outfile, "");
   N_searched = 0;
 
@@ -151,7 +158,7 @@ void HHblits::Init(int argc, char **argv) {
 
   // Premerging can be very time-consuming on large database a3ms, such as from pdb70.
   // Hence it is only done when iteratively searching against uniprot20 or nr20 with their much smaller MSAs:
-  if (!(num_rounds > 1 || *par.alnfile || *par.psifile || *par.hhmfile || *alis_basename))
+  if (!(num_rounds > 1 || *par.alnfile || *par.psifile || *par.hhmfile || *par.alisbasename))
     par.premerge = 0;
 
   // No outfile given? Name it basename.hhm
@@ -290,7 +297,7 @@ void HHblits::SetDatabase(char* db_base) {
   else if (!(file_exists(dba3m_data_filename)
       && file_exists(dba3m_index_filename))) {
     if (num_rounds > 1 || *par.alnfile || *par.psifile || *par.hhmfile
-        || *alis_basename) {
+        || *par.alisbasename) {
       cerr << endl << "Error in " << program_name
           << ": Could not open A3M database " << dba3m_data_filename
           << " (needed to construct result MSA)" << endl;
@@ -437,21 +444,23 @@ void HHblits::Reset() {
   }
 
   for (int idb = 0; idb < ndb_new; idb++)
-    delete[] (dbfiles_new[idb]);
-  delete[] (dbfiles_new);
+    delete[] dbfiles_new[idb];
 
   for (int idb = 0; idb < ndb_old; idb++)
-    delete[] (dbfiles_old[idb]);
-  delete[] (dbfiles_old);
+    delete[] dbfiles_old[idb];
 
   ndb_old = 0;
   ndb_new = 0;
 
-  // Delete content of hits in hitlist
   hitlist.Reset();
   while (!hitlist.End())
-    // Delete list record and hit object
     hitlist.Delete().Delete();
+
+  reducedHitlist.Reset();
+  while (!reducedHitlist.End())
+	reducedHitlist.Delete().Delete();
+
+  alis.clear();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -948,7 +957,7 @@ void HHblits::ProcessArguments(int argc, char** argv) {
         exit(4);
       }
       else
-        strcpy(alis_basename, argv[i]);
+        strcpy(par.alisbasename, argv[i]);
     }
     else if (!strcmp(argv[i], "-Ofas")) {
       par.append = 0;
@@ -1261,53 +1270,6 @@ void HHblits::ProcessArguments(int argc, char** argv) {
 
 void HHblits::ReadQueryA3MFile() {
   // Open query a3m MSA
-  char qa3mfile[NAMELEN];
-  RemoveExtension(qa3mfile, par.infile);
-  strcat(qa3mfile, ".a3m");
-  FILE* qa3mf = fopen(qa3mfile, "r");
-
-  if (!qa3mf) {
-    // <query>.a3m does not exist => extract query MSA from representative sequences in HHM
-    if (v >= 1 && input_format == 0)  // HHM format
-      printf(
-          "Extracting representative sequences from %s to merge later with matched database sequences\n",
-          par.infile);
-    if (v >= 1 && input_format == 1) // HMMER format
-      printf(
-          "Extracting consensus sequence from %s to merge later with matched database sequences\n",
-          par.infile);
-    Qali.GetSeqsFromHMM(q);
-    Qali.Compress(par.infile);
-    if (Qali.L != q->L) {
-      cerr << "Error in " << par.argv[0] << ": " << par.infile << " has "
-          << q->L << " match states, while its representative sequences have "
-          << Qali.L << "!\n";
-      exit(1);
-    }
-  }
-  else {
-    // <query>.a3m does exist => read it into Qali
-    if (v >= 1)
-      printf(
-          "Reading query MSA from %s to merge later with matched database sequences\n",
-          qa3mfile);
-    Qali.Read(qa3mf, qa3mfile);
-    Qali.Compress(qa3mfile);
-
-    // Copy names from query HMM (don't use name of master sequence of MSA)
-    delete[] Qali.longname;
-    Qali.longname = new char[strlen(q->longname) + 1];
-    strcpy(Qali.longname, q->longname);
-    strcpy(Qali.name, q->name);
-    strcpy(Qali.fam, q->fam);
-    if (Qali.L != q->L) {
-      printf(
-          "Error in %s: query hhm %s has %i match states whereas query a3m %s has %i!\n",
-          par.argv[0], qa3mfile, Qali.L, par.infile, q->L);
-      exit(4);
-    }
-    fclose(qa3mf);
-  }
 }
 
 void HHblits::getTemplateA3M(char* entry_name, long& ftellpos,
@@ -2906,7 +2868,12 @@ void HHblits::RealignByWorker(int bin) {
   return;
 }
 
-void HHblits::run() {
+void HHblits::wiggleQSC(int n_redundancy, float* qsc, size_t nqsc, HitList& reducedFinalHitList) {
+	wiggleQSC(hitlist, n_redundancy, Qali, input_format, qsc, nqsc, reducedFinalHitList);
+	reducedFinalHitList.N_searched = hitlist.N_searched;
+}
+
+void HHblits::run(FILE* query_fh, char* query_path) {
   int cluster_found = 0;
   int seqs_found = 0;
 
@@ -2925,16 +2892,10 @@ void HHblits::run() {
 
   // Read query input file (HHM, HMMER, or alignment format) without adding pseudocounts
   Qali.N_in = 0;
-  ReadQueryFile(par.infile, input_format, par.wg, q, &Qali);
+  ReadQueryFile(query_fh, input_format, par.wg, q, &Qali, query_path);
 
-  // If input file was not a sequence file (and hence a HHM or HMMER file) AND result MSA/HMM nee to be written,
-  // read in query sequences from a3m file or from representative seqs in HHM file or consensus seq in HMMER file
-  if (Qali.N_in == 0)
-    if (num_rounds > 1 || *par.alnfile || *par.psifile || *par.hhmfile || *alis_basename || par.premerge > 0)
-      ReadQueryA3MFile();
   if (Qali.N_in - Qali.N_ss > 1)
     par.premerge = 0;
-  par.M = 1; // all database MSAs must be in A3M format
 
   if (par.allseqs) {
     Qali_allseqs = Qali; // make a *deep* copy of Qali!
@@ -3074,7 +3035,7 @@ void HHblits::run() {
 
     // Generate alignment for next iteration
     if (round < num_rounds || *par.alnfile || *par.psifile || *par.hhmfile
-        || *alis_basename) {
+        || *par.alisbasename) {
       v1 = v;
       if (v > 0 && v <= 3)
         v = 1;
@@ -3090,16 +3051,19 @@ void HHblits::run() {
         hitlist.Reset();
         while (!hitlist.End()) {
           Hit hit_cur = hitlist.ReadNext();
+
           if (hit_cur.Eval > 100.0 * par.e)
             break; // E-value much too large
           if (hit_cur.Eval > par.e)
             continue; // E-value too large
           if (hit_cur.matched_cols < MINCOLS_REALIGN)
             continue; // leave out too short alignments
+
+          // Already in alignment
           stringstream ss_tmp;
           ss_tmp << hit_cur.file << "__" << hit_cur.irep;
           if (previous_hits->Contains((char*) ss_tmp.str().c_str()))
-            continue;  // Already in alignment
+            continue;
 
           // Add number of sequences in this cluster to total found
           seqs_found += SequencesInCluster(hit_cur.name); // read number after second '|'
@@ -3133,13 +3097,11 @@ void HHblits::run() {
             par.nseqdis);
 
         // Remove sequences with seq. identity larger than seqid percent (remove the shorter of two)
-        float const COV_ABS = 25;     // min. number of aligned residues
-        int cov_tot = imax(imin((int) (COV_ABS / Qali.L * 100 + 0.5), 70),
-            par.coverage);
+        const float COV_ABS = 25;     // min. number of aligned residues
+        int cov_tot = imax(imin((int) (COV_ABS / Qali.L * 100 + 0.5), 70), par.coverage);
         if (v > 2)
           printf("Filter new alignment with cov %3i%%\n", cov_tot);
-        Qali.N_filtered = Qali.Filter(par.max_seqid, cov_tot, par.qid, par.qsc,
-            par.Ndiff);
+        Qali.N_filtered = Qali.Filter(par.max_seqid, cov_tot, par.qid, par.qsc, par.Ndiff);
       }
 
       // Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
@@ -3149,8 +3111,7 @@ void HHblits::run() {
         q->NeutralizeTags();
 
       // Calculate SSpred if we need to print out alis after each iteration or if last iteration
-      if (par.addss
-          && (*alis_basename || round == num_rounds || new_hits == 0)) {
+      if (par.addss && (*par.alisbasename || round == num_rounds || new_hits == 0)) {
         char ss_pred[par.maxres];
         char ss_conf[par.maxres];
 
@@ -3159,34 +3120,40 @@ void HHblits::run() {
         Qali.AddSSPrediction(ss_pred, ss_conf);
       }
 
-      if (*alis_basename) {
-        stringstream ss_tmp;
-        ss_tmp << alis_basename << "_" << round << ".a3m";
-        if (par.allseqs)
-          Qali_allseqs.WriteToFile(ss_tmp.str().c_str(), "a3m");
-        else
-          Qali.WriteToFile(ss_tmp.str().c_str(), "a3m");
+      if (*par.alisbasename) {
+        if (par.allseqs) {
+          alis[round] = Qali_allseqs;
+        }
+        else {
+          alis[round] = Qali;
+        }
       }
 
       v = v1;
-
     }
-    else if (round == num_rounds) // Update counts for log
-        {
+    // Update counts for log
+    else if (round == num_rounds) {
       hitlist.Reset();
       while (!hitlist.End()) {
         Hit hit_cur = hitlist.ReadNext();
+
+        // E-value much too large
         if (hit_cur.Eval > 100.0 * par.e)
-          break; // E-value much too large
+          break;
+
+        // E-value too large
         if (hit_cur.Eval > par.e)
-          continue; // E-value too large
+          continue;
+
         stringstream ss_tmp;
         ss_tmp << hit_cur.file << "__" << hit_cur.irep;
+        // Already in alignment?
         if (previous_hits->Contains((char*) ss_tmp.str().c_str()))
-          continue;  // Already in alignment
+          continue;
 
         // Add number of sequences in this cluster to total found
-        seqs_found += SequencesInCluster(hit_cur.name); // read number after second '|'
+        // read number after second '|'
+        seqs_found += SequencesInCluster(hit_cur.name);
         cluster_found++;
       }
     }
@@ -3198,7 +3165,7 @@ void HHblits::run() {
 
     if (v >= 2
         && (round < num_rounds || *par.alnfile || *par.psifile || *par.hhmfile
-            || *alis_basename))
+            || *par.alisbasename))
       printf(
           "Number of effective sequences of resulting query HMM: Neff = %4.2f\n",
           q->Neff_HMM);
@@ -3239,6 +3206,11 @@ void HHblits::run() {
     fprintf(stderr,
         "WARNING: Using HMMER files results in a drastically reduced sensitivity (>10%%).\nWe recommend to use HHMs build by hhmake.\n");
 
+  if (*par.reduced_outfile) {
+    float qscs[] = {-20, 0, 0.1, 0.2};
+	wiggleQSC(par.n_redundancy, qscs, 4, reducedHitlist);
+  }
+
   previous_hits->Reset();
   while (!previous_hits->End())
     previous_hits->ReadNext().Delete(); // Delete hit object
@@ -3247,87 +3219,155 @@ void HHblits::run() {
   delete premerged_hits;
 }
 
-HitList& HHblits::getHitList() {
-  return hitlist;
-}
 
-Alignment& HHblits::getQAli() {
-  return Qali;
-}
-
-Alignment& HHblits::getQAliAllSeq() {
-  return Qali_allseqs;
-}
-
-HMM* HHblits::getQHMM() {
-  return q;
-}
-
-HMM* HHblits::getQTempHMM() {
-  return q_tmp;
+void HHblits::writeHHRFile(char* hhrFile) {
+	if(*hhrFile) {
+		hitlist.PrintHHR(q_tmp, hhrFile);
+	}
 }
 
 
-int main(int argc, char **argv) {
-  //TODO: write public print methods for hhblits
-  //TODO: run(Qali, informat)
+void HHblits::writeAlisFile(char* basename) {
+	if(*basename) {
+	  std::map<int, Alignment>::iterator it;
+	  for(it = alis.begin(); it != alis.end(); it++) {
+		stringstream ss_tmp;
+		ss_tmp << basename << "_" << (*it).first << ".a3m";
+		std::string id = ss_tmp.str();
 
-  HHblits test(argc, argv);
-  test.run();
+        (*it).second.WriteToFile(id.c_str(), "a3m");
+	  }
+	}
+}
 
-  if (*par.scorefile) {
-    test.getHitList().PrintScoreFile(test.getQHMM(), par.scorefile);
-  }
 
-  // Print FASTA or A2M alignments?
-  if (*par.pairwisealisfile) {
-    test.getHitList().PrintAlignments(test.getQHMM(), par.pairwisealisfile, par.outformat);
-  }
+void HHblits::writeScoresFile(char* scoresFile) {
+	if(*scoresFile) {
+		hitlist.PrintScoreFile(q, scoresFile);
+	}
+}
 
-  //TODO:
-//  // Write alignments in tabular layout to alitabfile
-//  if (*par.alitabfile)
-//    test.getHitList().WriteToAlifile(test.getQHMM(), alitab_scop);
 
-  //TODO:
-//  if (strlen(par.reduced_outfile) != 0) {
-//    HitList reducedHitlist;
-//    float qscs[4] = { -20, 0, 0.1, 0.2 };
-//
-//    //TODO: input format
-//    HHblits::wiggleQSC(test.getHitList(), 10, test.getQAli(), 0, qscs, 4, reducedHitlist);
-//
-//    reducedHitlist.N_searched = test.getHitList().N_searched;
-//    reducedHitlist.PrintHitList(q_tmp, par.reduced_outfile);
-//    reducedHitlist.PrintAlignments(q_tmp, par.reduced_outfile);
-//  }
+void HHblits::writePairwiseAlisFile(char* pairwiseAlisFile, char outformat) {
+	if (*pairwiseAlisFile) {
+		hitlist.PrintAlignments(q, pairwiseAlisFile, outformat);
+	}
+}
 
-  if(*par.outfile) {
-    test.getHitList().PrintHHR(test.getQTempHMM(), par.outfile);
-  }
 
-  // Write output PSI-BLAST-formatted alignment?
-  if (*par.psifile) {
-    if (par.allseqs)
-      test.getQAliAllSeq().WriteToFile(par.psifile, "psi");
+void HHblits::writeAlitabFile(char* alitabFile) {
+	if (*alitabFile) {
+		hitlist.WriteToAlifile(q, alitabFile, alitab_scop);
+	}
+}
+
+
+void HHblits::writeReducedHHRFile(char* reducedHHRFile) {
+	if(*reducedHHRFile) {
+		reducedHitlist.PrintHHR(q_tmp, reducedHHRFile);
+	}
+}
+
+
+void HHblits::writePsiFile(char* psiFile) {
+	  // Write output PSI-BLAST-formatted alignment?
+	  if (*psiFile) {
+	    if (par.allseqs)
+	      Qali_allseqs.WriteToFile(psiFile, "psi");
+	    else
+	      Qali.WriteToFile(psiFile, "psi");
+	  }
+}
+
+
+void HHblits::writeHMMFile(char* HMMFile) {
+	  // Write output HHM file?
+	  if (*HMMFile) {
+	    // Add *no* amino acid pseudocounts to query. This is necessary to copy f[i][a] to p[i][a]
+	    q->AddAminoAcidPseudocounts(0, 0.0, 0.0, 1.0);
+	    q->CalculateAminoAcidBackground();
+
+	    q->WriteToFile(HMMFile);
+	  }
+}
+
+
+void HHblits::writeA3MFile(char* A3MFile) {
+	  // Write output A3M alignment?
+	  if (*A3MFile) {
+	    if (par.allseqs)
+	      Qali_allseqs.WriteToFile(A3MFile, "a3m");
+	    else
+	      Qali.WriteToFile(A3MFile, "a3m");
+	  }
+}
+
+std::map<int, Alignment>& HHblits::getAlis() {
+	return alis;
+}
+
+
+std::stringstream* HHblits::writeHHRFile() {
+	std::stringstream* out = new std::stringstream();
+	hitlist.PrintHHR(q_tmp, *out);
+	return out;
+}
+
+
+std::stringstream* HHblits::writeScoresFile() {
+	std::stringstream* out = new std::stringstream();
+	hitlist.PrintScoreFile(q, *out);
+	return out;
+}
+
+
+std::stringstream* HHblits::writePairwiseAlisFile(char outformat) {
+	std::stringstream* out = new std::stringstream();
+	hitlist.PrintAlignments(q, *out, outformat);
+	return out;
+}
+
+
+std::stringstream* HHblits::writeAlitabFile() {
+	std::stringstream* out = new std::stringstream();
+	hitlist.WriteToAlifile(q, *out, alitab_scop);
+	return out;
+}
+
+
+std::stringstream* HHblits::writeReducedHHRFile() {
+	std::stringstream* out = new std::stringstream();
+	reducedHitlist.PrintHHR(q_tmp, *out);
+	return out;
+}
+
+
+std::stringstream* HHblits::writePsiFile() {
+	std::stringstream* out = new std::stringstream();
+	if (par.allseqs)
+      Qali_allseqs.WriteToFile(*out, "psi");
     else
-      test.getQAli().WriteToFile(par.psifile, "psi");
-  }
+      Qali.WriteToFile(*out, "psi");
+	return out;
+}
 
-  // Write output HHM file?
-  if (*par.hhmfile) {
+
+std::stringstream* HHblits::writeHMMFile() {
     // Add *no* amino acid pseudocounts to query. This is necessary to copy f[i][a] to p[i][a]
-    test.getQHMM()->AddAminoAcidPseudocounts(0, 0.0, 0.0, 1.0);
-    test.getQHMM()->CalculateAminoAcidBackground();
+    q->AddAminoAcidPseudocounts(0, 0.0, 0.0, 1.0);
+    q->CalculateAminoAcidBackground();
 
-    test.getQHMM()->WriteToFile(par.hhmfile);
-  }
+	std::stringstream* out = new std::stringstream();
+	q->WriteToFile(*out);
+	return out;
+}
 
-  // Write output A3M alignment?
-  if (*par.alnfile) {
-    if (par.allseqs)
-      test.getQAliAllSeq().WriteToFile(par.alnfile, "a3m");
+
+std::stringstream* HHblits::writeA3MFile() {
+	std::stringstream* out = new std::stringstream();
+	if (par.allseqs)
+      Qali_allseqs.WriteToFile(*out, "a3m");
     else
-      test.getQAli().WriteToFile(par.alnfile, "a3m");
-  }
+      Qali.WriteToFile(*out, "a3m");
+	return out;
 }

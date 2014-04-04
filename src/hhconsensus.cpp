@@ -33,14 +33,14 @@ using std::ofstream;
 #include "util.h"        // imax, fmax, iround, iceil, ifloor, strint, strscn, strcut, substr, uprstr, uprchr, Basename etc.
 #include "hhdecl.h"      // Constants, global variables, struct Parameters
 #include "hhutil.h"      // MatchChr, InsertChr, aa2i, i2aa, log2, fast_log2, ScopID, WriteToScreen,
-#include "hhmatrices.cpp"  // BLOSUM50, GONNET, HSDM
+#include "hhmatrices.h"  // BLOSUM50, GONNET, HSDM
 
 #include "hhhmm.h"       // class HMM
 #include "hhhit.h"       // class Hit
 #include "hhalignment.h" // class Alignment
 #include "hhhalfalignment.h" // class HalfAlignment
 
-#include "hhfunc.cpp"      // some functions common to hh programs
+#include "hhfunc.h"      // some functions common to hh programs
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Global variables 
@@ -270,7 +270,7 @@ int main(int argc, char **argv)
 
   // Read input file (HMM, HHM, or alignment format), and add pseudocounts etc.
   char input_format=0;
-  ReadQueryFile(par.infile,input_format,q,qali); 
+  ReadQueryFile(par.infile, input_format, par.wg, q, qali);
 
   // Same code as in PrepareQueryHMM(par.infile,input_format,q,qali), except that we add SS prediction
   // Add Pseudocounts, if no HMMER input

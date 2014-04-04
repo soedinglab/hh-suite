@@ -52,11 +52,11 @@ using std::ofstream;
 #include "util.h"        // imax, fmax, iround, iceil, ifloor, strint, strscn, strcut, substr, uprstr, uprchr, Basename etc.
 #include "hhdecl.h"      // Constants, global variables, struct Parameters
 #include "hhutil.h"      // MatchChr, InsertChr, aa2i, i2aa, log2, fast_log2, ScopID, WriteToScreen,
-#include "hhmatrices.cpp"  // BLOSUM50, GONNET, HSDM
+#include "hhmatrices.h"  // BLOSUM50, GONNET, HSDM
 #include "hhhmm.h"       // class HMM
 #include "hhhit.h"       // class Hit
 #include "hhalignment.h" // class Alignment
-#include "hhfunc.cpp"      // some functions common to hh programs
+#include "hhfunc.h"      // some functions common to hh programs
 /////////////////////////////////////////////////////////////////////////////////////
 // Exit function
 /////////////////////////////////////////////////////////////////////////////////////
@@ -299,7 +299,7 @@ int main(int argc, char **argv) {
   
   // Atune alignment diversity q.Neff with qsc to value Neff_goal
   if (par.Neff >= 1.0)
-    qali.FilterNeff();
+    qali.FilterNeff(par.wg);
 
   // Write filtered alignment WITH insert states (lower case) to alignment file
   qali.WriteToFile(par.outfile);

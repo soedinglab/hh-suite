@@ -197,6 +197,7 @@ public:
   char outfile[NAMELEN];  // output filename
   char reduced_outfile[NAMELEN];
   char pairwisealisfile[NAMELEN]; // output filename with pairwise alignments
+  char alisbasename[NAMELEN];
   char alnfile[NAMELEN];  // name of output alignment file in A3M format (for iterative search)
   char hhmfile[NAMELEN];  // name of output HHM file for (iterative search)
   char psifile[NAMELEN];  // name of output alignmen file in PSI-BLAST format (iterative search)
@@ -357,6 +358,8 @@ public:
   float fdummy;
 
   int min_prefilter_hits;
+
+  int n_redundancy;
 
   void SetDefaultPaths(char *program_path);
   void SetDefaults();
