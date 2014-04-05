@@ -9,8 +9,8 @@ void ReadQueryFile(FILE* inf, char& input_format, char use_global_weights, HMM* 
 	char line[LINELEN];
 
 	if (!fgetline(line, LINELEN, inf)) {
-	    std::cerr << std::endl << "Error in " << program_name << ": " << infile
-	        << " is empty!\n";
+		std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+	    std::cerr << "\t" << infile << " is empty!\n";
 	    exit(4);
 	  }
 	  while (strscn(line) == NULL)
@@ -48,11 +48,9 @@ void ReadQueryFile(FILE* inf, char& input_format, char use_global_weights, HMM* 
 	  else if (line[0] == '#' || line[0] == '>')         // read sequence/alignment
 	      {
 	    if (par.calibrate) {
-	      printf("\nError in %s: only HHM files can be calibrated.\n",
-	          program_name);
-	      printf(
-	          "Build an HHM file from your alignment with 'hhmake -i %s' and rerun hhsearch with the hhm file\n\n",
-	          infile);
+          std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+	      printf("\tonly HHM files can be calibrated.\n");
+	      printf("\tBuild an HHM file from your alignment with 'hhmake -i %s' and rerun hhsearch with the hhm file\n\n", infile);
 	      exit(1);
 	    }
 
@@ -82,9 +80,9 @@ void ReadQueryFile(FILE* inf, char& input_format, char use_global_weights, HMM* 
 	    input_format = 0;
 	  }
 	  else {
-	    std::cerr << std::endl << "Error in " << program_name
-	        << ": unrecognized input file format in \'" << infile << "\'\n";
-	    std::cerr << "line = " << line << "\n";
+        std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+	    std::cerr << "\tunrecognized input file format in \'" << infile << "\'\n";
+	    std::cerr << "\tline = " << line << "\n";
 	    exit(1);
 	  }
 
@@ -100,16 +98,15 @@ void ReadQueryFile(char* infile, char& input_format, char use_global_weights, HM
   FILE* inf = NULL;
   if (strcmp(infile, "stdin") == 0) {
     inf = stdin;
-    if (v >= 2)
-      printf(
-          "Reading HMM / multiple alignment from standard input ...\n(To get a help list instead, quit and type %s -h.)\n",
-          program_name);
+    if (v >= 2) {
+      printf("Reading HMM / multiple alignment from standard input ...\n");
+    }
     path[0] = '\0';
   }
   else {
     inf = fopen(infile, "r");
     if (!inf)
-      OpenFileError(infile);
+      OpenFileError(infile, __FILE__, __LINE__, __func__);
     Pathname(path, infile);
   }
   
@@ -292,7 +289,7 @@ void CalculateSS(HMM* q, char *ss_pred, char *ss_conf) {
   strcat(filename, ".mtx");
   mtxf = fopen(filename, "w");
   if (!mtxf)
-    OpenFileError(filename);
+    OpenFileError(filename, __FILE__, __LINE__, __func__);
 
   fprintf(mtxf, "%i\n", q->L);
   fprintf(mtxf, "%s\n", q->seq[q->nfirst] + 1);

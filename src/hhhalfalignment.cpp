@@ -21,7 +21,7 @@ HalfAlignment::HalfAlignment(int maxseqdis)
   s = new char*[maxseqdis];  //s[k][h] = character in column h, sequence k of output alignment
   l = new int*[maxseqdis];   //counts non-gap residues: l[k][i] = index of last residue AT OR BEFORE match state i in seq k
   m = new int*[maxseqdis];   //counts positions:        m[k][i] = position of match state i in string seq[k]
-  if (!h || !s || !l || !m) MemoryError("space for formatting HMM-HMM alignment");
+  if (!h || !s || !l || !m) MemoryError("space for formatting HMM-HMM alignment", __FILE__, __LINE__, __func__);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -78,7 +78,7 @@ void HalfAlignment::Set(char* name, char** seq_in, char** sname_in, int n_in, in
       s[k]=new char[LINELEN];
       l[k]=new int[L+10]; 
       m[k]=new int[L+10];
-      if (!s[k] || !l[k] || !m[k]) MemoryError("space for formatting HMM-HMM alignment");
+      if (!s[k] || !l[k] || !m[k]) MemoryError("space for formatting HMM-HMM alignment", __FILE__, __LINE__, __func__);
       h[k]=0; //starting positions in alignment = 0
     }
 
@@ -336,7 +336,7 @@ void HalfAlignment::Print(char* alnfile, char* commentname, const char format[])
   if (strcmp(alnfile,"stdout"))
     {
       if (par.append) outf=fopen(alnfile,"a"); else outf=fopen(alnfile,"w");
-      if (!outf) OpenFileError(alnfile);
+      if (!outf) OpenFileError(alnfile, __FILE__, __LINE__, __func__);
     } 
   else
     outf = stdout;

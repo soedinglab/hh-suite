@@ -33,7 +33,7 @@ FullAlignment::FullAlignment(int maxseqdis) {
   qa = new HalfAlignment(maxseqdis);
   ta = new HalfAlignment(maxseqdis);
   if (!qa || !ta)
-    MemoryError("space for formatting HMM-HMM alignment");
+    MemoryError("space for formatting HMM-HMM alignment", __FILE__, __LINE__, __func__);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////

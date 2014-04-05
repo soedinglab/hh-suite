@@ -34,15 +34,15 @@
 #include "hhdecl.h"
 #include "hhutil-inl.h"
 
-int FormatError(const char infile[], const char details[]="");
+int FormatError(const char infile[], const char* file, const int line, const char* func, const char details[]="");
 
-int OpenFileError(const char outfile[]);
+int OpenFileError(const char outfile[], const char* file, const int line, const char* func);
 
-int MemoryError(const char arrayname[]);
+int MemoryError(const char arrayname[], const char* file, const int line, const char* func);
 
-int SyntaxError(const char details[]="");
+int SyntaxError(const char* file, const int line, const char* func, const char details[]="");
 
-int InternalError(const char errstr[]);
+int InternalError(const char errstr[], const char* file, const int line, const char* func);
 
 /////////////////////////////////////////////////////////////////////////////////////
 //// Replace memalign by posix_memalign (Why? [JS])

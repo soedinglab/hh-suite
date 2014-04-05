@@ -106,7 +106,7 @@ void HitList::PrintHitList(HMM* q, char* outfile) {
   else {
     std::ofstream outf(outfile);
     if (!outf)
-      OpenFileError(outfile);
+      OpenFileError(outfile, __FILE__, __LINE__, __func__);
 
     outf << out.str();
 
@@ -125,7 +125,7 @@ void HitList::PrintHHR(HMM* q, char* outfile) {
     std::ofstream outf(outfile);
 
     if (!outf)
-      OpenFileError(outfile);
+      OpenFileError(outfile, __FILE__, __LINE__, __func__);
 
     outf << out.str();
     outf.close();
@@ -156,7 +156,7 @@ void HitList::PrintAlignments(HMM* q, char* outfile, char outformat) {
       outf.open(outfile, std::ios::out);
 
     if (!outf.good())
-      OpenFileError(outfile);
+      OpenFileError(outfile, __FILE__, __LINE__, __func__);
 
     outf << out.str();
     outf.close();
@@ -333,7 +333,7 @@ void HitList::WriteToAlifile(HMM* q, char* alitabfile, bool scop_only) {
     std::ofstream alitabf(alitabfile);
 
     if (!alitabf.good())
-    	OpenFileError(alitabfile);
+    	OpenFileError(alitabfile, __FILE__, __LINE__, __func__);
 
     alitabf << out.str();
 

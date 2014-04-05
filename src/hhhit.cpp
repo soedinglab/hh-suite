@@ -1058,7 +1058,7 @@ void Hit::Backtrace(HMM* q, HMM* t) {
   S = new float[nsteps + 1];
   S_ss = new float[nsteps + 1];
   if (!S_ss)
-    MemoryError("space for HMM-HMM alignments");
+    MemoryError("space for HMM-HMM alignments", __FILE__, __LINE__, __func__);
 
   // Add contribution from secondary structure score, record score along alignment,
   // and record template consensus sequence in master-slave-alignment to query sequence
@@ -1242,7 +1242,7 @@ void Hit::BacktraceMAC(HMM* q, HMM* t) {
   P_posterior = new float[nsteps + 1];
 
   if (!P_posterior)
-    MemoryError("space for HMM-HMM alignments");
+    MemoryError("space for HMM-HMM alignments", __FILE__, __LINE__, __func__);
 
   // Add contribution from secondary structure score, record score along alignment,
   // and record template consensus sequence in master-slave-alignment to query sequence
@@ -1465,7 +1465,7 @@ void Hit::InitializeBacktrace(HMM* q, HMM* t) {
   file = new char[strlen(t->file) + 1];
   if (!file)
     MemoryError(
-        "space for alignments with database HMMs. \nNote that all alignments have to be kept in memory");
+        "space for alignments with database HMMs. \nNote that all alignments have to be kept in memory", __FILE__, __LINE__, __func__);
   strcpy(longname, t->longname);
   strcpy(name, t->name);
   strcpy(fam, t->fam);
@@ -1484,7 +1484,7 @@ void Hit::InitializeBacktrace(HMM* q, HMM* t) {
   seq = new char*[t->n_display];
   if (!sname || !seq)
     MemoryError(
-        "space for alignments with database HMMs.\nNote that all sequences for display have to be kept in memory");
+        "space for alignments with database HMMs.\nNote that all sequences for display have to be kept in memory", __FILE__, __LINE__, __func__);
   
   if (irep == 1) {
     // Make flat copy for first alignment of template seqs to save speed

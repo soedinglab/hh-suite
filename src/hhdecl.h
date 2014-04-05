@@ -21,14 +21,6 @@
 #include "util.h"
 
 
-//name of program executed (e.g. hhmake of hhsearch)
-extern char program_name[];
-//path of program executed
-extern char program_path[];
-extern char VERSION_AND_DATE[];
-extern char REFERENCE[];
-extern char COPYRIGHT[];
-
 const int MAXSEQ=65535; //max number of sequences in input alignment (must be <~30000 on cluster nodes??)
 const int LINELEN=524288; //max length of line read in from input files; must be >= MAXCOL
 const int MAXRES=20000;
@@ -87,17 +79,6 @@ enum pair_states {STOP=0,SAME=1,GD=2,IM=3,DG=4,MI=5,MM=6};
 extern char v;
 
 
-// substitution matrix flavours
-extern float __attribute__((aligned(16))) P[20][20];
-extern float __attribute__((aligned(16))) R[20][20];
-extern float __attribute__((aligned(16))) Sim[20][20];
-extern float __attribute__((aligned(16))) S[20][20];
-extern float __attribute__((aligned(16))) pb[21];
-extern float __attribute__((aligned(16))) qav[21];
-
-// secondary structure matrices
-extern float S73[NDSSP][NSSPRED][MAXCF];
-extern float S33[NSSPRED][MAXCF][NSSPRED][MAXCF];
 
 // Class to store data about hit to realign
 class Realign_hitpos
@@ -373,12 +354,24 @@ public:
   bool alitab_scop;
 
 
-  void SetDefaultPaths(char *program_path);
+  void SetDefaultPaths();
   void SetDefaults();
   Parameters();
 };
 
+//TODO: get rid of these variables
 extern Parameters par;
 
+// substitution matrix flavours
+extern float __attribute__((aligned(16))) P[20][20];
+extern float __attribute__((aligned(16))) R[20][20];
+extern float __attribute__((aligned(16))) Sim[20][20];
+extern float __attribute__((aligned(16))) S[20][20];
+extern float __attribute__((aligned(16))) pb[21];
+extern float __attribute__((aligned(16))) qav[21];
+
+// secondary structure matrices
+extern float S73[NDSSP][NSSPRED][MAXCF];
+extern float S33[NSSPRED][MAXCF][NSSPRED][MAXCF];
 
 #endif /* HHDECL_H_ */

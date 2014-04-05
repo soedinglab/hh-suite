@@ -3,33 +3,34 @@
 /////////////////////////////////////////////////////////////////////////////////////
 // Errors
 /////////////////////////////////////////////////////////////////////////////////////
-int FormatError(const char infile[], const char details[])
-{
-  std::cerr<<"Error in "<<par.argv[0]<<": wrong format while reading file \'"<<infile<<". "<<details<<"\n";
+int FormatError(const char infile[], const char* file, const int line, const char* func, const char details[]) {
+  std::cerr << "Error in " << file << ":" << line << ": " << func << ":" << std::endl;
+  std::cerr<<  "\twrong format while reading file \'"<<infile<<". "<<details<<"\n";
   exit(1);
 }
 
-int OpenFileError(const char outfile[])
-{
-  std::cerr<<std::endl<<"Error in "<<par.argv[0]<<": could not open file \'"<<outfile<<"\'\n";
+int OpenFileError(const char outfile[], const char* file, const int line, const char* func) {
+  std::cerr << "Error in " << file << ":" << line << ": " << func << ":" << std::endl;
+  std::cerr << "\tcould not open file \'"<<outfile<<"\'\n";
   exit(2);
 }
 
-int MemoryError(const char arrayname[])
-{
-  std::cerr<<"Error in "<<par.argv[0]<<": Could not allocate memory for \'"<<arrayname<<"\'.\nDo you have >=4GB of RAM per core on your machine? Are your max memory size and stack sizes sufficient? (Check using '$ ulimit -a' under Linux and best set to 'unlimited')"<<std::endl;
+int MemoryError(const char arrayname[], const char* file, const int line, const char* func) {
+  std::cerr << "Error in " << file << ":" << line << ": " << func << ":" << std::endl;
+  std::cerr << "\tCould not allocate memory for \'"<<arrayname<<"\'.\n";
+  std::cerr << "\tDo you have >=4GB of RAM per core on your machine? Are your max memory size and stack sizes sufficient? (Check using '$ ulimit -a' under Linux and best set to 'unlimited')"<<std::endl;
   exit(3);
 }
 
-int SyntaxError(const char details[])
-{
-  std::cerr<<"Error in "<<par.argv[0]<<" on command line: "<<details<<"\n";
+int SyntaxError(const char* file, const int line, const char* func, const char details[]) {
+  std::cerr << "Error in " << file << ":" << line << ": " << func << ":" << std::endl;
+  std::cerr << "\ton command line: "<<details<<"\n";
   exit(4);
 }
 
-int InternalError(const char errstr[])
-{
-  std::cerr<<"Error in "<<par.argv[0]<<":  "<<errstr<<". Please report this bug to the developers\n";
+int InternalError(const char errstr[], const char* file, const int line, const char* func) {
+  std::cerr << "Error in " << file << ":" << line << ": " << func << ":" << std::endl;
+  std::cerr << "\t" << errstr << ". Please report this bug to the developers\n";
   exit(6);
 }
 
@@ -77,7 +78,7 @@ void WriteToScreen(char* outfile, int n)
   char line[LINELEN]="";
   std::ifstream outf;
   outf.open(outfile, std::ios::in);
-  if (!outf) {OpenFileError(outfile);}
+  if (!outf) {OpenFileError(outfile, __FILE__, __LINE__, __func__);}
   std::cout<<"\n";
   for(; n>0 && outf.getline(line,LINELEN); n--) std::cout<<line<<"\n";
   outf.close();
@@ -91,8 +92,7 @@ void WriteToScreen(char* outfile) {
 /////////////////////////////////////////////////////////////////////////////////////
 // Read .hhdefaults file into array argv_conf (beginning at argv_conf[1])
 /////////////////////////////////////////////////////////////////////////////////////
-void ReadDefaultsFile(int& argc_conf, char** argv_conf, char* path)
-{
+void ReadDefaultsFile(int& argc_conf, char** argv_conf, char* program_path) {
   char line[LINELEN]="";
   char filename[NAMELEN];
   char* c_first;   //pointer to first character of argument string
@@ -101,12 +101,18 @@ void ReadDefaultsFile(int& argc_conf, char** argv_conf, char* path)
   FILE* configf=NULL;
   argc_conf=1;     //counts number of arguments read in
 
+  char program_name[NAMELEN];
+  RemovePathAndExtension(program_name, program_path);
+
+  char program_dir[NAMELEN];
+  Pathname(program_dir, program_path);
+
   // Open config file
   strcpy(filename,"./.hhdefaults");
   configf = fopen(filename,"r");
-  if (!configf && path)
+  if (!configf)
   {
-    strcpy(filename,path);
+    strcpy(filename, program_dir);
     strcat(filename,".hhdefaults");
     configf = fopen(filename,"r");
   }
@@ -192,7 +198,7 @@ int CountSeqsInFile(char* file, int& numseqs)
   else 
     {
       fin = fopen(file, "r");
-      if (!fin) OpenFileError(file);
+      if (!fin) OpenFileError(file, __FILE__, __LINE__, __func__);
       while (fgets(line,LINELEN,fin))
 	{ 
 	  if (line[0]=='>') numseqs++;
@@ -224,7 +230,7 @@ int CountLinesInFile(char* file)
   else 
     {
       fin = fopen(file, "r");
-      if (!fin) OpenFileError(file);
+      if (!fin) OpenFileError(file, __FILE__, __LINE__, __func__);
       while (fgets(line,LINELEN,fin)) numlines++; 
       fclose(fin);
     }

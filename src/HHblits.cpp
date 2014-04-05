@@ -9,6 +9,11 @@
 
 #define SWAP(tmp, arg1, arg2) tmp = arg1; arg1 = arg2; arg2 = tmp;
 
+const char HHblits::VERSION_AND_DATE[]="version 2.1.0-pre (XXX 2013)";
+const char HHblits::REFERENCE[]="Remmert M, Biegert A, Hauser A, and Soding J.\nHHblits: Lightning-fast iterative protein sequence searching by HMM-HMM alignment.\nNat. Methods 9:173-175 (2011).\n";
+const char HHblits::COPYRIGHT[]="(C) Johannes Soeding, Michael Remmert, Andreas Biegert, Andreas Hauser\n";
+
+
 HHblits::HHblits(Parameters& parameters) {
   Init(parameters);
 }
@@ -116,7 +121,7 @@ void HHblits::Init(Parameters& parameters) {
   // Prepare column state lib (context size =1 )
   FILE* fin = fopen(par.cs_library, "r");
   if (!fin)
-    OpenFileError(par.cs_library);
+    OpenFileError(par.cs_library, __FILE__, __LINE__, __func__);
   cs_lib = new cs::ContextLibrary<cs::AA>(fin);
   fclose(fin);
   cs::TransformToLin(*cs_lib);
@@ -130,10 +135,6 @@ void HHblits::ProcessAllArguments(int argc, char** argv, Parameters& par) {
 	  par.Ndiff = 1000;
 	  par.prefilter = true;
 
-	  // Make command line input globally available
-	  RemovePathAndExtension(program_name, argv[0]);
-	  Pathname(program_path, argv[0]);
-
 	  // Enable changing verbose mode before command line are processed
 	  for (int i = 1; i < argc; i++) {
 	    if (argc > 1 && !strcmp(argv[i], "-v0"))
@@ -144,13 +145,13 @@ void HHblits::ProcessAllArguments(int argc, char** argv, Parameters& par) {
 	      v = atoi(argv[i + 1]);
 	  }
 
-	  par.SetDefaultPaths(program_path);
+	  par.SetDefaultPaths();
 
 	  // Process default otpions from .hhdefaults file
 	  char* argv_conf[MAXOPT];
 	  int argc_conf = 0;
 
-	  ReadDefaultsFile(argc_conf, argv_conf, program_path);
+	  ReadDefaultsFile(argc_conf, argv_conf, argv[0]);
 	  ProcessArguments(argc_conf, argv_conf, par);
 
 	  for (int n = 1; n < argc_conf; n++)
@@ -162,44 +163,49 @@ void HHblits::ProcessAllArguments(int argc, char** argv, Parameters& par) {
 	  // Check needed files
 	  if (!*par.infile || !strcmp(par.infile, "")) {
 	    help(par);
-	    cerr << endl << "Error in " << program_name << ": input file missing!\n";
+	    std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+	    std::cerr << "\tinput file missing!" << std::endl;
 	    exit(4);
 	  }
 	  if (!*par.db_base) {
 	    help(par);
-	    cerr << endl << "Error in " << program_name
-	        << ": database missing (see -d)\n";
+	    std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+	    std::cerr << "\tdatabase missing (see -d)\n";
 	    exit(4);
 	  }
 	  if (par.addss == 1 && (!*par.psipred || !*par.psipred_data)) {
 	    help(par);
-	    cerr << endl << "Error in " << program_name
-	        << ": missing PSIPRED directory (see -psipred and -psipred_data).\nIf you don't need the predicted secondary structure, don't use the -addss option!\n";
+	    std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+	    std::cerr << "\tmissing PSIPRED directory (see -psipred and -psipred_data).\n" << std::endl;
+	    std::cerr << "\tIf you don't need the predicted secondary structure, don't use the -addss option!" << std::endl;
 	    exit(4);
 	  }
 	  if (!par.nocontxt) {
 	    if (!strcmp(par.clusterfile, "")) {
 	      help(par);
-	      cerr << endl << "Error in " << program_name
-	          << ": context-specific library missing (see -contxt)\n";
+		  std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+	      std::cerr << "\tcontext-specific library missing (see -contxt)\n";
 	      exit(4);
 	    }
 	    if (!strcmp(par.cs_library, "")) {
 	      help(par);
-	      cerr << endl << "Error in " << program_name
-	          << ": column state library (see -cslib)\n";
+          std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+          std::cerr << "\tcolumn state library (see -cslib)\n";
 	      exit(4);
 	    }
 	  }
-	  if (par.loc == 0 && par.num_rounds >= 2 && v >= 1)
-	    cerr << "WARNING: using -global alignment for iterative searches is deprecated since non-homologous sequence segments can easily enter the MSA and corrupt it.\n";
+	  if (par.loc == 0 && par.num_rounds >= 2 && v >= 1) {
+		std::cerr << "Warning in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+	    std::cerr << "\tusing -global alignment for iterative searches is deprecated since non-homologous sequence segments can easily enter the MSA and corrupt it.\n";
+	  }
 
 	  if (par.num_rounds < 1)
 	    par.num_rounds = 1;
 	  else if (par.num_rounds > 8) {
-	    if (v >= 1)
-	      cerr << "WARNING: Number of iterations (" << par.num_rounds
-	          << ") to large => Set to 8 iterations\n";
+	    if (v >= 1) {
+	      std::cerr << "Warning in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+	      std::cerr << "\tNumber of iterations (" << par.num_rounds << ") to large => Set to 8 iterations\n";
+	    }
 	    par.num_rounds = 8;
 	  }
 
@@ -293,9 +299,9 @@ void HHblits::SetDatabase(char* db_base) {
       && file_exists(dba3m_index_filename))) {
     if (par.num_rounds > 1 || *par.alnfile || *par.psifile || *par.hhmfile
         || *par.alisbasename) {
-      cerr << endl << "Error in " << program_name
-          << ": Could not open A3M database " << dba3m_data_filename
-          << " (needed to construct result MSA)" << endl;
+
+      std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+      std::cerr << "\tCould not open A3M database " << dba3m_data_filename << " (needed to construct result MSA)" << endl;
       exit(4);
     }
     dba3m_data_filename[0] = 0;
@@ -307,11 +313,11 @@ void HHblits::SetDatabase(char* db_base) {
     dbca3m_index_file = fopen(dbca3m_index_filename, "r");
 
     if (dbca3m_data_file == NULL) {
-      OpenFileError(dbca3m_data_filename);
+      OpenFileError(dbca3m_data_filename, __FILE__, __LINE__, __func__);
     }
 
     if (dbca3m_index_file == NULL) {
-      OpenFileError(dbca3m_index_filename);
+      OpenFileError(dbca3m_index_filename, __FILE__, __LINE__, __func__);
     }
 
     size_t ca3m_data_size = CountLinesInFile(dbca3m_index_filename);
@@ -331,11 +337,11 @@ void HHblits::SetDatabase(char* db_base) {
         "r");
 
     if (dbuniprot_sequence_data_file == NULL) {
-      OpenFileError(dbuniprot_sequence_data_filename);
+      OpenFileError(dbuniprot_sequence_data_filename, __FILE__, __LINE__, __func__);
     }
 
     if (dbuniprot_sequence_index_file == NULL) {
-      OpenFileError(dbuniprot_sequence_index_filename);
+      OpenFileError(dbuniprot_sequence_index_filename, __FILE__, __LINE__, __func__);
     }
 
     size_t uniprot_sequence_data_size = CountLinesInFile(
@@ -358,11 +364,11 @@ void HHblits::SetDatabase(char* db_base) {
     dbuniprot_header_index_file = fopen(dbuniprot_header_index_filename, "r");
 
     if (dbuniprot_header_data_file == NULL) {
-      OpenFileError(dbuniprot_header_data_filename);
+      OpenFileError(dbuniprot_header_data_filename, __FILE__, __LINE__, __func__);
     }
 
     if (dbuniprot_header_index_file == NULL) {
-      OpenFileError(dbuniprot_header_index_filename);
+      OpenFileError(dbuniprot_header_index_filename, __FILE__, __LINE__, __func__);
     }
 
     size_t uniprot_header_data_size = CountLinesInFile(
@@ -384,11 +390,11 @@ void HHblits::SetDatabase(char* db_base) {
     // Prepare index-based databases
     dbhhm_data_file = fopen(dbhhm_data_filename, "r");
     if (!dbhhm_data_file)
-      OpenFileError(dbhhm_data_filename);
+      OpenFileError(dbhhm_data_filename, __FILE__, __LINE__, __func__);
 
     dbhhm_index_file = fopen(dbhhm_index_filename, "r");
     if (!dbhhm_index_file)
-      OpenFileError(dbhhm_index_filename);
+      OpenFileError(dbhhm_index_filename, __FILE__, __LINE__, __func__);
 
     int filesize;
     filesize = CountLinesInFile(dbhhm_index_filename);
@@ -408,13 +414,13 @@ void HHblits::SetDatabase(char* db_base) {
     else {
       dba3m_data_file = fopen(dba3m_data_filename, "r");
       if (!dba3m_data_file)
-        OpenFileError(dba3m_data_filename);
+        OpenFileError(dba3m_data_filename, __FILE__, __LINE__, __func__);
 
       filesize = CountLinesInFile(dba3m_index_filename);
 
       dba3m_index_file = fopen(dba3m_index_filename, "r");
       if (!dba3m_index_file)
-        OpenFileError(dba3m_index_filename);
+        OpenFileError(dba3m_index_filename, __FILE__, __LINE__, __func__);
 
       dba3m_index = ffindex_index_parse(dba3m_index_file, filesize);
       if (dba3m_index == NULL) {
@@ -462,7 +468,9 @@ void HHblits::Reset() {
 // Help functions
 /////////////////////////////////////////////////////////////////////////////////////
 void HHblits::help(Parameters& par, char all) {
-  //      ----+----1----+----2----+----3----+----4----+----5----+----6----+----7----+---8-----+----9----+----0
+  char program_name[NAMELEN];
+  RemovePathAndExtension(program_name, par.argv[0]);
+
   printf("\n");
   printf(
       "HHblits %s:\nHMM-HMM-based lightning-fast iterative sequence search\n",
@@ -830,6 +838,9 @@ void HHblits::help(Parameters& par, char all) {
 }
 
 void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
+  char program_name[NAMELEN];
+  RemovePathAndExtension(program_name, par.argv[0]);
+
   //Processing command line input
   for (int i = 1; i < argc; i++) {
     if (v >= 4)
@@ -1379,8 +1390,8 @@ void HHblits::getTemplateHMM(char* entry_name, char use_global_weights,
       //      t->Read(dbf, path);
       //    }
       else {
-        cerr << endl << "Error in " << program_name
-            << ": unrecognized HMM file format in \'" << entry_name << "\'. \n";
+    	std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+    	std::cerr << "\tunrecognized HMM file format in \'" << entry_name << "\'. \n";
         cerr << "Context:\n'" << line << "\n";
         fgetline(line, LINELEN, dbf);
         cerr << line << "\n";
@@ -2323,7 +2334,7 @@ int HHblits::ungapped_sse_score(const unsigned char* query_profile,
 void HHblits::init_no_prefiltering() {
   FILE* db_index_file = fopen(dbcs_index_filename, "r");
   if (db_index_file == NULL)
-    OpenFileError(dbcs_index_filename);
+    OpenFileError(dbcs_index_filename, __FILE__, __LINE__, __func__);
   ffindex_index_t* db_index = ffindex_index_parse(db_index_file, 0);
   fclose(db_index_file);
 
@@ -2331,11 +2342,10 @@ void HHblits::init_no_prefiltering() {
   par.dbsize = db_index->n_entries;
 
   if (par.dbsize > par.maxnumdb_no_prefilter) {
-    cerr << endl << "Error in " << program_name
-        << ": Without prefiltering, the max. number of database HHMs is "
+	std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+	std::cerr << "\tWithout prefiltering, the max. number of database HHMs is "
         << par.maxnumdb_no_prefilter << " (actual: " << par.dbsize << ")\n";
-    fprintf(stderr,
-        "You can increase the allowed maximum using the -maxfilt <max> option.\n");
+	std::cerr << "\tYou can increase the allowed maximum using the -maxfilt <max> option.\n";
     exit(4);
   }
 
@@ -2359,7 +2369,8 @@ void HHblits::checkCSFormat(size_t nr_checks) {
   }
 
   if (nr_checks == 0) {
-    std::cerr << "Error: Your cs database is in an old format!" << std::endl;
+	std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+    std::cerr << "\tYour cs database is in an old format!" << std::endl;
     std::cerr << "\tThis format is no longer supportet!" << std::endl;
     std::cerr << "\tCorrespond to the user manual!" << std::endl;
     exit(1);
@@ -2373,14 +2384,14 @@ void HHblits::init_prefilter() {
   // Map data file into memory
   db_data_file = fopen(dbcs_data_filename, "rb");
   if (db_data_file == NULL)
-    OpenFileError(dbcs_data_filename);
+    OpenFileError(dbcs_data_filename, __FILE__, __LINE__, __func__);
   size_t db_data_size;
   db_data = (unsigned char*) ffindex_mmap_data(db_data_file, &db_data_size);
 
   // Read index
   FILE* db_index_file = fopen(dbcs_index_filename, "r");
   if (db_index_file == NULL)
-    OpenFileError(dbcs_index_filename);
+    OpenFileError(dbcs_index_filename, __FILE__, __LINE__, __func__);
   ffindex_index_t* db_index = ffindex_index_parse(db_index_file, 0);
   fclose(db_index_file);
 

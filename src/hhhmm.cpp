@@ -125,12 +125,12 @@ HMM& HMM::operator=(HMM& q)
   n_seqs=q.n_seqs;
   for (int k=0; k<n_seqs; k++) {
     sname[k]=new char[strlen(q.sname[k])+1];
-    if (!sname[k]) MemoryError("array of names for sequences to display");
+    if (!sname[k]) MemoryError("array of names for sequences to display", __FILE__, __LINE__, __func__);
     strcpy(sname[k],q.sname[k]);
   }
   for (int k=0; k<n_seqs; k++) {
     seq[k]=new char[strlen(q.seq[k])+1];
-    if (!seq[k]) MemoryError("array of names for sequences to display");
+    if (!seq[k]) MemoryError("array of names for sequences to display", __FILE__, __LINE__, __func__);
     strcpy(seq[k],q.seq[k]);
   }
   ncons=q.ncons;
@@ -295,7 +295,10 @@ int HMM::Read(FILE* dbf, char* path)
                 {
                   if (k>=MAXSEQDIS-1) //maximum number of allowable sequences exceeded
                     {
-		      if (v>=2) std::cerr<<"WARNING in "<<program_name<<": number of sequences in "<<file<<" exceeds maximum allowed number of "<<MAXSEQDIS<<". Skipping sequences.\n";
+		      if (v>=2) {
+		    	  std::cerr << "Warning in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+		    	  std::cerr << "\tnumber of sequences in "<<file<<" exceeds maximum allowed number of "<<MAXSEQDIS<<". Skipping sequences.\n";
+		      }
 		      while (fgetline(line,LINELEN-1,dbf) && line[0]!='#'); 
 		      break;
 		    }
@@ -316,14 +319,14 @@ int HMM::Read(FILE* dbf, char* path)
                   //If this is not the first sequence then store residues of previous sequence
                   if (k>0) {
                     seq[k-1]=new char[strlen(cur_seq)+1];
-                    if (!seq[k-1]) MemoryError("array of sequences to display");
+                    if (!seq[k-1]) MemoryError("array of sequences to display", __FILE__, __LINE__, __func__);
                     strcpy(seq[k-1],cur_seq);
                   }
 
                   // store sequence name
                   strcut(line+1); //find next white-space character and overwrite it with end-of-string character
                   sname[k] = new char[strlen(line+1)+1]; //+1 for terminating '\0'
-                  if (!sname[k]) MemoryError("array of names for sequences to display");
+                  if (!sname[k]) MemoryError("array of names for sequences to display", __FILE__, __LINE__, __func__);
                   strcpy(sname[k],line+1);           //store sequence name in **name
                   l=1; i=1;
                 }
@@ -424,7 +427,7 @@ int HMM::Read(FILE* dbf, char* path)
           //If this is not the first sequence some residues have already been read in
           if (k>=0) {
             seq[k]=new char[strlen(cur_seq)+1];
-            if (!seq[k]) MemoryError("array of sequences to display");
+            if (!seq[k]) MemoryError("array of sequences to display", __FILE__, __LINE__, __func__);
             strcpy(seq[k],cur_seq);
           }
 	  n_seqs=k+1;
@@ -453,7 +456,7 @@ int HMM::Read(FILE* dbf, char* path)
       /////////////////////////////////////////////////////////////////////////////////////
       // Read average amino acid frequencies for HMM
       else if (!strcmp("FREQ",str4))
-	FormatError(file,"File has obsolete format. Please use hhmake version > 1.1 to generate hhm files.\n");
+	FormatError(file, __FILE__, __LINE__, __func__, "File has obsolete format. Please use hhmake version > 1.1 to generate hhm files.\n");
 
       else if (!strcmp("AVER",str4)) {} // AVER line scrapped
       else if (!strcmp("NULL",str4))
@@ -1879,7 +1882,7 @@ void HMM::IncludeNullModelInHMM(HMM* q, HMM* t, int columnscore )
 
     case 5: // Null model with local background prob. from template and query protein
       //      if (!q->divided_by_local_bg_freqs) q->DivideBySqrtOfLocalBackgroundFreqs(par.half_window_size_local_aa_bg_freqs);
-      if (!q->divided_by_local_bg_freqs) InternalError("No local amino acid bias correction on query HMM!");
+      if (!q->divided_by_local_bg_freqs) InternalError("No local amino acid bias correction on query HMM!", __FILE__, __LINE__, __func__);
       if (!t->divided_by_local_bg_freqs) t->DivideBySqrtOfLocalBackgroundFreqs(par.half_window_size_local_aa_bg_freqs);
       break;
 
@@ -1950,7 +1953,7 @@ void HMM::WriteToFile(char* outfile) {
       outf.open(outfile, std::ios::out);
 
     if (!outf.good())
-      OpenFileError(outfile);
+      OpenFileError(outfile, __FILE__, __LINE__, __func__);
 
     outf << out.str();
 
@@ -1967,9 +1970,9 @@ void HMM::WriteToFile(std::stringstream& out)
   char line[LINELEN];
 
   if (trans_lin==1) 
-    InternalError("tried to write HMM file with transition pseudocounts in linear representation");
+    InternalError("tried to write HMM file with transition pseudocounts in linear representation", __FILE__, __LINE__, __func__);
   if (divided_by_local_bg_freqs) 
-    InternalError("tried to write HMM file with amino acid probabilities divided by sqrt of local background frequencies\n");
+    InternalError("tried to write HMM file with amino acid probabilities divided by sqrt of local background frequencies\n", __FILE__, __LINE__, __func__);
 
   // format specification
   out << "HHsearch 1.5" << std::endl;
@@ -2091,7 +2094,7 @@ void HMM::InsertCalibration(char* infile)
   // Read from infile all lines and insert the EVD line with lamda and mu coefficients
   std::ifstream inf;
   inf.open(infile, std::ios::in);
-  if (!inf) OpenFileError(infile);
+  if (!inf) OpenFileError(infile, __FILE__, __LINE__, __func__);
   if (v>=2) std::cout<<"Recording calibration coefficients in "<<infile<<"\n";
 
   while (inf.getline(line,LINELEN) && !(line[0]=='/' && line[1]=='/') && nline<2*par.maxres)
@@ -2100,19 +2103,19 @@ void HMM::InsertCalibration(char* infile)
       // Found an EVD lamda mu line? -> remove, i.e., read next line
       while (!done && !strncmp(line,"EVD ",3) && !(line[0]=='/' && line[1]=='/') && nline<2*par.maxres)
         inf.getline(line,LINELEN);
-      if ((line[0]=='/' && line[1]=='/') || nline>=2*par.maxres) FormatError(infile,"Expecting hhm format");
+      if ((line[0]=='/' && line[1]=='/') || nline>=2*par.maxres) FormatError(infile, __FILE__, __LINE__, __func__, "Expecting hhm format");
 
       // Found the SEQ line? -> insert calibration before this line
       if (!done && (!strncmp("SEQ",line,3) || !strncmp("HMM",line,3)) && (isspace(line[3]) || line[3]=='\0'))
         {
           done=1;
           lines[nline]=new char[128];
-          if (!lines[nline]) MemoryError("space to read in HHM file for calibration");
+          if (!lines[nline]) MemoryError("space to read in HHM file for calibration", __FILE__, __LINE__, __func__);
           sprintf(lines[nline],"EVD   %-7.4f %-7.4f",lamda,mu);
           nline++;
         }
       lines[nline]=new char[strlen(line)+1];
-      if (!lines[nline]) MemoryError("space to read in HHM file for calibration");
+      if (!lines[nline]) MemoryError("space to read in HHM file for calibration", __FILE__, __LINE__, __func__);
       strcpy (lines[nline],line);
       nline++;
     }
@@ -2121,8 +2124,9 @@ void HMM::InsertCalibration(char* infile)
   // Write to infile all lines
   FILE* infout=fopen(infile,"w");
   if (!infout) {
-    std::cerr<<std::endl<<"WARNING in "<<program_name<<": no calibration coefficients written to "<<infile<<":\n";
-    std::cerr<<"Could not open file for writing.\n";
+	std::cerr << "Warning in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+    std::cerr << "\tno calibration coefficients written to "<<infile<<":\n";
+    std::cerr << "\tCould not open file for writing.\n";
     return;
   }
   for (l=0; l<nline; l++) {fprintf(infout,"%s\n",lines[l]); delete[] lines[l];}

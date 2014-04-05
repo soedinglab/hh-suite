@@ -118,24 +118,24 @@ Alignment& Alignment::operator=(Alignment& ali) {
   for (int k = 0; k < N_in; ++k) {
     sname[k] = new char[strlen(ali.sname[k]) + 1];
     if (!sname[k])
-      MemoryError("array of names for sequences to display");
+      MemoryError("array of names for sequences to display", __FILE__, __LINE__, __func__);
     strcpy(sname[k], ali.sname[k]);
   }
   for (int k = 0; k < N_in; ++k) {
     seq[k] = new char[strlen(ali.seq[k]) + 1];
     if (!seq[k])
-      MemoryError("array of names for sequences to display");
+      MemoryError("array of names for sequences to display", __FILE__, __LINE__, __func__);
     strcpy(seq[k], ali.seq[k]);
   }
   for (int k = 0; k < N_in; ++k) {
     X[k] = new char[strlen(ali.seq[k]) + 2];
     if (!X[k])
-      MemoryError("array for input sequences");
+      MemoryError("array for input sequences", __FILE__, __LINE__, __func__);
   }
   for (int k = 0; k < N_in; ++k) {
     I[k] = new short unsigned int[strlen(ali.seq[k]) + 2];
     if (!I[k])
-      MemoryError("array for input sequences");
+      MemoryError("array for input sequences", __FILE__, __LINE__, __func__);
   }
   for (int k = 0; k < N_in; ++k) {
     for (int i = 0; i <= L; ++i) {
@@ -220,13 +220,13 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline) {
         // Create space for residues and paste new sequence in
         seq[k] = new char[strlen(cur_seq) + 2];
         if (!seq[k])
-          MemoryError("array for input sequences");
+          MemoryError("array for input sequences", __FILE__, __LINE__, __func__);
         X[k] = new char[strlen(cur_seq) + 2];
         if (!X[k])
-          MemoryError("array for input sequences");
+          MemoryError("array for input sequences", __FILE__, __LINE__, __func__);
         I[k] = new short unsigned int[strlen(cur_seq) + 2];
         if (!I[k])
-          MemoryError("array for input sequences");
+          MemoryError("array for input sequences", __FILE__, __LINE__, __func__);
         strcpy(seq[k], cur_seq);
       }
       skip_sequence = 0;
@@ -357,7 +357,7 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline) {
             cur_name, k, n_display, display[k], keep[k]);
       sname[k] = new char[strlen(cur_name) + 1];
       if (!sname[k]) {
-        MemoryError("array for sequence names");
+        MemoryError("array for sequence names", __FILE__, __LINE__, __func__);
       }
       strcpy(sname[k], cur_name);
     } // end if(line contains sequence name)
@@ -495,13 +495,13 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline) {
       {
     seq[k] = new char[strlen(cur_seq) + 2];
     if (!seq[k])
-      MemoryError("array for input sequences");
+      MemoryError("array for input sequences", __FILE__, __LINE__, __func__);
     X[k] = new char[strlen(cur_seq) + 2];
     if (!X[k])
-      MemoryError("array for input sequences");
+      MemoryError("array for input sequences", __FILE__, __LINE__, __func__);
     I[k] = new short unsigned int[strlen(cur_seq) + 2];
     if (!I[k])
-      MemoryError("array for input sequences");
+      MemoryError("array for input sequences", __FILE__, __LINE__, __func__);
     strcpy(seq[k], cur_seq);
   }
   else {
@@ -514,8 +514,8 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline) {
 
   // Warn if there are only special sequences but no master sequence (consensus seq given if keep[kfirst]==0)
   if (kfirst < 0 || (N_in - N_ss - (keep[kfirst] == 0 ? 1 : 0)) == 0) {
-    fprintf(stderr, "Error in %s: MSA file %s contains no master sequence!\n",
-        program_name, infile);
+	  std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+    fprintf(stderr, "\tMSA file %s contains no master sequence!\n", infile);
     exit(1);
   }
 
@@ -800,8 +800,9 @@ void Alignment::ReadCompressed(ffindex_entry_t* entry, char* data,
 
   // Warn if there are only special sequences but no master sequence (consensus seq given if keep[kfirst]==0)
   if (kfirst < 0 || (N_in - N_ss - (keep[kfirst] == 0 ? 1 : 0)) == 0) {
-    fprintf(stderr, "Error in %s: MSA file %s contains no master sequence!\n",
-        program_name, entry->name);
+	  std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+    fprintf(stderr, "\tMSA file %s contains no master sequence!\n",
+        entry->name);
     exit(1);
   }
 
@@ -1344,14 +1345,14 @@ void Alignment::GetSeqsFromHMM(HMM* q) {
     // Create space for residues and paste new sequence in
     seq[k] = new char[strlen(q->seq[qk]) + 1];
     if (!seq[k])
-      MemoryError("array for input sequences");
+      MemoryError("array for input sequences", __FILE__, __LINE__, __func__);
     strcpy(seq[k], q->seq[qk]);
     X[k] = new char[strlen(q->seq[qk]) + 1];
     if (!X[k])
-      MemoryError("array for input sequences");
+      MemoryError("array for input sequences", __FILE__, __LINE__, __func__);
     I[k] = new short unsigned int[strlen(q->seq[qk]) + 1];
     if (!I[k])
-      MemoryError("array for input sequences");
+      MemoryError("array for input sequences", __FILE__, __LINE__, __func__);
 
     if (qk == q->nss_dssp) {
       display[k] = 2;
@@ -1400,7 +1401,7 @@ void Alignment::GetSeqsFromHMM(HMM* q) {
           q->sname[qk], k, n_display, display[k], keep[k]);
     sname[k] = new char[strlen(q->sname[qk]) + 1];
     if (!sname[k]) {
-      MemoryError("array for sequence names");
+      MemoryError("array for sequence names", __FILE__, __LINE__, __func__);
     }
     strcpy(sname[k], q->sname[qk]);
 
@@ -1681,16 +1682,22 @@ int Alignment::Filter2(char keep[], int coverage, int qid, float qsc,
       }
     }
     if (keep[k] == 1) {
-      if (v>=2) cerr<<endl<<"WARNING from "<<program_name<<": Filtering removed all sequences in alignment "<<name<<". Inserting back first sequence.\n";
+    	if(v >= 2) {
+    	std::cerr << "Warning in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+        cerr<< "\tFiltering removed all sequences in alignment "<<name<<". Inserting back first sequence.\n";
+    	}
     }
     else if (display[kfirst] == 2) { // the only sequence in the alignment is the consensus sequence :-(
-      if (v>=1) cerr<<endl<<"WARNING from "<<program_name<<": Alignment "<<name<<" contains no sequence except consensus sequence. Using consensus sequence for searching.\n";
+    	if(v >= 1) {
+    		std::cerr << "Warning in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+    		cerr<<"\tAlignment "<<name<<" contains no sequence except consensus sequence. Using consensus sequence for searching.\n";
+    	}
     }
     else {
       const char unknown[] = "'unknown'";
       char details[100];
       sprintf(details, "The alingment %s does not contain any sequences.", name);
-      FormatError(unknown, details);
+      FormatError(unknown, __FILE__, __LINE__, __func__, details);
     }
   }
 
@@ -2207,12 +2214,12 @@ void Alignment::FrequenciesAndTransitions(HMM* q, char use_global_weights, char*
       q->ncons = n++;
       q->sname[q->ncons] = new char[10];
       if (!q->sname[q->ncons]) {
-        MemoryError("array of names for displayed sequences");
+        MemoryError("array of names for displayed sequences", __FILE__, __LINE__, __func__);
       }
       strcpy(q->sname[q->ncons], "Consensus");
       q->seq[q->ncons] = new char[L + 2];
       if (!q->seq[q->ncons]) {
-        MemoryError("array of names for displayed sequences");
+        MemoryError("array of names for displayed sequences", __FILE__, __LINE__, __func__);
       }
     }
     if (par.cons) {
@@ -2221,13 +2228,13 @@ void Alignment::FrequenciesAndTransitions(HMM* q, char use_global_weights, char*
       kfirst = -1;
       q->sname[q->nfirst] = new char[strlen(name) + 11];
       if (!q->sname[q->nfirst]) {
-        MemoryError("array of names for displayed sequences");
+        MemoryError("array of names for displayed sequences", __FILE__, __LINE__, __func__);
       }
       strcpy(q->sname[q->nfirst], name);
       strcat(q->sname[q->nfirst], "_consensus");
       q->seq[q->nfirst] = new char[L + 2];
       if (!q->seq[q->nfirst]) {
-        MemoryError("array of names for displayed sequences");
+        MemoryError("array of names for displayed sequences", __FILE__, __LINE__, __func__);
       }
     }
     // Calculate consensus amino acids using similarity matrix
@@ -2292,12 +2299,12 @@ void Alignment::FrequenciesAndTransitions(HMM* q, char use_global_weights, char*
 //        strcut(sname[k],"  "); // delete rest of name line beginning with two spaces "  " // Why this?? Problem for pdb seqs without chain
       q->sname[nn] = new char[strlen(sname[k]) + 1];
       if (!q->sname[nn]) {
-        MemoryError("array of names for displayed sequences");
+        MemoryError("array of names for displayed sequences", __FILE__, __LINE__, __func__);
       }
       strcpy(q->sname[nn], sname[k]);
       q->seq[nn] = new char[strlen(seq[k]) + 1];
       if (!q->seq[nn]) {
-        MemoryError("array of names for displayed sequences");
+        MemoryError("array of names for displayed sequences", __FILE__, __LINE__, __func__);
       }
       strcpy(q->seq[nn], seq[k]);
     }
@@ -3028,7 +3035,7 @@ void Alignment::WriteWithoutInsertsToFile(const char* alnfile) {
   else
     alnf = fopen(alnfile, "a");
   if (!alnf)
-    OpenFileError(alnfile);
+    OpenFileError(alnfile, __FILE__, __LINE__, __func__);
   // If alignment name is different from that of query: write name into commentary line
   if (strncmp(longname, sname[kfirst], DESCLEN - 1))
     fprintf(alnf, "#%s\n", longname);
@@ -3074,7 +3081,7 @@ void Alignment::WriteToFile(const char* alnfile, const char format[]) {
       outf.open(alnfile, std::ios::out);
 
     if (!outf.good())
-      OpenFileError(alnfile);
+      OpenFileError(alnfile, __FILE__, __LINE__, __func__);
 
     outf << out.str();
 
@@ -3161,9 +3168,10 @@ void Alignment::MergeMasterSlave(Hit& hit, Alignment& Tali, char* ta3mfile) {
       continue;
     if (N_in >= MAXSEQ) {
       if(v >= 2) {
+    	  std::cerr << "Warning in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
         fprintf(stderr,
-            "WARNING in %s: maximum number of %i sequences exceeded while reading %s. Skipping all following sequences of this MSA\n",
-            program_name, MAXSEQ, ta3mfile);
+            "\tmaximum number of %i sequences exceeded while reading %s. Skipping all following sequences of this MSA\n",
+            MAXSEQ, ta3mfile);
       }
       break;
     }
@@ -3302,17 +3310,17 @@ void Alignment::MergeMasterSlave(Hit& hit, Alignment& Tali, char* ta3mfile) {
     keep[N_in] = display[N_in] = 1;
     seq[N_in] = new char[h];
     if (!seq[N_in])
-      MemoryError("array for input sequences");
+      MemoryError("array for input sequences", __FILE__, __LINE__, __func__);
     strcpy(seq[N_in], cur_seq);
     X[N_in] = new char[h];
     if (!X[N_in])
-      MemoryError("array for input sequences");
+      MemoryError("array for input sequences", __FILE__, __LINE__, __func__);
     I[N_in] = new short unsigned int[h];
     if (!I[N_in])
-      MemoryError("array for input sequences");
+      MemoryError("array for input sequences", __FILE__, __LINE__, __func__);
     sname[N_in] = new char[strlen(Tali.sname[k]) + 1];
     if (!sname[N_in])
-      MemoryError("array for input sequences");
+      MemoryError("array for input sequences", __FILE__, __LINE__, __func__);
     strcpy(sname[N_in], Tali.sname[k]);
     N_in++;
 
@@ -3344,7 +3352,7 @@ void Alignment::MergeMasterSlave(Hit& hit, Alignment& Tali, char* ta3mfile) {
 void Alignment::AddSequence(char Xk[], int Ik[]) {
   int i;    // position in query and template
   if (L <= 0)
-    InternalError("L is not set in AddSequence()");
+    InternalError("L is not set in AddSequence()", __FILE__, __LINE__, __func__);
   X[N_in] = new char[L + 2];
   for (i = 0; i <= L + 1; ++i)
     X[N_in][i] = Xk[i];
