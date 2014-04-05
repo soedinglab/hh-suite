@@ -132,28 +132,6 @@ struct Params {
 
 };
 
-
-//// cs object declarations
-// Context library for pseudocounts generation
-extern cs::ContextLibrary<cs::AA>* context_lib;
-// CRF for pseudocounts generation
-extern cs::Crf<cs::AA>* crf;
-// Pseudocounts engine
-extern cs::Pseudocounts<cs::AA>* pc_hhm_context_engine;
-// Pseudocounts admixture method
-extern cs::Admix* pc_hhm_context_mode;
-// Pseudocounts engine for prefiltering
-extern cs::Pseudocounts<cs::AA>* pc_prefilter_context_engine;
-// Pseudocounts admixture method for prefiltering
-extern cs::Admix* pc_prefilter_context_mode;
-
-
-void InitializePseudocountsEngine();
-
-
-void DeletePseudocountsEngine();
-
-
 // Structure to store data for HHblits early stopping filter
 struct Early_Stopping {
   int length;       // Length of array of 1/evalues
@@ -162,7 +140,6 @@ struct Early_Stopping {
   double thresh;    // Threshold for early stopping
   double sum;       // sum of evalues in array
 };
-
 
 class Parameters          // Parameters for gap penalties and pseudocounts
 {

@@ -118,7 +118,7 @@ void ReadQueryFile(char* infile, char& input_format, char use_global_weights, HM
 /////////////////////////////////////////////////////////////////////////////////////
 // Add transition and amino acid pseudocounts to query HMM, calculate aa background etc.
 /////////////////////////////////////////////////////////////////////////////////////
-void PrepareQueryHMM(char& input_format, HMM* q) {
+void PrepareQueryHMM(char& input_format, HMM* q, cs::Pseudocounts<cs::AA>* pc_hhm_context_engine, cs::Admix* pc_hhm_context_mode) {
   // Was query an HHsearch formatted file or MSA (no pseudocounts added yet)?
   if (input_format == 0) {
     // Add transition pseudocounts to query -> q->p[i][a]

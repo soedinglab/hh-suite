@@ -114,6 +114,12 @@ private:
 	static const char REFERENCE[];
 	static const char COPYRIGHT[];
 
+	cs::ContextLibrary<cs::AA>* context_lib = NULL;
+	cs::Crf<cs::AA>* crf = NULL;
+	cs::Pseudocounts<cs::AA>* pc_hhm_context_engine = NULL;
+	cs::Admix* pc_hhm_context_mode = NULL;
+	cs::Pseudocounts<cs::AA>* pc_prefilter_context_engine = NULL;
+	cs::Admix* pc_prefilter_context_mode = NULL;
 
 	FILE* db_data_file;
 	unsigned char* db_data;
@@ -256,25 +262,28 @@ private:
 
 	//Prefilter
 	int ungapped_sse_score(const unsigned char* query_profile,
-			const int query_length, const unsigned char* db_sequence,
-			const int dbseq_length, const unsigned char score_offset, __m128i* workspace);
+		const int query_length, const unsigned char* db_sequence,
+		const int dbseq_length, const unsigned char score_offset, __m128i* workspace);
 
-			int swStripedByte(unsigned char *querySeq,
-			int queryLength,
-			unsigned char *dbSeq,
-			int dbLength,
-			unsigned short gapOpen,
-			unsigned short gapExtend,
-			__m128i *pvHLoad,
-			__m128i *pvHStore,
-			__m128i *pvE,
-			unsigned short bias);
+	int swStripedByte(unsigned char *querySeq,
+		int queryLength,
+		unsigned char *dbSeq,
+		int dbLength,
+		unsigned short gapOpen,
+		unsigned short gapExtend,
+		__m128i *pvHLoad,
+		__m128i *pvHStore,
+		__m128i *pvE,
+		unsigned short bias);
 
-			void init_no_prefiltering();
-			void checkCSFormat(size_t nr_checks);
-			void init_prefilter();
-			void prefilter_db(Hash<Hit>* previous_hits);
-			void stripe_query_profile();
+	void init_no_prefiltering();
+	void checkCSFormat(size_t nr_checks);
+	void init_prefilter();
+	void prefilter_db(Hash<Hit>* previous_hits);
+	void stripe_query_profile();
+
+	void InitializePseudocountsEngine();
+	void DeletePseudocountsEngine();
 };
 
 #endif /* HHBLITS_H_ */

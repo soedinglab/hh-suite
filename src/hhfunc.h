@@ -18,7 +18,7 @@ void ReadQueryFile(FILE* inf, char& input_format, char use_global_weights, HMM* 
 void ReadQueryFile(char* infile, char& input_format, char use_global_weights, HMM* q, Alignment* qali);
 
 // Add transition and amino acid pseudocounts to query HMM, calculate aa background etc.
-void PrepareQueryHMM(char& input_format, HMM* q);
+void PrepareQueryHMM(char& input_format, HMM* q, cs::Pseudocounts<cs::AA>* pc_hhm_context_engine, cs::Admix* pc_hhm_context_mode);
 
 // Do precalculations for q and t to prepare comparison
 void PrepareTemplateHMM(HMM* q, HMM* t, int format);

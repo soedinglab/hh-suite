@@ -1946,7 +1946,7 @@ void HHblits::recalculateAlignmentsForDifferentQSC(HitList& hitlist,
     qali.N_filtered = qali.Filter(par.max_seqid, cov_tot, par.qid, actual_qsc,
         par.Ndiff);
     qali.FrequenciesAndTransitions(q, par.wg, NULL, false);
-    PrepareQueryHMM(inputformat, q);
+    PrepareQueryHMM(inputformat, q, pc_hhm_context_engine, pc_hhm_context_mode);
 
     hitlist.Reset();
     while (!hitlist.End()) {
@@ -2976,7 +2976,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
 //      v = v1;
 //    }
 
-    PrepareQueryHMM(input_format, q);
+    PrepareQueryHMM(input_format, q, pc_hhm_context_engine, pc_hhm_context_mode);
 
     ////////////////////////////////////////////
     // Prefiltering
@@ -3387,3 +3387,51 @@ std::stringstream* HHblits::writeA3MFile() {
       Qali.WriteToFile(*out, "a3m");
 	return out;
 }
+
+void HHblits::InitializePseudocountsEngine() {
+	// Prepare pseudocounts engine
+	FILE* fin = fopen(par.clusterfile, "r");
+	if (!fin) {
+		std::cerr << std::endl << "Error in " << par.argv[0]
+				<< ": could not open file \'" << par.clusterfile << "\'\n";
+		exit(2);
+	}
+	char ext[100];
+	Extension(ext, par.clusterfile);
+	if (strcmp(ext, "crf") == 0) {
+		crf = new cs::Crf<cs::AA>(fin);
+		pc_hhm_context_engine = new cs::CrfPseudocounts<cs::AA>(*crf);
+		pc_prefilter_context_engine = new cs::CrfPseudocounts<cs::AA>(*crf);
+	} else {
+		context_lib = new cs::ContextLibrary<cs::AA>(fin);
+		cs::TransformToLog(*context_lib);
+		pc_hhm_context_engine = new cs::LibraryPseudocounts<cs::AA>(
+				*context_lib, par.csw, par.csb);
+		pc_prefilter_context_engine = new cs::LibraryPseudocounts<cs::AA>(
+				*context_lib, par.csw, par.csb);
+	}
+	fclose(fin);
+	pc_hhm_context_engine->SetTargetNeff(par.pc_hhm_context_engine.target_neff);
+	pc_prefilter_context_engine->SetTargetNeff(
+			par.pc_prefilter_context_engine.target_neff);
+
+	// Prepare pseudocounts admixture method
+	pc_hhm_context_mode = par.pc_hhm_context_engine.CreateAdmix();
+	pc_prefilter_context_mode = par.pc_prefilter_context_engine.CreateAdmix();
+}
+
+void HHblits::DeletePseudocountsEngine() {
+	if (context_lib != NULL)
+		delete context_lib;
+	if (crf != NULL)
+		delete crf;
+	if (pc_hhm_context_engine != NULL)
+		delete pc_hhm_context_engine;
+	if (pc_hhm_context_mode != NULL)
+		delete pc_hhm_context_mode;
+	if (pc_prefilter_context_engine != NULL)
+		delete pc_prefilter_context_engine;
+	if (pc_prefilter_context_mode != NULL)
+		delete pc_prefilter_context_mode;
+}
+
