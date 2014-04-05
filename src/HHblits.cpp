@@ -92,11 +92,11 @@ void HHblits::Init(Parameters& parameters) {
   }
 
   // Set (global variable) substitution matrix and derived matrices
-  SetSubstitutionMatrix();
+  SetSubstitutionMatrix(par.matrix, pb, P, R, S, Sim);
 
   // Set secondary structure substitution matrix
   if (par.ssm)
-    SetSecStrucSubstitutionMatrix();
+    SetSecStrucSubstitutionMatrix(S73, S33);
 
   // Prepare pseudocounts
   if (!par.nocontxt && *par.clusterfile) {
@@ -1335,10 +1335,10 @@ void HHblits::getTemplateHMMFromA3M(char* entry_name, char use_global_weights,
     long& ftellpos, int& format, HMM* t) {
   Alignment tali;
   getTemplateA3M(entry_name, ftellpos, tali);
-  tali.N_filtered = tali.Filter(par.max_seqid_db, par.coverage_db, par.qid_db,
+  tali.N_filtered = tali.Filter(par.max_seqid_db, S, par.coverage_db, par.qid_db,
       par.qsc_db, par.Ndiff_db);
   t->name[0] = t->longname[0] = t->fam[0] = '\0';
-  tali.FrequenciesAndTransitions(t, use_global_weights);
+  tali.FrequenciesAndTransitions(t, use_global_weights, pb, Sim);
 
   format = 0;
 }
@@ -1363,13 +1363,13 @@ void HHblits::getTemplateHMM(char* entry_name, char use_global_weights,
       if (!strncmp(line, "HMMER3", 6))      // read HMMER3 format
           {
         format = 1;
-        t->ReadHMMer3(dbf, entry_name);
+        t->ReadHMMer3(dbf, pb, entry_name);
         par.hmmer_used = true;
       }
       else if (!strncmp(line, "HMMER", 5))      // read HMMER format
           {
         format = 1;
-        t->ReadHMMer(dbf, entry_name);
+        t->ReadHMMer(dbf, pb, entry_name);
         par.hmmer_used = true;
       }
       else if (!strncmp(line, "HH", 2))    // read HHM format
@@ -1378,7 +1378,7 @@ void HHblits::getTemplateHMM(char* entry_name, char use_global_weights,
         Pathname(path, entry_name);
 
         format = 0;
-        t->Read(dbf, path);
+        t->Read(dbf, pb, path);
       }
       //    else if (!strncmp(line, "NAME", 4)) // The following lines are for backward compatibility of HHM format version 1.2 with 1.1
       //    {
@@ -1675,7 +1675,7 @@ void HHblits::perform_realign(char *dbfiles[], int ndb, Hash<char>* premerged_hi
       }
 
       // Prepare MAC comparison(s)
-      PrepareTemplateHMM(q, t[bin], format[bin]);
+      PrepareTemplateHMM(q, t[bin], format[bin], pb, R);
       t[bin]->Log2LinTransitionProbs(1.0);
 
       // Realign only around previous Viterbi hit
@@ -1689,10 +1689,10 @@ void HHblits::perform_realign(char *dbfiles[], int ndb, Hash<char>* premerged_hi
       hit[bin]->realign_around_viterbi = true;
 
       // Align q to template in *hit[bin]
-      hit[bin]->Forward(q, t[bin]);
-      hit[bin]->Backward(q, t[bin]);
+      hit[bin]->Forward(q, t[bin], S73, S33);
+      hit[bin]->Backward(q, t[bin], S73, S33);
       hit[bin]->MACAlignment(q, t[bin]);
-      hit[bin]->BacktraceMAC(q, t[bin]);
+      hit[bin]->BacktraceMAC(q, t[bin], S73, S33);
 
       // Overwrite *hit[bin] with Viterbi scores, Probabilities etc. of hit_cur
       hit[bin]->score = hit_cur.score;
@@ -1726,7 +1726,7 @@ void HHblits::perform_realign(char *dbfiles[], int ndb, Hash<char>* premerged_hi
       if (par.allseqs) // need to keep *all* sequences in Qali_allseqs? => merge before filtering
         Qali_allseqs.MergeMasterSlave(*hit[bin], Tali, hit[bin]->dbfile);
 
-      Tali.N_filtered = Tali.Filter(par.max_seqid_db, par.coverage_db,
+      Tali.N_filtered = Tali.Filter(par.max_seqid_db, S, par.coverage_db,
           par.qid_db, par.qsc_db, par.Ndiff_db);
 
       Qali.MergeMasterSlave(*hit[bin], Tali, hit[bin]->dbfile);
@@ -1735,23 +1735,23 @@ void HHblits::perform_realign(char *dbfiles[], int ndb, Hash<char>* premerged_hi
       Qali.Compress("merged A3M file");
 
       // Remove sequences with seq. identity larger than seqid percent (remove the shorter of two)
-      Qali.N_filtered = Qali.Filter(par.max_seqid, par.coverage, par.qid,
+      Qali.N_filtered = Qali.Filter(par.max_seqid, S, par.coverage, par.qid,
           par.qsc, par.Ndiff);
 
       // Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
-      Qali.FrequenciesAndTransitions(q, par.wg);
+      Qali.FrequenciesAndTransitions(q, par.wg, pb, Sim);
 
       stringstream ss_tmp;
       ss_tmp << hit[bin]->file << "__" << hit[bin]->irep;
       premerged_hits->Add((char*) ss_tmp.str().c_str());
 
       if (par.notags)
-        q->NeutralizeTags();
+        q->NeutralizeTags(pb);
 
       // Compute substitution matrix pseudocounts?
       if (par.nocontxt) {
         // Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
-        q->PreparePseudocounts();
+        q->PreparePseudocounts(R);
         // Add amino acid pseudocounts to query: p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
         q->AddAminoAcidPseudocounts(par.pc_hhm_nocontext_mode,
             par.pc_hhm_nocontext_a, par.pc_hhm_nocontext_b,
@@ -1763,10 +1763,10 @@ void HHblits::perform_realign(char *dbfiles[], int ndb, Hash<char>* premerged_hi
             pc_hhm_context_mode);
       }
 
-      q->CalculateAminoAcidBackground();
+      q->CalculateAminoAcidBackground(pb);
       if (par.columnscore == 5 && !q->divided_by_local_bg_freqs)
         q->DivideBySqrtOfLocalBackgroundFreqs(
-            par.half_window_size_local_aa_bg_freqs);
+            par.half_window_size_local_aa_bg_freqs, pb);
 
       // Transform transition freqs to lin space if not already done
       q->AddTransitionPseudocounts(par.gapd, par.gape, par.gapf, par.gapg,
@@ -1943,10 +1943,9 @@ void HHblits::recalculateAlignmentsForDifferentQSC(HitList& hitlist,
     float actual_qsc = qsc[qsc_index];
 
     qali.Compress("filtered A3M file");
-    qali.N_filtered = qali.Filter(par.max_seqid, cov_tot, par.qid, actual_qsc,
-        par.Ndiff);
-    qali.FrequenciesAndTransitions(q, par.wg, NULL, false);
-    PrepareQueryHMM(inputformat, q, pc_hhm_context_engine, pc_hhm_context_mode);
+    qali.N_filtered = qali.Filter(par.max_seqid, S, cov_tot, par.qid, actual_qsc, par.Ndiff);
+    qali.FrequenciesAndTransitions(q, par.wg, pb, Sim, NULL, false);
+    PrepareQueryHMM(inputformat, q, pc_hhm_context_engine, pc_hhm_context_mode, pb, R);
 
     hitlist.Reset();
     while (!hitlist.End()) {
@@ -1958,7 +1957,7 @@ void HHblits::recalculateAlignmentsForDifferentQSC(HitList& hitlist,
       long ftellpos;
       getTemplateHMM(hit_ref.dbfile, 1, ftellpos, format, t);
 
-      PrepareTemplateHMM(q, t, format);
+      PrepareTemplateHMM(q, t, format, pb, R);
 
       Hit hit;
       hit.AllocateBacktraceMatrix(q->L + 2, par.maxres + 1);
@@ -1970,12 +1969,12 @@ void HHblits::recalculateAlignmentsForDifferentQSC(HitList& hitlist,
 
       for (int irep = 1; irep <= par.altali; irep++) {
         hit.irep = irep;
-        hit.Viterbi(q, t);
+        hit.Viterbi(q, t, S73, S33);
 
         if (hit.irep > 1 && hit.score <= SMIN)
           break;
 
-        hit.Backtrace(q, t);
+        hit.Backtrace(q, t, S73, S33);
         realigned_viterbi_hitlist.Push(hit);
       }
 
@@ -1999,7 +1998,7 @@ void HHblits::recalculateAlignmentsForDifferentQSC(HitList& hitlist,
       long ftellpos;
       getTemplateHMM(hit_ref.dbfile, par.wg, ftellpos, format, t);
 
-      PrepareTemplateHMM(q, t, format);
+      PrepareTemplateHMM(q, t, format, pb, R);
       t->Log2LinTransitionProbs(1.0);
 
       Hit hit;
@@ -2021,10 +2020,10 @@ void HHblits::recalculateAlignmentsForDifferentQSC(HitList& hitlist,
       hit.realign_around_viterbi = false;
 
       // Align q to template in *hit[bin]
-      hit.Forward(q, t);
-      hit.Backward(q, t);
+      hit.Forward(q, t, S73, S33);
+      hit.Backward(q, t, S73, S33);
       hit.MACAlignment(q, t);
-      hit.BacktraceMAC(q, t);
+      hit.BacktraceMAC(q, t, S73, S33);
 
       // Overwrite *hit[bin] with Viterbi scores, Probabilities etc. of hit_cur
       hit.score = hit_ref.score;
@@ -2431,7 +2430,7 @@ void HHblits::stripe_query_profile() {
   // Add Pseudocounts
   if (par.nocontxt) {
     // Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
-    q_tmp->PreparePseudocounts();
+    q_tmp->PreparePseudocounts(R);
     // Add amino acid pseudocounts to query: p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
     q_tmp->AddAminoAcidPseudocounts(par.pc_prefilter_nocontext_mode,
         par.pc_prefilter_nocontext_a, par.pc_prefilter_nocontext_b,
@@ -2443,7 +2442,7 @@ void HHblits::stripe_query_profile() {
         pc_prefilter_context_mode);
   }
 
-  q_tmp->CalculateAminoAcidBackground();
+  q_tmp->CalculateAminoAcidBackground(pb);
 
   // Build query profile with 219 column states
   query_profile = new float*[LQ + 1];
@@ -2741,21 +2740,21 @@ void HHblits::prefilter_db(Hash<Hit>* previous_hits) {
 
 void HHblits::AlignByWorker(int bin) {
   // Prepare q ant t and compare
-  PrepareTemplateHMM(q, t[bin], format[bin]);
+  PrepareTemplateHMM(q, t[bin], format[bin], pb, R);
 
   // Do HMM-HMM comparison, store results if score>SMIN, and try next best alignment
   for (hit[bin]->irep = 1; hit[bin]->irep <= par.altali; hit[bin]->irep++) {
     if (par.forward == 0) {
-      hit[bin]->Viterbi(q, t[bin]);
+      hit[bin]->Viterbi(q, t[bin], S73, S33);
       if (hit[bin]->irep > 1 && hit[bin]->score <= SMIN)
         break;
-      hit[bin]->Backtrace(q, t[bin]);
+      hit[bin]->Backtrace(q, t[bin], S73, S33);
     }
     else if (par.forward == 2) {
-      hit[bin]->Forward(q, t[bin]);
-      hit[bin]->Backward(q, t[bin]);
+      hit[bin]->Forward(q, t[bin], S73, S33);
+      hit[bin]->Backward(q, t[bin], S73, S33);
       hit[bin]->MACAlignment(q, t[bin]);
-      hit[bin]->BacktraceMAC(q, t[bin]);
+      hit[bin]->BacktraceMAC(q, t[bin], S73, S33);
     }
     hit[bin]->score_sort = hit[bin]->score_aass;
     if (hit[bin]->score <= SMIN)
@@ -2780,14 +2779,14 @@ void HHblits::AlignByWorker(int bin) {
 
 
 void HHblits::PerformViterbiByWorker(int bin, Hash<Hit>* previous_hits) {
-  PrepareTemplateHMM(q, t[bin], format[bin]);
+  PrepareTemplateHMM(q, t[bin], format[bin], pb, R);
 
   for (hit[bin]->irep = 1; hit[bin]->irep <= par.altali; hit[bin]->irep++) {
     // Break, if no previous_hit with irep is found
-    hit[bin]->Viterbi(q, t[bin]);
+    hit[bin]->Viterbi(q, t[bin], S73, S33);
     if (hit[bin]->irep > 1 && hit[bin]->score <= SMIN)
       break;
-    hit[bin]->Backtrace(q, t[bin]);
+    hit[bin]->Backtrace(q, t[bin], S73, S33);
 
     hit[bin]->score_sort = hit[bin]->score_aass;
 
@@ -2833,7 +2832,7 @@ void HHblits::RealignByWorker(int bin) {
   Hit* hit_cur;
 
   // Prepare MAC comparison(s)
-  PrepareTemplateHMM(q, t[bin], format[bin]);
+  PrepareTemplateHMM(q, t[bin], format[bin], pb, R);
   t[bin]->Log2LinTransitionProbs(1.0);
 
   hit[bin]->irep = 1;
@@ -2855,10 +2854,10 @@ void HHblits::RealignByWorker(int bin) {
     hit[bin]->realign_around_viterbi = true;
 
     // Align q to template in *hit[bin]
-    hit[bin]->Forward(q, t[bin]);
-    hit[bin]->Backward(q, t[bin]);
+    hit[bin]->Forward(q, t[bin], S73, S33);
+    hit[bin]->Backward(q, t[bin], S73, S33);
     hit[bin]->MACAlignment(q, t[bin]);
-    hit[bin]->BacktraceMAC(q, t[bin]);
+    hit[bin]->BacktraceMAC(q, t[bin], S73, S33);
 
     // Overwrite *hit[bin] with Viterbi scores, Probabilities etc. of hit_cur
     hit[bin]->score = hit_cur->score;
@@ -2907,7 +2906,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
 
   // Read query input file (HHM, HMMER, or alignment format) without adding pseudocounts
   Qali.N_in = 0;
-  ReadQueryFile(query_fh, input_format, par.wg, q, &Qali, query_path);
+  ReadQueryFile(query_fh, input_format, par.wg, q, &Qali, query_path, pb, S, Sim);
 
   if (Qali.N_in - Qali.N_ss > 1)
     par.premerge = 0;
@@ -2922,7 +2921,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
 
   // Set query columns in His-tags etc to Null model distribution
   if (par.notags)
-    q->NeutralizeTags();
+    q->NeutralizeTags(pb);
 
   // Input parameters
   if (v >= 3) {
@@ -2976,7 +2975,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
 //      v = v1;
 //    }
 
-    PrepareQueryHMM(input_format, q, pc_hhm_context_engine, pc_hhm_context_mode);
+    PrepareQueryHMM(input_format, q, pc_hhm_context_engine, pc_hhm_context_mode, pb, R);
 
     ////////////////////////////////////////////
     // Prefiltering
@@ -3097,7 +3096,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
 
           if (par.allseqs) // need to keep *all* sequences in Qali_allseqs? => merge before filtering
             Qali_allseqs.MergeMasterSlave(hit_cur, Tali, hit_cur.dbfile);
-          Tali.N_filtered = Tali.Filter(par.max_seqid_db, par.coverage_db,
+          Tali.N_filtered = Tali.Filter(par.max_seqid_db, S, par.coverage_db,
               par.qid_db, par.qsc_db, par.Ndiff_db);
           Qali.MergeMasterSlave(hit_cur, Tali, hit_cur.dbfile);
 
@@ -3109,7 +3108,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
         Qali.Compress("merged A3M file");
 
         // Sort out the nseqdis most dissimilacd r sequences for display in the result alignments
-        Qali.FilterForDisplay(par.max_seqid, par.coverage, par.qid, par.qsc,
+        Qali.FilterForDisplay(par.max_seqid, S, par.coverage, par.qid, par.qsc,
             par.nseqdis);
 
         // Remove sequences with seq. identity larger than seqid percent (remove the shorter of two)
@@ -3117,21 +3116,21 @@ void HHblits::run(FILE* query_fh, char* query_path) {
         int cov_tot = imax(imin((int) (COV_ABS / Qali.L * 100 + 0.5), 70), par.coverage);
         if (v > 2)
           printf("Filter new alignment with cov %3i%%\n", cov_tot);
-        Qali.N_filtered = Qali.Filter(par.max_seqid, cov_tot, par.qid, par.qsc, par.Ndiff);
+        Qali.N_filtered = Qali.Filter(par.max_seqid, S, cov_tot, par.qid, par.qsc, par.Ndiff);
       }
 
       // Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
-      Qali.FrequenciesAndTransitions(q, par.wg, NULL, true);
+      Qali.FrequenciesAndTransitions(q, par.wg, pb, Sim, NULL, true);
 
       if (par.notags)
-        q->NeutralizeTags();
+        q->NeutralizeTags(pb);
 
       // Calculate SSpred if we need to print out alis after each iteration or if last iteration
       if (par.addss && (*par.alisbasename || round == par.num_rounds || new_hits == 0)) {
         char ss_pred[par.maxres];
         char ss_conf[par.maxres];
 
-        CalculateSS(q, ss_pred, ss_conf);
+        CalculateSS(q, ss_pred, ss_conf, pb);
 
         Qali.AddSSPrediction(ss_pred, ss_conf);
       }
@@ -3238,7 +3237,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
 
 void HHblits::writeHHRFile(char* hhrFile) {
 	if(*hhrFile) {
-		hitlist.PrintHHR(q_tmp, hhrFile);
+		hitlist.PrintHHR(q_tmp, hhrFile, S);
 	}
 }
 
@@ -3266,7 +3265,7 @@ void HHblits::writeScoresFile(char* scoresFile) {
 
 void HHblits::writePairwiseAlisFile(char* pairwiseAlisFile, char outformat) {
 	if (*pairwiseAlisFile) {
-		hitlist.PrintAlignments(q, pairwiseAlisFile, outformat);
+		hitlist.PrintAlignments(q, pairwiseAlisFile, S, outformat);
 	}
 }
 
@@ -3280,7 +3279,7 @@ void HHblits::writeAlitabFile(char* alitabFile) {
 
 void HHblits::writeReducedHHRFile(char* reducedHHRFile) {
 	if(*reducedHHRFile) {
-		reducedHitlist.PrintHHR(q_tmp, reducedHHRFile);
+		reducedHitlist.PrintHHR(q_tmp, reducedHHRFile, S);
 	}
 }
 
@@ -3301,9 +3300,9 @@ void HHblits::writeHMMFile(char* HMMFile) {
 	  if (*HMMFile) {
 	    // Add *no* amino acid pseudocounts to query. This is necessary to copy f[i][a] to p[i][a]
 	    q->AddAminoAcidPseudocounts(0, 0.0, 0.0, 1.0);
-	    q->CalculateAminoAcidBackground();
+	    q->CalculateAminoAcidBackground(pb);
 
-	    q->WriteToFile(HMMFile);
+	    q->WriteToFile(HMMFile, pb);
 	  }
 }
 
@@ -3325,7 +3324,7 @@ std::map<int, Alignment>& HHblits::getAlis() {
 
 std::stringstream* HHblits::writeHHRFile() {
 	std::stringstream* out = new std::stringstream();
-	hitlist.PrintHHR(q_tmp, *out);
+	hitlist.PrintHHR(q_tmp, *out, S);
 	return out;
 }
 
@@ -3339,7 +3338,7 @@ std::stringstream* HHblits::writeScoresFile() {
 
 std::stringstream* HHblits::writePairwiseAlisFile(char outformat) {
 	std::stringstream* out = new std::stringstream();
-	hitlist.PrintAlignments(q, *out, outformat);
+	hitlist.PrintAlignments(q, *out, S, outformat);
 	return out;
 }
 
@@ -3353,7 +3352,7 @@ std::stringstream* HHblits::writeAlitabFile() {
 
 std::stringstream* HHblits::writeReducedHHRFile() {
 	std::stringstream* out = new std::stringstream();
-	reducedHitlist.PrintHHR(q_tmp, *out);
+	reducedHitlist.PrintHHR(q_tmp, *out, S);
 	return out;
 }
 
@@ -3371,10 +3370,10 @@ std::stringstream* HHblits::writePsiFile() {
 std::stringstream* HHblits::writeHMMFile() {
     // Add *no* amino acid pseudocounts to query. This is necessary to copy f[i][a] to p[i][a]
     q->AddAminoAcidPseudocounts(0, 0.0, 0.0, 1.0);
-    q->CalculateAminoAcidBackground();
+    q->CalculateAminoAcidBackground(pb);
 
 	std::stringstream* out = new std::stringstream();
-	q->WriteToFile(*out);
+	q->WriteToFile(*out, pb);
 	return out;
 }
 

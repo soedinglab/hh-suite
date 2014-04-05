@@ -3,7 +3,7 @@
 #include "hhmatrices.h"
 
 
-void SetBlosumMatrix(const float BlosumXX[])
+void SetBlosumMatrix(const char matrix, const float BlosumXX[], float* pb, float P[20][20])
 {
   int a,b,n=0;
   if (v>=3) printf("Using the BLOSUM%2i matrix",par.matrix);
@@ -19,7 +19,7 @@ void SetBlosumMatrix(const float BlosumXX[])
 /////////////////////////////////////////////////////////////////////////////////////
 // Set (global variable) substitution matrix with derived matrices and background frequencies
 /////////////////////////////////////////////////////////////////////////////////////
-void SetSubstitutionMatrix()
+void SetSubstitutionMatrix(const char matrix, float* pb, float P[20][20], float R[20][20], float S[20][20], float Sim[20][20])
 {
   int a,b;
   switch (par.matrix)
@@ -33,22 +33,22 @@ void SetSubstitutionMatrix()
       break;
 
     case 30:  //BLOSUM30
-      SetBlosumMatrix(Blosum30);
+      SetBlosumMatrix(par.matrix, Blosum30, pb, P);
       break;
     case 40:  //BLOSUM40
-      SetBlosumMatrix(Blosum40);
+      SetBlosumMatrix(par.matrix, Blosum40, pb, P);
       break;
     case 50:  //BLOSUM50
-      SetBlosumMatrix(Blosum50);
+      SetBlosumMatrix(par.matrix, Blosum50, pb, P);
       break;
     case 62:  //BLOSUM62
-      SetBlosumMatrix(Blosum62);
+      SetBlosumMatrix(par.matrix, Blosum62, pb, P);
       break;
     case 65:  //BLOSUM65
-      SetBlosumMatrix(Blosum65);
+      SetBlosumMatrix(par.matrix, Blosum65, pb, P);
       break;
     case 80:  //BLOSUM80
-      SetBlosumMatrix(Blosum80);
+      SetBlosumMatrix(par.matrix, Blosum80, pb, P);
       break;
    }
   
@@ -151,7 +151,7 @@ void SetSubstitutionMatrix()
 /////////////////////////////////////////////////////////////////////////////////////
 // Set secondary structure substitution matrix
 /////////////////////////////////////////////////////////////////////////////////////
-void SetSecStrucSubstitutionMatrix()
+void SetSecStrucSubstitutionMatrix(float S73[NDSSP][NSSPRED][MAXCF], float S33[NSSPRED][MAXCF][NSSPRED][MAXCF])
 {
   int A;        //observed ss state (determined dssp)
   int B,BB;     //predicted ss states (by psipred)

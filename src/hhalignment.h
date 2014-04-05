@@ -70,18 +70,18 @@ public:
   void Compress(const char infile[NAMELEN]);
 
   // Apply sequence identity filter
-  int FilterForDisplay(int max_seqid, int coverage=0, int qid=0, float qsc=0, int N=0);
-  int Filter(int max_seqid, int coverage=0, int qid=0, float qsc=0, int N=0);
-  int Filter2(char keep[], int coverage, int qid, float qsc, int seqid1, int seqid2, int Ndiff);
+  int FilterForDisplay(int max_seqid, const float S[20][20], int coverage=0, int qid=0, float qsc=0, int N=0);
+  int Filter(int max_seqid, const float S[20][20], int coverage=0, int qid=0, float qsc=0, int N=0);
+  int Filter2(char keep[], int coverage, int qid, float qsc, int seqid1, int seqid2, int Ndiff, const float S[20][20]);
 
-  void FilterNeff(char use_global_weights);
-  float filter_by_qsc(float qsc, char use_global_weights, char* dummy);
+  void FilterNeff(char use_global_weights, const float* pb, const float S[20][20], const float Sim[20][20]);
+  float filter_by_qsc(float qsc, char use_global_weights, char* dummy, const float* pb, const float S[20][20], const float Sim[20][20]);
 
   // Calculate AA frequencies q.p[i][a] and transition probabilities q.tr[i][a] from alignment
-  void FrequenciesAndTransitions(HMM* q, char use_global_weights, char* in=NULL, bool time=false);
+  void FrequenciesAndTransitions(HMM* q, char use_global_weights, const float* pb, const float Sim[20][20], char* in=NULL, bool time=false);
 
   // Calculate freqs q.f[i][a] and transitions q.tr[i][a] (a=MM,MI,MD) with pos-specific subalignments
-  void Amino_acid_frequencies_and_transitions_from_M_state(HMM* q, char use_global_weights, char* in);
+  void Amino_acid_frequencies_and_transitions_from_M_state(HMM* q, char use_global_weights, char* in, const float* pb);
 
   // Calculate transitions q.tr[i][a] (a=DM,DD) with pos-specific subalignments
   void Transitions_from_D_state(HMM* q, char* in);
@@ -126,7 +126,7 @@ private:
   int* first;             // first residue in sequence k
   int* last;              // last  residue in sequence k
   int* ksort;             // index for sorting sequences: X[ksort[k]]
-  int FilterWithCoreHMM(char in[], float coresc, HMM* qcore);
+  int FilterWithCoreHMM(char in[], float coresc, HMM* qcore, const float* pb);
   
 };
 

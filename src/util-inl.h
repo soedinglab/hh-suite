@@ -273,7 +273,7 @@ inline bool is_directory(const char *fn) {
 
 // Normalize a float array such that it sums to one
 // If it sums to 0 then assign def_array elements to array (optional)
-inline float NormalizeTo1(float* array, int length, float* def_array = NULL) {
+inline float NormalizeTo1(float* array, int length, const float* def_array = NULL) {
   float sum = 0.0f;
   int k;
   for (k = 0; k < length; k++)

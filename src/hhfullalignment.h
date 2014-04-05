@@ -15,7 +15,7 @@ public:
   FullAlignment(int maxseqdis=MAXSEQDIS);
   ~FullAlignment();
   void FreeMemory();
-  void Build(HMM* q, Hit& hit);
+  void Build(HMM* q, Hit& hit, const float S[20][20]);
   void PrintHeader(std::stringstream& out, HMM* q, Hit& hit);
   void PrintHHR(std::stringstream& out, Hit& hit);
   void PrintA2M(std::stringstream& out, Hit& hit);

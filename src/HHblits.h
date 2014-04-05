@@ -108,11 +108,21 @@ public:
 	void run(FILE* query_fh, char* query_path);
 
 private:
-	const int SHORT_BIAS = 32768;
-	const int NUMCOLSTATES = cs::AS219::kSize;
 	static const char VERSION_AND_DATE[];
 	static const char REFERENCE[];
 	static const char COPYRIGHT[];
+
+	// substitution matrix flavours
+	float __attribute__((aligned(16))) P[20][20];
+	float __attribute__((aligned(16))) R[20][20];
+	float __attribute__((aligned(16))) Sim[20][20];
+	float __attribute__((aligned(16))) S[20][20];
+	float __attribute__((aligned(16))) pb[21];
+	float __attribute__((aligned(16))) qav[21];
+
+	// secondary structure matrices
+	float S73[NDSSP][NSSPRED][MAXCF];
+	float S33[NSSPRED][MAXCF][NSSPRED][MAXCF];
 
 	cs::ContextLibrary<cs::AA>* context_lib = NULL;
 	cs::Crf<cs::AA>* crf = NULL;
@@ -121,9 +131,12 @@ private:
 	cs::Pseudocounts<cs::AA>* pc_prefilter_context_engine = NULL;
 	cs::Admix* pc_prefilter_context_mode = NULL;
 
+
+	//prefilter stuff
+	const int SHORT_BIAS = 32768;
+	const int NUMCOLSTATES = cs::AS219::kSize;
 	FILE* db_data_file;
 	unsigned char* db_data;
-
 	// number of sequences in prefilter database file
 	size_t num_dbs = 0;
 	// array containing all sequence names in prefilter db file
@@ -132,13 +145,16 @@ private:
 	unsigned char** first;
 	// length of next sequence
 	int* length;
-
 	unsigned char* qc;     // extended column state query profile as char
 	int W;                 //
 	unsigned short* qw;    // extended column state query profile as short int
 	int Ww;
-
 	cs::ContextLibrary<cs::AA> *cs_lib;
+	char** dbfiles_new;
+	char** dbfiles_old;
+	int ndb_new = 0;
+	int ndb_old = 0;
+
 
 	// HHblits variables
 	int v1 = v;                               // verbose mode
@@ -203,11 +219,6 @@ private:
 	FILE* dbuniprot_sequence_index_file;
 	ffindex_index_t* dbuniprot_sequence_index = NULL;
 	char* dbuniprot_sequence_data;
-
-	char** dbfiles_new;
-	char** dbfiles_old;
-	int ndb_new = 0;
-	int ndb_old = 0;
 
 	// Create query HMM with maximum of par.maxres match states
 	HMM* q = NULL;

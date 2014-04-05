@@ -130,22 +130,22 @@ class Hit
   void DeleteIndices();
 
   // Compare an HMM with overlapping subalignments
-  void Viterbi(HMM* q, HMM* t);
+  void Viterbi(HMM* q, HMM* t, const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]);
 
   // Compare two HMMs with each other in lin space
-  void Forward(HMM* q, HMM* t);
+  void Forward(HMM* q, HMM* t, const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]);
 
   // Compare two HMMs with each other in lin space
-  void Backward(HMM* q, HMM* t);
+  void Backward(HMM* q, HMM* t, const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]);
 
    // Find maximum accuracy alignment (after running Forward and Backward algorithms)
   void MACAlignment(HMM* q, HMM* t);
 
   // Trace back alignment of two profiles based on matrices btr[][]
-  void Backtrace(HMM* q, HMM* t);
+  void Backtrace(HMM* q, HMM* t, const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]);
 
   // Trace back MAC alignment of two profiles based on matrix btr[][]
-  void BacktraceMAC(HMM* q, HMM* t);
+  void BacktraceMAC(HMM* q, HMM* t, const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]);
 
   // Calculate score between columns i and j of two HMMs (query and template)
   inline float ProbFwd(float* qi, float* tj) {
@@ -158,7 +158,7 @@ class Hit
   }
 
   // Calculate secondary structure score between columns i and j of two HMMs (query and template)
-  inline float ScoreSS(HMM* q, HMM* t, int i, int j, int ssm) {
+  inline float ScoreSS(HMM* q, HMM* t, int i, int j, int ssm, const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]) {
     switch (ssm) //SS scoring during alignment
     {
       case 0: // no SS scoring during alignment
@@ -179,8 +179,8 @@ class Hit
   }
 
   // Calculate secondary structure score between columns i and j of two HMMs (query and template)
-  inline float ScoreSS(HMM* q, HMM* t, int i, int j) {
-    return ScoreSS(q, t, i, j, ssm2);
+  inline float ScoreSS(HMM* q, HMM* t, int i, int j, const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]) {
+    return ScoreSS(q, t, i, j, ssm2, S73, S33);
   }
 
   // Calculate score for a given alignment

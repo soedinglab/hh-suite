@@ -4,21 +4,6 @@
 //// Global variable declarations
 /////////////////////////////////////////////////////////////////////////////////////
 
-//char program_name[NAMELEN];
-//char program_path[NAMELEN];
-
-// substitution matrix flavours
-float __attribute__((aligned(16))) P[20][20];
-float __attribute__((aligned(16))) R[20][20];
-float __attribute__((aligned(16))) Sim[20][20];
-float __attribute__((aligned(16))) S[20][20];
-float __attribute__((aligned(16))) pb[21];
-float __attribute__((aligned(16))) qav[21];
-
-// secondary structure matrices
-float S73[NDSSP][NSSPRED][MAXCF];
-float S33[NSSPRED][MAXCF][NSSPRED][MAXCF];
-
 Parameters par;
 char v;
 
@@ -263,6 +248,7 @@ void Parameters::SetDefaults() {
 	neffmax = 10.0;
 	threads = 2;
 	alitab_scop = false;
+	nocontxt = false;
 
 	return;
 }

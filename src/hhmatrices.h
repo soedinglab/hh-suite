@@ -259,16 +259,16 @@ const float p_acc[]={0.00,0.47,0.53,0.56,0.58,0.62,0.69,0.74,0.82,0.88,0.96};
 //  };
 //
 
-void SetBlosumMatrix(const float BlosumXX[]);
+void SetBlosumMatrix(const char matrix, const float BlosumXX[], float* pb, float P[20][20]);
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Set (global variable) substitution matrix with derived matrices and background frequencies
 /////////////////////////////////////////////////////////////////////////////////////
-void SetSubstitutionMatrix();
+void SetSubstitutionMatrix(const char matrix, float* pb, float P[20][20], float R[20][20], float S[20][20], float Sim[20][20]);
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Set secondary structure substitution matrix
 /////////////////////////////////////////////////////////////////////////////////////
-void SetSecStrucSubstitutionMatrix();
+void SetSecStrucSubstitutionMatrix(float S73[NDSSP][NSSPRED][MAXCF], float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]);
 
 #endif /* HHMATRICES_H_ */

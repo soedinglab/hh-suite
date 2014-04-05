@@ -5,7 +5,8 @@
 /////////////////////////////////////////////////////////////////////////////////////
 // Read input file (HMM, HHM, or alignment format)
 /////////////////////////////////////////////////////////////////////////////////////
-void ReadQueryFile(FILE* inf, char& input_format, char use_global_weights, HMM* q, Alignment* qali, char infile[]) {
+void ReadQueryFile(FILE* inf, char& input_format, char use_global_weights, HMM* q, Alignment* qali, char infile[],
+		float* pb, const float S[20][20], const float Sim[20][20]) {
 	char line[LINELEN];
 
 	if (!fgetline(line, LINELEN, inf)) {
@@ -33,7 +34,7 @@ void ReadQueryFile(FILE* inf, char& input_format, char use_global_weights, HMM* 
 
 	    // Rewind to beginning of line and read query hhm file
 	    rewind(inf);
-	    q->Read(inf, path);
+	    q->Read(inf, pb, path);
 	    input_format = 0;
 
 	    if (v >= 1 && input_format == 0)  // HHM format
@@ -65,18 +66,18 @@ void ReadQueryFile(FILE* inf, char& input_format, char use_global_weights, HMM* 
 	    qali->Compress(infile);
 
 	    // Sort out the nseqdis most dissimilar sequences for display in the output alignments
-	    qali->FilterForDisplay(par.max_seqid, par.coverage, par.qid, par.qsc,
+	    qali->FilterForDisplay(par.max_seqid, S, par.coverage, par.qid, par.qsc,
 	        par.nseqdis);
 
 	    // Remove sequences with seq. identity larger than seqid percent (remove the shorter of two)
-	    qali->N_filtered = qali->Filter(par.max_seqid, par.coverage, par.qid,
+	    qali->N_filtered = qali->Filter(par.max_seqid, S, par.coverage, par.qid,
 	        par.qsc, par.Ndiff);
 
 	    if (par.Neff >= 0.999)
-	    	qali->FilterNeff(use_global_weights);
+	    	qali->FilterNeff(use_global_weights, pb, S, Sim);
 
 	    // Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
-	    qali->FrequenciesAndTransitions(q, use_global_weights);
+	    qali->FrequenciesAndTransitions(q, use_global_weights, pb, Sim);
 	    input_format = 0;
 	  }
 	  else {
@@ -92,7 +93,8 @@ void ReadQueryFile(FILE* inf, char& input_format, char use_global_weights, HMM* 
 	        q->name, q->Neff_HMM);
 }
 
-void ReadQueryFile(char* infile, char& input_format, char use_global_weights, HMM* q, Alignment* qali) {
+void ReadQueryFile(char* infile, char& input_format, char use_global_weights, HMM* q, Alignment* qali,
+		float* pb, const float S[20][20], const float Sim[20][20]) {
   // Open query file and determine file type
   char path[NAMELEN]; // path of input file (is needed to write full path and file name to HMM FILE record)
   FILE* inf = NULL;
@@ -110,7 +112,7 @@ void ReadQueryFile(char* infile, char& input_format, char use_global_weights, HM
     Pathname(path, infile);
   }
   
-  ReadQueryFile(inf, input_format, use_global_weights, q, qali, infile);
+  ReadQueryFile(inf, input_format, use_global_weights, q, qali, infile, pb, S, Sim);
 
   fclose(inf);
 }
@@ -118,7 +120,8 @@ void ReadQueryFile(char* infile, char& input_format, char use_global_weights, HM
 /////////////////////////////////////////////////////////////////////////////////////
 // Add transition and amino acid pseudocounts to query HMM, calculate aa background etc.
 /////////////////////////////////////////////////////////////////////////////////////
-void PrepareQueryHMM(char& input_format, HMM* q, cs::Pseudocounts<cs::AA>* pc_hhm_context_engine, cs::Admix* pc_hhm_context_mode) {
+void PrepareQueryHMM(char& input_format, HMM* q, cs::Pseudocounts<cs::AA>* pc_hhm_context_engine, cs::Admix* pc_hhm_context_mode,
+		const float* pb, const float R[20][20]) {
   // Was query an HHsearch formatted file or MSA (no pseudocounts added yet)?
   if (input_format == 0) {
     // Add transition pseudocounts to query -> q->p[i][a]
@@ -127,7 +130,7 @@ void PrepareQueryHMM(char& input_format, HMM* q, cs::Pseudocounts<cs::AA>* pc_hh
     // Compute substitutino matrix pseudocounts?
     if (par.nocontxt) {
       // Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
-      q->PreparePseudocounts();
+      q->PreparePseudocounts(R);
       // Add amino acid pseudocounts to query:  q->p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
       q->AddAminoAcidPseudocounts(par.pc_hhm_nocontext_mode, par.pc_hhm_nocontext_a, par.pc_hhm_nocontext_b,
           par.pc_hhm_nocontext_c);
@@ -144,13 +147,13 @@ void PrepareQueryHMM(char& input_format, HMM* q, cs::Pseudocounts<cs::AA>* pc_hh
     q->AddAminoAcidPseudocounts(0, par.pc_hhm_nocontext_a, par.pc_hhm_nocontext_b, par.pc_hhm_nocontext_c);
   }
   
-  q->CalculateAminoAcidBackground();
+  q->CalculateAminoAcidBackground(pb);
   
   // if (par.addss==1) CalculateSS(q);
   
   if (par.columnscore == 5 && !q->divided_by_local_bg_freqs)
     q->DivideBySqrtOfLocalBackgroundFreqs(
-        par.half_window_size_local_aa_bg_freqs);
+        par.half_window_size_local_aa_bg_freqs, pb);
   
   if (par.forward >= 1)
     q->Log2LinTransitionProbs(1.0);
@@ -159,7 +162,7 @@ void PrepareQueryHMM(char& input_format, HMM* q, cs::Pseudocounts<cs::AA>* pc_hh
 /////////////////////////////////////////////////////////////////////////////////////
 // Do precalculations for q and t to prepare comparison
 /////////////////////////////////////////////////////////////////////////////////////
-void PrepareTemplateHMM(HMM* q, HMM* t, int format) {
+void PrepareTemplateHMM(HMM* q, HMM* t, int format, const float* pb, const float R[20][20]) {
   // HHM format
   if (format == 0) {
     // Add transition pseudocounts to template
@@ -167,7 +170,7 @@ void PrepareTemplateHMM(HMM* q, HMM* t, int format) {
 
     // Don't use CS-pseudocounts because of runtime!!!
     // Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
-    t->PreparePseudocounts();
+    t->PreparePseudocounts(R);
 
     // Add amino acid pseudocounts to query:  p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
     t->AddAminoAcidPseudocounts(par.pc_hhm_nocontext_mode, par.pc_hhm_nocontext_a, par.pc_hhm_nocontext_b, par.pc_hhm_nocontext_c);
@@ -183,14 +186,14 @@ void PrepareTemplateHMM(HMM* q, HMM* t, int format) {
     // DON'T ADD amino acid pseudocounts to temlate: pcm=0!  t->p[i][a] = t->f[i][a]
     t->AddAminoAcidPseudocounts(0, par.pc_hhm_nocontext_a, par.pc_hhm_nocontext_b, par.pc_hhm_nocontext_c);
   }
-  t->CalculateAminoAcidBackground();
+  t->CalculateAminoAcidBackground(pb);
 
   if (par.forward >= 1)
     t->Log2LinTransitionProbs(1.0);
 
   // Factor Null model into HMM t
   // ATTENTION! t->p[i][a] is divided by pnul[a] (for reasons of efficiency) => do not reuse t->p
-  t->IncludeNullModelInHMM(q, t, par.columnscore); // Can go BEFORE the loop if not dependent on template
+  t->IncludeNullModelInHMM(q, t, par.columnscore, pb); // Can go BEFORE the loop if not dependent on template
 
   return;
 }
@@ -267,7 +270,7 @@ void CalculateSS(char *ss_pred, char *ss_conf, char *tmpfile) {
 /////////////////////////////////////////////////////////////////////////////////////
 // Calculate secondary structure for given HMM and return prediction
 /////////////////////////////////////////////////////////////////////////////////////
-void CalculateSS(HMM* q, char *ss_pred, char *ss_conf) {
+void CalculateSS(HMM* q, char *ss_pred, char *ss_conf, const float* pb) {
 
   if (q->divided_by_local_bg_freqs) {
     std::cerr
@@ -326,11 +329,11 @@ void CalculateSS(HMM* q, char *ss_pred, char *ss_conf) {
 }
 
 // Calculate secondary structure for given HMM
-void CalculateSS(HMM* q) {
+void CalculateSS(HMM* q, const float* pb) {
   char ss_pred[par.maxres];
   char ss_conf[par.maxres];
 
-  CalculateSS(q, ss_pred, ss_conf);
+  CalculateSS(q, ss_pred, ss_conf, pb);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////

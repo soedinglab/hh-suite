@@ -339,16 +339,4 @@ public:
 //TODO: get rid of these variables
 extern Parameters par;
 
-// substitution matrix flavours
-extern float __attribute__((aligned(16))) P[20][20];
-extern float __attribute__((aligned(16))) R[20][20];
-extern float __attribute__((aligned(16))) Sim[20][20];
-extern float __attribute__((aligned(16))) S[20][20];
-extern float __attribute__((aligned(16))) pb[21];
-extern float __attribute__((aligned(16))) qav[21];
-
-// secondary structure matrices
-extern float S73[NDSSP][NSSPRED][MAXCF];
-extern float S33[NSSPRED][MAXCF][NSSPRED][MAXCF];
-
 #endif /* HHDECL_H_ */

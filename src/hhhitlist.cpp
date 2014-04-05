@@ -114,9 +114,9 @@ void HitList::PrintHitList(HMM* q, char* outfile) {
   }
 }
 
-void HitList::PrintHHR(HMM* q, char* outfile) {
+void HitList::PrintHHR(HMM* q, char* outfile, const float S[20][20]) {
   std::stringstream out;
-  PrintHHR(q, out);
+  PrintHHR(q, out, S);
 
   if (strcmp(outfile, "stdout") == 0) {
     std::cout << out.str();
@@ -132,17 +132,17 @@ void HitList::PrintHHR(HMM* q, char* outfile) {
   }
 }
 
-void HitList::PrintHHR(HMM* q, std::stringstream& out) {
+void HitList::PrintHHR(HMM* q, std::stringstream& out, const float S[20][20]) {
   PrintHitList(q, out);
-  PrintAlignments(q, out, 0);
+  PrintAlignments(q, out, S, 0);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Print alignments of query sequences against hit sequences
 /////////////////////////////////////////////////////////////////////////////////////
-void HitList::PrintAlignments(HMM* q, char* outfile, char outformat) {
+void HitList::PrintAlignments(HMM* q, char* outfile, const float S[20][20], char outformat) {
   std::stringstream out;
-  PrintAlignments(q, out, outformat);
+  PrintAlignments(q, out, S, outformat);
 
   if (strcmp(outfile, "stdout") == 0) {
     std::cout << out.str();
@@ -163,7 +163,7 @@ void HitList::PrintAlignments(HMM* q, char* outfile, char outformat) {
   }
 }
 
-void HitList::PrintAlignments(HMM* q, std::stringstream& out, char outformat) {
+void HitList::PrintAlignments(HMM* q, std::stringstream& out, const float S[20][20], char outformat) {
   FullAlignment qt_ali(par.nseqdis + 10); // maximum 10 annotation (pseudo) sequences (ss_dssp, sa_dssp, ss_pred, ss_conf, consens,...)
   int nhits = 0;
 
@@ -179,7 +179,7 @@ void HitList::PrintAlignments(HMM* q, std::stringstream& out, char outformat) {
     nhits++;
 
     // Build double alignment of query against template sequences
-    qt_ali.Build(q, hit);
+    qt_ali.Build(q, hit, S);
 
     // Print out alignment
     // HHR format

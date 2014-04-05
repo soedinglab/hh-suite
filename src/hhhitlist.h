@@ -45,11 +45,11 @@ public:
   void PrintHitList(HMM* q, char* outfile);
 
   // Print alignments of query sequences against hit sequences 
-  void PrintAlignments(HMM* q, char* outfile, char outformat = 0);
-  void PrintAlignments(HMM* q, std::stringstream& out, char outformat = 0);
+  void PrintAlignments(HMM* q, char* outfile, const float S[20][20], char outformat = 0);
+  void PrintAlignments(HMM* q, std::stringstream& out, const float S[20][20], char outformat = 0);
 
-  void PrintHHR(HMM* q, char* outfile);
-  void PrintHHR(HMM* q, std::stringstream& out);
+  void PrintHHR(HMM* q, char* outfile, const float S[20][20]);
+  void PrintHHR(HMM* q, std::stringstream& out, const float S[20][20]);
 
   // Return a figure of merit for distinction of the score with positive from the scores with negatives
   void Optimize(HMM* q);

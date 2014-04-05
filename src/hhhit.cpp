@@ -9,11 +9,6 @@ using std::ios;
 using std::ifstream;
 using std::ofstream;
 
-#ifdef PTHREAD
-// Mutex for the saving of matrices in hhhit (-omat)
-pthread_mutex_t matrices_saving_mutex = PTHREAD_MUTEX_INITIALIZER;
-#endif
-
 #define CALCULATE_MAX6(max, var1, var2, var3, var4, var5, var6, varb) \
   if (var1>var2) { max=var1; varb=STOP;}			          \
   else           { max=var2; varb=MM;};					\
@@ -190,7 +185,7 @@ void Hit::DeleteIndices() {
 // The function is called with q and t
 // If q and t are equal (self==1), only the upper right part of the matrix is calculated: j>=i+3
 /////////////////////////////////////////////////////////////////////////////////////
-void Hit::Viterbi(HMM* q, HMM* t) {
+void Hit::Viterbi(HMM* q, HMM* t, const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]) {
   // Linear topology of query (and template) HMM:
   // 1. The HMM HMM has L+2 columns. Columns 1 to L contain 
   //    a match state, a delete state and an insert state each.
@@ -323,7 +318,7 @@ void Hit::Viterbi(HMM* q, HMM* t) {
             sDG_i_1_j_1 + q->tr[i - 1][D2M] + t->tr[j - 1][M2M],
             sMI_i_1_j_1 + q->tr[i - 1][M2M] + t->tr[j - 1][I2M], btr[i][j]);
 
-        sMM_i_j += Si[j] + ScoreSS(q, t, i, j) + par.shift;
+        sMM_i_j += Si[j] + ScoreSS(q, t, i, j, S73, S33) + par.shift;
 
         sGD_i_j = max2(sMM[j - 1] + t->tr[j - 1][M2D], // MM->GD gap opening in query
             sGD[j - 1] + t->tr[j - 1][D2D], // GD->GD gap extension in query
@@ -378,7 +373,7 @@ void Hit::Viterbi(HMM* q, HMM* t) {
 /////////////////////////////////////////////////////////////////////////////////////
 // Compare two HMMs with Forward Algorithm in lin-space (~ 2x faster than in log-space)
 /////////////////////////////////////////////////////////////////////////////////////
-void Hit::Forward(HMM* q, HMM* t) {
+void Hit::Forward(HMM* q, HMM* t, const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]) {
   // Variable declarations
   int i, j;      // query and template match state indices
   double pmin = (par.loc ? 1.0 : 0.0); // used to distinguish between SW and NW algorithms in maximization
@@ -488,7 +483,7 @@ void Hit::Forward(HMM* q, HMM* t) {
       float substitutionScore =
               ProbFwd(q->p[1], t->p[j]);
 
-      F_MM_prev[j] = P_MM[1][j] = substitutionScore * fpow2(ScoreSS(q, t, 1, j))
+      F_MM_prev[j] = P_MM[1][j] = substitutionScore * fpow2(ScoreSS(q, t, 1, j, S73, S33))
           * Cshift;
       F_MI_prev[j] = F_DG_prev[j] = 0.0;
       F_IM_prev[j] = F_MM_prev[j - 1] * q->tr[1][M2I] * t->tr[j - 1][M2M]
@@ -523,7 +518,7 @@ void Hit::Forward(HMM* q, HMM* t) {
               ProbFwd(q->p[i], t->p[jmin]);
 
       F_MM_curr[jmin] = scale_prod * substitutionScore
-          * fpow2(ScoreSS(q, t, i, jmin)) * Cshift;
+          * fpow2(ScoreSS(q, t, i, jmin, S73, S33)) * Cshift;
       F_IM_curr[jmin] = F_GD_curr[jmin] = 0.0;
       F_MI_curr[jmin] = scale[i]
           * (F_MM_prev[jmin] * q->tr[i - 1][M2M] * t->tr[jmin][M2I]
@@ -549,7 +544,7 @@ void Hit::Forward(HMM* q, HMM* t) {
         float substitutionScore =
                 ProbFwd(q->p[i], t->p[j]);
 
-        F_MM_curr[j] = substitutionScore * fpow2(ScoreSS(q, t, i, j)) * Cshift
+        F_MM_curr[j] = substitutionScore * fpow2(ScoreSS(q, t, i, j, S73, S33)) * Cshift
             * scale[i]
             * (pmin + F_MM_prev[j - 1] * q->tr[i - 1][M2M] * t->tr[j - 1][M2M] // BB -> MM (BB = Begin/Begin, for local alignment)
             + F_GD_prev[j - 1] * q->tr[i - 1][M2M] * t->tr[j - 1][D2M] // GD -> MM
@@ -670,7 +665,7 @@ void Hit::Forward(HMM* q, HMM* t) {
 /////////////////////////////////////////////////////////////////////////////////////
 // Compare two HMMs with Backward Algorithm (in lin-space, 2x faster), for use in MAC alignment 
 /////////////////////////////////////////////////////////////////////////////////////
-void Hit::Backward(HMM* q, HMM* t) {
+void Hit::Backward(HMM* q, HMM* t, const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]) {
   // Variable declarations
   int i, j;      // query and template match state indices
   double pmin; // this is the scaled 1 in the SW algorithm that represents a starting alignment
@@ -750,7 +745,7 @@ void Hit::Backward(HMM* q, HMM* t) {
                 ProbFwd(q->p[i + 1], t->p[j + 1]);
 
         double pmatch = B_MM_prev[j + 1] * substitutionScore
-            * fpow2(ScoreSS(q, t, i + 1, j + 1)) * Cshift * scale[i + 1];
+            * fpow2(ScoreSS(q, t, i + 1, j + 1, S73, S33)) * Cshift * scale[i + 1];
         B_MM_curr[j] = (+pmin         // MM -> EE (End/End, for local alignment)
         + pmatch * q->tr[i][M2M] * t->tr[j][M2M]              // MM -> MM
         + B_GD_curr[j + 1] * t->tr[j][M2D] // MM -> GD (q->tr[i][M2M] is already contained in GD->MM)
@@ -785,7 +780,7 @@ void Hit::Backward(HMM* q, HMM* t) {
       float substitutionScore =
               ProbFwd(q->p[i], t->p[j]);
 
-      actual_backward += substitutionScore * fpow2(ScoreSS(q, t, i, j)) * Cshift
+      actual_backward += substitutionScore * fpow2(ScoreSS(q, t, i, j, S73, S33)) * Cshift
           * B_MM_curr[j] / Pforward;
     } //end for j
 
@@ -972,7 +967,7 @@ void Hit::MACAlignment(HMM* q, HMM* t) {
 /////////////////////////////////////////////////////////////////////////////////////
 // Trace back Viterbi alignment of two profiles based on matrix btr[][]
 /////////////////////////////////////////////////////////////////////////////////////
-void Hit::Backtrace(HMM* q, HMM* t) {
+void Hit::Backtrace(HMM* q, HMM* t, const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]) {
   // Trace back trough the matrices bXY[i][j] until first match state is found (STOP-state)
 
   int step; // counts steps in path through 5-layered dynamic programming matrix
@@ -1073,7 +1068,7 @@ void Hit::Backtrace(HMM* q, HMM* t) {
         S[step] =
                 Score(q->p[i], t->p[j]);
 
-        S_ss[step] = ScoreSS(q, t, i, j, ssm);
+        S_ss[step] = ScoreSS(q, t, i, j, ssm, S73, S33);
         score_ss += S_ss[step];
         break;
       case MI: //if gap in template
@@ -1155,7 +1150,7 @@ void Hit::Backtrace(HMM* q, HMM* t) {
 /////////////////////////////////////////////////////////////////////////////////////
 // Trace back alignment of two profiles based on matrix btr[][]
 /////////////////////////////////////////////////////////////////////////////////////
-void Hit::BacktraceMAC(HMM* q, HMM* t) {
+void Hit::BacktraceMAC(HMM* q, HMM* t, const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]) {
   // Trace back trough the matrix b[i][j] until STOP state is found
 
   char** b = btr;  // define alias for backtracing matrix
@@ -1259,7 +1254,7 @@ void Hit::BacktraceMAC(HMM* q, HMM* t) {
         S[step] =
                 Score(q->p[i], t->p[j]);
 
-        S_ss[step] = ScoreSS(q, t, i, j, ssm);
+        S_ss[step] = ScoreSS(q, t, i, j, ssm, S73, S33);
         score_ss += S_ss[step];
         P_posterior[step] = P_MM[this->i[step]][this->j[step]];
         // Add probability to sum of probs if no dssp states given or dssp states exist and state is resolved in 3D structure

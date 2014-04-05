@@ -317,7 +317,7 @@ inline void sout(std::stringstream& out, int d) {
 
 
 // Calculate scalar product between 20 dimensional float vectors qi and tj
-inline float ScalarProd20(float* qi, float* tj)
+inline float ScalarProd20(const float* qi, const float* tj)
 {
 
 #ifndef HH_SSE2

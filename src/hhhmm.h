@@ -55,19 +55,19 @@ public:
     void FlatCopyTo(HMM* t);
 
     // Read an HMM from a HHsearch .hhm file and return 0 at end of file
-    int Read(FILE* dbf, char* path=NULL);
+    int Read(FILE* dbf, float* pb, char* path=NULL);
 
     // Read an HMM from a HMMer .hmm file; return 0 at end of file
-    int ReadHMMer(FILE* dbf, char* filestr=NULL);
+    int ReadHMMer(FILE* dbf, float* pb, char* filestr=NULL);
 
     // Read an HMM from a HMMer3 .hmm file; return 0 at end of file
-    int ReadHMMer3(FILE* dbf, char* filestr=NULL);
+    int ReadHMMer3(FILE* dbf, float* pb, char* filestr=NULL);
 
     // Add transition pseudocounts to HMM
     void AddTransitionPseudocounts(float gapd, float gape, float gapf, float gapg, float gaph, float gapi, float gapb);
 
     // Generate an amino acid frequency matrix g[][] with full pseudocount admixture (tau=1)
-    void PreparePseudocounts();
+    void PreparePseudocounts(const float R[20][20]);
 
     // Add context specific amino acid pseudocounts to HMM
     void AddContextSpecificPseudocounts(cs::Pseudocounts<cs::AA>* pc, cs::Admix* admix);
@@ -79,20 +79,20 @@ public:
     void AddAminoAcidPseudocounts(char pcm, float pca, float pcb, float pcc);
 
     // Calculate amino acid backround frequencies for HMM
-    void CalculateAminoAcidBackground();
+    void CalculateAminoAcidBackground(const float* pb);
 
     // Add no amino acid pseudocounts to HMM: copy  t.p[i][a] = f[i][a]
     void NoAminoAcidPseudocounts() {for(int i=1; i<=L; i++) for(int a=0; a<20; a++) p[i][a]=f[i][a];};
 
     // Divide aa probabilties by square root of locally averaged background frequencies
-    void DivideBySqrtOfLocalBackgroundFreqs(const int D);
+    void DivideBySqrtOfLocalBackgroundFreqs(const int D, const float* pb);
 
     // Factor Null model into HMM t
-    void IncludeNullModelInHMM(HMM* q, HMM* t, int columnscore);
+    void IncludeNullModelInHMM(HMM* q, HMM* t, int columnscore, const float* pb);
 
     // Write HMM to output file
-    void WriteToFile(char* outfile);
-    void WriteToFile(std::stringstream& outfile);
+    void WriteToFile(char* outfile, const float* pb);
+    void WriteToFile(std::stringstream& outfile, const float* pb);
 
     // Insert calibration line 'EVD   lamda   mu      hashvalue' into HMM file
     void InsertCalibration(char* infile);
@@ -101,7 +101,7 @@ public:
     void Log2LinTransitionProbs(float beta=1.0);
 
     // Set query columns in His-tags etc to Null model distribution
-    void NeutralizeTags();
+    void NeutralizeTags(const float* pb);
 
     // Calculate effective number of sequences using profiles INCLUDING pseudocounts
     float CalcNeff();

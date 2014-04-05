@@ -115,7 +115,7 @@ void FullAlignment::AddGaps() {
 /////////////////////////////////////////////////////////////////////////////////////
 // Build full alignment -> qa->s[k][h] and ta->s[k][h]
 /////////////////////////////////////////////////////////////////////////////////////
-void FullAlignment::Build(HMM* q, Hit& hit) {
+void FullAlignment::Build(HMM* q, Hit& hit, const float S[20][20]) {
   int step;
   char prev_state = MM, state = MM;
   int n;

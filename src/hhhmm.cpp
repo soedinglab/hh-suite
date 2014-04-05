@@ -170,7 +170,7 @@ HMM& HMM::operator=(HMM& q)
 /////////////////////////////////////////////////////////////////////////////////////
 //// Read an HMM from an HHsearch .hhm file; return 0 at end of file
 /////////////////////////////////////////////////////////////////////////////////////
-int HMM::Read(FILE* dbf, char* path)
+int HMM::Read(FILE* dbf, float* pb, char* path)
 {
   char line[LINELEN]="";    // input line
   char str3[8]="",str4[8]=""; // first 3 and 4 letters of input line
@@ -585,7 +585,7 @@ int HMM::Read(FILE* dbf, char* path)
 /////////////////////////////////////////////////////////////////////////////////////
 //// Read an HMM from a HMMer .hmm file; return 0 at end of file
 /////////////////////////////////////////////////////////////////////////////////////
-int HMM::ReadHMMer(FILE* dbf, char* filestr)
+int HMM::ReadHMMer(FILE* dbf, float* pb, char* filestr)
 {
   char line[LINELEN]="";    // input line
   char desc[DESCLEN]="";    // description of family
@@ -1045,7 +1045,7 @@ int HMM::ReadHMMer(FILE* dbf, char* filestr)
 /////////////////////////////////////////////////////////////////////////////////////
 //// Read an HMM from a HMMER3 .hmm file; return 0 at end of file
 /////////////////////////////////////////////////////////////////////////////////////
-int HMM::ReadHMMer3(FILE* dbf, char* filestr)
+int HMM::ReadHMMer3(FILE* dbf, float* pb, char* filestr)
 {
   char line[LINELEN]="";    // input line
   char desc[DESCLEN]="";    // description of family
@@ -1590,7 +1590,7 @@ void HMM::AddTransitionPseudocounts(float gapd, float gape, float gapf, float ga
 /////////////////////////////////////////////////////////////////////////////////////
 // Generate an amino acid frequency matrix g[][] with full pseudocount admixture (tau=1)
 /////////////////////////////////////////////////////////////////////////////////////
-void HMM::PreparePseudocounts()
+void HMM::PreparePseudocounts(const float R[20][20])
 {
   for (int i=0; i<=L+1; ++i)
       for (int a=0; a<20; ++a)
@@ -1635,8 +1635,7 @@ void HMM::fillCountProfile(cs::CountProfile<cs::AA> *csProfile)
 /////////////////////////////////////////////////////////////////////////////////////
 // Calculate amino acid background frequencies in HMM
 /////////////////////////////////////////////////////////////////////////////////////
-void HMM::CalculateAminoAcidBackground()
-{
+void HMM::CalculateAminoAcidBackground(const float* pb) {
   int a, i;
   // initialize vector of average aa freqs with pseudocounts
   for (a=0; a<20; ++a) pav[a]=pb[a]*100.0f/Neff_HMM;
@@ -1763,7 +1762,7 @@ void HMM::AddAminoAcidPseudocounts(char pcm, float pca, float pcb, float pcc)
 // Divide aa probabilties by square root of locally averaged background frequencies
 // !!!!! ATTENTION!!!!!!!  after this p is not the same as after adding pseudocounts !!!
 /////////////////////////////////////////////////////////////////////////////////////
-void HMM::DivideBySqrtOfLocalBackgroundFreqs(const int D) // 2*D+1 is window size
+void HMM::DivideBySqrtOfLocalBackgroundFreqs(const int D, const float* pb) // 2*D+1 is window size
 {
   if (divided_by_local_bg_freqs) {std::cerr<<"WARNING: already divided probs by local aa frequencies!\n"; return;}
   divided_by_local_bg_freqs=1;
@@ -1844,7 +1843,7 @@ void HMM::DivideBySqrtOfLocalBackgroundFreqs(const int D) // 2*D+1 is window siz
 // Factor Null model into HMM t
 // !!!!! ATTENTION!!!!!!!  after this t->p is not the same as after adding pseudocounts !!!
 /////////////////////////////////////////////////////////////////////////////////////
-void HMM::IncludeNullModelInHMM(HMM* q, HMM* t, int columnscore )
+void HMM::IncludeNullModelInHMM(HMM* q, HMM* t, int columnscore, const float* pb)
 {
 
   int i,j;         //query and template match state indices
@@ -1883,7 +1882,7 @@ void HMM::IncludeNullModelInHMM(HMM* q, HMM* t, int columnscore )
     case 5: // Null model with local background prob. from template and query protein
       //      if (!q->divided_by_local_bg_freqs) q->DivideBySqrtOfLocalBackgroundFreqs(par.half_window_size_local_aa_bg_freqs);
       if (!q->divided_by_local_bg_freqs) InternalError("No local amino acid bias correction on query HMM!", __FILE__, __LINE__, __func__);
-      if (!t->divided_by_local_bg_freqs) t->DivideBySqrtOfLocalBackgroundFreqs(par.half_window_size_local_aa_bg_freqs);
+      if (!t->divided_by_local_bg_freqs) t->DivideBySqrtOfLocalBackgroundFreqs(par.half_window_size_local_aa_bg_freqs, pb);
       break;
 
     case 10: // Separated column scoring for Stochastic Backtracing (STILL USED??)
@@ -1938,9 +1937,9 @@ void HMM::IncludeNullModelInHMM(HMM* q, HMM* t, int columnscore )
 }
 
 
-void HMM::WriteToFile(char* outfile) {
+void HMM::WriteToFile(char* outfile, const float* pb) {
   std::stringstream out;
-  WriteToFile(out);
+  WriteToFile(out, pb);
 
   if (strcmp(outfile,"stdout") == 0) {
     std::cout << out.str();
@@ -1964,7 +1963,7 @@ void HMM::WriteToFile(char* outfile) {
 /////////////////////////////////////////////////////////////////////////////////////
 // Write HMM to output file
 /////////////////////////////////////////////////////////////////////////////////////
-void HMM::WriteToFile(std::stringstream& out)
+void HMM::WriteToFile(std::stringstream& out, const float* pb)
 {
   const int SEQLEN=100;      // number of residues per line for sequences to be displayed
   char line[LINELEN];
@@ -2155,7 +2154,7 @@ void HMM::Log2LinTransitionProbs(float beta)
 /////////////////////////////////////////////////////////////////////////////////////
 // Set query columns in His-tags etc to Null model distribution
 /////////////////////////////////////////////////////////////////////////////////////
-void HMM::NeutralizeTags()
+void HMM::NeutralizeTags(const float* pb)
 {
   char* qseq = seq[nfirst];
   char* pt;
