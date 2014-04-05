@@ -9,19 +9,19 @@
 
 #define SWAP(tmp, arg1, arg2) tmp = arg1; arg1 = arg2; arg2 = tmp;
 
-HHblits::HHblits(int argc, char **argv) {
-  Init(argc, argv);
+HHblits::HHblits(Parameters& parameters) {
+  Init(parameters);
 }
 
 HHblits::~HHblits() {
   Reset();
 
-  for (int bin = 0; bin < bins; bin++) {
+  for (int bin = 0; bin < par.threads; bin++) {
     hit[bin]->DeleteBacktraceMatrix(par.maxres);
     hit[bin]->DeleteForwardMatrix(par.maxres);
   }
 
-  for (int bin = 0; bin < bins; bin++) {
+  for (int bin = 0; bin < par.threads; bin++) {
     delete hit[bin];
     delete t[bin];
   }
@@ -70,144 +70,21 @@ HHblits::~HHblits() {
   delete[] dbfiles_old;
 }
 
-void HHblits::Init(int argc, char **argv) {
-  par.premerge = 3;
-  par.Ndiff = 1000;
-  par.prefilter = true;
+void HHblits::Init(Parameters& parameters) {
+  par = parameters;
 
-  // all database MSAs must be in A3M format
-  par.M = 1;
-
-  strcpy(par.outfile, "");
   N_searched = 0;
-
-  // Make command line input globally available
-  par.argv = argv;
-  par.argc = argc;
-  RemovePathAndExtension(program_name, argv[0]);
-  Pathname(program_path, argv[0]);
-
-  // Enable changing verbose mode before command line are processed
-  for (int i = 1; i < argc; i++) {
-    if (argc > 1 && !strcmp(argv[i], "-v0"))
-      v = 0;
-    else if (argc > 1 && !strcmp(argv[i], "-v1"))
-      v = 1;
-    else if (argc > 2 && !strcmp(argv[i], "-v"))
-      v = atoi(argv[i + 1]);
-  }
-
-  par.SetDefaultPaths(program_path);
-
-  // Process default otpions from .hhdefaults file
-  char* argv_conf[MAXOPT];
-  int argc_conf = 0;
-
-  ReadDefaultsFile(argc_conf, argv_conf, program_path);
-  ProcessArguments(argc_conf, argv_conf);
-
-  for (int n = 1; n < argc_conf; n++)
-    delete[] argv_conf[n];
-
-  // Process command line options (they override defaults from .hhdefaults file)
-  ProcessArguments(argc, argv);
-
-  // Check needed files
-  if (!*par.infile || !strcmp(par.infile, "")) {
-    help();
-    cerr << endl << "Error in " << program_name << ": input file missing!\n";
-    exit(4);
-  }
-  if (!*db_base) {
-    help();
-    cerr << endl << "Error in " << program_name
-        << ": database missing (see -d)\n";
-    exit(4);
-  }
-  if (par.addss == 1 && (!*par.psipred || !*par.psipred_data)) {
-    help();
-    cerr << endl << "Error in " << program_name
-        << ": missing PSIPRED directory (see -psipred and -psipred_data).\nIf you don't need the predicted secondary structure, don't use the -addss option!\n";
-    exit(4);
-  }
-  if (!par.nocontxt) {
-    if (!strcmp(par.clusterfile, "")) {
-      help();
-      cerr << endl << "Error in " << program_name
-          << ": context-specific library missing (see -contxt)\n";
-      exit(4);
-    }
-    if (!strcmp(par.cs_library, "")) {
-      help();
-      cerr << endl << "Error in " << program_name
-          << ": column state library (see -cslib)\n";
-      exit(4);
-    }
-  }
-  if (par.loc == 0 && num_rounds >= 2 && v >= 1)
-    cerr << "WARNING: using -global alignment for iterative searches is deprecated since non-homologous sequence segments can easily enter the MSA and corrupt it.\n";
-
-  if (num_rounds < 1)
-    num_rounds = 1;
-  else if (num_rounds > 8) {
-    if (v >= 1)
-      cerr << "WARNING: Number of iterations (" << num_rounds
-          << ") to large => Set to 8 iterations\n";
-    num_rounds = 8;
-  }
-
-  // Premerging can be very time-consuming on large database a3ms, such as from pdb70.
-  // Hence it is only done when iteratively searching against uniprot20 or nr20 with their much smaller MSAs:
-  if (!(num_rounds > 1 || *par.alnfile || *par.psifile || *par.hhmfile || *par.alisbasename))
-    par.premerge = 0;
-
-  // No outfile given? Name it basename.hhm
-  if (!*par.outfile) {     // outfile not given? Name it basename.hhm
-    RemoveExtension(par.outfile, par.infile);
-    strcat(par.outfile, ".hhr");
-    if (v >= 2)
-      cout << "Search results will be written to " << par.outfile << "\n";
-  }
-
   dbfiles_new = new char*[par.maxnumdb_no_prefilter + 1];
   dbfiles_old = new char*[par.maxnumdb + 1];
 
-  SetDatabase(db_base);
+  SetDatabase(par.db_base);
 
   if (par.prefilter) {
-    // Initialize Prefiltering (Get DBsize)
     init_prefilter();
   }
-  // Set all HMMs in database as new_dbs
   else {
     init_no_prefiltering();
   }
-
-  // Check option compatibilities
-  if (par.nseqdis > MAXSEQDIS - 3 - par.showcons)
-    par.nseqdis = MAXSEQDIS - 3 - par.showcons; //3 reserved for secondary structure
-  if (par.aliwidth < 20)
-    par.aliwidth = 20;
-  if (par.pc_hhm_context_engine.pca < 0.001)
-    par.pc_hhm_context_engine.pca = 0.001; // to avoid log(0)
-  if (par.pc_prefilter_context_engine.pca < 0.001)
-    par.pc_prefilter_context_engine.pca = 0.001; // to avoid log(0)
-  if (par.b > par.B)
-    par.B = par.b;
-  if (par.z > par.Z)
-    par.Z = par.z;
-  if (par.maxmem < 1.0) {
-    cerr << "WARNING: setting -maxmem to its minimum allowed value of 1.0\n";
-    par.maxmem = 1.0;
-  }
-  if (par.mact >= 1.0)
-    par.mact = 0.999;
-  else if (par.mact < 0)
-    par.mact = 0.0;
-  if (par.macins >= 1.0)
-    par.macins = 0.999;
-  else if (par.macins < 0)
-    par.macins = 0.0;
 
   // Set (global variable) substitution matrix and derived matrices
   SetSubstitutionMatrix();
@@ -223,12 +100,9 @@ void HHblits::Init(int argc, char **argv) {
     InitializePseudocountsEngine();
   }
 
-  omp_threads = threads;
-
   // Prepare multi-threading - reserve memory for threads, intialize, etc.
-  omp_set_num_threads(threads);
-  bins = threads;
-  for (int bin = 0; bin < bins; bin++) {
+  omp_set_num_threads(par.threads);
+  for (int bin = 0; bin < par.threads; bin++) {
     t[bin] = new HMM; // Each bin has a template HMM allocated that was read from the database file
     // Each bin has an object of type Hit allocated ...
     hit[bin] = new Hit;
@@ -237,7 +111,7 @@ void HHblits::Init(int argc, char **argv) {
     // Allocate memory for matrix and set to 0
     hit[bin]->AllocateForwardMatrix(par.maxres, par.maxres);
   }
-  format = new int[bins];
+  format = new int[par.threads];
 
   // Prepare column state lib (context size =1 )
   FILE* fin = fopen(par.cs_library, "r");
@@ -246,6 +120,127 @@ void HHblits::Init(int argc, char **argv) {
   cs_lib = new cs::ContextLibrary<cs::AA>(fin);
   fclose(fin);
   cs::TransformToLin(*cs_lib);
+}
+
+void HHblits::ProcessAllArguments(int argc, char** argv, Parameters& par) {
+	  par.argv = argv;
+	  par.argc = argc;
+
+	  par.premerge = 3;
+	  par.Ndiff = 1000;
+	  par.prefilter = true;
+
+	  // Make command line input globally available
+	  RemovePathAndExtension(program_name, argv[0]);
+	  Pathname(program_path, argv[0]);
+
+	  // Enable changing verbose mode before command line are processed
+	  for (int i = 1; i < argc; i++) {
+	    if (argc > 1 && !strcmp(argv[i], "-v0"))
+	      v = 0;
+	    else if (argc > 1 && !strcmp(argv[i], "-v1"))
+	      v = 1;
+	    else if (argc > 2 && !strcmp(argv[i], "-v"))
+	      v = atoi(argv[i + 1]);
+	  }
+
+	  par.SetDefaultPaths(program_path);
+
+	  // Process default otpions from .hhdefaults file
+	  char* argv_conf[MAXOPT];
+	  int argc_conf = 0;
+
+	  ReadDefaultsFile(argc_conf, argv_conf, program_path);
+	  ProcessArguments(argc_conf, argv_conf, par);
+
+	  for (int n = 1; n < argc_conf; n++)
+	    delete[] argv_conf[n];
+
+	  // Process command line options (they override defaults from .hhdefaults file)
+	  ProcessArguments(argc, argv, par);
+
+	  // Check needed files
+	  if (!*par.infile || !strcmp(par.infile, "")) {
+	    help(par);
+	    cerr << endl << "Error in " << program_name << ": input file missing!\n";
+	    exit(4);
+	  }
+	  if (!*par.db_base) {
+	    help(par);
+	    cerr << endl << "Error in " << program_name
+	        << ": database missing (see -d)\n";
+	    exit(4);
+	  }
+	  if (par.addss == 1 && (!*par.psipred || !*par.psipred_data)) {
+	    help(par);
+	    cerr << endl << "Error in " << program_name
+	        << ": missing PSIPRED directory (see -psipred and -psipred_data).\nIf you don't need the predicted secondary structure, don't use the -addss option!\n";
+	    exit(4);
+	  }
+	  if (!par.nocontxt) {
+	    if (!strcmp(par.clusterfile, "")) {
+	      help(par);
+	      cerr << endl << "Error in " << program_name
+	          << ": context-specific library missing (see -contxt)\n";
+	      exit(4);
+	    }
+	    if (!strcmp(par.cs_library, "")) {
+	      help(par);
+	      cerr << endl << "Error in " << program_name
+	          << ": column state library (see -cslib)\n";
+	      exit(4);
+	    }
+	  }
+	  if (par.loc == 0 && par.num_rounds >= 2 && v >= 1)
+	    cerr << "WARNING: using -global alignment for iterative searches is deprecated since non-homologous sequence segments can easily enter the MSA and corrupt it.\n";
+
+	  if (par.num_rounds < 1)
+	    par.num_rounds = 1;
+	  else if (par.num_rounds > 8) {
+	    if (v >= 1)
+	      cerr << "WARNING: Number of iterations (" << par.num_rounds
+	          << ") to large => Set to 8 iterations\n";
+	    par.num_rounds = 8;
+	  }
+
+	  // Premerging can be very time-consuming on large database a3ms, such as from pdb70.
+	  // Hence it is only done when iteratively searching against uniprot20 or nr20 with their much smaller MSAs:
+	  if (!(par.num_rounds > 1 || *par.alnfile || *par.psifile || *par.hhmfile || *par.alisbasename))
+	    par.premerge = 0;
+
+	  // No outfile given? Name it basename.hhm
+	  if (!*par.outfile) {     // outfile not given? Name it basename.hhm
+	    RemoveExtension(par.outfile, par.infile);
+	    strcat(par.outfile, ".hhr");
+	    if (v >= 2)
+	      cout << "Search results will be written to " << par.outfile << "\n";
+	  }
+
+	  // Check option compatibilities
+	  if (par.nseqdis > MAXSEQDIS - 3 - par.showcons)
+	    par.nseqdis = MAXSEQDIS - 3 - par.showcons; //3 reserved for secondary structure
+	  if (par.aliwidth < 20)
+	    par.aliwidth = 20;
+	  if (par.pc_hhm_context_engine.pca < 0.001)
+	    par.pc_hhm_context_engine.pca = 0.001; // to avoid log(0)
+	  if (par.pc_prefilter_context_engine.pca < 0.001)
+	    par.pc_prefilter_context_engine.pca = 0.001; // to avoid log(0)
+	  if (par.b > par.B)
+	    par.B = par.b;
+	  if (par.z > par.Z)
+	    par.Z = par.z;
+	  if (par.maxmem < 1.0) {
+	    cerr << "WARNING: setting -maxmem to its minimum allowed value of 1.0\n";
+	    par.maxmem = 1.0;
+	  }
+	  if (par.mact >= 1.0)
+	    par.mact = 0.999;
+	  else if (par.mact < 0)
+	    par.mact = 0.0;
+	  if (par.macins >= 1.0)
+	    par.macins = 0.999;
+	  else if (par.macins < 0)
+	    par.macins = 0.0;
 }
 
 void HHblits::SetDatabase(char* db_base) {
@@ -296,7 +291,7 @@ void HHblits::SetDatabase(char* db_base) {
   }
   else if (!(file_exists(dba3m_data_filename)
       && file_exists(dba3m_index_filename))) {
-    if (num_rounds > 1 || *par.alnfile || *par.psifile || *par.hhmfile
+    if (par.num_rounds > 1 || *par.alnfile || *par.psifile || *par.hhmfile
         || *par.alisbasename) {
       cerr << endl << "Error in " << program_name
           << ": Could not open A3M database " << dba3m_data_filename
@@ -466,7 +461,7 @@ void HHblits::Reset() {
 /////////////////////////////////////////////////////////////////////////////////////
 // Help functions
 /////////////////////////////////////////////////////////////////////////////////////
-void HHblits::help(char all) {
+void HHblits::help(Parameters& par, char all) {
   //      ----+----1----+----2----+----3----+----4----+----5----+----6----+----7----+---8-----+----9----+----0
   printf("\n");
   printf(
@@ -499,10 +494,10 @@ void HHblits::help(char all) {
       "Options:                                                                       \n");
   printf(
       " -d <name>      database name (e.g. uniprot20_29Feb2012) (default=%s)          \n",
-      db_base);
+      par.db_base);
   printf(
       " -n     [1,8]   number of iterations (default=%i)                              \n",
-      num_rounds);
+      par.num_rounds);
   printf(
       " -e     [0,1]   E-value cutoff for inclusion in result alignment (def=%G)      \n",
       par.e);
@@ -809,10 +804,10 @@ void HHblits::help(char all) {
   printf(
       " -neffmax ]1,20] skip further search iterations when diversity Neff of query MSA \n");
   printf("                becomes larger than neffmax (default=%.1f)\n",
-      neffmax);
+      par.neffmax);
   printf(
       " -cpu <int>     number of CPUs to use (for shared memory SMPs) (default=%i)      \n",
-      threads);
+      par.threads);
   if (all) {
     printf(
         " -scores <file> write scores for all pairwise comparisions to file               \n");
@@ -834,14 +829,14 @@ void HHblits::help(char all) {
   cout << endl;
 }
 
-void HHblits::ProcessArguments(int argc, char** argv) {
+void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
   //Processing command line input
   for (int i = 1; i < argc; i++) {
     if (v >= 4)
       cout << i << "  " << argv[i] << endl; //PRINT
     if (!strcmp(argv[i], "-i")) {
       if (++i >= argc || argv[i][0] == '-') {
-        help();
+        help(par);
         cerr << endl << "Error in " << program_name
             << ": no query file following -i\n";
         exit(4);
@@ -851,17 +846,17 @@ void HHblits::ProcessArguments(int argc, char** argv) {
     }
     else if (!strcmp(argv[i], "-d")) {
       if (++i >= argc || argv[i][0] == '-') {
-        help();
+        help(par);
         cerr << endl << "Error in " << program_name
             << ": no database basename following -d\n";
         exit(4);
       }
       else
-        strcpy(db_base, argv[i]);
+        strcpy(par.db_base, argv[i]);
     }
     else if (!strcmp(argv[i], "-contxt") || !strcmp(argv[i], "-context_data")) {
       if (++i >= argc || argv[i][0] == '-') {
-        help();
+        help(par);
         cerr << endl << "Error in " << program_name
             << ": no lib following -contxt\n";
         exit(4);
@@ -871,7 +866,7 @@ void HHblits::ProcessArguments(int argc, char** argv) {
     }
     else if (!strcmp(argv[i], "-cslib") || !strcmp(argv[i], "-cs_lib")) {
       if (++i >= argc || argv[i][0] == '-') {
-        help();
+        help(par);
         cerr << endl << "Error in " << program_name
             << ": no lib following -cslib\n";
         exit(4);
@@ -881,7 +876,7 @@ void HHblits::ProcessArguments(int argc, char** argv) {
     }
     else if (!strcmp(argv[i], "-psipred")) {
       if (++i >= argc || argv[i][0] == '-') {
-        help();
+        help(par);
         cerr << endl << "Error in " << program_name
             << ": no directory following -psipred\n";
         exit(4);
@@ -891,7 +886,7 @@ void HHblits::ProcessArguments(int argc, char** argv) {
     }
     else if (!strcmp(argv[i], "-psipred_data")) {
       if (++i >= argc || argv[i][0] == '-') {
-        help();
+        help(par);
         cerr << endl << "Error in " << program_name
             << ": no database directory following -psipred_data\n";
         exit(4);
@@ -901,7 +896,7 @@ void HHblits::ProcessArguments(int argc, char** argv) {
     }
     else if (!strcmp(argv[i], "-o")) {
       if (++i >= argc || argv[i][0] == '-') {
-        help();
+        help(par);
         cerr << endl << "Error in " << program_name
             << ": no output file following -o\n";
         exit(4);
@@ -911,7 +906,7 @@ void HHblits::ProcessArguments(int argc, char** argv) {
     }
     else if (!strcmp(argv[i], "-ored")) {
       if (++i >= argc || argv[i][0] == '-') {
-        help();
+        help(par);
         cerr << endl << "Error in " << program_name
             << ": no output file following -o\n";
         exit(4);
@@ -921,7 +916,7 @@ void HHblits::ProcessArguments(int argc, char** argv) {
     }
     else if (!strcmp(argv[i], "-oa3m")) {
       if (++i >= argc || argv[i][0] == '-') {
-        help();
+        help(par);
         cerr << endl << "Error in " << program_name
             << ": no output file following -oa3m\n";
         exit(4);
@@ -931,7 +926,7 @@ void HHblits::ProcessArguments(int argc, char** argv) {
     }
     else if (!strcmp(argv[i], "-ohhm")) {
       if (++i >= argc || argv[i][0] == '-') {
-        help();
+        help(par);
         cerr << endl << "Error in " << program_name
             << ": no output file following -ohhm\n";
         exit(4);
@@ -941,7 +936,7 @@ void HHblits::ProcessArguments(int argc, char** argv) {
     }
     else if (!strcmp(argv[i], "-opsi")) {
       if (++i >= argc || argv[i][0] == '-') {
-        help();
+        help(par);
         cerr << endl << "Error in " << program_name
             << ": no output file following -opsi\n";
         exit(4);
@@ -951,7 +946,7 @@ void HHblits::ProcessArguments(int argc, char** argv) {
     }
     else if (!strcmp(argv[i], "-oalis")) {
       if (++i >= argc || argv[i][0] == '-') {
-        help();
+        help(par);
         cerr << endl << "Error in " << program_name
             << ": no file basename following -oalis\n";
         exit(4);
@@ -963,7 +958,7 @@ void HHblits::ProcessArguments(int argc, char** argv) {
       par.append = 0;
       par.outformat = 1;
       if (++i >= argc || argv[i][0] == '-') {
-        help();
+        help(par);
         cerr << endl << "Error in " << program_name
             << ": no output file following -o\n";
         exit(4);
@@ -975,7 +970,7 @@ void HHblits::ProcessArguments(int argc, char** argv) {
       par.append = 0;
       par.outformat = 2;
       if (++i >= argc || argv[i][0] == '-') {
-        help();
+        help(par);
         cerr << endl << "Error in " << program_name
             << ": no output file following -o\n";
         exit(4);
@@ -987,7 +982,7 @@ void HHblits::ProcessArguments(int argc, char** argv) {
       par.append = 0;
       par.outformat = 3;
       if (++i >= argc || argv[i][0] == '-') {
-        help();
+        help(par);
         cerr << endl << "Error in " << program_name
             << ": no output file following -o\n";
         exit(4);
@@ -997,17 +992,17 @@ void HHblits::ProcessArguments(int argc, char** argv) {
     }
     else if (!strcmp(argv[i], "-qhhm")) {
       if (++i >= argc || argv[i][0] == '-') {
-        help();
+        help(par);
         cerr << endl << "Error in " << program_name
             << ": no filename following -qhhm\n";
         exit(4);
       }
       else
-        strcpy(query_hhmfile, argv[i]);
+        strcpy(par.query_hhmfile, argv[i]);
     }
     else if (!strcmp(argv[i], "-scores")) {
       if (++i >= argc || argv[i][0] == '-') {
-        help();
+        help(par);
         cerr << endl << "Error in " << program_name
             << ": no file following -scores\n";
         exit(4);
@@ -1018,7 +1013,7 @@ void HHblits::ProcessArguments(int argc, char** argv) {
     }
     else if (!strcmp(argv[i], "-atab")) {
       if (++i >= argc || argv[i][0] == '-') {
-        help();
+        help(par);
         cerr << endl << "Error in " << program_name
             << ": no file following -atab\n";
         exit(4);
@@ -1028,9 +1023,9 @@ void HHblits::ProcessArguments(int argc, char** argv) {
       }
     }
     else if (!strcmp(argv[i], "-atab_scop"))
-      alitab_scop = true;
+      par.alitab_scop = true;
     else if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "-help")) {
-      help(1);
+      help(par, 1);
       exit(0);
     }
     else if (!strcmp(argv[i], "-v") && (i < argc - 1) && argv[i + 1][0] != '-')
@@ -1042,7 +1037,7 @@ void HHblits::ProcessArguments(int argc, char** argv) {
     else if (!strcmp(argv[i], "-v1"))
       v = 1;
     else if (!strcmp(argv[i], "-n") && (i < argc - 1))
-      num_rounds = atoi(argv[++i]);
+      par.num_rounds = atoi(argv[++i]);
     else if (!strncmp(argv[i], "-BLOSUM", 7)
         || !strncmp(argv[i], "-Blosum", 7)) {
       if (!strcmp(argv[i] + 7, "30"))
@@ -1113,7 +1108,7 @@ void HHblits::ProcessArguments(int argc, char** argv) {
       par.allseqs = true;
     }
     else if (!strcmp(argv[i], "-neffmax") && (i < argc - 1))
-      neffmax = atof(argv[++i]);
+      par.neffmax = atof(argv[++i]);
     else if ((!strcmp(argv[i], "-neff") || !strcmp(argv[i], "-Neff"))
         && (i < argc - 1))
       par.Neff = atof(argv[++i]);
@@ -1184,10 +1179,10 @@ void HHblits::ProcessArguments(int argc, char** argv) {
       par.alphac = atof(argv[++i]);
     else if (!strcmp(argv[i], "-noprefilt")) {
       par.prefilter = false;
-      already_seen_filter = false;
+      par.already_seen_filter = false;
     }
     else if (!strcmp(argv[i], "-noaddfilter")) {
-      already_seen_filter = false;
+      par.already_seen_filter = false;
     }
     else if (!strcmp(argv[i], "-maxfilt") && (i < argc - 1))
       par.maxnumdb = par.maxnumdb_no_prefilter = atoi(argv[++i]);
@@ -1206,7 +1201,7 @@ void HHblits::ProcessArguments(int argc, char** argv) {
     else if (!strcmp(argv[i], "-pre_score_offset") && (i < argc - 1))
       par.prefilter_score_offset = atoi(argv[++i]);
     else if (!strcmp(argv[i], "-realignoldhits"))
-      realign_old_hits = true;
+      par.realign_old_hits = true;
     else if (!strcmp(argv[i], "-realign"))
       par.realign = 1;
     else if (!strcmp(argv[i], "-norealign"))
@@ -1244,7 +1239,7 @@ void HHblits::ProcessArguments(int argc, char** argv) {
       par.half_window_size_local_aa_bg_freqs = imax(1, atoi(argv[++i]));
     }
     else if (!strncmp(argv[i], "-cpu", 4) && (i < argc - 1)) {
-      threads = atoi(argv[++i]);
+      par.threads = atoi(argv[++i]);
     }
     else if (!strcmp(argv[i], "-maxmem") && (i < argc - 1)) {
       par.maxmem = atof(argv[++i]);
@@ -1404,7 +1399,7 @@ void HHblits::getTemplateHMM(char* entry_name, char use_global_weights,
 
 void HHblits::DoViterbiSearch(char *dbfiles[], int ndb, Hash<Hit>* previous_hits, bool alignByWorker) {
   // Search databases
-  for (int bin = 0; bin < bins; bin++) {
+  for (int bin = 0; bin < par.threads; bin++) {
     hit[bin]->realign_around_viterbi = false;
   }
 
@@ -1524,7 +1519,7 @@ void HHblits::perform_realign(char *dbfiles[], int ndb, Hash<char>* premerged_hi
 
   // Longest allowable length of database HMM (backtrace: 5 chars, fwd, bwd: 1 double
   long int Lmaxmem = (par.maxmem * 1024 * 1024 * 1024) / sizeof(double) / q->L
-      / bins;
+      / par.threads;
   long int Lmax = 0;      // length of longest HMM to be realigned
 
   // phash_plist_realignhitpos->Show(dbfile) is pointer to list with template indices and their ftell positions.
@@ -2566,7 +2561,7 @@ void HHblits::prefilter_db(Hash<Hit>* previous_hits) {
 //  int* prefiltered_hits = new int[par.dbsize+1];
   int* backtrace_hits = new int[par.maxnumdb + 1];
 
-  __m128i ** workspace = new __m128i *[omp_threads];
+  __m128i ** workspace = new __m128i *[par.threads];
 
   int score;
   double evalue;
@@ -2582,7 +2577,7 @@ void HHblits::prefilter_db(Hash<Hit>* previous_hits) {
   const float log_qlen = flog2(LQ);
   const double factor = (double) par.dbsize * LQ;
 
-  for (int i = 0; i < omp_threads; i++)
+  for (int i = 0; i < par.threads; i++)
     workspace[i] = (__m128i *) memalign(16, 3 * (LQ + 15) * sizeof(char),
         "the dynamic programming workspace during prefiltering");
 
@@ -2725,7 +2720,7 @@ void HHblits::prefilter_db(Hash<Hit>* previous_hits) {
 
   // Free memory
   free(qc);
-  for (int i = 0; i < omp_threads; i++)
+  for (int i = 0; i < par.threads; i++)
     free(workspace[i]);
   delete[] workspace;
   delete[] backtrace_hits;
@@ -2932,7 +2927,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
   // Main loop overs search iterations
   //////////////////////////////////////////////////////////////////////////////////
 
-  for (int round = 1; round <= num_rounds; round++) {
+  for (int round = 1; round <= par.num_rounds; round++) {
     if (v >= 2)
       printf("\nIteration %i\n", round);
 
@@ -3014,12 +3009,12 @@ void HHblits::run(FILE* query_fh, char* query_path) {
       new_hits++;
     }
 
-    if (new_hits == 0 || round == num_rounds) {
+    if (new_hits == 0 || round == par.num_rounds) {
       last_round = true;
-      if (round < num_rounds && v >= 2)
+      if (round < par.num_rounds && v >= 2)
         printf("No new hits found in iteration %i => Stop searching\n", round);
 
-      if (ndb_old > 0 && realign_old_hits) {
+      if (ndb_old > 0 && par.realign_old_hits) {
         if (v > 0) {
           printf("Rescoring previously found HMMs with Viterbi algorithm\n");
         }
@@ -3031,7 +3026,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
           ndb_new++;
         }
       }
-      else if (!realign_old_hits && previous_hits->Size() > 0) {
+      else if (!par.realign_old_hits && previous_hits->Size() > 0) {
         if (v > 0) {
           printf("Rescoring previously found HMMs with Viterbi algorithm\n");
         }
@@ -3044,7 +3039,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
       perform_realign(dbfiles_new, ndb_new, premerged_hits);
 
     // Generate alignment for next iteration
-    if (round < num_rounds || *par.alnfile || *par.psifile || *par.hhmfile
+    if (round < par.num_rounds || *par.alnfile || *par.psifile || *par.hhmfile
         || *par.alisbasename) {
       v1 = v;
       if (v > 0 && v <= 3)
@@ -3121,7 +3116,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
         q->NeutralizeTags();
 
       // Calculate SSpred if we need to print out alis after each iteration or if last iteration
-      if (par.addss && (*par.alisbasename || round == num_rounds || new_hits == 0)) {
+      if (par.addss && (*par.alisbasename || round == par.num_rounds || new_hits == 0)) {
         char ss_pred[par.maxres];
         char ss_conf[par.maxres];
 
@@ -3142,7 +3137,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
       v = v1;
     }
     // Update counts for log
-    else if (round == num_rounds) {
+    else if (round == par.num_rounds) {
       hitlist.Reset();
       while (!hitlist.End()) {
         Hit hit_cur = hitlist.ReadNext();
@@ -3174,16 +3169,16 @@ void HHblits::run(FILE* query_fh, char* query_path) {
           seqs_found, cluster_found, par.e);
 
     if (v >= 2
-        && (round < num_rounds || *par.alnfile || *par.psifile || *par.hhmfile
+        && (round < par.num_rounds || *par.alnfile || *par.psifile || *par.hhmfile
             || *par.alisbasename))
       printf(
           "Number of effective sequences of resulting query HMM: Neff = %4.2f\n",
           q->Neff_HMM);
 
-    if (v >= 2 && q->Neff_HMM > neffmax && round < num_rounds) {
+    if (v >= 2 && q->Neff_HMM > par.neffmax && round < par.num_rounds) {
       printf(
           "Diversity is above threshold (%4.2f). Stop searching! (Change threshold using -neffmax <float>.)\n",
-          neffmax);
+          par.neffmax);
     }
 
     if (v >= 2 && Qali.N_in >= MAXSEQ)
@@ -3191,7 +3186,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
           "Maximun number of sequences in query alignment reached (%i). Stop searching!\n",
           MAXSEQ);
 
-    if (new_hits == 0 || round == num_rounds || q->Neff_HMM > neffmax
+    if (new_hits == 0 || round == par.num_rounds || q->Neff_HMM > par.neffmax
         || Qali.N_in >= MAXSEQ)
       break;
 
@@ -3201,7 +3196,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
       Hit hit_cur = hitlist.ReadNext();
       char strtmp[NAMELEN + 6];
       sprintf(strtmp, "%s__%i%c", hit_cur.file, hit_cur.irep, '\0');
-      if (!already_seen_filter || hit_cur.Eval > par.e
+      if (!par.already_seen_filter || hit_cur.Eval > par.e
           || previous_hits->Contains(strtmp))
         hit_cur.Delete(); // Delete hit object (deep delete with Hit::Delete())
       else
@@ -3267,7 +3262,7 @@ void HHblits::writePairwiseAlisFile(char* pairwiseAlisFile, char outformat) {
 
 void HHblits::writeAlitabFile(char* alitabFile) {
 	if (*alitabFile) {
-		hitlist.WriteToAlifile(q, alitabFile, alitab_scop);
+		hitlist.WriteToAlifile(q, alitabFile, par.alitab_scop);
 	}
 }
 
@@ -3340,7 +3335,7 @@ std::stringstream* HHblits::writePairwiseAlisFile(char outformat) {
 
 std::stringstream* HHblits::writeAlitabFile() {
 	std::stringstream* out = new std::stringstream();
-	hitlist.WriteToAlifile(q, *out, alitab_scop);
+	hitlist.WriteToAlifile(q, *out, par.alitab_scop);
 	return out;
 }
 

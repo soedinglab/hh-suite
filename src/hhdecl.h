@@ -29,7 +29,6 @@ extern char VERSION_AND_DATE[];
 extern char REFERENCE[];
 extern char COPYRIGHT[];
 
-
 const int MAXSEQ=65535; //max number of sequences in input alignment (must be <~30000 on cluster nodes??)
 const int LINELEN=524288; //max length of line read in from input files; must be >= MAXCOL
 const int MAXRES=20000;
@@ -360,6 +359,19 @@ public:
   int min_prefilter_hits;
 
   int n_redundancy;
+
+  //hhblits specific variables
+  int num_rounds;
+  char db_base[NAMELEN];
+  // Perform filtering of already seen HHMs
+  bool already_seen_filter;
+  // Realign old hits in last round or use previous alignments
+  bool realign_old_hits;
+  float neffmax;
+  int threads;
+  char query_hhmfile[NAMELEN];
+  bool alitab_scop;
+
 
   void SetDefaultPaths(char *program_path);
   void SetDefaults();

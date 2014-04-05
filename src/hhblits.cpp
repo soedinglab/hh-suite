@@ -58,7 +58,10 @@
 #include "hhdecl.h"
 
 int main(int argc, char **argv) {
-  HHblits hhblits(argc, argv);
+  Parameters par;
+  HHblits::ProcessAllArguments(argc, argv, par);
+
+  HHblits hhblits(par);
 
   FILE* inf;
   if(strcmp(par.infile, "stdin") == 0) {

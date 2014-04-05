@@ -78,11 +78,12 @@ const char HHBLITS_REFERENCE[] =
 
 class HHblits {
 public:
-	HHblits(int argc, char** argv);
+	HHblits(Parameters& parameters);
 	virtual ~HHblits();
 
-	void Init(int argc, char** argv);
+	void Init(Parameters& par);
 	void Reset();
+	static void ProcessAllArguments(int argc, char** argv, Parameters& par);
 
 	void SetDatabase(char* db_base);
 
@@ -135,22 +136,23 @@ private:
 
 	// HHblits variables
 	int v1 = v;                               // verbose mode
-	int num_rounds = 2;                   // number of iterations
+//	int num_rounds = 2;                   // number of iterations
 	bool last_round = false;                // set to true in last iteration
-	bool already_seen_filter = true;   // Perform filtering of already seen HHMs
-	bool realign_old_hits = false; // Realign old hits in last round or use previous alignments
+
+//	bool already_seen_filter = true;   // Perform filtering of already seen HHMs
+//	bool realign_old_hits = false; // Realign old hits in last round or use previous alignments
 
 	char input_format = 0; // Set to 1 if input in HMMER format (has already pseudocounts)
 
-	float neffmax = 10;                     // Break if Neff > Neffmax
+//	float neffmax = 10;                     // Break if Neff > Neffmax
 
 	char config_file[NAMELEN];
-	char infile[NAMELEN];
-	char query_hhmfile[NAMELEN];             // -qhmm output file
-	bool alitab_scop = false;        // Write only SCOP alignments in alitabfile
+//	char infile[NAMELEN];
+//	char query_hhmfile[NAMELEN];             // -qhmm output file
+//	bool alitab_scop = false;        // Write only SCOP alignments in alitabfile
 
 	//database filenames
-	char db_base[NAMELEN];
+//	char db_base[NAMELEN];
 	char dbcs_base[NAMELEN];
 	char dbcs_index_filename[NAMELEN];
 	char dbcs_data_filename[NAMELEN];
@@ -212,9 +214,9 @@ private:
 	int ndb_old = 0;
 
 	// HHsearch variables
-	int threads = 2; // number of compute pthreads during Viterbi and Realign (apart from the main thread which reads from db file) and # OpenMP threads; 0:no multithreading
-    int omp_threads = 2;                    // number of OpenMP threads to start
-	int bins; // number of bins; jobs gets allocated to a FREE bin were they are waiting for execution by a thread
+//	int threads = 2; // number of compute pthreads during Viterbi and Realign (apart from the main thread which reads from db file) and # OpenMP threads; 0:no multithreading
+//    int omp_threads = 2;                    // number of OpenMP threads to start
+//	int bins; // number of bins; jobs gets allocated to a FREE bin were they are waiting for execution by a thread
 
 	// Create query HMM with maximum of par.maxres match states
 	HMM* q = NULL;
@@ -233,8 +235,8 @@ private:
 	int N_searched;           // Number of HMMs searched
 	std::map<int, Alignment> alis;
 
-	void help(char all = 0);
-	void ProcessArguments(int argc, char** argv);
+	static void help(Parameters& par, char all = 0);
+	static void ProcessArguments(int argc, char** argv, Parameters& par);
 
 	void ReadQueryA3MFile();
 	void getTemplateA3M(char* entry_name, long& ftellpos, Alignment& tali);
