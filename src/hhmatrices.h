@@ -269,6 +269,6 @@ void SetSubstitutionMatrix(const char matrix, float* pb, float P[20][20], float 
 /////////////////////////////////////////////////////////////////////////////////////
 // Set secondary structure substitution matrix
 /////////////////////////////////////////////////////////////////////////////////////
-void SetSecStrucSubstitutionMatrix(float S73[NDSSP][NSSPRED][MAXCF], float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]);
+void SetSecStrucSubstitutionMatrix(const float ssa, float S73[NDSSP][NSSPRED][MAXCF], float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]);
 
 #endif /* HHMATRICES_H_ */

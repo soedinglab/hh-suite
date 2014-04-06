@@ -116,9 +116,8 @@ char* lwrstr(char* str) {
 
 // Returns leftmost integer in ptr and sets the pointer to first char after
 // the integer. If no integer is found, returns INT_MIN and sets pt to NULL
-int strint(char*& ptr) {
-  int i;
-  char* ptr0 = ptr;
+int strint(const char* ptr) {
+  const char* ptr0 = ptr;
   if (!ptr)
     return INT_MIN;
   while (*ptr != '\0' && !(*ptr >= '0' && *ptr <= '9'))
@@ -127,6 +126,7 @@ int strint(char*& ptr) {
     ptr = 0;
     return INT_MIN;
   }
+  int i;
   if (ptr > ptr0 && *(ptr - 1) == '-')
     i = -atoi(ptr);
   else

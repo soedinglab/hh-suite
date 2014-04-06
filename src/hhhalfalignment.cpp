@@ -253,7 +253,7 @@ void HalfAlignment::ToFASTA()
 /////////////////////////////////////////////////////////////////////////////////////
 // Align query (HalfAlignment) to template (i.e. hit) match state structure
 /////////////////////////////////////////////////////////////////////////////////////
-void HalfAlignment::AlignToTemplate(Hit& hit)
+void HalfAlignment::AlignToTemplate(Hit& hit, const char outformat)
 {
   int i,j;
   int step;    // column of the HMM-HMM alignment (first:nstep, last:1)
@@ -266,7 +266,7 @@ void HalfAlignment::AlignToTemplate(Hit& hit)
       {
 	AddColumnAsInsert(i);
 	AddInserts(i);
-	if (par.outformat<=2) FillUpGaps();
+	if (outformat<=2) FillUpGaps();
       }
   }
 
@@ -298,7 +298,7 @@ void HalfAlignment::AlignToTemplate(Hit& hit)
 	AddChar('-');
 	break;
       }
-    if (par.outformat<=2) FillUpGaps();
+    if (outformat<=2) FillUpGaps();
 
   }
 
@@ -309,7 +309,7 @@ void HalfAlignment::AlignToTemplate(Hit& hit)
       {
 	AddColumnAsInsert(i);
 	AddInserts(i);
-	if (par.outformat==2) FillUpGaps();
+	if (outformat==2) FillUpGaps();
       }
   }
 
@@ -327,7 +327,7 @@ void HalfAlignment::AlignToTemplate(Hit& hit)
 /////////////////////////////////////////////////////////////////////////////////////
 // Write the a2m/a3m alignment into alnfile 
 /////////////////////////////////////////////////////////////////////////////////////
-void HalfAlignment::Print(char* alnfile, char* commentname, const char format[])
+void HalfAlignment::Print(char* alnfile, const char append, char* commentname, const char format[])
 {
   int k;      //counts sequences
   int omitted=0; // counts number of sequences with no residues in match states
@@ -335,7 +335,7 @@ void HalfAlignment::Print(char* alnfile, char* commentname, const char format[])
   char* tmp_name = new char[NAMELEN];
   if (strcmp(alnfile,"stdout"))
     {
-      if (par.append) outf=fopen(alnfile,"a"); else outf=fopen(alnfile,"w");
+      if (append) outf=fopen(alnfile,"a"); else outf=fopen(alnfile,"w");
       if (!outf) OpenFileError(alnfile, __FILE__, __LINE__, __func__);
     } 
   else

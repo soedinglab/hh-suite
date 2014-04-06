@@ -5,7 +5,7 @@
 /////////////////////////////////////////////////////////////////////////////////////
 // Read input file (HMM, HHM, or alignment format)
 /////////////////////////////////////////////////////////////////////////////////////
-void ReadQueryFile(FILE* inf, char& input_format, char use_global_weights, HMM* q, Alignment* qali, char infile[],
+void ReadQueryFile(Parameters& par, FILE* inf, char& input_format, char use_global_weights, HMM* q, Alignment* qali, char infile[],
 		float* pb, const float S[20][20], const float Sim[20][20]) {
 	char line[LINELEN];
 
@@ -34,20 +34,19 @@ void ReadQueryFile(FILE* inf, char& input_format, char use_global_weights, HMM* 
 
 	    // Rewind to beginning of line and read query hhm file
 	    rewind(inf);
-	    q->Read(inf, pb, path);
+	    q->Read(inf, par.maxcol, par.nseqdis, pb, path);
 	    input_format = 0;
 
 	    if (v >= 1 && input_format == 0)  // HHM format
 	      printf(
 	          "Extracting representative sequences from %s to merge later with matched database sequences\n",
-	          par.infile);
+	          infile);
 
 	    qali->GetSeqsFromHMM(q);
-	    qali->Compress(par.infile);
+	    qali->Compress(infile, par.cons, par.maxres, par.maxcol, par.M, par.Mgaps);
 	  }
 	  // ... or is it an alignment file
-	  else if (line[0] == '#' || line[0] == '>')         // read sequence/alignment
-	      {
+	  else if (line[0] == '#' || line[0] == '>') {
 	    if (par.calibrate) {
           std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
 	      printf("\tonly HHM files can be calibrated.\n");
@@ -59,25 +58,23 @@ void ReadQueryFile(FILE* inf, char& input_format, char use_global_weights, HMM* 
 	      std::cout << infile << " is in A2M, A3M or FASTA format\n";
 
 	    // Read alignment from infile into matrix X[k][l] as ASCII (and supply first line as extra argument)
-	    qali->Read(inf, infile, line);
+	    qali->Read(inf, infile, par.mark, par.maxcol, par.nseqdis, line);
 
 	    // Convert ASCII to int (0-20),throw out all insert states, record their number in I[k][i]
 	    // and store marked sequences in name[k] and seq[k]
-	    qali->Compress(infile);
+	    qali->Compress(infile, par.cons, par.maxres, par.maxcol, par.M, par.Mgaps);
 
 	    // Sort out the nseqdis most dissimilar sequences for display in the output alignments
-	    qali->FilterForDisplay(par.max_seqid, S, par.coverage, par.qid, par.qsc,
-	        par.nseqdis);
+	    qali->FilterForDisplay(par.max_seqid, par.mark, S, par.coverage, par.qid, par.qsc, par.nseqdis);
 
 	    // Remove sequences with seq. identity larger than seqid percent (remove the shorter of two)
-	    qali->N_filtered = qali->Filter(par.max_seqid, S, par.coverage, par.qid,
-	        par.qsc, par.Ndiff);
+	    qali->N_filtered = qali->Filter(par.max_seqid, S, par.coverage, par.qid, par.qsc, par.Ndiff);
 
 	    if (par.Neff >= 0.999)
-	    	qali->FilterNeff(use_global_weights, pb, S, Sim);
+	    	qali->FilterNeff(use_global_weights, par.mark, par.cons, par.showcons, par.maxres, par.max_seqid, par.coverage, par.Neff, pb, S, Sim);
 
 	    // Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
-	    qali->FrequenciesAndTransitions(q, use_global_weights, pb, Sim);
+	    qali->FrequenciesAndTransitions(q, use_global_weights, par.mark, par.cons, par.showcons, par.maxres, pb, Sim);
 	    input_format = 0;
 	  }
 	  else {
@@ -93,7 +90,7 @@ void ReadQueryFile(FILE* inf, char& input_format, char use_global_weights, HMM* 
 	        q->name, q->Neff_HMM);
 }
 
-void ReadQueryFile(char* infile, char& input_format, char use_global_weights, HMM* q, Alignment* qali,
+void ReadQueryFile(Parameters& par, char* infile, char& input_format, char use_global_weights, HMM* q, Alignment* qali,
 		float* pb, const float S[20][20], const float Sim[20][20]) {
   // Open query file and determine file type
   char path[NAMELEN]; // path of input file (is needed to write full path and file name to HMM FILE record)
@@ -112,7 +109,7 @@ void ReadQueryFile(char* infile, char& input_format, char use_global_weights, HM
     Pathname(path, infile);
   }
   
-  ReadQueryFile(inf, input_format, use_global_weights, q, qali, infile, pb, S, Sim);
+  ReadQueryFile(par, inf, input_format, use_global_weights, q, qali, infile, pb, S, Sim);
 
   fclose(inf);
 }
@@ -120,12 +117,13 @@ void ReadQueryFile(char* infile, char& input_format, char use_global_weights, HM
 /////////////////////////////////////////////////////////////////////////////////////
 // Add transition and amino acid pseudocounts to query HMM, calculate aa background etc.
 /////////////////////////////////////////////////////////////////////////////////////
-void PrepareQueryHMM(char& input_format, HMM* q, cs::Pseudocounts<cs::AA>* pc_hhm_context_engine, cs::Admix* pc_hhm_context_mode,
+void PrepareQueryHMM(Parameters& par, char& input_format, HMM* q,
+		cs::Pseudocounts<cs::AA>* pc_hhm_context_engine, cs::Admix* pc_hhm_context_mode,
 		const float* pb, const float R[20][20]) {
   // Was query an HHsearch formatted file or MSA (no pseudocounts added yet)?
   if (input_format == 0) {
     // Add transition pseudocounts to query -> q->p[i][a]
-    q->AddTransitionPseudocounts(par.gapd, par.gape, par.gapf, par.gapg, par.gaph, par.gapi, par.gapb);
+    q->AddTransitionPseudocounts(par.gapd, par.gape, par.gapf, par.gapg, par.gaph, par.gapi, par.gapb, par.gapb);
 
     // Compute substitutino matrix pseudocounts?
     if (par.nocontxt) {
@@ -162,11 +160,11 @@ void PrepareQueryHMM(char& input_format, HMM* q, cs::Pseudocounts<cs::AA>* pc_hh
 /////////////////////////////////////////////////////////////////////////////////////
 // Do precalculations for q and t to prepare comparison
 /////////////////////////////////////////////////////////////////////////////////////
-void PrepareTemplateHMM(HMM* q, HMM* t, int format, const float* pb, const float R[20][20]) {
+void PrepareTemplateHMM(Parameters& par, HMM* q, HMM* t, int format, const float* pb, const float R[20][20]) {
   // HHM format
   if (format == 0) {
     // Add transition pseudocounts to template
-    t->AddTransitionPseudocounts(par.gapd, par.gape, par.gapf, par.gapg, par.gaph, par.gapi, par.gapb);
+    t->AddTransitionPseudocounts(par.gapd, par.gape, par.gapf, par.gapg, par.gaph, par.gapi, par.gapb, par.gapb);
 
     // Don't use CS-pseudocounts because of runtime!!!
     // Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
@@ -193,7 +191,7 @@ void PrepareTemplateHMM(HMM* q, HMM* t, int format, const float* pb, const float
 
   // Factor Null model into HMM t
   // ATTENTION! t->p[i][a] is divided by pnul[a] (for reasons of efficiency) => do not reuse t->p
-  t->IncludeNullModelInHMM(q, t, par.columnscore, pb); // Can go BEFORE the loop if not dependent on template
+  t->IncludeNullModelInHMM(q, t, par.columnscore, par.half_window_size_local_aa_bg_freqs, pb); // Can go BEFORE the loop if not dependent on template
 
   return;
 }
@@ -201,7 +199,7 @@ void PrepareTemplateHMM(HMM* q, HMM* t, int format, const float* pb, const float
 /////////////////////////////////////////////////////////////////////////////////////
 // Calculate secondary structure prediction with PSIPRED
 /////////////////////////////////////////////////////////////////////////////////////
-void CalculateSS(char *ss_pred, char *ss_conf, char *tmpfile) {
+void CalculateSS(char *ss_pred, char *ss_conf, char *tmpfile, const char* psipred_data, const char* psipred) {
   // Initialize
   std::string command;
   char line[LINELEN] = "";
@@ -213,27 +211,27 @@ void CalculateSS(char *ss_pred, char *ss_conf, char *tmpfile) {
   // Run PSIPRED
   
   // Check for PSIPRED ver >= 3.0 (weights.dat4 doesn't exists anymore)
-  strcpy(filename, par.psipred_data);
+  strcpy(filename, psipred_data);
   strcat(filename, "/weights.dat4");
   FILE* check_exists = fopen(filename, "r");
   if (check_exists) {  // Psipred version < 3.0
-    command = (std::string) par.psipred + "/psipred " + (std::string) tmpfile
-        + ".mtx " + (std::string) par.psipred_data + "/weights.dat "
-        + (std::string) par.psipred_data + "/weights.dat2 "
-        + (std::string) par.psipred_data + "/weights.dat3 "
-        + (std::string) par.psipred_data + "/weights.dat4 > "
+    command = (std::string) psipred + "/psipred " + (std::string) tmpfile
+        + ".mtx " + (std::string) psipred_data + "/weights.dat "
+        + (std::string) psipred_data + "/weights.dat2 "
+        + (std::string) psipred_data + "/weights.dat3 "
+        + (std::string) psipred_data + "/weights.dat4 > "
         + (std::string) tmpfile + ".ss";
   }
   else {
-    command = (std::string) par.psipred + "/psipred " + (std::string) tmpfile
-        + ".mtx " + (std::string) par.psipred_data + "/weights.dat "
-        + (std::string) par.psipred_data + "/weights.dat2 "
-        + (std::string) par.psipred_data + "/weights.dat3 > "
+    command = (std::string) psipred + "/psipred " + (std::string) tmpfile
+        + ".mtx " + (std::string) psipred_data + "/weights.dat "
+        + (std::string) psipred_data + "/weights.dat2 "
+        + (std::string) psipred_data + "/weights.dat3 > "
         + (std::string) tmpfile + ".ss";
   }
   runSystem(command, v);
-  command = (std::string) par.psipred + "/psipass2 "
-      + (std::string) par.psipred_data + "/weights_p2.dat 1 0.98 1.09 "
+  command = (std::string) psipred + "/psipass2 "
+      + (std::string) psipred_data + "/weights_p2.dat 1 0.98 1.09 "
       + (std::string) tmpfile + ".ss2 " + (std::string) tmpfile + ".ss > "
       + (std::string) tmpfile + ".horiz";
   runSystem(command, v);
@@ -270,7 +268,7 @@ void CalculateSS(char *ss_pred, char *ss_conf, char *tmpfile) {
 /////////////////////////////////////////////////////////////////////////////////////
 // Calculate secondary structure for given HMM and return prediction
 /////////////////////////////////////////////////////////////////////////////////////
-void CalculateSS(HMM* q, char *ss_pred, char *ss_conf, const float* pb) {
+void CalculateSS(HMM* q, char *ss_pred, char *ss_conf, const char* psipred_data, const char* psipred, const float* pb) {
 
   if (q->divided_by_local_bg_freqs) {
     std::cerr
@@ -319,7 +317,7 @@ void CalculateSS(HMM* q, char *ss_pred, char *ss_conf, const float* pb) {
   fclose(mtxf);
 
   // Calculate secondary structure
-  CalculateSS(ss_pred, ss_conf, tmpfile);
+  CalculateSS(ss_pred, ss_conf, tmpfile, psipred_data, psipred);
   
   q->AddSSPrediction(ss_pred, ss_conf);
 
@@ -329,18 +327,18 @@ void CalculateSS(HMM* q, char *ss_pred, char *ss_conf, const float* pb) {
 }
 
 // Calculate secondary structure for given HMM
-void CalculateSS(HMM* q, const float* pb) {
-  char ss_pred[par.maxres];
-  char ss_conf[par.maxres];
+void CalculateSS(HMM* q, const int maxres, const char* psipred_data, const char* psipred, const float* pb) {
+  char ss_pred[maxres];
+  char ss_conf[maxres];
 
-  CalculateSS(q, ss_pred, ss_conf, pb);
+  CalculateSS(q, ss_pred, ss_conf, psipred_data, psipred, pb);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Write alignment in tab format (option -atab)
 /////////////////////////////////////////////////////////////////////////////////////
-void WriteToAlifile(FILE* alitabf, Hit* hit) {
-      if (hit->P_posterior != NULL && (par.forward==2 || par.realign)) 
+void WriteToAlifile(FILE* alitabf, Hit* hit, const char forward, const char realign) {
+      if (hit->P_posterior != NULL && (forward==2 || realign))
 	{
 	  if (hit->nss_dssp >= 0)
 	    {

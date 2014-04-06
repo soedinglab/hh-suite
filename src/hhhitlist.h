@@ -41,15 +41,25 @@ public:
   ~HitList() {if (blast_logPvals) delete blast_logPvals;}
 
   // Print summary listing of hits
-  void PrintHitList(HMM* q, std::stringstream& out);
-  void PrintHitList(HMM* q, char* outfile);
+  void PrintHitList(HMM* q, std::stringstream& out, const int maxdbstrlen, const int z, const int Z, const float p, const double E, const int argc, char** argv);
+  void PrintHitList(HMM* q, char* outfile, const int maxdbstrlen, const int z, const int Z, const float p, const double E, const int argc, char** argv);
 
   // Print alignments of query sequences against hit sequences 
-  void PrintAlignments(HMM* q, char* outfile, const float S[20][20], char outformat = 0);
-  void PrintAlignments(HMM* q, std::stringstream& out, const float S[20][20], char outformat = 0);
+  void PrintAlignments(HMM* q, char* outfile, const char showconf, const char showcons,
+			const char showdssp, const char showpred, const float p, const int aliwidth, const int nseqdis,
+			const int b, const int B, const double E, const float S[20][20], char outformat = 0);
+  void PrintAlignments(HMM* q, std::stringstream& out, const char showconf, const char showcons,
+			const char showdssp, const char showpred, const float p, const int aliwidth, const int nseqdis,
+			const int b, const int B, const double E, const float S[20][20], char outformat = 0);
 
-  void PrintHHR(HMM* q, char* outfile, const float S[20][20]);
-  void PrintHHR(HMM* q, std::stringstream& out, const float S[20][20]);
+  void PrintHHR(HMM* q, char* outfile, const int maxdbstrlen,
+			const char showconf, const char showcons, const char showdssp, const char showpred,
+			const int b, const int B, const int z, const int Z, const int aliwidth, const int nseqdis,
+			const float p, const double E, const int argc, char** argv, const float S[20][20]);
+  void PrintHHR(HMM* q, std::stringstream& out, const int maxdbstrlen,
+			const char showconf, const char showcons, const char showdssp, const char showpred,
+			const int b, const int B, const int z, const int Z, const int aliwidth, const int nseqdis,
+			const float p, const double E, const int argc, char** argv, const float S[20][20]);
 
   // Return a figure of merit for distinction of the score with positive from the scores with negatives
   void Optimize(HMM* q);
@@ -76,16 +86,17 @@ public:
   float FindMin(int ndim, double* p, double* y, double tol, int& nfunc, double (*Func)(void* pt2hitlist, double* v));
   
   // Do a maximum likelihood fit of the scores with an EV distribution with parameters lamda and mu 
-  void MaxLikelihoodEVD(HMM* q, int nbest);
+  void MaxLikelihoodEVD(HMM* q, int nbest, const char loc, const char ssm, const float ssw);
   
   // Calculate HHblits composite E-values 
-  void CalculateHHblitsEvalues(HMM* q);
+  void CalculateHHblitsEvalues(HMM* q, const int dbsize,
+		  const float alphaa, const float alphab, const float alphac, const double prefilter_evalue_thresh);
 
   // Calculate Pvalues as a function of query and template lengths and diversities
-  void CalculatePvalues(HMM* q);
+  void CalculatePvalues(HMM* q, const char loc, const char ssm, const float ssw);
 
   // Set P-values, E-values and scores according to q->lamda and q->mu (if calibration from database scan is impossible)  
-  void GetPvalsFromCalibration(HMM* q);
+  void GetPvalsFromCalibration(HMM* q,  const char loc, const char calm, const char ssm, const float ssw);
 
   // HHblits: read PSI-BLAST E-values to determine correlation
   void ReadBlastFile(HMM* q);

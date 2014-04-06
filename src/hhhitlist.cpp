@@ -18,7 +18,7 @@ using std::endl;
 /////////////////////////////////////////////////////////////////////////////////////
 // Print summary listing of hits
 /////////////////////////////////////////////////////////////////////////////////////
-void HitList::PrintHitList(HMM* q, std::stringstream& out) {
+void HitList::PrintHitList(HMM* q, std::stringstream& out, const int maxdbstrlen, const int z, const int Z, const float p, const double E, const int argc, char** argv) {
   int nhits = 0;
 
   out << "Query         " << q->longname << std::endl;
@@ -36,11 +36,11 @@ void HitList::PrintHitList(HMM* q, std::stringstream& out) {
 
   // Print command line
   out << "Command       ";
-  for (int i = 0; i < par.argc; i++)
-    if (strlen(par.argv[i]) <= par.maxdbstrlen)
-      out << par.argv[i] << " ";
+  for (int i = 0; i < argc; i++)
+    if (strlen(argv[i]) <= maxdbstrlen)
+      out << argv[i] << " ";
     else
-      out << "<" << strlen(par.argv[i]) << "characters> ";
+      out << "<" << strlen(argv[i]) << "characters> ";
   out << std::endl << std::endl;
 
 #ifdef WINDOWS
@@ -53,11 +53,11 @@ void HitList::PrintHitList(HMM* q, std::stringstream& out) {
   Reset();
   while (!End()) {
     Hit hit = ReadNext();
-    if (nhits >= par.Z)
+    if (nhits >= Z)
       break;       //max number of lines reached?
-    if (nhits >= par.z && hit.Probab < par.p)
+    if (nhits >= z && hit.Probab < p)
       break;
-    if (nhits >= par.z && hit.Eval > par.E)
+    if (nhits >= z && hit.Eval > E)
       continue;
     nhits++;
 
@@ -96,9 +96,9 @@ void HitList::PrintHitList(HMM* q, std::stringstream& out) {
   out << std::endl;
 }
 
-void HitList::PrintHitList(HMM* q, char* outfile) {
+void HitList::PrintHitList(HMM* q, char* outfile, const int maxdbstrlen, const int z, const int Z, const float p, const double E, const int argc, char** argv) {
   std::stringstream out;
-  PrintHitList(q, out);
+  PrintHitList(q, out, maxdbstrlen, z, Z, p, E, argc, argv);
 
   if (strcmp(outfile, "stdout") == 0) {
     std::cout << out.str();
@@ -114,9 +114,12 @@ void HitList::PrintHitList(HMM* q, char* outfile) {
   }
 }
 
-void HitList::PrintHHR(HMM* q, char* outfile, const float S[20][20]) {
+void HitList::PrintHHR(HMM* q, char* outfile, const int maxdbstrlen,
+		const char showconf, const char showcons, const char showdssp, const char showpred,
+		const int b, const int B, const int z, const int Z, const int aliwidth, const int nseqdis,
+		const float p, const double E, const int argc, char** argv, const float S[20][20]) {
   std::stringstream out;
-  PrintHHR(q, out, S);
+  PrintHHR(q, out, maxdbstrlen, showconf, showcons, showdssp, showpred, b, B, z, Z, aliwidth, nseqdis, p, E, argc, argv, S);
 
   if (strcmp(outfile, "stdout") == 0) {
     std::cout << out.str();
@@ -132,17 +135,22 @@ void HitList::PrintHHR(HMM* q, char* outfile, const float S[20][20]) {
   }
 }
 
-void HitList::PrintHHR(HMM* q, std::stringstream& out, const float S[20][20]) {
-  PrintHitList(q, out);
-  PrintAlignments(q, out, S, 0);
+void HitList::PrintHHR(HMM* q, std::stringstream& out, const int maxdbstrlen,
+		const char showconf, const char showcons, const char showdssp, const char showpred,
+		const int b, const int B, const int z, const int Z, const int aliwidth, const int nseqdis,
+		const float p, const double E, const int argc, char** argv, const float S[20][20]) {
+  PrintHitList(q, out, maxdbstrlen, z, Z, p, E, argc, argv);
+  PrintAlignments(q, out, showconf, showcons, showdssp, showpred, p, aliwidth, nseqdis, b, B, E, S, 0);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Print alignments of query sequences against hit sequences
 /////////////////////////////////////////////////////////////////////////////////////
-void HitList::PrintAlignments(HMM* q, char* outfile, const float S[20][20], char outformat) {
+void HitList::PrintAlignments(HMM* q, char* outfile, const char showconf, const char showcons,
+		const char showdssp, const char showpred, const float p, const int aliwidth, const int nseqdis,
+		const int b, const int B, const double E, const float S[20][20], char outformat) {
   std::stringstream out;
-  PrintAlignments(q, out, S, outformat);
+  PrintAlignments(q, out, showconf, showcons, showdssp, showpred, p, aliwidth, nseqdis, b, B, E, S, outformat);
 
   if (strcmp(outfile, "stdout") == 0) {
     std::cout << out.str();
@@ -163,23 +171,25 @@ void HitList::PrintAlignments(HMM* q, char* outfile, const float S[20][20], char
   }
 }
 
-void HitList::PrintAlignments(HMM* q, std::stringstream& out, const float S[20][20], char outformat) {
-  FullAlignment qt_ali(par.nseqdis + 10); // maximum 10 annotation (pseudo) sequences (ss_dssp, sa_dssp, ss_pred, ss_conf, consens,...)
+void HitList::PrintAlignments(HMM* q, std::stringstream& out, const char showconf, const char showcons,
+		const char showdssp, const char showpred, const float p, const int aliwidth, const int nseqdis,
+		const int b, const int B, const double E, const float S[20][20], char outformat) {
+  FullAlignment qt_ali(nseqdis + 10); // maximum 10 annotation (pseudo) sequences (ss_dssp, sa_dssp, ss_pred, ss_conf, consens,...)
   int nhits = 0;
 
   Reset();
   while (!End()) {
-    if (nhits >= par.B)
+    if (nhits >= B)
       break;
     Hit hit = ReadNext();
-    if (nhits >= par.b && hit.Probab < par.p)
+    if (nhits >= b && hit.Probab < p)
       break;
-    if (nhits >= par.b && hit.Eval > par.E)
+    if (nhits >= b && hit.Eval > E)
       continue;
     nhits++;
 
     // Build double alignment of query against template sequences
-    qt_ali.Build(q, hit, S);
+    qt_ali.Build(q, hit, nseqdis, S);
 
     // Print out alignment
     // HHR format
@@ -187,22 +197,22 @@ void HitList::PrintAlignments(HMM* q, std::stringstream& out, const float S[20][
     if (outformat == 0)
     {
       qt_ali.PrintHeader(out, q, hit);
-      qt_ali.PrintHHR(out, hit);
+      qt_ali.PrintHHR(out, hit, showconf, showcons, showdssp, showpred, aliwidth);
     }
     // FASTA format
     else if (outformat == 1)
     {
-      qt_ali.PrintFASTA(out, hit);
+      qt_ali.PrintFASTA(out, hit, showcons, showdssp, showpred, aliwidth);
     }
     // A2M format
     else if (outformat == 2)
     {
-      qt_ali.PrintA2M(out, hit);
+      qt_ali.PrintA2M(out, hit, showcons, showdssp, showpred, aliwidth);
     }
     // A3m format
     else
     {
-      qt_ali.PrintA3M(out, hit);
+      qt_ali.PrintA3M(out, hit, showcons, showdssp, showpred, aliwidth);
     }
 
     qt_ali.FreeMemory();
@@ -263,7 +273,8 @@ void HitList::PrintScoreFile(HMM* q, char* outputfile) {
   else {
     std::ofstream out(outputfile);
     if (!out.good()) {
-      std::cerr << "WARNING from " << par.argv[0] << ": could not open \'" << outputfile << std::endl;
+    	std::cerr << "Warning in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+      std::cerr << "\tcould not open \'" << outputfile << std::endl;
       return;
     }
 
@@ -583,7 +594,7 @@ float HitList::FindMin(const int ndim, double* p, double* y, double tol,
 /////////////////////////////////////////////////////////////////////////////////////
 //// Do a maximum likelihod fit of the scores with an EV distribution with parameters lamda and mu
 /////////////////////////////////////////////////////////////////////////////////////
-void HitList::MaxLikelihoodEVD(HMM* q, int nbest) {
+void HitList::MaxLikelihoodEVD(HMM* q, int nbest, const char loc, const char ssm, const float ssw) {
   double tol = 1E-6; // Maximum relative tolerance when minimizing -log(P)/N (~likelihood)
   static char first_call = 1;
   static Hash<int> size_fam(MAXPROF / 10); // Hash counts number of HMMs in family
@@ -723,7 +734,7 @@ void HitList::MaxLikelihoodEVD(HMM* q, int nbest) {
 
   // Set simplex vertices and function values
   mu = sum_scores / sum_weights - 0.584 / LAMDA;
-  if (par.loc) // fit only in local mode; in global mode use fixed value LAMDA and mu mean score
+  if (loc) // fit only in local mode; in global mode use fixed value LAMDA and mu mean score
   {
     double (*Func)(void*, double*);
     Func = HitList::LogLikelihoodEVD_static;
@@ -770,7 +781,7 @@ void HitList::MaxLikelihoodEVD(HMM* q, int nbest) {
     hit = ReadNext();
     hit.logPval = logPvalue(hit.score, q->lamda, q->mu);
     hit.Pval = Pvalue(hit.score, q->lamda, q->mu);
-    hit.CalcEvalScoreProbab(N_searched, q->lamda); // calculate Evalue, score_aass, Proba from logPval and score_ss
+    hit.CalcEvalScoreProbab(N_searched, q->lamda, loc, ssm, ssw); // calculate Evalue, score_aass, Proba from logPval and score_ss
 
     Overwrite(hit);
   }
@@ -780,11 +791,12 @@ void HitList::MaxLikelihoodEVD(HMM* q, int nbest) {
 /////////////////////////////////////////////////////////////////////////////////////
 //// Calculate HHblits composite E-values
 /////////////////////////////////////////////////////////////////////////////////////
-void HitList::CalculateHHblitsEvalues(HMM* q) {
+void HitList::CalculateHHblitsEvalues(HMM* q, const int dbsize,
+		const float alphaa, const float alphab, const float alphac, const double prefilter_evalue_thresh) {
   Hit hit;
   double alpha = 0;
-  double log_Pcut = log(par.prefilter_evalue_thresh / par.dbsize);
-  double log_dbsize = log((double) par.dbsize);
+  double log_Pcut = log(prefilter_evalue_thresh / dbsize);
+  double log_dbsize = log((double) dbsize);
   //printf("log_Pcut: %7.4f  Pcut: %7.4f DBsize: %10i   a: %4.2f  b: %4.2f  c: %4.2f\n",log_Pcut, exp(log_Pcut), par.dbsize, par.alphaa, par.alphab, par.alphac);
   // int nhits=0;?
 
@@ -795,9 +807,9 @@ void HitList::CalculateHHblitsEvalues(HMM* q) {
     // if (nhits++<50)
     // 	printf("before correction  Eval: %7.4g    logEval: %7.4f\n",hit.Eval, hit.logEval);
 
-    alpha = par.alphaa
-        + par.alphab * (hit.Neff_HMM - 1)
-            * (1 - par.alphac * (q->Neff_HMM - 1));
+    alpha = alphaa
+        + alphab * (hit.Neff_HMM - 1)
+            * (1 - alphac * (q->Neff_HMM - 1));
 
     hit.Eval = exp(hit.logPval + log_dbsize + (alpha * log_Pcut));
     hit.logEval = hit.logPval + log_dbsize + (alpha * log_Pcut);
@@ -813,7 +825,7 @@ void HitList::CalculateHHblitsEvalues(HMM* q) {
 /////////////////////////////////////////////////////////////////////////////////////
 //// Calculate Pvalues as a function of query and template lengths and diversities
 /////////////////////////////////////////////////////////////////////////////////////
-void HitList::CalculatePvalues(HMM* q) {
+void HitList::CalculatePvalues(HMM* q, const char loc, const char ssm, const float ssw) {
   Hit hit;
   float lamda = LAMDA_GLOB, mu = 3.0;   // init for global search
   const float log1000 = log(1000.0);
@@ -827,7 +839,7 @@ void HitList::CalculatePvalues(HMM* q) {
   while (!End()) {
     hit = ReadNext();
 
-    if (par.loc) {
+    if (loc) {
       lamda = lamda_NN(log(q->L) / log1000, log(hit.L) / log1000,
           q->Neff_HMM / 10.0, hit.Neff_HMM / 10.0);
       mu = mu_NN(log(q->L) / log1000, log(hit.L) / log1000, q->Neff_HMM / 10.0,
@@ -837,7 +849,7 @@ void HitList::CalculatePvalues(HMM* q) {
     }
     hit.logPval = logPvalue(hit.score, lamda, mu);
     hit.Pval = Pvalue(hit.score, lamda, mu);
-    hit.CalcEvalScoreProbab(N_searched, lamda); // calculate Evalue, score_aass, Proba from logPval and score_ss
+    hit.CalcEvalScoreProbab(N_searched, lamda, loc, ssm, ssw); // calculate Evalue, score_aass, Proba from logPval and score_ss
 
     Overwrite(hit);
   }
@@ -850,13 +862,13 @@ void HitList::CalculatePvalues(HMM* q) {
 /////////////////////////////////////////////////////////////////////////////////////
 //// Calculate Pvalues from calibration of  0: query HMM, 1:template HMMs, 2: both
 /////////////////////////////////////////////////////////////////////////////////////
-void HitList::GetPvalsFromCalibration(HMM* q) {
+void HitList::GetPvalsFromCalibration(HMM* q,  const char loc, const char calm, const char ssm, const float ssw) {
   Hit hit;
   char warn = 0;
   if (N_searched == 0)
     N_searched = 1;
   if (v >= 2) {
-    switch (par.calm) {
+    switch (calm) {
       case 0:
         printf(
             "Using lamda=%-5.3f and mu=%-5.2f from calibrated query HMM %s. \n",
@@ -879,19 +891,19 @@ void HitList::GetPvalsFromCalibration(HMM* q) {
   Reset();
   while (!End()) {
     hit = ReadNext();
-    if (par.calm == 0 || (hit.logPvalt == 0)) {
+    if (calm == 0 || (hit.logPvalt == 0)) {
       hit.logPval = logPvalue(hit.score, q->lamda, q->mu);
       hit.Pval = Pvalue(hit.score, q->lamda, q->mu);
-      if (par.calm > 0 && warn++ < 1 && v >= 1)
+      if (calm > 0 && warn++ < 1 && v >= 1)
         printf(
             "WARNING: some template HMM (e.g. %s) are not calibrated. Using query calibration.\n",
             hit.name);
     }
-    else if (par.calm == 1) {
+    else if (calm == 1) {
       hit.logPval = hit.logPvalt;
       hit.Pval = hit.Pvalt;
     }
-    else if (par.calm == 2) {
+    else if (calm == 2) {
       hit.logPval = 0.5
           * (logPvalue(hit.score, q->lamda, q->mu) + hit.logPvalt);
       hit.Pval = sqrt(Pvalue(hit.score, q->lamda, q->mu) * hit.Pvalt);
@@ -902,7 +914,8 @@ void HitList::GetPvalsFromCalibration(HMM* q) {
             hit.Pvalt, hit.Pval);
     }
 
-    hit.CalcEvalScoreProbab(N_searched, q->lamda); // calculate Evalue, score_aass, Proba from logPval and score_ss
+    // calculate Evalue, score_aass, Proba from logPval and score_ss
+    hit.CalcEvalScoreProbab(N_searched, q->lamda, loc, ssm, ssw);
 
     Overwrite(hit);
   }

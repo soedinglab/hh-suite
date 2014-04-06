@@ -173,12 +173,12 @@ Alignment& Alignment::operator=(Alignment& ali) {
 /////////////////////////////////////////////////////////////////////////////////////
 // Reads in an alignment from file into matrix seq[k][l] as ASCII
 /////////////////////////////////////////////////////////////////////////////////////
-void Alignment::Read(FILE* inf, char infile[], char* firstline) {
+void Alignment::Read(FILE* inf, char infile[], const char mark, const int maxcol, const int nseqdis, char* firstline) {
 	int l;                  // Postion in alignment incl. gaps (first=1)
 	int h;                  // Position in input line (first=0)
 	int k;                  // Index of sequence being read currently (first=0)
 	char line[LINELEN] = "";  // input line
-	char cur_seq[par.maxcol];   // Sequence currently read in
+	char cur_seq[maxcol];   // Sequence currently read in
 	char* cur_name;         // Sequence currently read in
 	int linenr = 0;           // current line number in input file
 	char skip_sequence = 0;
@@ -216,9 +216,9 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline) {
 			if (k >= 0) //if this is at least the second name line
 					{
 				if (strlen(cur_seq) <= 1) // 1, because the sequence in cur_seq starts at position 1 => no residues = length 1
-						{
-					cerr << endl << "Error in " << par.argv[0] << ": sequence "
-							<< sname[k] << " contains no residues." << endl;
+				{
+					std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+					std::cerr << "\tsequence " << sname[k] << " contains no residues." << std::endl;
 					exit(1);
 				}
 
@@ -328,15 +328,15 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline) {
 				}
 			}
 			//store all sequences
-			else if (par.mark == 0) {
+			else if (mark == 0) {
 				display[k] = keep[k] = 1;
 				n_display++;
 			}
 			//store sequences up to nseqdis
-			else if (line[1] == '@' && n_display - N_ss < par.nseqdis) {
+			else if (line[1] == '@' && n_display - N_ss < nseqdis) {
 				display[k] = keep[k] = 2;
 				n_display++;
-			} else if (par.mark == 1) {
+			} else if (mark == 1) {
 				display[k] = keep[k] = 1;
 				n_display++;
 			}
@@ -394,7 +394,7 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline) {
 			// Check whether all characters are correct; store into cur_seq
 			if (keep[k] || k == kfirst) // normal line containing residues
 					{
-				while (h < LINELEN && line[h] > '\0' && l < par.maxcol - 1) {
+				while (h < LINELEN && line[h] > '\0' && l < maxcol - 1) {
 					if (aa2i(line[h]) >= 0) // ignore white-space characters ' ', \t and \n (aa2i()==-1)
 							{
 						cur_seq[l] = line[h];
@@ -407,7 +407,7 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline) {
 				}
 			} else if (k == kss_dssp) // lines with dssp secondary structure states (. - H E C S T G B)
 					{
-				while (h < LINELEN && line[h] > '\0' && l < par.maxcol - 1) {
+				while (h < LINELEN && line[h] > '\0' && l < maxcol - 1) {
 					if (ss2i(line[h]) >= 0 && ss2i(line[h]) <= 7) {
 						cur_seq[l] = ss2ss(line[h]);
 						l++;
@@ -419,7 +419,7 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline) {
 				}
 			} else if (k == ksa_dssp) // lines with dssp solvent accessibility states (. - ???)
 					{
-				while (h < LINELEN && line[h] > '\0' && l < par.maxcol - 1) {
+				while (h < LINELEN && line[h] > '\0' && l < maxcol - 1) {
 					if (sa2i(line[h]) >= 0)
 						cur_seq[l++] = line[h];
 					else if (v)
@@ -430,7 +430,7 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline) {
 				}
 			} else if (k == kss_pred) // lines with predicted secondary structure (. - H E C)
 					{
-				while (h < LINELEN && line[h] > '\0' && l < par.maxcol - 1) {
+				while (h < LINELEN && line[h] > '\0' && l < maxcol - 1) {
 					if (ss2i(line[h]) >= 0 && ss2i(line[h]) <= 3) {
 						cur_seq[l] = ss2ss(line[h]);
 						l++;
@@ -442,7 +442,7 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline) {
 				}
 			} else if (k == kss_conf) // lines with confidence values should contain only 0-9, '-', or '.'
 					{
-				while (h < LINELEN && line[h] > '\0' && l < par.maxcol - 1) {
+				while (h < LINELEN && line[h] > '\0' && l < maxcol - 1) {
 					if (line[h] == '-' || line[h] == '.'
 							|| (line[h] >= '0' && line[h] <= '9')) {
 						cur_seq[l] = line[h];
@@ -455,7 +455,7 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline) {
 				}
 			} else if (display[k]) // other lines such as >sa_pred etc
 			{
-				while (h < LINELEN && line[h] > '\0' && l < par.maxcol - 1) {
+				while (h < LINELEN && line[h] > '\0' && l < maxcol - 1) {
 					if (line[h] == '-' || line[h] == '.'
 							|| (line[h] >= '0' && line[h] <= '9')
 							|| (line[h] >= 'A' && line[h] <= 'B')) {
@@ -468,9 +468,9 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline) {
 					h++;
 				}
 			}
-			if (v && l >= par.maxcol - 1) {
+			if (v && l >= maxcol - 1) {
 				cerr << endl << "WARNING: maximum number of residues "
-						<< par.maxcol - 2 << " exceeded in sequence "
+						<< maxcol - 2 << " exceeded in sequence "
 						<< sname[k] << "\n";
 				skip_sequence = 1;
 			}
@@ -496,8 +496,8 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline) {
 					__func__);
 		strcpy(seq[k], cur_seq);
 	} else {
-		cerr << endl << "Error in " << par.argv[0]
-				<< ": no sequences found in file " << infile << "\n";
+		std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+		std::cerr << "\tno sequences found in file " << infile << "\n";
 		exit(1);
 	}
 
@@ -505,8 +505,7 @@ void Alignment::Read(FILE* inf, char infile[], char* firstline) {
 
 	// Warn if there are only special sequences but no master sequence (consensus seq given if keep[kfirst]==0)
 	if (kfirst < 0 || (N_in - N_ss - (keep[kfirst] == 0 ? 1 : 0)) == 0) {
-		std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": "
-				<< __func__ << ":" << std::endl;
+		std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
 		fprintf(stderr, "\tMSA file %s contains no master sequence!\n", infile);
 		exit(1);
 	}
@@ -548,9 +547,10 @@ void Alignment::ReadCompressed(ffindex_entry_t* entry, char* data,
 		ffindex_index_t* ffindex_sequence_database_index,
 		char* ffindex_sequence_database_data,
 		ffindex_index_t* ffindex_header_database_index,
-		char* ffindex_header_database_data) {
+		char* ffindex_header_database_data,
+		const char mark, const int maxcol) {
 
-	char cur_seq[par.maxcol];
+	char cur_seq[maxcol];
 	cur_seq[0] = ' ';
 	char cur_header[NAMELEN];
 
@@ -658,9 +658,9 @@ void Alignment::ReadCompressed(ffindex_entry_t* entry, char* data,
 	sname[k] = new char[strlen(cur_name) + 1];
 	strcpy(sname[k], cur_name);
 
-	if (v && copy_pos >= par.maxcol - 1) {
+	if (v && copy_pos >= maxcol - 1) {
 		std::cerr << std::endl << "WARNING: maximum number of residues "
-				<< par.maxcol - 2 << " exceeded in sequence " << sname[k]
+				<< maxcol - 2 << " exceeded in sequence " << sname[k]
 				<< std::endl;
 	}
 
@@ -753,10 +753,10 @@ void Alignment::ReadCompressed(ffindex_entry_t* entry, char* data,
 		cur_seq[alignment_index] = '\0';
 
 		//process sequence with header
-		if (par.mark == 0) {
+		if (mark == 0) {
 			display[k] = keep[k] = 1;
 			n_display++;
-		} else if (par.mark == 1) {
+		} else if (mark == 1) {
 			display[k] = keep[k] = 1;
 			n_display++;
 		} else {
@@ -833,7 +833,7 @@ void Alignment::ReadCompressed(ffindex_entry_t* entry, char* data,
 // Convert ASCII in seq[k][l] to int (0-20) in X[k][i], throw out all insert states, record their number in I[k][i]
 // and store sequences to be displayed in seq[k]
 /////////////////////////////////////////////////////////////////////////////////////
-void Alignment::Compress(const char infile[]) {
+void Alignment::Compress(const char infile[], const char cons, const int maxres, const int maxcol, const int par_M, const int Mgaps) {
 	int i;                  //Index for match state (first=1)
 	int l;                  //Postion in alignment incl. gaps (first=1)
 	int k;                  //Index for sequences (first=0)
@@ -842,7 +842,7 @@ void Alignment::Compress(const char infile[]) {
 	int unequal_lengths = 0; //k: seq k doesn't have same number of match states as seq 0 => WARNING
 	static short unsigned int h[MAXSEQ]; //points to next character in seq[k] to be written
 
-	int M = par.M;
+	int M = par_M;
 
 	// for (k=0;k<N_in; ++k) printf("k=%i >%s\n%s\n",k,sname[k],seq[k]); // DEBUG
 
@@ -928,7 +928,7 @@ void Alignment::Compress(const char infile[]) {
 				ptrS++;
 			}
 		}
-		L = par.maxres - 2; // needed because L=imin(L,i)
+		L = maxres - 2; // needed because L=imin(L,i)
 		for (k = 0; k < N_in; ++k) {
 			i = 1;
 			l = 1; // start at i=1, not i=0!
@@ -971,7 +971,7 @@ void Alignment::Compress(const char infile[]) {
 			} else
 				continue;
 			i--;
-			if (L != i && L != par.maxres - 2 && !unequal_lengths)
+			if (L != i && L != maxres - 2 && !unequal_lengths)
 				unequal_lengths = k;   //sequences have different lengths
 
 			L = imin(L, i);
@@ -992,13 +992,12 @@ void Alignment::Compress(const char infile[]) {
 		for (i = 1; i <= L; ++i)
 			this->l[i] = i; //assign column indices to match states
 		if (L <= 0) {
-			cerr << "\nError in " << par.argv[0] << ": Alignment in " << infile
-					<< " contains no match states. Consider using -M first or -M <int> option"
-					<< endl;
+			std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+			std::cerr << "\tAlignment in " << infile << " contains no match states. Consider using -M first or -M <int> option" << endl;
 			exit(1);
 		}
 
-		if (L == par.maxres - 2 && v >= 2) {
+		if (L == maxres - 2 && v >= 2) {
 			fprintf(stderr,
 					"WARNING: Number of match columns too large. Only first %i match columns will be kept!\n",
 					L);
@@ -1013,7 +1012,7 @@ void Alignment::Compress(const char infile[]) {
 		// gap-rule assignment of match states
 	case 2: {
 		int nl[NAA + 2]; //nl[a] = number of seq's with amino acid a at position l
-		float* percent_gaps = new float[par.maxcol]; //percentage of gaps in column k (with weighted sequences)
+		float* percent_gaps = new float[maxcol]; //percentage of gaps in column k (with weighted sequences)
 
 		//determine number of columns L in alignment
 		L = strlen(seq[kfirst]) - 1;
@@ -1094,8 +1093,8 @@ void Alignment::Compress(const char infile[]) {
 			seq[k][0] = '-';
 		}
 		for (l = 1; l <= L; l++) {
-			if (percent_gaps[l] <= float(par.Mgaps)) {
-				if (i >= par.maxres - 2) {
+			if (percent_gaps[l] <= float(Mgaps)) {
+				if (i >= maxres - 2) {
 					if (v >= 1)
 						fprintf(stderr,
 								"WARNING: Number of match columns too large. Only first %i match columns will be kept!\n",
@@ -1142,7 +1141,7 @@ void Alignment::Compress(const char infile[]) {
 		/////////////////////////////////////////////////////////////////////////////////////
 		// Using residues of first sequence as match states
 	case 3: {
-		char* match_state = new char[par.maxcol]; //1: column assigned to match state 0: insert state
+		char* match_state = new char[maxcol]; //1: column assigned to match state 0: insert state
 
 		// Determine number of columns L in alignment
 		L = strlen(seq[0] + 1);
@@ -1172,7 +1171,7 @@ void Alignment::Compress(const char infile[]) {
 		for (l = 1; l <= L; l++) {
 			if (match_state[l]) // does sequence 0 have residue at position l?
 			{
-				if (i >= par.maxres - 2) {
+				if (i >= maxres - 2) {
 					if (v >= 1)
 						fprintf(stderr,
 								"WARNING: Number of match columns too large. Only first %i match columns will be kept!\n",
@@ -1234,10 +1233,9 @@ void Alignment::Compress(const char infile[]) {
 	// Error
 	if (unequal_lengths) {
 		strcut(sname[unequal_lengths]);
-		cerr << endl << "Error in " << par.argv[0] << ": sequences in "
-				<< infile
-				<< " do not all have the same number of columns, \ne.g. first sequence and sequence "
-				<< sname[unequal_lengths] << ".\n";
+		std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+		std::cerr << "\tsequences in " << infile << " do not all have the same number of columns, " << std::endl;
+		std::cerr << "\t\ne.g. first sequence and sequence " << sname[unequal_lengths] << ".\n";
 
 		if (M == 1)
 			cerr
@@ -1252,15 +1250,14 @@ void Alignment::Compress(const char infile[]) {
 	}
 
 	if (L == 0) {
-		cerr << endl << "Error in " << par.argv[0]
-				<< ": no match states found in " << infile << "!\n";
-		cerr
-				<< "Better use '-M first' option or reduce gap percentage threshold for match states\n";
+		std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+		std::cerr << "\tno match states found in " << infile << "!\n";
+		std::cerr << "Better use '-M first' option or reduce gap percentage threshold for match states\n";
 		exit(1);
 	}
 
 	// Avert user about -cons option?
-	if (v >= 2 && !par.cons) {
+	if (v >= 2 && !cons) {
 		for (i = 1; i <= L; ++i)
 			if (X[kfirst][i] == GAP) {
 				printf(
@@ -1396,9 +1393,9 @@ void Alignment::GetSeqsFromHMM(HMM* q) {
 /////////////////////////////////////////////////////////////////////////////////////
 // Remove sequences with seq. identity larger than seqid percent (remove the shorter of two) or coverage<cov_thr
 /////////////////////////////////////////////////////////////////////////////////////
-int Alignment::FilterForDisplay(int max_seqid, const float S[20][20],
+int Alignment::FilterForDisplay(int max_seqid, const char mark, const float S[20][20],
 		int coverage, int qid, float qsc, int N) {
-	if (par.mark)
+	if (mark)
 		return n_display;
 	char *dummy = new char[N_in + 1];
 	int vtmp = v, seqid;
@@ -1803,7 +1800,7 @@ int Alignment::Filter2(char keep[], int coverage, int qid, float qsc,
 
 	if (v >= 2) {
 		printf("%i out of %i sequences passed filter (", N_in - N_ss, n);
-		if (par.coverage)
+		if (coverage)
 			printf("%i%% min coverage, ", coverage);
 		if (qid)
 			printf("%i%% min sequence identity to query, ", qid);
@@ -1953,7 +1950,9 @@ int Alignment::FilterWithCoreHMM(char in[], float coresc, HMM* qcore,
 /////////////////////////////////////////////////////////////////////////////////////
 // Filter alignment to given diversity/Neff
 /////////////////////////////////////////////////////////////////////////////////////
-void Alignment::FilterNeff(char use_global_weights, const float* pb, const float S[20][20], const float Sim[20][20]) {
+void Alignment::FilterNeff(char use_global_weights, const char mark, const char cons,
+		const char showcons, const int maxres, const int max_seqid, const int coverage,
+		const float Neff, const float* pb, const float S[20][20], const float Sim[20][20]) {
 	int v1 = v--;
 	const float TOLX = 0.01;
 	const float TOLY = 0.02;
@@ -1969,22 +1968,23 @@ void Alignment::FilterNeff(char use_global_weights, const float* pb, const float
 	int i = 1;
 
 	HMM q;
-	FrequenciesAndTransitions(&q, use_global_weights, pb, Sim);
+	FrequenciesAndTransitions(&q, use_global_weights, mark, cons, showcons, maxres, pb, Sim);
 	y = y0 = q.Neff_HMM;
-	if (fabs(par.Neff - y0) < TOLY) {
+	if (fabs(Neff - y0) < TOLY) {
 		v = v1;
 		return;
 	}
-	if (y0 < par.Neff) {
+	if (y0 < Neff) {
 		if (v >= 2)
 			printf(
 					"Diversity of alignment before Neff filter %.2f is below target diversity Neff = %.2f.\n",
-					y0, par.Neff);
+					y0, Neff);
 		return;
 	}
 
-	y1 = filter_by_qsc(x1, use_global_weights, keep_orig, pb, S, Sim);
-	if (fabs(par.Neff - y1) < TOLY) {
+	y1 = filter_by_qsc(x1, use_global_weights, mark, cons,
+			showcons, maxres, max_seqid, coverage, keep_orig, pb, S, Sim);
+	if (fabs(Neff - y1) < TOLY) {
 		v = v1;
 		return;
 	}
@@ -1993,20 +1993,21 @@ void Alignment::FilterNeff(char use_global_weights, const float* pb, const float
 	do {
 		const float w = 0.5;  // mixture coefficient
 		x = w * (0.5 * (x0 + x1))
-				+ (1 - w) * (x0 + (par.Neff - y0) * (x1 - x0) / (y1 - y0)); // mixture of bisection and linear interpolation
-		y = filter_by_qsc(x, use_global_weights, keep_orig, pb, S, Sim);
+				+ (1 - w) * (x0 + (Neff - y0) * (x1 - x0) / (y1 - y0)); // mixture of bisection and linear interpolation
+		y = filter_by_qsc(x, use_global_weights, mark, cons,
+				showcons, maxres, max_seqid, coverage, keep_orig, pb, S, Sim);
 		if (v >= 2)
 			printf(
 					" %3i  x0=%6.3f -> %6.3f     x=%6.3f -> %6.3f     x1=%6.3f -> %6.3f \n",
 					++i, x0, y0, x, y, x1, y1);
-		if (y > par.Neff) {
+		if (y > Neff) {
 			x0 = x;
 			y0 = y;
 		} else {
 			x1 = x;
 			y1 = y;
 		}
-	} while (fabs(par.Neff - y) > TOLY && x1 - x0 > TOLX);
+	} while (fabs(Neff - y) > TOLY && x1 - x0 > TOLX);
 
 	// Write filtered alignment WITH insert states (lower case) to alignment file
 	if (v >= 2)
@@ -2015,13 +2016,14 @@ void Alignment::FilterNeff(char use_global_weights, const float* pb, const float
 	return;
 }
 
-float Alignment::filter_by_qsc(float qsc, char use_global_weights,
+float Alignment::filter_by_qsc(float qsc, char use_global_weights, const char mark, const char cons,
+		const char showcons, const int maxres, const int max_seqid, const int coverage,
 		char* keep_orig, const float* pb, const float S[20][20], const float Sim[20][20]) {
 	HMM q;
 	for (int k = 0; k < N_in; ++k)
 		keep[k] = keep_orig[k];
-	Filter2(keep, par.coverage, 0, qsc, par.max_seqid + 1, par.max_seqid, 0, S);
-	FrequenciesAndTransitions(&q, use_global_weights, pb, Sim); // Might be sped up by calculating wg and calling only Amino_acid_frequencies_and_transitions_from_M_state(q,in);
+	Filter2(keep, coverage, 0, qsc, max_seqid + 1, max_seqid, 0, S);
+	FrequenciesAndTransitions(&q, use_global_weights, mark, cons, showcons, maxres, pb, Sim); // Might be sped up by calculating wg and calling only Amino_acid_frequencies_and_transitions_from_M_state(q,in);
 	return q.Neff_HMM;
 }
 
@@ -2029,6 +2031,7 @@ float Alignment::filter_by_qsc(float qsc, char use_global_weights,
 // Calculate AA frequencies q->p[i][a] and transition probabilities q->tr[i][a] from alignment
 /////////////////////////////////////////////////////////////////////////////////////
 void Alignment::FrequenciesAndTransitions(HMM* q, char use_global_weights,
+		const char mark, const char cons, const char showcons, const int maxres,
 		const float* pb, const float Sim[20][20], char* in, bool time) {
 	int k;                // index of sequence
 	int i;                // position in alignment
@@ -2097,9 +2100,9 @@ void Alignment::FrequenciesAndTransitions(HMM* q, char use_global_weights,
 			X[k][L + 1] = ENDGAP;  // does it have an influence?
 
 		Amino_acid_frequencies_and_transitions_from_M_state(q,
-				use_global_weights, in, pb); // use subalignments of seqs with residue in i
-		Transitions_from_I_state(q, in); // use subalignments of seqs with insert in i
-		Transitions_from_D_state(q, in); // use subalignments of seqs with delete in i. Must be last of these three calls if par.wg==1!
+				use_global_weights, in, maxres, pb); // use subalignments of seqs with residue in i
+		Transitions_from_I_state(q, in, maxres); // use subalignments of seqs with insert in i
+		Transitions_from_D_state(q, in, maxres); // use subalignments of seqs with delete in i. Must be last of these three calls if par.wg==1!
 		//if (time) { ElapsedTimeSinceLastCall("Do pos-specific sequence weighting and calculate amino acid frequencies and transitions"); }
 	} else // N_filtered==1
 	{
@@ -2187,10 +2190,10 @@ void Alignment::FrequenciesAndTransitions(HMM* q, char use_global_weights,
 	//if (time) { ElapsedTimeSinceLastCall("Copy to HMM"); }
 
 	// Calculate consensus sequence?
-	if (par.showcons || par.cons) {
+	if (showcons || cons) {
 		float maxw;
 		int maxa;
-		if (par.showcons) {
+		if (showcons) {
 			// Reserve space for consensus/conservation sequence as Q-T alignment mark-up
 			q->ncons = n++;
 			q->sname[q->ncons] = new char[10];
@@ -2205,7 +2208,7 @@ void Alignment::FrequenciesAndTransitions(HMM* q, char use_global_weights,
 						__LINE__, __func__);
 			}
 		}
-		if (par.cons) {
+		if (cons) {
 			// Reserve space for consensus sequence as first sequence in alignment
 			q->nfirst = n++;
 			kfirst = -1;
@@ -2232,7 +2235,7 @@ void Alignment::FrequenciesAndTransitions(HMM* q, char use_global_weights,
 					maxa = a;
 				}
 
-			if (par.showcons) {
+			if (showcons) {
 				maxw = 0.0;
 				for (int b = 0; b < 20; b++)
 					maxw += q->f[i][b] * Sim[maxa][b] * Sim[maxa][b];
@@ -2244,14 +2247,14 @@ void Alignment::FrequenciesAndTransitions(HMM* q, char use_global_weights,
 				else
 					q->seq[q->ncons][i] = 'x';
 			}
-			if (par.cons)
+			if (cons)
 				q->seq[q->nfirst][i] = uprchr(i2aa(maxa));
 		}
-		if (par.showcons) {
+		if (showcons) {
 			q->seq[q->ncons][0] = '-';
 			q->seq[q->ncons][L + 1] = '\0';
 		}
-		if (par.cons) {
+		if (cons) {
 			q->seq[q->nfirst][0] = '-';
 			q->seq[q->nfirst][L + 1] = '\0';
 		}
@@ -2264,7 +2267,7 @@ void Alignment::FrequenciesAndTransitions(HMM* q, char use_global_weights,
 		int nn;
 		if (display[k]) {
 			if (n >= MAXSEQDIS) {
-				if (par.mark)
+				if (mark)
 					cerr << "WARNING: maximum number " << MAXSEQDIS
 							<< " of sequences for display of alignment exceeded\n";
 				break;
@@ -2368,7 +2371,7 @@ void Alignment::FrequenciesAndTransitions(HMM* q, char use_global_weights,
 // Pos-specific weights are calculated like in "GetPositionSpecificWeights()"
 /////////////////////////////////////////////////////////////////////////////////////
 void Alignment::Amino_acid_frequencies_and_transitions_from_M_state(HMM* q,
-		char use_global_weights, char* in, const float* pb) {
+		char use_global_weights, char* in, const int maxres, const float* pb) {
 	// Calculate position-dependent weights wi[k] for each i.
 	// For calculation of weights in column i use sub-alignment
 	// over sequences which have a *residue* in column i (no gap, no end gap)
@@ -2386,7 +2389,7 @@ void Alignment::Amino_acid_frequencies_and_transitions_from_M_state(HMM* q,
 	int naa;                    // number of different amino acids
 	int** n; // n[j][a] = number of seq's with some residue at column i AND a at position j
 	float wi[MAXSEQ]; // weight of sequence k in column i, calculated from subalignment i
-	float Neff[par.maxres];         // diversity of subalignment i
+	float Neff[maxres];         // diversity of subalignment i
 	int nseqi = 0;                // number of sequences in subalignment i
 	int ncol = 0;              // number of columns j that contribute to Neff[i]
 	char change; // has the set of sequences in subalignment changed? 0:no  1:yes
@@ -2593,7 +2596,7 @@ void Alignment::Amino_acid_frequencies_and_transitions_from_M_state(HMM* q,
 /////////////////////////////////////////////////////////////////////////////////////
 // Calculate transitions q->tr[i][a] (a=DM,DD) with pos-specific subalignments
 /////////////////////////////////////////////////////////////////////////////////////
-void Alignment::Transitions_from_I_state(HMM* q, char* in) {
+void Alignment::Transitions_from_I_state(HMM* q, char* in, const int maxres) {
 	// Calculate position-dependent weights wi[k] for each i.
 	// For calculation of weights in column i use sub-alignment
 	// over sequences which have a INSERT in column i
@@ -2611,7 +2614,7 @@ void Alignment::Transitions_from_I_state(HMM* q, char* in) {
 	int naa;                    // number of different amino acids
 	int** n; // n[j][a] = number of seq's with some residue at column i AND a at position j
 	float wi[MAXSEQ]; // weight of sequence k in column i, calculated from subalignment i
-	float Neff[par.maxres];         // diversity of subalignment i
+	float Neff[maxres];         // diversity of subalignment i
 	int nseqi;                  // number of sequences in subalignment i
 	int ncol;                  // number of columns j that contribute to Neff[i]
 	float fj[NAA + 3];            // to calculate entropy
@@ -2689,9 +2692,9 @@ void Alignment::Transitions_from_I_state(HMM* q, char* in) {
 					for (k = 0; k < N_in; ++k) {
 						if (in[k] && I[k][i] > 0 && X[k][j] < ANY) {
 							if (!n[j][(int) X[k][j]]) {
-								fprintf(stderr,
-										"Error in %s: Ii=%i: n[%i][X[%i]]=0! (X[%i]=%i)\n",
-										par.argv[0], i, j, k, k, X[k][j]);
+								std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+								fprintf(stderr, "\tIi=%i: n[%i][X[%i]]=0! (X[%i]=%i)\n",
+										i, j, k, k, X[k][j]);
 							}
 							wi[k] += 1.0 / float(n[j][(int) X[k][j]] * naa);
 						}
@@ -2796,7 +2799,7 @@ void Alignment::Transitions_from_I_state(HMM* q, char* in) {
 /////////////////////////////////////////////////////////////////////////////////////
 // Calculate transitions q->tr[i][a] (a=DM,DD) with pos-specific subalignments
 /////////////////////////////////////////////////////////////////////////////////////
-void Alignment::Transitions_from_D_state(HMM* q, char* in) {
+void Alignment::Transitions_from_D_state(HMM* q, char* in, const int maxres) {
 	// Calculate position-dependent weights wi[k] for each i.
 	// For calculation of weights in column i use sub-alignment
 	// over sequences which have a DELETE in column i
@@ -2814,7 +2817,7 @@ void Alignment::Transitions_from_D_state(HMM* q, char* in) {
 	int naa;                    // number of different amino acids
 	int** n; // n[j][a] = number of seq's with some residue at column i AND a at position j
 	float wi[MAXSEQ]; // weight of sequence k in column i, calculated from subalignment i
-	float Neff[par.maxres];         // diversity of subalignment i
+	float Neff[maxres];         // diversity of subalignment i
 	int nseqi = 0;      // number of sequences in subalignment i (for DEBUGGING)
 	int ncol = 0;              // number of columns j that contribute to Neff[i]
 	char change; // has the set of sequences in subalignment changed? 0:no  1:yes
@@ -2895,9 +2898,10 @@ void Alignment::Transitions_from_D_state(HMM* q, char* in) {
 					for (k = 0; k < N_in; ++k) {
 						if (in[k] && X[k][i] == GAP && X[k][j] < ANY) {
 							if (!n[j][(int) X[k][j]]) {
+								std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
 								fprintf(stderr,
-										"Error in %s: Di=%i: n[%i][X[%i]]=0! (X[%i]=%i)\n",
-										par.argv[0], i, j, k, k, X[k][j]);
+										"\tDi=%i: n[%i][X[%i]]=0! (X[%i]=%i)\n",
+										i, j, k, k, X[k][j]);
 							}
 							wi[k] += 1.0 / float(n[j][(int) X[k][j]] * naa);
 						}
@@ -3011,11 +3015,11 @@ void Alignment::Transitions_from_D_state(HMM* q, char* in) {
 /////////////////////////////////////////////////////////////////////////////////////
 // Write alignment without insert states (lower case) to alignment file?
 /////////////////////////////////////////////////////////////////////////////////////
-void Alignment::WriteWithoutInsertsToFile(const char* alnfile) {
+void Alignment::WriteWithoutInsertsToFile(const char* alnfile, const char append) {
 	if (v >= 2)
 		cout << "Writing alignment to " << alnfile << "\n";
 	FILE* alnf;
-	if (!par.append)
+	if (!append)
 		alnf = fopen(alnfile, "w");
 	else
 		alnf = fopen(alnfile, "a");
@@ -3051,7 +3055,7 @@ void Alignment::WriteWithoutInsertsToFile(const char* alnfile) {
 /////////////////////////////////////////////////////////////////////////////////////
 // Write stored, filtered sequences WITH insert states (lower case) to alignment file?
 /////////////////////////////////////////////////////////////////////////////////////
-void Alignment::WriteToFile(const char* alnfile, const char format[]) {
+void Alignment::WriteToFile(const char* alnfile, const char append, const char format[]) {
 	std::stringstream out;
 	WriteToFile(out, format);
 
@@ -3059,7 +3063,7 @@ void Alignment::WriteToFile(const char* alnfile, const char format[]) {
 		std::cout << out.str();
 	} else {
 		std::fstream outf;
-		if (par.append)
+		if (append)
 			outf.open(alnfile, std::ios::out | std::ios::app);
 		else
 			outf.open(alnfile, std::ios::out);
@@ -3114,9 +3118,9 @@ void Alignment::WriteToFile(std::stringstream& out, const char format[]) {
 /////////////////////////////////////////////////////////////////////////////////////
 // Read a3m slave alignment of hit from file and merge into (query) master alignment
 /////////////////////////////////////////////////////////////////////////////////////
-void Alignment::MergeMasterSlave(Hit& hit, Alignment& Tali, char* ta3mfile) {
-	char* cur_seq = new char[par.maxcol];   // Sequence currently read in
-	int maxcol = par.maxcol;
+void Alignment::MergeMasterSlave(Hit& hit, Alignment& Tali, char* ta3mfile, const int par_maxcol) {
+	char* cur_seq = new char[par_maxcol];   // Sequence currently read in
+	int maxcol = par_maxcol;
 	int l, ll;        // position in unaligned template (T) sequence Tali.seq[l]
 	int i;              // counts match states in query (Q) HMM
 	int j;              // counts match states in T sequence Tali.seq[l]
@@ -3175,9 +3179,10 @@ void Alignment::MergeMasterSlave(Hit& hit, Alignment& Tali, char* ta3mfile) {
 					break;       // yes: increment j. Reached hit,j1? yes: break
 
 		if (j < hit.j1) {
+			std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
 			fprintf(stderr,
-					"Error in %s: did not find %i match states in sequence %i of %s. Sequence:\n%s\n",
-					par.argv[0], hit.j1, k, Tali.name, Tali.seq[k]);
+					"\tdid not find %i match states in sequence %i of %s. Sequence:\n%s\n",
+					hit.j1, k, Tali.name, Tali.seq[k]);
 			exit(1);
 		}
 

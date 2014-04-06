@@ -9,8 +9,9 @@
 /////////////////////////////////////////////////////////////////////////////////////
 // Object constructor
 /////////////////////////////////////////////////////////////////////////////////////
-HMM::HMM(int maxseqdis, int maxres)
+HMM::HMM(int maxseqdis, int par_maxres)
 {
+  maxres = par_maxres;
   sname = new char*[maxseqdis];   // names of stored sequences
   seq = new char*[maxseqdis];     // residues of stored sequences (first at pos 1!)
   Neff_M = new float[maxres];     // Neff_M[i] = diversity of subalignment of seqs that have residue in col i
@@ -75,10 +76,10 @@ HMM::~HMM()
   delete[] ss_pred;
   delete[] ss_conf;
   delete[] l;
-  for (int i=0; i<par.maxres; i++) if (f[i]) delete[] f[i]; else break;
-  for (int i=0; i<par.maxres; i++) if (g[i]) delete[] g[i]; else break;
-  for (int i=0; i<par.maxres; i++) if (p[i])  free(p[i]);  else break;
-  for (int i=0; i<par.maxres; i++) if (tr[i]) free(tr[i]); else break;
+  for (int i=0; i<maxres; i++) if (f[i]) delete[] f[i]; else break;
+  for (int i=0; i<maxres; i++) if (g[i]) delete[] g[i]; else break;
+  for (int i=0; i<maxres; i++) if (p[i])  free(p[i]);  else break;
+  for (int i=0; i<maxres; i++) if (tr[i]) free(tr[i]); else break;
   delete[] f;
   delete[] g;
   delete[] p;
@@ -170,7 +171,7 @@ HMM& HMM::operator=(HMM& q)
 /////////////////////////////////////////////////////////////////////////////////////
 //// Read an HMM from an HHsearch .hhm file; return 0 at end of file
 /////////////////////////////////////////////////////////////////////////////////////
-int HMM::Read(FILE* dbf, float* pb, char* path)
+int HMM::Read(FILE* dbf, const int maxcol, const int nseqdis, float* pb, char* path)
 {
   char line[LINELEN]="";    // input line
   char str3[8]="",str4[8]=""; // first 3 and 4 letters of input line
@@ -280,7 +281,7 @@ int HMM::Read(FILE* dbf, float* pb, char* path)
       else if (!strcmp("SEQ",str3))
         {
           //char cur_seq[par.maxcol]=""; //Sequence currently read in
-	  char* cur_seq = new char[par.maxcol]; //Sequence currently read in
+	  char* cur_seq = new char[maxcol]; //Sequence currently read in
           int k;                // sequence index; start with -1; after reading name of n'th sequence-> k=n
           int h;                // index for character in input line
           int l=1;              // index of character in sequence seq[k]
@@ -343,7 +344,7 @@ int HMM::Read(FILE* dbf, float* pb, char* path)
                   // Check whether all characters are correct; store into cur_seq
                   if (k==nss_dssp) // lines with dssp secondary structure states (. - H E C S T G B)
                     {
-                      while (h<LINELEN && line[h]>'\0' && l<par.maxcol-1)
+                      while (h<LINELEN && line[h]>'\0' && l<maxcol-1)
                         {
                           if (ss2i(line[h])>=0 && line[h]!='.')
                             {
@@ -359,7 +360,7 @@ int HMM::Read(FILE* dbf, float* pb, char* path)
                     }
                   if (k==nsa_dssp) // lines with dssp secondary solvent accessibility (- A B C D E)
                     {
-                      while (h<LINELEN && line[h]>'\0' && l<par.maxcol-1)
+                      while (h<LINELEN && line[h]>'\0' && l<maxcol-1)
                         {
                           if (sa2i(line[h])>=0)
                             {
@@ -375,7 +376,7 @@ int HMM::Read(FILE* dbf, float* pb, char* path)
                     }
                   else if (k==nss_pred) // lines with predicted secondary structure (. - H E C)
                     {
-                      while (h<LINELEN && line[h]>'\0' && l<par.maxcol-1)
+                      while (h<LINELEN && line[h]>'\0' && l<maxcol-1)
                         {
                           if (ss2i(line[h])>=0 && ss2i(line[h])<=3 && line[h]!='.')
                             {
@@ -391,7 +392,7 @@ int HMM::Read(FILE* dbf, float* pb, char* path)
                     }
                   else if (k==nss_conf) // lines with confidence values should contain only 0-9, '-', or '.'
                     {
-                      while (h<LINELEN && line[h]>'\0' && l<par.maxcol-1)
+                      while (h<LINELEN && line[h]>'\0' && l<maxcol-1)
                         {
                           if (line[h]=='-' || (line[h]>='0' && line[h]<='9'))
                             {
@@ -406,7 +407,7 @@ int HMM::Read(FILE* dbf, float* pb, char* path)
                     }
                   else // normal line containing residues
                     {
-                      while (h<LINELEN && line[h]>'\0' && l<par.maxcol-1)
+                      while (h<LINELEN && line[h]>'\0' && l<maxcol-1)
                         {
                           if (aa2i(line[h])>=0 && line[h]!='.') // ignore '.' and white-space characters ' ', \t and \n (aa2i()==-1)
                             {cur_seq[l]=line[h]; l++;}
@@ -419,7 +420,7 @@ int HMM::Read(FILE* dbf, float* pb, char* path)
 
                 } //end else
 
-	      if (n_seq<=par.nseqdis)
+	      if (n_seq<=nseqdis)
 		n_display=k+1;
             } //while(getline)
 
@@ -514,7 +515,7 @@ int HMM::Read(FILE* dbf, float* pb, char* path)
                   std::cerr<<std::endl<<"WARNING: in HMM "<<name<<" there are more columns than the stated length "<<L<<". Skipping HMM\n";
                   return 2;
                 }
-              if (i>par.maxres-2)
+              if (i>maxres-2)
                 {
                   fgetline(line,LINELEN-1,dbf); // Skip line
                   continue;
@@ -568,7 +569,7 @@ int HMM::Read(FILE* dbf, float* pb, char* path)
   if (lamda && v>=3) printf("HMM %s is already calibrated: lamda=%-5.3f, mu=%-5.2f\n",name,lamda,mu);
 
   if (v && i!=L) std::cerr<<std::endl<<"WARNING: in HMM "<<name<<" there are only "<<i<<" columns while the stated length is "<<L<<"\n";
-  if (v && i>par.maxres-2) {i=par.maxres-2; std::cerr<<std::endl<<"WARNING: maximum number "<<par.maxres-2<<" of residues exceeded while reading HMM "<<name<<"\n";}
+  if (v && i>maxres-2) {i=maxres-2; std::cerr<<std::endl<<"WARNING: maximum number "<<maxres-2<<" of residues exceeded while reading HMM "<<name<<"\n";}
   if (v && !i)  std::cerr<<std::endl<<"WARNING: HMM "<<name<<" contains no match states. Check the alignment that gave rise to this HMM.\n";
   if (v>=2) std::cout<<"Read in HMM "<<name<<" with "<<L<<" match states and effective number of sequences = "<<Neff_HMM<<"\n";
   L = i;
@@ -585,7 +586,7 @@ int HMM::Read(FILE* dbf, float* pb, char* path)
 /////////////////////////////////////////////////////////////////////////////////////
 //// Read an HMM from a HMMer .hmm file; return 0 at end of file
 /////////////////////////////////////////////////////////////////////////////////////
-int HMM::ReadHMMer(FILE* dbf, float* pb, char* filestr)
+int HMM::ReadHMMer(FILE* dbf, const char showcons, float* pb, char* filestr)
 {
   char line[LINELEN]="";    // input line
   char desc[DESCLEN]="";    // description of family
@@ -598,7 +599,7 @@ int HMM::ReadHMMer(FILE* dbf, float* pb, char* filestr)
   int k=0;                  // index for seq[k]
   static char ignore_hmmer_cal = 0;
   char* annotchr;           // consensus amino acids in ASCII format, or, in HMMER format, the reference annotation character in insert line
-  annotchr = new char[par.maxres]; // consensus amino acids in ASCII format, or, in HMMER format, the reference annotation character in insert line
+  annotchr = new char[maxres]; // consensus amino acids in ASCII format, or, in HMMER format, the reference annotation character in insert line
   static int warn=0;
 
   L=0;
@@ -677,7 +678,7 @@ int HMM::ReadHMMer(FILE* dbf, float* pb, char* filestr)
           if (nsa_dssp<0)
             {
               nsa_dssp=k++;
-              seq[nsa_dssp] = new char[par.maxres+2];
+              seq[nsa_dssp] = new char[maxres+2];
               sname[nsa_dssp] = new char[15];
               strcpy(seq[nsa_dssp]," ");
               strcpy(sname[nsa_dssp],"sa_dssp");
@@ -687,8 +688,8 @@ int HMM::ReadHMMer(FILE* dbf, float* pb, char* filestr)
           if (ptr)
             {
               strcut(ptr);
-              if (strlen(seq[nsa_dssp])+strlen(ptr)>=(unsigned)(par.maxres))
-                printf("WARNING: HMM %s has SADSS records with more than %i residues.\n",name,par.maxres);
+              if (strlen(seq[nsa_dssp])+strlen(ptr)>=(unsigned)(maxres))
+                printf("WARNING: HMM %s has SADSS records with more than %i residues.\n",name,maxres);
               else strcat(seq[nsa_dssp],ptr);
             }
         }
@@ -698,7 +699,7 @@ int HMM::ReadHMMer(FILE* dbf, float* pb, char* filestr)
           if (nss_pred<0)
             {
               nss_pred=k++;
-              seq[nss_pred] = new char[par.maxres+2];
+              seq[nss_pred] = new char[maxres+2];
               sname[nss_pred] = new char[15];
               strcpy(seq[nss_pred]," ");
               strcpy(sname[nss_pred],"ss_pred");
@@ -708,8 +709,8 @@ int HMM::ReadHMMer(FILE* dbf, float* pb, char* filestr)
           if (ptr)
             {
               strcut(ptr);
-              if (strlen(seq[nss_pred])+strlen(ptr)>=(unsigned)(par.maxres))
-                printf("WARNING: HMM %s has SSPRD records with more than %i residues.\n",name,par.maxres);
+              if (strlen(seq[nss_pred])+strlen(ptr)>=(unsigned)(maxres))
+                printf("WARNING: HMM %s has SSPRD records with more than %i residues.\n",name,maxres);
               else strcat(seq[nss_pred],ptr);
             }
         }
@@ -719,7 +720,7 @@ int HMM::ReadHMMer(FILE* dbf, float* pb, char* filestr)
           if (nss_conf<0)
             {
               nss_conf=k++;
-              seq[nss_conf] = new char[par.maxres+2];
+              seq[nss_conf] = new char[maxres+2];
               sname[nss_conf] = new char[15];
               strcpy(seq[nss_conf]," ");
               strcpy(sname[nss_conf],"ss_conf");
@@ -728,8 +729,8 @@ int HMM::ReadHMMer(FILE* dbf, float* pb, char* filestr)
           if (ptr)
             {
               strcut(ptr);
-              if (strlen(seq[nss_conf])+strlen(ptr)>=(unsigned)(par.maxres))
-                printf("WARNING: HMM %s has SSPRD records with more than %i residues.\n",name,par.maxres);
+              if (strlen(seq[nss_conf])+strlen(ptr)>=(unsigned)(maxres))
+                printf("WARNING: HMM %s has SSPRD records with more than %i residues.\n",name,maxres);
               else strcat(seq[nss_conf],ptr);
             }
         }
@@ -793,7 +794,7 @@ int HMM::ReadHMMer(FILE* dbf, float* pb, char* filestr)
 
           // Prepare to store DSSP states (if there are none, delete afterwards)
           nss_dssp=k++;
-          seq[nss_dssp] = new char[par.maxres+2];
+          seq[nss_dssp] = new char[maxres+2];
           sname[nss_dssp] = new char[15];
           strcpy(sname[nss_dssp],"ss_dssp");
 
@@ -821,7 +822,7 @@ int HMM::ReadHMMer(FILE* dbf, float* pb, char* filestr)
                 }
               if (i>L && v)
                 std::cerr<<std::endl<<"WARNING: in HMM "<<name<<" there are more columns than the stated length "<<L<<"\n";
-              if (i>=par.maxres-2)
+              if (i>=maxres-2)
                 {
                   fgetline(line,LINELEN-1,dbf); // Skip two lines
                   fgetline(line,LINELEN-1,dbf);
@@ -930,7 +931,7 @@ int HMM::ReadHMMer(FILE* dbf, float* pb, char* filestr)
   if (lamda && v>=2) printf("HMM %s is already calibrated: lamda=%-5.3f, mu=%-5.2f\n",name,lamda,mu);
 
   if (v && i!=L) std::cerr<<std::endl<<"WARNING: in HMM "<<name<<" there are only "<<i<<" columns while the stated length is "<<L<<"\n";
-  if (v && i>=par.maxres-2) {i=par.maxres-2; std::cerr<<std::endl<<"WARNING: maximum number "<<par.maxres-2<<" of residues exceeded while reading HMM "<<name<<"\n";}
+  if (v && i>=maxres-2) {i=maxres-2; std::cerr<<std::endl<<"WARNING: maximum number "<<maxres-2<<" of residues exceeded while reading HMM "<<name<<"\n";}
   if (v && !i)  std::cerr<<std::endl<<"WARNING: HMM "<<name<<" contains no match states. Check the alignment that gave rise to this HMM.\n";
   L = i;
 
@@ -963,7 +964,7 @@ int HMM::ReadHMMer(FILE* dbf, float* pb, char* filestr)
     }
 
   // Copy query (first sequence) and consensus  residues?
-  if (par.showcons)
+  if (showcons)
     {
       sname[k]=new char[10];
       strcpy(sname[k],"Consensus");
@@ -1003,7 +1004,7 @@ int HMM::ReadHMMer(FILE* dbf, float* pb, char* filestr)
       annotchr[L+1]='\0';
       strcpy(seq[k],annotchr); // overwrite the consensus sequence with the annotation characters
     }
-  else if (!par.showcons)  // we have not yet calculated the consensus, but we need it now as query (first sequence)
+  else if (!showcons)  // we have not yet calculated the consensus, but we need it now as query (first sequence)
     {
       for (i=1; i<=L; ++i)
         {
@@ -1045,7 +1046,7 @@ int HMM::ReadHMMer(FILE* dbf, float* pb, char* filestr)
 /////////////////////////////////////////////////////////////////////////////////////
 //// Read an HMM from a HMMER3 .hmm file; return 0 at end of file
 /////////////////////////////////////////////////////////////////////////////////////
-int HMM::ReadHMMer3(FILE* dbf, float* pb, char* filestr)
+int HMM::ReadHMMer3(FILE* dbf, const char showcons, float* pb, char* filestr)
 {
   char line[LINELEN]="";    // input line
   char desc[DESCLEN]="";    // description of family
@@ -1057,7 +1058,7 @@ int HMM::ReadHMMer3(FILE* dbf, float* pb, char* filestr)
   char annot=0;             // 1 if at least one annotation character in insert lines is ne '-' or ' '
   int k=0;                  // index for seq[k]
   char* annotchr;           // consensus amino acids in ASCII format, or, in HMMER format, the reference annotation character in insert line
-  annotchr = new char[par.maxres]; // consensus amino acids in ASCII format, or, in HMMER format, the reference annotation character in insert line
+  annotchr = new char[maxres]; // consensus amino acids in ASCII format, or, in HMMER format, the reference annotation character in insert line
   static int warn=0;
 
   L=0;
@@ -1140,7 +1141,7 @@ int HMM::ReadHMMer3(FILE* dbf, float* pb, char* filestr)
           if (nsa_dssp<0)
             {
               nsa_dssp=k++;
-              seq[nsa_dssp] = new char[par.maxres+2];
+              seq[nsa_dssp] = new char[maxres+2];
               sname[nsa_dssp] = new char[15];
               strcpy(seq[nsa_dssp]," ");
               strcpy(sname[nsa_dssp],"sa_dssp");
@@ -1150,8 +1151,8 @@ int HMM::ReadHMMer3(FILE* dbf, float* pb, char* filestr)
           if (ptr)
             {
               strcut(ptr);
-              if (strlen(seq[nsa_dssp])+strlen(ptr)>=(unsigned)(par.maxres))
-                printf("WARNING: HMM %s has SADSS records with more than %i residues.\n",name,par.maxres);
+              if (strlen(seq[nsa_dssp])+strlen(ptr)>=(unsigned)(maxres))
+                printf("WARNING: HMM %s has SADSS records with more than %i residues.\n",name,maxres);
               else strcat(seq[nsa_dssp],ptr);
             }
         }
@@ -1161,7 +1162,7 @@ int HMM::ReadHMMer3(FILE* dbf, float* pb, char* filestr)
           if (nss_pred<0)
             {
               nss_pred=k++;
-              seq[nss_pred] = new char[par.maxres+2];
+              seq[nss_pred] = new char[maxres+2];
               sname[nss_pred] = new char[15];
               strcpy(seq[nss_pred]," ");
               strcpy(sname[nss_pred],"ss_pred");
@@ -1171,8 +1172,8 @@ int HMM::ReadHMMer3(FILE* dbf, float* pb, char* filestr)
           if (ptr)
             {
               strcut(ptr);
-              if (strlen(seq[nss_pred])+strlen(ptr)>=(unsigned)(par.maxres))
-                printf("WARNING: HMM %s has SSPRD records with more than %i residues.\n",name,par.maxres);
+              if (strlen(seq[nss_pred])+strlen(ptr)>=(unsigned)(maxres))
+                printf("WARNING: HMM %s has SSPRD records with more than %i residues.\n",name,maxres);
               else strcat(seq[nss_pred],ptr);
             }
         }
@@ -1182,7 +1183,7 @@ int HMM::ReadHMMer3(FILE* dbf, float* pb, char* filestr)
           if (nss_conf<0)
             {
               nss_conf=k++;
-              seq[nss_conf] = new char[par.maxres+2];
+              seq[nss_conf] = new char[maxres+2];
               sname[nss_conf] = new char[15];
               strcpy(seq[nss_conf]," ");
               strcpy(sname[nss_conf],"ss_conf");
@@ -1191,8 +1192,8 @@ int HMM::ReadHMMer3(FILE* dbf, float* pb, char* filestr)
           if (ptr)
             {
               strcut(ptr);
-              if (strlen(seq[nss_conf])+strlen(ptr)>=(unsigned)(par.maxres))
-                printf("WARNING: HMM %s has SSPRD records with more than %i residues.\n",name,par.maxres);
+              if (strlen(seq[nss_conf])+strlen(ptr)>=(unsigned)(maxres))
+                printf("WARNING: HMM %s has SSPRD records with more than %i residues.\n",name,maxres);
               else strcat(seq[nss_conf],ptr);
             }
         }
@@ -1253,7 +1254,7 @@ int HMM::ReadHMMer3(FILE* dbf, float* pb, char* filestr)
 	  
           // Prepare to store DSSP states (if there are none, delete afterwards)
           nss_dssp=k++;
-          seq[nss_dssp] = new char[par.maxres+2];
+          seq[nss_dssp] = new char[maxres+2];
           sname[nss_dssp] = new char[15];
           strcpy(sname[nss_dssp],"ss_dssp");
 
@@ -1281,7 +1282,7 @@ int HMM::ReadHMMer3(FILE* dbf, float* pb, char* filestr)
                 }
               if (i>L && v)
                 std::cerr<<std::endl<<"WARNING: in HMM "<<name<<" there are more columns than the stated length "<<L<<"\n";
-              if (i>=par.maxres-2)
+              if (i>=maxres-2)
                 {
                   fgetline(line,LINELEN-1,dbf); // Skip two lines
                   fgetline(line,LINELEN-1,dbf);
@@ -1392,7 +1393,7 @@ int HMM::ReadHMMer3(FILE* dbf, float* pb, char* filestr)
   if (L==0) return 0; //End of db file -> stop reading in
 
   if (v && i!=L) std::cerr<<std::endl<<"WARNING: in HMM "<<name<<" there are only "<<i<<" columns while the stated length is "<<L<<"\n";
-  if (v && i>=par.maxres-2) {i=par.maxres-2; std::cerr<<std::endl<<"WARNING: maximum number "<<par.maxres-2<<" of residues exceeded while reading HMM "<<name<<"\n";}
+  if (v && i>=maxres-2) {i=maxres-2; std::cerr<<std::endl<<"WARNING: maximum number "<<maxres-2<<" of residues exceeded while reading HMM "<<name<<"\n";}
   if (v && !i)  std::cerr<<std::endl<<"WARNING: HMM "<<name<<" contains no match states. Check the alignment that gave rise to this HMM.\n";
   L = i;
 
@@ -1425,7 +1426,7 @@ int HMM::ReadHMMer3(FILE* dbf, float* pb, char* filestr)
     }
 
   // Copy query (first sequence) and consensus  residues?
-  if (par.showcons)
+  if (showcons)
     {
       sname[k]=new char[10];
       strcpy(sname[k],"Consensus");
@@ -1465,7 +1466,7 @@ int HMM::ReadHMMer3(FILE* dbf, float* pb, char* filestr)
       annotchr[L+1]='\0';
       strcpy(seq[k],annotchr); // overwrite the consensus sequence with the annotation characters
     }
-  else if (!par.showcons)  // we have not yet calculated the consensus, but we need it now as query (first sequence)
+  else if (!showcons)  // we have not yet calculated the consensus, but we need it now as query (first sequence)
     {
       for (i=1; i<=L; ++i)
         {
@@ -1513,15 +1514,23 @@ int HMM::ReadHMMer3(FILE* dbf, float* pb, char* filestr)
 /////////////////////////////////////////////////////////////////////////////////////
 // Add transition pseudocounts to HMM (and calculate lin-space transition probs)
 /////////////////////////////////////////////////////////////////////////////////////
-void HMM::AddTransitionPseudocounts(float gapd, float gape, float gapf, float gapg, float gaph, float gapi, float gapb)
+void HMM::AddTransitionPseudocounts(float gapd, float gape, float gapf, float gapg, float gaph, float gapi, float gapb, const float par_gapb)
 {
   int i;               //position in alignment
   float sum;
   float pM2M, pM2I, pM2D, pI2I, pI2M, pD2D, pD2M;
   float p0,p1,p2;
-  if (par.gapb<=0) return;
-  if (trans_lin==1) {fprintf(stderr,"Error in %s: Adding transition pseudocounts to linear representation of %s not allowed. Please report this error to the HHsearch developers.\n",par.argv[0],name); exit(6);}
-  if (trans_lin==2) {fprintf(stderr,"Error in %s: Adding transition pseudocounts twice is %s not allowed. Please report this error to the HHsearch developers.\n",par.argv[0],name); exit(6);}
+  if (gapb<=0) return;
+  if (trans_lin==1) {
+	  std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+	  std::cerr << "\tAdding transition pseudocounts to linear representation of " << name << " not allowed. Please report this error to the HHsearch developers.\n";
+	  exit(6);
+  }
+  if (trans_lin==2) {
+	  std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+	  std::cerr << "\tAdding transition pseudocounts twice in " << name << " not allowed. Please report this error to the HHsearch developers.\n";
+	  exit(6);
+  }
   trans_lin=2;
 
   // Calculate pseudocount transition probabilities
@@ -1843,7 +1852,7 @@ void HMM::DivideBySqrtOfLocalBackgroundFreqs(const int D, const float* pb) // 2*
 // Factor Null model into HMM t
 // !!!!! ATTENTION!!!!!!!  after this t->p is not the same as after adding pseudocounts !!!
 /////////////////////////////////////////////////////////////////////////////////////
-void HMM::IncludeNullModelInHMM(HMM* q, HMM* t, int columnscore, const float* pb)
+void HMM::IncludeNullModelInHMM(HMM* q, HMM* t, int columnscore, const int half_window_size_local_aa_bg_freqs, const float* pb)
 {
 
   int i,j;         //query and template match state indices
@@ -1882,7 +1891,7 @@ void HMM::IncludeNullModelInHMM(HMM* q, HMM* t, int columnscore, const float* pb
     case 5: // Null model with local background prob. from template and query protein
       //      if (!q->divided_by_local_bg_freqs) q->DivideBySqrtOfLocalBackgroundFreqs(par.half_window_size_local_aa_bg_freqs);
       if (!q->divided_by_local_bg_freqs) InternalError("No local amino acid bias correction on query HMM!", __FILE__, __LINE__, __func__);
-      if (!t->divided_by_local_bg_freqs) t->DivideBySqrtOfLocalBackgroundFreqs(par.half_window_size_local_aa_bg_freqs, pb);
+      if (!t->divided_by_local_bg_freqs) t->DivideBySqrtOfLocalBackgroundFreqs(half_window_size_local_aa_bg_freqs, pb);
       break;
 
     case 10: // Separated column scoring for Stochastic Backtracing (STILL USED??)
@@ -1937,16 +1946,17 @@ void HMM::IncludeNullModelInHMM(HMM* q, HMM* t, int columnscore, const float* pb
 }
 
 
-void HMM::WriteToFile(char* outfile, const float* pb) {
+void HMM::WriteToFile(char* outfile, const char append, const int max_seqid, const int coverage,
+		const int qid, const int Ndiff, const float qsc, const int argc, char** argv, const float* pb) {
   std::stringstream out;
-  WriteToFile(out, pb);
+  WriteToFile(out, max_seqid, coverage, qid, Ndiff, qsc, argc, argv, pb);
 
   if (strcmp(outfile,"stdout") == 0) {
     std::cout << out.str();
   }
   else {
     std::fstream outf;
-    if (par.append)
+    if (append)
       outf.open(outfile, std::ios::out | std::ios::app);
     else
       outf.open(outfile, std::ios::out);
@@ -1963,8 +1973,8 @@ void HMM::WriteToFile(char* outfile, const float* pb) {
 /////////////////////////////////////////////////////////////////////////////////////
 // Write HMM to output file
 /////////////////////////////////////////////////////////////////////////////////////
-void HMM::WriteToFile(std::stringstream& out, const float* pb)
-{
+void HMM::WriteToFile(std::stringstream& out, const int max_seqid, const int coverage, const int qid,
+		const int Ndiff, const float qsc, const int argc, char** argv, const float* pb) {
   const int SEQLEN=100;      // number of residues per line for sequences to be displayed
   char line[LINELEN];
 
@@ -1986,11 +1996,11 @@ void HMM::WriteToFile(std::stringstream& out, const float* pb)
 
   // Print command line
   out << "COM   ";
-  for (int i=0; i<par.argc; i++)
-    if (strlen(par.argv[i])<=100)
-      out << par.argv[i] << " ";
+  for (int i=0; i<argc; i++)
+    if (strlen(argv[i])<=100)
+      out << argv[i] << " ";
     else
-      out << "<" << strlen(par.argv[i]) << " characters> ";
+      out << "<" << strlen(argv[i]) << " characters> ";
   out << std::endl;
 
   // print out date stamp
@@ -2001,7 +2011,8 @@ void HMM::WriteToFile(std::stringstream& out, const float* pb)
 
   // Print out some statistics of alignment
   out << "LENG  " << L << " match states, " << l[L] << " columns in multiple alignment\n" << std::endl;
-  out << "FILT  " << N_filtered << " out of " << N_in << " sequences passed filter (-id " << par.max_seqid << " -cov " << par.coverage << " -qid " << par.qid << " -qsc " << par.qsc << " -diff " <<  par.Ndiff << ")" << std::endl;
+  out << "FILT  " << N_filtered << " out of " << N_in << " sequences passed filter (-id " << max_seqid << " -cov " << coverage
+		  << " -qid " << qid << " -qsc " << qsc << " -diff " <<  Ndiff << ")" << std::endl;
   sprintf(line, "NEFF  %-4.1f\n", Neff_HMM);
   out << line;
 
@@ -2096,13 +2107,13 @@ void HMM::InsertCalibration(char* infile)
   if (!inf) OpenFileError(infile, __FILE__, __LINE__, __func__);
   if (v>=2) std::cout<<"Recording calibration coefficients in "<<infile<<"\n";
 
-  while (inf.getline(line,LINELEN) && !(line[0]=='/' && line[1]=='/') && nline<2*par.maxres)
+  while (inf.getline(line,LINELEN) && !(line[0]=='/' && line[1]=='/') && nline<2*maxres)
     {
 
       // Found an EVD lamda mu line? -> remove, i.e., read next line
-      while (!done && !strncmp(line,"EVD ",3) && !(line[0]=='/' && line[1]=='/') && nline<2*par.maxres)
+      while (!done && !strncmp(line,"EVD ",3) && !(line[0]=='/' && line[1]=='/') && nline<2*maxres)
         inf.getline(line,LINELEN);
-      if ((line[0]=='/' && line[1]=='/') || nline>=2*par.maxres) FormatError(infile, __FILE__, __LINE__, __func__, "Expecting hhm format");
+      if ((line[0]=='/' && line[1]=='/') || nline>=2*maxres) FormatError(infile, __FILE__, __LINE__, __func__, "Expecting hhm format");
 
       // Found the SEQ line? -> insert calibration before this line
       if (!done && (!strncmp("SEQ",line,3) || !strncmp("HMM",line,3)) && (isspace(line[3]) || line[3]=='\0'))

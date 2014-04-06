@@ -57,47 +57,55 @@ public:
   Alignment& operator=(Alignment&);
 
   // Read alignment into X (uncompressed) in ASCII characters
-  void Read(FILE* inf, char infile[NAMELEN], char* line=NULL);
+  void Read(FILE* inf, char infile[], const char mark, const int maxcol, const int nseqdis, char* firstline=NULL);
   void ReadCompressed(ffindex_entry_t* entry, char* data,
       ffindex_index_t* ffindex_sequence_database_index, char* ffindex_sequence_database_data,
-      ffindex_index_t* ffindex_header_database_index, char* ffindex_header_database_data);
+      ffindex_index_t* ffindex_header_database_index, char* ffindex_header_database_data,
+      const char mark, const int maxcol);
 
   // Read sequences from HHM-file into X (uncompressed) in ASCII characters
   void GetSeqsFromHMM(HMM* q);
   
   // Convert ASCII to numbers between 0 and 20, throw out all insert states, 
   // record their number in I[k][i] and store sequences to be displayed in sname[k] and seq[k]
-  void Compress(const char infile[NAMELEN]);
+  void Compress(const char infile[NAMELEN], const char cons, const int maxres, const int maxcol, const int par_M, const int Mgaps);
 
   // Apply sequence identity filter
-  int FilterForDisplay(int max_seqid, const float S[20][20], int coverage=0, int qid=0, float qsc=0, int N=0);
+  int FilterForDisplay(int max_seqid, const char mark, const float S[20][20], int coverage=0, int qid=0, float qsc=0, int N=0);
   int Filter(int max_seqid, const float S[20][20], int coverage=0, int qid=0, float qsc=0, int N=0);
   int Filter2(char keep[], int coverage, int qid, float qsc, int seqid1, int seqid2, int Ndiff, const float S[20][20]);
 
-  void FilterNeff(char use_global_weights, const float* pb, const float S[20][20], const float Sim[20][20]);
-  float filter_by_qsc(float qsc, char use_global_weights, char* dummy, const float* pb, const float S[20][20], const float Sim[20][20]);
+  void FilterNeff(char use_global_weights, const char mark, const char cons,
+			const char showcons, const int maxres, const int max_seqid, const int coverage,
+			const float Neff, const float* pb, const float S[20][20], const float Sim[20][20]);
+  float filter_by_qsc(float qsc, char use_global_weights, const char mark, const char cons,
+			const char showcons, const int maxres, const int max_seqid, const int coverage,
+			char* keep_orig, const float* pb, const float S[20][20], const float Sim[20][20]);
 
   // Calculate AA frequencies q.p[i][a] and transition probabilities q.tr[i][a] from alignment
-  void FrequenciesAndTransitions(HMM* q, char use_global_weights, const float* pb, const float Sim[20][20], char* in=NULL, bool time=false);
+  void FrequenciesAndTransitions(HMM* q, char use_global_weights,
+			const char mark, const char cons, const char showcons, const int maxres,
+			const float* pb, const float Sim[20][20], char* in=NULL, bool time=false);
 
   // Calculate freqs q.f[i][a] and transitions q.tr[i][a] (a=MM,MI,MD) with pos-specific subalignments
-  void Amino_acid_frequencies_and_transitions_from_M_state(HMM* q, char use_global_weights, char* in, const float* pb);
+  void Amino_acid_frequencies_and_transitions_from_M_state(HMM* q,
+			char use_global_weights, char* in, const int maxres, const float* pb);
 
   // Calculate transitions q.tr[i][a] (a=DM,DD) with pos-specific subalignments
-  void Transitions_from_D_state(HMM* q, char* in);
+  void Transitions_from_D_state(HMM* q, char* in, const int maxres);
 
   // Calculate transitions q.tr[i][a] (a=DM,DD) with pos-specific subalignments
-  void Transitions_from_I_state(HMM* q, char* in);
+  void Transitions_from_I_state(HMM* q, char* in, const int maxres);
   
   // Write alignment without insert states to alignment file
-  void WriteWithoutInsertsToFile(const char* alnfile);
+  void WriteWithoutInsertsToFile(const char* alnfile, const char append);
 
   // Write alignment to alignment file
-  void WriteToFile(const char* alnfile, const char format[]=NULL);
+  void WriteToFile(const char* alnfile, const char append, const char format[]=NULL);
   void WriteToFile(std::stringstream& out, const char format[]=NULL);
 
   // Read a3m slave alignment of hit from ta3mfile and merge into (query) master alignment
-  void MergeMasterSlave(Hit& hit, Alignment& Tali, char* ta3mfile);
+  void MergeMasterSlave(Hit& hit, Alignment& Tali, char* ta3mfile, const int par_maxcol);
 
   // Read a3m alignment of hit from ta3mfile and merge-combine with query alignment
   void Merge(Hit& hit, char ta3mfile[]);

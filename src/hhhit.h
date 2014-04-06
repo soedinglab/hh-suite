@@ -130,22 +130,22 @@ class Hit
   void DeleteIndices();
 
   // Compare an HMM with overlapping subalignments
-  void Viterbi(HMM* q, HMM* t, const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]);
+  void Viterbi(HMM* q, HMM* t, const char loc, const char ssm, const int maxres, const int par_min_overlap, const float shift, const float egt, const float egq, const float ssw, const char* exclstr, const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]);
 
   // Compare two HMMs with each other in lin space
-  void Forward(HMM* q, HMM* t, const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]);
+  void Forward(HMM* q, HMM* t, const char ssm, const int par_min_overlap, const char loc, const float shift, const float ssw, const char* exclstr, const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]);
 
   // Compare two HMMs with each other in lin space
-  void Backward(HMM* q, HMM* t, const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]);
+  void Backward(HMM* q, HMM* t, const char loc, const float shift, const float ssw, const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]);
 
    // Find maximum accuracy alignment (after running Forward and Backward algorithms)
-  void MACAlignment(HMM* q, HMM* t);
+  void MACAlignment(HMM* q, HMM* t, const char loc, const double mact, const double macins);
 
   // Trace back alignment of two profiles based on matrices btr[][]
-  void Backtrace(HMM* q, HMM* t, const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]);
+  void Backtrace(HMM* q, HMM* t, const float corr, const float ssw, const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]);
 
   // Trace back MAC alignment of two profiles based on matrix btr[][]
-  void BacktraceMAC(HMM* q, HMM* t, const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]);
+  void BacktraceMAC(HMM* q, HMM* t, const float corr, const float ssw, const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]);
 
   // Calculate score between columns i and j of two HMMs (query and template)
   inline float ProbFwd(float* qi, float* tj) {
@@ -158,19 +158,19 @@ class Hit
   }
 
   // Calculate secondary structure score between columns i and j of two HMMs (query and template)
-  inline float ScoreSS(HMM* q, HMM* t, int i, int j, int ssm, const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]) {
+  inline float ScoreSS(HMM* q, HMM* t, int i, int j, int ssm, const float ssw, const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]) {
     switch (ssm) //SS scoring during alignment
     {
       case 0: // no SS scoring during alignment
         return 0.0;
       case 1: // t has dssp information, q has psipred information
-        return par.ssw
+        return ssw
             * S73[(int) t->ss_dssp[j]][(int) q->ss_pred[i]][(int) q->ss_conf[i]];
       case 2: // q has dssp information, t has psipred information
-        return par.ssw
+        return ssw
             * S73[(int) q->ss_dssp[i]][(int) t->ss_pred[j]][(int) t->ss_conf[j]];
       case 3: // q has dssp information, t has psipred information
-        return par.ssw
+        return ssw
             * S33[(int) q->ss_pred[i]][(int) q->ss_conf[i]][(int) t->ss_pred[j]][(int) t->ss_conf[j]];
         //     case 4: // q has dssp information, t has dssp information
         //       return par.ssw*S77[ (int)t->ss_dssp[j]][ (int)t->ss_conf[j]];
@@ -179,8 +179,8 @@ class Hit
   }
 
   // Calculate secondary structure score between columns i and j of two HMMs (query and template)
-  inline float ScoreSS(HMM* q, HMM* t, int i, int j, const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]) {
-    return ScoreSS(q, t, i, j, ssm2, S73, S33);
+  inline float ScoreSS(HMM* q, HMM* t, int i, int j, const float ssw, const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]) {
+    return ScoreSS(q, t, i, j, ssm2, ssw, S73, S33);
   }
 
   // Calculate score for a given alignment
@@ -199,14 +199,14 @@ class Hit
 
   // Calculate Evalue, score_aass, Proba from logPval and score_ss
   // Calculate Evalue, score_aass, Proba from logPval and score_ss
-  inline void CalcEvalScoreProbab(int N_searched, float lamda) {
+  inline void CalcEvalScoreProbab(int N_searched, float lamda, const char loc, const char ssm, const float ssw) {
     Eval = exp(logPval + log(N_searched));
     logEval = logPval + log(N_searched);
     // P-value = 1 - exp(-exp(-lamda*(Saa-mu))) => -lamda*(Saa-mu) = log(-log(1-Pvalue))
     score_aass = (logPval < -10.0 ? logPval : log(-log(1 - Pval))) / 0.45
         - fmin(lamda * score_ss, fmax(0.0, 0.2 * (score - 8.0))) / 0.45 - 3.0;
     score_sort = score_aass;
-    Probab = CalcProbab();
+    Probab = CalcProbab(loc, ssm, ssw);
   }
 
   /* // Merge HMM with next aligned HMM   */
@@ -219,17 +219,17 @@ private:
   double* scale;       // 
 
   void InitializeBacktrace(HMM* q, HMM* t);
-  void InitializeForAlignment(HMM* q, HMM* t, bool vit=true);
+  void InitializeForAlignment(HMM* q, HMM* t, const int min_overlap, const char ssm, const char* exclstr, bool vit=true);
 
   // Calculate probability of true positive : p_TP(score)/( p_TP(score)+p_FP(score) )
   // TP: same superfamily OR MAXSUB score >=0.1
-  inline double CalcProbab() {
+  inline double CalcProbab(const char loc, const char ssm, const float ssw) {
     double s = -score_aass;
     double t;
     if (s > 200)
       return 100.0;
-    if (par.loc) {
-      if (par.ssm && (ssm1 || ssm2) && par.ssw > 0) {
+    if (loc) {
+      if (ssm && (ssm1 || ssm2) && ssw > 0) {
         // local with SS
         const double a = sqrt(6000.0);
         const double b = 2.0 * 2.5;
@@ -247,7 +247,7 @@ private:
       }
     }
     else {
-      if (par.ssm > 0 && par.ssw > 0) {
+      if (ssm > 0 && ssw > 0) {
         // global with SS
         const double a = sqrt(4000.0);
         const double b = 2.0 * 3.0;

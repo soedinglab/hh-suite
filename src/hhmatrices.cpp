@@ -6,7 +6,7 @@
 void SetBlosumMatrix(const char matrix, const float BlosumXX[], float* pb, float P[20][20])
 {
   int a,b,n=0;
-  if (v>=3) printf("Using the BLOSUM%2i matrix",par.matrix);
+  if (v>=3) printf("Using the BLOSUM%2i matrix",matrix);
   for (a=0; a<20; ++a)
     for (pb[a]=0.0f, b=0; b<=a; ++b,++n)
       P[a][b] = BlosumXX[n];
@@ -22,7 +22,7 @@ void SetBlosumMatrix(const char matrix, const float BlosumXX[], float* pb, float
 void SetSubstitutionMatrix(const char matrix, float* pb, float P[20][20], float R[20][20], float S[20][20], float Sim[20][20])
 {
   int a,b;
-  switch (par.matrix)
+  switch (matrix)
     {
     default:
     case 0:  //Gonnet matrix
@@ -33,22 +33,22 @@ void SetSubstitutionMatrix(const char matrix, float* pb, float P[20][20], float 
       break;
 
     case 30:  //BLOSUM30
-      SetBlosumMatrix(par.matrix, Blosum30, pb, P);
+      SetBlosumMatrix(matrix, Blosum30, pb, P);
       break;
     case 40:  //BLOSUM40
-      SetBlosumMatrix(par.matrix, Blosum40, pb, P);
+      SetBlosumMatrix(matrix, Blosum40, pb, P);
       break;
     case 50:  //BLOSUM50
-      SetBlosumMatrix(par.matrix, Blosum50, pb, P);
+      SetBlosumMatrix(matrix, Blosum50, pb, P);
       break;
     case 62:  //BLOSUM62
-      SetBlosumMatrix(par.matrix, Blosum62, pb, P);
+      SetBlosumMatrix(matrix, Blosum62, pb, P);
       break;
     case 65:  //BLOSUM65
-      SetBlosumMatrix(par.matrix, Blosum65, pb, P);
+      SetBlosumMatrix(matrix, Blosum65, pb, P);
       break;
     case 80:  //BLOSUM80
-      SetBlosumMatrix(par.matrix, Blosum80, pb, P);
+      SetBlosumMatrix(matrix, Blosum80, pb, P);
       break;
    }
   
@@ -151,7 +151,7 @@ void SetSubstitutionMatrix(const char matrix, float* pb, float P[20][20], float 
 /////////////////////////////////////////////////////////////////////////////////////
 // Set secondary structure substitution matrix
 /////////////////////////////////////////////////////////////////////////////////////
-void SetSecStrucSubstitutionMatrix(float S73[NDSSP][NSSPRED][MAXCF], float S33[NSSPRED][MAXCF][NSSPRED][MAXCF])
+void SetSecStrucSubstitutionMatrix(const float ssa, float S73[NDSSP][NSSPRED][MAXCF], float S33[NSSPRED][MAXCF][NSSPRED][MAXCF])
 {
   int A;        //observed ss state (determined dssp)
   int B,BB;     //predicted ss states (by psipred)
@@ -166,7 +166,7 @@ void SetSecStrucSubstitutionMatrix(float S73[NDSSP][NSSPRED][MAXCF], float S33[N
       for (B=0; B<NSSPRED; B++)
 	{
 
-	  P73[A][B][cf] = 1.-par.ssa + par.ssa*Ppred[cf*NSSPRED*NDSSP + B*NDSSP + A];
+	  P73[A][B][cf] = 1.-ssa + ssa*Ppred[cf*NSSPRED*NDSSP + B*NDSSP + A];
 	  S73[A][B][cf] = log2(P73[A][B][cf]);
 	}
 

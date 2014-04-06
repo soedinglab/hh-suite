@@ -25,10 +25,10 @@ public:
   void Unset();
 
   // Align query (HalfAlignment) to template (i.e. hit) match state structure
-  void AlignToTemplate(Hit& hit); 
+  void AlignToTemplate(Hit& hit, const char outformat);
 
   // Write the a2m/a3m query alignment into alnfile 
-  void Print(char* outfile, char* commentname = NULL, const char format[]=NULL);
+  void Print(char* outfile, const char append, char* commentname = NULL, const char format[]=NULL);
 
   // Fill in insert states following match state i
   void AddInserts(int i);

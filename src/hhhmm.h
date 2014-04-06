@@ -22,6 +22,8 @@ public:
     ~HMM();
     HMM& operator=(HMM&);
 
+    int maxres;
+
     int n_display;            // number of sequences stored for display of alignment (INCLUDING >ss_ and >cf_ sequences)
     int n_seqs;               // number of sequences read in (INCLUDING >ss_ and >cf_ sequences)
     char** sname;             // names of stored sequences
@@ -55,16 +57,16 @@ public:
     void FlatCopyTo(HMM* t);
 
     // Read an HMM from a HHsearch .hhm file and return 0 at end of file
-    int Read(FILE* dbf, float* pb, char* path=NULL);
+    int Read(FILE* dbf, const int maxcol, const int nseqdis, float* pb, char* path=NULL);
 
     // Read an HMM from a HMMer .hmm file; return 0 at end of file
-    int ReadHMMer(FILE* dbf, float* pb, char* filestr=NULL);
+    int ReadHMMer(FILE* dbf, const char showcons, float* pb, char* filestr=NULL);
 
     // Read an HMM from a HMMer3 .hmm file; return 0 at end of file
-    int ReadHMMer3(FILE* dbf, float* pb, char* filestr=NULL);
+    int ReadHMMer3(FILE* dbf, const char showcons, float* pb, char* filestr=NULL);
 
     // Add transition pseudocounts to HMM
-    void AddTransitionPseudocounts(float gapd, float gape, float gapf, float gapg, float gaph, float gapi, float gapb);
+    void AddTransitionPseudocounts(float gapd, float gape, float gapf, float gapg, float gaph, float gapi, float gapb, const float par_gapb);
 
     // Generate an amino acid frequency matrix g[][] with full pseudocount admixture (tau=1)
     void PreparePseudocounts(const float R[20][20]);
@@ -88,11 +90,13 @@ public:
     void DivideBySqrtOfLocalBackgroundFreqs(const int D, const float* pb);
 
     // Factor Null model into HMM t
-    void IncludeNullModelInHMM(HMM* q, HMM* t, int columnscore, const float* pb);
+    void IncludeNullModelInHMM(HMM* q, HMM* t, int columnscore, const int half_window_size_local_aa_bg_freqs, const float* pb);
 
     // Write HMM to output file
-    void WriteToFile(char* outfile, const float* pb);
-    void WriteToFile(std::stringstream& outfile, const float* pb);
+    void WriteToFile(char* outfile, const char append, const int max_seqid, const int coverage, const int qid,
+    		const int Ndiff, const float qsc, const int argc, char** argv, const float* pb);
+    void WriteToFile(std::stringstream& out, const int max_seqid, const int coverage, const int qid,
+    		const int Ndiff, const float qsc, const int argc, char** argv, const float* pb);
 
     // Insert calibration line 'EVD   lamda   mu      hashvalue' into HMM file
     void InsertCalibration(char* infile);

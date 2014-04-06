@@ -124,13 +124,14 @@ private:
 	float S73[NDSSP][NSSPRED][MAXCF];
 	float S33[NSSPRED][MAXCF][NSSPRED][MAXCF];
 
+	Parameters par;
+
 	cs::ContextLibrary<cs::AA>* context_lib = NULL;
 	cs::Crf<cs::AA>* crf = NULL;
 	cs::Pseudocounts<cs::AA>* pc_hhm_context_engine = NULL;
 	cs::Admix* pc_hhm_context_mode = NULL;
 	cs::Pseudocounts<cs::AA>* pc_prefilter_context_engine = NULL;
 	cs::Admix* pc_prefilter_context_mode = NULL;
-
 
 	//prefilter stuff
 	const int SHORT_BIAS = 32768;

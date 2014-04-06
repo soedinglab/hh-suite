@@ -21,6 +21,14 @@
 #include "util.h"
 
 
+/////////////////////////////////////////////////////////////////////////////////////
+//// Global variable declarations
+/////////////////////////////////////////////////////////////////////////////////////
+
+//=2 1: show only warnings 2:verbose mode
+extern char v;
+
+
 const int MAXSEQ=65535; //max number of sequences in input alignment (must be <~30000 on cluster nodes??)
 const int LINELEN=524288; //max length of line read in from input files; must be >= MAXCOL
 const int MAXRES=20000;
@@ -70,14 +78,6 @@ const int a2s[]={ 0,14,11, 2, 1,13, 3, 5, 6, 7, 9, 8,10, 4,12,15,16,18,19,17,20}
 
 enum transitions {M2M,M2I,M2D,I2M,I2I,D2M,D2D}; // index for transitions within a HMM
 enum pair_states {STOP=0,SAME=1,GD=2,IM=3,DG=4,MI=5,MM=6};
-
-/////////////////////////////////////////////////////////////////////////////////////
-//// Global variable declarations
-/////////////////////////////////////////////////////////////////////////////////////
-
-//=2 1: show only warnings 2:verbose mode
-extern char v;
-
 
 
 // Class to store data about hit to realign
@@ -174,10 +174,10 @@ public:
   int z;                  // min number of lines in hit list
   int B;                  // max number of lines in alignment list
   int b;                  // min number of lines in alignment list
-  int showcons;           // in query-template alignments  0: don't show consensus sequence   1:show
-  int showdssp;           // in query-template alignments  0: don't show ss_dssp lines        1:show
-  int showpred;           // in query-template alignments  0: don't show ss_pred and ss_conf lines  1:show
-  int showconf;           // in query-template alignments  0: don't show ss_conf lines        1:show
+  char showcons;           // in query-template alignments  0: don't show consensus sequence   1:show
+  char showdssp;           // in query-template alignments  0: don't show ss_dssp lines        1:show
+  char showpred;           // in query-template alignments  0: don't show ss_pred and ss_conf lines  1:show
+  char showconf;           // in query-template alignments  0: don't show ss_conf lines        1:show
   char cons;              // if set to 1, include consensus as first representative sequence of HMM
   int nseqdis;            // maximum number of query or template sequences in output alignments
   char mark;              // which sequences to mark for display in output alignments? 0: auto; 1:all
@@ -335,8 +335,5 @@ public:
   void SetDefaults();
   Parameters();
 };
-
-//TODO: get rid of these variables
-extern Parameters par;
 
 #endif /* HHDECL_H_ */

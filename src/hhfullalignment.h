@@ -15,12 +15,12 @@ public:
   FullAlignment(int maxseqdis=MAXSEQDIS);
   ~FullAlignment();
   void FreeMemory();
-  void Build(HMM* q, Hit& hit, const float S[20][20]);
+  void Build(HMM* q, Hit& hit, const int nseqdis, const float S[20][20]);
   void PrintHeader(std::stringstream& out, HMM* q, Hit& hit);
-  void PrintHHR(std::stringstream& out, Hit& hit);
-  void PrintA2M(std::stringstream& out, Hit& hit);
-  void PrintFASTA(std::stringstream& out, Hit& hit);
-  void PrintA3M(std::stringstream& out, Hit& hit);
+  void PrintHHR(std::stringstream& out, Hit& hit, const char showconf, const char showcons, const char showdssp, const char showpred, const int aliwidth);
+  void PrintA2M(std::stringstream& out, Hit& hit, const char showcons, const char showdssp, const char showpred, const int aliwidth);
+  void PrintFASTA(std::stringstream& out, Hit& hit, const char showcons, const char showdssp, const char showpred, const int aliwidth);
+  void PrintA3M(std::stringstream& out, Hit& hit, const char showcons, const char showdssp, const char showpred, const int aliwidth);
   int identities;      // number of identical residues in query and template sequence
   float score_sim;     // substitution matrix similarity score between query and template
 

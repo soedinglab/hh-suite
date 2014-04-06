@@ -110,13 +110,13 @@ void Hit::AllocateBacktraceMatrix(int Nq, int Nt) {
     btr[i] = new char[Nt];
     cell_off[i] = new char[Nt];
     if (!btr[i] || !cell_off[i]) {
+   	  std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
       fprintf(stderr,
-          "Error in %s: out of memory while allocating row %i (out of %i) for dynamic programming matrices \n",
-          par.argv[0], i + 1, Nq);
+          "\tout of memory while allocating row %i (out of %i) for dynamic programming matrices \n", i + 1, Nq);
       fprintf(stderr,
-          "Please decrease your memory requirements to the available memory using option -maxmem <GBs>\n");
+          "\tPlease decrease your memory requirements to the available memory using option -maxmem <GBs>\n");
       fprintf(stderr,
-          "You may want to check and increase your stack size limit (Linux: ulimit -a)\n");
+          "\tYou may want to check and increase your stack size limit (Linux: ulimit -a)\n");
       exit(3);
     }
   }
@@ -142,13 +142,15 @@ void Hit::AllocateForwardMatrix(int Nq, int Nt) {
   for (int i = 0; i < Nq; ++i) {
     P_MM[i] = new float[Nt];
     if (!P_MM[i]) {
+   	  std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+
       fprintf(stderr,
-          "Error in %s: out of memory while allocating row %i (out of %i) for dynamic programming matrices \n",
-          par.argv[0], i + 1, Nq);
+          "\tout of memory while allocating row %i (out of %i) for dynamic programming matrices \n",
+          i + 1, Nq);
       fprintf(stderr,
-          "Please decrease your memory requirements to the available memory using option -maxmem <GBs>\n");
+          "\tPlease decrease your memory requirements to the available memory using option -maxmem <GBs>\n");
       fprintf(stderr,
-          "You may want to check and increase your stack size limit (Linux: ulimit -a)\n");
+          "\tYou may want to check and increase your stack size limit (Linux: ulimit -a)\n");
       exit(3);
     }
     for (int j = 0; j < Nt; ++j)
@@ -185,7 +187,7 @@ void Hit::DeleteIndices() {
 // The function is called with q and t
 // If q and t are equal (self==1), only the upper right part of the matrix is calculated: j>=i+3
 /////////////////////////////////////////////////////////////////////////////////////
-void Hit::Viterbi(HMM* q, HMM* t, const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]) {
+void Hit::Viterbi(HMM* q, HMM* t, const char loc, const char ssm, const int maxres, const int par_min_overlap, const float shift, const float egt, const float egq, const float ssw, const char* exclstr, const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]) {
   // Linear topology of query (and template) HMM:
   // 1. The HMM HMM has L+2 columns. Columns 1 to L contain 
   //    a match state, a delete state and an insert state each.
@@ -220,13 +222,13 @@ void Hit::Viterbi(HMM* q, HMM* t, const float S73[NDSSP][NSSPRED][MAXCF], const 
   // btr[i][j] = 0|MI|DG|IM|GD|MM = 0|1|1|1|1|111
 
   // Variable declarations
-  float __attribute__((aligned(16))) Si[par.maxres]; // sMM[i][j] = score of best alignment up to indices (i,j) ending in (Match,Match)
-  float sMM[par.maxres]; // sMM[i][j] = score of best alignment up to indices (i,j) ending in (Match,Match)
-  float sGD[par.maxres]; // sGD[i][j] = score of best alignment up to indices (i,j) ending in (Gap,Delete)
-  float sDG[par.maxres]; // sDG[i][j] = score of best alignment up to indices (i,j) ending in (Delete,Gap)
-  float sIM[par.maxres]; // sIM[i][j] = score of best alignment up to indices (i,j) ending in (Ins,Match)
-  float sMI[par.maxres]; // sMI[i][j] = score of best alignment up to indices (i,j) ending in (Match,Ins)
-  float smin = (par.loc ? 0 : -FLT_MAX); //used to distinguish between SW and NW algorithms in maximization
+  float __attribute__((aligned(16))) Si[maxres]; // sMM[i][j] = score of best alignment up to indices (i,j) ending in (Match,Match)
+  float sMM[maxres]; // sMM[i][j] = score of best alignment up to indices (i,j) ending in (Match,Match)
+  float sGD[maxres]; // sGD[i][j] = score of best alignment up to indices (i,j) ending in (Gap,Delete)
+  float sDG[maxres]; // sDG[i][j] = score of best alignment up to indices (i,j) ending in (Delete,Gap)
+  float sIM[maxres]; // sIM[i][j] = score of best alignment up to indices (i,j) ending in (Ins,Match)
+  float sMI[maxres]; // sMI[i][j] = score of best alignment up to indices (i,j) ending in (Match,Ins)
+  float smin = (loc ? 0 : -FLT_MAX); //used to distinguish between SW and NW algorithms in maximization
   int i, j;      //query and template match state indices
   float sMM_i_j = 0, sMI_i_j, sIM_i_j, sGD_i_j, sDG_i_j;
   float sMM_i_1_j_1, sMI_i_1_j_1, sIM_i_1_j_1, sGD_i_1_j_1, sDG_i_1_j_1;
@@ -234,11 +236,11 @@ void Hit::Viterbi(HMM* q, HMM* t, const float S73[NDSSP][NSSPRED][MAXCF], const 
 
   // Reset crossed out cells?
   if (irep == 1)
-    InitializeForAlignment(q, t);
+    InitializeForAlignment(q, t, par_min_overlap, ssm, exclstr);
 
   // Initialization of top row, i.e. cells (0,j)
   for (j = 0; j <= t->L; ++j) {
-    sMM[j] = (self ? 0 : -j * par.egt);
+    sMM[j] = (self ? 0 : -j * egt);
     sIM[j] = sMI[j] = sDG[j] = sGD[j] = -FLT_MAX;
   }
   score = -INT_MAX;
@@ -266,8 +268,8 @@ void Hit::Viterbi(HMM* q, HMM* t, const float S73[NDSSP][NSSPRED][MAXCF], const 
 
     // Initialize cells
     if (jmin == 1) {
-      sMM_i_1_j_1 = -(i - 1) * par.egq;  // initialize at (i-1,0)
-      sMM[0] = -i * par.egq;           // initialize at (i,0)
+      sMM_i_1_j_1 = -(i - 1) * egq;  // initialize at (i-1,0)
+      sMM[0] = -i * egq;           // initialize at (i,0)
       sIM_i_1_j_1 = sMI_i_1_j_1 = sDG_i_1_j_1 = sGD_i_1_j_1 = -FLT_MAX; // initialize at (i-1,jmin-1)
     }
     else {
@@ -318,7 +320,7 @@ void Hit::Viterbi(HMM* q, HMM* t, const float S73[NDSSP][NSSPRED][MAXCF], const 
             sDG_i_1_j_1 + q->tr[i - 1][D2M] + t->tr[j - 1][M2M],
             sMI_i_1_j_1 + q->tr[i - 1][M2M] + t->tr[j - 1][I2M], btr[i][j]);
 
-        sMM_i_j += Si[j] + ScoreSS(q, t, i, j, S73, S33) + par.shift;
+        sMM_i_j += Si[j] + ScoreSS(q, t, i, j, ssw, S73, S33) + shift;
 
         sGD_i_j = max2(sMM[j - 1] + t->tr[j - 1][M2D], // MM->GD gap opening in query
             sGD[j - 1] + t->tr[j - 1][D2D], // GD->GD gap extension in query
@@ -344,7 +346,7 @@ void Hit::Viterbi(HMM* q, HMM* t, const float S73[NDSSP][NSSPRED][MAXCF], const 
         sMI[j] = sMI_i_j;
 
         // Find maximum score; global alignment: maxize only over last row and last column
-        if (sMM_i_j > score && (par.loc || i == q->L)) {
+        if (sMM_i_j > score && (loc || i == q->L)) {
           i2 = i;
           j2 = j;
           score = sMM_i_j;
@@ -355,7 +357,7 @@ void Hit::Viterbi(HMM* q, HMM* t, const float S73[NDSSP][NSSPRED][MAXCF], const 
     } //end for j
 
     // if global alignment: look for best cell in last column
-    if (!par.loc && sMM_i_j > score) {
+    if (!loc && sMM_i_j > score) {
       i2 = i;
       j2 = jmax;
       score = sMM_i_j;
@@ -373,11 +375,11 @@ void Hit::Viterbi(HMM* q, HMM* t, const float S73[NDSSP][NSSPRED][MAXCF], const 
 /////////////////////////////////////////////////////////////////////////////////////
 // Compare two HMMs with Forward Algorithm in lin-space (~ 2x faster than in log-space)
 /////////////////////////////////////////////////////////////////////////////////////
-void Hit::Forward(HMM* q, HMM* t, const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]) {
+void Hit::Forward(HMM* q, HMM* t, const char ssm, const int par_min_overlap, const char loc, const float shift, const float ssw, const char* exclstr, const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]) {
   // Variable declarations
   int i, j;      // query and template match state indices
-  double pmin = (par.loc ? 1.0 : 0.0); // used to distinguish between SW and NW algorithms in maximization
-  double Cshift = pow(2.0, par.shift); // score offset transformed into factor in lin-space
+  double pmin = (loc ? 1.0 : 0.0); // used to distinguish between SW and NW algorithms in maximization
+  double Cshift = pow(2.0, shift); // score offset transformed into factor in lin-space
   double Pmax_i;                        // maximum of F_MM in row i
   double scale_prod = 1.0;                // Prod_i=1^i (scale[i])
   int jmin;
@@ -413,12 +415,12 @@ void Hit::Forward(HMM* q, HMM* t, const float S73[NDSSP][NSSPRED][MAXCF], const 
     t->tr[t->L][I2M] = t->tr[t->L][I2I] = 0.0;
     t->tr[t->L][D2M] = 1.0;
     t->tr[t->L][D2D] = 0.0;
-    InitializeForAlignment(q, t, false);
+    InitializeForAlignment(q, t, par_min_overlap, ssm, exclstr, false);
   }
 
   if (realign_around_viterbi) {
     if (irep > 1)
-      InitializeForAlignment(q, t, false);
+      InitializeForAlignment(q, t, par_min_overlap, ssm, exclstr, false);
 
     int step;
     // fprintf(stderr,"\nViterbi-hit (Index: %i  Irep: %i) Query: %4i-%4i   Template %4i-%4i\n",index,irep,i1,i2,j1,j2);
@@ -483,7 +485,7 @@ void Hit::Forward(HMM* q, HMM* t, const float S73[NDSSP][NSSPRED][MAXCF], const 
       float substitutionScore =
               ProbFwd(q->p[1], t->p[j]);
 
-      F_MM_prev[j] = P_MM[1][j] = substitutionScore * fpow2(ScoreSS(q, t, 1, j, S73, S33))
+      F_MM_prev[j] = P_MM[1][j] = substitutionScore * fpow2(ScoreSS(q, t, 1, j, ssw, S73, S33))
           * Cshift;
       F_MI_prev[j] = F_DG_prev[j] = 0.0;
       F_IM_prev[j] = F_MM_prev[j - 1] * q->tr[1][M2I] * t->tr[j - 1][M2M]
@@ -518,7 +520,7 @@ void Hit::Forward(HMM* q, HMM* t, const float S73[NDSSP][NSSPRED][MAXCF], const 
               ProbFwd(q->p[i], t->p[jmin]);
 
       F_MM_curr[jmin] = scale_prod * substitutionScore
-          * fpow2(ScoreSS(q, t, i, jmin, S73, S33)) * Cshift;
+          * fpow2(ScoreSS(q, t, i, jmin, ssw, S73, S33)) * Cshift;
       F_IM_curr[jmin] = F_GD_curr[jmin] = 0.0;
       F_MI_curr[jmin] = scale[i]
           * (F_MM_prev[jmin] * q->tr[i - 1][M2M] * t->tr[jmin][M2I]
@@ -544,7 +546,7 @@ void Hit::Forward(HMM* q, HMM* t, const float S73[NDSSP][NSSPRED][MAXCF], const 
         float substitutionScore =
                 ProbFwd(q->p[i], t->p[j]);
 
-        F_MM_curr[j] = substitutionScore * fpow2(ScoreSS(q, t, i, j, S73, S33)) * Cshift
+        F_MM_curr[j] = substitutionScore * fpow2(ScoreSS(q, t, i, j, ssw, S73, S33)) * Cshift
             * scale[i]
             * (pmin + F_MM_prev[j - 1] * q->tr[i - 1][M2M] * t->tr[j - 1][M2M] // BB -> MM (BB = Begin/Begin, for local alignment)
             + F_GD_prev[j - 1] * q->tr[i - 1][M2M] * t->tr[j - 1][D2M] // GD -> MM
@@ -596,7 +598,7 @@ void Hit::Forward(HMM* q, HMM* t, const float S73[NDSSP][NSSPRED][MAXCF], const 
   } // end for i
 
 // Calculate P_forward * Product_{i=1}^{Lq+1}(scale[i])
-  if (par.loc) {
+  if (loc) {
     Pforward = 1.0; // alignment contains no residues (see Mueckstein, Stadler et al.)
     // Loop through query positions i
     for (i = 1; i <= q->L; ++i) {
@@ -626,7 +628,7 @@ void Hit::Forward(HMM* q, HMM* t, const float S73[NDSSP][NSSPRED][MAXCF], const 
   for (i = 1; i <= q->L + 1; ++i)
     score -= log2(scale[i]);
 
-  if (par.loc) {
+  if (loc) {
     if (self)
       score -= log(0.5 * t->L * q->L) / LAMDA + 14.; // +14.0 to get approx same mean as for -global
     else
@@ -665,11 +667,11 @@ void Hit::Forward(HMM* q, HMM* t, const float S73[NDSSP][NSSPRED][MAXCF], const 
 /////////////////////////////////////////////////////////////////////////////////////
 // Compare two HMMs with Backward Algorithm (in lin-space, 2x faster), for use in MAC alignment 
 /////////////////////////////////////////////////////////////////////////////////////
-void Hit::Backward(HMM* q, HMM* t, const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]) {
+void Hit::Backward(HMM* q, HMM* t, const char loc, const float shift, const float ssw, const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]) {
   // Variable declarations
   int i, j;      // query and template match state indices
   double pmin; // this is the scaled 1 in the SW algorithm that represents a starting alignment
-  double Cshift = pow(2.0, par.shift); // score offset transformed into factor in lin-space
+  double Cshift = pow(2.0, shift); // score offset transformed into factor in lin-space
   double scale_prod = scale[q->L + 1];
   int jmin;
   
@@ -694,7 +696,7 @@ void Hit::Backward(HMM* q, HMM* t, const float S73[NDSSP][NSSPRED][MAXCF], const
     B_MI_prev[j] = B_DG_prev[j] = 0.0;
   }
 
-  if (par.loc)
+  if (loc)
     pmin = scale[q->L + 1];
   else
     pmin = 0.0; // transform pmin (for local alignment) to scale of present (i'th) row
@@ -745,7 +747,7 @@ void Hit::Backward(HMM* q, HMM* t, const float S73[NDSSP][NSSPRED][MAXCF], const
                 ProbFwd(q->p[i + 1], t->p[j + 1]);
 
         double pmatch = B_MM_prev[j + 1] * substitutionScore
-            * fpow2(ScoreSS(q, t, i + 1, j + 1, S73, S33)) * Cshift * scale[i + 1];
+            * fpow2(ScoreSS(q, t, i + 1, j + 1, ssw, S73, S33)) * Cshift * scale[i + 1];
         B_MM_curr[j] = (+pmin         // MM -> EE (End/End, for local alignment)
         + pmatch * q->tr[i][M2M] * t->tr[j][M2M]              // MM -> MM
         + B_GD_curr[j + 1] * t->tr[j][M2D] // MM -> GD (q->tr[i][M2M] is already contained in GD->MM)
@@ -780,7 +782,7 @@ void Hit::Backward(HMM* q, HMM* t, const float S73[NDSSP][NSSPRED][MAXCF], const
       float substitutionScore =
               ProbFwd(q->p[i], t->p[j]);
 
-      actual_backward += substitutionScore * fpow2(ScoreSS(q, t, i, j, S73, S33)) * Cshift
+      actual_backward += substitutionScore * fpow2(ScoreSS(q, t, i, j, ssw, S73, S33)) * Cshift
           * B_MM_curr[j] / Pforward;
     } //end for j
 
@@ -840,7 +842,7 @@ void Hit::Backward(HMM* q, HMM* t, const float S73[NDSSP][NSSPRED][MAXCF], const
 /////////////////////////////////////////////////////////////////////////////////////
 // Maximum Accuracy alignment 
 /////////////////////////////////////////////////////////////////////////////////////
-void Hit::MACAlignment(HMM* q, HMM* t) {
+void Hit::MACAlignment(HMM* q, HMM* t, const char loc, const double mact, const double macins) {
   // Use Forward and Backward matrices to find that alignment which 
   // maximizes the expected number of correctly aligned pairs of residues (mact=0)
   // or, more generally, which maximizes the expectation value of the number of 
@@ -853,7 +855,7 @@ void Hit::MACAlignment(HMM* q, HMM* t) {
   double S_prev[t->L + 1];    // scores
   double S_curr[t->L + 1];    // scores
   double score_MAC;   // score of the best MAC alignment
-  const double GAPPENALTY = 0.5 * (1.0 - (double) par.macins) * par.mact;
+  const double GAPPENALTY = 0.5 * (1.0 - (double) macins) * mact;
 
   // float S[1000][2000]; //DEBUG
 
@@ -904,8 +906,8 @@ void Hit::MACAlignment(HMM* q, HMM* t) {
         // is larger than par.macins. For par.macins = 0.0, such insertions are always compressed and aligned on top of each other.
 
         // NOT the state before the first MM state)
-        CALCULATE_MAX4(S_curr[j], P_MM[i][j] - par.mact, // STOP signifies the first MM state, NOT the state before the first MM state (as in Viterbi)
-        S_prev[j-1] + P_MM[i][j] - par.mact,// P_MM[i][j] contains posterior probability
+        CALCULATE_MAX4(S_curr[j], P_MM[i][j] - mact, // STOP signifies the first MM state, NOT the state before the first MM state (as in Viterbi)
+        S_prev[j-1] + P_MM[i][j] - mact,// P_MM[i][j] contains posterior probability
             S_prev[j] - GAPPENALTY, S_curr[j - 1] - GAPPENALTY, btr[i][j] // backtracing matrix
             );
 
@@ -913,7 +915,7 @@ void Hit::MACAlignment(HMM* q, HMM* t) {
         //printf("i=%i  j=%i  S[i][j]=%8.3f  MM:%7.3f  MI:%7.3f  IM:%7.3f  b:%i\n",i,j,S[i][j],S[i-1][j-1]+P_MM[i][j]-par.mact,S[i-1][j],S[i][j-1],btr[i][j]);
 
         // Find maximum score; global alignment: maximize only over last row and last column
-        if (S_curr[j] > score_MAC && (par.loc || i == q->L)) {
+        if (S_curr[j] > score_MAC && (loc || i == q->L)) {
           i2 = i;
           j2 = j;
           score_MAC = S_curr[j];
@@ -924,7 +926,7 @@ void Hit::MACAlignment(HMM* q, HMM* t) {
     } //end for j
 
     // if global alignment: look for best cell in last column
-    if (!par.loc && S_curr[jmax] > score_MAC) {
+    if (!loc && S_curr[jmax] > score_MAC) {
       i2 = i;
       j2 = jmax;
       score_MAC = S_curr[jmax];
@@ -967,7 +969,7 @@ void Hit::MACAlignment(HMM* q, HMM* t) {
 /////////////////////////////////////////////////////////////////////////////////////
 // Trace back Viterbi alignment of two profiles based on matrix btr[][]
 /////////////////////////////////////////////////////////////////////////////////////
-void Hit::Backtrace(HMM* q, HMM* t, const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]) {
+void Hit::Backtrace(HMM* q, HMM* t, const float corr, const float ssw, const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]) {
   // Trace back trough the matrices bXY[i][j] until first match state is found (STOP-state)
 
   int step; // counts steps in path through 5-layered dynamic programming matrix
@@ -1024,9 +1026,10 @@ void Hit::Backtrace(HMM* q, HMM* t, const float S73[NDSSP][NSSPRED][MAXCF], cons
           state = MM;
         break;
       default:
+    	std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
         fprintf(stderr,
-            "Error in %s: unallowed state value %i occurred during backtracing at step %i, (i,j)=(%i,%i) with template %s\n",
-            par.argv[0], state, step, i, j, t->name);
+            "\tunallowed state value %i occurred during backtracing at step %i, (i,j)=(%i,%i) with template %s\n",
+            state, step, i, j, t->name);
         fprintf(stderr, "Dumping alignment and terminating:\n");
         state = 0;
         v = 4;
@@ -1038,9 +1041,10 @@ void Hit::Backtrace(HMM* q, HMM* t, const float S73[NDSSP][NSSPRED][MAXCF], cons
   j1 = this->j[step];
 
   if (state != 0) {
+	std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
     fprintf(stderr,
-        "Error in %s: reached  (i,j)=(%i,%i) in state value %i at  at step %i  with template %s during backtracing,\n",
-        par.argv[0], i, j, state, step, t->name);
+        "\treached  (i,j)=(%i,%i) in state value %i at  at step %i  with template %s during backtracing,\n",
+        i, j, state, step, t->name);
     fprintf(stderr, "Dumping alignment and terminating:\n");
     state = 0;
     v = 100;  //exit
@@ -1068,7 +1072,7 @@ void Hit::Backtrace(HMM* q, HMM* t, const float S73[NDSSP][NSSPRED][MAXCF], cons
         S[step] =
                 Score(q->p[i], t->p[j]);
 
-        S_ss[step] = ScoreSS(q, t, i, j, ssm, S73, S33);
+        S_ss[step] = ScoreSS(q, t, i, j, ssm, ssw, S73, S33);
         score_ss += S_ss[step];
         break;
       case MI: //if gap in template
@@ -1093,7 +1097,7 @@ void Hit::Backtrace(HMM* q, HMM* t, const float S73[NDSSP][NSSPRED][MAXCF], cons
       Scorr += S[step] * S[step - 3];
     for (step = 5; step <= nsteps; step++)
       Scorr += S[step] * S[step - 4];
-    score += par.corr * Scorr;
+    score += corr * Scorr;
   }
   
   // Set score, P-value etc.
@@ -1150,7 +1154,7 @@ void Hit::Backtrace(HMM* q, HMM* t, const float S73[NDSSP][NSSPRED][MAXCF], cons
 /////////////////////////////////////////////////////////////////////////////////////
 // Trace back alignment of two profiles based on matrix btr[][]
 /////////////////////////////////////////////////////////////////////////////////////
-void Hit::BacktraceMAC(HMM* q, HMM* t, const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]) {
+void Hit::BacktraceMAC(HMM* q, HMM* t, const float corr, const float ssw, const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]) {
   // Trace back trough the matrix b[i][j] until STOP state is found
 
   char** b = btr;  // define alias for backtracing matrix
@@ -1175,10 +1179,12 @@ void Hit::BacktraceMAC(HMM* q, HMM* t, const float S73[NDSSP][NSSPRED][MAXCF], c
   j = j2;     // last aligned pair is (i2,j2)
 
   if (b[i][j] != MM) {
-    if (v > 3)
+    if (v > 3) {
+      std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
       fprintf(stderr,
-          "Error in %s: backtrace does not start in match-match state, but in state %i, (i,j)=(%i,%i)\n",
-          par.argv[0], b[i][j], i, j);
+          "\tbacktrace does not start in match-match state, but in state %i, (i,j)=(%i,%i)\n",
+          b[i][j], i, j);
+    }
     step = 1;
     this->i[step] = i;
     this->j[step] = j;
@@ -1216,9 +1222,10 @@ void Hit::BacktraceMAC(HMM* q, HMM* t, const float S73[NDSSP][NSSPRED][MAXCF], c
         case STOP:
           break;
         default:
+          std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
           fprintf(stderr,
-              "Errorin %s: unallowed state value %i occurred during backtracing at step %i, (i,j)=(%i,%i)\n",
-              par.argv[0], state, step, i, j);
+              "\tunallowed state value %i occurred during backtracing at step %i, (i,j)=(%i,%i)\n",
+              state, step, i, j);
           state = 0;
           v = 4;
           break;
@@ -1254,7 +1261,7 @@ void Hit::BacktraceMAC(HMM* q, HMM* t, const float S73[NDSSP][NSSPRED][MAXCF], c
         S[step] =
                 Score(q->p[i], t->p[j]);
 
-        S_ss[step] = ScoreSS(q, t, i, j, ssm, S73, S33);
+        S_ss[step] = ScoreSS(q, t, i, j, ssm, ssw, S73, S33);
         score_ss += S_ss[step];
         P_posterior[step] = P_MM[this->i[step]][this->j[step]];
         // Add probability to sum of probs if no dssp states given or dssp states exist and state is resolved in 3D structure
@@ -1285,7 +1292,7 @@ void Hit::BacktraceMAC(HMM* q, HMM* t, const float S73[NDSSP][NSSPRED][MAXCF], c
       Scorr += S[step] * S[step + 3];
     for (step = 1; step <= nsteps - 4; step++)
       Scorr += S[step] * S[step + 4];
-    score += par.corr * Scorr;
+    score += corr * Scorr;
   }
   
   // Set score, P-value etc.
@@ -1338,7 +1345,7 @@ void Hit::BacktraceMAC(HMM* q, HMM* t, const float S73[NDSSP][NSSPRED][MAXCF], c
 /////////////////////////////////////////////////////////////////////////////////////
 //// Functions that calculate probabilities
 /////////////////////////////////////////////////////////////////////////////////////
-void Hit::InitializeForAlignment(HMM* q, HMM* t, bool vit) {
+void Hit::InitializeForAlignment(HMM* q, HMM* t, const int par_min_overlap, const char ssm, const char* exclstr, bool vit) {
   int i, j;
 
   if (vit) {
@@ -1352,7 +1359,7 @@ void Hit::InitializeForAlignment(HMM* q, HMM* t, bool vit) {
   }
 
   // SS scoring during (ssm2>0) or after (ssm1>0) alignment? Query SS known or Template SS known?
-  switch (par.ssm) {
+  switch (ssm) {
     case 0:
       ssm1 = 0;
       ssm2 = 0;
@@ -1421,10 +1428,10 @@ void Hit::InitializeForAlignment(HMM* q, HMM* t, bool vit) {
         cell_off[i][j] = 0;   // no other cells crossed out yet
 
       // Cross out cells that are excluded by the minimum-overlap criterion
-    if (par.min_overlap == 0)
+    if (par_min_overlap == 0)
       min_overlap = imin(60, (int) (0.333f * imin(q->L, t->L)) + 1); // automatic minimum overlap
     else
-      min_overlap = imin(par.min_overlap, (int) (0.8f * imin(q->L, t->L)));
+      min_overlap = imin(par_min_overlap, (int) (0.8f * imin(q->L, t->L)));
 
     for (i = 0; i < min_overlap; ++i)
       for (j = i - min_overlap + t->L + 1; j <= t->L; ++j) // Lt-j+i>=Ovlap => j<=i-Ovlap+Lt => jmax=min{Lt,i-Ovlap+Lt}
@@ -1434,8 +1441,8 @@ void Hit::InitializeForAlignment(HMM* q, HMM* t, bool vit) {
         cell_off[i][j] = 1;
 
     // Cross out rows which are contained in range given by exclstr ("3-57,238-314")
-    if (par.exclstr) {
-      char* ptr = par.exclstr;
+    if (exclstr) {
+      const char* ptr = exclstr;
       int i0, i1;
       while (1) {
         i0 = abs(strint(ptr));

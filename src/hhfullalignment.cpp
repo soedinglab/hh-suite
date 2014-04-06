@@ -115,7 +115,7 @@ void FullAlignment::AddGaps() {
 /////////////////////////////////////////////////////////////////////////////////////
 // Build full alignment -> qa->s[k][h] and ta->s[k][h]
 /////////////////////////////////////////////////////////////////////////////////////
-void FullAlignment::Build(HMM* q, Hit& hit, const float S[20][20]) {
+void FullAlignment::Build(HMM* q, Hit& hit, const int nseqdis, const float S[20][20]) {
   int step;
   char prev_state = MM, state = MM;
   int n;
@@ -129,12 +129,12 @@ void FullAlignment::Build(HMM* q, Hit& hit, const float S[20][20]) {
   // Set up half-alignments 
   // n is the sequence index up to which sequences are prepared for display
   n = imin(q->n_display,
-      par.nseqdis + (q->nss_dssp >= 0) + (q->nsa_dssp >= 0) + (q->nss_pred >= 0)
+      nseqdis + (q->nss_dssp >= 0) + (q->nsa_dssp >= 0) + (q->nss_pred >= 0)
           + (q->nss_conf >= 0) + (q->ncons >= 0));
   qa->Set(q->name, q->seq, q->sname, n, q->L, q->nss_dssp, q->nss_pred,
       q->nss_conf, q->nsa_dssp, q->ncons);
   n = imin(hit.n_display,
-      par.nseqdis + (hit.nss_dssp >= 0) + (hit.nsa_dssp >= 0)
+      nseqdis + (hit.nss_dssp >= 0) + (hit.nsa_dssp >= 0)
           + (hit.nss_pred >= 0) + (hit.nss_conf >= 0) + (hit.ncons >= 0));
   ta->Set(hit.name, hit.seq, hit.sname, n, hit.L, hit.nss_dssp, hit.nss_pred,
       hit.nss_conf, hit.nsa_dssp, hit.ncons);
@@ -208,7 +208,7 @@ void FullAlignment::PrintHeader(std::stringstream& out, HMM* q, Hit& hit) {
 /////////////////////////////////////////////////////////////////////////////////////
 // Print out full alignment in HHR format
 /////////////////////////////////////////////////////////////////////////////////////
-void FullAlignment::PrintHHR(std::stringstream& out, Hit& hit) {
+void FullAlignment::PrintHHR(std::stringstream& out, Hit& hit, const char showconf, const char showcons, const char showdssp, const char showpred, const int aliwidth) {
   const int NLEN = 14;  //Length of name field in front of multiple alignment
   int h = 0;    //counts position (column) in alignment
   int hh = 0;   //points to column at start of present output block of alignment
@@ -229,16 +229,15 @@ void FullAlignment::PrintHHR(std::stringstream& out, Hit& hit) {
   {
     // Print query secondary structure sequences
     for (k = 0; k < qa->n; k++) {
-      if (!(k == qa->nss_dssp || k == qa->nsa_dssp || k == qa->nss_pred
-          || k == qa->nss_conf))
+      if (!(k == qa->nss_dssp || k == qa->nsa_dssp || k == qa->nss_pred || k == qa->nss_conf))
         continue;
       if (k == qa->nsa_dssp)
         continue;
-      if (k == qa->nss_dssp && !par.showdssp)
+      if (k == qa->nss_dssp && !showdssp)
         continue;
-      if ((k == qa->nss_pred || k == qa->nss_conf) && !par.showpred)
+      if ((k == qa->nss_pred || k == qa->nss_conf) && !showpred)
         continue;
-      if (k == qa->nss_conf && !par.showconf)
+      if (k == qa->nss_conf && !showconf)
         continue;
       strmcpy(namestr, qa->sname[k], NAMELEN - 1);
       strcut(namestr);
@@ -246,14 +245,14 @@ void FullAlignment::PrintHHR(std::stringstream& out, Hit& hit) {
       out << line;
 
       if (k == qa->nss_pred && qa->nss_conf >= 0)
-        for (h = hh; h < imin(hh + par.aliwidth, qa->pos - 1); h++) {
+        for (h = hh; h < imin(hh + aliwidth, qa->pos - 1); h++) {
           sprintf(line, "%1c",
               qa->s[qa->nss_conf][h] <= '6' && qa->s[qa->nss_conf][h] >= '0' ?
                   qa->s[k][h] + 32 : qa->s[k][h]);
           out << line;
         }
       else
-        for (h = hh; h < imin(hh + par.aliwidth, qa->pos - 1); h++) {
+        for (h = hh; h < imin(hh + aliwidth, qa->pos - 1); h++) {
           sprintf(line, "%1c", qa->s[k][h]);
           out << line;
         }
@@ -269,7 +268,7 @@ void FullAlignment::PrintHHR(std::stringstream& out, Hit& hit) {
       strcut(namestr);
       sprintf(line, "Q %-*.*s %4i ", NLEN, NLEN, namestr, lq[k]);
       out << line;
-      for (h = hh; h < imin(hh + par.aliwidth, qa->pos - 1); h++) {
+      for (h = hh; h < imin(hh + aliwidth, qa->pos - 1); h++) {
         sprintf(line, "%1c", qa->s[k][h]);
         out << line;
         lq[k] += WordChr(qa->s[k][h]);
@@ -279,13 +278,13 @@ void FullAlignment::PrintHHR(std::stringstream& out, Hit& hit) {
     }
 
     // Print query consensus sequence
-    if (par.showcons && qa->ncons >= 0) {
+    if (showcons && qa->ncons >= 0) {
       k = qa->ncons;
       strmcpy(namestr, qa->sname[k], NAMELEN - 1);
       strcut(namestr);
       sprintf(line, "Q %-*.*s %4i ", NLEN, NLEN, namestr, iq);
       out << line;
-      for (h = hh; h < imin(hh + par.aliwidth, qa->pos - 1); h++) {
+      for (h = hh; h < imin(hh + aliwidth, qa->pos - 1); h++) {
         if (qa->s[k][h] == 'x')
           qa->s[k][h] = '~';
         if (qa->s[k][h] != '-' && qa->s[k][h] != '.')
@@ -300,20 +299,20 @@ void FullAlignment::PrintHHR(std::stringstream& out, Hit& hit) {
     // Print symbols representing the score
     sprintf(line, "  %*.*s      ", NLEN, NLEN, " ");
     out << line;
-    for (h = hh; h < imin(hh + par.aliwidth, qa->pos - 1); h++) {
+    for (h = hh; h < imin(hh + aliwidth, qa->pos - 1); h++) {
       sprintf(line, "%1c", symbol[h]);
       out << line;
     }
     out << std::endl;
 
     // Print template consensus sequence
-    if (par.showcons && ta->ncons >= 0) {
+    if (showcons && ta->ncons >= 0) {
       k = ta->ncons;
       strmcpy(namestr, ta->sname[k], NAMELEN - 1);
       strcut(namestr);
       sprintf(line, "T %-*.*s %4i ", NLEN, NLEN, namestr, jt);
       out << line;
-      for (h = hh; h < imin(hh + par.aliwidth, ta->pos - 1); h++) {
+      for (h = hh; h < imin(hh + aliwidth, ta->pos - 1); h++) {
         if (ta->s[k][h] == 'x')
           ta->s[k][h] = '~';
         if (ta->s[k][h] != '-' && ta->s[k][h] != '.')
@@ -333,7 +332,7 @@ void FullAlignment::PrintHHR(std::stringstream& out, Hit& hit) {
       strcut(namestr);
       sprintf(line, "T %-*.*s %4i ", NLEN, NLEN, namestr, lt[k]);
       out << line;
-      for (h = hh; h < imin(hh + par.aliwidth, ta->pos - 1); h++) {
+      for (h = hh; h < imin(hh + aliwidth, ta->pos - 1); h++) {
         sprintf(line, "%1c", ta->s[k][h]);
         out << line;
         lt[k] += WordChr(ta->s[k][h]);
@@ -348,25 +347,25 @@ void FullAlignment::PrintHHR(std::stringstream& out, Hit& hit) {
         continue;
       if (k == ta->nsa_dssp)
         continue;
-      if (k == ta->nss_dssp && !par.showdssp)
+      if (k == ta->nss_dssp && !showdssp)
         continue;
-      if ((k == ta->nss_pred || k == ta->nss_conf) && !par.showpred)
+      if ((k == ta->nss_pred || k == ta->nss_conf) && !showpred)
         continue;
-      if (k == ta->nss_conf && !par.showconf)
+      if (k == ta->nss_conf && !showconf)
         continue;
       strmcpy(namestr, ta->sname[k], NAMELEN - 1);
       strcut(namestr);
       sprintf(line, "T %-*.*s      ", NLEN, NLEN, namestr);
       out << line;
       if (k == ta->nss_pred && ta->nss_conf >= 0)
-        for (h = hh; h < imin(hh + par.aliwidth, ta->pos - 1); h++) {
+        for (h = hh; h < imin(hh + aliwidth, ta->pos - 1); h++) {
           sprintf(line, "%1c",
               ta->s[ta->nss_conf][h] <= '6' && ta->s[ta->nss_conf][h] >= '0' ?
                   ta->s[k][h] + 32 : ta->s[k][h]);
           out << line;
         }
       else
-        for (h = hh; h < imin(hh + par.aliwidth, ta->pos - 1); h++) {
+        for (h = hh; h < imin(hh + aliwidth, ta->pos - 1); h++) {
           sprintf(line, "%1c", ta->s[k][h]);
           out << line;
         }
@@ -378,7 +377,7 @@ void FullAlignment::PrintHHR(std::stringstream& out, Hit& hit) {
       sprintf(line, "%-*.*s        ", NLEN, NLEN,
           "Confidence                     ");
       out << line;
-      for (h = hh; h < imin(hh + par.aliwidth, qa->pos - 1); h++) {
+      for (h = hh; h < imin(hh + aliwidth, qa->pos - 1); h++) {
         sprintf(line, "%1c", posterior[h]);
         out << line;
       }
@@ -392,7 +391,7 @@ void FullAlignment::PrintHHR(std::stringstream& out, Hit& hit) {
 /////////////////////////////////////////////////////////////////////////////////////
 // Print out full alignment in A2M format
 /////////////////////////////////////////////////////////////////////////////////////
-void FullAlignment::PrintA2M(std::stringstream& out, Hit& hit) {
+void FullAlignment::PrintA2M(std::stringstream& out, Hit& hit, const char showcons, const char showdssp, const char showpred, const int aliwidth) {
   int k;      //counts sequences in query and template 
   int h, hh;
 
@@ -400,18 +399,18 @@ void FullAlignment::PrintA2M(std::stringstream& out, Hit& hit) {
   for (k = 0; k < qa->n; k++) {
     if (k == qa->nsa_dssp)
       continue;
-    if (k == qa->nss_dssp && !par.showdssp)
+    if (k == qa->nss_dssp && !showdssp)
       continue;
-    if ((k == qa->nss_pred || k == qa->nss_conf) && !par.showpred)
+    if ((k == qa->nss_pred || k == qa->nss_conf) && !showpred)
       continue;
-    if (k == qa->ncons && !par.showcons)
+    if (k == qa->ncons && !showcons)
       continue;
 
     out << ">" << qa->sname[k] << std::endl;
-    for (h = 0, hh = -par.aliwidth; qa->s[k][h] > 0; h++, hh++) {
+    for (h = 0, hh = -aliwidth; qa->s[k][h] > 0; h++, hh++) {
       if (!hh) {
         out << std::endl;
-        hh -= par.aliwidth;
+        hh -= aliwidth;
       }
       out << qa->s[k][h];
     }
@@ -422,18 +421,18 @@ void FullAlignment::PrintA2M(std::stringstream& out, Hit& hit) {
   for (k = 0; k < ta->n; k++) {
     if (k == ta->nsa_dssp)
       continue;
-    if (k == ta->nss_dssp && !par.showdssp)
+    if (k == ta->nss_dssp && !showdssp)
       continue;
-    if ((k == ta->nss_pred || k == ta->nss_conf) && !par.showpred)
+    if ((k == ta->nss_pred || k == ta->nss_conf) && !showpred)
       continue;
-    if (k == ta->ncons && !par.showcons)
+    if (k == ta->ncons && !showcons)
       continue;
 
     out << ">" << ta->sname[k] << std::endl;
-    for (h = 0, hh = -par.aliwidth; ta->s[k][h] > 0; h++, hh++) {
+    for (h = 0, hh = -aliwidth; ta->s[k][h] > 0; h++, hh++) {
       if (!hh) {
         out << std::endl;
-        hh -= par.aliwidth;
+        hh -= aliwidth;
       }
       out << ta->s[k][h];
     }
@@ -445,20 +444,20 @@ void FullAlignment::PrintA2M(std::stringstream& out, Hit& hit) {
 /////////////////////////////////////////////////////////////////////////////////////
 // Print out full alignment in A2M format
 /////////////////////////////////////////////////////////////////////////////////////
-void FullAlignment::PrintFASTA(std::stringstream& out, Hit& hit) {
+void FullAlignment::PrintFASTA(std::stringstream& out, Hit& hit, const char showcons, const char showdssp, const char showpred, const int aliwidth) {
   // Transform sequences to uppercase and '.' to '-'
   qa->ToFASTA();
   ta->ToFASTA();
-  PrintA2M(out, hit);
+  PrintA2M(out, hit, showcons, showdssp, showpred, aliwidth);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Print out full alignment in A2M format
 /////////////////////////////////////////////////////////////////////////////////////
-void FullAlignment::PrintA3M(std::stringstream& out, Hit& hit) {
+void FullAlignment::PrintA3M(std::stringstream& out, Hit& hit, const char showcons, const char showdssp, const char showpred, const int aliwidth) {
   // Remove all '.' from sequences
   qa->RemoveChars('.');
   ta->RemoveChars('.');
-  PrintA2M(out, hit);
+  PrintA2M(out, hit, showcons, showdssp, showpred, aliwidth);
 }
 
