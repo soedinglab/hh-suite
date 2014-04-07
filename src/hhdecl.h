@@ -147,6 +147,8 @@ public:
   char** argv;            //command line parameters
   char argc;              //dimension of argv
 
+  char v;
+
   char hhlib[PATH_MAX];   // lib base path e.g. /usr/lib64/hh
   char hhdata[PATH_MAX];  // data base path e.g. /usr/lib64/hh/data
 

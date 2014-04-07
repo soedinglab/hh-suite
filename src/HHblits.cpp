@@ -78,6 +78,8 @@ HHblits::~HHblits() {
 void HHblits::Init(Parameters& parameters) {
   par = parameters;
 
+  v = par.v;
+
   N_searched = 0;
   dbfiles_new = new char*[par.maxnumdb_no_prefilter + 1];
   dbfiles_old = new char*[par.maxnumdb + 1];
@@ -144,6 +146,8 @@ void HHblits::ProcessAllArguments(int argc, char** argv, Parameters& par) {
 	    else if (argc > 2 && !strcmp(argv[i], "-v"))
 	      v = atoi(argv[i + 1]);
 	  }
+
+	  par.v = v;
 
 	  par.SetDefaultPaths();
 
@@ -1040,13 +1044,13 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
       exit(0);
     }
     else if (!strcmp(argv[i], "-v") && (i < argc - 1) && argv[i + 1][0] != '-')
-      v = atoi(argv[++i]);
+      par.v = atoi(argv[++i]);
     else if (!strcmp(argv[i], "-v"))
-      v = 2;
+      par.v = 2;
     else if (!strcmp(argv[i], "-v0"))
-      v = 0;
+      par.v = 0;
     else if (!strcmp(argv[i], "-v1"))
-      v = 1;
+      par.v = 1;
     else if (!strcmp(argv[i], "-n") && (i < argc - 1))
       par.num_rounds = atoi(argv[++i]);
     else if (!strncmp(argv[i], "-BLOSUM", 7)

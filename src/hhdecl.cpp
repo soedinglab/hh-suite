@@ -70,10 +70,8 @@ void Parameters::SetDefaultPaths() {
 }
 
 void Parameters::SetDefaults() {
-	// Moved from hhdecl.C
 	v = 2;
 
-	// Parameter class
 	maxcol = 32765; // max number of columns in sequence/MSA input files; must be <= LINELEN and >= maxres
 	maxres = 20000;           // max number of states in HMM; must be <= LINELEN
 	maxnumdb = 20000;          // max number of hits allowed past prefilter
