@@ -6,6 +6,8 @@
 
 char v;
 
+bool sort_realign_hitpos (Realign_hitpos i, Realign_hitpos j) { return (i.ftellpos < j.ftellpos); }
+
 void Parameters::SetDefaultPaths() {
 	// set hhlib
 	FILE* testf = NULL;

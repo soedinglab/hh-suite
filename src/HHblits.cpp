@@ -10,7 +10,86 @@
 #define SWAP(tmp, arg1, arg2) tmp = arg1; arg1 = arg2; arg2 = tmp;
 
 HHblits::HHblits(Parameters& parameters) {
-  Init(parameters);
+  par = parameters;
+
+  v = par.v;
+
+  N_searched = 0;
+  dbfiles_new = new char*[par.maxnumdb_no_prefilter + 1];
+  dbfiles_old = new char*[par.maxnumdb + 1];
+
+  SetDatabase(par.db_base);
+
+  if (par.prefilter) {
+    init_prefilter();
+  }
+  else {
+    init_no_prefiltering();
+  }
+
+  // Set (global variable) substitution matrix and derived matrices
+  SetSubstitutionMatrix(par.matrix, pb, P, R, S, Sim);
+
+  // Set secondary structure substitution matrix
+  if (par.ssm)
+    SetSecStrucSubstitutionMatrix(par.ssa, S73, S33);
+
+  // Prepare pseudocounts
+  if (!par.nocontxt && *par.clusterfile) {
+    FILE* fin = fopen(par.clusterfile, "r");
+    if (!fin) {
+        std::cerr << std::endl << "Error in " << par.argv[0]
+                << ": could not open file \'" << par.clusterfile << "\'\n";
+        exit(2);
+    }
+    char ext[100];
+    Extension(ext, par.clusterfile);
+    if (strcmp(ext, "crf") == 0) {
+        crf = new cs::Crf<cs::AA>(fin);
+        pc_hhm_context_engine = new cs::CrfPseudocounts<cs::AA>(*crf);
+        pc_prefilter_context_engine = new cs::CrfPseudocounts<cs::AA>(*crf);
+    } else {
+        context_lib = new cs::ContextLibrary<cs::AA>(fin);
+        cs::TransformToLog(*context_lib);
+        pc_hhm_context_engine = new cs::LibraryPseudocounts<cs::AA>(
+                *context_lib, par.csw, par.csb);
+        pc_prefilter_context_engine = new cs::LibraryPseudocounts<cs::AA>(
+                *context_lib, par.csw, par.csb);
+    }
+    fclose(fin);
+    pc_hhm_context_engine->SetTargetNeff(par.pc_hhm_context_engine.target_neff);
+    pc_prefilter_context_engine->SetTargetNeff(
+            par.pc_prefilter_context_engine.target_neff);
+
+    // Prepare pseudocounts admixture method
+    pc_hhm_context_mode = par.pc_hhm_context_engine.CreateAdmix();
+    pc_prefilter_context_mode = par.pc_prefilter_context_engine.CreateAdmix();
+//
+//    char ext[100];
+//    Extension(ext, par.clusterfile);
+//    InitializePseudocountsEngine(par, context_lib, crf, pc_hhm_context_engine, pc_hhm_context_mode, pc_prefilter_context_engine, pc_prefilter_context_mode);
+  }
+
+  // Prepare multi-threading - reserve memory for threads, intialize, etc.
+  omp_set_num_threads(par.threads);
+  for (int bin = 0; bin < par.threads; bin++) {
+    t[bin] = new HMM; // Each bin has a template HMM allocated that was read from the database file
+    // Each bin has an object of type Hit allocated ...
+    hit[bin] = new Hit;
+    // ...with a separate dynamic programming matrix (memory!!)
+    hit[bin]->AllocateBacktraceMatrix(par.maxres, par.maxres);
+    // Allocate memory for matrix and set to 0
+    hit[bin]->AllocateForwardMatrix(par.maxres, par.maxres);
+  }
+  format = new int[par.threads];
+
+  // Prepare column state lib (context size =1 )
+  FILE* fin = fopen(par.cs_library, "r");
+  if (!fin)
+    OpenFileError(par.cs_library, __FILE__, __LINE__, __func__);
+  cs_lib = new cs::ContextLibrary<cs::AA>(fin);
+  fclose(fin);
+  cs::TransformToLin(*cs_lib);
 }
 
 HHblits::~HHblits() {
@@ -68,60 +147,6 @@ HHblits::~HHblits() {
 
   delete[] dbfiles_new;
   delete[] dbfiles_old;
-}
-
-void HHblits::Init(Parameters& parameters) {
-  par = parameters;
-
-  v = par.v;
-
-  N_searched = 0;
-  dbfiles_new = new char*[par.maxnumdb_no_prefilter + 1];
-  dbfiles_old = new char*[par.maxnumdb + 1];
-
-  SetDatabase(par.db_base);
-
-  if (par.prefilter) {
-    init_prefilter();
-  }
-  else {
-    init_no_prefiltering();
-  }
-
-  // Set (global variable) substitution matrix and derived matrices
-  SetSubstitutionMatrix(par.matrix, pb, P, R, S, Sim);
-
-  // Set secondary structure substitution matrix
-  if (par.ssm)
-    SetSecStrucSubstitutionMatrix(par.ssa, S73, S33);
-
-  // Prepare pseudocounts
-  if (!par.nocontxt && *par.clusterfile) {
-    char ext[100];
-    Extension(ext, par.clusterfile);
-    InitializePseudocountsEngine(par, context_lib, crf, pc_hhm_context_engine, pc_hhm_context_mode, pc_prefilter_context_engine, pc_prefilter_context_mode);
-  }
-
-  // Prepare multi-threading - reserve memory for threads, intialize, etc.
-  omp_set_num_threads(par.threads);
-  for (int bin = 0; bin < par.threads; bin++) {
-    t[bin] = new HMM; // Each bin has a template HMM allocated that was read from the database file
-    // Each bin has an object of type Hit allocated ...
-    hit[bin] = new Hit;
-    // ...with a separate dynamic programming matrix (memory!!)
-    hit[bin]->AllocateBacktraceMatrix(par.maxres, par.maxres);
-    // Allocate memory for matrix and set to 0
-    hit[bin]->AllocateForwardMatrix(par.maxres, par.maxres);
-  }
-  format = new int[par.threads];
-
-  // Prepare column state lib (context size =1 )
-  FILE* fin = fopen(par.cs_library, "r");
-  if (!fin)
-    OpenFileError(par.cs_library, __FILE__, __LINE__, __func__);
-  cs_lib = new cs::ContextLibrary<cs::AA>(fin);
-  fclose(fin);
-  cs::TransformToLin(*cs_lib);
 }
 
 void HHblits::ProcessAllArguments(int argc, char** argv, Parameters& par) {

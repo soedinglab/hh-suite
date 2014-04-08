@@ -77,7 +77,6 @@ public:
 	HHblits(Parameters& parameters);
 	virtual ~HHblits();
 
-	void Init(Parameters& par);
 	void Reset();
 	static void ProcessAllArguments(int argc, char** argv, Parameters& par);
 

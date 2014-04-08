@@ -97,7 +97,7 @@ public:
   int operator<(const Realign_hitpos& realign_hitpos) {return ftellpos<realign_hitpos.ftellpos;}
 };
 
-bool sort_realign_hitpos (Realign_hitpos i, Realign_hitpos j) { return (i.ftellpos < j.ftellpos); }
+bool sort_realign_hitpos (Realign_hitpos i, Realign_hitpos j);
 
 
 // Pseudocounts
