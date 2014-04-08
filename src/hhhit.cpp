@@ -31,6 +31,7 @@ using std::ofstream;
 /////////////////////////////////////////////////////////////////////////////////////
 Hit::Hit() {
   longname = name = file = dbfile = NULL;
+  entry = NULL;
   sname = NULL;
   seq = NULL;
   btr = NULL;

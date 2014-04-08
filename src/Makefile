@@ -19,7 +19,7 @@ CFLAGS+=-std=c99 -O2 -g -fPIC -Wall -pedantic $(INC)
 ifdef ICC
   CXX = env LANG=C icc
   CXXFLAGS += -fast -Wall -fno-strict-aliasing -finline-functions -funroll-loops -fp-model fast=2 -fast-transcendentals -wd981 -wd383 -wd2259 -wd1572 -D HH_SSE3 -I$(CS_DIR) -I$(FFINDEX_DIR)
-  HHSEARCH_LIBS = -lpthread -lrt
+  HHSEARCH_LIBS = -lpthread -lrt -openmp
   HHBLITS_LIBS = -lpthread -lrt -openmp
   CS_LIBS = -openmp
   OBJECT_LIBS = -openmp
@@ -61,8 +61,8 @@ CPP = $(CXX) $(CPPFLAGS) $(CXXFLAGS) $(LDFLAGS)
 CPP_VALGRIND = $(CXX) -g $(CXXFLAGS)
 
 
-SOURCES = hhsearch.cpp hhhitlist.cpp hhhit.cpp hhalignment.cpp hhhmm.cpp hhmatrices.cpp hhdecl.cpp hhfunc.cpp hhprefilter.cpp hhworker.cpp hhfullalignment.cpp hhhalfalignment.cpp hhutil.cpp util.cpp hash.cpp list.cpp
-HH_OBJECTS = hhalignment.o hhfullalignment.o hhhalfalignment.o hhhitlist.o hhhmm.o hhdecl.o hhhit.o hhutil.o util.o HHblits.o hhfunc.o hhmatrices.o
+SOURCES = hhsearch.cpp hhhitlist.cpp hhhit.cpp hhalignment.cpp hhhmm.cpp hhmatrices.cpp hhdecl.cpp hhfunc.cpp hhfullalignment.cpp hhhalfalignment.cpp hhutil.cpp util.cpp hash.cpp list.cpp
+HH_OBJECTS = hhalignment.o hhfullalignment.o hhhalfalignment.o hhhitlist.o hhhmm.o hhdecl.o hhhit.o hhutil.o util.o HHblits.o hhfunc.o hhmatrices.o HHDatabase.o
 
 CS_SOURCES_WITH_APPS = $(filter-out $(wildcard $(CS_DIR)/*test*.cc), $(wildcard $(CS_DIR)/*.cc))
 CS_SOURCES = $(filter-out $(wildcard $(CS_DIR)/*app.cc), $(CS_SOURCES_WITH_APPS))

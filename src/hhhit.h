@@ -38,6 +38,7 @@
 #include "hhdecl.h"
 #include "hhutil.h"
 #include "util.h"
+#include "HHDatabase.h"
 
 #include "hhhit-inl.h"
 
@@ -59,6 +60,7 @@ class Hit
   char* dbfile;         // full database file name from which HMM was read
   long ftellpos;        // start position of HMM in database file
   int index;            // index of HMM in order of reading in (first=0)
+  HHDatabaseEntry* entry;
   List<void*>* plist_phits; // points to a list of pointers to hitlist elements of same template (for realignment)
   
   float score;          // Score of alignment (i.e. of Viterbi path)

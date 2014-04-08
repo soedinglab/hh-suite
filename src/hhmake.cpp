@@ -61,6 +61,33 @@ using std::ofstream;
 /////////////////////////////////////////////////////////////////////////////////////
 // Global variables
 /////////////////////////////////////////////////////////////////////////////////////
+
+Parameters par;
+
+cs::ContextLibrary<cs::AA>* context_lib = NULL;
+cs::Crf<cs::AA>* crf = NULL;
+cs::Pseudocounts<cs::AA>* pc_hhm_context_engine = NULL;
+cs::Admix* pc_hhm_context_mode = NULL;
+cs::Pseudocounts<cs::AA>* pc_prefilter_context_engine = NULL;
+cs::Admix* pc_prefilter_context_mode = NULL;
+
+// substitution matrix flavours
+float __attribute__((aligned(16))) P[20][20];
+float __attribute__((aligned(16))) R[20][20];
+float __attribute__((aligned(16))) Sim[20][20];
+float __attribute__((aligned(16))) S[20][20];
+float __attribute__((aligned(16))) pb[21];
+float __attribute__((aligned(16))) qav[21];
+
+// secondary structure matrices
+float S73[NDSSP][NSSPRED][MAXCF];
+float S33[NSSPRED][MAXCF][NSSPRED][MAXCF];
+
+char program_name[NAMELEN];
+char program_path[NAMELEN];
+
+int v;
+
 HMM* q = new HMM;         //Create a HMM with maximum of par.maxres match states
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -337,9 +364,7 @@ void ProcessArguments(int argc, char** argv) {
   } // end of for-loop for command line input
 }
 
-/////////////////////////////////////////////////////////////////////////////////////
-//// MAIN PROGRAM
-/////////////////////////////////////////////////////////////////////////////////////
+
 int main(int argc, char **argv) {
   char* argv_conf[MAXOPT]; // Input arguments from .hhdefaults file (first=1: argv_conf[0] is not used)
   int argc_conf;               // Number of arguments in argv_conf
@@ -382,7 +407,7 @@ int main(int argc, char **argv) {
       v = atoi(argv[i + 1]);
   }
 
-  par.SetDefaultPaths(program_path);
+  par.SetDefaultPaths();
 
   // Read .hhdefaults file?
   if (par.readdefaultsfile) {
@@ -414,20 +439,20 @@ int main(int argc, char **argv) {
 
   // Prepare CS pseudocounts lib
   if (!par.nocontxt && *par.clusterfile) {
-    InitializePseudocountsEngine();
+    InitializePseudocountsEngine(par, context_lib, crf, pc_hhm_context_engine, pc_hhm_context_mode, pc_prefilter_context_engine, pc_prefilter_context_mode);
   }
 
   // Set substitution matrix; adjust to query aa distribution if par.pcm==3
-  SetSubstitutionMatrix();
+  SetSubstitutionMatrix(par.matrix, pb, P, R, S, Sim);
 
   // Read input file (HMM, HHM, or alignment format), and add pseudocounts etc.
   char input_format = 0;
   Alignment qali;
-  ReadQueryFile(par.infile, input_format, par.wg, q, &qali);
-  PrepareQueryHMM(input_format, q);
+  ReadQueryFile(par, par.infile, input_format, par.wg, q, &qali, pb, S, Sim);
+  PrepareQueryHMM(par, input_format, q, pc_hhm_context_engine, pc_hhm_context_mode, pb, R);
 
   // Write HMM to output file in HHsearch format
-  q->WriteToFile(par.outfile);
+  q->WriteToFile(par.outfile, par.append, par.max_seqid, par.coverage, par.qid, par.Ndiff, par.qsc, par.argc, par.argv, pb);
 
   if (v >= 3)
     WriteToScreen(par.outfile, 1000); // (max 1000 lines)
@@ -450,5 +475,5 @@ int main(int argc, char **argv) {
   DeletePseudocountsEngine();
 
   exit(0);
-} //end main
+}
 

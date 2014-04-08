@@ -13,6 +13,7 @@
 #include "hhhmm.h"
 #include "hhhit.h"
 #include "hhalignment.h"
+#include "hhhitlist.h"
 
 void ReadQueryFile(Parameters& par, FILE* inf, char& input_format, char use_global_weights, HMM* q, Alignment* qali, char infile[],
 		float* pb, const float S[20][20], const float Sim[20][20]);
@@ -41,5 +42,21 @@ void WriteToAlifile(FILE* alitabf, Hit* hit, const char forward, const char real
 
 // Read number of sequences in annotation, after second '|'
 int SequencesInCluster(char* name);
+
+void InitializePseudocountsEngine(Parameters& par,
+    cs::ContextLibrary<cs::AA>* context_lib, cs::Crf<cs::AA>* crf,
+    cs::Pseudocounts<cs::AA>* pc_hhm_context_engine, cs::Admix* pc_hhm_context_mode,
+    cs::Pseudocounts<cs::AA>* pc_prefilter_context_engine, cs::Admix* pc_prefilter_context_mode);
+
+void DeletePseudocountsEngine(
+    cs::ContextLibrary<cs::AA>* context_lib, cs::Crf<cs::AA>* crf,
+    cs::Pseudocounts<cs::AA>* pc_hhm_context_engine, cs::Admix* pc_hhm_context_mode,
+    cs::Pseudocounts<cs::AA>* pc_prefilter_context_engine, cs::Admix* pc_prefilter_context_mode);
+
+void AlignByWorker(Parameters& par, Hit* hit, HMM* t, HMM* q, const int format, const float* pb, const float R[20][20], const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF], HitList& hitlist);
+
+void PerformViterbiByWorker(Parameters& par, Hit* hit, HMM* t, HMM* q, const int format, const float* pb, const float R[20][20], const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF], HitList& hitlist, Hash<Hit>* previous_hits);
+
+void RealignByWorker(Parameters& par, Hit* hit, HMM* q, HMM* t, const int format, const float* pb, const float R[20][20], const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]);
 
 #endif /* HHFUNC_H_ */

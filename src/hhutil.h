@@ -5,9 +5,6 @@
  *      Author: meiermark
  */
 
-#ifndef HHUTIL_H_
-#define HHUTIL_H_
-
 #include <errno.h>
 
 #ifdef HH_SSE41
@@ -33,6 +30,10 @@
 
 #include "hhdecl.h"
 #include "hhutil-inl.h"
+
+#ifndef HHUTIL_H_
+#define HHUTIL_H_
+
 
 int FormatError(const char infile[], const char* file, const int line, const char* func, const char details[]="");
 

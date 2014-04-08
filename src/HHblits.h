@@ -81,8 +81,6 @@ public:
 	void Reset();
 	static void ProcessAllArguments(int argc, char** argv, Parameters& par);
 
-	void SetDatabase(char* db_base);
-
     //writer for non-mpi version
     void writeHHRFile(char* hhrFile);
     void writeAlisFile(char* basename);
@@ -108,10 +106,6 @@ public:
 	void run(FILE* query_fh, char* query_path);
 
 private:
-	static const char VERSION_AND_DATE[];
-	static const char REFERENCE[];
-	static const char COPYRIGHT[];
-
 	// substitution matrix flavours
 	float __attribute__((aligned(16))) P[20][20];
 	float __attribute__((aligned(16))) R[20][20];
@@ -245,17 +239,21 @@ private:
 
 	static void help(Parameters& par, char all = 0);
 	static void ProcessArguments(int argc, char** argv, Parameters& par);
+    void SetDatabase(char* db_base);
 
 	void ReadQueryA3MFile();
+
 	void getTemplateA3M(char* entry_name, long& ftellpos, Alignment& tali);
 	void getTemplateHMMFromA3M(char* entry_name, char use_global_weights, long& ftellpos, int& format, HMM* t);
 	void getTemplateHMM(char* entry_name, char use_global_weights, long& ftellpos, int& format, HMM* t);
+
 	void DoViterbiSearch(char *dbfiles[], int ndb, Hash<Hit>* previous_hits, bool alignByWorker = true);
 	void ViterbiSearch(char *dbfiles[], int ndb, Hash<Hit>* previous_hits, int db_size);
-
 	void RescoreWithViterbiKeepAlignment(int db_size, Hash<Hit>* previous_hits);
+
 	void perform_realign(char *dbfiles[], int ndb, Hash<char>* premerged_hits);
 
+	//redundancy filter
     void wiggleQSC(HitList& hitlist, int n_redundancy, Alignment& Qali,
             char inputformat, float* qsc, size_t nqsc,
             HitList& reducedFinalHitList);
@@ -266,11 +264,6 @@ private:
 			char inputformat, float* qsc, size_t nqsc,
 			HitList& recalculated_hitlist);
 	void uniqueHitlist(HitList& hitlist);
-
-	//Worker
-	void AlignByWorker(int bin);
-	void PerformViterbiByWorker(int bin, Hash<Hit>* previous_hits);
-	void RealignByWorker(int bin);
 
 	//Prefilter
 	int ungapped_sse_score(const unsigned char* query_profile,
@@ -293,9 +286,6 @@ private:
 	void init_prefilter();
 	void prefilter_db(Hash<Hit>* previous_hits);
 	void stripe_query_profile();
-
-	void InitializePseudocountsEngine();
-	void DeletePseudocountsEngine();
 };
 
 #endif /* HHBLITS_H_ */

@@ -9,11 +9,6 @@
 
 #define SWAP(tmp, arg1, arg2) tmp = arg1; arg1 = arg2; arg2 = tmp;
 
-const char HHblits::VERSION_AND_DATE[]="version 2.1.0-pre (XXX 2013)";
-const char HHblits::REFERENCE[]="Remmert M, Biegert A, Hauser A, and Soding J.\nHHblits: Lightning-fast iterative protein sequence searching by HMM-HMM alignment.\nNat. Methods 9:173-175 (2011).\n";
-const char HHblits::COPYRIGHT[]="(C) Johannes Soeding, Michael Remmert, Andreas Biegert, Andreas Hauser\n";
-
-
 HHblits::HHblits(Parameters& parameters) {
   Init(parameters);
 }
@@ -58,7 +53,7 @@ HHblits::~HHblits() {
   }
 
   delete cs_lib;
-  DeletePseudocountsEngine();
+  DeletePseudocountsEngine(context_lib, crf, pc_hhm_context_engine, pc_hhm_context_mode, pc_prefilter_context_engine, pc_prefilter_context_mode);
 
   if (par.prefilter) {
     free(length);
@@ -104,7 +99,7 @@ void HHblits::Init(Parameters& parameters) {
   if (!par.nocontxt && *par.clusterfile) {
     char ext[100];
     Extension(ext, par.clusterfile);
-    InitializePseudocountsEngine();
+    InitializePseudocountsEngine(par, context_lib, crf, pc_hhm_context_engine, pc_hhm_context_mode, pc_prefilter_context_engine, pc_prefilter_context_mode);
   }
 
   // Prepare multi-threading - reserve memory for threads, intialize, etc.
@@ -1439,9 +1434,9 @@ void HHblits::DoViterbiSearch(char *dbfiles[], int ndb, Hash<Hit>* previous_hits
     strcpy(hit[bin]->dbfile, dbfiles[idb]); // record db file name from which next HMM is read
 
     if (alignByWorker)
-      AlignByWorker(bin);
+      AlignByWorker(par, hit[bin], t[bin], q, format[bin], pb, R, S73, S33, hitlist);
     else
-      PerformViterbiByWorker(bin, previous_hits);
+      PerformViterbiByWorker(par, hit[bin], t[bin], q, format[bin], pb, R, S73, S33, hitlist, previous_hits);
   }
 }
 
@@ -1583,6 +1578,7 @@ void HHblits::perform_realign(char *dbfiles[], int ndb, Hash<char>* premerged_hi
         Realign_hitpos realign_hitpos;
         realign_hitpos.ftellpos = hit_cur.ftellpos; // stores position on disk of template for current hit
         realign_hitpos.index = hit_cur.index; // stores index of template of current hit
+        realign_hitpos.entry = NULL;  //TODO
         if (!phash_plist_realignhitpos->Contains(hit_cur.dbfile)) {
           List<Realign_hitpos>* newlist = new List<Realign_hitpos>;
           phash_plist_realignhitpos->Add(hit_cur.dbfile, newlist);
@@ -1822,7 +1818,7 @@ void HHblits::perform_realign(char *dbfiles[], int ndb, Hash<char>* premerged_hi
           N_aligned++;
         }
 
-        RealignByWorker(bin);
+        RealignByWorker(par, hit[bin], q, t[bin], format[bin], pb, R, S73, S33);
         break;
       }
     }
@@ -2743,149 +2739,149 @@ void HHblits::prefilter_db(Hash<Hit>* previous_hits) {
 }
 
 
-void HHblits::AlignByWorker(int bin) {
-  // Prepare q ant t and compare
-  PrepareTemplateHMM(par, q, t[bin], format[bin], pb, R);
-
-  // Do HMM-HMM comparison, store results if score>SMIN, and try next best alignment
-  for (hit[bin]->irep = 1; hit[bin]->irep <= par.altali; hit[bin]->irep++) {
-    if (par.forward == 0) {
-      hit[bin]->Viterbi(q, t[bin], par.loc, par.ssm, par.maxres, par.min_overlap, par.shift, par.egt, par.egq, par.ssw, par.exclstr, S73, S33);
-      if (hit[bin]->irep > 1 && hit[bin]->score <= SMIN)
-        break;
-      hit[bin]->Backtrace(q, t[bin], par.corr, par.ssw, S73, S33);
-    }
-    else if (par.forward == 2) {
-      hit[bin]->Forward(q, t[bin], par.ssm, par.min_overlap, par.loc, par.shift, par.ssw, par.exclstr, S73, S33);
-      hit[bin]->Backward(q, t[bin], par.loc, par.shift, par.ssw, S73, S33);
-      hit[bin]->MACAlignment(q, t[bin], par.loc, par.mact, par.macins);
-      hit[bin]->BacktraceMAC(q, t[bin], par.corr, par.ssw, S73, S33);
-    }
-    hit[bin]->score_sort = hit[bin]->score_aass;
-    if (hit[bin]->score <= SMIN)
-      hit[bin]->lastrep = 1;
-    else
-      hit[bin]->lastrep = 0;
-
-    #pragma omp critical
-    {
-      hitlist.Push(*(hit[bin])); // insert hit at beginning of list (last repeats first!)
-    }
-
-    // find only best alignment for forward algorithm and stochastic sampling
-    if (par.forward > 0)
-      break;
-
-    // break if score for previous hit is already worse than SMIN
-    if (hit[bin]->score <= SMIN)
-      break;
-  }
-}
-
-
-void HHblits::PerformViterbiByWorker(int bin, Hash<Hit>* previous_hits) {
-  PrepareTemplateHMM(par, q, t[bin], format[bin], pb, R);
-
-  for (hit[bin]->irep = 1; hit[bin]->irep <= par.altali; hit[bin]->irep++) {
-    // Break, if no previous_hit with irep is found
-    hit[bin]->Viterbi(q, t[bin], par.loc, par.ssm, par.maxres, par.min_overlap, par.shift, par.egt, par.egq, par.ssw, par.exclstr, S73, S33);
-    if (hit[bin]->irep > 1 && hit[bin]->score <= SMIN)
-      break;
-    hit[bin]->Backtrace(q, t[bin], par.corr, par.ssw, S73, S33);
-
-    hit[bin]->score_sort = hit[bin]->score_aass;
-
-    #pragma omp critical
-    {
-      stringstream ss_tmp;
-      ss_tmp << hit[bin]->file << "__" << hit[bin]->irep;
-
-      if (previous_hits->Contains((char*) ss_tmp.str().c_str())) {
-        //printf("Previous hits contains %s!\n",(char*)ss_tmp.str().c_str());
-        Hit hit_cur = previous_hits->Remove((char*) ss_tmp.str().c_str());
-        previous_hits->Add((char*) ss_tmp.str().c_str(), *(hit[bin]));
-
-        // Overwrite *hit[bin] with alignment, etc. of hit_cur
-        hit_cur.score = hit[bin]->score;
-        hit_cur.score_aass = hit[bin]->score_aass;
-        hit_cur.score_ss = hit[bin]->score_ss;
-        hit_cur.Pval = hit[bin]->Pval;
-        hit_cur.Pvalt = hit[bin]->Pvalt;
-        hit_cur.logPval = hit[bin]->logPval;
-        hit_cur.logPvalt = hit[bin]->logPvalt;
-        hit_cur.Eval = hit[bin]->Eval;
-        hit_cur.logEval = hit[bin]->logEval;
-        hit_cur.Probab = hit[bin]->Probab;
-
-        hitlist.Push(hit_cur); // insert hit at beginning of list (last repeats first!)
-      }
-    }
-
-    // break if score for first hit is already worse than SMIN
-    if (hit[bin]->score <= SMIN)
-      break;
-  }
-}
-
-
-///////////////////////////////////////////////////////////////////////////////////////
-//// Realign q and with t[bin] in all hits from same tempate using  MAC algorithm
-//////////////////////////////////////////////////////////////////////////////////////
-void HHblits::RealignByWorker(int bin) {
-  // Realign all hits with same template, pointed to by list List<void*>* hit[bin]->plist_phits;
-  // This list is set up in HHseach and HHblits at the beginning of perform_realign()
-  Hit* hit_cur;
-
-  // Prepare MAC comparison(s)
-  PrepareTemplateHMM(par, q, t[bin], format[bin], pb, R);
-  t[bin]->Log2LinTransitionProbs(1.0);
-
-  hit[bin]->irep = 1;
-  hit[bin]->plist_phits->Reset();
-  while (!hit[bin]->plist_phits->End()) {
-    // Set pointer hit_cur to next hit to be realigned
-    hit_cur = (Hit*) hit[bin]->plist_phits->ReadNext();
-    // printf("Realigning %s, irep=%i\n",hit_cur->name,hit_cur->irep);  //?????????
-
-    // Realign only around previous Viterbi hit
-    // hit[bin] = *hit_cur; is not possible because the pointers to the DP matrices would be overwritten
-    hit[bin]->i1 = hit_cur->i1;
-    hit[bin]->i2 = hit_cur->i2;
-    hit[bin]->j1 = hit_cur->j1;
-    hit[bin]->j2 = hit_cur->j2;
-    hit[bin]->nsteps = hit_cur->nsteps;
-    hit[bin]->i = hit_cur->i;
-    hit[bin]->j = hit_cur->j;
-    hit[bin]->realign_around_viterbi = true;
-
-    // Align q to template in *hit[bin]
-    hit[bin]->Forward(q, t[bin], par.ssm, par.min_overlap, par.loc, par.shift, par.ssw, par.exclstr, S73, S33);
-    hit[bin]->Backward(q, t[bin], par.loc, par.shift, par.ssw, S73, S33);
-    hit[bin]->MACAlignment(q, t[bin], par.loc, par.mact, par.macins);
-    hit[bin]->BacktraceMAC(q, t[bin], par.corr, par.ssw, S73, S33);
-
-    // Overwrite *hit[bin] with Viterbi scores, Probabilities etc. of hit_cur
-    hit[bin]->score = hit_cur->score;
-    hit[bin]->score_ss = hit_cur->score_ss;
-    hit[bin]->score_aass = hit_cur->score_aass;
-    hit[bin]->score_sort = hit_cur->score_sort;
-    hit[bin]->Pval = hit_cur->Pval;
-    hit[bin]->Pvalt = hit_cur->Pvalt;
-    hit[bin]->logPval = hit_cur->logPval;
-    hit[bin]->logPvalt = hit_cur->logPvalt;
-    hit[bin]->Eval = hit_cur->Eval;
-    hit[bin]->logEval = hit_cur->logEval;
-    hit[bin]->Probab = hit_cur->Probab;
-
-    // Replace original hit in hitlist with realigned hit
-    hit_cur->Delete(); // delete content of pointers etc. of hit_cur (but not DP matrices)
-    *hit_cur = *hit[bin]; // copy all variables and pointers from *hit[bin] into hitlist
-
-    hit[bin]->irep++;
-  }
-
-  return;
-}
+//void HHblits::AlignByWorker(int bin) {
+//  // Prepare q ant t and compare
+//  PrepareTemplateHMM(par, q, t[bin], format[bin], pb, R);
+//
+//  // Do HMM-HMM comparison, store results if score>SMIN, and try next best alignment
+//  for (hit[bin]->irep = 1; hit[bin]->irep <= par.altali; hit[bin]->irep++) {
+//    if (par.forward == 0) {
+//      hit[bin]->Viterbi(q, t[bin], par.loc, par.ssm, par.maxres, par.min_overlap, par.shift, par.egt, par.egq, par.ssw, par.exclstr, S73, S33);
+//      if (hit[bin]->irep > 1 && hit[bin]->score <= SMIN)
+//        break;
+//      hit[bin]->Backtrace(q, t[bin], par.corr, par.ssw, S73, S33);
+//    }
+//    else if (par.forward == 2) {
+//      hit[bin]->Forward(q, t[bin], par.ssm, par.min_overlap, par.loc, par.shift, par.ssw, par.exclstr, S73, S33);
+//      hit[bin]->Backward(q, t[bin], par.loc, par.shift, par.ssw, S73, S33);
+//      hit[bin]->MACAlignment(q, t[bin], par.loc, par.mact, par.macins);
+//      hit[bin]->BacktraceMAC(q, t[bin], par.corr, par.ssw, S73, S33);
+//    }
+//    hit[bin]->score_sort = hit[bin]->score_aass;
+//    if (hit[bin]->score <= SMIN)
+//      hit[bin]->lastrep = 1;
+//    else
+//      hit[bin]->lastrep = 0;
+//
+//    #pragma omp critical
+//    {
+//      hitlist.Push(*(hit[bin])); // insert hit at beginning of list (last repeats first!)
+//    }
+//
+//    // find only best alignment for forward algorithm and stochastic sampling
+//    if (par.forward > 0)
+//      break;
+//
+//    // break if score for previous hit is already worse than SMIN
+//    if (hit[bin]->score <= SMIN)
+//      break;
+//  }
+//}
+//
+//
+//void HHblits::PerformViterbiByWorker(int bin, Hash<Hit>* previous_hits) {
+//  PrepareTemplateHMM(par, q, t[bin], format[bin], pb, R);
+//
+//  for (hit[bin]->irep = 1; hit[bin]->irep <= par.altali; hit[bin]->irep++) {
+//    // Break, if no previous_hit with irep is found
+//    hit[bin]->Viterbi(q, t[bin], par.loc, par.ssm, par.maxres, par.min_overlap, par.shift, par.egt, par.egq, par.ssw, par.exclstr, S73, S33);
+//    if (hit[bin]->irep > 1 && hit[bin]->score <= SMIN)
+//      break;
+//    hit[bin]->Backtrace(q, t[bin], par.corr, par.ssw, S73, S33);
+//
+//    hit[bin]->score_sort = hit[bin]->score_aass;
+//
+//    #pragma omp critical
+//    {
+//      stringstream ss_tmp;
+//      ss_tmp << hit[bin]->file << "__" << hit[bin]->irep;
+//
+//      if (previous_hits->Contains((char*) ss_tmp.str().c_str())) {
+//        //printf("Previous hits contains %s!\n",(char*)ss_tmp.str().c_str());
+//        Hit hit_cur = previous_hits->Remove((char*) ss_tmp.str().c_str());
+//        previous_hits->Add((char*) ss_tmp.str().c_str(), *(hit[bin]));
+//
+//        // Overwrite *hit[bin] with alignment, etc. of hit_cur
+//        hit_cur.score = hit[bin]->score;
+//        hit_cur.score_aass = hit[bin]->score_aass;
+//        hit_cur.score_ss = hit[bin]->score_ss;
+//        hit_cur.Pval = hit[bin]->Pval;
+//        hit_cur.Pvalt = hit[bin]->Pvalt;
+//        hit_cur.logPval = hit[bin]->logPval;
+//        hit_cur.logPvalt = hit[bin]->logPvalt;
+//        hit_cur.Eval = hit[bin]->Eval;
+//        hit_cur.logEval = hit[bin]->logEval;
+//        hit_cur.Probab = hit[bin]->Probab;
+//
+//        hitlist.Push(hit_cur); // insert hit at beginning of list (last repeats first!)
+//      }
+//    }
+//
+//    // break if score for first hit is already worse than SMIN
+//    if (hit[bin]->score <= SMIN)
+//      break;
+//  }
+//}
+//
+//
+/////////////////////////////////////////////////////////////////////////////////////////
+////// Realign q and with t[bin] in all hits from same tempate using  MAC algorithm
+////////////////////////////////////////////////////////////////////////////////////////
+//void HHblits::RealignByWorker(int bin) {
+//  // Realign all hits with same template, pointed to by list List<void*>* hit[bin]->plist_phits;
+//  // This list is set up in HHseach and HHblits at the beginning of perform_realign()
+//  Hit* hit_cur;
+//
+//  // Prepare MAC comparison(s)
+//  PrepareTemplateHMM(par, q, t[bin], format[bin], pb, R);
+//  t[bin]->Log2LinTransitionProbs(1.0);
+//
+//  hit[bin]->irep = 1;
+//  hit[bin]->plist_phits->Reset();
+//  while (!hit[bin]->plist_phits->End()) {
+//    // Set pointer hit_cur to next hit to be realigned
+//    hit_cur = (Hit*) hit[bin]->plist_phits->ReadNext();
+//    // printf("Realigning %s, irep=%i\n",hit_cur->name,hit_cur->irep);  //?????????
+//
+//    // Realign only around previous Viterbi hit
+//    // hit[bin] = *hit_cur; is not possible because the pointers to the DP matrices would be overwritten
+//    hit[bin]->i1 = hit_cur->i1;
+//    hit[bin]->i2 = hit_cur->i2;
+//    hit[bin]->j1 = hit_cur->j1;
+//    hit[bin]->j2 = hit_cur->j2;
+//    hit[bin]->nsteps = hit_cur->nsteps;
+//    hit[bin]->i = hit_cur->i;
+//    hit[bin]->j = hit_cur->j;
+//    hit[bin]->realign_around_viterbi = true;
+//
+//    // Align q to template in *hit[bin]
+//    hit[bin]->Forward(q, t[bin], par.ssm, par.min_overlap, par.loc, par.shift, par.ssw, par.exclstr, S73, S33);
+//    hit[bin]->Backward(q, t[bin], par.loc, par.shift, par.ssw, S73, S33);
+//    hit[bin]->MACAlignment(q, t[bin], par.loc, par.mact, par.macins);
+//    hit[bin]->BacktraceMAC(q, t[bin], par.corr, par.ssw, S73, S33);
+//
+//    // Overwrite *hit[bin] with Viterbi scores, Probabilities etc. of hit_cur
+//    hit[bin]->score = hit_cur->score;
+//    hit[bin]->score_ss = hit_cur->score_ss;
+//    hit[bin]->score_aass = hit_cur->score_aass;
+//    hit[bin]->score_sort = hit_cur->score_sort;
+//    hit[bin]->Pval = hit_cur->Pval;
+//    hit[bin]->Pvalt = hit_cur->Pvalt;
+//    hit[bin]->logPval = hit_cur->logPval;
+//    hit[bin]->logPvalt = hit_cur->logPvalt;
+//    hit[bin]->Eval = hit_cur->Eval;
+//    hit[bin]->logEval = hit_cur->logEval;
+//    hit[bin]->Probab = hit_cur->Probab;
+//
+//    // Replace original hit in hitlist with realigned hit
+//    hit_cur->Delete(); // delete content of pointers etc. of hit_cur (but not DP matrices)
+//    *hit_cur = *hit[bin]; // copy all variables and pointers from *hit[bin] into hitlist
+//
+//    hit[bin]->irep++;
+//  }
+//
+//  return;
+//}
 
 void HHblits::wiggleQSC(int n_redundancy, float* qsc, size_t nqsc, HitList& reducedFinalHitList) {
 	wiggleQSC(hitlist, n_redundancy, Qali, input_format, qsc, nqsc, reducedFinalHitList);
@@ -3391,51 +3387,3 @@ std::stringstream* HHblits::writeA3MFile() {
       Qali.WriteToFile(*out, "a3m");
 	return out;
 }
-
-void HHblits::InitializePseudocountsEngine() {
-	// Prepare pseudocounts engine
-	FILE* fin = fopen(par.clusterfile, "r");
-	if (!fin) {
-		std::cerr << std::endl << "Error in " << par.argv[0]
-				<< ": could not open file \'" << par.clusterfile << "\'\n";
-		exit(2);
-	}
-	char ext[100];
-	Extension(ext, par.clusterfile);
-	if (strcmp(ext, "crf") == 0) {
-		crf = new cs::Crf<cs::AA>(fin);
-		pc_hhm_context_engine = new cs::CrfPseudocounts<cs::AA>(*crf);
-		pc_prefilter_context_engine = new cs::CrfPseudocounts<cs::AA>(*crf);
-	} else {
-		context_lib = new cs::ContextLibrary<cs::AA>(fin);
-		cs::TransformToLog(*context_lib);
-		pc_hhm_context_engine = new cs::LibraryPseudocounts<cs::AA>(
-				*context_lib, par.csw, par.csb);
-		pc_prefilter_context_engine = new cs::LibraryPseudocounts<cs::AA>(
-				*context_lib, par.csw, par.csb);
-	}
-	fclose(fin);
-	pc_hhm_context_engine->SetTargetNeff(par.pc_hhm_context_engine.target_neff);
-	pc_prefilter_context_engine->SetTargetNeff(
-			par.pc_prefilter_context_engine.target_neff);
-
-	// Prepare pseudocounts admixture method
-	pc_hhm_context_mode = par.pc_hhm_context_engine.CreateAdmix();
-	pc_prefilter_context_mode = par.pc_prefilter_context_engine.CreateAdmix();
-}
-
-void HHblits::DeletePseudocountsEngine() {
-	if (context_lib != NULL)
-		delete context_lib;
-	if (crf != NULL)
-		delete crf;
-	if (pc_hhm_context_engine != NULL)
-		delete pc_hhm_context_engine;
-	if (pc_hhm_context_mode != NULL)
-		delete pc_hhm_context_mode;
-	if (pc_prefilter_context_engine != NULL)
-		delete pc_prefilter_context_engine;
-	if (pc_prefilter_context_mode != NULL)
-		delete pc_prefilter_context_mode;
-}
-

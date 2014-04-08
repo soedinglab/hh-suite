@@ -52,7 +52,8 @@ using std::ios;
 using std::ifstream;
 using std::ofstream;
 
-#include "cs.h"          // context-specific pseudocounts
+// context-specific pseudocounts
+#include "cs.h"
 #include "context_library.h"
 #include "library_pseudocounts-inl.h"
 #include "crf_pseudocounts-inl.h"
@@ -79,6 +80,30 @@ using std::ofstream;
 /////////////////////////////////////////////////////////////////////////////////////
 // Global variables 
 /////////////////////////////////////////////////////////////////////////////////////
+
+char program_name[NAMELEN];
+
+Parameters par;
+
+// substitution matrix flavours
+float __attribute__((aligned(16))) P[20][20];
+float __attribute__((aligned(16))) R[20][20];
+float __attribute__((aligned(16))) Sim[20][20];
+float __attribute__((aligned(16))) S[20][20];
+float __attribute__((aligned(16))) pb[21];
+float __attribute__((aligned(16))) qav[21];
+
+cs::ContextLibrary<cs::AA>* context_lib = NULL;
+cs::Crf<cs::AA>* crf = NULL;
+cs::Pseudocounts<cs::AA>* pc_hhm_context_engine = NULL;
+cs::Admix* pc_hhm_context_mode = NULL;
+cs::Pseudocounts<cs::AA>* pc_prefilter_context_engine = NULL;
+cs::Admix* pc_prefilter_context_mode = NULL;
+
+// secondary structure matrices
+float S73[NDSSP][NSSPRED][MAXCF];
+float S33[NSSPRED][MAXCF][NSSPRED][MAXCF];
+
 HMM* q = new HMM; // Create query    HMM with maximum of par.maxres match states
 HMM* t = new HMM; // Create template HMM with maximum of par.maxres match states
 Alignment qali; // (query alignment might be needed outside of hhfunc.C for -a option)
@@ -522,8 +547,8 @@ void ProcessArguments(int argc, char** argv) {
     if (!strcmp(argv[i], "-i")) {
       if (++i >= argc || argv[i][0] == '-') {
         help();
-        cerr << endl << "Error in " << program_name
-            << ": no query file following -i\n";
+        std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+        std::cerr << "\tno query file following -i\n";
         exit(4);
       }
       else
@@ -532,8 +557,8 @@ void ProcessArguments(int argc, char** argv) {
     else if (!strcmp(argv[i], "-t")) {
       if (++i >= argc || argv[i][0] == '-') {
         help();
-        cerr << endl << "Error in " << program_name
-            << ": no template file following -d\n";
+        std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+        std::cerr << "\tno template file following -d\n";
         exit(4);
       }
       else
@@ -542,8 +567,8 @@ void ProcessArguments(int argc, char** argv) {
     else if (!strcmp(argv[i], "-o")) {
       if (++i >= argc) {
         help();
-        cerr << endl << "Error in " << program_name
-            << ": no filename following -o\n";
+        std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+        std::cerr << "\tno filename following -o\n";
         exit(4);
       }
       else
@@ -553,8 +578,8 @@ void ProcessArguments(int argc, char** argv) {
       par.outformat = 1;
       if (++i >= argc || argv[i][0] == '-') {
         help();
-        cerr << endl << "Error in " << program_name
-            << ": no output file following -o\n";
+        std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+        std::cerr << "\tno output file following -o\n";
         exit(4);
       }
       else
@@ -564,8 +589,8 @@ void ProcessArguments(int argc, char** argv) {
       par.outformat = 2;
       if (++i >= argc || argv[i][0] == '-') {
         help();
-        cerr << endl << "Error in " << program_name
-            << ": no output file following -o\n";
+        std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+        std::cerr << "\tno output file following -o\n";
         exit(4);
       }
       else
@@ -575,8 +600,8 @@ void ProcessArguments(int argc, char** argv) {
       par.outformat = 3;
       if (++i >= argc || argv[i][0] == '-') {
         help();
-        cerr << endl << "Error in " << program_name
-            << ": no output file following -o\n";
+        std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+        std::cerr << "\tno output file following -o\n";
         exit(4);
       }
       else
@@ -588,8 +613,8 @@ void ProcessArguments(int argc, char** argv) {
       par.append = 0;
       if (++i >= argc || argv[i][0] == '-') {
         help();
-        cerr << endl << "Error in " << program_name
-            << ": no output file following -Oa3m\n";
+        std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+        std::cerr << "\tno output file following -Oa3m\n";
         exit(4);
       }
       else
@@ -599,8 +624,8 @@ void ProcessArguments(int argc, char** argv) {
       par.append = 1;
       if (++i >= argc || argv[i][0] == '-') {
         help();
-        cerr << endl << "Error in " << program_name
-            << ": no output file following -Aa3m\n";
+        std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+        std::cerr << "\tno output file following -Aa3m\n";
         exit(4);
       }
       else
@@ -610,8 +635,8 @@ void ProcessArguments(int argc, char** argv) {
       par.append = 0;
       if (++i >= argc || argv[i][0] == '-') {
         help();
-        cerr << endl << "Error in " << program_name
-            << ": no output file following -Opsi\n";
+        std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+        std::cerr << "\tno output file following -Opsi\n";
         exit(4);
       }
       else
@@ -621,8 +646,8 @@ void ProcessArguments(int argc, char** argv) {
       par.append = 1;
       if (++i >= argc || argv[i][0] == '-') {
         help();
-        cerr << endl << "Error in " << program_name
-            << ": no output file following -Apsi\n";
+        std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+        std::cerr << "\tno output file following -Apsi\n";
         exit(4);
       }
       else
@@ -631,8 +656,8 @@ void ProcessArguments(int argc, char** argv) {
     else if (!strcmp(argv[i], "-png")) {
       if (++i >= argc) {
         help();
-        cerr << endl << "Error in " << program_name
-            << ": no filename following -png\n";
+        std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+        std::cerr << "\tno filename following -png\n";
         exit(4);
       }
       else {
@@ -643,8 +668,8 @@ void ProcessArguments(int argc, char** argv) {
     else if (!strcmp(argv[i], "-atab") || !strcmp(argv[i], "-Aliout")) {
       if (++i >= argc || argv[i][0] == '-') {
         help();
-        cerr << endl << "Error in " << program_name
-            << ": no query file following -atab\n";
+        std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+        std::cerr << "\tno query file following -atab\n";
         exit(4);
       }
       else
@@ -653,8 +678,8 @@ void ProcessArguments(int argc, char** argv) {
     else if (!strcmp(argv[i], "-index")) {
       if (++i >= argc || argv[i][0] == '-') {
         help();
-        cerr << endl << "Error in " << program_name
-            << ": no index file following -index\n";
+        std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+        std::cerr << "\tno index file following -index\n";
         exit(4);
       }
       else
@@ -663,8 +688,8 @@ void ProcessArguments(int argc, char** argv) {
     else if (!strcmp(argv[i], "-tc")) {
       if (++i >= argc || argv[i][0] == '-') {
         help();
-        cerr << endl << "Error in " << program_name
-            << ": no output file following -Opsi\n";
+        std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+        std::cerr << "\tno output file following -Opsi\n";
         exit(4);
       }
       else {
@@ -782,8 +807,8 @@ void ProcessArguments(int argc, char** argv) {
     else if (!strcmp(argv[i], "-dmap")) {
       if (++i >= argc) {
         help();
-        cerr << endl << "Error in " << program_name
-            << ": no filename following -o\n";
+        std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+        std::cerr << "\tno filename following -o\n";
         exit(4);
       }
       else {
@@ -872,11 +897,9 @@ void ProcessArguments(int argc, char** argv) {
       par.altali = atoi(argv[++i]);
     else if (!strcmp(argv[i], "-map") || !strcmp(argv[i], "-MAP")
         || !strcmp(argv[i], "-mac") || !strcmp(argv[i], "-MAC"))
-      SyntaxError(
-          "Please note that this option has been replaced by the '-realign' option.");
+      SyntaxError(__FILE__, __LINE__, __func__, "Please note that this option has been replaced by the '-realign' option.");
     else if (!strcmp(argv[i], "-vit"))
-      SyntaxError(
-          "Please note that this option has been replaced by the '-norealign' option.");
+      SyntaxError(__FILE__, __LINE__, __func__, "Please note that this option has been replaced by the '-norealign' option.");
     else if (!strcmp(argv[i], "-realign"))
       par.realign = 1;
     else if (!strcmp(argv[i], "-norealign"))
@@ -936,8 +959,8 @@ void ProcessArguments(int argc, char** argv) {
     else if (!strcmp(argv[i], "-cs")) {
       if (++i >= argc || argv[i][0] == '-') {
         help();
-        cerr << endl << "Error in " << program_name
-            << ": no query file following -cs\n";
+        std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+        std::cerr << "\tno query file following -cs\n";
         exit(4);
       }
       else
@@ -984,10 +1007,10 @@ void RealignByWorker(Hit& hit) {
 
     //fprintf(stderr,"  t->name=%s   hit_cur.irep=%i  hit.irep=%i  nhits=%i\n",t->name,hit_cur.irep,hit.irep,nhits);
     // Align q to template in *hit[bin]
-    hit.Forward(q, t);
-    hit.Backward(q, t);
-    hit.MACAlignment(q, t);
-    hit.BacktraceMAC(q, t);
+    hit.Forward(q, t, par.ssm, par.min_overlap, par.loc, par.shift, par.ssw, par.exclstr, S73, S33);
+    hit.Backward(q, t, par.loc, par.shift, par.ssw, S73, S33);
+    hit.MACAlignment(q, t, par.loc, par.mact, par.macins);
+    hit.BacktraceMAC(q, t, par.corr, par.ssw, S73, S33);
 
     // Overwrite *hit[bin] with Viterbi scores, Probabilities etc. of hit_cur
     hit.score = hit_cur.score;
@@ -1033,11 +1056,8 @@ void RealignByWorker(Hit& hit) {
   }
 
   if (hit.irep == 1) {
-    fprintf(stderr, "*************************************************\n");
-    fprintf(stderr,
-        "\nError in %s: could not find template %s in hit list \n\n",
-        par.argv[0], hit.name);
-    fprintf(stderr, "*************************************************\n");
+    std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+    std::cerr << "\tcould not find template " << hit.name << " in hit list\n";
   }
 
   return;
@@ -1089,7 +1109,7 @@ int main(int argc, char **argv) {
       v = atoi(argv[i + 1]);
   }
 
-  par.SetDefaultPaths(program_path);
+  par.SetDefaultPaths();
 
   // Read .hhdefaults file?
   if (par.readdefaultsfile) {
@@ -1104,8 +1124,8 @@ int main(int argc, char **argv) {
   // Check command line input and default values
   if (!*par.infile) {
     help();
-    cerr << endl << "Error in " << program_name
-        << ": no query alignment file given (-i file)\n";
+    std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+    std::cerr << "\tno query alignment file given (-i file)\n";
     exit(4);
   }
 
@@ -1147,23 +1167,23 @@ int main(int argc, char **argv) {
 
   // Prepare CS pseudocounts lib
   if (!par.nocontxt && *par.clusterfile) {
-    InitializePseudocountsEngine();
+    InitializePseudocountsEngine(par, context_lib, crf, pc_hhm_context_engine, pc_hhm_context_mode, pc_prefilter_context_engine, pc_prefilter_context_mode);
   }
 
   // Set (global variable) substitution matrix and derived matrices
-  SetSubstitutionMatrix();
+  SetSubstitutionMatrix(par.matrix, pb, P, R, S, Sim);
 
   // Set secondary structure substitution matrix
-  SetSecStrucSubstitutionMatrix();
+  SetSecStrucSubstitutionMatrix(par.ssa, S73, S33);
 
   // Read input file (HMM, HHM, or alignment format), and add pseudocounts etc.
   char input_format = 0;
-  ReadQueryFile(par.infile, input_format, par.wg, q, &qali);
-  PrepareQueryHMM(input_format, q);
+  ReadQueryFile(par, par.infile, input_format, par.wg, q, &qali, pb, S, Sim);
+  PrepareQueryHMM(par, input_format, q, pc_hhm_context_engine, pc_hhm_context_mode, pb, R);
 
   // Set query columns in His-tags etc to Null model distribution
   if (par.notags)
-    q->NeutralizeTags();
+    q->NeutralizeTags(pb);
 
   // Do self-comparison?
   if (!*par.tfile) {
@@ -1180,15 +1200,15 @@ int main(int argc, char **argv) {
     hit.self = 1;
 
     // Factor Null model into HMM t
-    t->IncludeNullModelInHMM(q, t, par.columnscore);
+    t->IncludeNullModelInHMM(q, t, par.columnscore, par.half_window_size_local_aa_bg_freqs, pb);
   }
   // Read template alignment/HMM t and add pseudocounts
   else {
     // Read input file (HMM, HHM, or alignment format), and add pseudocounts etc.
     char input_format = 0;
     Alignment tali;
-    ReadQueryFile(par.tfile, input_format, par.wg, t, &tali);
-    PrepareTemplateHMM(q, t, input_format);
+    ReadQueryFile(par, par.tfile, input_format, par.wg, t, &tali, pb, S, Sim);
+    PrepareTemplateHMM(par, q, t, input_format, pb, R);
   }
 
   //////////////////////////////////////////////////////////////
@@ -1210,8 +1230,8 @@ int main(int argc, char **argv) {
       length = strint(ptr);
     }
     if (length == 0) {
-      cerr << endl << "Error in " << program_name
-          << ": first line of index file must contain length of alignment (#LEN ...)\n";
+      std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+      std::cerr << "\tfirst line of index file must contain length of alignment (#LEN ...)\n";
       exit(4);
     }
 
@@ -1294,25 +1314,25 @@ int main(int argc, char **argv) {
   while (1) {
     if (par.forward == 0)        // generate Viterbi alignment
         {
-      hit.Viterbi(q, t);
+      hit.Viterbi(q, t, par.loc, par.ssm, par.maxres, par.min_overlap, par.shift, par.egt, par.egq, par.ssw, par.exclstr, S73, S33);
       if (hit.irep > 1 && hit.irep > par.hitrank && hit.score <= SMIN
           && !(hit.Pvalt < pself && hit.score > 0)) {
         hit = hitlist.ReadLast(); // last alignment was not significant => read last (significant) hit from list
         break;
       }
-      hit.Backtrace(q, t);
+      hit.Backtrace(q, t, par.corr, par.ssw, S73, S33);
     }
     else if (par.forward == 2)   // generate forward alignment
     {
-      hit.Forward(q, t);
-      hit.Backward(q, t);
-      hit.MACAlignment(q, t);
+      hit.Forward(q, t, par.ssm, par.min_overlap, par.loc, par.shift, par.ssw, par.exclstr, S73, S33);
+      hit.Backward(q, t, par.loc, par.shift, par.ssw, S73, S33);
+      hit.MACAlignment(q, t, par.loc, par.mact, par.macins);
       if (hit.irep > 1 && hit.irep > par.hitrank && hit.score <= SMIN
           && !(hit.Pvalt < pself && hit.score > 0)) {
         hit = hitlist.ReadLast(); // last alignment was not significant => read last (significant) hit from list
         break;
       }
-      hit.BacktraceMAC(q, t);
+      hit.BacktraceMAC(q, t, par.corr, par.ssw, S73, S33);
     }
     //fprintf (stderr,"%-12.12s  %-12.12s   irep=%-2i  score=%6.2f hit.Pvalt=%.2g\n",hit.name,hit.fam,hit.irep,hit.score,hit.Pvalt);
 
@@ -1342,7 +1362,7 @@ int main(int argc, char **argv) {
     else
       tcf = stdout;
     if (!tcf)
-      OpenFileError(tcfile);
+      OpenFileError(tcfile, __FILE__, __LINE__, __func__);
     fprintf(tcf, "! TC_LIB_FORMAT_01\n");
     fprintf(tcf, "%i\n", 2); // two sequences in library file
     fprintf(tcf, "%s %i %s\n", q->name, q->L, q->seq[q->nfirst] + 1);
@@ -1380,17 +1400,17 @@ int main(int argc, char **argv) {
     else
       alitabf = stdout;
     if (!alitabf)
-      OpenFileError(par.alitabfile);
-    WriteToAlifile(alitabf, &hit);
+      OpenFileError(par.alitabfile, __FILE__, __LINE__, __func__);
+    WriteToAlifile(alitabf, &hit, par.forward, par.realign);
     fclose(alitabf);
   }
 
   // Fit EVD (with lamda, mu) to score distribution?
   if (par.forward == 0) {
     if (par.calm == 3)
-      hitlist.CalculatePvalues(q);  // Use NN prediction of lamda and mu
+      hitlist.CalculatePvalues(q, par.loc, par.ssm, par.ssw);  // Use NN prediction of lamda and mu
     else
-      hitlist.GetPvalsFromCalibration(q);
+      hitlist.GetPvalsFromCalibration(q, par.loc, par.calm, par.ssm, par.ssw);
   }
   else
     printf(
@@ -1402,13 +1422,13 @@ int main(int argc, char **argv) {
       cout << "Printing alignments in "
           << (par.outformat == 1 ? "FASTA" : par.outformat == 2 ? "A2M" : "A3M")
           << " format to " << par.pairwisealisfile << "\n";
-    hitlist.PrintAlignments(q, par.pairwisealisfile, par.outformat);
+    hitlist.PrintAlignments(q, par.pairwisealisfile, par.showconf, par.showcons, par.showdssp, par.showpred, par.p, par.aliwidth, par.nseqdis, par.b, par.B, par.E, S, par.outformat);
   }
 
   // Print hit list and alignments
   if (*par.outfile) {
-    hitlist.PrintHitList(q, par.outfile);
-    hitlist.PrintAlignments(q, par.outfile);
+    hitlist.PrintHitList(q, par.outfile, par.maxdbstrlen, par.z, par.Z, par.p, par.E, par.argc, par.argv);
+    hitlist.PrintAlignments(q, par.outfile, par.showconf, par.showcons, par.showdssp, par.showpred, par.p, par.aliwidth, par.nseqdis, par.b, par.B, par.E, S);
     if (v == 2 && strcmp(par.outfile, "stdout"))
       WriteToScreen(par.outfile, 1009); // write only hit list to screen
     // Write whole output file to screen? (max 10000 lines)
@@ -1454,8 +1474,8 @@ int main(int argc, char **argv) {
     strcat(qa3mfile, ".a3m");
     FILE* qa3mf = fopen(qa3mfile, "r");
     if (!qa3mf)
-      OpenFileError(qa3mfile);
-    Qali.Read(qa3mf, qa3mfile);
+      OpenFileError(qa3mfile, __FILE__, __LINE__, __func__);
+    Qali.Read(qa3mf, qa3mfile, par.mark, par.maxcol, par.nseqdis);
     fclose(qa3mf);
 
     // If par.append==1 do not print query alignment
@@ -1466,22 +1486,22 @@ int main(int argc, char **argv) {
     Alignment Tali;
     FILE* ta3mf = fopen(par.tfile, "r");
     if (!ta3mf)
-      OpenFileError(par.tfile);
-    Tali.Read(ta3mf, par.tfile); // Read template alignment into Tali
+      OpenFileError(par.tfile, __FILE__, __LINE__, __func__);
+    Tali.Read(ta3mf, par.tfile, par.mark, par.maxcol, par.nseqdis); // Read template alignment into Tali
     fclose(ta3mf);
-    Tali.Compress(par.tfile); // Filter database alignment
-    Qali.MergeMasterSlave(hit, Tali, par.tfile);
+    Tali.Compress(par.tfile, par.cons, par.maxres, par.maxcol, par.M, par.Mgaps); // Filter database alignment
+    Qali.MergeMasterSlave(hit, Tali, par.tfile, par.maxcol);
 
     // Write output A3M alignment?
     if (*par.alnfile)
-      Qali.WriteToFile(par.alnfile, "a3m");
+      Qali.WriteToFile(par.alnfile, par.append, "a3m");
 
     if (*par.psifile) {
       // Convert ASCII to int (0-20),throw out all insert states, record their number in I[k][i]
-      Qali.Compress("merged A3M file");
+      Qali.Compress("merged A3M file", par.cons, par.maxres, par.maxcol, par.M, par.Mgaps);
 
       // Write output PSI-BLAST-formatted alignment?
-      Qali.WriteToFile(par.psifile, "psi");
+      Qali.WriteToFile(par.psifile, par.append, "psi");
     }
   }
 
@@ -1497,7 +1517,7 @@ int main(int argc, char **argv) {
     int i,j,l;
     float** s=new(float*[q->L+2]);
     for (i=0; i<q->L+2; i++)
-    if(!(s[i]=new(float[t->L+2]))) MemoryError("image map");
+    if(!(s[i]=new(float[t->L+2]))) MemoryError("image map", __FILE__, __LINE__, __func__);
     for(i=1; i<=q->L; i++)
     for (j=1; j<=t->L; j++)// Loop through template positions j
     {
@@ -1549,7 +1569,7 @@ int main(int argc, char **argv) {
       int nhits=1;
 
       FILE* dmapf = fopen(dmapfile, "w");
-      if (!dmapf) OpenFileError(dmapfile);
+      if (!dmapf) OpenFileError(dmapfile, __FILE__, __LINE__, __func__);
 
       hitlist.Reset();
       while (!hitlist.End() && nhits<256)
@@ -1672,7 +1692,7 @@ int main(int argc, char **argv) {
   if (par.forward >= 1 || par.realign)
     hit.DeleteForwardMatrix(q->L + 2);
 
-  DeletePseudocountsEngine();
+  DeletePseudocountsEngine(context_lib, crf, pc_hhm_context_engine, pc_hhm_context_mode, pc_prefilter_context_engine, pc_prefilter_context_mode);
 
   // Delete content of hits in hitlist
   hitlist.Reset();

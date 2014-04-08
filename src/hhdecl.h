@@ -18,7 +18,6 @@
 #include "crf_pseudocounts-inl.h"
 #include "library_pseudocounts-inl.h"
 
-#include "util.h"
 
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -28,6 +27,10 @@
 //=2 1: show only warnings 2:verbose mode
 extern char v;
 
+
+const char REFERENCE[]="Remmert M, Biegert A, Hauser A, and Soding J.\nHHblits: Lightning-fast iterative protein sequence searching by HMM-HMM alignment.\nNat. Methods 9:173-175 (2011).\n";
+const char COPYRIGHT[]="(C) Johannes Soeding, Michael Remmert, Andreas Biegert, Andreas Hauser\n";
+const char VERSION_AND_DATE[]="version 2.1.0-pre (XXX 2013)";
 
 const int MAXSEQ=65535; //max number of sequences in input alignment (must be <~30000 on cluster nodes??)
 const int LINELEN=524288; //max length of line read in from input files; must be >= MAXCOL
@@ -80,14 +83,21 @@ enum transitions {M2M,M2I,M2D,I2M,I2I,D2M,D2D}; // index for transitions within 
 enum pair_states {STOP=0,SAME=1,GD=2,IM=3,DG=4,MI=5,MM=6};
 
 
+#include "util.h"
+#include "HHDatabase.h"
+
+
 // Class to store data about hit to realign
 class Realign_hitpos
 {
 public:
   int index;         // index of template in dbfile (1,2,..)
   long ftellpos;     // position of template in dbfile
+  HHDatabaseEntry* entry;
   int operator<(const Realign_hitpos& realign_hitpos) {return ftellpos<realign_hitpos.ftellpos;}
 };
+
+bool sort_realign_hitpos (Realign_hitpos i, Realign_hitpos j) { return (i.ftellpos < j.ftellpos); }
 
 
 // Pseudocounts

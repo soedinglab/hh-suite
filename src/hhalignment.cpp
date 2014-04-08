@@ -214,9 +214,9 @@ void Alignment::Read(FILE* inf, char infile[], const char mark, const int maxcol
 			}
 
 			if (k >= 0) //if this is at least the second name line
-					{
-				if (strlen(cur_seq) <= 1) // 1, because the sequence in cur_seq starts at position 1 => no residues = length 1
-				{
+			{
+			    // 1, because the sequence in cur_seq starts at position 1 => no residues = length 1
+				if (strlen(cur_seq) <= 1) {
 					std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
 					std::cerr << "\tsequence " << sname[k] << " contains no residues." << std::endl;
 					exit(1);
