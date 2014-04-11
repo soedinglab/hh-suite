@@ -1443,12 +1443,14 @@ void Hit::InitializeForAlignment(HMM* q, HMM* t, const int par_min_overlap, cons
 
     // Cross out rows which are contained in range given by exclstr ("3-57,238-314")
     if (exclstr) {
-      const char* ptr = exclstr;
+      char* tmp = new char[strlen(exclstr) + 1];
+      strcpy(tmp, exclstr);
+
       int i0, i1;
       while (1) {
-        i0 = abs(strint(ptr));
-        i1 = abs(strint(ptr));
-        if (!ptr)
+        i0 = abs(strint(tmp));
+        i1 = abs(strint(tmp));
+        if (!tmp)
           break;
         for (i = i0; i <= imin(i1, q->L); ++i)
           for (j = 1; j <= t->L; ++j)

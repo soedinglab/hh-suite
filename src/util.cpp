@@ -116,7 +116,8 @@ char* lwrstr(char* str) {
 
 // Returns leftmost integer in ptr and sets the pointer to first char after
 // the integer. If no integer is found, returns INT_MIN and sets pt to NULL
-int strint(const char* ptr) {
+
+int strint(char*& ptr) {
   const char* ptr0 = ptr;
   if (!ptr)
     return INT_MIN;
@@ -135,6 +136,27 @@ int strint(const char* ptr) {
     ptr++;
   return i;
 }
+
+//
+//int strint(const char* ptr) {
+//  const char* ptr0 = ptr;
+//  if (!ptr)
+//    return INT_MIN;
+//  while (*ptr != '\0' && !(*ptr >= '0' && *ptr <= '9'))
+//    ptr++;
+//  if (*ptr == '\0') {
+//    ptr = 0;
+//    return INT_MIN;
+//  }
+//  int i;
+//  if (ptr > ptr0 && *(ptr - 1) == '-')
+//    i = -atoi(ptr);
+//  else
+//    i = atoi(ptr);
+//  while (*ptr >= '0' && *ptr <= '9')
+//    ptr++;
+//  return i;
+//}
 
 // Same as strint, but interpretes '*' as default
 int strinta(char*& ptr, int deflt) {

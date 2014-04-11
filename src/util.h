@@ -64,7 +64,7 @@ char* lwrstr(char* str);
 
 // Returns leftmost integer in ptr and sets the pointer to first char after
 // the integer. If no integer is found, returns INT_MIN and sets pt to NULL
-int strint(const char* ptr);
+int strint(char*& ptr);
 
 // Same as strint, but interpretes '*' as default
 int strinta(char*& ptr, int deflt = 99999);
