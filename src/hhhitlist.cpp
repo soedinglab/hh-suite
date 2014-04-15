@@ -18,7 +18,7 @@ using std::endl;
 /////////////////////////////////////////////////////////////////////////////////////
 // Print summary listing of hits
 /////////////////////////////////////////////////////////////////////////////////////
-void HitList::PrintHitList(HMM* q, std::stringstream& out, const int maxdbstrlen, const int z, const int Z, const float p, const double E, const int argc, char** argv) {
+void HitList::PrintHitList(HMM* q, std::stringstream& out, const unsigned int maxdbstrlen, const int z, const int Z, const float p, const double E, const int argc, char** argv) {
   int nhits = 0;
 
   out << "Query         " << q->longname << std::endl;
@@ -96,7 +96,7 @@ void HitList::PrintHitList(HMM* q, std::stringstream& out, const int maxdbstrlen
   out << std::endl;
 }
 
-void HitList::PrintHitList(HMM* q, char* outfile, const int maxdbstrlen, const int z, const int Z, const float p, const double E, const int argc, char** argv) {
+void HitList::PrintHitList(HMM* q, char* outfile, const unsigned int maxdbstrlen, const int z, const int Z, const float p, const double E, const int argc, char** argv) {
   std::stringstream out;
   PrintHitList(q, out, maxdbstrlen, z, Z, p, E, argc, argv);
 
@@ -114,7 +114,7 @@ void HitList::PrintHitList(HMM* q, char* outfile, const int maxdbstrlen, const i
   }
 }
 
-void HitList::PrintHHR(HMM* q, char* outfile, const int maxdbstrlen,
+void HitList::PrintHHR(HMM* q, char* outfile, const unsigned int maxdbstrlen,
 		const char showconf, const char showcons, const char showdssp, const char showpred,
 		const int b, const int B, const int z, const int Z, const int aliwidth, const int nseqdis,
 		const float p, const double E, const int argc, char** argv, const float S[20][20]) {
@@ -135,7 +135,7 @@ void HitList::PrintHHR(HMM* q, char* outfile, const int maxdbstrlen,
   }
 }
 
-void HitList::PrintHHR(HMM* q, std::stringstream& out, const int maxdbstrlen,
+void HitList::PrintHHR(HMM* q, std::stringstream& out, const unsigned int maxdbstrlen,
 		const char showconf, const char showcons, const char showdssp, const char showpred,
 		const int b, const int B, const int z, const int Z, const int aliwidth, const int nseqdis,
 		const float p, const double E, const int argc, char** argv, const float S[20][20]) {
