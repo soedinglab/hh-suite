@@ -528,7 +528,6 @@ void AlignByWorker(Parameters& par, Hit* hit, HMM* t, HMM* q, const int format,
         par.filter_sum -= par.filter_evals[par.filter_counter];
         par.filter_evals[par.filter_counter] = 1.0 / (1.0 + hit->Eval);
         par.filter_sum += par.filter_evals[par.filter_counter];
-        std::cerr << "use prefilter: " << par.filter_sum << std::endl;
 
         par.filter_counter++;
         if (par.filter_counter == par.filter_length) {

@@ -38,7 +38,7 @@
 #include "hhdecl.h"
 #include "hhutil.h"
 #include "util.h"
-#include "HHDatabase.h"
+#include "hhdatabase.h"
 
 #include "hhhit-inl.h"
 

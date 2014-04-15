@@ -5,7 +5,7 @@
  *      Author: meiermark
  */
 
-#include "HHDatabase.h"
+#include "hhdatabase.h"
 
 #include "hhdecl.h"
 

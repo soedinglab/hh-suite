@@ -8,7 +8,7 @@
 #include <mpi.h>
 #include <stdio.h>
 #include "hhdecl.h"
-#include "HHblits.h"
+#include "hhblits.h"
 
 extern "C" {
 #include <ffindex.h>     // fast index-based database reading

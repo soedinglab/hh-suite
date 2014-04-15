@@ -84,7 +84,7 @@ enum pair_states {STOP=0,SAME=1,GD=2,IM=3,DG=4,MI=5,MM=6};
 
 
 #include "util.h"
-#include "HHDatabase.h"
+#include "hhdatabase.h"
 
 
 // Class to store data about hit to realign
