@@ -38,28 +38,29 @@ HHblits::HHblits(Parameters& parameters) {
   if (!par.nocontxt && *par.clusterfile) {
     FILE* fin = fopen(par.clusterfile, "r");
     if (!fin) {
-        std::cerr << std::endl << "Error in " << par.argv[0]
-                << ": could not open file \'" << par.clusterfile << "\'\n";
-        exit(2);
+      std::cerr << std::endl << "Error in " << par.argv[0]
+          << ": could not open file \'" << par.clusterfile << "\'\n";
+      exit(2);
     }
     char ext[100];
     Extension(ext, par.clusterfile);
     if (strcmp(ext, "crf") == 0) {
-        crf = new cs::Crf<cs::AA>(fin);
-        pc_hhm_context_engine = new cs::CrfPseudocounts<cs::AA>(*crf);
-        pc_prefilter_context_engine = new cs::CrfPseudocounts<cs::AA>(*crf);
-    } else {
-        context_lib = new cs::ContextLibrary<cs::AA>(fin);
-        cs::TransformToLog(*context_lib);
-        pc_hhm_context_engine = new cs::LibraryPseudocounts<cs::AA>(
-                *context_lib, par.csw, par.csb);
-        pc_prefilter_context_engine = new cs::LibraryPseudocounts<cs::AA>(
-                *context_lib, par.csw, par.csb);
+      crf = new cs::Crf<cs::AA>(fin);
+      pc_hhm_context_engine = new cs::CrfPseudocounts<cs::AA>(*crf);
+      pc_prefilter_context_engine = new cs::CrfPseudocounts<cs::AA>(*crf);
+    }
+    else {
+      context_lib = new cs::ContextLibrary<cs::AA>(fin);
+      cs::TransformToLog(*context_lib);
+      pc_hhm_context_engine = new cs::LibraryPseudocounts<cs::AA>(*context_lib,
+          par.csw, par.csb);
+      pc_prefilter_context_engine = new cs::LibraryPseudocounts<cs::AA>(
+          *context_lib, par.csw, par.csb);
     }
     fclose(fin);
     pc_hhm_context_engine->SetTargetNeff(par.pc_hhm_context_engine.target_neff);
     pc_prefilter_context_engine->SetTargetNeff(
-            par.pc_prefilter_context_engine.target_neff);
+        par.pc_prefilter_context_engine.target_neff);
 
     // Prepare pseudocounts admixture method
     pc_hhm_context_mode = par.pc_hhm_context_engine.CreateAdmix();
@@ -132,7 +133,9 @@ HHblits::~HHblits() {
   }
 
   delete cs_lib;
-  DeletePseudocountsEngine(context_lib, crf, pc_hhm_context_engine, pc_hhm_context_mode, pc_prefilter_context_engine, pc_prefilter_context_mode);
+  DeletePseudocountsEngine(context_lib, crf, pc_hhm_context_engine,
+      pc_hhm_context_mode, pc_prefilter_context_engine,
+      pc_prefilter_context_mode);
 
   if (par.prefilter) {
     free(length);
@@ -150,127 +153,144 @@ HHblits::~HHblits() {
 }
 
 void HHblits::ProcessAllArguments(int argc, char** argv, Parameters& par) {
-	  par.argv = argv;
-	  par.argc = argc;
+  par.argv = argv;
+  par.argc = argc;
 
-	  par.premerge = 3;
-	  par.Ndiff = 1000;
-	  par.prefilter = true;
+  par.premerge = 3;
+  par.Ndiff = 1000;
+  par.prefilter = true;
 
-	  // Enable changing verbose mode before command line are processed
-	  for (int i = 1; i < argc; i++) {
-	    if (argc > 1 && !strcmp(argv[i], "-v0"))
-	      v = 0;
-	    else if (argc > 1 && !strcmp(argv[i], "-v1"))
-	      v = 1;
-	    else if (argc > 2 && !strcmp(argv[i], "-v"))
-	      v = atoi(argv[i + 1]);
-	  }
+  par.early_stopping_filter = true;
+  par.filter_thresh=0.01;
 
-	  par.v = v;
+  // Enable changing verbose mode before command line are processed
+  for (int i = 1; i < argc; i++) {
+    if (argc > 1 && !strcmp(argv[i], "-v0"))
+      v = 0;
+    else if (argc > 1 && !strcmp(argv[i], "-v1"))
+      v = 1;
+    else if (argc > 2 && !strcmp(argv[i], "-v"))
+      v = atoi(argv[i + 1]);
+  }
 
-	  par.SetDefaultPaths();
+  par.v = v;
 
-	  // Process default otpions from .hhdefaults file
-	  char* argv_conf[MAXOPT];
-	  int argc_conf = 0;
+  par.SetDefaultPaths();
 
-	  ReadDefaultsFile(argc_conf, argv_conf, argv[0]);
-	  ProcessArguments(argc_conf, argv_conf, par);
+  // Process default otpions from .hhdefaults file
+  char* argv_conf[MAXOPT];
+  int argc_conf = 0;
 
-	  for (int n = 1; n < argc_conf; n++)
-	    delete[] argv_conf[n];
+  ReadDefaultsFile(argc_conf, argv_conf, argv[0]);
+  ProcessArguments(argc_conf, argv_conf, par);
 
-	  // Process command line options (they override defaults from .hhdefaults file)
-	  ProcessArguments(argc, argv, par);
+  for (int n = 1; n < argc_conf; n++)
+    delete[] argv_conf[n];
 
-	  // Check needed files
-	  if (!*par.infile || !strcmp(par.infile, "")) {
-	    help(par);
-	    std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
-	    std::cerr << "\tinput file missing!" << std::endl;
-	    exit(4);
-	  }
-	  if (!*par.db_base) {
-	    help(par);
-	    std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
-	    std::cerr << "\tdatabase missing (see -d)\n";
-	    exit(4);
-	  }
-	  if (par.addss == 1 && (!*par.psipred || !*par.psipred_data)) {
-	    help(par);
-	    std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
-	    std::cerr << "\tmissing PSIPRED directory (see -psipred and -psipred_data).\n" << std::endl;
-	    std::cerr << "\tIf you don't need the predicted secondary structure, don't use the -addss option!" << std::endl;
-	    exit(4);
-	  }
-	  if (!par.nocontxt) {
-	    if (!strcmp(par.clusterfile, "")) {
-	      help(par);
-		  std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
-	      std::cerr << "\tcontext-specific library missing (see -contxt)\n";
-	      exit(4);
-	    }
-	    if (!strcmp(par.cs_library, "")) {
-	      help(par);
-          std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
-          std::cerr << "\tcolumn state library (see -cslib)\n";
-	      exit(4);
-	    }
-	  }
-	  if (par.loc == 0 && par.num_rounds >= 2 && v >= 1) {
-		std::cerr << "Warning in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
-	    std::cerr << "\tusing -global alignment for iterative searches is deprecated since non-homologous sequence segments can easily enter the MSA and corrupt it.\n";
-	  }
+  // Process command line options (they override defaults from .hhdefaults file)
+  ProcessArguments(argc, argv, par);
 
-	  if (par.num_rounds < 1)
-	    par.num_rounds = 1;
-	  else if (par.num_rounds > 8) {
-	    if (v >= 1) {
-	      std::cerr << "Warning in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
-	      std::cerr << "\tNumber of iterations (" << par.num_rounds << ") to large => Set to 8 iterations\n";
-	    }
-	    par.num_rounds = 8;
-	  }
+  // Check needed files
+  if (!*par.infile || !strcmp(par.infile, "")) {
+    help(par);
+    std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__
+        << ":" << std::endl;
+    std::cerr << "\tinput file missing!" << std::endl;
+    exit(4);
+  }
+  if (!*par.db_base) {
+    help(par);
+    std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__
+        << ":" << std::endl;
+    std::cerr << "\tdatabase missing (see -d)\n";
+    exit(4);
+  }
+  if (par.addss == 1 && (!*par.psipred || !*par.psipred_data)) {
+    help(par);
+    std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__
+        << ":" << std::endl;
+    std::cerr
+        << "\tmissing PSIPRED directory (see -psipred and -psipred_data).\n"
+        << std::endl;
+    std::cerr
+        << "\tIf you don't need the predicted secondary structure, don't use the -addss option!"
+        << std::endl;
+    exit(4);
+  }
+  if (!par.nocontxt) {
+    if (!strcmp(par.clusterfile, "")) {
+      help(par);
+      std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": "
+          << __func__ << ":" << std::endl;
+      std::cerr << "\tcontext-specific library missing (see -contxt)\n";
+      exit(4);
+    }
+    if (!strcmp(par.cs_library, "")) {
+      help(par);
+      std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": "
+          << __func__ << ":" << std::endl;
+      std::cerr << "\tcolumn state library (see -cslib)\n";
+      exit(4);
+    }
+  }
+  if (par.loc == 0 && par.num_rounds >= 2 && v >= 1) {
+    std::cerr << "Warning in " << __FILE__ << ":" << __LINE__ << ": "
+        << __func__ << ":" << std::endl;
+    std::cerr
+        << "\tusing -global alignment for iterative searches is deprecated since non-homologous sequence segments can easily enter the MSA and corrupt it.\n";
+  }
 
-	  // Premerging can be very time-consuming on large database a3ms, such as from pdb70.
-	  // Hence it is only done when iteratively searching against uniprot20 or nr20 with their much smaller MSAs:
-	  if (!(par.num_rounds > 1 || *par.alnfile || *par.psifile || *par.hhmfile || *par.alisbasename))
-	    par.premerge = 0;
+  if (par.num_rounds < 1)
+    par.num_rounds = 1;
+  else if (par.num_rounds > 8) {
+    if (v >= 1) {
+      std::cerr << "Warning in " << __FILE__ << ":" << __LINE__ << ": "
+          << __func__ << ":" << std::endl;
+      std::cerr << "\tNumber of iterations (" << par.num_rounds
+          << ") to large => Set to 8 iterations\n";
+    }
+    par.num_rounds = 8;
+  }
 
-	  // No outfile given? Name it basename.hhm
-	  if (!*par.outfile) {     // outfile not given? Name it basename.hhm
-	    RemoveExtension(par.outfile, par.infile);
-	    strcat(par.outfile, ".hhr");
-	    if (v >= 2)
-	      cout << "Search results will be written to " << par.outfile << "\n";
-	  }
+  // Premerging can be very time-consuming on large database a3ms, such as from pdb70.
+  // Hence it is only done when iteratively searching against uniprot20 or nr20 with their much smaller MSAs:
+  if (!(par.num_rounds > 1 || *par.alnfile || *par.psifile || *par.hhmfile
+      || *par.alisbasename))
+    par.premerge = 0;
 
-	  // Check option compatibilities
-	  if (par.nseqdis > MAXSEQDIS - 3 - par.showcons)
-	    par.nseqdis = MAXSEQDIS - 3 - par.showcons; //3 reserved for secondary structure
-	  if (par.aliwidth < 20)
-	    par.aliwidth = 20;
-	  if (par.pc_hhm_context_engine.pca < 0.001)
-	    par.pc_hhm_context_engine.pca = 0.001; // to avoid log(0)
-	  if (par.pc_prefilter_context_engine.pca < 0.001)
-	    par.pc_prefilter_context_engine.pca = 0.001; // to avoid log(0)
-	  if (par.b > par.B)
-	    par.B = par.b;
-	  if (par.z > par.Z)
-	    par.Z = par.z;
-	  if (par.maxmem < 1.0) {
-	    cerr << "WARNING: setting -maxmem to its minimum allowed value of 1.0\n";
-	    par.maxmem = 1.0;
-	  }
-	  if (par.mact >= 1.0)
-	    par.mact = 0.999;
-	  else if (par.mact < 0)
-	    par.mact = 0.0;
-	  if (par.macins >= 1.0)
-	    par.macins = 0.999;
-	  else if (par.macins < 0)
-	    par.macins = 0.0;
+  // No outfile given? Name it basename.hhm
+  if (!*par.outfile) {     // outfile not given? Name it basename.hhm
+    RemoveExtension(par.outfile, par.infile);
+    strcat(par.outfile, ".hhr");
+    if (v >= 2)
+      cout << "Search results will be written to " << par.outfile << "\n";
+  }
+
+  // Check option compatibilities
+  if (par.nseqdis > MAXSEQDIS - 3 - par.showcons)
+    par.nseqdis = MAXSEQDIS - 3 - par.showcons; //3 reserved for secondary structure
+  if (par.aliwidth < 20)
+    par.aliwidth = 20;
+  if (par.pc_hhm_context_engine.pca < 0.001)
+    par.pc_hhm_context_engine.pca = 0.001; // to avoid log(0)
+  if (par.pc_prefilter_context_engine.pca < 0.001)
+    par.pc_prefilter_context_engine.pca = 0.001; // to avoid log(0)
+  if (par.b > par.B)
+    par.B = par.b;
+  if (par.z > par.Z)
+    par.Z = par.z;
+  if (par.maxmem < 1.0) {
+    cerr << "WARNING: setting -maxmem to its minimum allowed value of 1.0\n";
+    par.maxmem = 1.0;
+  }
+  if (par.mact >= 1.0)
+    par.mact = 0.999;
+  else if (par.mact < 0)
+    par.mact = 0.0;
+  if (par.macins >= 1.0)
+    par.macins = 0.999;
+  else if (par.macins < 0)
+    par.macins = 0.0;
 }
 
 void HHblits::SetDatabase(char* db_base) {
@@ -324,8 +344,10 @@ void HHblits::SetDatabase(char* db_base) {
     if (par.num_rounds > 1 || *par.alnfile || *par.psifile || *par.hhmfile
         || *par.alisbasename) {
 
-      std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
-      std::cerr << "\tCould not open A3M database " << dba3m_data_filename << " (needed to construct result MSA)" << endl;
+      std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": "
+          << __func__ << ":" << std::endl;
+      std::cerr << "\tCould not open A3M database " << dba3m_data_filename
+          << " (needed to construct result MSA)" << endl;
       exit(4);
     }
     dba3m_data_filename[0] = 0;
@@ -361,11 +383,13 @@ void HHblits::SetDatabase(char* db_base) {
         "r");
 
     if (dbuniprot_sequence_data_file == NULL) {
-      OpenFileError(dbuniprot_sequence_data_filename, __FILE__, __LINE__, __func__);
+      OpenFileError(dbuniprot_sequence_data_filename, __FILE__, __LINE__,
+          __func__);
     }
 
     if (dbuniprot_sequence_index_file == NULL) {
-      OpenFileError(dbuniprot_sequence_index_filename, __FILE__, __LINE__, __func__);
+      OpenFileError(dbuniprot_sequence_index_filename, __FILE__, __LINE__,
+          __func__);
     }
 
     size_t uniprot_sequence_data_size = CountLinesInFile(
@@ -388,11 +412,13 @@ void HHblits::SetDatabase(char* db_base) {
     dbuniprot_header_index_file = fopen(dbuniprot_header_index_filename, "r");
 
     if (dbuniprot_header_data_file == NULL) {
-      OpenFileError(dbuniprot_header_data_filename, __FILE__, __LINE__, __func__);
+      OpenFileError(dbuniprot_header_data_filename, __FILE__, __LINE__,
+          __func__);
     }
 
     if (dbuniprot_header_index_file == NULL) {
-      OpenFileError(dbuniprot_header_index_filename, __FILE__, __LINE__, __func__);
+      OpenFileError(dbuniprot_header_index_filename, __FILE__, __LINE__,
+          __func__);
     }
 
     size_t uniprot_header_data_size = CountLinesInFile(
@@ -458,12 +484,12 @@ void HHblits::SetDatabase(char* db_base) {
 }
 
 void HHblits::Reset() {
-  if(q) {
+  if (q) {
     delete q;
-    q=NULL;
+    q = NULL;
   }
 
-  if(q_tmp) {
+  if (q_tmp) {
     delete q_tmp;
     q_tmp = NULL;
   }
@@ -483,7 +509,7 @@ void HHblits::Reset() {
 
   reducedHitlist.Reset();
   while (!reducedHitlist.End())
-	reducedHitlist.Delete().Delete();
+    reducedHitlist.Delete().Delete();
 
   alis.clear();
 }
@@ -1297,7 +1323,6 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
   } // end of for-loop for command line input
 }
 
-
 void HHblits::ReadQueryA3MFile() {
   // Open query a3m MSA
 }
@@ -1324,7 +1349,8 @@ void HHblits::getTemplateA3M(char* entry_name, long& ftellpos,
 
     ftellpos = entry->offset;
     tali.ReadCompressed(entry, data, dbuniprot_sequence_index,
-        dbuniprot_sequence_data, dbuniprot_header_index, dbuniprot_header_data, par.mark, par.maxcol);
+        dbuniprot_sequence_data, dbuniprot_header_index, dbuniprot_header_data,
+        par.mark, par.maxcol);
   }
   else {
     FILE* dbf = ffindex_fopen_by_name(dba3m_data, dba3m_index, entry_name);
@@ -1359,10 +1385,11 @@ void HHblits::getTemplateHMMFromA3M(char* entry_name, char use_global_weights,
     long& ftellpos, int& format, HMM* t) {
   Alignment tali;
   getTemplateA3M(entry_name, ftellpos, tali);
-  tali.N_filtered = tali.Filter(par.max_seqid_db, S, par.coverage_db, par.qid_db,
-      par.qsc_db, par.Ndiff_db);
+  tali.N_filtered = tali.Filter(par.max_seqid_db, S, par.coverage_db,
+      par.qid_db, par.qsc_db, par.Ndiff_db);
   t->name[0] = t->longname[0] = t->fam[0] = '\0';
-  tali.FrequenciesAndTransitions(t, use_global_weights, par.mark, par.cons, par.showcons, par.maxres, pb, Sim);
+  tali.FrequenciesAndTransitions(t, use_global_weights, par.mark, par.cons,
+      par.showcons, par.maxres, pb, Sim);
 
   format = 0;
 }
@@ -1397,7 +1424,7 @@ void HHblits::getTemplateHMM(char* entry_name, char use_global_weights,
         par.hmmer_used = true;
       }
       else if (!strncmp(line, "HH", 2))    // read HHM format
-      {
+          {
         char path[NAMELEN];
         Pathname(path, entry_name);
 
@@ -1414,8 +1441,10 @@ void HHblits::getTemplateHMM(char* entry_name, char use_global_weights,
       //      t->Read(dbf, path);
       //    }
       else {
-    	std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
-    	std::cerr << "\tunrecognized HMM file format in \'" << entry_name << "\'. \n";
+        std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": "
+            << __func__ << ":" << std::endl;
+        std::cerr << "\tunrecognized HMM file format in \'" << entry_name
+            << "\'. \n";
         cerr << "Context:\n'" << line << "\n";
         fgetline(line, LINELEN, dbf);
         cerr << line << "\n";
@@ -1432,40 +1461,60 @@ void HHblits::getTemplateHMM(char* entry_name, char use_global_weights,
   getTemplateHMMFromA3M(entry_name, use_global_weights, ftellpos, format, t);
 }
 
-void HHblits::DoViterbiSearch(char *dbfiles[], int ndb, Hash<Hit>* previous_hits, bool alignByWorker) {
+void HHblits::DoViterbiSearch(char *dbfiles[], int ndb,
+    Hash<Hit>* previous_hits, bool alignByWorker) {
   // Search databases
   for (int bin = 0; bin < par.threads; bin++) {
     hit[bin]->realign_around_viterbi = false;
   }
 
+  double filter_cutoff = par.filter_length * par.filter_thresh;
+  par.filter_sum = par.filter_length;
+  par.filter_counter = 0;
+  par.filter_evals = new double[par.filter_length];
+
+  for (int a = 0; a < par.filter_length; a++) {
+    par.filter_evals[a] = 1;
+  }
+
   // For all the databases comming through prefilter
-  #pragma omp parallel for schedule(dynamic, 5)
+  #pragma omp parallel for schedule(dynamic, 1)
   for (int idb = 0; idb < ndb; idb++) {
     // Allocate free bin (no need to lock, since slave processes cannot change FREE to other status)
     int bin = omp_get_thread_num();
 
-    #pragma omp critical
-    {
-      hit[bin]->index = N_searched;     // give hit a unique index for HMM
-      ++N_searched;
+    if (!(par.early_stopping_filter && par.filter_sum < filter_cutoff)) {
+      #pragma omp critical
+      {
+        hit[bin]->index = N_searched;     // give hit a unique index for HMM
+        ++N_searched;
+      }
+
+      getTemplateHMM(dbfiles[idb], 1, hit[bin]->ftellpos, format[bin], t[bin]);
+
+      if (v >= 4)
+        printf("Aligning with %s\n", t[bin]->name);
+
+      hit[bin]->dbfile = new char[strlen(dbfiles[idb]) + 1];
+      strcpy(hit[bin]->dbfile, dbfiles[idb]); // record db file name from which next HMM is read
+
+      if (alignByWorker)
+        AlignByWorker(par, hit[bin], t[bin], q, format[bin], pb, R, S73, S33,
+            hitlist);
+      else
+        PerformViterbiByWorker(par, hit[bin], t[bin], q, format[bin], pb, R,
+            S73, S33, hitlist, previous_hits);
     }
-
-    getTemplateHMM(dbfiles[idb], 1, hit[bin]->ftellpos, format[bin], t[bin]);
-
-    if (v >= 4)
-      printf("Aligning with %s\n", t[bin]->name);
-
-    hit[bin]->dbfile = new char[strlen(dbfiles[idb]) + 1];
-    strcpy(hit[bin]->dbfile, dbfiles[idb]); // record db file name from which next HMM is read
-
-    if (alignByWorker)
-      AlignByWorker(par, hit[bin], t[bin], q, format[bin], pb, R, S73, S33, hitlist);
-    else
-      PerformViterbiByWorker(par, hit[bin], t[bin], q, format[bin], pb, R, S73, S33, hitlist, previous_hits);
+    else {
+      std::cerr << "Early stopping!" << std::endl;
+    }
   }
+
+  delete[] par.filter_evals;
 }
 
-void HHblits::ViterbiSearch(char *dbfiles[], int ndb, Hash<Hit>* previous_hits, int db_size) {
+void HHblits::ViterbiSearch(char *dbfiles[], int ndb, Hash<Hit>* previous_hits,
+    int db_size) {
   // Initialize
   v1 = v;
   if (v > 0 && v <= 3)
@@ -1493,14 +1542,16 @@ void HHblits::ViterbiSearch(char *dbfiles[], int ndb, Hash<Hit>* previous_hits, 
 
   // Calculate E-values as combination of P-value for Viterbi HMM-HMM comparison and prefilter E-value: E = Ndb P (Epre/Ndb)^alpha
   if (par.prefilter)
-    hitlist.CalculateHHblitsEvalues(q, par.dbsize, par.alphaa, par.alphab, par.alphac, par.prefilter_evalue_thresh);
+    hitlist.CalculateHHblitsEvalues(q, par.dbsize, par.alphaa, par.alphab,
+        par.alphac, par.prefilter_evalue_thresh);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Variant of ViterbiSearch() function for rescoring previously found HMMs with Viterbi algorithm.
 // Perform Viterbi search on each hit object in global hash previous_hits, but keep old alignment
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void HHblits::RescoreWithViterbiKeepAlignment(int db_size, Hash<Hit>* previous_hits) {
+void HHblits::RescoreWithViterbiKeepAlignment(int db_size,
+    Hash<Hit>* previous_hits) {
   // Initialize
   v1 = v;
   if (v > 0 && v <= 3)
@@ -1540,14 +1591,16 @@ void HHblits::RescoreWithViterbiKeepAlignment(int db_size, Hash<Hit>* previous_h
     printf("Sorting hit list ...\n");
   hitlist.SortList();
 
-  hitlist.CalculatePvalues(q, par.loc, par.ssm, par.ssw);  // Use NN prediction of lamda and mu
+  hitlist.CalculatePvalues(q, par.loc, par.ssm, par.ssw); // Use NN prediction of lamda and mu
 
   if (par.prefilter)
-    hitlist.CalculateHHblitsEvalues(q, par.dbsize, par.alphaa, par.alphab, par.alphac, par.prefilter_evalue_thresh);
+    hitlist.CalculateHHblitsEvalues(q, par.dbsize, par.alphaa, par.alphab,
+        par.alphac, par.prefilter_evalue_thresh);
 
 }
 
-void HHblits::perform_realign(char *dbfiles[], int ndb, Hash<char>* premerged_hits) {
+void HHblits::perform_realign(char *dbfiles[], int ndb,
+    Hash<char>* premerged_hits) {
   q->Log2LinTransitionProbs(1.0); // transform transition freqs to lin space if not already done
   int nhits = 0;
   int N_aligned = 0;
@@ -1714,7 +1767,8 @@ void HHblits::perform_realign(char *dbfiles[], int ndb, Hash<char>* premerged_hi
       hit[bin]->realign_around_viterbi = true;
 
       // Align q to template in *hit[bin]
-      hit[bin]->Forward(q, t[bin], par.ssm, par.min_overlap, par.loc, par.shift, par.ssw, par.exclstr, S73, S33);
+      hit[bin]->Forward(q, t[bin], par.ssm, par.min_overlap, par.loc, par.shift,
+          par.ssw, par.exclstr, S73, S33);
       hit[bin]->Backward(q, t[bin], par.loc, par.shift, par.ssw, S73, S33);
       hit[bin]->MACAlignment(q, t[bin], par.loc, par.mact, par.macins);
       hit[bin]->BacktraceMAC(q, t[bin], par.corr, par.ssw, S73, S33);
@@ -1749,7 +1803,8 @@ void HHblits::perform_realign(char *dbfiles[], int ndb, Hash<char>* premerged_hi
       getTemplateA3M(hit[bin]->dbfile, ftellpos, Tali);
 
       if (par.allseqs) // need to keep *all* sequences in Qali_allseqs? => merge before filtering
-        Qali_allseqs.MergeMasterSlave(*hit[bin], Tali, hit[bin]->dbfile, par.maxcol);
+        Qali_allseqs.MergeMasterSlave(*hit[bin], Tali, hit[bin]->dbfile,
+            par.maxcol);
 
       Tali.N_filtered = Tali.Filter(par.max_seqid_db, S, par.coverage_db,
           par.qid_db, par.qsc_db, par.Ndiff_db);
@@ -1757,14 +1812,16 @@ void HHblits::perform_realign(char *dbfiles[], int ndb, Hash<char>* premerged_hi
       Qali.MergeMasterSlave(*hit[bin], Tali, hit[bin]->dbfile, par.maxcol);
 
       // Convert ASCII to int (0-20),throw out all insert states, record their number in I[k][i]
-      Qali.Compress("merged A3M file", par.cons, par.maxres, par.maxcol, par.M, par.Mgaps);
+      Qali.Compress("merged A3M file", par.cons, par.maxres, par.maxcol, par.M,
+          par.Mgaps);
 
       // Remove sequences with seq. identity larger than seqid percent (remove the shorter of two)
       Qali.N_filtered = Qali.Filter(par.max_seqid, S, par.coverage, par.qid,
           par.qsc, par.Ndiff);
 
       // Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
-      Qali.FrequenciesAndTransitions(q, par.wg, par.mark, par.cons, par.showcons, par.maxres, pb, Sim);
+      Qali.FrequenciesAndTransitions(q, par.wg, par.mark, par.cons,
+          par.showcons, par.maxres, pb, Sim);
 
       stringstream ss_tmp;
       ss_tmp << hit[bin]->file << "__" << hit[bin]->irep;
@@ -1803,7 +1860,7 @@ void HHblits::perform_realign(char *dbfiles[], int ndb, Hash<char>* premerged_hi
   //////////////////////////////////////////////////////////////////////////////////
 
   // Read all HMMs whose position is given in phash_plist_realignhitpos
-  #pragma omp parallel for schedule(dynamic, 5)
+#pragma omp parallel for schedule(dynamic, 1)
   for (int idb = 0; idb < ndb; idb++) {
     // Can we skip dbfiles[idb] because it contains no template to be realigned?
     if (!phash_plist_realignhitpos->Contains(dbfiles[idb]))
@@ -1838,7 +1895,7 @@ void HHblits::perform_realign(char *dbfiles[], int ndb, Hash<char>* premerged_hi
         if (v >= 2)
           fprintf(stderr, "Realigning with %s\n", t[bin]->name);
 
-        #pragma omp critical
+#pragma omp critical
         {
           N_aligned++;
         }
@@ -1967,10 +2024,14 @@ void HHblits::recalculateAlignmentsForDifferentQSC(HitList& hitlist,
   for (size_t qsc_index = 0; qsc_index < nqsc; qsc_index++) {
     float actual_qsc = qsc[qsc_index];
 
-    qali.Compress("filtered A3M file", par.cons, par.maxres, par.maxcol, par.M, par.Mgaps);
-    qali.N_filtered = qali.Filter(par.max_seqid, S, cov_tot, par.qid, actual_qsc, par.Ndiff);
-    qali.FrequenciesAndTransitions(q, par.wg, par.mark, par.cons, par.showcons, par.maxres, pb, Sim, NULL, false);
-    PrepareQueryHMM(par, inputformat, q, pc_hhm_context_engine, pc_hhm_context_mode, pb, R);
+    qali.Compress("filtered A3M file", par.cons, par.maxres, par.maxcol, par.M,
+        par.Mgaps);
+    qali.N_filtered = qali.Filter(par.max_seqid, S, cov_tot, par.qid,
+        actual_qsc, par.Ndiff);
+    qali.FrequenciesAndTransitions(q, par.wg, par.mark, par.cons, par.showcons,
+        par.maxres, pb, Sim, NULL, false);
+    PrepareQueryHMM(par, inputformat, q, pc_hhm_context_engine,
+        pc_hhm_context_mode, pb, R);
 
     hitlist.Reset();
     while (!hitlist.End()) {
@@ -1994,7 +2055,8 @@ void HHblits::recalculateAlignmentsForDifferentQSC(HitList& hitlist,
 
       for (int irep = 1; irep <= par.altali; irep++) {
         hit.irep = irep;
-        hit.Viterbi(q, t, par.loc, par.ssm, par.maxres, par.min_overlap, par.shift, par.egt, par.egq, par.ssw, par.exclstr, S73, S33);
+        hit.Viterbi(q, t, par.loc, par.ssm, par.maxres, par.min_overlap,
+            par.shift, par.egt, par.egq, par.ssw, par.exclstr, S73, S33);
 
         if (hit.irep > 1 && hit.score <= SMIN)
           break;
@@ -2009,7 +2071,8 @@ void HHblits::recalculateAlignmentsForDifferentQSC(HitList& hitlist,
     }
 
     realigned_viterbi_hitlist.CalculatePvalues(q, par.loc, par.ssm, par.ssw);
-    realigned_viterbi_hitlist.CalculateHHblitsEvalues(q, par.dbsize, par.alphaa, par.alphab, par.alphac, par.prefilter_evalue_thresh);
+    realigned_viterbi_hitlist.CalculateHHblitsEvalues(q, par.dbsize, par.alphaa,
+        par.alphab, par.alphac, par.prefilter_evalue_thresh);
 
     q->Log2LinTransitionProbs(1.0);
 
@@ -2045,7 +2108,8 @@ void HHblits::recalculateAlignmentsForDifferentQSC(HitList& hitlist,
       hit.realign_around_viterbi = false;
 
       // Align q to template in *hit[bin]
-      hit.Forward(q, t, par.ssm, par.min_overlap, par.loc, par.shift, par.ssw, par.exclstr, S73, S33);
+      hit.Forward(q, t, par.ssm, par.min_overlap, par.loc, par.shift, par.ssw,
+          par.exclstr, S73, S33);
       hit.Backward(q, t, par.loc, par.shift, par.ssw, S73, S33);
       hit.MACAlignment(q, t, par.loc, par.mact, par.macins);
       hit.BacktraceMAC(q, t, par.corr, par.ssw, S73, S33);
@@ -2103,8 +2167,7 @@ void HHblits::uniqueHitlist(HitList& hitlist) {
 }
 
 void HHblits::wiggleQSC(HitList& hitlist, int n_redundancy, Alignment& Qali,
-    char inputformat, float* qsc, size_t nqsc,
-    HitList& reducedFinalHitList) {
+    char inputformat, float* qsc, size_t nqsc, HitList& reducedFinalHitList) {
   int query_length = Qali.L;
   HitList* reducedHitList = new HitList();
   //  HitList* wiggledHitList = new HitList();
@@ -2281,7 +2344,7 @@ int HHblits::swStripedByte(unsigned char *querySeq, int queryLength,
 int HHblits::ungapped_sse_score(const unsigned char* query_profile,
     const int query_length, const unsigned char* db_sequence,
     const int dbseq_length, const unsigned char score_offset, __m128i* workspace)
-{
+    {
       int i; // position in query bands (0,..,W-1)
     int j;// position in db sequence (0,..,dbseq_length-1)
     int W = (query_length + 15) / 16;// width of bands in query and score matrix = hochgerundetes LQ/16
@@ -2366,10 +2429,12 @@ void HHblits::init_no_prefiltering() {
   par.dbsize = db_index->n_entries;
 
   if (par.dbsize > par.maxnumdb_no_prefilter) {
-	std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
-	std::cerr << "\tWithout prefiltering, the max. number of database HHMs is "
+    std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__
+        << ":" << std::endl;
+    std::cerr << "\tWithout prefiltering, the max. number of database HHMs is "
         << par.maxnumdb_no_prefilter << " (actual: " << par.dbsize << ")\n";
-	std::cerr << "\tYou can increase the allowed maximum using the -maxfilt <max> option.\n";
+    std::cerr
+        << "\tYou can increase the allowed maximum using the -maxfilt <max> option.\n";
     exit(4);
   }
 
@@ -2393,7 +2458,8 @@ void HHblits::checkCSFormat(size_t nr_checks) {
   }
 
   if (nr_checks == 0) {
-	std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+    std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__
+        << ":" << std::endl;
     std::cerr << "\tYour cs database is in an old format!" << std::endl;
     std::cerr << "\tThis format is no longer supportet!" << std::endl;
     std::cerr << "\tCorrespond to the user manual!" << std::endl;
@@ -2763,7 +2829,6 @@ void HHblits::prefilter_db(Hash<Hit>* previous_hits) {
     delete doubled;
 }
 
-
 //void HHblits::AlignByWorker(int bin) {
 //  // Prepare q ant t and compare
 //  PrepareTemplateHMM(par, q, t[bin], format[bin], pb, R);
@@ -2908,9 +2973,11 @@ void HHblits::prefilter_db(Hash<Hit>* previous_hits) {
 //  return;
 //}
 
-void HHblits::wiggleQSC(int n_redundancy, float* qsc, size_t nqsc, HitList& reducedFinalHitList) {
-	wiggleQSC(hitlist, n_redundancy, Qali, input_format, qsc, nqsc, reducedFinalHitList);
-	reducedFinalHitList.N_searched = hitlist.N_searched;
+void HHblits::wiggleQSC(int n_redundancy, float* qsc, size_t nqsc,
+    HitList& reducedFinalHitList) {
+  wiggleQSC(hitlist, n_redundancy, Qali, input_format, qsc, nqsc,
+      reducedFinalHitList);
+  reducedFinalHitList.N_searched = hitlist.N_searched;
 }
 
 void HHblits::run(FILE* query_fh, char* query_path) {
@@ -2932,7 +2999,8 @@ void HHblits::run(FILE* query_fh, char* query_path) {
 
   // Read query input file (HHM, HMMER, or alignment format) without adding pseudocounts
   Qali.N_in = 0;
-  ReadQueryFile(par, query_fh, input_format, par.wg, q, &Qali, query_path, pb, S, Sim);
+  ReadQueryFile(par, query_fh, input_format, par.wg, q, &Qali, query_path, pb,
+      S, Sim);
 
   if (Qali.N_in - Qali.N_ss > 1)
     par.premerge = 0;
@@ -3001,7 +3069,8 @@ void HHblits::run(FILE* query_fh, char* query_path) {
 //      v = v1;
 //    }
 
-    PrepareQueryHMM(par, input_format, q, pc_hhm_context_engine, pc_hhm_context_mode, pb, R);
+    PrepareQueryHMM(par, input_format, q, pc_hhm_context_engine,
+        pc_hhm_context_mode, pb, R);
 
     ////////////////////////////////////////////
     // Prefiltering
@@ -3066,7 +3135,8 @@ void HHblits::run(FILE* query_fh, char* query_path) {
         if (v > 0) {
           printf("Rescoring previously found HMMs with Viterbi algorithm\n");
         }
-        RescoreWithViterbiKeepAlignment(ndb_new + previous_hits->Size(), previous_hits);
+        RescoreWithViterbiKeepAlignment(ndb_new + previous_hits->Size(),
+            previous_hits);
       }
     }
 
@@ -3121,7 +3191,8 @@ void HHblits::run(FILE* query_fh, char* query_path) {
           getTemplateA3M(hit_cur.dbfile, ftellpos, Tali);
 
           if (par.allseqs) // need to keep *all* sequences in Qali_allseqs? => merge before filtering
-            Qali_allseqs.MergeMasterSlave(hit_cur, Tali, hit_cur.dbfile, par.maxcol);
+            Qali_allseqs.MergeMasterSlave(hit_cur, Tali, hit_cur.dbfile,
+                par.maxcol);
           Tali.N_filtered = Tali.Filter(par.max_seqid_db, S, par.coverage_db,
               par.qid_db, par.qsc_db, par.Ndiff_db);
           Qali.MergeMasterSlave(hit_cur, Tali, hit_cur.dbfile, par.maxcol);
@@ -3131,28 +3202,33 @@ void HHblits::run(FILE* query_fh, char* query_path) {
         }
 
         // Convert ASCII to int (0-20),throw out all insert states, record their number in I[k][i]
-        Qali.Compress("merged A3M file", par.cons, par.maxres, par.maxcol, par.M, par.Mgaps);
+        Qali.Compress("merged A3M file", par.cons, par.maxres, par.maxcol,
+            par.M, par.Mgaps);
 
         // Sort out the nseqdis most dissimilacd r sequences for display in the result alignments
-        Qali.FilterForDisplay(par.max_seqid, par.mark, S, par.coverage, par.qid, par.qsc,
-            par.nseqdis);
+        Qali.FilterForDisplay(par.max_seqid, par.mark, S, par.coverage, par.qid,
+            par.qsc, par.nseqdis);
 
         // Remove sequences with seq. identity larger than seqid percent (remove the shorter of two)
         const float COV_ABS = 25;     // min. number of aligned residues
-        int cov_tot = imax(imin((int) (COV_ABS / Qali.L * 100 + 0.5), 70), par.coverage);
+        int cov_tot = imax(imin((int) (COV_ABS / Qali.L * 100 + 0.5), 70),
+            par.coverage);
         if (v > 2)
           printf("Filter new alignment with cov %3i%%\n", cov_tot);
-        Qali.N_filtered = Qali.Filter(par.max_seqid, S, cov_tot, par.qid, par.qsc, par.Ndiff);
+        Qali.N_filtered = Qali.Filter(par.max_seqid, S, cov_tot, par.qid,
+            par.qsc, par.Ndiff);
       }
 
       // Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
-      Qali.FrequenciesAndTransitions(q, par.wg, par.mark, par.cons, par.showcons, par.maxres, pb, Sim, NULL, true);
+      Qali.FrequenciesAndTransitions(q, par.wg, par.mark, par.cons,
+          par.showcons, par.maxres, pb, Sim, NULL, true);
 
       if (par.notags)
         q->NeutralizeTags(pb);
 
       // Calculate SSpred if we need to print out alis after each iteration or if last iteration
-      if (par.addss && (*par.alisbasename || round == par.num_rounds || new_hits == 0)) {
+      if (par.addss
+          && (*par.alisbasename || round == par.num_rounds || new_hits == 0)) {
         char ss_pred[par.maxres];
         char ss_conf[par.maxres];
 
@@ -3205,8 +3281,8 @@ void HHblits::run(FILE* query_fh, char* query_path) {
           seqs_found, cluster_found, par.e);
 
     if (v >= 2
-        && (round < par.num_rounds || *par.alnfile || *par.psifile || *par.hhmfile
-            || *par.alisbasename))
+        && (round < par.num_rounds || *par.alnfile || *par.psifile
+            || *par.hhmfile || *par.alisbasename))
       printf(
           "Number of effective sequences of resulting query HMM: Neff = %4.2f\n",
           q->Neff_HMM);
@@ -3248,8 +3324,8 @@ void HHblits::run(FILE* query_fh, char* query_path) {
         "WARNING: Using HMMER files results in a drastically reduced sensitivity (>10%%).\nWe recommend to use HHMs build by hhmake.\n");
 
   if (*par.reduced_outfile) {
-    float qscs[] = {-20, 0, 0.1, 0.2};
-	wiggleQSC(par.n_redundancy, qscs, 4, reducedHitlist);
+    float qscs[] = { -20, 0, 0.1, 0.2 };
+    wiggleQSC(par.n_redundancy, qscs, 4, reducedHitlist);
   }
 
   previous_hits->Reset();
@@ -3260,155 +3336,153 @@ void HHblits::run(FILE* query_fh, char* query_path) {
   delete premerged_hits;
 }
 
-
 void HHblits::writeHHRFile(char* hhrFile) {
-	if(*hhrFile) {
-		hitlist.PrintHHR(q_tmp, hhrFile, par.maxdbstrlen, par.showconf, par.showcons, par.showdssp, par.showpred, par.b, par.B, par.z, par.Z, par.aliwidth, par.nseqdis, par.p, par.E, par.argc, par.argv, S);
-	}
+  if (*hhrFile) {
+    hitlist.PrintHHR(q_tmp, hhrFile, par.maxdbstrlen, par.showconf,
+        par.showcons, par.showdssp, par.showpred, par.b, par.B, par.z, par.Z,
+        par.aliwidth, par.nseqdis, par.p, par.E, par.argc, par.argv, S);
+  }
 }
-
 
 void HHblits::writeAlisFile(char* basename) {
-	if(*basename) {
-	  std::map<int, Alignment>::iterator it;
-	  for(it = alis.begin(); it != alis.end(); it++) {
-		stringstream ss_tmp;
-		ss_tmp << basename << "_" << (*it).first << ".a3m";
-		std::string id = ss_tmp.str();
+  if (*basename) {
+    std::map<int, Alignment>::iterator it;
+    for (it = alis.begin(); it != alis.end(); it++) {
+      stringstream ss_tmp;
+      ss_tmp << basename << "_" << (*it).first << ".a3m";
+      std::string id = ss_tmp.str();
 
-        (*it).second.WriteToFile(id.c_str(), par.append, "a3m");
-	  }
-	}
+      (*it).second.WriteToFile(id.c_str(), par.append, "a3m");
+    }
+  }
 }
-
 
 void HHblits::writeScoresFile(char* scoresFile) {
-	if(*scoresFile) {
-		hitlist.PrintScoreFile(q, scoresFile);
-	}
+  if (*scoresFile) {
+    hitlist.PrintScoreFile(q, scoresFile);
+  }
 }
-
 
 void HHblits::writePairwiseAlisFile(char* pairwiseAlisFile, char outformat) {
-	if (*pairwiseAlisFile) {
-		hitlist.PrintAlignments(q, pairwiseAlisFile, par.showconf, par.showcons, par.showdssp, par.showpred, par.p, par.aliwidth, par.nseqdis, par.b, par.B, par.E, S, outformat);
-	}
+  if (*pairwiseAlisFile) {
+    hitlist.PrintAlignments(q, pairwiseAlisFile, par.showconf, par.showcons,
+        par.showdssp, par.showpred, par.p, par.aliwidth, par.nseqdis, par.b,
+        par.B, par.E, S, outformat);
+  }
 }
-
 
 void HHblits::writeAlitabFile(char* alitabFile) {
-	if (*alitabFile) {
-		hitlist.WriteToAlifile(q, alitabFile, par.alitab_scop);
-	}
+  if (*alitabFile) {
+    hitlist.WriteToAlifile(q, alitabFile, par.alitab_scop);
+  }
 }
-
 
 void HHblits::writeReducedHHRFile(char* reducedHHRFile) {
-	if(*reducedHHRFile) {
-		reducedHitlist.PrintHHR(q_tmp, reducedHHRFile, par.maxdbstrlen, par.showconf, par.showcons, par.showdssp, par.showpred, par.b, par.B, par.z, par.Z, par.aliwidth, par.nseqdis, par.p, par.E, par.argc, par.argv, S);
-	}
+  if (*reducedHHRFile) {
+    reducedHitlist.PrintHHR(q_tmp, reducedHHRFile, par.maxdbstrlen,
+        par.showconf, par.showcons, par.showdssp, par.showpred, par.b, par.B,
+        par.z, par.Z, par.aliwidth, par.nseqdis, par.p, par.E, par.argc,
+        par.argv, S);
+  }
 }
-
 
 void HHblits::writePsiFile(char* psiFile) {
-	  // Write output PSI-BLAST-formatted alignment?
-	  if (*psiFile) {
-	    if (par.allseqs)
-	      Qali_allseqs.WriteToFile(psiFile, par.append, "psi");
-	    else
-	      Qali.WriteToFile(psiFile, par.append, "psi");
-	  }
+  // Write output PSI-BLAST-formatted alignment?
+  if (*psiFile) {
+    if (par.allseqs)
+      Qali_allseqs.WriteToFile(psiFile, par.append, "psi");
+    else
+      Qali.WriteToFile(psiFile, par.append, "psi");
+  }
 }
-
 
 void HHblits::writeHMMFile(char* HMMFile) {
-	  // Write output HHM file?
-	  if (*HMMFile) {
-	    // Add *no* amino acid pseudocounts to query. This is necessary to copy f[i][a] to p[i][a]
-	    q->AddAminoAcidPseudocounts(0, 0.0, 0.0, 1.0);
-	    q->CalculateAminoAcidBackground(pb);
-
-	    q->WriteToFile(HMMFile, par.append, par.max_seqid, par.coverage, par.qid, par.Ndiff, par.qsc, par.argc, par.argv, pb);
-	  }
-}
-
-
-void HHblits::writeA3MFile(char* A3MFile) {
-	  // Write output A3M alignment?
-	  if (*A3MFile) {
-	    if (par.allseqs)
-	      Qali_allseqs.WriteToFile(A3MFile, par.append, "a3m");
-	    else
-	      Qali.WriteToFile(A3MFile, par.append, "a3m");
-	  }
-}
-
-std::map<int, Alignment>& HHblits::getAlis() {
-	return alis;
-}
-
-
-std::stringstream* HHblits::writeHHRFile() {
-	std::stringstream* out = new std::stringstream();
-	hitlist.PrintHHR(q_tmp, *out, par.maxdbstrlen, par.showconf, par.showcons, par.showdssp, par.showpred, par.b, par.B, par.z, par.Z, par.aliwidth, par.nseqdis, par.p, par.E, par.argc, par.argv, S);
-	return out;
-}
-
-
-std::stringstream* HHblits::writeScoresFile() {
-	std::stringstream* out = new std::stringstream();
-	hitlist.PrintScoreFile(q, *out);
-	return out;
-}
-
-
-std::stringstream* HHblits::writePairwiseAlisFile(char outformat) {
-	std::stringstream* out = new std::stringstream();
-	hitlist.PrintAlignments(q, *out, par.showconf, par.showcons, par.showdssp, par.showpred, par.p, par.aliwidth, par.nseqdis, par.b, par.B, par.E, S, outformat);
-	return out;
-}
-
-
-std::stringstream* HHblits::writeAlitabFile() {
-	std::stringstream* out = new std::stringstream();
-	hitlist.WriteToAlifile(q, *out, par.alitab_scop);
-	return out;
-}
-
-
-std::stringstream* HHblits::writeReducedHHRFile() {
-	std::stringstream* out = new std::stringstream();
-	reducedHitlist.PrintHHR(q_tmp, *out, par.maxdbstrlen, par.showconf, par.showcons, par.showdssp, par.showpred, par.b, par.B, par.z, par.Z, par.aliwidth, par.nseqdis, par.p, par.E, par.argc, par.argv, S);
-	return out;
-}
-
-
-std::stringstream* HHblits::writePsiFile() {
-	std::stringstream* out = new std::stringstream();
-	if (par.allseqs)
-      Qali_allseqs.WriteToFile(*out, "psi");
-    else
-      Qali.WriteToFile(*out, "psi");
-	return out;
-}
-
-
-std::stringstream* HHblits::writeHMMFile() {
+  // Write output HHM file?
+  if (*HMMFile) {
     // Add *no* amino acid pseudocounts to query. This is necessary to copy f[i][a] to p[i][a]
     q->AddAminoAcidPseudocounts(0, 0.0, 0.0, 1.0);
     q->CalculateAminoAcidBackground(pb);
 
-	std::stringstream* out = new std::stringstream();
-	q->WriteToFile(*out, par.max_seqid, par.coverage, par.qid, par.Ndiff, par.qsc, par.argc, par.argv, pb);
-	return out;
+    q->WriteToFile(HMMFile, par.append, par.max_seqid, par.coverage, par.qid,
+        par.Ndiff, par.qsc, par.argc, par.argv, pb);
+  }
 }
 
+void HHblits::writeA3MFile(char* A3MFile) {
+  // Write output A3M alignment?
+  if (*A3MFile) {
+    if (par.allseqs)
+      Qali_allseqs.WriteToFile(A3MFile, par.append, "a3m");
+    else
+      Qali.WriteToFile(A3MFile, par.append, "a3m");
+  }
+}
+
+std::map<int, Alignment>& HHblits::getAlis() {
+  return alis;
+}
+
+std::stringstream* HHblits::writeHHRFile() {
+  std::stringstream* out = new std::stringstream();
+  hitlist.PrintHHR(q_tmp, *out, par.maxdbstrlen, par.showconf, par.showcons,
+      par.showdssp, par.showpred, par.b, par.B, par.z, par.Z, par.aliwidth,
+      par.nseqdis, par.p, par.E, par.argc, par.argv, S);
+  return out;
+}
+
+std::stringstream* HHblits::writeScoresFile() {
+  std::stringstream* out = new std::stringstream();
+  hitlist.PrintScoreFile(q, *out);
+  return out;
+}
+
+std::stringstream* HHblits::writePairwiseAlisFile(char outformat) {
+  std::stringstream* out = new std::stringstream();
+  hitlist.PrintAlignments(q, *out, par.showconf, par.showcons, par.showdssp,
+      par.showpred, par.p, par.aliwidth, par.nseqdis, par.b, par.B, par.E, S,
+      outformat);
+  return out;
+}
+
+std::stringstream* HHblits::writeAlitabFile() {
+  std::stringstream* out = new std::stringstream();
+  hitlist.WriteToAlifile(q, *out, par.alitab_scop);
+  return out;
+}
+
+std::stringstream* HHblits::writeReducedHHRFile() {
+  std::stringstream* out = new std::stringstream();
+  reducedHitlist.PrintHHR(q_tmp, *out, par.maxdbstrlen, par.showconf,
+      par.showcons, par.showdssp, par.showpred, par.b, par.B, par.z, par.Z,
+      par.aliwidth, par.nseqdis, par.p, par.E, par.argc, par.argv, S);
+  return out;
+}
+
+std::stringstream* HHblits::writePsiFile() {
+  std::stringstream* out = new std::stringstream();
+  if (par.allseqs)
+    Qali_allseqs.WriteToFile(*out, "psi");
+  else
+    Qali.WriteToFile(*out, "psi");
+  return out;
+}
+
+std::stringstream* HHblits::writeHMMFile() {
+  // Add *no* amino acid pseudocounts to query. This is necessary to copy f[i][a] to p[i][a]
+  q->AddAminoAcidPseudocounts(0, 0.0, 0.0, 1.0);
+  q->CalculateAminoAcidBackground(pb);
+
+  std::stringstream* out = new std::stringstream();
+  q->WriteToFile(*out, par.max_seqid, par.coverage, par.qid, par.Ndiff, par.qsc,
+      par.argc, par.argv, pb);
+  return out;
+}
 
 std::stringstream* HHblits::writeA3MFile() {
-	std::stringstream* out = new std::stringstream();
-	if (par.allseqs)
-      Qali_allseqs.WriteToFile(*out, "a3m");
-    else
-      Qali.WriteToFile(*out, "a3m");
-	return out;
+  std::stringstream* out = new std::stringstream();
+  if (par.allseqs)
+    Qali_allseqs.WriteToFile(*out, "a3m");
+  else
+    Qali.WriteToFile(*out, "a3m");
+  return out;
 }

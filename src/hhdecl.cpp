@@ -194,7 +194,13 @@ void Parameters::SetDefaults() {
 	alphac = 0.1;
 
 	prefilter = false;              //true in hhblits
+
 	early_stopping_filter = false;  //true in hhblits
+    filter_thresh=0;                // 0.01 in hhblits
+    filter_length=200;
+    filter_evals=NULL;
+    filter_sum=0.0;
+    filter_counter=0;
 
 	// For HHblits prefiltering with SSE2
 	prefilter_gap_open = 20;

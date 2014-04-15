@@ -298,6 +298,7 @@ public:
   float alphab;
   float alphac;
 
+
   // For filtering database alignments in HHsearch and HHblits
   // JS: What are these used for? They are set to the values without _db anyway.
   int max_seqid_db;
@@ -311,7 +312,14 @@ public:
 
   // HHblits prefilter
   bool prefilter;             // perform prefiltering in HHblits?
+
+  //early stopping stuff
   bool early_stopping_filter; // Break HMM search, when the sum of the last N HMM-hit-Evalues is below threshold
+  double filter_thresh;    // Threshold for early stopping
+  int filter_length;       // Length of array of 1/evalues
+  double *filter_evals;    // array of last 1/evalues
+  double filter_sum;       // sum of evalues in array
+  int filter_counter;      // counter for evalue array
 
   // For HHblits prefiltering with SSE2
   short prefilter_gap_open;

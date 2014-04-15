@@ -7,93 +7,104 @@
 /////////////////////////////////////////////////////////////////////////////////////
 // Read input file (HMM, HHM, or alignment format)
 /////////////////////////////////////////////////////////////////////////////////////
-void ReadQueryFile(Parameters& par, FILE* inf, char& input_format, char use_global_weights, HMM* q, Alignment* qali, char infile[],
-		float* pb, const float S[20][20], const float Sim[20][20]) {
-	char line[LINELEN];
+void ReadQueryFile(Parameters& par, FILE* inf, char& input_format,
+    char use_global_weights, HMM* q, Alignment* qali, char infile[], float* pb,
+    const float S[20][20], const float Sim[20][20]) {
+  char line[LINELEN];
 
-	if (!fgetline(line, LINELEN, inf)) {
-		std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
-	    std::cerr << "\t" << infile << " is empty!\n";
-	    exit(4);
-	  }
-	  while (strscn(line) == NULL)
-	    fgetline(line, LINELEN, inf); // skip lines that contain only white space
+  if (!fgetline(line, LINELEN, inf)) {
+    std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__
+        << ":" << std::endl;
+    std::cerr << "\t" << infile << " is empty!\n";
+    exit(4);
+  }
+  while (strscn(line) == NULL)
+    fgetline(line, LINELEN, inf); // skip lines that contain only white space
 
-	  // Is infile a HMMER file?
-	  if (!strncmp(line, "HMMER", 5)) {
-	    // Uncomment this line to allow HMMER2/HMMER3 models as queries:
-	    std::cerr << "Error: Use of HMMER format as input will result in severe loss of sensitivity!\n";
-	    exit(4);
-	  }
-	  // ... or is it an hhm file?
-	  else if (!strncmp(line, "NAME", 4) || !strncmp(line, "HH", 2)) {
-		char path[NAMELEN];
-		Pathname(path, infile);
+  // Is infile a HMMER file?
+  if (!strncmp(line, "HMMER", 5)) {
+    // Uncomment this line to allow HMMER2/HMMER3 models as queries:
+    std::cerr
+        << "Error: Use of HMMER format as input will result in severe loss of sensitivity!\n";
+    exit(4);
+  }
+  // ... or is it an hhm file?
+  else if (!strncmp(line, "NAME", 4) || !strncmp(line, "HH", 2)) {
+    char path[NAMELEN];
+    Pathname(path, infile);
 
+    if (v >= 2)
+      std::cout << "Query file is in HHM format\n";
 
-	    if (v >= 2)
-	      std::cout << "Query file is in HHM format\n";
+    // Rewind to beginning of line and read query hhm file
+    rewind(inf);
+    q->Read(inf, par.maxcol, par.nseqdis, pb, path);
+    input_format = 0;
 
-	    // Rewind to beginning of line and read query hhm file
-	    rewind(inf);
-	    q->Read(inf, par.maxcol, par.nseqdis, pb, path);
-	    input_format = 0;
+    if (v >= 1 && input_format == 0)  // HHM format
+      printf(
+          "Extracting representative sequences from %s to merge later with matched database sequences\n",
+          infile);
 
-	    if (v >= 1 && input_format == 0)  // HHM format
-	      printf(
-	          "Extracting representative sequences from %s to merge later with matched database sequences\n",
-	          infile);
+    qali->GetSeqsFromHMM(q);
+    qali->Compress(infile, par.cons, par.maxres, par.maxcol, par.M, par.Mgaps);
+  }
+  // ... or is it an alignment file
+  else if (line[0] == '#' || line[0] == '>') {
+    if (par.calibrate) {
+      std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": "
+          << __func__ << ":" << std::endl;
+      printf("\tonly HHM files can be calibrated.\n");
+      printf(
+          "\tBuild an HHM file from your alignment with 'hhmake -i %s' and rerun hhsearch with the hhm file\n\n",
+          infile);
+      exit(1);
+    }
 
-	    qali->GetSeqsFromHMM(q);
-	    qali->Compress(infile, par.cons, par.maxres, par.maxcol, par.M, par.Mgaps);
-	  }
-	  // ... or is it an alignment file
-	  else if (line[0] == '#' || line[0] == '>') {
-	    if (par.calibrate) {
-          std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
-	      printf("\tonly HHM files can be calibrated.\n");
-	      printf("\tBuild an HHM file from your alignment with 'hhmake -i %s' and rerun hhsearch with the hhm file\n\n", infile);
-	      exit(1);
-	    }
+    if (v >= 2 && strcmp(infile, "stdin"))
+      std::cout << infile << " is in A2M, A3M or FASTA format\n";
 
-	    if (v >= 2 && strcmp(infile, "stdin"))
-	      std::cout << infile << " is in A2M, A3M or FASTA format\n";
+    // Read alignment from infile into matrix X[k][l] as ASCII (and supply first line as extra argument)
+    qali->Read(inf, infile, par.mark, par.maxcol, par.nseqdis, line);
 
-	    // Read alignment from infile into matrix X[k][l] as ASCII (and supply first line as extra argument)
-	    qali->Read(inf, infile, par.mark, par.maxcol, par.nseqdis, line);
+    // Convert ASCII to int (0-20),throw out all insert states, record their number in I[k][i]
+    // and store marked sequences in name[k] and seq[k]
+    qali->Compress(infile, par.cons, par.maxres, par.maxcol, par.M, par.Mgaps);
 
-	    // Convert ASCII to int (0-20),throw out all insert states, record their number in I[k][i]
-	    // and store marked sequences in name[k] and seq[k]
-	    qali->Compress(infile, par.cons, par.maxres, par.maxcol, par.M, par.Mgaps);
+    // Sort out the nseqdis most dissimilar sequences for display in the output alignments
+    qali->FilterForDisplay(par.max_seqid, par.mark, S, par.coverage, par.qid,
+        par.qsc, par.nseqdis);
 
-	    // Sort out the nseqdis most dissimilar sequences for display in the output alignments
-	    qali->FilterForDisplay(par.max_seqid, par.mark, S, par.coverage, par.qid, par.qsc, par.nseqdis);
+    // Remove sequences with seq. identity larger than seqid percent (remove the shorter of two)
+    qali->N_filtered = qali->Filter(par.max_seqid, S, par.coverage, par.qid,
+        par.qsc, par.Ndiff);
 
-	    // Remove sequences with seq. identity larger than seqid percent (remove the shorter of two)
-	    qali->N_filtered = qali->Filter(par.max_seqid, S, par.coverage, par.qid, par.qsc, par.Ndiff);
+    if (par.Neff >= 0.999)
+      qali->FilterNeff(use_global_weights, par.mark, par.cons, par.showcons,
+          par.maxres, par.max_seqid, par.coverage, par.Neff, pb, S, Sim);
 
-	    if (par.Neff >= 0.999)
-	    	qali->FilterNeff(use_global_weights, par.mark, par.cons, par.showcons, par.maxres, par.max_seqid, par.coverage, par.Neff, pb, S, Sim);
+    // Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
+    qali->FrequenciesAndTransitions(q, use_global_weights, par.mark, par.cons,
+        par.showcons, par.maxres, pb, Sim);
+    input_format = 0;
+  }
+  else {
+    std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__
+        << ":" << std::endl;
+    std::cerr << "\tunrecognized input file format in \'" << infile << "\'\n";
+    std::cerr << "\tline = " << line << "\n";
+    exit(1);
+  }
 
-	    // Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
-	    qali->FrequenciesAndTransitions(q, use_global_weights, par.mark, par.cons, par.showcons, par.maxres, pb, Sim);
-	    input_format = 0;
-	  }
-	  else {
-        std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
-	    std::cerr << "\tunrecognized input file format in \'" << infile << "\'\n";
-	    std::cerr << "\tline = " << line << "\n";
-	    exit(1);
-	  }
-
-	  if (v >= 2 && input_format == 0 && q->Neff_HMM > 11.0)
-	    fprintf(stderr,
-	        "WARNING: MSA %s looks too diverse (Neff=%.1f>11). Better check it with an alignment viewer for non-homologous segments. Also consider building the MSA with hhblits using the - option to limit MSA diversity.\n",
-	        q->name, q->Neff_HMM);
+  if (v >= 2 && input_format == 0 && q->Neff_HMM > 11.0)
+    fprintf(stderr,
+        "WARNING: MSA %s looks too diverse (Neff=%.1f>11). Better check it with an alignment viewer for non-homologous segments. Also consider building the MSA with hhblits using the - option to limit MSA diversity.\n",
+        q->name, q->Neff_HMM);
 }
 
-void ReadQueryFile(Parameters& par, char* infile, char& input_format, char use_global_weights, HMM* q, Alignment* qali,
-		float* pb, const float S[20][20], const float Sim[20][20]) {
+void ReadQueryFile(Parameters& par, char* infile, char& input_format,
+    char use_global_weights, HMM* q, Alignment* qali, float* pb,
+    const float S[20][20], const float Sim[20][20]) {
   // Open query file and determine file type
   char path[NAMELEN]; // path of input file (is needed to write full path and file name to HMM FILE record)
   FILE* inf = NULL;
@@ -111,7 +122,8 @@ void ReadQueryFile(Parameters& par, char* infile, char& input_format, char use_g
     Pathname(path, infile);
   }
   
-  ReadQueryFile(par, inf, input_format, use_global_weights, q, qali, infile, pb, S, Sim);
+  ReadQueryFile(par, inf, input_format, use_global_weights, q, qali, infile, pb,
+      S, Sim);
 
   fclose(inf);
 }
@@ -120,31 +132,35 @@ void ReadQueryFile(Parameters& par, char* infile, char& input_format, char use_g
 // Add transition and amino acid pseudocounts to query HMM, calculate aa background etc.
 /////////////////////////////////////////////////////////////////////////////////////
 void PrepareQueryHMM(Parameters& par, char& input_format, HMM* q,
-		cs::Pseudocounts<cs::AA>* pc_hhm_context_engine, cs::Admix* pc_hhm_context_mode,
-		const float* pb, const float R[20][20]) {
+    cs::Pseudocounts<cs::AA>* pc_hhm_context_engine,
+    cs::Admix* pc_hhm_context_mode, const float* pb, const float R[20][20]) {
   // Was query an HHsearch formatted file or MSA (no pseudocounts added yet)?
   if (input_format == 0) {
     // Add transition pseudocounts to query -> q->p[i][a]
-    q->AddTransitionPseudocounts(par.gapd, par.gape, par.gapf, par.gapg, par.gaph, par.gapi, par.gapb, par.gapb);
+    q->AddTransitionPseudocounts(par.gapd, par.gape, par.gapf, par.gapg,
+        par.gaph, par.gapi, par.gapb, par.gapb);
 
     // Compute substitutino matrix pseudocounts?
     if (par.nocontxt) {
       // Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
       q->PreparePseudocounts(R);
       // Add amino acid pseudocounts to query:  q->p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
-      q->AddAminoAcidPseudocounts(par.pc_hhm_nocontext_mode, par.pc_hhm_nocontext_a, par.pc_hhm_nocontext_b,
+      q->AddAminoAcidPseudocounts(par.pc_hhm_nocontext_mode,
+          par.pc_hhm_nocontext_a, par.pc_hhm_nocontext_b,
           par.pc_hhm_nocontext_c);
     }
     else {
       // Add context specific pseudocount to query
-      q->AddContextSpecificPseudocounts(pc_hhm_context_engine, pc_hhm_context_mode);
+      q->AddContextSpecificPseudocounts(pc_hhm_context_engine,
+          pc_hhm_context_mode);
     }
   }
   // or was query a HMMER file? (pseudocounts already added!)
   else if (input_format == 1) {
     // Don't add transition pseudocounts to query!!
     // DON'T ADD amino acid pseudocounts to query: pcm=0!  q->p[i][a] = f[i][a]
-    q->AddAminoAcidPseudocounts(0, par.pc_hhm_nocontext_a, par.pc_hhm_nocontext_b, par.pc_hhm_nocontext_c);
+    q->AddAminoAcidPseudocounts(0, par.pc_hhm_nocontext_a,
+        par.pc_hhm_nocontext_b, par.pc_hhm_nocontext_c);
   }
   
   q->CalculateAminoAcidBackground(pb);
@@ -162,18 +178,21 @@ void PrepareQueryHMM(Parameters& par, char& input_format, HMM* q,
 /////////////////////////////////////////////////////////////////////////////////////
 // Do precalculations for q and t to prepare comparison
 /////////////////////////////////////////////////////////////////////////////////////
-void PrepareTemplateHMM(Parameters& par, HMM* q, HMM* t, int format, const float* pb, const float R[20][20]) {
+void PrepareTemplateHMM(Parameters& par, HMM* q, HMM* t, int format,
+    const float* pb, const float R[20][20]) {
   // HHM format
   if (format == 0) {
     // Add transition pseudocounts to template
-    t->AddTransitionPseudocounts(par.gapd, par.gape, par.gapf, par.gapg, par.gaph, par.gapi, par.gapb, par.gapb);
+    t->AddTransitionPseudocounts(par.gapd, par.gape, par.gapf, par.gapg,
+        par.gaph, par.gapi, par.gapb, par.gapb);
 
     // Don't use CS-pseudocounts because of runtime!!!
     // Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
     t->PreparePseudocounts(R);
 
     // Add amino acid pseudocounts to query:  p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
-    t->AddAminoAcidPseudocounts(par.pc_hhm_nocontext_mode, par.pc_hhm_nocontext_a, par.pc_hhm_nocontext_b, par.pc_hhm_nocontext_c);
+    t->AddAminoAcidPseudocounts(par.pc_hhm_nocontext_mode,
+        par.pc_hhm_nocontext_a, par.pc_hhm_nocontext_b, par.pc_hhm_nocontext_c);
   }
   // HHMER format
   else {
@@ -184,7 +203,8 @@ void PrepareTemplateHMM(Parameters& par, HMM* q, HMM* t, int format, const float
     // t->PreparePseudocounts();
     
     // DON'T ADD amino acid pseudocounts to temlate: pcm=0!  t->p[i][a] = t->f[i][a]
-    t->AddAminoAcidPseudocounts(0, par.pc_hhm_nocontext_a, par.pc_hhm_nocontext_b, par.pc_hhm_nocontext_c);
+    t->AddAminoAcidPseudocounts(0, par.pc_hhm_nocontext_a,
+        par.pc_hhm_nocontext_b, par.pc_hhm_nocontext_c);
   }
   t->CalculateAminoAcidBackground(pb);
 
@@ -193,7 +213,8 @@ void PrepareTemplateHMM(Parameters& par, HMM* q, HMM* t, int format, const float
 
   // Factor Null model into HMM t
   // ATTENTION! t->p[i][a] is divided by pnul[a] (for reasons of efficiency) => do not reuse t->p
-  t->IncludeNullModelInHMM(q, t, par.columnscore, par.half_window_size_local_aa_bg_freqs, pb); // Can go BEFORE the loop if not dependent on template
+  t->IncludeNullModelInHMM(q, t, par.columnscore,
+      par.half_window_size_local_aa_bg_freqs, pb); // Can go BEFORE the loop if not dependent on template
 
   return;
 }
@@ -201,7 +222,8 @@ void PrepareTemplateHMM(Parameters& par, HMM* q, HMM* t, int format, const float
 /////////////////////////////////////////////////////////////////////////////////////
 // Calculate secondary structure prediction with PSIPRED
 /////////////////////////////////////////////////////////////////////////////////////
-void CalculateSS(char *ss_pred, char *ss_conf, char *tmpfile, const char* psipred_data, const char* psipred) {
+void CalculateSS(char *ss_pred, char *ss_conf, char *tmpfile,
+    const char* psipred_data, const char* psipred) {
   // Initialize
   std::string command;
   char line[LINELEN] = "";
@@ -232,10 +254,9 @@ void CalculateSS(char *ss_pred, char *ss_conf, char *tmpfile, const char* psipre
         + (std::string) tmpfile + ".ss";
   }
   runSystem(command, v);
-  command = (std::string) psipred + "/psipass2 "
-      + (std::string) psipred_data + "/weights_p2.dat 1 0.98 1.09 "
-      + (std::string) tmpfile + ".ss2 " + (std::string) tmpfile + ".ss > "
-      + (std::string) tmpfile + ".horiz";
+  command = (std::string) psipred + "/psipass2 " + (std::string) psipred_data
+      + "/weights_p2.dat 1 0.98 1.09 " + (std::string) tmpfile + ".ss2 "
+      + (std::string) tmpfile + ".ss > " + (std::string) tmpfile + ".horiz";
   runSystem(command, v);
 
   // Read results
@@ -270,7 +291,8 @@ void CalculateSS(char *ss_pred, char *ss_conf, char *tmpfile, const char* psipre
 /////////////////////////////////////////////////////////////////////////////////////
 // Calculate secondary structure for given HMM and return prediction
 /////////////////////////////////////////////////////////////////////////////////////
-void CalculateSS(HMM* q, char *ss_pred, char *ss_conf, const char* psipred_data, const char* psipred, const float* pb) {
+void CalculateSS(HMM* q, char *ss_pred, char *ss_conf, const char* psipred_data,
+    const char* psipred, const float* pb) {
 
   if (q->divided_by_local_bg_freqs) {
     std::cerr
@@ -329,7 +351,8 @@ void CalculateSS(HMM* q, char *ss_pred, char *ss_conf, const char* psipred_data,
 }
 
 // Calculate secondary structure for given HMM
-void CalculateSS(HMM* q, const int maxres, const char* psipred_data, const char* psipred, const float* pb) {
+void CalculateSS(HMM* q, const int maxres, const char* psipred_data,
+    const char* psipred, const float* pb) {
   char ss_pred[maxres];
   char ss_conf[maxres];
 
@@ -339,32 +362,34 @@ void CalculateSS(HMM* q, const int maxres, const char* psipred_data, const char*
 /////////////////////////////////////////////////////////////////////////////////////
 // Write alignment in tab format (option -atab)
 /////////////////////////////////////////////////////////////////////////////////////
-void WriteToAlifile(FILE* alitabf, Hit* hit, const char forward, const char realign) {
-      if (hit->P_posterior != NULL && (forward==2 || realign))
-	{
-	  if (hit->nss_dssp >= 0)
-	    {
-	    // secondary structure determined by dssp 0:-  1:H  2:E  3:C  4:S  5:T  6:G  7:B
-	      fprintf(alitabf,"    i     j  score     SS  probab  dssp\n");
-	      for (int step=hit->nsteps; step>=1; step--)
-		if (hit->states[step]>=MM) 
-		  fprintf(alitabf,"%5i %5i %6.2f %6.2f %7.4f %5c\n",hit->i[step],hit->j[step],hit->S[step],hit->S_ss[step],hit->P_posterior[step],hit->seq[hit->nss_dssp][hit->j[step]]);
-	    }
-	  else 
-	    {
-	      fprintf(alitabf, "missing dssp\n");
-	      fprintf(alitabf,"    i     j  score     SS  probab\n");
-	      for (int step=hit->nsteps; step>=1; step--)
-	    	if (hit->states[step]>=MM) 
-		  fprintf(alitabf,"%5i %5i %6.2f %6.2f %7.4f\n",hit->i[step],hit->j[step],hit->S[step],hit->S_ss[step],hit->P_posterior[step]);
-	    }
-	} 
-      else 
-	{
-	  fprintf(alitabf,"    i     j  score     SS\n");
-	  for (int step=hit->nsteps; step>=1; step--)
-	    if (hit->states[step]>=MM) 
-	      fprintf(alitabf,"%5i %5i %6.2f %6.2f\n",hit->i[step],hit->j[step],hit->S[step],hit->S_ss[step]);
+void WriteToAlifile(FILE* alitabf, Hit* hit, const char forward,
+    const char realign) {
+  if (hit->P_posterior != NULL && (forward == 2 || realign)) {
+    if (hit->nss_dssp >= 0) {
+      // secondary structure determined by dssp 0:-  1:H  2:E  3:C  4:S  5:T  6:G  7:B
+      fprintf(alitabf, "    i     j  score     SS  probab  dssp\n");
+      for (int step = hit->nsteps; step >= 1; step--)
+        if (hit->states[step] >= MM)
+          fprintf(alitabf, "%5i %5i %6.2f %6.2f %7.4f %5c\n", hit->i[step],
+              hit->j[step], hit->S[step], hit->S_ss[step],
+              hit->P_posterior[step], hit->seq[hit->nss_dssp][hit->j[step]]);
+    }
+    else {
+      fprintf(alitabf, "missing dssp\n");
+      fprintf(alitabf, "    i     j  score     SS  probab\n");
+      for (int step = hit->nsteps; step >= 1; step--)
+        if (hit->states[step] >= MM)
+          fprintf(alitabf, "%5i %5i %6.2f %6.2f %7.4f\n", hit->i[step],
+              hit->j[step], hit->S[step], hit->S_ss[step],
+              hit->P_posterior[step]);
+    }
+  }
+  else {
+    fprintf(alitabf, "    i     j  score     SS\n");
+    for (int step = hit->nsteps; step >= 1; step--)
+      if (hit->states[step] >= MM)
+        fprintf(alitabf, "%5i %5i %6.2f %6.2f\n", hit->i[step], hit->j[step],
+            hit->S[step], hit->S_ss[step]);
   }
   return;
 }
@@ -391,74 +416,81 @@ int SequencesInCluster(char* name) {
 
 void InitializePseudocountsEngine(Parameters& par,
     cs::ContextLibrary<cs::AA>* context_lib, cs::Crf<cs::AA>* crf,
-    cs::Pseudocounts<cs::AA>* pc_hhm_context_engine, cs::Admix* pc_hhm_context_mode,
-    cs::Pseudocounts<cs::AA>* pc_prefilter_context_engine, cs::Admix* pc_prefilter_context_mode
-) {
-    // Prepare pseudocounts engine
-    FILE* fin = fopen(par.clusterfile, "r");
-    if (!fin) {
-        std::cerr << std::endl << "Error in " << par.argv[0]
-                << ": could not open file \'" << par.clusterfile << "\'\n";
-        exit(2);
-    }
-    char ext[100];
-    Extension(ext, par.clusterfile);
-    if (strcmp(ext, "crf") == 0) {
-        crf = new cs::Crf<cs::AA>(fin);
-        pc_hhm_context_engine = new cs::CrfPseudocounts<cs::AA>(*crf);
-        pc_prefilter_context_engine = new cs::CrfPseudocounts<cs::AA>(*crf);
-    } else {
-        context_lib = new cs::ContextLibrary<cs::AA>(fin);
-        cs::TransformToLog(*context_lib);
-        pc_hhm_context_engine = new cs::LibraryPseudocounts<cs::AA>(
-                *context_lib, par.csw, par.csb);
-        pc_prefilter_context_engine = new cs::LibraryPseudocounts<cs::AA>(
-                *context_lib, par.csw, par.csb);
-    }
-    fclose(fin);
-    pc_hhm_context_engine->SetTargetNeff(par.pc_hhm_context_engine.target_neff);
-    pc_prefilter_context_engine->SetTargetNeff(
-            par.pc_prefilter_context_engine.target_neff);
+    cs::Pseudocounts<cs::AA>* pc_hhm_context_engine,
+    cs::Admix* pc_hhm_context_mode,
+    cs::Pseudocounts<cs::AA>* pc_prefilter_context_engine,
+    cs::Admix* pc_prefilter_context_mode) {
+  // Prepare pseudocounts engine
+  FILE* fin = fopen(par.clusterfile, "r");
+  if (!fin) {
+    std::cerr << std::endl << "Error in " << par.argv[0]
+        << ": could not open file \'" << par.clusterfile << "\'\n";
+    exit(2);
+  }
+  char ext[100];
+  Extension(ext, par.clusterfile);
+  if (strcmp(ext, "crf") == 0) {
+    crf = new cs::Crf<cs::AA>(fin);
+    pc_hhm_context_engine = new cs::CrfPseudocounts<cs::AA>(*crf);
+    pc_prefilter_context_engine = new cs::CrfPseudocounts<cs::AA>(*crf);
+  }
+  else {
+    context_lib = new cs::ContextLibrary<cs::AA>(fin);
+    cs::TransformToLog(*context_lib);
+    pc_hhm_context_engine = new cs::LibraryPseudocounts<cs::AA>(*context_lib,
+        par.csw, par.csb);
+    pc_prefilter_context_engine = new cs::LibraryPseudocounts<cs::AA>(
+        *context_lib, par.csw, par.csb);
+  }
+  fclose(fin);
+  pc_hhm_context_engine->SetTargetNeff(par.pc_hhm_context_engine.target_neff);
+  pc_prefilter_context_engine->SetTargetNeff(
+      par.pc_prefilter_context_engine.target_neff);
 
-    // Prepare pseudocounts admixture method
-    pc_hhm_context_mode = par.pc_hhm_context_engine.CreateAdmix();
-    pc_prefilter_context_mode = par.pc_prefilter_context_engine.CreateAdmix();
+  // Prepare pseudocounts admixture method
+  pc_hhm_context_mode = par.pc_hhm_context_engine.CreateAdmix();
+  pc_prefilter_context_mode = par.pc_prefilter_context_engine.CreateAdmix();
 }
 
-void DeletePseudocountsEngine(
-    cs::ContextLibrary<cs::AA>* context_lib, cs::Crf<cs::AA>* crf,
-    cs::Pseudocounts<cs::AA>* pc_hhm_context_engine, cs::Admix* pc_hhm_context_mode,
-    cs::Pseudocounts<cs::AA>* pc_prefilter_context_engine, cs::Admix* pc_prefilter_context_mode) {
+void DeletePseudocountsEngine(cs::ContextLibrary<cs::AA>* context_lib,
+    cs::Crf<cs::AA>* crf, cs::Pseudocounts<cs::AA>* pc_hhm_context_engine,
+    cs::Admix* pc_hhm_context_mode,
+    cs::Pseudocounts<cs::AA>* pc_prefilter_context_engine,
+    cs::Admix* pc_prefilter_context_mode) {
 
-    if (context_lib != NULL)
-        delete context_lib;
-    if (crf != NULL)
-        delete crf;
-    if (pc_hhm_context_engine != NULL)
-        delete pc_hhm_context_engine;
-    if (pc_hhm_context_mode != NULL)
-        delete pc_hhm_context_mode;
-    if (pc_prefilter_context_engine != NULL)
-        delete pc_prefilter_context_engine;
-    if (pc_prefilter_context_mode != NULL)
-        delete pc_prefilter_context_mode;
+  if (context_lib != NULL)
+    delete context_lib;
+  if (crf != NULL)
+    delete crf;
+  if (pc_hhm_context_engine != NULL)
+    delete pc_hhm_context_engine;
+  if (pc_hhm_context_mode != NULL)
+    delete pc_hhm_context_mode;
+  if (pc_prefilter_context_engine != NULL)
+    delete pc_prefilter_context_engine;
+  if (pc_prefilter_context_mode != NULL)
+    delete pc_prefilter_context_mode;
 }
 
-
-void AlignByWorker(Parameters& par, Hit* hit, HMM* t, HMM* q, const int format, const float* pb, const float R[20][20], const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF], HitList& hitlist) {
+void AlignByWorker(Parameters& par, Hit* hit, HMM* t, HMM* q, const int format,
+    const float* pb, const float R[20][20],
+    const float S73[NDSSP][NSSPRED][MAXCF],
+    const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF], HitList& hitlist) {
   // Prepare q ant t and compare
   PrepareTemplateHMM(par, q, t, format, pb, R);
 
   // Do HMM-HMM comparison, store results if score>SMIN, and try next best alignment
   for (hit->irep = 1; hit->irep <= par.altali; hit->irep++) {
     if (par.forward == 0) {
-      hit->Viterbi(q, t, par.loc, par.ssm, par.maxres, par.min_overlap, par.shift, par.egt, par.egq, par.ssw, par.exclstr, S73, S33);
+      hit->Viterbi(q, t, par.loc, par.ssm, par.maxres, par.min_overlap,
+          par.shift, par.egt, par.egq, par.ssw, par.exclstr, S73, S33);
       if (hit->irep > 1 && hit->score <= SMIN)
         break;
       hit->Backtrace(q, t, par.corr, par.ssw, S73, S33);
     }
     else if (par.forward == 2) {
-      hit->Forward(q, t, par.ssm, par.min_overlap, par.loc, par.shift, par.ssw, par.exclstr, S73, S33);
+      hit->Forward(q, t, par.ssm, par.min_overlap, par.loc, par.shift, par.ssw,
+          par.exclstr, S73, S33);
       hit->Backward(q, t, par.loc, par.shift, par.ssw, S73, S33);
       hit->MACAlignment(q, t, par.loc, par.mact, par.macins);
       hit->BacktraceMAC(q, t, par.corr, par.ssw, S73, S33);
@@ -468,6 +500,42 @@ void AlignByWorker(Parameters& par, Hit* hit, HMM* t, HMM* q, const int format, 
       hit->lastrep = 1;
     else
       hit->lastrep = 0;
+
+
+    if (par.early_stopping_filter) {
+      // Calculate Evalue
+      float q_len = log(q->L) / LOG1000;
+      float hit_len = log(hit->L) / LOG1000;
+      float q_neff = q->Neff_HMM / 10.0;
+      float hit_neff = hit->Neff_HMM / 10.0;
+      float lamda = lamda_NN(q_len, hit_len, q_neff, hit_neff);
+      float mu = mu_NN(q_len, hit_len, q_neff, hit_neff);
+      hit->logPval = logPvalue(hit->score, lamda, mu);
+
+      float alpha = 0;
+      float log_Pcut = log(par.prefilter_evalue_thresh / par.dbsize);
+      float log_dbsize = log(par.dbsize);
+
+      if (par.prefilter)
+        alpha = par.alphaa
+            + par.alphab * (hit_neff - 1) * (1 - par.alphac * (q_neff - 1));
+
+      hit->Eval = exp(hit->logPval + log_dbsize + (alpha * log_Pcut));
+      hit->logEval = hit->logPval + log_dbsize + (alpha * log_Pcut);
+
+      #pragma omp critical
+      {
+        par.filter_sum -= par.filter_evals[par.filter_counter];
+        par.filter_evals[par.filter_counter] = 1.0 / (1.0 + hit->Eval);
+        par.filter_sum += par.filter_evals[par.filter_counter];
+        std::cerr << "use prefilter: " << par.filter_sum << std::endl;
+
+        par.filter_counter++;
+        if (par.filter_counter == par.filter_length) {
+          par.filter_counter = 0;
+        }
+      }
+    }
 
     #pragma omp critical
     {
@@ -484,25 +552,30 @@ void AlignByWorker(Parameters& par, Hit* hit, HMM* t, HMM* q, const int format, 
   }
 }
 
-
-void PerformViterbiByWorker(Parameters& par, Hit* hit, HMM* t, HMM* q, const int format, const float* pb, const float R[20][20], const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF], HitList& hitlist, Hash<Hit>* previous_hits) {
+void PerformViterbiByWorker(Parameters& par, Hit* hit, HMM* t, HMM* q,
+    const int format, const float* pb, const float R[20][20],
+    const float S73[NDSSP][NSSPRED][MAXCF],
+    const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF], HitList& hitlist,
+    Hash<Hit>* previous_hits) {
   PrepareTemplateHMM(par, q, t, format, pb, R);
 
   for (hit->irep = 1; hit->irep <= par.altali; hit->irep++) {
     // Break, if no previous_hit with irep is found
-    hit->Viterbi(q, t, par.loc, par.ssm, par.maxres, par.min_overlap, par.shift, par.egt, par.egq, par.ssw, par.exclstr, S73, S33);
+    hit->Viterbi(q, t, par.loc, par.ssm, par.maxres, par.min_overlap, par.shift,
+        par.egt, par.egq, par.ssw, par.exclstr, S73, S33);
     if (hit->irep > 1 && hit->score <= SMIN)
       break;
     hit->Backtrace(q, t, par.corr, par.ssw, S73, S33);
 
     hit->score_sort = hit->score_aass;
 
-    #pragma omp critical
+#pragma omp critical
     {
       std::stringstream ss_tmp;
       ss_tmp << hit->file << "__" << hit->irep;
 
-      if (previous_hits && previous_hits->Contains((char*) ss_tmp.str().c_str())) {
+      if (previous_hits
+          && previous_hits->Contains((char*) ss_tmp.str().c_str())) {
         //printf("Previous hits contains %s!\n",(char*)ss_tmp.str().c_str());
         Hit hit_cur = previous_hits->Remove((char*) ss_tmp.str().c_str());
         previous_hits->Add((char*) ss_tmp.str().c_str(), *(hit));
@@ -529,11 +602,13 @@ void PerformViterbiByWorker(Parameters& par, Hit* hit, HMM* t, HMM* q, const int
   }
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////////////
 //// Realign q and with t[bin] in all hits from same tempate using  MAC algorithm
 //////////////////////////////////////////////////////////////////////////////////////
-void RealignByWorker(Parameters& par, Hit* hit, HMM* q, HMM* t, const int format, const float* pb, const float R[20][20], const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]) {
+void RealignByWorker(Parameters& par, Hit* hit, HMM* q, HMM* t,
+    const int format, const float* pb, const float R[20][20],
+    const float S73[NDSSP][NSSPRED][MAXCF],
+    const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]) {
   // Realign all hits with same template, pointed to by list List<void*>* hit[bin]->plist_phits;
   // This list is set up in HHseach and HHblits at the beginning of perform_realign()
 
@@ -560,7 +635,8 @@ void RealignByWorker(Parameters& par, Hit* hit, HMM* q, HMM* t, const int format
     hit->realign_around_viterbi = true;
 
     // Align q to template in *hit[bin]
-    hit->Forward(q, t, par.ssm, par.min_overlap, par.loc, par.shift, par.ssw, par.exclstr, S73, S33);
+    hit->Forward(q, t, par.ssm, par.min_overlap, par.loc, par.shift, par.ssw,
+        par.exclstr, S73, S33);
     hit->Backward(q, t, par.loc, par.shift, par.ssw, S73, S33);
     hit->MACAlignment(q, t, par.loc, par.mact, par.macins);
     hit->BacktraceMAC(q, t, par.corr, par.ssw, S73, S33);
@@ -585,5 +661,4 @@ void RealignByWorker(Parameters& par, Hit* hit, HMM* q, HMM* t, const int format
     hit->irep++;
   }
 }
-
 
