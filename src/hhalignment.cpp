@@ -1471,6 +1471,7 @@ int Alignment::Filter(int max_seqid, const float S[20][20], int coverage, int qi
 /////////////////////////////////////////////////////////////////////////////////////
 int Alignment::Filter2(char keep[], int coverage, int qid, float qsc,
 		int seqid1, int seqid2, int Ndiff, const float S[20][20]) {
+
 	// In the beginnning, keep[k] is 1 for all regular amino acid sequences and 0 for all others (ss_conf, ss_pred,...)
 	// In the end, keep[k] will be 1 for all regular representative sequences kept in the alignment, 0 for all others
 	// Sequences with keep[k] = 2 will cannot be filtered out and will remain in the alignment.
@@ -1533,7 +1534,7 @@ int Alignment::Filter2(char keep[], int coverage, int qid, float qsc,
 			delete[] nres;
 		nres = new (int[N_in]);
 		for (k = 0; k < N_in; ++k) // do this for ALL sequences, not only those with in[k]==1 (since in[k] may be display[k])
-				{
+		{
 			int nr = 0;
 			for (i = first[k]; i <= last[k]; ++i)
 				if (X[k][i] < NAA)

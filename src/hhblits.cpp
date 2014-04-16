@@ -161,7 +161,7 @@ void HHblits::ProcessAllArguments(int argc, char** argv, Parameters& par) {
   par.prefilter = true;
 
   par.early_stopping_filter = true;
-  par.filter_thresh=0.01;
+  par.filter_thresh = 0.01;
 
   // Enable changing verbose mode before command line are processed
   for (int i = 1; i < argc; i++) {
@@ -2996,8 +2996,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
 
   // Read query input file (HHM, HMMER, or alignment format) without adding pseudocounts
   Qali.N_in = 0;
-  ReadQueryFile(par, query_fh, input_format, par.wg, q, &Qali, query_path, pb,
-      S, Sim);
+  ReadQueryFile(par, query_fh, input_format, par.wg, q, Qali, query_path, pb, S, Sim);
 
   if (Qali.N_in - Qali.N_ss > 1)
     par.premerge = 0;
@@ -3295,8 +3294,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
           "Maximun number of sequences in query alignment reached (%i). Stop searching!\n",
           MAXSEQ);
 
-    if (new_hits == 0 || round == par.num_rounds || q->Neff_HMM > par.neffmax
-        || Qali.N_in >= MAXSEQ)
+    if (new_hits == 0 || round == par.num_rounds || q->Neff_HMM > par.neffmax || Qali.N_in >= MAXSEQ)
       break;
 
     // Write good hits to previous_hits hash and clear hitlist

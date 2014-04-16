@@ -8,7 +8,7 @@
 // Read input file (HMM, HHM, or alignment format)
 /////////////////////////////////////////////////////////////////////////////////////
 void ReadQueryFile(Parameters& par, FILE* inf, char& input_format,
-    char use_global_weights, HMM* q, Alignment* qali, char infile[], float* pb,
+    char use_global_weights, HMM* q, Alignment& qali, char infile[], float* pb,
     const float S[20][20], const float Sim[20][20]) {
   char line[LINELEN];
 
@@ -46,8 +46,10 @@ void ReadQueryFile(Parameters& par, FILE* inf, char& input_format,
           "Extracting representative sequences from %s to merge later with matched database sequences\n",
           infile);
 
-    qali->GetSeqsFromHMM(q);
-    qali->Compress(infile, par.cons, par.maxres, par.maxcol, par.M, par.Mgaps);
+    Alignment ali_tmp;
+    ali_tmp.GetSeqsFromHMM(q);
+    ali_tmp.Compress(infile, par.cons, par.maxres, par.maxcol, par.M, par.Mgaps);
+    qali = ali_tmp;
   }
   // ... or is it an alignment file
   else if (line[0] == '#' || line[0] == '>') {
@@ -64,28 +66,32 @@ void ReadQueryFile(Parameters& par, FILE* inf, char& input_format,
     if (v >= 2 && strcmp(infile, "stdin"))
       std::cout << infile << " is in A2M, A3M or FASTA format\n";
 
+    Alignment ali_tmp;
+
     // Read alignment from infile into matrix X[k][l] as ASCII (and supply first line as extra argument)
-    qali->Read(inf, infile, par.mark, par.maxcol, par.nseqdis, line);
+    ali_tmp.Read(inf, infile, par.mark, par.maxcol, par.nseqdis, line);
 
     // Convert ASCII to int (0-20),throw out all insert states, record their number in I[k][i]
     // and store marked sequences in name[k] and seq[k]
-    qali->Compress(infile, par.cons, par.maxres, par.maxcol, par.M, par.Mgaps);
+    ali_tmp.Compress(infile, par.cons, par.maxres, par.maxcol, par.M, par.Mgaps);
 
     // Sort out the nseqdis most dissimilar sequences for display in the output alignments
-    qali->FilterForDisplay(par.max_seqid, par.mark, S, par.coverage, par.qid,
+    ali_tmp.FilterForDisplay(par.max_seqid, par.mark, S, par.coverage, par.qid,
         par.qsc, par.nseqdis);
 
     // Remove sequences with seq. identity larger than seqid percent (remove the shorter of two)
-    qali->N_filtered = qali->Filter(par.max_seqid, S, par.coverage, par.qid,
+    ali_tmp.N_filtered = ali_tmp.Filter(par.max_seqid, S, par.coverage, par.qid,
         par.qsc, par.Ndiff);
 
     if (par.Neff >= 0.999)
-      qali->FilterNeff(use_global_weights, par.mark, par.cons, par.showcons,
+    	ali_tmp.FilterNeff(use_global_weights, par.mark, par.cons, par.showcons,
           par.maxres, par.max_seqid, par.coverage, par.Neff, pb, S, Sim);
 
     // Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
-    qali->FrequenciesAndTransitions(q, use_global_weights, par.mark, par.cons,
+    ali_tmp.FrequenciesAndTransitions(q, use_global_weights, par.mark, par.cons,
         par.showcons, par.maxres, pb, Sim);
+
+    qali = ali_tmp;
     input_format = 0;
   }
   else {
@@ -103,7 +109,7 @@ void ReadQueryFile(Parameters& par, FILE* inf, char& input_format,
 }
 
 void ReadQueryFile(Parameters& par, char* infile, char& input_format,
-    char use_global_weights, HMM* q, Alignment* qali, float* pb,
+    char use_global_weights, HMM* q, Alignment& qali, float* pb,
     const float S[20][20], const float Sim[20][20]) {
   // Open query file and determine file type
   char path[NAMELEN]; // path of input file (is needed to write full path and file name to HMM FILE record)

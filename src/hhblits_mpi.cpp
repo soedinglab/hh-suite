@@ -167,7 +167,7 @@ int main(int argc, char **argv) {
   initOutputFFDatabase(par.alnfile, mpi_rank, print_a3m, a3m_data_file,
       a3m_index_file, a3m_data_fh, a3m_index_fh);
 
-  HHblits hhblits(par);
+//  HHblits hhblits(par);
 
   size_t batch_size, range_start, range_end;
   if (index->n_entries >= mpi_num_procs)
@@ -178,6 +178,8 @@ int main(int argc, char **argv) {
   range_start = mpi_rank * batch_size;
   range_end = range_start + batch_size;
 
+  HHblits hhblits(par);
+
   // Foreach entry
   if (batch_size > 0) {
     for (size_t entry_index = range_start; entry_index < range_end;
@@ -187,8 +189,9 @@ int main(int argc, char **argv) {
         continue;
       }
 
-      FILE* inf = ffindex_fopen_by_entry(data, entry);
       hhblits.Reset();
+
+      FILE* inf = ffindex_fopen_by_entry(data, entry);
       hhblits.run(inf, entry->name);
 
       if (print_hhr) {
@@ -252,8 +255,9 @@ int main(int argc, char **argv) {
     ffindex_entry_t* entry = ffindex_get_entry_by_index(index,
         left_over_entry_index);
 
-    FILE* inf = ffindex_fopen_by_entry(data, entry);
     hhblits.Reset();
+
+    FILE* inf = ffindex_fopen_by_entry(data, entry);
     hhblits.run(inf, entry->name);
 
     if (print_hhr) {
