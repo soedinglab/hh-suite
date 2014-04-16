@@ -1647,7 +1647,7 @@ void HHblits::perform_realign(char *dbfiles[], int ndb,
     //fprintf(stderr,"hit.name=%-15.15s  hit.index=%-5i hit.ftellpos=%-8i  hit.dbfile=%s\n",hit_cur.name,hit_cur.index,(unsigned int)hit_cur.ftellpos,hit_cur.dbfile);
 
     if (nhits >= par.premerge) // realign the first premerge hits consecutively to query profile
-        {
+    {
       if (hit_cur.irep == 1) {
         // For each template (therefore irep==1), store template index and position on disk in a list
         Realign_hitpos realign_hitpos;
@@ -3419,67 +3419,51 @@ std::map<int, Alignment>& HHblits::getAlis() {
   return alis;
 }
 
-std::stringstream* HHblits::writeHHRFile() {
-  std::stringstream* out = new std::stringstream();
-  hitlist.PrintHHR(q_tmp, *out, par.maxdbstrlen, par.showconf, par.showcons,
+void HHblits::writeHHRFile(std::stringstream& out) {
+  hitlist.PrintHHR(q_tmp, out, par.maxdbstrlen, par.showconf, par.showcons,
       par.showdssp, par.showpred, par.b, par.B, par.z, par.Z, par.aliwidth,
       par.nseqdis, par.p, par.E, par.argc, par.argv, S);
-  return out;
 }
 
-std::stringstream* HHblits::writeScoresFile() {
-  std::stringstream* out = new std::stringstream();
-  hitlist.PrintScoreFile(q, *out);
-  return out;
+void HHblits::writeScoresFile(std::stringstream& out) {
+  hitlist.PrintScoreFile(q, out);
 }
 
-std::stringstream* HHblits::writePairwiseAlisFile(char outformat) {
-  std::stringstream* out = new std::stringstream();
-  hitlist.PrintAlignments(q, *out, par.showconf, par.showcons, par.showdssp,
+void HHblits::writePairwiseAlisFile(char outformat, std::stringstream& out) {
+  hitlist.PrintAlignments(q, out, par.showconf, par.showcons, par.showdssp,
       par.showpred, par.p, par.aliwidth, par.nseqdis, par.b, par.B, par.E, S,
       outformat);
-  return out;
 }
 
-std::stringstream* HHblits::writeAlitabFile() {
-  std::stringstream* out = new std::stringstream();
-  hitlist.WriteToAlifile(q, *out, par.alitab_scop);
-  return out;
+void HHblits::writeAlitabFile(std::stringstream& out) {
+  hitlist.WriteToAlifile(q, out, par.alitab_scop);
 }
 
-std::stringstream* HHblits::writeReducedHHRFile() {
-  std::stringstream* out = new std::stringstream();
-  reducedHitlist.PrintHHR(q_tmp, *out, par.maxdbstrlen, par.showconf,
+void HHblits::writeReducedHHRFile(std::stringstream& out) {
+  reducedHitlist.PrintHHR(q_tmp, out, par.maxdbstrlen, par.showconf,
       par.showcons, par.showdssp, par.showpred, par.b, par.B, par.z, par.Z,
       par.aliwidth, par.nseqdis, par.p, par.E, par.argc, par.argv, S);
-  return out;
 }
 
-std::stringstream* HHblits::writePsiFile() {
-  std::stringstream* out = new std::stringstream();
+void HHblits::writePsiFile(std::stringstream& out) {
   if (par.allseqs)
-    Qali_allseqs.WriteToFile(*out, "psi");
+    Qali_allseqs.WriteToFile(out, "psi");
   else
-    Qali.WriteToFile(*out, "psi");
-  return out;
+    Qali.WriteToFile(out, "psi");
 }
 
-std::stringstream* HHblits::writeHMMFile() {
+void HHblits::writeHMMFile(std::stringstream& out) {
   // Add *no* amino acid pseudocounts to query. This is necessary to copy f[i][a] to p[i][a]
   q->AddAminoAcidPseudocounts(0, 0.0, 0.0, 1.0);
   q->CalculateAminoAcidBackground(pb);
 
-  std::stringstream* out = new std::stringstream();
-  q->WriteToFile(*out, par.max_seqid, par.coverage, par.qid, par.Ndiff, par.qsc,
+  q->WriteToFile(out, par.max_seqid, par.coverage, par.qid, par.Ndiff, par.qsc,
       par.argc, par.argv, pb);
-  return out;
 }
 
-std::stringstream* HHblits::writeA3MFile() {
-  std::stringstream* out = new std::stringstream();
+void HHblits::writeA3MFile(std::stringstream& out) {
   if (par.allseqs)
-    Qali_allseqs.WriteToFile(*out, "a3m");
+    Qali_allseqs.WriteToFile(out, "a3m");
   else
-    Qali.WriteToFile(*out, "a3m");
-  return out;
+    Qali.WriteToFile(out, "a3m");
 }

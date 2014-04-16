@@ -8,20 +8,20 @@
 #ifndef HHBLITS_H_
 #define HHBLITS_H_
 
-#include <iostream>   // cin, cout, cerr
-#include <fstream>    // ofstream, ifstream
-#include <cstdio>     // printf
-#include <algorithm>  // min,max
-#include <stdlib.h>   // exit
-#include <string.h>     // strcmp, strstr
+#include <iostream>
+#include <fstream>
+#include <cstdio>
+#include <algorithm>
+#include <stdlib.h>
+#include <string.h>
 #include <sstream>
 #include <vector>
-#include <math.h>     // sqrt, pow
-#include <limits.h>   // INT_MIN
-#include <float.h>    // FLT_MIN
-#include <ctype.h>    // islower, isdigit etc
-#include <time.h>     // clock_gettime etc. (in realtime library (-lrt compiler option))
-#include <errno.h>    // perror(), strerror(errno)
+#include <math.h>
+#include <limits.h>
+#include <float.h>
+#include <ctype.h>
+#include <time.h>
+#include <errno.h>
 #include <cassert>
 #include <stdexcept>
 #include <map>
@@ -58,17 +58,22 @@ extern "C" {
 #include "util.h"
 #include "hhutil.h"
 
-#include "hhhmm.h"       // class HMM
-#include "hhhit.h"       // class Hit
-#include "hhalignment.h" // class Alignment
-#include "hhhalfalignment.h" // class HalfAlignment
-#include "hhfullalignment.h" // class FullAlignment
-#include "hhhitlist.h"   // class Hit
+#include "hhhmm.h"
+#include "hhhit.h"
+#include "hhalignment.h"
+#include "hhhalfalignment.h"
+#include "hhfullalignment.h"
+#include "hhhitlist.h"
 
 #include "hhmatrices.h"
-#include "hhfunc.h"      // some functions common to hh programs
+#include "hhfunc.h"
 
-const int MAXBINS = 384; // maximum number of bins (positions in thread queue)
+//TODO: not yet used
+//maximum number of bins (positions in thread queue)
+const int MAXBINS = 384;
+
+//TODO: separate prefilter class
+
 const char HHBLITS_REFERENCE[] =
 		"Remmert M., Biegert A., Hauser A., and Soding J.\nHHblits: Lightning-fast iterative protein sequence searching by HMM-HMM alignment.\nNat. Methods 9:173-175 (2011)\n";
 
@@ -93,14 +98,14 @@ public:
 
     //output writer for mpi version
     std::map<int, Alignment>& getAlis();
-    std::stringstream* writeHHRFile();
-    std::stringstream* writeScoresFile();
-    std::stringstream* writePairwiseAlisFile(char outformat);
-    std::stringstream* writeAlitabFile();
-    std::stringstream* writeReducedHHRFile();
-    std::stringstream* writePsiFile();
-    std::stringstream* writeHMMFile();
-    std::stringstream* writeA3MFile();
+    void writeHHRFile(std::stringstream& out);
+    void writeScoresFile(std::stringstream& out);
+    void writePairwiseAlisFile(char outformat, std::stringstream& out);
+    void writeAlitabFile(std::stringstream& out);
+    void writeReducedHHRFile(std::stringstream& out);
+    void writePsiFile(std::stringstream& out);
+    void writeHMMFile(std::stringstream& out);
+    void writeA3MFile(std::stringstream& out);
 
 	void run(FILE* query_fh, char* query_path);
 
