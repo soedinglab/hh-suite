@@ -64,19 +64,19 @@ using std::ofstream;
 #include "library_pseudocounts-inl.h"
 #include "crf_pseudocounts-inl.h"
 
-#include "util.h"        // imax, fmax, iround, iceil, ifloor, strint, strscn, strcut, substr, uprstr, uprchr, Basename etc.
-#include "list.h"        // list data structure
-#include "hash.h"        // hash data structure
-#include "hhdecl.h"      // Constants, global variables, struct Parameters
-#include "hhutil.h"      // MatchChr, InsertChr, aa2i, i2aa, log2, fast_log2, ScopID, WriteToScreen,
-#include "hhmatrices.h"  // BLOSUM50, GONNET, HSDM
-#include "hhhmm.h"       // class HMM
-#include "hhhit.h"       // class Hit
-#include "hhalignment.h" // class Alignment
-#include "hhhalfalignment.h" // class HalfAlignment
-#include "hhfullalignment.h" // class FullAlignment
-#include "hhhitlist.h"   // class Hit
-#include "hhfunc.h"      // some functions common to hh programs
+#include "util.h"
+#include "list.h"
+#include "hash.h"
+#include "hhdecl.h"
+#include "hhutil.h"
+#include "hhmatrices.h"
+#include "hhhmm.h"
+#include "hhhit.h"
+#include "hhalignment.h"
+#include "hhhalfalignment.h"
+#include "hhfullalignment.h"
+#include "hhhitlist.h"
+#include "hhfunc.h"
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Global variables
@@ -105,8 +105,6 @@ float S33[NSSPRED][MAXCF][NSSPRED][MAXCF];
 
 char program_name[NAMELEN];
 char program_path[NAMELEN];
-
-int v;
 
 const char HHSEARCH_REFERENCE[] =
     "Soding, J. Protein homology detection by HMM-HMM comparison. Bioinformatics 21:951-960 (2005).\n";

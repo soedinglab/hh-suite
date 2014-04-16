@@ -86,8 +86,6 @@ float S33[NSSPRED][MAXCF][NSSPRED][MAXCF];
 char program_name[NAMELEN];
 char program_path[NAMELEN];
 
-int v;
-
 HMM* q = new HMM;         //Create a HMM with maximum of par.maxres match states
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -472,8 +470,6 @@ int main(int argc, char **argv) {
   }
 
   delete q;
-  DeletePseudocountsEngine();
-
-  exit(0);
+  DeletePseudocountsEngine(context_lib, crf, pc_hhm_context_engine, pc_hhm_context_mode, pc_prefilter_context_engine, pc_prefilter_context_mode);
 }
 

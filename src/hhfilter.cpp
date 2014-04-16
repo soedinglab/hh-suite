@@ -57,6 +57,26 @@ using std::ofstream;
 #include "hhhit.h"       // class Hit
 #include "hhalignment.h" // class Alignment
 #include "hhfunc.h"      // some functions common to hh programs
+
+
+Parameters par;
+
+cs::ContextLibrary<cs::AA>* context_lib = NULL;
+cs::Crf<cs::AA>* crf = NULL;
+cs::Pseudocounts<cs::AA>* pc_hhm_context_engine = NULL;
+cs::Admix* pc_hhm_context_mode = NULL;
+cs::Pseudocounts<cs::AA>* pc_prefilter_context_engine = NULL;
+cs::Admix* pc_prefilter_context_mode = NULL;
+
+// substitution matrix flavours
+float __attribute__((aligned(16))) P[20][20];
+float __attribute__((aligned(16))) R[20][20];
+float __attribute__((aligned(16))) Sim[20][20];
+float __attribute__((aligned(16))) S[20][20];
+float __attribute__((aligned(16))) pb[21];
+
+char program_name[NAMELEN];
+
 /////////////////////////////////////////////////////////////////////////////////////
 // Exit function
 /////////////////////////////////////////////////////////////////////////////////////
@@ -242,7 +262,7 @@ int main(int argc, char **argv) {
       v = atoi(argv[i + 1]);
   }
 
-  par.SetDefaultPaths(program_path);
+  par.SetDefaultPaths();
 
   // Read .hhdefaults file?
   if (par.readdefaultsfile) {
@@ -276,33 +296,34 @@ int main(int argc, char **argv) {
   if (strcmp(par.infile, "stdin")) {
     inf = fopen(par.infile, "r");
     if (!inf)
-      OpenFileError(par.infile);
+      OpenFileError(par.infile, __FILE__, __LINE__, __func__);
   }
   else {
     inf = stdin;
   }
 
-  qali.Read(inf, par.infile);
+  qali.Read(inf, par.infile, par.mark, par.maxcol, par.nseqdis);
   fclose(inf);
 
   // Convert ASCII to int (0-20),throw out all insert states, record their number in I[k][i] 
   // and store marked sequences in name[k] and seq[k]
-  qali.Compress(par.infile);
+  qali.Compress(par.infile, par.cons, par.maxres, par.maxcol, par.M, par.Mgaps);
 
   // Filter by minimum score per column with query sequence?
+  //TODO: nonsense???
   if (0 > -10)
-    SetSubstitutionMatrix();
+    SetSubstitutionMatrix(par.matrix, pb, P, R, S, Sim);
 
   // Remove sequences with seq. identity larger than seqid percent (remove the shorter of two)
-  qali.N_filtered = qali.Filter(par.max_seqid, par.coverage, par.qid, par.qsc,
+  qali.N_filtered = qali.Filter(par.max_seqid, S, par.coverage, par.qid, par.qsc,
       par.Ndiff);
   
   // Atune alignment diversity q.Neff with qsc to value Neff_goal
   if (par.Neff >= 1.0)
-    qali.FilterNeff(par.wg);
+    qali.FilterNeff(par.wg, par.mark, par.cons, par.showcons, par.maxres, par.max_seqid, par.coverage, par.Neff, pb, S, Sim);
 
   // Write filtered alignment WITH insert states (lower case) to alignment file
-  qali.WriteToFile(par.outfile);
+  qali.WriteToFile(par.outfile, par.append);
 
   // Print 'Done!'
   FILE* outf = NULL;
@@ -317,8 +338,5 @@ int main(int argc, char **argv) {
     if (v >= 2)
       printf("Done\n");
   }
-
-  exit(0);
-
-} //end main
+}
 

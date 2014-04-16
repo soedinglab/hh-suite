@@ -68,10 +68,6 @@ extern "C" {
 #include "hhmatrices.h"
 #include "hhfunc.h"
 
-//TODO: not yet used
-//maximum number of bins (positions in thread queue)
-const int MAXBINS = 384;
-
 //TODO: separate prefilter class
 
 const char HHBLITS_REFERENCE[] =

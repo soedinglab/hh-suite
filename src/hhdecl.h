@@ -61,6 +61,10 @@ const float PLTY_GAPEXTD=1.0f; // for -qsc option (filter for min similarity to 
 const int MINCOLS_REALIGN=6; // hits with MAC alignments with fewer matched columns will be deleted in hhsearch hitlist; must be at least 2 to avoid nonsense MAC alignments starting from the left/upper edge
 const float LOG1000=log(1000.0);
 
+//TODO: not yet used
+//maximum number of bins (positions in thread queue)
+const int MAXBINS = 384;
+
 // Secondary structure
 const int NDSSP=8;      //number of different ss states determined by dssp: 0-7 (0: no state available)
 const int NSSPRED=4;    //number of different ss states predicted by psipred: 0-3 (0: no prediction availabe)
