@@ -209,7 +209,6 @@ void Parameters::SetDefaults() {
 	prefilter_bit_factor = 4;
 	prefilter_evalue_thresh = 1000;
 	prefilter_evalue_coarse_thresh = 100000;
-	prefilter_min_alis = 1000;
 	preprefilter_smax_thresh = 10;
 	min_prefilter_hits = 100;
 

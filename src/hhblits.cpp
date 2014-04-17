@@ -7,25 +7,17 @@
 
 #include "hhblits.h"
 
-#define SWAP(tmp, arg1, arg2) tmp = arg1; arg1 = arg2; arg2 = tmp;
-
 HHblits::HHblits(Parameters& parameters) {
   par = parameters;
 
   v = par.v;
 
   N_searched = 0;
-  dbfiles_new = new char*[par.maxnumdb_no_prefilter + 1];
-  dbfiles_old = new char*[par.maxnumdb + 1];
 
   db = new HHblitsDatabase(par.db_base);
+  par.dbsize = db->cs219_database->db_index->n_entries;
 
-  if (par.prefilter) {
-    init_prefilter();
-  }
-  else {
-    init_no_prefiltering();
-  }
+  prefilter = new hh::Prefilter(par.prefilter, par.cs_library, db->cs219_database);
 
   // Set (global variable) substitution matrix and derived matrices
   SetSubstitutionMatrix(par.matrix, pb, P, R, S, Sim);
@@ -82,14 +74,6 @@ HHblits::HHblits(Parameters& parameters) {
     hit[bin]->AllocateForwardMatrix(par.maxres, par.maxres);
   }
   format = new int[par.threads];
-
-  // Prepare column state lib (context size =1 )
-  FILE* fin = fopen(par.cs_library, "r");
-  if (!fin)
-    OpenFileError(par.cs_library, __FILE__, __LINE__, __func__);
-  cs_lib = new cs::ContextLibrary<cs::AA>(fin);
-  fclose(fin);
-  cs::TransformToLin(*cs_lib);
 }
 
 HHblits::~HHblits() {
@@ -107,23 +91,10 @@ HHblits::~HHblits() {
 
   delete[] format;
 
-  delete cs_lib;
   DeletePseudocountsEngine(context_lib, crf, pc_hhm_context_engine,
       pc_hhm_context_mode, pc_prefilter_context_engine,
       pc_prefilter_context_mode);
 
-  if (par.prefilter) {
-    free(length);
-    free(first);
-
-    for (size_t n = 0; n < num_dbs; n++)
-      delete[] dbnames[n];
-    free(dbnames);
-
-  }
-
-  delete[] dbfiles_new;
-  delete[] dbfiles_old;
 }
 
 void HHblits::ProcessAllArguments(int argc, char** argv, Parameters& par) {
@@ -277,15 +248,6 @@ void HHblits::Reset() {
     delete q_tmp;
     q_tmp = NULL;
   }
-
-  for (int idb = 0; idb < ndb_new; idb++)
-    delete[] dbfiles_new[idb];
-
-  for (int idb = 0; idb < ndb_old; idb++)
-    delete[] dbfiles_old[idb];
-
-  ndb_old = 0;
-  ndb_new = 0;
 
   hitlist.Reset();
   while (!hitlist.End())
@@ -1107,10 +1069,6 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
   } // end of for-loop for command line input
 }
 
-void HHblits::ReadQueryA3MFile() {
-  // Open query a3m MSA
-}
-
 void HHblits::getTemplateA3M(char* entry_name, long& ftellpos,
     Alignment& tali) {
   if (db->use_compressed) {
@@ -1241,8 +1199,7 @@ void HHblits::getTemplateHMM(char* entry_name, char use_global_weights,
   getTemplateHMMFromA3M(entry_name, use_global_weights, ftellpos, format, t);
 }
 
-void HHblits::DoViterbiSearch(char *dbfiles[], int ndb,
-    Hash<Hit>* previous_hits, bool alignByWorker) {
+void HHblits::DoViterbiSearch(std::vector<std::string>& prefiltered_hits, Hash<Hit>* previous_hits, bool alignByWorker) {
   // Search databases
   for (int bin = 0; bin < par.threads; bin++) {
     hit[bin]->realign_around_viterbi = false;
@@ -1259,7 +1216,7 @@ void HHblits::DoViterbiSearch(char *dbfiles[], int ndb,
 
   // For all the databases comming through prefilter
   #pragma omp parallel for schedule(dynamic, 1)
-  for (int idb = 0; idb < ndb; idb++) {
+  for (int idb = 0; idb < prefiltered_hits.size(); idb++) {
     // Allocate free bin (no need to lock, since slave processes cannot change FREE to other status)
     int bin = omp_get_thread_num();
 
@@ -1270,13 +1227,16 @@ void HHblits::DoViterbiSearch(char *dbfiles[], int ndb,
         ++N_searched;
       }
 
-      getTemplateHMM(dbfiles[idb], 1, hit[bin]->ftellpos, format[bin], t[bin]);
+      char* entry_name = new char[prefiltered_hits[idb].size()+1];
+      strcpy(entry_name, prefiltered_hits[idb].c_str());
+
+      getTemplateHMM(entry_name, 1, hit[bin]->ftellpos, format[bin], t[bin]);
 
       if (v >= 4)
         printf("Aligning with %s\n", t[bin]->name);
 
-      hit[bin]->dbfile = new char[strlen(dbfiles[idb]) + 1];
-      strcpy(hit[bin]->dbfile, dbfiles[idb]); // record db file name from which next HMM is read
+      hit[bin]->dbfile = new char[strlen(entry_name) + 1];
+      strcpy(hit[bin]->dbfile, entry_name); // record db file name from which next HMM is read
 
       if (alignByWorker)
         AlignByWorker(par, hit[bin], t[bin], q, format[bin], pb, R, S73, S33,
@@ -1290,8 +1250,7 @@ void HHblits::DoViterbiSearch(char *dbfiles[], int ndb,
   delete[] par.filter_evals;
 }
 
-void HHblits::ViterbiSearch(char *dbfiles[], int ndb, Hash<Hit>* previous_hits,
-    int db_size) {
+void HHblits::ViterbiSearch(std::vector<std::string> prefiltered_hits, Hash<Hit>* previous_hits, int db_size) {
   // Initialize
   v1 = v;
   if (v > 0 && v <= 3)
@@ -1299,11 +1258,12 @@ void HHblits::ViterbiSearch(char *dbfiles[], int ndb, Hash<Hit>* previous_hits,
   else
     v -= 2;
 
-  hitlist.N_searched = db_size; //hand over number of HMMs scanned to hitlist (for E-value calculation)
+  //hand over number of HMMs scanned to hitlist (for E-value calculation)
+  hitlist.N_searched = db_size;
 
   //////////////////////////////////////////////////////////
   // Start Viterbi search through db HMMs listed in dbfiles
-  DoViterbiSearch(dbfiles, ndb, previous_hits);
+  DoViterbiSearch(prefiltered_hits, previous_hits);
 
   if (v1 >= 2)
     cout << "\n";
@@ -1327,8 +1287,7 @@ void HHblits::ViterbiSearch(char *dbfiles[], int ndb, Hash<Hit>* previous_hits,
 // Variant of ViterbiSearch() function for rescoring previously found HMMs with Viterbi algorithm.
 // Perform Viterbi search on each hit object in global hash previous_hits, but keep old alignment
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void HHblits::RescoreWithViterbiKeepAlignment(int db_size,
-    Hash<Hit>* previous_hits) {
+void HHblits::RescoreWithViterbiKeepAlignment(int db_size, Hash<Hit>* previous_hits) {
   // Initialize
   v1 = v;
   if (v > 0 && v <= 3)
@@ -1336,17 +1295,14 @@ void HHblits::RescoreWithViterbiKeepAlignment(int db_size,
   else
     v -= 2;
 
-  char *dbfiles[db_size + 1];
-  int ndb = 0;
+  std::vector<std::string> hits_to_rescore;
 
   // Get dbfiles of previous hits
   previous_hits->Reset();
   while (!previous_hits->End()) {
     Hit hit_cur = previous_hits->ReadNext();
     if (hit_cur.irep == 1) {
-      dbfiles[ndb] = new char[strlen(hit_cur.dbfile) + 1];
-      strcpy(dbfiles[ndb], hit_cur.dbfile);
-      ++ndb;
+      hits_to_rescore.push_back(std::string(hit_cur.dbfile));
     }
   }
 
@@ -1354,14 +1310,11 @@ void HHblits::RescoreWithViterbiKeepAlignment(int db_size,
 
   //////////////////////////////////////////////////////////
   // Start Viterbi search through db HMMs listed in dbfiles
-  DoViterbiSearch(dbfiles, ndb, previous_hits, false);
+  DoViterbiSearch(hits_to_rescore, previous_hits, false);
 
   if (v1 >= 2)
     cout << "\n";
   v = v1;
-
-  for (int n = 0; n < ndb; ++n)
-    delete[] (dbfiles[n]);
 
   // Sort list according to sortscore
   if (v >= 3)
@@ -1373,11 +1326,9 @@ void HHblits::RescoreWithViterbiKeepAlignment(int db_size,
   if (par.prefilter)
     hitlist.CalculateHHblitsEvalues(q, par.dbsize, par.alphaa, par.alphab,
         par.alphac, par.prefilter_evalue_thresh);
-
 }
 
-void HHblits::perform_realign(char *dbfiles[], int ndb,
-    Hash<char>* premerged_hits) {
+void HHblits::perform_realign(std::vector<std::string>& hits_to_realign, Hash<char>* premerged_hits) {
   q->Log2LinTransitionProbs(1.0); // transform transition freqs to lin space if not already done
   int nhits = 0;
   int N_aligned = 0;
@@ -1638,41 +1589,44 @@ void HHblits::perform_realign(char *dbfiles[], int ndb,
 
   // Read all HMMs whose position is given in phash_plist_realignhitpos
 #pragma omp parallel for schedule(dynamic, 1)
-  for (int idb = 0; idb < ndb; idb++) {
+  for (int idb = 0; idb < hits_to_realign.size(); idb++) {
     // Can we skip dbfiles[idb] because it contains no template to be realigned?
-    if (!phash_plist_realignhitpos->Contains(dbfiles[idb]))
+    if (!phash_plist_realignhitpos->Contains(hits_to_realign[idb].c_str()))
       continue;
 
     // phash_plist_realignhitpos->Show(dbfile) is pointer to list with template indices and their ftell positions.
     // This list is now sorted by ftellpos in ascending order to access one template after the other efficiently
-    phash_plist_realignhitpos->Show(dbfiles[idb])->SortList();
+    phash_plist_realignhitpos->Show(hits_to_realign[idb].c_str())->SortList();
 
     ///////////////////////////////////////////////////////////////////////////////////////
     // The loop (reads HMMs from the database file and) submits jobs into free bins as soon as they become available
-    phash_plist_realignhitpos->Show(dbfiles[idb])->Reset();
-    while (!phash_plist_realignhitpos->Show(dbfiles[idb])->End()) {
+    phash_plist_realignhitpos->Show(hits_to_realign[idb].c_str())->Reset();
+    while (!phash_plist_realignhitpos->Show(hits_to_realign[idb].c_str())->End()) {
       // Submit jobs until no bin is free anymore
-      while (!phash_plist_realignhitpos->Show(dbfiles[idb])->End()) {
+      while (!phash_plist_realignhitpos->Show(hits_to_realign[idb].c_str())->End()) {
         // Allocate free bin
         int bin = omp_get_thread_num();
 
         // Forward stream position to start of next database HMM to be realigned
         Realign_hitpos hitpos_curr = phash_plist_realignhitpos->Show(
-            dbfiles[idb])->ReadNext();
+        		hits_to_realign[idb].c_str())->ReadNext();
         hit[bin]->index = hitpos_curr.index; // give hit[bin] a unique index for HMM
 
         // Give hit[bin] the pointer to the list of pointers to hitlist elements of same template (for realignment)
         hit[bin]->plist_phits = array_plist_phits[hitpos_curr.index];
 
-        hit[bin]->dbfile = new char[strlen(dbfiles[idb]) + 1];
-        strcpy(hit[bin]->dbfile, dbfiles[idb]); // record db file name from which next HMM is read
-        getTemplateHMM(dbfiles[idb], par.wg, hit[bin]->ftellpos, format[bin],
-            t[bin]);
+        hit[bin]->dbfile = new char[strlen(hits_to_realign[idb].c_str()) + 1];
+        strcpy(hit[bin]->dbfile, hits_to_realign[idb].c_str()); // record db file name from which next HMM is read
+
+        char* entry_name = new char[hits_to_realign[idb].size()+1];
+        strcpy(entry_name, hits_to_realign[idb].c_str());
+
+        getTemplateHMM(entry_name, par.wg, hit[bin]->ftellpos, format[bin], t[bin]);
 
         if (v >= 2)
           fprintf(stderr, "Realigning with %s\n", t[bin]->name);
 
-#pragma omp critical
+		#pragma omp critical
         {
           N_aligned++;
         }
@@ -1962,631 +1916,6 @@ void HHblits::wiggleQSC(HitList& hitlist, int n_redundancy, Alignment& Qali,
   //  reduceRedundancyOfHitList(n_redundancy, query_length, *wiggledHitList, reducedFinalHitList);
 }
 
-int HHblits::swStripedByte(unsigned char *querySeq, int queryLength,
-    unsigned char *dbSeq, int dbLength, unsigned short gapOpen,
-    unsigned short gapExtend, __m128i *pvHLoad, __m128i *pvHStore, __m128i *pvE,
-    unsigned short bias) {
-  int i, j;
-  int score;
-
-  int cmp;
-  int iter = (queryLength + 15) / 16;
-
-  __m128i *pv;
-
-  __m128i vE, vF, vH;
-
-  __m128i vMaxScore;
-  __m128i vBias;
-  __m128i vGapOpen;
-  __m128i vGapExtend;
-
-  __m128i vTemp;
-  __m128i vZero;
-
-  __m128i *pvScore;
-
-  __m128i *pvQueryProf = (__m128i *) querySeq;
-
-  /* Load the bias to all elements of a constant */
-  vBias = _mm_set1_epi8(bias);
-
-  /* Load gap opening penalty to all elements of a constant */
-  vGapOpen = _mm_set1_epi8(gapOpen);
-
-  /* Load gap extension penalty to all elements of a constant */
-  vGapExtend = _mm_set1_epi8(gapExtend);
-
-  vMaxScore = _mm_setzero_si128();
-  vZero = _mm_setzero_si128();
-
-  /* Zero out the storage vector */
-  for (i = 0; i < iter; ++i) {
-    _mm_store_si128(pvE + i, vMaxScore);
-    _mm_store_si128(pvHStore + i, vMaxScore);
-  }
-
-  for (i = 0; i < dbLength; ++i) {
-    /* fetch first data asap. */
-    pvScore = pvQueryProf + dbSeq[i] * iter;
-
-    /* zero out F. */
-    vF = _mm_setzero_si128();
-
-    /* load the next h value */
-    vH = _mm_load_si128(pvHStore + iter - 1);
-    vH = _mm_slli_si128(vH, 1);
-
-    pv = pvHLoad;
-    pvHLoad = pvHStore;
-    pvHStore = pv;
-
-    for (j = 0; j < iter; ++j) {
-      /* load values of vF and vH from previous row (one unit up) */
-      vE = _mm_load_si128(pvE + j);
-
-      /* add score to vH */
-      vH = _mm_adds_epu8(vH, *(pvScore++));
-      vH = _mm_subs_epu8(vH, vBias);
-
-      /* Update highest score encountered this far */
-      vMaxScore = _mm_max_epu8(vMaxScore, vH);
-
-      /* get max from vH, vE and vF */
-      vH = _mm_max_epu8(vH, vE);
-      vH = _mm_max_epu8(vH, vF);
-
-      /* save vH values */
-      _mm_store_si128(pvHStore + j, vH);
-
-      /* update vE value */
-      vH = _mm_subs_epu8(vH, vGapOpen);
-      vE = _mm_subs_epu8(vE, vGapExtend);
-      vE = _mm_max_epu8(vE, vH);
-
-      /* update vF value */
-      vF = _mm_subs_epu8(vF, vGapExtend);
-      vF = _mm_max_epu8(vF, vH);
-
-      /* save vE values */
-      _mm_store_si128(pvE + j, vE);
-
-      /* load the next h value */
-      vH = _mm_load_si128(pvHLoad + j);
-    }
-
-    /* reset pointers to the start of the saved data */
-    j = 0;
-    vH = _mm_load_si128(pvHStore);
-
-    /*  the computed vF value is for the given column.  since */
-    /*  we are at the end, we need to shift the vF value over */
-    /*  to the next column. */
-    vF = _mm_slli_si128(vF, 1);
-    vTemp = _mm_subs_epu8(vH, vGapOpen);
-    vTemp = _mm_subs_epu8(vF, vTemp);
-    vTemp = _mm_cmpeq_epi8(vTemp, vZero);
-    cmp = _mm_movemask_epi8(vTemp);
-
-    while (cmp != 0xffff) {
-      vE = _mm_load_si128(pvE + j);
-
-      vH = _mm_max_epu8(vH, vF);
-
-      /* save vH values */
-      _mm_store_si128(pvHStore + j, vH);
-
-      /*  update vE incase the new vH value would change it */
-      vH = _mm_subs_epu8(vH, vGapOpen);
-      vE = _mm_max_epu8(vE, vH);
-      _mm_store_si128(pvE + j, vE);
-
-      /* update vF value */
-      vF = _mm_subs_epu8(vF, vGapExtend);
-
-      ++j;
-      if (j >= iter) {
-        j = 0;
-        vF = _mm_slli_si128(vF, 1);
-      }
-
-      vH = _mm_load_si128(pvHStore + j);
-
-      vTemp = _mm_subs_epu8(vH, vGapOpen);
-      vTemp = _mm_subs_epu8(vF, vTemp);
-      vTemp = _mm_cmpeq_epi8(vTemp, vZero);
-      cmp = _mm_movemask_epi8(vTemp);
-    }
-  }
-
-  /* find largest score in the vMaxScore vector */
-  vTemp = _mm_srli_si128(vMaxScore, 8);
-  vMaxScore = _mm_max_epu8(vMaxScore, vTemp);
-  vTemp = _mm_srli_si128(vMaxScore, 4);
-  vMaxScore = _mm_max_epu8(vMaxScore, vTemp);
-  vTemp = _mm_srli_si128(vMaxScore, 2);
-  vMaxScore = _mm_max_epu8(vMaxScore, vTemp);
-  vTemp = _mm_srli_si128(vMaxScore, 1);
-  vMaxScore = _mm_max_epu8(vMaxScore, vTemp);
-
-  /* store in temporary variable */
-  score = _mm_extract_epi16(vMaxScore, 0);
-  score = score & 0x00ff;
-
-  /* return largest score */
-  return score;
-}
-
-// d = i-j+LT-1 is index of diagonal
-int HHblits::ungapped_sse_score(const unsigned char* query_profile,
-    const int query_length, const unsigned char* db_sequence,
-    const int dbseq_length, const unsigned char score_offset, __m128i* workspace)
-    {
-      int i; // position in query bands (0,..,W-1)
-    int j;// position in db sequence (0,..,dbseq_length-1)
-    int W = (query_length + 15) / 16;// width of bands in query and score matrix = hochgerundetes LQ/16
-
-    __m128i *p;
-    __m128i S;// 16 unsigned bytes holding S(b*W+i,j) (b=0,..,15)
-    __m128i Smax = _mm_setzero_si128();
-    __m128i Soffset;// all scores in query profile are shifted up by Soffset to obtain pos values
-    __m128i *s_prev, *s_curr;// pointers to Score(i-1,j-1) and Score(i,j), resp.
-    __m128i *qji;// query profile score in row j (for residue x_j)
-    __m128i *s_prev_it, *s_curr_it;
-    __m128i *query_profile_it = (__m128i *) query_profile;
-    __m128i Zero = _mm_setzero_si128();
-
-    // Load the score offset to all 16 unsigned byte elements of Soffset
-    Soffset = _mm_set1_epi8(score_offset);
-
-    // Initialize  workspace to zero
-    for (i=0, p=workspace; i < 2*W; ++i)
-    _mm_store_si128(p++, Zero);
-
-    s_curr = workspace;
-    s_prev = workspace + W;
-
-    for (j=0; j<dbseq_length; ++j)// loop over db sequence positions
-    {
-      // Get address of query scores for row j
-      qji = query_profile_it + db_sequence[j]*W;
-
-      // Load the next S value
-      S = _mm_load_si128(s_curr + W - 1);
-      S = _mm_slli_si128(S, 1);
-
-      // Swap s_prev and s_curr, smax_prev and smax_curr
-      SWAP(p,s_prev,s_curr);
-
-      s_curr_it = s_curr;
-      s_prev_it = s_prev;
-
-      for (i=0; i<W; ++i)// loop over query band positions
-      {
-        // Saturated addition and subtraction to score S(i,j)
-        S = _mm_adds_epu8(S, *(qji++));// S(i,j) = S(i-1,j-1) + (q(i,x_j) + Soffset)
-        S = _mm_subs_epu8(S, Soffset);// S(i,j) = max(0, S(i,j) - Soffset)
-        _mm_store_si128(s_curr_it++, S);// store S to s_curr[i]
-        Smax = _mm_max_epu8(Smax, S);// Smax(i,j) = max(Smax(i,j), S(i,j))
-
-        // Load the next S and Smax values
-        S = _mm_load_si128(s_prev_it++);
-      }
-    }
-
-    /* find largest score in the Smax vector */
-    S = _mm_srli_si128 (Smax, 8);
-    Smax = _mm_max_epu8 (Smax, S);
-    S = _mm_srli_si128 (Smax, 4);
-    Smax = _mm_max_epu8 (Smax, S);
-    S = _mm_srli_si128 (Smax, 2);
-    Smax = _mm_max_epu8 (Smax, S);
-    S = _mm_srli_si128 (Smax, 1);
-    Smax = _mm_max_epu8 (Smax, S);
-
-    /* store in temporary variable */
-    int score = _mm_extract_epi16 (Smax, 0);
-    score = score & 0x00ff;
-
-    /* return largest score */
-    return score;
-  }
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
-// Pull out all names from prefilter db file and copy into dbfiles_new for full HMM-HMM comparison
-///////////////////////////////////////////////////////////////////////////////////////////////////
-void HHblits::init_no_prefiltering() {
-  ffindex_index_t* db_index = db->cs219_database->db_index;
-
-  num_dbs = db_index->n_entries;
-  par.dbsize = db_index->n_entries;
-
-  if (par.dbsize > par.maxnumdb_no_prefilter) {
-    std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__
-        << ":" << std::endl;
-    std::cerr << "\tWithout prefiltering, the max. number of database HHMs is "
-        << par.maxnumdb_no_prefilter << " (actual: " << par.dbsize << ")\n";
-    std::cerr
-        << "\tYou can increase the allowed maximum using the -maxfilt <max> option.\n";
-    exit(4);
-  }
-
-  for (size_t n = 0; n < num_dbs; n++) {
-    ffindex_entry_t* entry = ffindex_get_entry_by_index(db_index, n);
-    dbfiles_new[n] = new char[strlen(entry->name) + 1];
-    strcpy(dbfiles_new[n], entry->name);
-  }
-  ndb_new = num_dbs;
-
-  if (v >= 2)
-    cout << "Searching " << ndb_new << " database HHMs without prefiltering"
-        << endl;
-}
-
-void HHblits::checkCSFormat(size_t nr_checks) {
-  for (size_t n = 0; n < std::min(nr_checks, num_dbs); n++) {
-    if (first[n][0] == '>') {
-      nr_checks--;
-    }
-  }
-
-  if (nr_checks == 0) {
-    std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__
-        << ":" << std::endl;
-    std::cerr << "\tYour cs database is in an old format!" << std::endl;
-    std::cerr << "\tThis format is no longer supportet!" << std::endl;
-    std::cerr << "\tCorrespond to the user manual!" << std::endl;
-    exit(1);
-  }
-}
-
-//////////////////////////////////////////////////////////////
-// Reading in column state sequences for prefiltering
-//////////////////////////////////////////////////////////////
-void HHblits::init_prefilter() {
-  unsigned char* db_data = (unsigned char*) db->cs219_database->db_data;
-  ffindex_index_t* db_index = db->cs219_database->db_index;
-
-  // Set up variables for prefiltering
-  num_dbs = db_index->n_entries;
-  par.dbsize = db_index->n_entries;
-  first = (unsigned char**) memalign(16, num_dbs * sizeof(unsigned char*));
-  length = (int*) memalign(16, num_dbs * sizeof(int));
-  dbnames = (char**) memalign(16, num_dbs * sizeof(char*));
-  for (size_t n = 0; n < num_dbs; n++) {
-    ffindex_entry_t* entry = ffindex_get_entry_by_index(db_index, n);
-    first[n] = (unsigned char*) ffindex_get_data_by_entry((char*) db_data, entry);
-    length[n] = entry->length - 1;
-    dbnames[n] = new char[strlen(entry->name) + 1];
-    strcpy(dbnames[n], entry->name);
-  }
-
-  //check if cs219 format is new binary format
-  checkCSFormat(5);
-
-  if (v >= 2) {
-    printf("Searching %zu column state sequences.\n", num_dbs);
-  }
-}
-
-////////////////////////////////////////////////////////////////////////
-// Prepare query profile for prefitering
-////////////////////////////////////////////////////////////////////////
-void HHblits::stripe_query_profile() {
-  int LQ = q_tmp->L;
-  float** query_profile = NULL;
-  int a, h, i, j, k;
-
-  // Add Pseudocounts
-  if (par.nocontxt) {
-    // Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
-    q_tmp->PreparePseudocounts(R);
-    // Add amino acid pseudocounts to query: p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
-    q_tmp->AddAminoAcidPseudocounts(par.pc_prefilter_nocontext_mode,
-        par.pc_prefilter_nocontext_a, par.pc_prefilter_nocontext_b,
-        par.pc_prefilter_nocontext_c);
-  }
-  else {
-    // Add context specific pseudocounts (now always used, because clusterfile is necessary)
-    q_tmp->AddContextSpecificPseudocounts(pc_prefilter_context_engine,
-        pc_prefilter_context_mode);
-  }
-
-  q_tmp->CalculateAminoAcidBackground(pb);
-
-  // Build query profile with 219 column states
-  query_profile = new float*[LQ + 1];
-  for (i = 0; i < LQ + 1; ++i)
-    query_profile[i] = (float*) memalign(16, NUMCOLSTATES * sizeof(float),
-        "the query profile during prefiltering");
-
-  const cs::ContextLibrary<cs::AA>& lib = *cs_lib;
-
-  // log S(i,k) = log ( SUM_a p(i,a) * p(k,a) / f(a) )   k: column state, i: pos in ali, a: amino acid
-  for (i = 0; i < LQ; ++i)
-    for (k = 0; k < NUMCOLSTATES; ++k) {
-      float sum = 0;
-      for (a = 0; a < 20; ++a)
-        sum += (q_tmp->p[i][a] * lib[k].probs[0][a]) / q_tmp->pav[a];
-      query_profile[i + 1][k] = sum;
-    }
-
-  /////////////////////////////////////////
-  // Stripe query profile with chars
-  qc = (unsigned char*) memalign(16,
-      (NUMCOLSTATES + 1) * (LQ + 15) * sizeof(unsigned char),
-      "the striped query profile during prefiltering"); // query profile (states + 1 because of ANY char)
-  W = (LQ + 15) / 16;   // band width = hochgerundetes LQ/16
-
-  for (a = 0; a < NUMCOLSTATES; ++a) {
-    h = a * W * 16;
-    for (i = 0; i < W; ++i) {
-      j = i;
-      for (k = 0; k < 16; ++k) {
-        if (j >= LQ)
-          qc[h] = (unsigned char) par.prefilter_score_offset;
-        else {
-          float dummy = flog2(query_profile[j + 1][a])
-              * par.prefilter_bit_factor + par.prefilter_score_offset + 0.5;
-          // if (dummy>255.0) qc[h] = 255;
-          // else if (dummy<0) qc[h] = 0;
-          // else qc[h] = (unsigned char) dummy;  // 1/3 bits & make scores >=0 everywhere
-          qc[h] = (unsigned char) fmax(0.0, fmin(255.0, dummy));
-        }
-        ++h;
-        j += W;
-      }
-    }
-  }
-
-  // Add extra ANY-state (220'th state)
-  h = NUMCOLSTATES * W * 16;
-  for (i = 0; i < W; ++i) {
-    j = i;
-    for (k = 0; k < 16; ++k) {
-      if (j >= LQ)
-        qc[h] = (unsigned char) par.prefilter_score_offset;
-      else
-        qc[h] = (unsigned char) (par.prefilter_score_offset - 1);
-      h++;
-      j += W;
-    }
-  }
-
-  //////////////////////////////////////////////+
-  // Stripe query profile with shorts
-  qw = (unsigned short*) memalign(16,
-      (NUMCOLSTATES + 1) * (LQ + 7) * sizeof(unsigned short),
-      "the striped 2B query profile during prefiltering"); // query profile (states + 1 because of ANY char)
-  Ww = (LQ + 7) / 8;
-
-  /////////////////////////////////////////
-  // Stripe query profile
-  for (a = 0; a < NUMCOLSTATES; ++a) {
-    h = a * Ww * 8;
-    for (i = 0; i < Ww; ++i) {
-      j = i;
-      for (k = 0; k < 8; ++k) {
-        if (j >= LQ)
-          qw[h] = 0;
-        else {
-          float dummy = flog2(query_profile[j + 1][a])
-              * par.prefilter_bit_factor;
-          qw[h] = (unsigned short) dummy; // 1/3 bits & make scores >=0 everywhere
-        }
-        ++h;
-        j += Ww;
-      }
-    }
-  }
-
-  // Add extra ANY-state
-  h = NUMCOLSTATES * Ww * 8;
-  for (i = 0; i < Ww; ++i) {
-    j = i;
-    for (k = 0; k < 8; ++k) {
-      if (j >= LQ)
-        qw[h] = 0;
-      else
-        qw[h] = (unsigned short) -1;
-      h++;
-      j += W;
-    }
-  }
-
-  free(qw);
-
-  for (i = 0; i < LQ + 1; ++i)
-    free(query_profile[i]);
-  delete[] query_profile;
-}
-////////////////////////////////////////////////////////////////////////
-
-////////////////////////////////////////////////////////////////////////
-// Main prefilter function
-////////////////////////////////////////////////////////////////////////
-void HHblits::prefilter_db(Hash<Hit>* previous_hits) {
-  Hash<char>* doubled = new Hash<char>;
-  doubled->New(16381, 0);
-  for (int idb = 0; idb < ndb_new; idb++)
-    delete[] (dbfiles_new[idb]);
-  for (int idb = 0; idb < ndb_old; idb++)
-    delete[] (dbfiles_old[idb]);
-  ndb_new = ndb_old = 0;
-
-  // Prefilter with SW evalue preprefilter backtrace
-
-  stripe_query_profile();
-
-//  int* prefiltered_hits = new int[par.dbsize+1];
-  int* backtrace_hits = new int[par.maxnumdb + 1];
-
-  __m128i ** workspace = new __m128i *[par.threads];
-
-  int score;
-  double evalue;
-  vector<pair<double, int> > first_prefilter;
-
-  vector<pair<double, int> > hits;
-
-  int thread_id = 0;
-  int count_dbs = 0;
-  int gap_init = par.prefilter_gap_open + par.prefilter_gap_extend;
-  int gap_extend = par.prefilter_gap_extend;
-  int LQ = q_tmp->L;
-  const float log_qlen = flog2(LQ);
-  const double factor = (double) par.dbsize * LQ;
-
-  for (int i = 0; i < par.threads; i++)
-    workspace[i] = (__m128i *) memalign(16, 3 * (LQ + 15) * sizeof(char),
-        "the dynamic programming workspace during prefiltering");
-
-#pragma omp parallel for schedule(static) private(score, thread_id)
-  // Loop over all database sequences
-  for (size_t n = 0; n < num_dbs; n++) {
-#ifdef _OPENMP
-    thread_id = omp_get_thread_num();
-#endif
-
-    // Perform search step
-    score = ungapped_sse_score(qc, LQ, first[n], length[n],
-        par.prefilter_score_offset, workspace[thread_id]);
-
-    score = score
-        - (int) (par.prefilter_bit_factor * (log_qlen + flog2(length[n])));
-
-#pragma omp critical
-    first_prefilter.push_back(pair<double, int>(score, n));
-
-    if (v >= 2 && !(n % 100000)) {
-      cout << ".";
-      cout.flush();
-    }
-  }
-
-  //filter after calculation of ungapped sse score to include at least par.min_prefilter_hits
-  vector<pair<double, int> >::iterator it;
-
-  sort(first_prefilter.begin(), first_prefilter.end());
-  std::reverse(first_prefilter.begin(), first_prefilter.end());
-
-  vector<pair<double, int> >::iterator first_prefilter_begin_erase =
-      first_prefilter.end();
-  vector<pair<double, int> >::iterator first_prefilter_end_erase =
-      first_prefilter.end();
-  count_dbs = 0;
-  for (it = first_prefilter.begin(); it < first_prefilter.end(); it++) {
-    if (count_dbs >= par.min_prefilter_hits
-        && (*it).first < par.preprefilter_smax_thresh) {
-      first_prefilter_begin_erase = it;
-      break;
-    }
-    else {
-      count_dbs++;
-    }
-  }
-
-  first_prefilter.erase(first_prefilter_begin_erase, first_prefilter_end_erase);
-
-  if (v >= 2) {
-    printf(
-        "\nHMMs passed 1st prefilter (gapless profile-profile alignment)  : %6i\n",
-        count_dbs);
-  }
-
-#pragma omp parallel for schedule(static) private(evalue, score, thread_id)
-  // Loop over all database sequences
-//  for (int n = 0; n < count_dbs; n++) {
-  for (it = first_prefilter.begin(); it < first_prefilter.end(); it++) {
-#ifdef _OPENMP
-    thread_id = omp_get_thread_num();
-#endif
-
-    int n = (*it).second;
-
-    // Perform search step
-    score = swStripedByte(qc, LQ, first[n], length[n], gap_init, gap_extend,
-        workspace[thread_id], workspace[thread_id] + W,
-        workspace[thread_id] + 2 * W, par.prefilter_score_offset);
-
-    evalue = factor * length[n] * fpow2(-score / par.prefilter_bit_factor);
-
-    if (evalue < par.prefilter_evalue_coarse_thresh) {
-#pragma omp critical
-      hits.push_back(pair<double, int>(evalue, n));
-    }
-  }
-
-  //filter after calculation of evalues to include at least par.min_prefilter_hits
-  sort(hits.begin(), hits.end());
-
-  vector<pair<double, int> >::iterator second_prefilter_begin_erase =
-      hits.end();
-  vector<pair<double, int> >::iterator second_prefilter_end_erase = hits.end();
-  count_dbs = 0;
-  for (it = hits.begin(); it < hits.end(); it++) {
-    if (count_dbs >= par.min_prefilter_hits
-        && (*it).first > par.prefilter_evalue_thresh) {
-      second_prefilter_begin_erase = it;
-      break;
-    }
-    else {
-      count_dbs++;
-    }
-  }
-
-  hits.erase(second_prefilter_begin_erase, second_prefilter_end_erase);
-
-  count_dbs = 0;
-
-  for (it = hits.begin(); it < hits.end(); it++) {
-    backtrace_hits[count_dbs++] = (*it).second;
-
-    // Add hit to dbfiles
-    char name[NAMELEN];
-    strcpy(name, dbnames[(*it).second]);
-
-    char db_name[NAMELEN];
-    strcpy(db_name, name);
-
-    if (!doubled->Contains(db_name)) {
-      doubled->Add(db_name);
-      // check, if DB was searched in previous rounds
-      strcat(name, "__1");  // irep=1
-
-      if (previous_hits->Contains(name)) {
-        dbfiles_old[ndb_old] = new char[strlen(db_name) + 1];
-        strcpy(dbfiles_old[ndb_old], db_name);
-        ndb_old++;
-      }
-      else {
-        dbfiles_new[ndb_new] = new char[strlen(db_name) + 1];
-        strcpy(dbfiles_new[ndb_new], db_name);
-        ndb_new++;
-      }
-    }
-
-    if (count_dbs >= par.maxnumdb) {
-      if (v >= 2) {
-        fprintf(stderr,
-            "WARNING: Number of hits passing 2nd prefilter reduced from %6i to allowed maximum of %i!\n",
-            (int) hits.size(), par.maxnumdb);
-        fprintf(stderr,
-            "You can increase the allowed maximum using the -maxfilt <max> option.\n\n");
-      }
-      break;
-    }
-  }
-
-  // Free memory
-  free(qc);
-  for (int i = 0; i < par.threads; i++)
-    free(workspace[i]);
-  delete[] workspace;
-  delete[] backtrace_hits;
-  if (doubled)
-    delete doubled;
-}
 
 
 void HHblits::wiggleQSC(int n_redundancy, float* qsc, size_t nqsc,
@@ -2638,6 +1967,13 @@ void HHblits::run(FILE* query_fh, char* query_path) {
     cout << "Output file      :   " << par.outfile << "\n";
     cout << "Prefilter DB     :   " << db->cs219_database->data_filename << "\n";
     cout << "HHM DB           :   " << db->a3m_database->data_filename << "\n";
+  }
+
+  std::vector<std::string> new_prefilter_hits;
+  std::vector<std::string> old_prefilter_hits;
+
+  if(!par.prefilter) {
+	hh::Prefilter::init_no_prefiltering(db->cs219_database, new_prefilter_hits);
   }
 
   //////////////////////////////////////////////////////////////////////////////////
@@ -2692,10 +2028,33 @@ void HHblits::run(FILE* query_fh, char* query_path) {
     if (par.prefilter) {
       if (v >= 2)
         printf("Prefiltering database\n");
-      prefilter_db(previous_hits);  // in hhprefilter.C
+
+      new_prefilter_hits.clear();
+      old_prefilter_hits.clear();
+
+		// Add Pseudocounts to q_tmp
+		if (par.nocontxt) {
+			// Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
+			q_tmp->PreparePseudocounts(R);
+			// Add amino acid pseudocounts to query: p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
+			q_tmp->AddAminoAcidPseudocounts(par.pc_prefilter_nocontext_mode,
+					par.pc_prefilter_nocontext_a, par.pc_prefilter_nocontext_b,
+					par.pc_prefilter_nocontext_c);
+		} else {
+			// Add context specific pseudocounts (now always used, because clusterfile is necessary)
+			q_tmp->AddContextSpecificPseudocounts(pc_prefilter_context_engine,
+					pc_prefilter_context_mode);
+		}
+
+		q_tmp->CalculateAminoAcidBackground(pb);
+
+      prefilter->prefilter_db(q_tmp, previous_hits, par.threads,
+    		  par.prefilter_gap_open, par.prefilter_gap_extend, par.prefilter_score_offset,
+    		  par.prefilter_bit_factor, par. prefilter_evalue_thresh, par.prefilter_evalue_coarse_thresh,
+    		  par.preprefilter_smax_thresh, par.min_prefilter_hits, R, new_prefilter_hits, old_prefilter_hits);
     }
 
-    if (v >= 2 && ndb_new == 0) {
+    if (v >= 2 && new_prefilter_hits.size() == 0) {
       printf("No HMMs pass prefilter => Stop searching!\n");
       break;
     }
@@ -2703,17 +2062,15 @@ void HHblits::run(FILE* query_fh, char* query_path) {
     // Search datbases
     if (v >= 2) {
       printf(
-          "HMMs passed 2nd prefilter (gapped profile-profile alignment)   : %6i\n",
-          (ndb_new + ndb_old));
+          "HMMs passed 2nd prefilter (gapped profile-profile alignment)   : %6i\n", (new_prefilter_hits.size() + old_prefilter_hits.size()));
       printf(
-          "HMMs passed 2nd prefilter and not found in previous iterations : %6i\n",
-          ndb_new);
-      printf("Scoring %i HMMs using HMM-HMM Viterbi alignment\n", ndb_new);
+          "HMMs passed 2nd prefilter and not found in previous iterations : %6i\n", new_prefilter_hits.size());
+      printf("Scoring %i HMMs using HMM-HMM Viterbi alignment\n", new_prefilter_hits.size());
     }
 
     // Main Viterbi HMM-HMM search
     // Starts with empty hitlist (hits of previous iterations were deleted) and creates a hitlist with the hits of this iteration
-    ViterbiSearch(dbfiles_new, ndb_new, previous_hits, (ndb_new + ndb_old));
+    ViterbiSearch(new_prefilter_hits, previous_hits, (new_prefilter_hits.size() + old_prefilter_hits.size()));
 
     // check for new hits or end with iteration
     int new_hits = 0;
@@ -2732,30 +2089,29 @@ void HHblits::run(FILE* query_fh, char* query_path) {
       if (round < par.num_rounds && v >= 2)
         printf("No new hits found in iteration %i => Stop searching\n", round);
 
-      if (ndb_old > 0 && par.realign_old_hits) {
+      if (old_prefilter_hits.size() > 0 && par.realign_old_hits) {
         if (v > 0) {
           printf("Rescoring previously found HMMs with Viterbi algorithm\n");
         }
-        ViterbiSearch(dbfiles_old, ndb_old, previous_hits, (ndb_new + ndb_old));
+        ViterbiSearch(old_prefilter_hits, previous_hits, (new_prefilter_hits.size() + old_prefilter_hits.size()));
+
         // Add dbfiles_old to dbfiles_new for realign
-        for (int a = 0; a < ndb_old; a++) {
-          dbfiles_new[ndb_new] = new char[strlen(dbfiles_old[a]) + 1];
-          strcpy(dbfiles_new[ndb_new], dbfiles_old[a]);
-          ndb_new++;
+        for (int a = 0; a < old_prefilter_hits.size(); a++) {
+          new_prefilter_hits.push_back(old_prefilter_hits[a]);
         }
       }
       else if (!par.realign_old_hits && previous_hits->Size() > 0) {
         if (v > 0) {
           printf("Rescoring previously found HMMs with Viterbi algorithm\n");
         }
-        RescoreWithViterbiKeepAlignment(ndb_new + previous_hits->Size(),
-            previous_hits);
+
+        RescoreWithViterbiKeepAlignment(new_prefilter_hits.size() + previous_hits->Size(), previous_hits);
       }
     }
 
     // Realign hits with MAC algorithm
     if (par.realign)
-      perform_realign(dbfiles_new, ndb_new, premerged_hits);
+      perform_realign(new_prefilter_hits, premerged_hits);
 
     // Generate alignment for next iteration
     if (round < par.num_rounds || *par.alnfile || *par.psifile || *par.hhmfile

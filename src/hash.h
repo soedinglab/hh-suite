@@ -38,6 +38,7 @@
 
 #include <cstring>
 #include <iostream>
+#include "list.h"
 
 
 template<class Typ> 
@@ -91,7 +92,7 @@ private:
   
   Slot<Typ>** slot;      //each slot[i] (i<num_slots) points to a list of key/data pairs for this slot
 
-  inline unsigned int HashValue(char* key);  //returns the hash value for key 
+  inline unsigned int HashValue(const char* key);  //returns the hash value for key
 
 public:
   Hash();
@@ -114,8 +115,8 @@ public:
 //                 Methods that work with a key supplied as an argument
 
   // Return data element for key. Returns 'fail' if key does not exist
-  Typ Show(char* key);
-  inline Typ operator[](char* key) {return Show(key);}
+  Typ Show(const char* key);
+  inline Typ operator[](const char* key) {return Show(key);}
 
   // Add/replace key/data pair to hash and return address of data element for key
   Typ* Add(char* key, Typ data);
@@ -170,7 +171,7 @@ public:
 //            Methods that return usefull information about the data stored in Hash:
 
   // Returns 1 if the hash contains key, 0 otherwise 
-  int Contains(char* key);
+  int Contains(const char* key);
 
   // Return number of slots
   int Size()  {return num_keys;}  
@@ -245,7 +246,7 @@ Hash<Typ>::~Hash() {
 // Hash function
 ////////////////////////////////////////////////////////////////////////////////////////////
 template<class Typ>
-inline unsigned int Hash<Typ>::HashValue(char* key) //returns the hash value for key
+inline unsigned int Hash<Typ>::HashValue(const char* key) //returns the hash value for key
     {
   // Calculate a hash value by the division method:
   // Transform key into a natural number k = sum ( key[i]*128^(L-i) ) and calculate i= k % num_slots.
@@ -256,7 +257,7 @@ inline unsigned int Hash<Typ>::HashValue(char* key) //returns the hash value for
     return 0;
   }
   unsigned int i = 0;     // Start of iteration: k is zero
-  char* c = key;
+  const char* c = key;
   while (*c)
     i = ((i << 7) + *(c++)) % num_slots;
   key_len = c - key;
@@ -287,7 +288,7 @@ void Hash<Typ>::New(int nslots, Typ f) {
 // Return data element for key. Returns 'fail' if key does not exist
 ////////////////////////////////////////////////////////////////////////////////////////////
 template<class Typ>
-Typ Hash<Typ>::Show(char* key) {
+Typ Hash<Typ>::Show(const char* key) {
   Slot<Typ>* pslot;
   int i = HashValue(key);
 
@@ -623,7 +624,7 @@ void Hash<Typ>::Reset() {
 // Returns 1 if the hash contains key, 0 otherwise
 ////////////////////////////////////////////////////////////////////////////////////////////
 template<class Typ>
-int Hash<Typ>::Contains(char* key) {
+int Hash<Typ>::Contains(const char* key) {
   Slot<Typ>* pslot;
   int i = HashValue(key);
 

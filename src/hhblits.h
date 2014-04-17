@@ -70,7 +70,7 @@ extern "C" {
 
 #include "hhdatabase.h"
 
-//TODO: separate prefilter class
+#include "hhprefilter.h"
 
 const char HHBLITS_REFERENCE[] =
 		"Remmert M., Biegert A., Hauser A., and Soding J.\nHHblits: Lightning-fast iterative protein sequence searching by HMM-HMM alignment.\nNat. Methods 9:173-175 (2011)\n";
@@ -129,32 +129,12 @@ private:
 	cs::Pseudocounts<cs::AA>* pc_prefilter_context_engine = NULL;
 	cs::Admix* pc_prefilter_context_mode = NULL;
 
-	//prefilter stuff
-	const int SHORT_BIAS = 32768;
-	const int NUMCOLSTATES = cs::AS219::kSize;
-
-	// number of sequences in prefilter database file
-	size_t num_dbs = 0;
-	// array containing all sequence names in prefilter db file
-	char** dbnames;
-	// pointer to first letter of next sequence in db_data
-	unsigned char** first;
-	// length of next sequence
-	int* length;
-	unsigned char* qc;     // extended column state query profile as char
-	int W;                 //
-	unsigned short* qw;    // extended column state query profile as short int
-	int Ww;
-	cs::ContextLibrary<cs::AA> *cs_lib;
-	char** dbfiles_new;
-	char** dbfiles_old;
-	int ndb_new = 0;
-	int ndb_old = 0;
-
-
 	// HHblits variables
-	int v1 = v;                             // verbose mode
-	bool last_round = false;                // set to true in last iteration
+    // verbose mode
+	int v1 = v;
+
+    // set to true in last iteration
+	bool last_round = false;
 
 	char input_format = 0; // Set to 1 if input in HMMER format (has already pseudocounts)
 
@@ -162,6 +142,7 @@ private:
 
 	//database filenames
 	HHblitsDatabase* db;
+	hh::Prefilter* prefilter;
 
 	// Create query HMM with maximum of par.maxres match states
 	HMM* q = NULL;
@@ -189,17 +170,15 @@ private:
 	static void ProcessArguments(int argc, char** argv, Parameters& par);
     void SetDatabase(char* db_base);
 
-	void ReadQueryA3MFile();
-
 	void getTemplateA3M(char* entry_name, long& ftellpos, Alignment& tali);
 	void getTemplateHMMFromA3M(char* entry_name, char use_global_weights, long& ftellpos, int& format, HMM* t);
 	void getTemplateHMM(char* entry_name, char use_global_weights, long& ftellpos, int& format, HMM* t);
 
-	void DoViterbiSearch(char *dbfiles[], int ndb, Hash<Hit>* previous_hits, bool alignByWorker = true);
-	void ViterbiSearch(char *dbfiles[], int ndb, Hash<Hit>* previous_hits, int db_size);
+	void DoViterbiSearch(std::vector<std::string>& prefiltered_hits, Hash<Hit>* previous_hits, bool alignByWorker = true);
+	void ViterbiSearch(std::vector<std::string> prefiltered_hits, Hash<Hit>* previous_hits, int db_size);
 	void RescoreWithViterbiKeepAlignment(int db_size, Hash<Hit>* previous_hits);
 
-	void perform_realign(char *dbfiles[], int ndb, Hash<char>* premerged_hits);
+	void perform_realign(std::vector<std::string>& hits_to_realign, Hash<char>* premerged_hits);
 
 	//redundancy filter
     void wiggleQSC(HitList& hitlist, int n_redundancy, Alignment& Qali,
@@ -212,28 +191,6 @@ private:
 			char inputformat, float* qsc, size_t nqsc,
 			HitList& recalculated_hitlist);
 	void uniqueHitlist(HitList& hitlist);
-
-	//Prefilter
-	int ungapped_sse_score(const unsigned char* query_profile,
-		const int query_length, const unsigned char* db_sequence,
-		const int dbseq_length, const unsigned char score_offset, __m128i* workspace);
-
-	int swStripedByte(unsigned char *querySeq,
-		int queryLength,
-		unsigned char *dbSeq,
-		int dbLength,
-		unsigned short gapOpen,
-		unsigned short gapExtend,
-		__m128i *pvHLoad,
-		__m128i *pvHStore,
-		__m128i *pvE,
-		unsigned short bias);
-
-	void init_no_prefiltering();
-	void checkCSFormat(size_t nr_checks);
-	void init_prefilter();
-	void prefilter_db(Hash<Hit>* previous_hits);
-	void stripe_query_profile();
 };
 
 #endif /* HHBLITS_H_ */

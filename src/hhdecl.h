@@ -333,7 +333,6 @@ public:
   double prefilter_evalue_thresh;
   double prefilter_evalue_coarse_thresh;
   int preprefilter_smax_thresh;
-  int prefilter_min_alis;
 
   int idummy;
   float fdummy;
