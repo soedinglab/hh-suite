@@ -167,8 +167,6 @@ int main(int argc, char **argv) {
   initOutputFFDatabase(par.alnfile, mpi_rank, print_a3m, a3m_data_file,
       a3m_index_file, a3m_data_fh, a3m_index_fh);
 
-//  HHblits hhblits(par);
-
   size_t batch_size, range_start, range_end;
   if (index->n_entries >= mpi_num_procs)
     batch_size = index->n_entries / mpi_num_procs;

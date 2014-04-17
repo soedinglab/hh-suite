@@ -68,6 +68,8 @@ extern "C" {
 #include "hhmatrices.h"
 #include "hhfunc.h"
 
+#include "hhdatabase.h"
+
 //TODO: separate prefilter class
 
 const char HHBLITS_REFERENCE[] =
@@ -130,8 +132,7 @@ private:
 	//prefilter stuff
 	const int SHORT_BIAS = 32768;
 	const int NUMCOLSTATES = cs::AS219::kSize;
-	FILE* db_data_file;
-	unsigned char* db_data;
+
 	// number of sequences in prefilter database file
 	size_t num_dbs = 0;
 	// array containing all sequence names in prefilter db file
@@ -160,60 +161,7 @@ private:
 	char config_file[NAMELEN];
 
 	//database filenames
-	char dbcs_base[NAMELEN];
-	char dbcs_index_filename[NAMELEN];
-	char dbcs_data_filename[NAMELEN];
-
-	char dbhhm_base[NAMELEN];
-	char dbhhm_index_filename[NAMELEN];
-	char dbhhm_data_filename[NAMELEN];
-
-	char dba3m_base[NAMELEN];
-	char dba3m_index_filename[NAMELEN];
-	char dba3m_data_filename[NAMELEN];
-
-	//compressed a3m stuff
-	bool use_compressed_a3m = false;
-	char dbca3m_base[NAMELEN];
-	char dbca3m_index_filename[NAMELEN];
-	char dbca3m_data_filename[NAMELEN];
-
-	char dbuniprot_base[NAMELEN];
-	char dbuniprot_header_index_filename[NAMELEN];
-	char dbuniprot_header_data_filename[NAMELEN];
-	char dbuniprot_sequence_index_filename[NAMELEN];
-	char dbuniprot_sequence_data_filename[NAMELEN];
-
-	// Needed for fast index reading
-	size_t data_size;
-	FILE *dba3m_data_file;
-	FILE *dba3m_index_file;
-	ffindex_index_t* dba3m_index = NULL;
-	char* dba3m_data;
-
-	FILE *dbhhm_data_file;
-	FILE *dbhhm_index_file;
-	ffindex_index_t* dbhhm_index = NULL;
-	char* dbhhm_data;
-
-	// compressed a3m stuff
-	size_t ca3m_data_offset;
-	FILE* dbca3m_data_file;
-	FILE* dbca3m_index_file;
-	ffindex_index_t* dbca3m_index = NULL;
-	char* dbca3m_data;
-
-	size_t uniprot_header_data_offset;
-	FILE* dbuniprot_header_data_file;
-	FILE* dbuniprot_header_index_file;
-	ffindex_index_t* dbuniprot_header_index = NULL;
-	char* dbuniprot_header_data;
-
-	size_t uniprot_sequence_data_offset;
-	FILE* dbuniprot_sequence_data_file;
-	FILE* dbuniprot_sequence_index_file;
-	ffindex_index_t* dbuniprot_sequence_index = NULL;
-	char* dbuniprot_sequence_data;
+	HHblitsDatabase* db;
 
 	// Create query HMM with maximum of par.maxres match states
 	HMM* q = NULL;

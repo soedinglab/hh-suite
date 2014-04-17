@@ -18,7 +18,7 @@ HHblits::HHblits(Parameters& parameters) {
   dbfiles_new = new char*[par.maxnumdb_no_prefilter + 1];
   dbfiles_old = new char*[par.maxnumdb + 1];
 
-  SetDatabase(par.db_base);
+  db = new HHblitsDatabase(par.db_base);
 
   if (par.prefilter) {
     init_prefilter();
@@ -42,8 +42,10 @@ HHblits::HHblits(Parameters& parameters) {
           << ": could not open file \'" << par.clusterfile << "\'\n";
       exit(2);
     }
+
     char ext[100];
     Extension(ext, par.clusterfile);
+
     if (strcmp(ext, "crf") == 0) {
       crf = new cs::Crf<cs::AA>(fin);
       pc_hhm_context_engine = new cs::CrfPseudocounts<cs::AA>(*crf);
@@ -57,6 +59,7 @@ HHblits::HHblits(Parameters& parameters) {
       pc_prefilter_context_engine = new cs::LibraryPseudocounts<cs::AA>(
           *context_lib, par.csw, par.csb);
     }
+
     fclose(fin);
     pc_hhm_context_engine->SetTargetNeff(par.pc_hhm_context_engine.target_neff);
     pc_prefilter_context_engine->SetTargetNeff(
@@ -65,10 +68,6 @@ HHblits::HHblits(Parameters& parameters) {
     // Prepare pseudocounts admixture method
     pc_hhm_context_mode = par.pc_hhm_context_engine.CreateAdmix();
     pc_prefilter_context_mode = par.pc_prefilter_context_engine.CreateAdmix();
-//
-//    char ext[100];
-//    Extension(ext, par.clusterfile);
-//    InitializePseudocountsEngine(par, context_lib, crf, pc_hhm_context_engine, pc_hhm_context_mode, pc_prefilter_context_engine, pc_prefilter_context_mode);
   }
 
   // Prepare multi-threading - reserve memory for threads, intialize, etc.
@@ -108,30 +107,6 @@ HHblits::~HHblits() {
 
   delete[] format;
 
-  if (use_compressed_a3m) {
-    fclose(dbca3m_data_file);
-    fclose(dbca3m_index_file);
-    fclose(dbuniprot_header_data_file);
-    fclose(dbuniprot_header_index_file);
-    fclose(dbuniprot_sequence_data_file);
-    fclose(dbuniprot_sequence_index_file);
-    free(dbca3m_index);
-    free(dbuniprot_sequence_index);
-    free(dbuniprot_header_index);
-  }
-  else {
-    fclose(dbhhm_data_file);
-    fclose(dbhhm_index_file);
-
-    if (dba3m_index_file != NULL) {
-      fclose(dba3m_data_file);
-      fclose(dba3m_index_file);
-    }
-
-    free(dbhhm_index);
-    free(dba3m_index);
-  }
-
   delete cs_lib;
   DeletePseudocountsEngine(context_lib, crf, pc_hhm_context_engine,
       pc_hhm_context_mode, pc_prefilter_context_engine,
@@ -145,7 +120,6 @@ HHblits::~HHblits() {
       delete[] dbnames[n];
     free(dbnames);
 
-    fclose(db_data_file);
   }
 
   delete[] dbfiles_new;
@@ -291,196 +265,6 @@ void HHblits::ProcessAllArguments(int argc, char** argv, Parameters& par) {
     par.macins = 0.999;
   else if (par.macins < 0)
     par.macins = 0.0;
-}
-
-void HHblits::SetDatabase(char* db_base) {
-  // Set databases
-  strcpy(dbcs_base, db_base);
-  strcat(dbcs_base, "_cs219");
-  strcpy(dbcs_index_filename, dbcs_base);
-  strcat(dbcs_index_filename, ".ffindex");
-  strcpy(dbcs_data_filename, dbcs_base);
-  strcat(dbcs_data_filename, ".ffdata");
-
-  strcpy(dbhhm_base, db_base);
-  strcat(dbhhm_base, "_hhm");
-  strcpy(dbhhm_index_filename, dbhhm_base);
-  strcat(dbhhm_index_filename, ".ffindex");
-  strcpy(dbhhm_data_filename, dbhhm_base);
-  strcat(dbhhm_data_filename, ".ffdata");
-
-  strcpy(dba3m_base, db_base);
-  strcat(dba3m_base, "_a3m");
-  strcpy(dba3m_index_filename, dba3m_base);
-  strcat(dba3m_index_filename, ".ffindex");
-  strcpy(dba3m_data_filename, dba3m_base);
-  strcat(dba3m_data_filename, ".ffdata");
-
-  strcpy(dbca3m_base, db_base);
-  strcat(dbca3m_base, "_ca3m");
-  strcpy(dbca3m_index_filename, dbca3m_base);
-  strcat(dbca3m_index_filename, ".ffindex");
-  strcpy(dbca3m_data_filename, dbca3m_base);
-  strcat(dbca3m_data_filename, ".ffdata");
-
-  strcpy(dbuniprot_header_index_filename, db_base);
-  strcat(dbuniprot_header_index_filename, "_header.ffindex");
-  strcpy(dbuniprot_header_data_filename, db_base);
-  strcat(dbuniprot_header_data_filename, "_header.ffdata");
-  strcpy(dbuniprot_sequence_index_filename, db_base);
-  strcat(dbuniprot_sequence_index_filename, "_sequence.ffindex");
-  strcpy(dbuniprot_sequence_data_filename, db_base);
-  strcat(dbuniprot_sequence_data_filename, "_sequence.ffdata");
-
-  if (file_exists(dbca3m_index_filename) && file_exists(dbca3m_data_filename)
-      && file_exists(dbuniprot_header_index_filename)
-      && file_exists(dbuniprot_header_data_filename)
-      && file_exists(dbuniprot_sequence_index_filename)
-      && file_exists(dbuniprot_sequence_data_filename)) {
-    use_compressed_a3m = true;
-  }
-  else if (!(file_exists(dba3m_data_filename)
-      && file_exists(dba3m_index_filename))) {
-    if (par.num_rounds > 1 || *par.alnfile || *par.psifile || *par.hhmfile
-        || *par.alisbasename) {
-
-      std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": "
-          << __func__ << ":" << std::endl;
-      std::cerr << "\tCould not open A3M database " << dba3m_data_filename
-          << " (needed to construct result MSA)" << endl;
-      exit(4);
-    }
-    dba3m_data_filename[0] = 0;
-  }
-
-  if (use_compressed_a3m) {
-    //ca3m database
-    dbca3m_data_file = fopen(dbca3m_data_filename, "r");
-    dbca3m_index_file = fopen(dbca3m_index_filename, "r");
-
-    if (dbca3m_data_file == NULL) {
-      OpenFileError(dbca3m_data_filename, __FILE__, __LINE__, __func__);
-    }
-
-    if (dbca3m_index_file == NULL) {
-      OpenFileError(dbca3m_index_filename, __FILE__, __LINE__, __func__);
-    }
-
-    size_t ca3m_data_size = CountLinesInFile(dbca3m_index_filename);
-
-    dbca3m_index = ffindex_index_parse(dbca3m_index_file, ca3m_data_size);
-    if (dbca3m_index == NULL) {
-      cerr << "Error in " << par.argv[0] << ": could not read index file"
-          << dbca3m_index_filename << ". Is the file empty or corrupted?\n";
-      exit(1);
-    }
-
-    dbca3m_data = ffindex_mmap_data(dbca3m_data_file, &ca3m_data_offset);
-
-    //uniprot sequences database
-    dbuniprot_sequence_data_file = fopen(dbuniprot_sequence_data_filename, "r");
-    dbuniprot_sequence_index_file = fopen(dbuniprot_sequence_index_filename,
-        "r");
-
-    if (dbuniprot_sequence_data_file == NULL) {
-      OpenFileError(dbuniprot_sequence_data_filename, __FILE__, __LINE__,
-          __func__);
-    }
-
-    if (dbuniprot_sequence_index_file == NULL) {
-      OpenFileError(dbuniprot_sequence_index_filename, __FILE__, __LINE__,
-          __func__);
-    }
-
-    size_t uniprot_sequence_data_size = CountLinesInFile(
-        dbuniprot_sequence_index_filename);
-
-    dbuniprot_sequence_index = ffindex_index_parse(
-        dbuniprot_sequence_index_file, uniprot_sequence_data_size);
-    if (dbuniprot_sequence_index == NULL) {
-      cerr << "Error in " << par.argv[0] << ": could not read index file"
-          << dbuniprot_sequence_index_filename
-          << ". Is the file empty or corrupted?\n";
-      exit(1);
-    }
-
-    dbuniprot_sequence_data = ffindex_mmap_data(dbuniprot_sequence_data_file,
-        &uniprot_sequence_data_offset);
-
-    //uniprot sequences database
-    dbuniprot_header_data_file = fopen(dbuniprot_header_data_filename, "r");
-    dbuniprot_header_index_file = fopen(dbuniprot_header_index_filename, "r");
-
-    if (dbuniprot_header_data_file == NULL) {
-      OpenFileError(dbuniprot_header_data_filename, __FILE__, __LINE__,
-          __func__);
-    }
-
-    if (dbuniprot_header_index_file == NULL) {
-      OpenFileError(dbuniprot_header_index_filename, __FILE__, __LINE__,
-          __func__);
-    }
-
-    size_t uniprot_header_data_size = CountLinesInFile(
-        dbuniprot_header_index_filename);
-
-    dbuniprot_header_index = ffindex_index_parse(dbuniprot_header_index_file,
-        uniprot_header_data_size);
-    if (dbuniprot_header_index == NULL) {
-      cerr << "Error in " << par.argv[0] << ": could not read index file"
-          << dbuniprot_sequence_index_filename
-          << ". Is the file empty or corrupted?\n";
-      exit(1);
-    }
-
-    dbuniprot_header_data = ffindex_mmap_data(dbuniprot_header_data_file,
-        &uniprot_header_data_offset);
-  }
-  else {
-    // Prepare index-based databases
-    dbhhm_data_file = fopen(dbhhm_data_filename, "r");
-    if (!dbhhm_data_file)
-      OpenFileError(dbhhm_data_filename, __FILE__, __LINE__, __func__);
-
-    dbhhm_index_file = fopen(dbhhm_index_filename, "r");
-    if (!dbhhm_index_file)
-      OpenFileError(dbhhm_index_filename, __FILE__, __LINE__, __func__);
-
-    int filesize;
-    filesize = CountLinesInFile(dbhhm_index_filename);
-
-    dbhhm_index = ffindex_index_parse(dbhhm_index_file, filesize);
-    if (dbhhm_index == NULL) {
-      cerr << "Error in " << par.argv[0] << ": could not read index file"
-          << dbhhm_index_filename << ". Is the file empty or corrupted?\n";
-      exit(1);
-    }
-    dbhhm_data = ffindex_mmap_data(dbhhm_data_file, &data_size);
-
-    if (!*dba3m_data_filename) {
-      dba3m_data_file = dba3m_index_file = NULL;
-      dba3m_index = NULL;
-    }
-    else {
-      dba3m_data_file = fopen(dba3m_data_filename, "r");
-      if (!dba3m_data_file)
-        OpenFileError(dba3m_data_filename, __FILE__, __LINE__, __func__);
-
-      filesize = CountLinesInFile(dba3m_index_filename);
-
-      dba3m_index_file = fopen(dba3m_index_filename, "r");
-      if (!dba3m_index_file)
-        OpenFileError(dba3m_index_filename, __FILE__, __LINE__, __func__);
-
-      dba3m_index = ffindex_index_parse(dba3m_index_file, filesize);
-      if (dba3m_index == NULL) {
-        cerr << "Error in " << par.argv[0] << ": could not read index file"
-            << dba3m_index_filename << ". Is the file empty or corrupted?\n";
-        exit(1);
-      }
-      dba3m_data = ffindex_mmap_data(dba3m_data_file, &data_size);
-    }
-  }
 }
 
 void HHblits::Reset() {
@@ -1329,17 +1113,15 @@ void HHblits::ReadQueryA3MFile() {
 
 void HHblits::getTemplateA3M(char* entry_name, long& ftellpos,
     Alignment& tali) {
-  if (use_compressed_a3m) {
-    ffindex_entry_t* entry = ffindex_get_entry_by_name(dbca3m_index,
-        entry_name);
+  if (db->use_compressed) {
+    ffindex_entry_t* entry = ffindex_get_entry_by_name(db->ca3m_database->db_index, entry_name);
 
     if (entry == NULL) {
-      std::cerr << "Could not fetch entry for a3m " << entry_name << "!"
-          << std::endl;
+      std::cerr << "Could not fetch entry for a3m " << entry_name << "!" << std::endl;
       exit(4);
     }
 
-    char* data = ffindex_get_data_by_entry(dbca3m_data, entry);
+    char* data = ffindex_get_data_by_entry(db->ca3m_database->db_data, entry);
 
     if (data == NULL) {
       std::cerr << "Could not fetch data for a3m " << entry_name << "!"
@@ -1348,18 +1130,16 @@ void HHblits::getTemplateA3M(char* entry_name, long& ftellpos,
     }
 
     ftellpos = entry->offset;
-    tali.ReadCompressed(entry, data, dbuniprot_sequence_index,
-        dbuniprot_sequence_data, dbuniprot_header_index, dbuniprot_header_data,
-        par.mark, par.maxcol);
+    tali.ReadCompressed(entry, data,
+    	db->sequence_database->db_index, db->sequence_database->db_data,
+    	db->header_database->db_index, db->header_database->db_data,
+    	par.mark, par.maxcol);
   }
   else {
-    FILE* dbf = ffindex_fopen_by_name(dba3m_data, dba3m_index, entry_name);
+    FILE* dbf = ffindex_fopen_by_name(db->a3m_database->db_data, db->a3m_database->db_index, entry_name);
 
     if (dbf == NULL) {
       cerr << endl << "Error: opening A3M " << entry_name << std::endl;
-      if (dba3m_index_file == NULL) {
-        cerr << endl << "Error: A3M database missing" << std::endl;
-      }
       exit(4);
     }
 
@@ -1396,8 +1176,8 @@ void HHblits::getTemplateHMMFromA3M(char* entry_name, char use_global_weights,
 
 void HHblits::getTemplateHMM(char* entry_name, char use_global_weights,
     long& ftellpos, int& format, HMM* t) {
-  if (!use_compressed_a3m) {
-    FILE* dbf = ffindex_fopen_by_name(dbhhm_data, dbhhm_index, entry_name);
+  if (!db->use_compressed) {
+    FILE* dbf = ffindex_fopen_by_name(db->hhm_database->db_data, db->hhm_database->db_index, entry_name);
 
     if (dbf != NULL) {
       ftellpos = ftell(dbf); // record position in dbfile of next HMM to be read
@@ -2416,11 +2196,7 @@ int HHblits::ungapped_sse_score(const unsigned char* query_profile,
 // Pull out all names from prefilter db file and copy into dbfiles_new for full HMM-HMM comparison
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void HHblits::init_no_prefiltering() {
-  FILE* db_index_file = fopen(dbcs_index_filename, "r");
-  if (db_index_file == NULL)
-    OpenFileError(dbcs_index_filename, __FILE__, __LINE__, __func__);
-  ffindex_index_t* db_index = ffindex_index_parse(db_index_file, 0);
-  fclose(db_index_file);
+  ffindex_index_t* db_index = db->cs219_database->db_index;
 
   num_dbs = db_index->n_entries;
   par.dbsize = db_index->n_entries;
@@ -2468,19 +2244,8 @@ void HHblits::checkCSFormat(size_t nr_checks) {
 // Reading in column state sequences for prefiltering
 //////////////////////////////////////////////////////////////
 void HHblits::init_prefilter() {
-  // Map data file into memory
-  db_data_file = fopen(dbcs_data_filename, "rb");
-  if (db_data_file == NULL)
-    OpenFileError(dbcs_data_filename, __FILE__, __LINE__, __func__);
-  size_t db_data_size;
-  db_data = (unsigned char*) ffindex_mmap_data(db_data_file, &db_data_size);
-
-  // Read index
-  FILE* db_index_file = fopen(dbcs_index_filename, "r");
-  if (db_index_file == NULL)
-    OpenFileError(dbcs_index_filename, __FILE__, __LINE__, __func__);
-  ffindex_index_t* db_index = ffindex_index_parse(db_index_file, 0);
-  fclose(db_index_file);
+  unsigned char* db_data = (unsigned char*) db->cs219_database->db_data;
+  ffindex_index_t* db_index = db->cs219_database->db_index;
 
   // Set up variables for prefiltering
   num_dbs = db_index->n_entries;
@@ -2490,14 +2255,11 @@ void HHblits::init_prefilter() {
   dbnames = (char**) memalign(16, num_dbs * sizeof(char*));
   for (size_t n = 0; n < num_dbs; n++) {
     ffindex_entry_t* entry = ffindex_get_entry_by_index(db_index, n);
-    first[n] = (unsigned char*) ffindex_get_data_by_entry((char*) db_data,
-        entry);
+    first[n] = (unsigned char*) ffindex_get_data_by_entry((char*) db_data, entry);
     length[n] = entry->length - 1;
     dbnames[n] = new char[strlen(entry->name) + 1];
     strcpy(dbnames[n], entry->name);
   }
-
-  free(db_index);
 
   //check if cs219 format is new binary format
   checkCSFormat(5);
@@ -2826,149 +2588,6 @@ void HHblits::prefilter_db(Hash<Hit>* previous_hits) {
     delete doubled;
 }
 
-//void HHblits::AlignByWorker(int bin) {
-//  // Prepare q ant t and compare
-//  PrepareTemplateHMM(par, q, t[bin], format[bin], pb, R);
-//
-//  // Do HMM-HMM comparison, store results if score>SMIN, and try next best alignment
-//  for (hit[bin]->irep = 1; hit[bin]->irep <= par.altali; hit[bin]->irep++) {
-//    if (par.forward == 0) {
-//      hit[bin]->Viterbi(q, t[bin], par.loc, par.ssm, par.maxres, par.min_overlap, par.shift, par.egt, par.egq, par.ssw, par.exclstr, S73, S33);
-//      if (hit[bin]->irep > 1 && hit[bin]->score <= SMIN)
-//        break;
-//      hit[bin]->Backtrace(q, t[bin], par.corr, par.ssw, S73, S33);
-//    }
-//    else if (par.forward == 2) {
-//      hit[bin]->Forward(q, t[bin], par.ssm, par.min_overlap, par.loc, par.shift, par.ssw, par.exclstr, S73, S33);
-//      hit[bin]->Backward(q, t[bin], par.loc, par.shift, par.ssw, S73, S33);
-//      hit[bin]->MACAlignment(q, t[bin], par.loc, par.mact, par.macins);
-//      hit[bin]->BacktraceMAC(q, t[bin], par.corr, par.ssw, S73, S33);
-//    }
-//    hit[bin]->score_sort = hit[bin]->score_aass;
-//    if (hit[bin]->score <= SMIN)
-//      hit[bin]->lastrep = 1;
-//    else
-//      hit[bin]->lastrep = 0;
-//
-//    #pragma omp critical
-//    {
-//      hitlist.Push(*(hit[bin])); // insert hit at beginning of list (last repeats first!)
-//    }
-//
-//    // find only best alignment for forward algorithm and stochastic sampling
-//    if (par.forward > 0)
-//      break;
-//
-//    // break if score for previous hit is already worse than SMIN
-//    if (hit[bin]->score <= SMIN)
-//      break;
-//  }
-//}
-//
-//
-//void HHblits::PerformViterbiByWorker(int bin, Hash<Hit>* previous_hits) {
-//  PrepareTemplateHMM(par, q, t[bin], format[bin], pb, R);
-//
-//  for (hit[bin]->irep = 1; hit[bin]->irep <= par.altali; hit[bin]->irep++) {
-//    // Break, if no previous_hit with irep is found
-//    hit[bin]->Viterbi(q, t[bin], par.loc, par.ssm, par.maxres, par.min_overlap, par.shift, par.egt, par.egq, par.ssw, par.exclstr, S73, S33);
-//    if (hit[bin]->irep > 1 && hit[bin]->score <= SMIN)
-//      break;
-//    hit[bin]->Backtrace(q, t[bin], par.corr, par.ssw, S73, S33);
-//
-//    hit[bin]->score_sort = hit[bin]->score_aass;
-//
-//    #pragma omp critical
-//    {
-//      stringstream ss_tmp;
-//      ss_tmp << hit[bin]->file << "__" << hit[bin]->irep;
-//
-//      if (previous_hits->Contains((char*) ss_tmp.str().c_str())) {
-//        //printf("Previous hits contains %s!\n",(char*)ss_tmp.str().c_str());
-//        Hit hit_cur = previous_hits->Remove((char*) ss_tmp.str().c_str());
-//        previous_hits->Add((char*) ss_tmp.str().c_str(), *(hit[bin]));
-//
-//        // Overwrite *hit[bin] with alignment, etc. of hit_cur
-//        hit_cur.score = hit[bin]->score;
-//        hit_cur.score_aass = hit[bin]->score_aass;
-//        hit_cur.score_ss = hit[bin]->score_ss;
-//        hit_cur.Pval = hit[bin]->Pval;
-//        hit_cur.Pvalt = hit[bin]->Pvalt;
-//        hit_cur.logPval = hit[bin]->logPval;
-//        hit_cur.logPvalt = hit[bin]->logPvalt;
-//        hit_cur.Eval = hit[bin]->Eval;
-//        hit_cur.logEval = hit[bin]->logEval;
-//        hit_cur.Probab = hit[bin]->Probab;
-//
-//        hitlist.Push(hit_cur); // insert hit at beginning of list (last repeats first!)
-//      }
-//    }
-//
-//    // break if score for first hit is already worse than SMIN
-//    if (hit[bin]->score <= SMIN)
-//      break;
-//  }
-//}
-//
-//
-/////////////////////////////////////////////////////////////////////////////////////////
-////// Realign q and with t[bin] in all hits from same tempate using  MAC algorithm
-////////////////////////////////////////////////////////////////////////////////////////
-//void HHblits::RealignByWorker(int bin) {
-//  // Realign all hits with same template, pointed to by list List<void*>* hit[bin]->plist_phits;
-//  // This list is set up in HHseach and HHblits at the beginning of perform_realign()
-//  Hit* hit_cur;
-//
-//  // Prepare MAC comparison(s)
-//  PrepareTemplateHMM(par, q, t[bin], format[bin], pb, R);
-//  t[bin]->Log2LinTransitionProbs(1.0);
-//
-//  hit[bin]->irep = 1;
-//  hit[bin]->plist_phits->Reset();
-//  while (!hit[bin]->plist_phits->End()) {
-//    // Set pointer hit_cur to next hit to be realigned
-//    hit_cur = (Hit*) hit[bin]->plist_phits->ReadNext();
-//    // printf("Realigning %s, irep=%i\n",hit_cur->name,hit_cur->irep);  //?????????
-//
-//    // Realign only around previous Viterbi hit
-//    // hit[bin] = *hit_cur; is not possible because the pointers to the DP matrices would be overwritten
-//    hit[bin]->i1 = hit_cur->i1;
-//    hit[bin]->i2 = hit_cur->i2;
-//    hit[bin]->j1 = hit_cur->j1;
-//    hit[bin]->j2 = hit_cur->j2;
-//    hit[bin]->nsteps = hit_cur->nsteps;
-//    hit[bin]->i = hit_cur->i;
-//    hit[bin]->j = hit_cur->j;
-//    hit[bin]->realign_around_viterbi = true;
-//
-//    // Align q to template in *hit[bin]
-//    hit[bin]->Forward(q, t[bin], par.ssm, par.min_overlap, par.loc, par.shift, par.ssw, par.exclstr, S73, S33);
-//    hit[bin]->Backward(q, t[bin], par.loc, par.shift, par.ssw, S73, S33);
-//    hit[bin]->MACAlignment(q, t[bin], par.loc, par.mact, par.macins);
-//    hit[bin]->BacktraceMAC(q, t[bin], par.corr, par.ssw, S73, S33);
-//
-//    // Overwrite *hit[bin] with Viterbi scores, Probabilities etc. of hit_cur
-//    hit[bin]->score = hit_cur->score;
-//    hit[bin]->score_ss = hit_cur->score_ss;
-//    hit[bin]->score_aass = hit_cur->score_aass;
-//    hit[bin]->score_sort = hit_cur->score_sort;
-//    hit[bin]->Pval = hit_cur->Pval;
-//    hit[bin]->Pvalt = hit_cur->Pvalt;
-//    hit[bin]->logPval = hit_cur->logPval;
-//    hit[bin]->logPvalt = hit_cur->logPvalt;
-//    hit[bin]->Eval = hit_cur->Eval;
-//    hit[bin]->logEval = hit_cur->logEval;
-//    hit[bin]->Probab = hit_cur->Probab;
-//
-//    // Replace original hit in hitlist with realigned hit
-//    hit_cur->Delete(); // delete content of pointers etc. of hit_cur (but not DP matrices)
-//    *hit_cur = *hit[bin]; // copy all variables and pointers from *hit[bin] into hitlist
-//
-//    hit[bin]->irep++;
-//  }
-//
-//  return;
-//}
 
 void HHblits::wiggleQSC(int n_redundancy, float* qsc, size_t nqsc,
     HitList& reducedFinalHitList) {
@@ -3017,10 +2636,8 @@ void HHblits::run(FILE* query_fh, char* query_path) {
   if (v >= 3) {
     cout << "Input file       :   " << par.infile << "\n";
     cout << "Output file      :   " << par.outfile << "\n";
-    cout << "Prefilter DB     :   " << dbcs_data_filename << " "
-        << dbcs_index_filename << "\n";
-    cout << "HHM DB           :   " << dbhhm_data_filename << " "
-        << dbhhm_index_filename << "\n";
+    cout << "Prefilter DB     :   " << db->cs219_database->data_filename << "\n";
+    cout << "HHM DB           :   " << db->a3m_database->data_filename << "\n";
   }
 
   //////////////////////////////////////////////////////////////////////////////////

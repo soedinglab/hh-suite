@@ -21,7 +21,7 @@ FFindexDatabase::FFindexDatabase(char* data_filename, char* index_filename) {
   }
 
   if (db_index_fh == NULL) {
-    OpenFileError(data_filename, __FILE__, __LINE__, __func__);
+    OpenFileError(index_filename, __FILE__, __LINE__, __func__);
   }
 
   size_t ca3m_data_size = CountLinesInFile(index_filename);
@@ -94,10 +94,10 @@ HHblitsDatabase::HHblitsDatabase(char* base) {
     char hhm_data_filename[NAMELEN];
 
     buildDatabaseName(base, "a3m", ".ffdata", a3m_data_filename);
-    buildDatabaseName(base, "a3m", ".ffindex", a3m_data_filename);
+    buildDatabaseName(base, "a3m", ".ffindex", a3m_index_filename);
 
     buildDatabaseName(base, "hhm", ".ffdata", hhm_data_filename);
-    buildDatabaseName(base, "hhm", ".ffindex", hhm_data_filename);
+    buildDatabaseName(base, "hhm", ".ffindex", hhm_index_filename);
 
     a3m_database = new FFindexDatabase(a3m_data_filename, a3m_index_filename);
     hhm_database = new FFindexDatabase(hhm_data_filename, hhm_index_filename);
@@ -119,7 +119,7 @@ bool HHblitsDatabase::checkAndBuildCompressedDatabase(char* base) {
   char header_data_filename[NAMELEN];
 
   buildDatabaseName(base, "ca3m", ".ffdata", ca3m_data_filename);
-  buildDatabaseName(base, "ca3m", ".ffindex", ca3m_data_filename);
+  buildDatabaseName(base, "ca3m", ".ffindex", ca3m_index_filename);
 
   buildDatabaseName(base, "sequence", ".ffdata", sequence_data_filename);
   buildDatabaseName(base, "sequence", ".ffindex", sequence_index_filename);
