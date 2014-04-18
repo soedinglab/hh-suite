@@ -6,8 +6,9 @@
  */
 
 #include "hhdatabase.h"
-
 #include "hhdecl.h"
+
+#include <sys/mman.h>
 
 FFindexDatabase::FFindexDatabase(char* data_filename, char* index_filename, int superId, bool isCompressed) {
 	static int runaway;
@@ -22,12 +23,11 @@ FFindexDatabase::FFindexDatabase(char* data_filename, char* index_filename, int 
   strcpy(this->data_filename, data_filename);
 
   db_data_fh = fopen(data_filename, "r");
-  FILE* db_index_fh = fopen(index_filename, "r");
-
   if (db_data_fh == NULL) {
     OpenFileError(data_filename, __FILE__, __LINE__, __func__);
   }
 
+  FILE* db_index_fh = fopen(index_filename, "r");
   if (db_index_fh == NULL) {
     OpenFileError(index_filename, __FILE__, __LINE__, __func__);
   }
@@ -35,6 +35,8 @@ FFindexDatabase::FFindexDatabase(char* data_filename, char* index_filename, int 
   size_t ca3m_data_size = CountLinesInFile(index_filename);
 
   db_index = ffindex_index_parse(db_index_fh, ca3m_data_size);
+
+  fclose(db_index_fh);
 
   if (db_index == NULL) {
     std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
@@ -46,7 +48,9 @@ FFindexDatabase::FFindexDatabase(char* data_filename, char* index_filename, int 
 }
 
 FFindexDatabase::~FFindexDatabase() {
-  delete[] db_index;
+  delete[] data_filename;
+  munmap(db_data, data_size);
+  free(db_index);
   fclose(db_data_fh);
 }
 
@@ -114,14 +118,30 @@ HHblitsDatabase::HHblitsDatabase(char* base) {
     a3m_database = new FFindexDatabase(a3m_data_filename, a3m_index_filename, id, use_compressed);
     hhm_database = new FFindexDatabase(hhm_data_filename, hhm_index_filename, id, use_compressed);
   }
+
+  prefilter = NULL;
 }
 
 HHblitsDatabase::~HHblitsDatabase() {
+	delete cs219_database;
+
+	if(use_compressed) {
+		delete ca3m_database;
+		delete sequence_database;
+		delete header_database;
+	}
+	else {
+		delete a3m_database;
+		delete hhm_database;
+	}
+
+	if(prefilter) {
+		delete prefilter;
+	}
 }
 
 void HHblitsDatabase::initPrefilter(const char* cs_library) {
 	prefilter = new hh::Prefilter(cs_library, cs219_database);
-	//TODO: delete cs219 database
 }
 
 void HHblitsDatabase::initNoPrefilter(std::vector<HHDatabaseEntry*>& new_entries) {

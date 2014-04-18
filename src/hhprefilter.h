@@ -41,8 +41,6 @@ private:
 	const int NUMCOLSTATES = cs::AS219::kSize;
 	cs::ContextLibrary<cs::AA> *cs_lib;
 
-	bool use_prefilter;
-
 	// number of sequences in prefilter database file
 	size_t num_dbs = 0;
 

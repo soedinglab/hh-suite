@@ -78,6 +78,8 @@ int main(int argc, char **argv) {
 
   hhblits.run(inf, par.infile);
 
+  fclose(inf);
+
   hhblits.writeHHRFile(par.outfile);
   hhblits.writeAlisFile(par.alisbasename);
   hhblits.writeScoresFile(par.scorefile);

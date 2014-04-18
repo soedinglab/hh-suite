@@ -94,6 +94,11 @@ HHblits::HHblits(Parameters& parameters) {
 HHblits::~HHblits() {
 	Reset();
 
+	for(size_t i = 0; i < dbs.size(); i++) {
+		delete dbs[i];
+	}
+	dbs.clear();
+
 	for (int bin = 0; bin < par.threads; bin++) {
 		hit[bin]->DeleteBacktraceMatrix(par.maxres);
 		hit[bin]->DeleteForwardMatrix(par.maxres);
@@ -1994,6 +1999,8 @@ void HHblits::run(FILE* query_fh, char* query_path) {
 //		cout << "HHM DB           :   " << db->a3m_database->data_filename << "\n";
 	}
 
+	//save all entries pointer in this vector to delete, when it's safe
+	std::vector<HHDatabaseEntry*> all_entries;
 	std::vector<HHDatabaseEntry*> new_entries;
 	std::vector<HHDatabaseEntry*> old_entries;
 
@@ -2001,6 +2008,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
 		for(size_t i = 0; i < dbs.size(); i++) {
 			dbs[0]->initNoPrefilter(new_entries);
 		}
+		all_entries.insert(all_entries.end(), new_entries.begin(), new_entries.end());
 	}
 
 	//////////////////////////////////////////////////////////////////////////////////
@@ -2083,6 +2091,8 @@ void HHblits::run(FILE* query_fh, char* query_path) {
 						par.preprefilter_smax_thresh, par.min_prefilter_hits, R,
 						new_entries, old_entries);
 			}
+			all_entries.insert(all_entries.end(), new_entries.begin(), new_entries.end());
+			all_entries.insert(all_entries.end(), old_entries.begin(), old_entries.end());
 		}
 
 		if (v >= 2 && new_entries.size() == 0) {
@@ -2348,6 +2358,11 @@ void HHblits::run(FILE* query_fh, char* query_path) {
 		float qscs[] = { -20, 0, 0.1, 0.2 };
 		wiggleQSC(par.n_redundancy, qscs, 4, reducedHitlist);
 	}
+
+	for(size_t i = 0; i < all_entries.size(); i++) {
+		delete all_entries[i];
+	}
+	all_entries.clear();
 
 	previous_hits->Reset();
 	while (!previous_hits->End())

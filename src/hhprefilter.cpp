@@ -11,8 +11,6 @@ namespace hh {
 
 #define SWAP(tmp, arg1, arg2) tmp = arg1; arg1 = arg2; arg2 = tmp;
 
-//TODO: read cs_library once and give pointer to it
-
 Prefilter::Prefilter(const char* cs_library, FFindexDatabase* cs219_database) {
 	// Prepare column state lib (context size =1 )
 	FILE* fin = fopen(cs_library, "r");
@@ -28,14 +26,12 @@ Prefilter::Prefilter(const char* cs_library, FFindexDatabase* cs219_database) {
 }
 
 Prefilter::~Prefilter() {
-	if (use_prefilter) {
-		free(length);
-		free(first);
+	free(length);
+	free(first);
 
-		for (size_t n = 0; n < num_dbs; n++)
-			delete[] dbnames[n];
-		free(dbnames);
-	}
+	for (size_t n = 0; n < num_dbs; n++)
+		delete[] dbnames[n];
+	free(dbnames);
 
 	delete cs_lib;
 }
