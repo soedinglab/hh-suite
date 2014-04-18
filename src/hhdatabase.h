@@ -10,23 +10,33 @@
 #define HHDATABASE_H_
 
 class HHDatabaseEntry;
+class FFindexDatabase;
+
 
 extern "C" {
 #include <ffindex.h>
 }
 
 #include "hhutil.h"
+#include "hhprefilter.h"
+#include "hash.h"
+#include "hhhit.h"
 
 
 
 class FFindexDatabase {
   public:
-    FFindexDatabase(char* data_filename, char* index_filename);
+    FFindexDatabase(char* data_filename, char* index_filename, int superId, bool isCompressed);
     virtual ~FFindexDatabase();
 
     ffindex_index_t* db_index = NULL;
     char* db_data;
     char* data_filename;
+
+    bool isCompressed;
+
+    int id;
+    int superId;
 
   private:
     size_t data_size;
@@ -57,7 +67,18 @@ class HHblitsDatabase : HHDatabase {
     HHblitsDatabase(char* base);
     ~HHblitsDatabase();
 
+    void initPrefilter(const char* cs_library);
+    void initNoPrefilter(std::vector<HHDatabaseEntry*>& new_prefilter_hits);
+    void prefilter_db(HMM* q_tmp, Hash<Hit>* previous_hits,
+			const int threads, const int prefilter_gap_open, const int prefilter_gap_extend,
+			const int prefilter_score_offset, const int prefilter_bit_factor,
+			const double prefilter_evalue_thresh, const double prefilter_evalue_coarse_thresh,
+			const int preprefilter_smax_thresh, const int min_prefilter_hits, const float R[20][20],
+			std::vector<HHDatabaseEntry*>& new_entries, std::vector<HHDatabaseEntry*>& old_entries);
+
     char* basename;
+
+    int id;
 
     FFindexDatabase* cs219_database = NULL;
 
@@ -70,19 +91,16 @@ class HHblitsDatabase : HHDatabase {
     FFindexDatabase* header_database = NULL;
 
   private:
+    void getEntriesFromNames(std::vector<std::string>& names, std::vector<HHDatabaseEntry*>& entries);
     bool checkAndBuildCompressedDatabase(char* base);
+
+    hh::Prefilter* prefilter;
     char* base;
 };
 
-class HHDatabaseEntry {
-  public:
-    HHDatabaseEntry(ffindex_entry_t* entry, HHsearchDatabase* db, FFindexDatabase* ffdb);
-    virtual ~HHDatabaseEntry();
-
-    HHsearchDatabase* database;
-    FFindexDatabase* ffdatabase;
-    ffindex_entry_t* entry;
-  private:
+struct HHDatabaseEntry {
+	FFindexDatabase* ffdatabase;
+	ffindex_entry_t* entry;
 };
 
 #endif /* HHDATABASE_H_ */

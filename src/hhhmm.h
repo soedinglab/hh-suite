@@ -5,6 +5,11 @@
 #define HHHMM_H_
 
 #include <iostream>
+
+
+class HMM;
+
+
 #include "util.h"
 
 //from cs

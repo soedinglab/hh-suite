@@ -141,8 +141,7 @@ private:
 	char config_file[NAMELEN];
 
 	//database filenames
-	HHblitsDatabase* db;
-	hh::Prefilter* prefilter;
+	std::vector<HHblitsDatabase*> dbs;
 
 	// Create query HMM with maximum of par.maxres match states
 	HMM* q = NULL;
@@ -168,17 +167,16 @@ private:
 
 	static void help(Parameters& par, char all = 0);
 	static void ProcessArguments(int argc, char** argv, Parameters& par);
-    void SetDatabase(char* db_base);
+    HHblitsDatabase* getHHblitsDatabase(HHDatabaseEntry& entry, std::vector<HHblitsDatabase*>& dbs);
 
-	void getTemplateA3M(char* entry_name, long& ftellpos, Alignment& tali);
-	void getTemplateHMMFromA3M(char* entry_name, char use_global_weights, long& ftellpos, int& format, HMM* t);
-	void getTemplateHMM(char* entry_name, char use_global_weights, long& ftellpos, int& format, HMM* t);
+	void getTemplateA3M(HHblitsDatabase* db, char* entry_name, long& ftellpos, Alignment& tali);
+	void getTemplateHMM(HHDatabaseEntry& entry, char use_global_weights, long& ftellpos, int& format, HMM* t);
 
-	void DoViterbiSearch(std::vector<std::string>& prefiltered_hits, Hash<Hit>* previous_hits, bool alignByWorker = true);
-	void ViterbiSearch(std::vector<std::string> prefiltered_hits, Hash<Hit>* previous_hits, int db_size);
+	void DoViterbiSearch(std::vector<HHDatabaseEntry*>& prefiltered_hits, Hash<Hit>* previous_hits, bool alignByWorker = true);
+	void ViterbiSearch(std::vector<HHDatabaseEntry*>& prefiltered_hits, Hash<Hit>* previous_hits, int db_size);
 	void RescoreWithViterbiKeepAlignment(int db_size, Hash<Hit>* previous_hits);
 
-	void perform_realign(std::vector<std::string>& hits_to_realign, Hash<char>* premerged_hits);
+	void perform_realign(std::vector<HHDatabaseEntry*>& hits_to_realign, Hash<char>* premerged_hits);
 
 	//redundancy filter
     void wiggleQSC(HitList& hitlist, int n_redundancy, Alignment& Qali,

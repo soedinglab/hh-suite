@@ -659,6 +659,7 @@ void RealignByWorker(Parameters& par, Hit* hit, HMM* q, HMM* t,
     hit->logEval = hit_cur->logEval;
     hit->Probab = hit_cur->Probab;
 
+
     // Replace original hit in hitlist with realigned hit
     hit_cur->Delete(); // delete content of pointers etc. of hit_cur (but not DP matrices)
     *hit_cur = *hit; // copy all variables and pointers from *hit[bin] into hitlist

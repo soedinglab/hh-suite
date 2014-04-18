@@ -11,9 +11,9 @@ namespace hh {
 
 #define SWAP(tmp, arg1, arg2) tmp = arg1; arg1 = arg2; arg2 = tmp;
 
-Prefilter::Prefilter(const bool prefilter, const char* cs_library, FFindexDatabase* cs219_database) {
-	use_prefilter = prefilter;
+//TODO: read cs_library once and give pointer to it
 
+Prefilter::Prefilter(const char* cs_library, FFindexDatabase* cs219_database) {
 	// Prepare column state lib (context size =1 )
 	FILE* fin = fopen(cs_library, "r");
 	if (!fin)
@@ -24,9 +24,7 @@ Prefilter::Prefilter(const bool prefilter, const char* cs_library, FFindexDataba
 
 	cs::TransformToLin(*cs_lib);
 
-	if (prefilter) {
-		init_prefilter(cs219_database);
-	}
+	init_prefilter(cs219_database);
 }
 
 Prefilter::~Prefilter() {

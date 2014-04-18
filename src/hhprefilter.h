@@ -9,16 +9,23 @@
 #define HHPREFILTER_H_
 
 #include <vector>
+#include <omp.h>
+
+namespace hh {
+class Prefilter;
+}
+
 #include "hhhmm.h"
 #include "hash.h"
 #include "hhhit.h"
-#include <omp.h>
+#include "hhdatabase.h"
 
 namespace hh {
 
 class Prefilter {
+
 public:
-	Prefilter(const bool prefilter, const char* cs_library, FFindexDatabase* cs219_database);
+	Prefilter(const char* cs_library, FFindexDatabase* cs219_database);
 	virtual ~Prefilter();
 
 	static void init_no_prefiltering(FFindexDatabase* cs219_database, std::vector<std::string>& prefiltered_entries);
@@ -51,10 +58,6 @@ private:
 	// extended column state query profile as char
 	unsigned char* qc;
 	int W;
-
-    // extended column state query profile as short int
-//	unsigned short* qw;
-//	int Ww;
 
 	void init_prefilter(FFindexDatabase* cs219_database);
 

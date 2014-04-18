@@ -2,16 +2,16 @@
 #ifndef HHHIT_H_
 #define HHHIT_H_
 
-#include <iostream>   // cin, cout, cerr
-#include <fstream>    // ofstream, ifstream
-#include <stdio.h>    // printf
-#include <stdlib.h>   // exit
-#include <string>     // strcmp, strstr
-#include <math.h>     // sqrt, pow
-#include <limits.h>   // INT_MIN
-#include <float.h>    // FLT_MIN
-#include <time.h>     // clock
-#include <ctype.h>    // islower, isdigit etc
+#include <iostream>
+#include <fstream>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string>
+#include <math.h>
+#include <limits.h>
+#include <float.h>
+#include <time.h>
+#include <ctype.h>
 #include <vector>
 
 #ifdef HH_SSE41
@@ -32,6 +32,8 @@
 #include <sunmedia_intrin.h>
 #endif
 #endif
+
+class Hit;
 
 #include "list.h"
 #include "hhhmm.h"
@@ -149,41 +151,6 @@ class Hit
   // Trace back MAC alignment of two profiles based on matrix btr[][]
   void BacktraceMAC(HMM* q, HMM* t, const float corr, const float ssw, const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]);
 
-  // Calculate score between columns i and j of two HMMs (query and template)
-  inline float ProbFwd(float* qi, float* tj) {
-    return ScalarProd20(qi, tj); //
-  }
-
-  //Calculate score between columns i and j of two HMMs (query and template)
-  inline float Score(float* qi, float* tj) {
-    return fast_log2(ProbFwd(qi, tj));
-  }
-
-  // Calculate secondary structure score between columns i and j of two HMMs (query and template)
-  inline float ScoreSS(HMM* q, HMM* t, int i, int j, int ssm, const float ssw, const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]) {
-    switch (ssm) //SS scoring during alignment
-    {
-      case 0: // no SS scoring during alignment
-        return 0.0;
-      case 1: // t has dssp information, q has psipred information
-        return ssw
-            * S73[(int) t->ss_dssp[j]][(int) q->ss_pred[i]][(int) q->ss_conf[i]];
-      case 2: // q has dssp information, t has psipred information
-        return ssw
-            * S73[(int) q->ss_dssp[i]][(int) t->ss_pred[j]][(int) t->ss_conf[j]];
-      case 3: // q has dssp information, t has psipred information
-        return ssw
-            * S33[(int) q->ss_pred[i]][(int) q->ss_conf[i]][(int) t->ss_pred[j]][(int) t->ss_conf[j]];
-        //     case 4: // q has dssp information, t has dssp information
-        //       return par.ssw*S77[ (int)t->ss_dssp[j]][ (int)t->ss_conf[j]];
-    }
-    return 0.0;
-  }
-
-  // Calculate secondary structure score between columns i and j of two HMMs (query and template)
-  inline float ScoreSS(HMM* q, HMM* t, int i, int j, const float ssw, const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]) {
-    return ScoreSS(q, t, i, j, ssm2, ssw, S73, S33);
-  }
 
   // Calculate score for a given alignment
   void ScoreAlignment(HMM* q, HMM* t, int steps);
@@ -271,6 +238,10 @@ private:
     return 100.0 / (1.0 + t * t); // ??? JS Jul'12
   }
 
+  float ScoreSS(HMM* q, HMM* t, int i, int j, int ssm, const float ssw, const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]);
+
+  // Calculate secondary structure score between columns i and j of two HMMs (query and template)
+  float ScoreSS(HMM* q, HMM* t, int i, int j, const float ssw, const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]);
 };
 
 
@@ -278,6 +249,7 @@ double Pvalue(double x, double a[]);
 double Pvalue(float x, float lamda, float mu);
 double logPvalue(float x, float lamda, float mu);
 double logPvalue(float x, double a[]);
+
 
 
 #endif

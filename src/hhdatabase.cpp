@@ -9,7 +9,15 @@
 
 #include "hhdecl.h"
 
-FFindexDatabase::FFindexDatabase(char* data_filename, char* index_filename) {
+FFindexDatabase::FFindexDatabase(char* data_filename, char* index_filename, int superId, bool isCompressed) {
+	static int runaway;
+	this->id = runaway++;
+
+	this->superId = superId;
+
+	this->isCompressed = isCompressed;
+
+
   this->data_filename = new char [strlen(data_filename) + 1];
   strcpy(this->data_filename, data_filename);
 
@@ -68,7 +76,8 @@ HHsearchDatabase::HHsearchDatabase(char* base) {
   buildDatabaseName(base, "", ".ffdata", data_filename);
   buildDatabaseName(base, "", ".ffindex", index_filename);
 
-  database = new FFindexDatabase(data_filename, index_filename);
+  //TODO:
+  database = new FFindexDatabase(data_filename, index_filename, 0, false);
 }
 
 HHsearchDatabase::~HHsearchDatabase() {
@@ -77,6 +86,9 @@ HHsearchDatabase::~HHsearchDatabase() {
 }
 
 HHblitsDatabase::HHblitsDatabase(char* base) {
+  static int runaway;
+  id = runaway++;
+
   char cs219_index_filename[NAMELEN];
   char cs219_data_filename[NAMELEN];
 
@@ -84,7 +96,7 @@ HHblitsDatabase::HHblitsDatabase(char* base) {
   buildDatabaseName(base, "cs219", ".ffindex", cs219_index_filename);
 
   cs219_database = new FFindexDatabase(cs219_data_filename,
-      cs219_index_filename);
+      cs219_index_filename, id, use_compressed);
 
   if (!checkAndBuildCompressedDatabase(base)) {
     char a3m_index_filename[NAMELEN];
@@ -99,12 +111,99 @@ HHblitsDatabase::HHblitsDatabase(char* base) {
     buildDatabaseName(base, "hhm", ".ffdata", hhm_data_filename);
     buildDatabaseName(base, "hhm", ".ffindex", hhm_index_filename);
 
-    a3m_database = new FFindexDatabase(a3m_data_filename, a3m_index_filename);
-    hhm_database = new FFindexDatabase(hhm_data_filename, hhm_index_filename);
+    a3m_database = new FFindexDatabase(a3m_data_filename, a3m_index_filename, id, use_compressed);
+    hhm_database = new FFindexDatabase(hhm_data_filename, hhm_index_filename, id, use_compressed);
   }
 }
 
 HHblitsDatabase::~HHblitsDatabase() {
+}
+
+void HHblitsDatabase::initPrefilter(const char* cs_library) {
+	prefilter = new hh::Prefilter(cs_library, cs219_database);
+	//TODO: delete cs219 database
+}
+
+void HHblitsDatabase::initNoPrefilter(std::vector<HHDatabaseEntry*>& new_entries) {
+	std::vector<std::string> new_entry_names;
+	hh::Prefilter::init_no_prefiltering(cs219_database, new_entry_names);
+
+	getEntriesFromNames(new_entry_names, new_entries);
+}
+
+void HHblitsDatabase::prefilter_db(HMM* q_tmp, Hash<Hit>* previous_hits,
+		const int threads, const int prefilter_gap_open, const int prefilter_gap_extend,
+		const int prefilter_score_offset, const int prefilter_bit_factor,
+		const double prefilter_evalue_thresh, const double prefilter_evalue_coarse_thresh,
+		const int preprefilter_smax_thresh, const int min_prefilter_hits, const float R[20][20],
+		std::vector<HHDatabaseEntry*>& new_entries, std::vector<HHDatabaseEntry*>& old_entries) {
+
+	std::vector<std::string> prefiltered_new_entry_names;
+	std::vector<std::string> prefiltered_old_entry_names;
+
+	prefilter->prefilter_db(q_tmp, previous_hits, threads, prefilter_gap_open,
+			prefilter_gap_extend, prefilter_score_offset, prefilter_bit_factor,
+			prefilter_evalue_thresh, prefilter_evalue_coarse_thresh,
+			preprefilter_smax_thresh, min_prefilter_hits, R,
+			prefiltered_new_entry_names, prefiltered_old_entry_names);
+
+
+	getEntriesFromNames(prefiltered_new_entry_names, new_entries);
+	getEntriesFromNames(prefiltered_old_entry_names, old_entries);
+}
+
+void HHblitsDatabase::getEntriesFromNames(std::vector<std::string>& names, std::vector<HHDatabaseEntry*>& entries) {
+	for(size_t i = 0; i < names.size(); i++) {
+		ffindex_entry_t* entry;
+
+		if(use_compressed) {
+			entry = ffindex_get_entry_by_name(ca3m_database->db_index,
+					const_cast<char*>(names[i].c_str()));
+			if(entry == NULL) {
+				//TODO: error
+				std::cerr << "warning: could not fetch entry from compressed a3m!" << std::endl;
+				std::cerr << "\tentry: " << names[i] << std::endl;
+				std::cerr << "\tdb: " << ca3m_database->data_filename << std::endl;
+				continue;
+			}
+
+			HHDatabaseEntry* hhentry = new HHDatabaseEntry();
+			hhentry->entry = entry;
+			hhentry->ffdatabase = ca3m_database;
+
+			entries.push_back(hhentry);
+		}
+		else {
+			entry = ffindex_get_entry_by_name(hhm_database->db_index,
+					const_cast<char*>(names[i].c_str()));
+
+			if(entry != NULL) {
+				HHDatabaseEntry* hhentry = new HHDatabaseEntry();
+				hhentry->entry = entry;
+				hhentry->ffdatabase = hhm_database;
+				entries.push_back(hhentry);
+				continue;
+			}
+
+			entry = ffindex_get_entry_by_name(a3m_database->db_index,
+					const_cast<char*>(names[i].c_str()));
+
+			if(entry != NULL) {
+				HHDatabaseEntry* hhentry = new HHDatabaseEntry();
+				hhentry->entry = entry;
+				hhentry->ffdatabase = a3m_database;
+				entries.push_back(hhentry);
+			}
+			else {
+				//TODO: error
+				std::cerr << "warning: could not fetch entry from a3m or hhm!" << std::endl;
+				std::cerr << "\tentry: " << names[i] << std::endl;
+				std::cerr << "\ta3m_db: " << a3m_database->data_filename << std::endl;
+				std::cerr << "\thhm_db: " << hhm_database->data_filename << std::endl;
+				continue;
+			}
+		}
+	}
 }
 
 
@@ -133,12 +232,9 @@ bool HHblitsDatabase::checkAndBuildCompressedDatabase(char* base) {
       && file_exists(sequence_data_filename)) {
     use_compressed = true;
 
-    ca3m_database = new FFindexDatabase(ca3m_data_filename,
-        ca3m_index_filename);
-    sequence_database = new FFindexDatabase(sequence_data_filename,
-        sequence_index_filename);
-    header_database = new FFindexDatabase(header_data_filename,
-        header_index_filename);
+    ca3m_database = new FFindexDatabase(ca3m_data_filename, ca3m_index_filename, id, use_compressed);
+    sequence_database = new FFindexDatabase(sequence_data_filename, sequence_index_filename, id, use_compressed);
+    header_database = new FFindexDatabase(header_data_filename, header_index_filename, id, use_compressed);
   }
   else {
     use_compressed = false;
@@ -147,14 +243,5 @@ bool HHblitsDatabase::checkAndBuildCompressedDatabase(char* base) {
   return use_compressed;
 }
 
-HHDatabaseEntry::HHDatabaseEntry(ffindex_entry* entry, HHsearchDatabase* db, FFindexDatabase* ffdb) {
-  this->entry = entry;
-  this->database = db;
-  this->ffdatabase = ffdb;
-}
-
-
-HHDatabaseEntry::~HHDatabaseEntry() {
-}
 
 

@@ -182,4 +182,14 @@ inline double logPvalue(float x, double a[]) {
          (h < -2.5) ? -exp(-exp(-h)) : log((double(1.0) - exp(-exp(-h))));
 }
 
+// Calculate score between columns i and j of two HMMs (query and template)
+inline float ProbFwd(float* qi, float* tj) {
+  return ScalarProd20(qi, tj); //
+}
+
+//Calculate score between columns i and j of two HMMs (query and template)
+inline float Score(float* qi, float* tj) {
+  return fast_log2(ProbFwd(qi, tj));
+}
+
 #endif /* HHHIT_INL_H_ */

@@ -1551,3 +1551,29 @@ void Hit::ScoreAlignment(HMM* q, HMM* t, int steps) {
     score += substitutionScore;
   }
 }
+
+// Calculate secondary structure score between columns i and j of two HMMs (query and template)
+float Hit::ScoreSS(HMM* q, HMM* t, int i, int j, int ssm, const float ssw, const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]) {
+  switch (ssm) //SS scoring during alignment
+  {
+    case 0: // no SS scoring during alignment
+      return 0.0;
+    case 1: // t has dssp information, q has psipred information
+      return ssw
+          * S73[(int) t->ss_dssp[j]][(int) q->ss_pred[i]][(int) q->ss_conf[i]];
+    case 2: // q has dssp information, t has psipred information
+      return ssw
+          * S73[(int) q->ss_dssp[i]][(int) t->ss_pred[j]][(int) t->ss_conf[j]];
+    case 3: // q has dssp information, t has psipred information
+      return ssw
+          * S33[(int) q->ss_pred[i]][(int) q->ss_conf[i]][(int) t->ss_pred[j]][(int) t->ss_conf[j]];
+      //     case 4: // q has dssp information, t has dssp information
+      //       return par.ssw*S77[ (int)t->ss_dssp[j]][ (int)t->ss_conf[j]];
+  }
+  return 0.0;
+}
+
+// Calculate secondary structure score between columns i and j of two HMMs (query and template)
+float Hit::ScoreSS(HMM* q, HMM* t, int i, int j, const float ssw, const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]) {
+  return ScoreSS(q, t, i, j, ssm2, ssw, S73, S33);
+}
