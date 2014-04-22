@@ -107,9 +107,6 @@ public:
   // Read a3m slave alignment of hit from ta3mfile and merge into (query) master alignment
   void MergeMasterSlave(Hit& hit, Alignment& Tali, char* ta3mfile, const int par_maxcol);
 
-  // Read a3m alignment of hit from ta3mfile and merge-combine with query alignment
-  void Merge(Hit& hit, char ta3mfile[]);
-
   // Add a sequence to Qali
   void AddSequence(char Xk[], int Ik[]=NULL);
 

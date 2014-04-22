@@ -93,6 +93,9 @@ HHblitsDatabase::HHblitsDatabase(char* base) {
   static int runaway;
   id = runaway++;
 
+  basename = new char[strlen(base)+1];
+  strcpy(basename, base);
+
   char cs219_index_filename[NAMELEN];
   char cs219_data_filename[NAMELEN];
 
@@ -123,6 +126,7 @@ HHblitsDatabase::HHblitsDatabase(char* base) {
 }
 
 HHblitsDatabase::~HHblitsDatabase() {
+    delete[] basename;
 	delete cs219_database;
 
 	if(use_compressed) {

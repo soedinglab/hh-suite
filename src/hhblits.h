@@ -133,9 +133,6 @@ private:
     // verbose mode
 	int v1 = v;
 
-    // set to true in last iteration
-	bool last_round = false;
-
 	char input_format = 0; // Set to 1 if input in HMMER format (has already pseudocounts)
 
 	char config_file[NAMELEN];

@@ -544,7 +544,8 @@ void AlignByWorker(Parameters& par, Hit* hit, HMM* t, HMM* q, const int format,
 
     #pragma omp critical
     {
-      hitlist.Push(*(hit)); // insert hit at beginning of list (last repeats first!)
+      // insert hit at beginning of list (last repeats first!)
+      hitlist.Push(*(hit));
     }
 
     // find only best alignment for forward algorithm and stochastic sampling
