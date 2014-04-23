@@ -1178,7 +1178,7 @@ int main(int argc, char **argv) {
 
   // Read input file (HMM, HHM, or alignment format), and add pseudocounts etc.
   char input_format = 0;
-  ReadQueryFile(par, par.infile, input_format, par.wg, q, &qali, pb, S, Sim);
+  ReadQueryFile(par, par.infile, input_format, par.wg, q, qali, pb, S, Sim);
   PrepareQueryHMM(par, input_format, q, pc_hhm_context_engine, pc_hhm_context_mode, pb, R);
 
   // Set query columns in His-tags etc to Null model distribution
@@ -1207,7 +1207,7 @@ int main(int argc, char **argv) {
     // Read input file (HMM, HHM, or alignment format), and add pseudocounts etc.
     char input_format = 0;
     Alignment tali;
-    ReadQueryFile(par, par.tfile, input_format, par.wg, t, &tali, pb, S, Sim);
+    ReadQueryFile(par, par.tfile, input_format, par.wg, t, tali, pb, S, Sim);
     PrepareTemplateHMM(par, q, t, input_format, pb, R);
   }
 
