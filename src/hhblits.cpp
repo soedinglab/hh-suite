@@ -227,12 +227,13 @@ void HHblits::ProcessAllArguments(int argc, char** argv, Parameters& par) {
     par.premerge = 0;
 
   // No outfile given? Name it basename.hhm
-  if (!*par.outfile) {     // outfile not given? Name it basename.hhm
-    RemoveExtension(par.outfile, par.infile);
-    strcat(par.outfile, ".hhr");
-    if (v >= 2)
-      cout << "Search results will be written to " << par.outfile << "\n";
-  }
+  //TODO check if no output at all is specified
+//  if (!*par.outfile) {
+//    RemoveExtension(par.outfile, par.infile);
+//    strcat(par.outfile, ".hhr");
+//    if (v >= 2)
+//      cout << "Search results will be written to " << par.outfile << "\n";
+//  }
 
   // Check option compatibilities
   if (par.nseqdis > MAXSEQDIS - 3 - par.showcons)
@@ -2036,14 +2037,6 @@ void HHblits::run(FILE* query_fh, char* query_path) {
   // Set query columns in His-tags etc to Null model distribution
   if (par.notags)
     q->NeutralizeTags(pb);
-
-  // Input parameters
-  if (v >= 3) {
-    cout << "Input file       :   " << par.infile << "\n";
-    cout << "Output file      :   " << par.outfile << "\n";
-//		cout << "Prefilter DB     :   " << db->cs219_database->data_filename << "\n";
-//		cout << "HHM DB           :   " << db->a3m_database->data_filename << "\n";
-  }
 
   //save all entries pointer in this vector to delete, when it's safe
   std::vector<HHDatabaseEntry*> all_entries;
