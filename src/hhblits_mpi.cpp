@@ -153,13 +153,6 @@ int main(int argc, char **argv) {
 			print_pairwise_alis = false, print_alitab = false,
 			print_reduced_hhr = false, print_psi = false, print_hmm = false,
 			print_a3m = false;
-//	char hhr_data_file[NAMELEN], alis_data_file[NAMELEN], scores_data_file[NAMELEN],
-//			pairwise_alis_data_file[NAMELEN], alitab_data_file[NAMELEN], reduced_hhr_data_file[NAMELEN],
-//			psi_data_file[NAMELEN], hmm_data_file[NAMELEN], a3m_data_file[NAMELEN];
-//	char hhr_index_file[NAMELEN], alis_index_file[NAMELEN], scores_index_file[NAMELEN],
-//			pairwise_alis_index_file[NAMELEN], alitab_index_file[NAMELEN],
-//			reduced_hhr_index_file[NAMELEN], psi_index_file[NAMELEN], hmm_index_file[NAMELEN],
-//			a3m_index_file[NAMELEN];
 	FILE* hhr_data_fh = NULL, *alis_data_fh = NULL, *scores_data_fh = NULL,
 			*pairwise_alis_data_fh = NULL, *alitab_data_fh = NULL,
 			*reduced_hhr_data_fh = NULL, *psi_data_fh = NULL, *hmm_data_fh =

@@ -378,16 +378,16 @@ void HHblits::help(Parameters& par, char all) {
         " -E [0,inf[     maximum E-value in summary and alignment list (default=%G)      \n",
         par.E);
     printf(
-        " -Z <int>       maximum number of lines in summary hit list (default=%i)        \n",
+        " -Z <int>       maximum number of lines in summary hit list (default=%zu)        \n",
         par.Z);
     printf(
-        " -z <int>       minimum number of lines in summary hit list (default=%i)        \n",
+        " -z <int>       minimum number of lines in summary hit list (default=%zu)        \n",
         par.z);
     printf(
-        " -B <int>       maximum number of alignments in alignment list (default=%i)     \n",
+        " -B <int>       maximum number of alignments in alignment list (default=%zu)     \n",
         par.B);
     printf(
-        " -b <int>       minimum number of alignments in alignment list (default=%i)     \n",
+        " -b <int>       minimum number of alignments in alignment list (default=%zu)     \n",
         par.b);
     printf("\n");
     printf(
@@ -449,7 +449,7 @@ void HHblits::help(Parameters& par, char all) {
       " -glob/-loc     use global/local alignment mode for searching/ranking (def=local)\n");
   if (all) {
     printf(
-        " -realign_max <int>  realign max. <int> hits (default=%i)                        \n",
+        " -realign_max <int>  realign max. <int> hits (default=%zu)                        \n",
         par.realign_max);
     printf(
         " -alt <int>     show up to this many significant alternative alignments(def=%i)  \n",
@@ -1067,7 +1067,7 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
       par.macins = atof(argv[++i]);
     else if (!strcmp(argv[i], "-scwin") && (i < argc - 1)) {
       par.columnscore = 5;
-      par.half_window_size_local_aa_bg_freqs = imax(1, atoi(argv[++i]));
+      par.half_window_size_local_aa_bg_freqs = std::max(1, atoi(argv[++i]));
     }
     else if (!strncmp(argv[i], "-cpu", 4) && (i < argc - 1)) {
       par.threads = atoi(argv[++i]);
@@ -1279,7 +1279,7 @@ void HHblits::DoViterbiSearch(std::vector<HHDatabaseEntry*>& prefiltered_hits,
 
   // For all the databases comming through prefilter
   #pragma omp parallel for schedule(dynamic, 1)
-  for (int idb = 0; idb < prefiltered_hits.size(); idb++) {
+  for (size_t idb = 0; idb < prefiltered_hits.size(); idb++) {
     // Allocate free bin (no need to lock, since slave processes cannot change FREE to other status)
     int bin = omp_get_thread_num();
 
@@ -1392,11 +1392,11 @@ void HHblits::RescoreWithViterbiKeepAlignment(int db_size,
         par.alphac, par.prefilter_evalue_thresh);
 }
 
-void HHblits::perform_realign(std::vector<HHDatabaseEntry*>& hits_to_realign,
+void HHblits::perform_realign(std::vector<HHDatabaseEntry*>& hits_to_realign, const size_t premerge,
     Hash<char>* premerged_hits) {
   q->Log2LinTransitionProbs(1.0); // transform transition freqs to lin space if not already done
-  int nhits = 0;
-  int N_aligned = 0;
+  size_t nhits = 0;
+  size_t N_aligned = 0;
 
   // Longest allowable length of database HMM (backtrace: 5 chars, fwd, bwd: 1 double
   long int Lmaxmem = (par.maxmem * 1024 * 1024 * 1024) / sizeof(double) / q->L
@@ -1422,14 +1422,14 @@ void HHblits::perform_realign(std::vector<HHDatabaseEntry*>& hits_to_realign,
   hitlist.Reset();
   while (!hitlist.End()) {
     Hit hit_cur = hitlist.ReadNext();
-    if (nhits >= par.realign_max && nhits >= imax(par.B, par.Z))
+    if (nhits >= par.realign_max && nhits >= std::max(par.B, par.Z))
       break;
     if (hit_cur.Eval > par.e) {
-      if (nhits >= imax(par.B, par.Z))
+      if (nhits >= std::max(par.B, par.Z))
         continue;
-      if (nhits >= imax(par.b, par.z) && hit_cur.Probab < par.p)
+      if (nhits >= std::max(par.b, par.z) && hit_cur.Probab < par.p)
         continue;
-      if (nhits >= imax(par.b, par.z) && hit_cur.Eval > par.E)
+      if (nhits >= std::max(par.b, par.z) && hit_cur.Eval > par.E)
         continue;
     }
 
@@ -1443,7 +1443,7 @@ void HHblits::perform_realign(std::vector<HHDatabaseEntry*>& hits_to_realign,
     //fprintf(stderr,"hit.name=%-15.15s  hit.index=%-5i hit.ftellpos=%-8i  hit.dbfile=%s\n",hit_cur.name,hit_cur.index,(unsigned int)hit_cur.ftellpos,hit_cur.dbfile);
 
     // realign the first premerge hits consecutively to query profile
-    if (nhits >= par.premerge) {
+    if (nhits >= premerge) {
       if (hit_cur.irep == 1) {
         // For each template (therefore irep==1), store template index and position on disk in a list
         Realign_hitpos realign_hitpos;
@@ -1457,8 +1457,8 @@ void HHblits::perform_realign(std::vector<HHDatabaseEntry*>& hits_to_realign,
         // Add template index and ftellpos to list which belongs to key dbfile in hash
         phash_plist_realignhitpos->Show(hit_cur.dbfile)->Push(realign_hitpos);
       }
-      if (!array_plist_phits[hit_cur.index]) // pointer at index is still NULL
-      {
+      // pointer at index is still NULL
+      if (!array_plist_phits[hit_cur.index]) {
         List<void*>* newlist = new List<void*>; // create new list of pointers to all aligments of a template
         array_plist_phits[hit_cur.index] = newlist; // set array[index] to newlist
       }
@@ -1471,7 +1471,7 @@ void HHblits::perform_realign(std::vector<HHDatabaseEntry*>& hits_to_realign,
   }
   if (v >= 2)
     printf(
-        "Realigning %i HMM-HMM alignments using Maximum Accuracy algorithm\n",
+        "Realigning %zu HMM-HMM alignments using Maximum Accuracy algorithm\n",
         nhits);
 
   if (Lmax > Lmaxmem) {
@@ -1499,24 +1499,24 @@ void HHblits::perform_realign(std::vector<HHDatabaseEntry*>& hits_to_realign,
 
   //////////////////////////////////////////////////////////////////////////////////
   // start premerge:
-  // Align the first par.premerge templates
-  if (par.premerge > 0) {
+  // Align the first premerge templates
+  if (premerge > 0) {
     if (v >= 2)
-      printf("Merging %i best hits to query alignment ...\n", par.premerge);
+      printf("Merging %zu best hits to query alignment ...\n", premerge);
 
     int bin = 0;
     nhits = 0;
     hitlist.Reset();
 
-    while (!hitlist.End() && nhits < par.premerge) {
+    while (!hitlist.End() && nhits < premerge) {
       Hit hit_cur = hitlist.ReadNext();
       // JS: removed bug on 13 Feb 13 due to which premerged hits with E-value > par.e were not realigned
       if (hit_cur.Eval > par.e) {
-        if (nhits >= imax(par.B, par.Z))
+        if (nhits >= std::max(par.B, par.Z))
           break;
-        if (nhits >= imax(par.b, par.z) && hit_cur.Probab < par.p)
+        if (nhits >= std::max(par.b, par.z) && hit_cur.Probab < par.p)
           break;
-        if (nhits >= imax(par.b, par.z) && hit_cur.Eval > par.E)
+        if (nhits >= std::max(par.b, par.z) && hit_cur.Eval > par.E)
           continue;
       }
       nhits++;
@@ -1541,7 +1541,7 @@ void HHblits::perform_realign(std::vector<HHDatabaseEntry*>& hits_to_realign,
       if (v1 >= 2 && !(N_aligned % 10)) {
         cout << ".";
         if (!(N_aligned % 500))
-          printf(" %-4i HMMs aligned\n", N_aligned);
+          printf(" %-4zu HMMs aligned\n", N_aligned);
         cout.flush();
       }
 
@@ -1663,7 +1663,7 @@ void HHblits::perform_realign(std::vector<HHDatabaseEntry*>& hits_to_realign,
 
   // Read all HMMs whose position is given in phash_plist_realignhitpos
 #pragma omp parallel for schedule(dynamic, 1)
-  for (int idb = 0; idb < hits_to_realign.size(); idb++) {
+  for (size_t idb = 0; idb < hits_to_realign.size(); idb++) {
     // Can we skip dbfiles[idb] because it contains no template to be realigned?
     if (!phash_plist_realignhitpos->Contains(hits_to_realign[idb]->entry->name))
       continue;
@@ -1725,14 +1725,14 @@ void HHblits::perform_realign(std::vector<HHDatabaseEntry*>& hits_to_realign,
   while (!hitlist.End()) {
     Hit hit_cur = hitlist.ReadNext();
 
-    if (nhits > par.realign_max && nhits >= imax(par.B, par.Z))
+    if (nhits > par.realign_max && nhits >= std::max(par.B, par.Z))
       break;
     if (hit_cur.Eval > par.e) {
-      if (nhits >= imax(par.B, par.Z))
+      if (nhits >= std::max(par.B, par.Z))
         continue;
-      if (nhits >= imax(par.b, par.z) && hit_cur.Probab < par.p)
+      if (nhits >= std::max(par.b, par.z) && hit_cur.Probab < par.p)
         continue;
-      if (nhits >= imax(par.b, par.z) && hit_cur.Eval > par.E)
+      if (nhits >= std::max(par.b, par.z) && hit_cur.Eval > par.E)
         continue;
     }
 
@@ -1821,7 +1821,7 @@ void HHblits::recalculateAlignmentsForDifferentQSC(HitList& hitlist,
     v -= 2; // Supress verbose output during iterative realignment and realignment
 
   const int COV_ABS = 25;
-  int cov_tot = imax(imin((int) (COV_ABS / Qali.L * 100 + 0.5), 70),
+  int cov_tot = std::max(std::min((int) (COV_ABS / Qali.L * 100 + 0.5), 70),
       par.coverage);
 
   Alignment qali;
@@ -2004,6 +2004,7 @@ void HHblits::wiggleQSC(int n_redundancy, float* qsc, size_t nqsc,
 void HHblits::run(FILE* query_fh, char* query_path) {
   int cluster_found = 0;
   int seqs_found = 0;
+  size_t premerge = par.premerge;
 
   v1 = v;
   if (v > 0 && v <= 2)
@@ -2023,7 +2024,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
   ReadQueryFile(par, query_fh, input_format, par.wg, q, Qali, query_path, pb, S, Sim);
 
   if (Qali.N_in - Qali.N_ss > 1)
-    par.premerge = 0;
+    premerge = 0;
 
   if (par.allseqs) {
     Qali_allseqs = Qali; // make a *deep* copy of Qali!
@@ -2059,16 +2060,16 @@ void HHblits::run(FILE* query_fh, char* query_path) {
       printf("\nIteration %i\n", round);
 
     // Settings for different rounds
-    if (par.premerge > 0 && round > 1
-        && previous_hits->Size() >= par.premerge) {
+    if (premerge > 0 && round > 1
+        && previous_hits->Size() >= premerge) {
       if (v > 3)
         printf(
-            "Set premerge to 0! (premerge: %i   iteration: %i   hits.Size: %i)\n",
-            par.premerge, round, previous_hits->Size());
-      par.premerge = 0;
+            "Set premerge to 0! (premerge: %zu   iteration: %i   hits.Size: %zu)\n",
+            premerge, round, previous_hits->Size());
+      premerge = 0;
     }
     else {
-      par.premerge -= previous_hits->Size();
+      premerge -= previous_hits->Size();
     }
 
     // Save HMM without pseudocounts for prefilter query-profile
@@ -2144,12 +2145,12 @@ void HHblits::run(FILE* query_fh, char* query_path) {
     // Search datbases
     if (v >= 2) {
       printf(
-          "HMMs passed 2nd prefilter (gapped profile-profile alignment)   : %6i\n",
+          "HMMs passed 2nd prefilter (gapped profile-profile alignment)   : %6zu\n",
           (new_entries.size() + old_entries.size()));
       printf(
-          "HMMs passed 2nd prefilter and not found in previous iterations : %6i\n",
+          "HMMs passed 2nd prefilter and not found in previous iterations : %6zu\n",
           new_entries.size());
-      printf("Scoring %i HMMs using HMM-HMM Viterbi alignment\n",
+      printf("Scoring %zu HMMs using HMM-HMM Viterbi alignment\n",
           new_entries.size());
     }
 
@@ -2182,7 +2183,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
             (new_entries.size() + old_entries.size()));
 
         // Add dbfiles_old to dbfiles_new for realign
-        for (int a = 0; a < old_entries.size(); a++) {
+        for (size_t a = 0; a < old_entries.size(); a++) {
           new_entries.push_back(old_entries[a]);
         }
       }
@@ -2198,7 +2199,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
 
     // Realign hits with MAC algorithm
     if (par.realign)
-      perform_realign(new_entries, premerged_hits);
+      perform_realign(new_entries, premerge, premerged_hits);
 
     // Generate alignment for next iteration
     if (round < par.num_rounds || *par.alnfile || *par.psifile || *par.hhmfile || *par.alisbasename) {
@@ -2272,7 +2273,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
 
         // Remove sequences with seq. identity larger than seqid percent (remove the shorter of two)
         const float COV_ABS = 25;     // min. number of aligned residues
-        int cov_tot = imax(imin((int) (COV_ABS / Qali.L * 100 + 0.5), 70),
+        int cov_tot = std::max(std::min((int) (COV_ABS / Qali.L * 100 + 0.5), 70),
             par.coverage);
         if (v > 2)
           printf("Filter new alignment with cov %3i%%\n", cov_tot);

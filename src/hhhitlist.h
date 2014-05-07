@@ -33,7 +33,7 @@ private:
 
 public:
   int fams;                     // number of families found found in hitlist
-  int sfams;                    // number of superfamilies found in hitlist
+  size_t sfams;                    // number of superfamilies found in hitlist
   int N_searched;               // number of sequences searched from HMM database
   Hash<float>* blast_logPvals;  // Hash containing names and log(P-values) read from BLAST file (needed for HHblits)
 
@@ -86,7 +86,7 @@ public:
   float FindMin(int ndim, double* p, double* y, double tol, int& nfunc, double (*Func)(void* pt2hitlist, double* v));
   
   // Do a maximum likelihood fit of the scores with an EV distribution with parameters lamda and mu 
-  void MaxLikelihoodEVD(HMM* q, int nbest, const char loc, const char ssm, const float ssw);
+  void MaxLikelihoodEVD(HMM* q, size_t nbest, const char loc, const char ssm, const float ssw);
   
   // Calculate HHblits composite E-values 
   void CalculateHHblitsEvalues(HMM* q, const int dbsize,
