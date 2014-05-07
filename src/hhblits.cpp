@@ -1441,8 +1441,8 @@ void HHblits::perform_realign(std::vector<HHDatabaseEntry*>& hits_to_realign,
 
     //fprintf(stderr,"hit.name=%-15.15s  hit.index=%-5i hit.ftellpos=%-8i  hit.dbfile=%s\n",hit_cur.name,hit_cur.index,(unsigned int)hit_cur.ftellpos,hit_cur.dbfile);
 
-    if (nhits >= par.premerge) // realign the first premerge hits consecutively to query profile
-        {
+    // realign the first premerge hits consecutively to query profile
+    if (nhits >= par.premerge) {
       if (hit_cur.irep == 1) {
         // For each template (therefore irep==1), store template index and position on disk in a list
         Realign_hitpos realign_hitpos;
@@ -2019,8 +2019,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
 
   // Read query input file (HHM or alignment format) without adding pseudocounts
   Qali.N_in = 0;
-  ReadQueryFile(par, query_fh, input_format, par.wg, q, Qali, query_path, pb, S,
-      Sim);
+  ReadQueryFile(par, query_fh, input_format, par.wg, q, Qali, query_path, pb, S, Sim);
 
   if (Qali.N_in - Qali.N_ss > 1)
     par.premerge = 0;
@@ -2058,8 +2057,6 @@ void HHblits::run(FILE* query_fh, char* query_path) {
         new_entries.end());
   }
 
-  bool last_round = false;
-
   //////////////////////////////////////////////////////////////////////////////////
   // Main loop overs search iterations
   //////////////////////////////////////////////////////////////////////////////////
@@ -2084,8 +2081,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
     // Save HMM without pseudocounts for prefilter query-profile
     *q_tmp = *q;
 
-    // Write query HHM file? (not the final HMM, which will be written to par.hhmfile)
-    //TODO
+    //TODO: Write query HHM file? (not the final HMM, which will be written to par.hhmfile)
 //    if (*query_hhmfile) {
 //      v1 = v;
 //      if (v > 0 && v <= 3)
@@ -2182,7 +2178,6 @@ void HHblits::run(FILE* query_fh, char* query_path) {
     }
 
     if (new_hits == 0 || round == par.num_rounds) {
-      last_round = true;
       if (round < par.num_rounds && v >= 2)
         printf("No new hits found in iteration %i => Stop searching\n", round);
 
@@ -2300,8 +2295,8 @@ void HHblits::run(FILE* query_fh, char* query_path) {
         q->NeutralizeTags(pb);
 
       // Calculate SSpred if we need to print out alis after each iteration or if last iteration
-      if (par.addss
-          && (*par.alisbasename || round == par.num_rounds || new_hits == 0)) {
+      // TODO: we should get rid of this... since it calls psipred on the command line and is untested
+      if (par.addss && (*par.alisbasename || round == par.num_rounds || new_hits == 0)) {
         char ss_pred[par.maxres];
         char ss_conf[par.maxres];
 
