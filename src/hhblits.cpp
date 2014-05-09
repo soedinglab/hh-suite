@@ -2491,51 +2491,53 @@ std::map<int, Alignment>& HHblits::getAlis() {
   return alis;
 }
 
-void HHblits::writeHHRFile(std::stringstream& out) {
-  hitlist.PrintHHR(q_tmp, out, par.maxdbstrlen, par.showconf, par.showcons,
-      par.showdssp, par.showpred, par.b, par.B, par.z, par.Z, par.aliwidth,
-      par.nseqdis, par.p, par.E, par.argc, par.argv, S);
+void HHblits::writeHHRFile(HHblits& hhblits, std::stringstream& out) {
+  hhblits.hitlist.PrintHHR(hhblits.q_tmp, out, hhblits.par.maxdbstrlen, hhblits.par.showconf, hhblits.par.showcons,
+		  hhblits.par.showdssp, hhblits.par.showpred, hhblits.par.b, hhblits.par.B, hhblits.par.z, hhblits.par.Z, hhblits.par.aliwidth,
+		  hhblits.par.nseqdis, hhblits.par.p, hhblits.par.E, hhblits.par.argc, hhblits.par.argv, hhblits.S);
 }
 
-void HHblits::writeScoresFile(std::stringstream& out) {
-  hitlist.PrintScoreFile(q, out);
+void HHblits::writeScoresFile(HHblits& hhblits, std::stringstream& out) {
+  hhblits.hitlist.PrintScoreFile(hhblits.q, out);
 }
 
-void HHblits::writePairwiseAlisFile(char outformat, std::stringstream& out) {
-  hitlist.PrintAlignments(q, out, par.showconf, par.showcons, par.showdssp,
-      par.showpred, par.p, par.aliwidth, par.nseqdis, par.b, par.B, par.E, S,
-      outformat);
+void HHblits::writePairwiseAlisFile(HHblits& hhblits, std::stringstream& out) {
+	hhblits.hitlist.PrintAlignments(hhblits.q, out, hhblits.par.showconf, hhblits.par.showcons, hhblits.par.showdssp,
+		  hhblits.par.showpred, hhblits.par.p, hhblits.par.aliwidth, hhblits.par.nseqdis, hhblits.par.b, hhblits.par.B, hhblits.par.E, hhblits.S,
+		  hhblits.par.outformat);
 }
 
-void HHblits::writeAlitabFile(std::stringstream& out) {
-  hitlist.WriteToAlifile(q, out, par.alitab_scop);
+void HHblits::writeAlitabFile(HHblits& hhblits, std::stringstream& out) {
+	hhblits.hitlist.WriteToAlifile(hhblits.q, out, hhblits.par.alitab_scop);
 }
 
-void HHblits::writeReducedHHRFile(std::stringstream& out) {
-  reducedHitlist.PrintHHR(q_tmp, out, par.maxdbstrlen, par.showconf,
-      par.showcons, par.showdssp, par.showpred, par.b, par.B, par.z, par.Z,
-      par.aliwidth, par.nseqdis, par.p, par.E, par.argc, par.argv, S);
+void HHblits::writeReducedHHRFile(HHblits& hhblits, std::stringstream& out) {
+	hhblits.reducedHitlist.PrintHHR(hhblits.q_tmp, out, hhblits.par.maxdbstrlen, hhblits.par.showconf,
+		  hhblits.par.showcons, hhblits.par.showdssp, hhblits.par.showpred, hhblits.par.b,
+		  hhblits.par.B, hhblits.par.z, hhblits.par.Z,
+		  hhblits.par.aliwidth, hhblits.par.nseqdis, hhblits.par.p, hhblits.par.E, hhblits.par.argc,
+		  hhblits.par.argv, hhblits.S);
 }
 
-void HHblits::writePsiFile(std::stringstream& out) {
-  if (par.allseqs)
-    Qali_allseqs.WriteToFile(out, "psi");
+void HHblits::writePsiFile(HHblits& hhblits, std::stringstream& out) {
+  if (hhblits.par.allseqs)
+	  hhblits.Qali_allseqs.WriteToFile(out, "psi");
   else
-    Qali.WriteToFile(out, "psi");
+	  hhblits.Qali.WriteToFile(out, "psi");
 }
 
-void HHblits::writeHMMFile(std::stringstream& out) {
+void HHblits::writeHMMFile(HHblits& hhblits, std::stringstream& out) {
   // Add *no* amino acid pseudocounts to query. This is necessary to copy f[i][a] to p[i][a]
-  q->AddAminoAcidPseudocounts(0, 0.0, 0.0, 1.0);
-  q->CalculateAminoAcidBackground(pb);
+	hhblits.q->AddAminoAcidPseudocounts(0, 0.0, 0.0, 1.0);
+	hhblits.q->CalculateAminoAcidBackground(hhblits.pb);
 
-  q->WriteToFile(out, par.max_seqid, par.coverage, par.qid, par.Ndiff, par.qsc,
-      par.argc, par.argv, pb);
+	hhblits.q->WriteToFile(out, hhblits.par.max_seqid, hhblits.par.coverage, hhblits.par.qid, hhblits.par.Ndiff, hhblits.par.qsc,
+			hhblits.par.argc, hhblits.par.argv, hhblits.pb);
 }
 
-void HHblits::writeA3MFile(std::stringstream& out) {
-  if (par.allseqs)
-    Qali_allseqs.WriteToFile(out, "a3m");
+void HHblits::writeA3MFile(HHblits& hhblits, std::stringstream& out) {
+  if (hhblits.par.allseqs)
+	  hhblits.Qali_allseqs.WriteToFile(out, "a3m");
   else
-    Qali.WriteToFile(out, "a3m");
+	  hhblits.Qali.WriteToFile(out, "a3m");
 }

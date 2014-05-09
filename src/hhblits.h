@@ -75,6 +75,17 @@ extern "C" {
 const char HHBLITS_REFERENCE[] =
 		"Remmert M., Biegert A., Hauser A., and Soding J.\nHHblits: Lightning-fast iterative protein sequence searching by HMM-HMM alignment.\nNat. Methods 9:173-175 (2011)\n";
 
+
+class HHblits;
+//static void writeHHRFile(HHblits& hhblits, std::stringstream& out);
+//static void writeScoresFile(HHblits& hhblits, std::stringstream& out);
+//static void writePairwiseAlisFile(HHblits& hhblits, std::stringstream& out);
+//static void writeAlitabFile(HHblits& hhblits, std::stringstream& out);
+//static void writeReducedHHRFile(HHblits& hhblits, std::stringstream& out);
+//static void writePsiFile(HHblits& hhblits, std::stringstream& out);
+//static void writeHMMFile(HHblits& hhblits, std::stringstream& out);
+//static void writeA3MFile(HHblits& hhblits, std::stringstream& out);
+
 class HHblits {
 public:
 	HHblits(Parameters& parameters);
@@ -96,14 +107,14 @@ public:
 
     //output writer for mpi version
     std::map<int, Alignment>& getAlis();
-    void writeHHRFile(std::stringstream& out);
-    void writeScoresFile(std::stringstream& out);
-    void writePairwiseAlisFile(char outformat, std::stringstream& out);
-    void writeAlitabFile(std::stringstream& out);
-    void writeReducedHHRFile(std::stringstream& out);
-    void writePsiFile(std::stringstream& out);
-    void writeHMMFile(std::stringstream& out);
-    void writeA3MFile(std::stringstream& out);
+    static void writeHHRFile(HHblits& hhblits, std::stringstream& out);
+    static void writeScoresFile(HHblits& hhblits, std::stringstream& out);
+    static void writePairwiseAlisFile(HHblits& hhblits, std::stringstream& out);
+    static void writeAlitabFile(HHblits& hhblits, std::stringstream& out);
+    static void writeReducedHHRFile(HHblits& hhblits, std::stringstream& out);
+    static void writePsiFile(HHblits& hhblits, std::stringstream& out);
+    static void writeHMMFile(HHblits& hhblits, std::stringstream& out);
+    static void writeA3MFile(HHblits& hhblits, std::stringstream& out);
 
 	void run(FILE* query_fh, char* query_path);
 
