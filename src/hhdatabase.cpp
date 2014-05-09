@@ -89,7 +89,7 @@ HHsearchDatabase::~HHsearchDatabase() {
   delete database;
 }
 
-HHblitsDatabase::HHblitsDatabase(char* base) {
+HHblitsDatabase::HHblitsDatabase(const char* base) {
   static int runaway;
   id = runaway++;
 
@@ -231,7 +231,7 @@ void HHblitsDatabase::getEntriesFromNames(std::vector<std::string>& names, std::
 }
 
 
-bool HHblitsDatabase::checkAndBuildCompressedDatabase(char* base) {
+bool HHblitsDatabase::checkAndBuildCompressedDatabase(const char* base) {
   char ca3m_index_filename[NAMELEN];
   char ca3m_data_filename[NAMELEN];
 

@@ -246,7 +246,6 @@ void Parameters::SetDefaults() {
 
 	//hhblits specific variables
 	num_rounds = 2;
-	strcpy(db_base, "");
 	already_seen_filter = true;   // Perform filtering of already seen HHMs
 	realign_old_hits = false; // Realign old hits in last round or use previous alignments
 	neffmax = 10.0;

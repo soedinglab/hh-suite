@@ -64,7 +64,7 @@ class HHsearchDatabase : HHDatabase {
 
 class HHblitsDatabase : HHDatabase {
   public:
-    HHblitsDatabase(char* base);
+    HHblitsDatabase(const char* base);
     ~HHblitsDatabase();
 
     void initPrefilter(const char* cs_library);
@@ -92,10 +92,9 @@ class HHblitsDatabase : HHDatabase {
 
   private:
     void getEntriesFromNames(std::vector<std::string>& names, std::vector<HHDatabaseEntry*>& entries);
-    bool checkAndBuildCompressedDatabase(char* base);
+    bool checkAndBuildCompressedDatabase(const char* base);
 
     hh::Prefilter* prefilter;
-    char* base;
 };
 
 struct HHDatabaseEntry {

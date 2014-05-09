@@ -343,7 +343,7 @@ public:
 
   //hhblits specific variables
   int num_rounds;
-  char db_base[NAMELEN];
+  std::vector<std::string> db_bases;
   // Perform filtering of already seen HHMs
   bool already_seen_filter;
   // Realign old hits in last round or use previous alignments

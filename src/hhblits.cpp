@@ -23,8 +23,10 @@ HHblits::HHblits(Parameters& parameters) {
   N_searched = 0;
 
   //TODO: multiple databases
-  HHblitsDatabase* db = new HHblitsDatabase(par.db_base);
-  dbs.push_back(db);
+  for(size_t i = 0; i < par.db_bases.size(); i++) {
+	  HHblitsDatabase* db = new HHblitsDatabase(par.db_bases[i].c_str());
+	  dbs.push_back(db);
+  }
 
   par.dbsize = 0;
   for (size_t i = 0; i < dbs.size(); i++) {
@@ -166,10 +168,9 @@ void HHblits::ProcessAllArguments(int argc, char** argv, Parameters& par) {
     std::cerr << "\tinput file missing!" << std::endl;
     exit(4);
   }
-  if (!*par.db_base) {
+  if (par.db_bases.size() == 0) {
     help(par);
-    std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__
-        << ":" << std::endl;
+    std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
     std::cerr << "\tdatabase missing (see -d)\n";
     exit(4);
   }
@@ -321,8 +322,7 @@ void HHblits::help(Parameters& par, char all) {
   printf(
       "Options:                                                                       \n");
   printf(
-      " -d <name>      database name (e.g. uniprot20_29Feb2012) (default=%s)          \n",
-      par.db_base);
+      " -d <name>      database name (e.g. uniprot20_29Feb2012)                       \n");
   printf(
       " -n     [1,8]   number of iterations (default=%i)                              \n",
       par.num_rounds);
@@ -682,8 +682,10 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
             << ": no database basename following -d\n";
         exit(4);
       }
-      else
-        strcpy(par.db_base, argv[i]);
+      else {
+    	  std::string db(argv[i]);
+    	  par.db_bases.push_back(db);
+      }
     }
     else if (!strcmp(argv[i], "-contxt") || !strcmp(argv[i], "-context_data")) {
       if (++i >= argc || argv[i][0] == '-') {
