@@ -574,6 +574,16 @@ void ProcessArguments(int argc, char** argv) {
       else
         strcpy(par.outfile, argv[i]);
     }
+    else if (!strcmp(argv[i], "-ored")) {
+      if (++i >= argc) {
+        help();
+        std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+        std::cerr << "\tno filename following -o\n";
+        exit(4);
+      }
+      else
+        strcpy(par.reduced_outfile, argv[i]);
+    }
     else if (!strcmp(argv[i], "-ofas")) {
       par.outformat = 1;
       if (++i >= argc || argv[i][0] == '-') {
@@ -1063,6 +1073,129 @@ void RealignByWorker(Hit& hit) {
   return;
 }
 
+void wiggleQSC(Alignment& orig_qali, char query_input_format, Alignment& orig_tali, char template_input_format, size_t nqsc, float* qsc, HitList& recalculated_hitlist) {
+  char v1 = v;
+  if (v > 0 && v <= 3)
+    v = 1;
+  else
+    v -= 2; // Supress verbose output during iterative realignment and realignment
+
+  const int COV_ABS = 25;
+  int cov_tot = std::max(std::min((int) (COV_ABS / orig_qali.L * 100 + 0.5), 70),
+      par.coverage);
+
+  Alignment qali;
+  qali = orig_qali;
+
+  Alignment tali;
+  tali = orig_tali;
+
+  HMM* q = new HMM();
+  HMM* t = new HMM();
+
+  //TODO:
+  recalculated_hitlist.N_searched = 1;
+  HitList realigned_viterbi_hitlist;
+  realigned_viterbi_hitlist.N_searched = 1;
+
+  for (size_t qsc_index = 0; qsc_index < nqsc; qsc_index++) {
+    float actual_qsc = qsc[qsc_index];
+
+    qali.Compress("filtered A3M file", par.cons, par.maxres, par.maxcol, par.M, par.Mgaps);
+    qali.N_filtered = qali.Filter(par.max_seqid, S, cov_tot, par.qid, actual_qsc, par.Ndiff);
+    qali.FrequenciesAndTransitions(q, par.wg, par.mark, par.cons, par.showcons, par.maxres, pb, Sim, NULL, false);
+    PrepareQueryHMM(par, query_input_format, q, pc_hhm_context_engine, pc_hhm_context_mode, pb, R);
+
+    tali.Compress("filtered A3M file", par.cons, par.maxres, par.maxcol, par.M, par.Mgaps);
+    tali.N_filtered = qali.Filter(par.max_seqid, S, cov_tot, par.qid, actual_qsc, par.Ndiff);
+    tali.FrequenciesAndTransitions(t, par.wg, par.mark, par.cons, par.showcons, par.maxres, pb, Sim, NULL, false);
+    PrepareTemplateHMM(par, q, t, template_input_format, pb, R);
+
+    //run viterbi
+    Hit hit;
+    hit.AllocateBacktraceMatrix(q->L + 2, par.maxres + 1);
+    hit.self = 0;
+    hit.realign_around_viterbi = false;
+
+    for (int irep = 1; irep <= par.altali; irep++) {
+      hit.irep = irep;
+      hit.Viterbi(q, t, par.loc, par.ssm, par.maxres, par.min_overlap,
+          par.shift, par.egt, par.egq, par.ssw, par.exclstr, S73, S33);
+
+      if (hit.irep > 1 && hit.score <= SMIN)
+        break;
+
+      hit.Backtrace(q, t, par.corr, par.ssw, S73, S33);
+      realigned_viterbi_hitlist.Push(hit);
+    }
+
+
+    hit.DeleteBacktraceMatrix(q->L + 2);
+
+    realigned_viterbi_hitlist.CalculatePvalues(q, par.loc, par.ssm, par.ssw);
+    realigned_viterbi_hitlist.CalculateHHblitsEvalues(q, 1, par.alphaa,
+        par.alphab, par.alphac, par.prefilter_evalue_thresh);
+
+    //run mac alignment
+    q->Log2LinTransitionProbs(1.0);
+    t->Log2LinTransitionProbs(1.0);
+
+    realigned_viterbi_hitlist.Reset();
+    while (!realigned_viterbi_hitlist.End()) {
+      Hit hit_ref = realigned_viterbi_hitlist.ReadNext();
+
+      Hit hit;
+      hit.AllocateForwardMatrix(q->L + 2, par.maxres + 1);
+      hit.AllocateBacktraceMatrix(q->L + 2, par.maxres + 1);
+      hit.irep = 1;
+      hit.self = 0;
+      hit.i1 = hit_ref.i1;
+      hit.i2 = hit_ref.i2;
+      hit.j1 = hit_ref.j1;
+      hit.j2 = hit_ref.j2;
+      hit.nsteps = hit_ref.nsteps;
+      hit.i = hit_ref.i;
+      hit.j = hit_ref.j;
+      hit.realign_around_viterbi = false;
+
+      // Align q to template in *hit[bin]
+      hit.Forward(q, t, par.ssm, par.min_overlap, par.loc, par.shift, par.ssw,
+          par.exclstr, S73, S33);
+      hit.Backward(q, t, par.loc, par.shift, par.ssw, S73, S33);
+      hit.MACAlignment(q, t, par.loc, par.mact, par.macins);
+      hit.BacktraceMAC(q, t, par.corr, par.ssw, S73, S33);
+
+      // Overwrite *hit[bin] with Viterbi scores, Probabilities etc. of hit_cur
+      hit.score = hit_ref.score;
+      hit.score_ss = hit_ref.score_ss;
+      hit.score_aass = hit_ref.score_aass;
+      hit.score_sort = hit_ref.score_sort;
+      hit.Pval = hit_ref.Pval;
+      hit.Pvalt = hit_ref.Pvalt;
+      hit.logPval = hit_ref.logPval;
+      hit.logPvalt = hit_ref.logPvalt;
+      hit.Eval = hit_ref.Eval;
+      hit.logEval = hit_ref.logEval;
+      hit.Probab = hit_ref.Probab;
+
+      hit.DeleteForwardMatrix(q->L + 2);
+      hit.DeleteBacktraceMatrix(q->L + 2);
+      hit = hit_ref;
+
+      if (hit.matched_cols >= MINCOLS_REALIGN) {
+        recalculated_hitlist.Insert(hit);
+      }
+    }
+
+    realigned_viterbi_hitlist.Reset();
+    while (!realigned_viterbi_hitlist.End()) {
+      realigned_viterbi_hitlist.Delete();
+    }
+  }
+
+  recalculated_hitlist.SortList();
+}
+
 /////////////////////////////////////////////////////////////////////////////////////
 //// MAIN PROGRAM
 /////////////////////////////////////////////////////////////////////////////////////
@@ -1185,6 +1318,9 @@ int main(int argc, char **argv) {
   if (par.notags)
     q->NeutralizeTags(pb);
 
+  char template_input_format;
+  Alignment tali;
+
   // Do self-comparison?
   if (!*par.tfile) {
     if (par.loc == 0) {
@@ -1195,6 +1331,7 @@ int main(int argc, char **argv) {
 
     // Deep-copy q into t
     *t = *q;
+    tali = qali;
 
     // Find overlapping alternative alignments
     hit.self = 1;
@@ -1205,8 +1342,7 @@ int main(int argc, char **argv) {
   // Read template alignment/HMM t and add pseudocounts
   else {
     // Read input file (HMM, HHM, or alignment format), and add pseudocounts etc.
-    char input_format = 0;
-    Alignment tali;
+    template_input_format = 0;
     ReadQueryFile(par, par.tfile, input_format, par.wg, t, tali, pb, S, Sim);
     PrepareTemplateHMM(par, q, t, input_format, pb, R);
   }
@@ -1425,6 +1561,14 @@ int main(int argc, char **argv) {
     hitlist.PrintAlignments(q, par.pairwisealisfile, par.showconf, par.showcons, par.showdssp, par.showpred, par.p, par.aliwidth, par.nseqdis, par.b, par.B, par.E, S, par.outformat);
   }
 
+  if(*par.reduced_outfile) {
+    size_t nqsc = 4;
+    float wiggle_qscs[] = { -20, 0, 0.1, 0.2 };
+    HitList recalculatedHitlist;
+    wiggleQSC(qali, input_format, tali, template_input_format, nqsc, wiggle_qscs, recalculatedHitlist);
+    recalculatedHitlist.PrintHHR(q, par.reduced_outfile, par.maxdbstrlen, par.showconf, par.showcons, par.showdssp, par.showpred, par.b, par.B, par.z, par.Z, par.aliwidth, par.nseqdis, par.p, par.E, par.argc, par.argv, S);
+  }
+
   // Print hit list and alignments
   if (*par.outfile) {
     hitlist.PrintHitList(q, par.outfile, par.maxdbstrlen, par.z, par.Z, par.p, par.E, par.argc, par.argv);
@@ -1437,6 +1581,8 @@ int main(int argc, char **argv) {
   }
 
   //////////////////////////////////////////////////////////////////////////////////////
+
+
 
   // Show results for hit with rank par.hitrank
   if (par.hitrank == 0)
@@ -1687,10 +1833,13 @@ int main(int argc, char **argv) {
           q->name, t->name, par.hitrank, hit.score, hit.Pval);
   }
 
+
   // Delete memory for dynamic programming matrix
   hit.DeleteBacktraceMatrix(q->L + 2);
   if (par.forward >= 1 || par.realign)
     hit.DeleteForwardMatrix(q->L + 2);
+
+
 
   DeletePseudocountsEngine(context_lib, crf, pc_hhm_context_engine, pc_hhm_context_mode, pc_prefilter_context_engine, pc_prefilter_context_mode);
 

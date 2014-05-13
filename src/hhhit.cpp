@@ -861,8 +861,11 @@ void Hit::MACAlignment(HMM* q, HMM* t, const char loc, const double mact, const 
   // float S[1000][2000]; //DEBUG
 
   // Initialization of top row, i.e. cells (0,j)
-  for (j = 0; j <= t->L; ++j)
+  for (j = 0; j <= t->L; ++j) {
     S_prev[j] = 0.0;
+    //TODO: why???
+    S_curr[j] = 0.0;
+  }
   score_MAC = -INT_MAX;
   i2 = j2 = 0;
   btr[0][0] = STOP;
@@ -908,7 +911,7 @@ void Hit::MACAlignment(HMM* q, HMM* t, const char loc, const double mact, const 
 
         // NOT the state before the first MM state)
         CALCULATE_MAX4(S_curr[j], P_MM[i][j] - mact, // STOP signifies the first MM state, NOT the state before the first MM state (as in Viterbi)
-        S_prev[j-1] + P_MM[i][j] - mact,// P_MM[i][j] contains posterior probability
+            S_prev[j-1] + P_MM[i][j] - mact,// P_MM[i][j] contains posterior probability
             S_prev[j] - GAPPENALTY, S_curr[j - 1] - GAPPENALTY, btr[i][j] // backtracing matrix
             );
 
