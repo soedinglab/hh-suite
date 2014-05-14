@@ -1145,6 +1145,8 @@ void wiggleQSC(Alignment& orig_qali, char query_input_format, Alignment& orig_ta
       Hit hit_ref = realigned_viterbi_hitlist.ReadNext();
 
       Hit hit;
+      hit = hit_ref;
+
       hit.AllocateForwardMatrix(q->L + 2, par.maxres + 1);
       hit.AllocateBacktraceMatrix(q->L + 2, par.maxres + 1);
       hit.irep = 1;
@@ -1180,7 +1182,8 @@ void wiggleQSC(Alignment& orig_qali, char query_input_format, Alignment& orig_ta
 
       hit.DeleteForwardMatrix(q->L + 2);
       hit.DeleteBacktraceMatrix(q->L + 2);
-      hit = hit_ref;
+
+      std::cout << hit.sum_of_probs << std::endl;
 
       if (hit.matched_cols >= MINCOLS_REALIGN) {
         recalculated_hitlist.Insert(hit);
@@ -1193,7 +1196,7 @@ void wiggleQSC(Alignment& orig_qali, char query_input_format, Alignment& orig_ta
     }
   }
 
-  recalculated_hitlist.SortList();
+  recalculated_hitlist.SortList(&Hit::compare_sum_of_probs);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -1483,7 +1486,9 @@ int main(int argc, char **argv) {
   Nali = hit.irep;
 
   if (par.realign) {
-    printf("Realigning using HMM-HMM Maximum Accuracy algorithm\n");
+    if(par.v > 0) {
+      printf("Realigning using HMM-HMM Maximum Accuracy algorithm\n");
+    }
     RealignByWorker(hit);
   }
 
@@ -1562,8 +1567,8 @@ int main(int argc, char **argv) {
   }
 
   if(*par.reduced_outfile) {
-    size_t nqsc = 4;
-    float wiggle_qscs[] = { -20, 0, 0.1, 0.2 };
+    size_t nqsc = 6;
+    float wiggle_qscs[] = { -20, 0, 0.1, 0.15, 0.2, 0.25, 0.3};
     HitList recalculatedHitlist;
     wiggleQSC(qali, input_format, tali, template_input_format, nqsc, wiggle_qscs, recalculatedHitlist);
     recalculatedHitlist.PrintHHR(q, par.reduced_outfile, par.maxdbstrlen, par.showconf, par.showcons, par.showdssp, par.showpred, par.b, par.B, par.z, par.Z, par.aliwidth, par.nseqdis, par.p, par.E, par.argc, par.argv, S);

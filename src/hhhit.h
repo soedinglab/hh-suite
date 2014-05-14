@@ -163,7 +163,7 @@ class Hit
   }
 
   static int compare_sum_of_probs(const Hit& hit1, const Hit& hit2) {
-    return hit1.sum_of_probs < hit2.sum_of_probs;
+    return hit1.sum_of_probs > hit2.sum_of_probs;
   }
 
   // Calculate Evalue, score_aass, Proba from logPval and score_ss
