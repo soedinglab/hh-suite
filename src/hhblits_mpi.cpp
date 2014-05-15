@@ -74,6 +74,13 @@ struct OutputFFIndex {
 
         ffindex_insert_ffindex(data_file, index_file, &offset, data_to_add,
             index_to_add);
+
+        fclose(data_file_to_add);
+        fclose(index_file_to_add);
+
+        remove(data_file_name_to_add);
+        remove(index_file_name_to_add);
+
         //TODO: free memory???
       }
 
