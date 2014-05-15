@@ -1486,7 +1486,7 @@ int main(int argc, char **argv) {
   Nali = hit.irep;
 
   if (par.realign) {
-    if(par.v > 0) {
+    if(v > 0) {
       printf("Realigning using HMM-HMM Maximum Accuracy algorithm\n");
     }
     RealignByWorker(hit);
