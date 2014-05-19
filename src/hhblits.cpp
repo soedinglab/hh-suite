@@ -1282,9 +1282,6 @@ void HHblits::DoViterbiSearch(std::vector<HHDatabaseEntry*>& prefiltered_hits,
   // For all the databases comming through prefilter
   #pragma omp parallel for schedule(dynamic, 1)
   for (size_t idb = 0; idb < prefiltered_hits.size(); idb++) {
-    if(strcmp(prefiltered_hits[idb]->entry->name, "LIDNABABA.a3m") == 0) {
-      std::cout << "Viterbi: " << prefiltered_hits[idb]->entry->name << std::endl;
-    }
     // Allocate free bin (no need to lock, since slave processes cannot change FREE to other status)
     int bin = omp_get_thread_num();
 
