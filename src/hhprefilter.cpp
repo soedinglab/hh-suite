@@ -576,17 +576,18 @@ void Prefilter::prefilter_db(HMM* q_tmp, Hash<Hit>* previous_hits,
 
 	for (it = hits.begin(); it < hits.end(); it++) {
 		// Add hit to dbfiles
-		char name[NAMELEN];
-		strcpy(name, dbnames[(*it).second]);
-
 		char db_name[NAMELEN];
-		strcpy(db_name, name);
+		strcpy(db_name, dbnames[(*it).second]);
+
+		char name[NAMELEN];
+        RemoveExtension(name, db_name);
 
 		if (!doubled->Contains(db_name)) {
 			doubled->Add(db_name);
 
 			// check, if DB was searched in previous rounds
 			strcat(name, "__1");  // irep=1
+
 			if (previous_hits->Contains(name)) {
 				old_prefilter_hits.push_back(std::string(db_name));
 			} else {

@@ -1282,6 +1282,9 @@ void HHblits::DoViterbiSearch(std::vector<HHDatabaseEntry*>& prefiltered_hits,
   // For all the databases comming through prefilter
   #pragma omp parallel for schedule(dynamic, 1)
   for (size_t idb = 0; idb < prefiltered_hits.size(); idb++) {
+    if(strcmp(prefiltered_hits[idb]->entry->name, "LIDNABABA.a3m") == 0) {
+      std::cout << "Viterbi: " << prefiltered_hits[idb]->entry->name << std::endl;
+    }
     // Allocate free bin (no need to lock, since slave processes cannot change FREE to other status)
     int bin = omp_get_thread_num();
 
@@ -2158,8 +2161,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
 
     // Main Viterbi HMM-HMM search
     // Starts with empty hitlist (hits of previous iterations were deleted) and creates a hitlist with the hits of this iteration
-    ViterbiSearch(new_entries, previous_hits,
-        (new_entries.size() + old_entries.size()));
+    ViterbiSearch(new_entries, previous_hits, (new_entries.size() + old_entries.size()));
 
     // check for new hits or end with iteration
     int new_hits = 0;
@@ -2375,8 +2377,9 @@ void HHblits::run(FILE* query_fh, char* query_path) {
       if (!par.already_seen_filter || hit_cur.Eval > par.e
           || previous_hits->Contains(strtmp))
         hit_cur.Delete(); // Delete hit object (deep delete with Hit::Delete())
-      else
+      else {
         previous_hits->Add(strtmp, hit_cur);
+      }
 
       hitlist.Delete(); // Delete list record (flat delete)
     }
