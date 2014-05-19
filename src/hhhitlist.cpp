@@ -594,7 +594,7 @@ float HitList::FindMin(const int ndim, double* p, double* y, double tol,
 /////////////////////////////////////////////////////////////////////////////////////
 //// Do a maximum likelihod fit of the scores with an EV distribution with parameters lamda and mu
 /////////////////////////////////////////////////////////////////////////////////////
-void HitList::MaxLikelihoodEVD(HMM* q, size_t nbest, const char loc, const char ssm, const float ssw) {
+void HitList::MaxLikelihoodEVD(HMM* q, int nbest, const char loc, const char ssm, const float ssw) {
   double tol = 1E-6; // Maximum relative tolerance when minimizing -log(P)/N (~likelihood)
   static char first_call = 1;
   static Hash<int> size_fam(MAXPROF / 10); // Hash counts number of HMMs in family
@@ -631,7 +631,7 @@ void HitList::MaxLikelihoodEVD(HMM* q, size_t nbest, const char loc, const char 
     sfams = size_sfam.Size();
     if (v >= 3)
       printf(
-          "%-3i HMMs from %i families and %zu superfamilies searched. Found %zu hits\n",
+          "%-3i HMMs from %i families and %i superfamilies searched. Found %i hits\n",
           N_searched, fams, sfams, Size());
   }
 
@@ -655,7 +655,7 @@ void HitList::MaxLikelihoodEVD(HMM* q, size_t nbest, const char loc, const char 
     // Find the nbest best-scoring superfamilies for exclusion from first ML fit
     if (v >= 4)
       printf(
-          "  find %zu best-scoring superfamilies to exclude from first fit  ...\n",
+          "  find %i best-scoring superfamilies to exclude from first fit  ...\n",
           nbest);
     hit = Smallest();
     excluded.Add(hit.sfam);

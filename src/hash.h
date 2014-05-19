@@ -85,7 +85,7 @@ private:
   int num_slots;         //number of slots in slot[]. num_slots is set with the constructor
   int curr;              //index of current slot
   int prev;              //index of slot from previous ReadNext() 
-  size_t num_keys;          //total number of keys in hash
+  int num_keys;          //total number of keys in hash
   int max_len;           //length of longest key in hash
   int key_len;           //length of key in argument
   Typ fail;
@@ -174,7 +174,7 @@ public:
   int Contains(const char* key);
 
   // Return number of slots
-  size_t Size()  {return num_keys;}
+  int Size()  {return num_keys;}
 
   // Return length of longest key INCLUDING DELETED KEYS (excluding \0)
   int MaxLen()  {return max_len;}  

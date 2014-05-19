@@ -183,7 +183,9 @@ void Alignment::Read(FILE* inf, char infile[], const char mark, const int maxcol
 	int linenr = 0;           // current line number in input file
 	char skip_sequence = 0;
 	char no_name[] = "no_name_1234567890";
+//	std::cout << infile << std::endl;
 	RemoveExtension(file, infile); //copy rootname (w/o path) of infile into file variable of class object
+//	std::cout << file << std::endl;
 
 	kss_dssp = ksa_dssp = kss_pred = kss_conf = kfirst = -1;
 	n_display = 0;
@@ -1800,7 +1802,7 @@ int Alignment::Filter2(char keep[], int coverage, int qid, float qsc,
 	} // End Loop over seqid
 
 	if (v >= 2) {
-		printf("%i out of %i sequences passed filter (", N_in - N_ss, n);
+		printf("%i out of %i sequences passed filter (", n, N_in - N_ss);
 		if (coverage)
 			printf("%i%% min coverage, ", coverage);
 		if (qid)
@@ -1813,7 +1815,6 @@ int Alignment::Filter2(char keep[], int coverage, int qid, float qsc,
 					seqid);
 		else
 			printf("%i%% max pairwise sequence identity)\n", seqid1);
-
 	}
 
 	for (k = 0; k < N_in; ++k)

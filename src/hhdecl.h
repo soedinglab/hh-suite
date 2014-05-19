@@ -186,10 +186,10 @@ public:
   float p;                // minimum probability for inclusion in hit list and alignments
   double E;               // maximum E-value for inclusion in hit list and alignment list
   double e;               // maximum E-value for inclusion in output alignment, output HMM, and PSI-BLAST checkpoint model
-  size_t Z;                  // max number of lines in hit list
-  size_t z;                  // min number of lines in hit list
-  size_t B;                  // max number of lines in alignment list
-  size_t b;                  // min number of lines in alignment list
+  int Z;                  // max number of lines in hit list
+  int z;                  // min number of lines in hit list
+  int B;                  // max number of lines in alignment list
+  int b;                  // min number of lines in alignment list
   char showcons;           // in query-template alignments  0: don't show consensus sequence   1:show
   char showdssp;           // in query-template alignments  0: don't show ss_dssp lines        1:show
   char showpred;           // in query-template alignments  0: don't show ss_pred and ss_conf lines  1:show
@@ -261,7 +261,7 @@ public:
   float shift;            // Score offset for match-match states
   double mact;            // Probability threshold (negative offset) in MAC alignment determining greediness at ends of alignment
   double macins;          // Probability threshold (negative offset) in MAC alignment determining greediness inside the alignment
-  size_t realign_max;        // Realign max ... hits
+  int realign_max;        // Realign max ... hits
   float maxmem;           // maximum available memory in GB for realignment (approximately)
 
   char calibrate;         // calibration of query HMM?  0:no, 1:yes (write lamda,mu into query profile)

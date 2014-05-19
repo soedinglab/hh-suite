@@ -378,16 +378,16 @@ void HHblits::help(Parameters& par, char all) {
         " -E [0,inf[     maximum E-value in summary and alignment list (default=%G)      \n",
         par.E);
     printf(
-        " -Z <int>       maximum number of lines in summary hit list (default=%zu)        \n",
+        " -Z <int>       maximum number of lines in summary hit list (default=%i)        \n",
         par.Z);
     printf(
-        " -z <int>       minimum number of lines in summary hit list (default=%zu)        \n",
+        " -z <int>       minimum number of lines in summary hit list (default=%i)        \n",
         par.z);
     printf(
-        " -B <int>       maximum number of alignments in alignment list (default=%zu)     \n",
+        " -B <int>       maximum number of alignments in alignment list (default=%i)     \n",
         par.B);
     printf(
-        " -b <int>       minimum number of alignments in alignment list (default=%zu)     \n",
+        " -b <int>       minimum number of alignments in alignment list (default=%i)     \n",
         par.b);
     printf("\n");
     printf(
@@ -449,7 +449,7 @@ void HHblits::help(Parameters& par, char all) {
       " -glob/-loc     use global/local alignment mode for searching/ranking (def=local)\n");
   if (all) {
     printf(
-        " -realign_max <int>  realign max. <int> hits (default=%zu)                        \n",
+        " -realign_max <int>  realign max. <int> hits (default=%i)                        \n",
         par.realign_max);
     printf(
         " -alt <int>     show up to this many significant alternative alignments(def=%i)  \n",
@@ -1292,15 +1292,13 @@ void HHblits::DoViterbiSearch(std::vector<HHDatabaseEntry*>& prefiltered_hits,
         ++N_searched;
       }
 
-      getTemplateHMM(*prefiltered_hits[idb], 1, hit[bin]->ftellpos, format[bin],
-          t[bin]);
+      getTemplateHMM(*prefiltered_hits[idb], 1, hit[bin]->ftellpos, format[bin], t[bin]);
 
       if (v >= 4)
         printf("Aligning with %s\n", t[bin]->name);
 
       hit[bin]->dbfile =
           new char[strlen(prefiltered_hits[idb]->entry->name) + 1];
-      strcpy(hit[bin]->dbfile, prefiltered_hits[idb]->entry->name);
       hit[bin]->entry = prefiltered_hits[idb];
 
       if (alignByWorker)
@@ -1394,10 +1392,10 @@ void HHblits::RescoreWithViterbiKeepAlignment(int db_size,
         par.alphac, par.prefilter_evalue_thresh);
 }
 
-void HHblits::perform_realign(std::vector<HHDatabaseEntry*>& hits_to_realign, const size_t premerge,
+void HHblits::perform_realign(std::vector<HHDatabaseEntry*>& hits_to_realign, const int premerge,
     Hash<char>* premerged_hits) {
   q->Log2LinTransitionProbs(1.0); // transform transition freqs to lin space if not already done
-  size_t nhits = 0;
+  int nhits = 0;
   size_t N_aligned = 0;
 
   // Longest allowable length of database HMM (backtrace: 5 chars, fwd, bwd: 1 double
@@ -1473,7 +1471,7 @@ void HHblits::perform_realign(std::vector<HHDatabaseEntry*>& hits_to_realign, co
   }
   if (v >= 2)
     printf(
-        "Realigning %zu HMM-HMM alignments using Maximum Accuracy algorithm\n",
+        "Realigning %i HMM-HMM alignments using Maximum Accuracy algorithm\n",
         nhits);
 
   if (Lmax > Lmaxmem) {
@@ -1504,7 +1502,7 @@ void HHblits::perform_realign(std::vector<HHDatabaseEntry*>& hits_to_realign, co
   // Align the first premerge templates
   if (premerge > 0) {
     if (v >= 2)
-      printf("Merging %zu best hits to query alignment ...\n", premerge);
+      printf("Merging %i best hits to query alignment ...\n", premerge);
 
     int bin = 0;
     nhits = 0;
@@ -1620,8 +1618,7 @@ void HHblits::perform_realign(std::vector<HHDatabaseEntry*>& hits_to_realign, co
           par.Mgaps);
 
       // Remove sequences with seq. identity larger than seqid percent (remove the shorter of two)
-      Qali.N_filtered = Qali.Filter(par.max_seqid, S, par.coverage, par.qid,
-          par.qsc, par.Ndiff);
+      Qali.N_filtered = Qali.Filter(par.max_seqid, S, par.coverage, par.qid, par.qsc, par.Ndiff);
 
       // Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
       Qali.FrequenciesAndTransitions(q, par.wg, par.mark, par.cons,
@@ -1704,7 +1701,7 @@ void HHblits::perform_realign(std::vector<HHDatabaseEntry*>& hits_to_realign, co
         if (v >= 2)
           fprintf(stderr, "Realigning with %s\n", t[bin]->name);
 
-#pragma omp critical
+        #pragma omp critical
         {
           N_aligned++;
         }
@@ -2006,7 +2003,7 @@ void HHblits::wiggleQSC(int n_redundancy, float* qsc, size_t nqsc,
 void HHblits::run(FILE* query_fh, char* query_path) {
   int cluster_found = 0;
   int seqs_found = 0;
-  size_t premerge = par.premerge;
+  int premerge = par.premerge;
 
   v1 = v;
   if (v > 0 && v <= 2)
@@ -2066,7 +2063,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
         && previous_hits->Size() >= premerge) {
       if (v > 3)
         printf(
-            "Set premerge to 0! (premerge: %zu   iteration: %i   hits.Size: %zu)\n",
+            "Set premerge to 0! (premerge: %i   iteration: %i   hits.Size: %i)\n",
             premerge, round, previous_hits->Size());
       premerge = 0;
     }

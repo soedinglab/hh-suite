@@ -184,7 +184,7 @@ private:
 	void ViterbiSearch(std::vector<HHDatabaseEntry*>& prefiltered_hits, Hash<Hit>* previous_hits, int db_size);
 	void RescoreWithViterbiKeepAlignment(int db_size, Hash<Hit>* previous_hits);
 
-	void perform_realign(std::vector<HHDatabaseEntry*>& hits_to_realign, const size_t premerge, Hash<char>* premerged_hits);
+	void perform_realign(std::vector<HHDatabaseEntry*>& hits_to_realign, const int premerge, Hash<char>* premerged_hits);
 
 	//redundancy filter
     void wiggleQSC(HitList& hitlist, int n_redundancy, Alignment& Qali,
