@@ -1452,10 +1452,10 @@ void HHblits::perform_realign(std::vector<HHDatabaseEntry*>& hits_to_realign, co
         realign_hitpos.entry = hit_cur.entry;
         if (!phash_plist_realignhitpos->Contains(hit_cur.dbfile)) {
           List<Realign_hitpos>* newlist = new List<Realign_hitpos>;
-          phash_plist_realignhitpos->Add(hit_cur.dbfile, newlist);
+          phash_plist_realignhitpos->Add(hit_cur.entry->entry->name, newlist);
         }
         // Add template index and ftellpos to list which belongs to key dbfile in hash
-        phash_plist_realignhitpos->Show(hit_cur.dbfile)->Push(realign_hitpos);
+        phash_plist_realignhitpos->Show(hit_cur.entry->entry->name)->Push(realign_hitpos);
       }
       // pointer at index is still NULL
       if (!array_plist_phits[hit_cur.index]) {
@@ -1693,7 +1693,6 @@ void HHblits::perform_realign(std::vector<HHDatabaseEntry*>& hits_to_realign, co
         hit[bin]->dbfile = new char[strlen(hits_to_realign[idb]->entry->name)
             + 1];
         strcpy(hit[bin]->dbfile, hits_to_realign[idb]->entry->name);
-
 
         getTemplateHMM(*hitpos_curr.entry, par.wg, hit[bin]->ftellpos,
             format[bin], t[bin]);
