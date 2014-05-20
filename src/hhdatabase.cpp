@@ -33,7 +33,6 @@ FFindexDatabase::FFindexDatabase(char* data_filename, char* index_filename, int 
   }
 
   size_t ca3m_data_size = CountLinesInFile(index_filename);
-
   db_index = ffindex_index_parse(db_index_fh, ca3m_data_size);
 
   fclose(db_index_fh);

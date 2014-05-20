@@ -181,7 +181,8 @@ int main(int argc, char **argv) {
   size_t data_size;
   char *data = ffindex_mmap_data(data_file, &data_size);
 
-  ffindex_index_t* index = ffindex_index_parse(index_file, 0);
+  size_t number_input_index_lines = CountLinesInFile(index_filename);
+  ffindex_index_t* index = ffindex_index_parse(index_file, number_input_index_lines);
   if (index == NULL) {
     std::cerr << "Could not parse index from " << index_filename << std::endl;
     MPI_Finalize();
