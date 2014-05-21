@@ -33,6 +33,9 @@ struct OutputFFIndex {
       std::string tmp = out.str();
       ffindex_insert_memory(data_fh, index_fh, &offset,
           const_cast<char*>(tmp.c_str()), tmp.size(), name);
+
+      fflush(data_fh);
+      fflush(index_fh);
     }
 
     void merge(const int mpi_num_procs) {
@@ -45,7 +48,8 @@ struct OutputFFIndex {
       FILE *data_file = NULL, *index_file = NULL;
       size_t offset = 0;
 
-      ffindex_index_open(data_filename, index_filename, "w", &data_file, &index_file, &offset);
+      char fh_mode[] = "w";
+      ffindex_index_open(data_filename, index_filename, fh_mode, &data_file, &index_file, &offset);
       //TODO: check error
 
       /* Append other ffindexes */
@@ -149,6 +153,11 @@ int main(int argc, char **argv) {
   mpi_error = MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
   mpi_error = MPI_Comm_size(MPI_COMM_WORLD, &mpi_num_procs);
 
+  if(mpi_error) {
+    std::cerr << "MPI error: " << mpi_error << std::endl;
+    exit(1);
+  }
+
   Parameters par;
   HHblits::ProcessAllArguments(argc, argv, par);
 
@@ -210,7 +219,7 @@ int main(int argc, char **argv) {
 //	initOutputFFDatabase(par.alisbasename, mpi_rank, print_alis, alis_data_fh, alis_index_fh);
 
   size_t batch_size, range_start, range_end;
-  if (index->n_entries >= mpi_num_procs)
+  if (int(index->n_entries) >= mpi_num_procs)
     batch_size = index->n_entries / mpi_num_procs;
   else
     batch_size = 0;

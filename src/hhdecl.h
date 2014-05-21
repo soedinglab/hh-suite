@@ -179,7 +179,6 @@ public:
   char tfile[NAMELEN];    // template filename (in hhalign)
   char wfile[NAMELEN];    // weights file generated with hhformat
   char alitabfile[NAMELEN]; // where to write pairs of aligned residues (-atab option)
-  char* dbfiles;          // database filenames, separated by colons
   char* exclstr;          // optional string containing list of excluded residues, e.g. '1-33,97-168'
   int aliwidth;           // number of characters per line in output alignments for HMM search
   char append;            // append to output file? (hhmake)

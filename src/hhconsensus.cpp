@@ -387,7 +387,7 @@ int main(int argc, char **argv) {
 
   // Read input file (HMM, HHM, or alignment format), and add pseudocounts etc.
   char input_format = 0;
-  ReadQueryFile(par, par.infile, input_format, par.wg, q, qali, pb, S, Sim);
+  ReadQueryFile(par, par.infile, input_format, par.wg, q, *qali, pb, S, Sim);
 
   // Same code as in PrepareQueryHMM(par.infile,input_format,q,qali), except that we add SS prediction
   // Add Pseudocounts, if no HMMER input

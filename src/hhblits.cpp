@@ -1095,6 +1095,74 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
   } // end of for-loop for command line input
 }
 
+void HHblits::mergeHitsToQuery(Hash<Hit>* previous_hits, Hash<char>* premerged_hits, int& seqs_found, int& cluster_found) {
+  // For each template below threshold
+  hitlist.Reset();
+  while (!hitlist.End()) {
+    Hit hit_cur = hitlist.ReadNext();
+
+    if (hit_cur.Eval > 100.0 * par.e)
+      break; // E-value much too large
+    if (hit_cur.Eval > par.e)
+      continue; // E-value too large
+    if (hit_cur.matched_cols < MINCOLS_REALIGN)
+      continue; // leave out too short alignments
+
+    // Already in alignment
+    stringstream ss_tmp;
+    ss_tmp << hit_cur.file << "__" << hit_cur.irep;
+    if (previous_hits->Contains((char*) ss_tmp.str().c_str()))
+      continue;
+
+    // Add number of sequences in this cluster to total found
+    seqs_found += SequencesInCluster(hit_cur.name); // read number after second '|'
+    cluster_found++;
+
+    // Skip merging this hit if hit alignment was already merged during premerging
+    if (premerged_hits->Contains((char*) ss_tmp.str().c_str()))
+      continue;
+
+    // Read a3m alignment of hit from <file>.a3m file
+    // Reading in next db MSA and merging it onto Qali
+    HHblitsDatabase* db = getHHblitsDatabase(*hit_cur.entry, dbs);
+    if (db == NULL) {
+      std::cerr << "Could not find database for merging!" << std::endl;
+      continue;
+    }
+
+    Alignment Tali;
+    long ftellpos;
+    getTemplateA3M(db, hit_cur.entry->entry->name, ftellpos, Tali);
+
+    if (par.allseqs) // need to keep *all* sequences in Qali_allseqs? => merge before filtering
+      Qali_allseqs.MergeMasterSlave(hit_cur, Tali, hit_cur.dbfile,
+          par.maxcol);
+    Tali.N_filtered = Tali.Filter(par.max_seqid_db, S, par.coverage_db,
+        par.qid_db, par.qsc_db, par.Ndiff_db);
+    Qali.MergeMasterSlave(hit_cur, Tali, hit_cur.dbfile, par.maxcol);
+
+    if (Qali.N_in >= MAXSEQ)
+      break; // Maximum number of sequences reached
+  }
+
+  // Convert ASCII to int (0-20),throw out all insert states, record their number in I[k][i]
+  Qali.Compress("merged A3M file", par.cons, par.maxres, par.maxcol,
+      par.M, par.Mgaps);
+
+  // Sort out the nseqdis most dissimilacd r sequences for display in the result alignments
+  Qali.FilterForDisplay(par.max_seqid, par.mark, S, par.coverage, par.qid,
+      par.qsc, par.nseqdis);
+
+  // Remove sequences with seq. identity larger than seqid percent (remove the shorter of two)
+  const float COV_ABS = 25;     // min. number of aligned residues
+  int cov_tot = std::max(std::min((int) (COV_ABS / Qali.L * 100 + 0.5), 70),
+      par.coverage);
+  if (v > 2)
+    printf("Filter new alignment with cov %3i%%\n", cov_tot);
+  Qali.N_filtered = Qali.Filter(par.max_seqid, S, cov_tot, par.qid,
+      par.qsc, par.Ndiff);
+}
+
 void HHblits::getTemplateA3M(HHblitsDatabase* db, char* entry_name,
     long& ftellpos, Alignment& tali) {
   if (db->use_compressed) {
@@ -2043,7 +2111,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
 
   if (!par.prefilter) {
     for (size_t i = 0; i < dbs.size(); i++) {
-      dbs[0]->initNoPrefilter(new_entries);
+      dbs[i]->initNoPrefilter(new_entries);
     }
     all_entries.insert(all_entries.end(), new_entries.begin(),
         new_entries.end());
@@ -2206,76 +2274,8 @@ void HHblits::run(FILE* query_fh, char* query_path) {
       else
         v -= 2;
 
-      // If new hits found, merge hits to query alignment
-      if (new_hits > 0) {
-        if (v >= 1)
-          printf("Merging hits to query profile\n");
-
-        // For each template below threshold
-        hitlist.Reset();
-        while (!hitlist.End()) {
-          Hit hit_cur = hitlist.ReadNext();
-
-          if (hit_cur.Eval > 100.0 * par.e)
-            break; // E-value much too large
-          if (hit_cur.Eval > par.e)
-            continue; // E-value too large
-          if (hit_cur.matched_cols < MINCOLS_REALIGN)
-            continue; // leave out too short alignments
-
-          // Already in alignment
-          stringstream ss_tmp;
-          ss_tmp << hit_cur.file << "__" << hit_cur.irep;
-          if (previous_hits->Contains((char*) ss_tmp.str().c_str()))
-            continue;
-
-          // Add number of sequences in this cluster to total found
-          seqs_found += SequencesInCluster(hit_cur.name); // read number after second '|'
-          cluster_found++;
-
-          // Skip merging this hit if hit alignment was already merged during premerging
-          if (premerged_hits->Contains((char*) ss_tmp.str().c_str()))
-            continue;
-
-          // Read a3m alignment of hit from <file>.a3m file
-          // Reading in next db MSA and merging it onto Qali
-          HHblitsDatabase* db = getHHblitsDatabase(*hit_cur.entry, dbs);
-          if (db == NULL) {
-            std::cerr << "Could not find database for merging!" << std::endl;
-            continue;
-          }
-
-          Alignment Tali;
-          long ftellpos;
-          getTemplateA3M(db, hit_cur.entry->entry->name, ftellpos, Tali);
-
-          if (par.allseqs) // need to keep *all* sequences in Qali_allseqs? => merge before filtering
-            Qali_allseqs.MergeMasterSlave(hit_cur, Tali, hit_cur.dbfile,
-                par.maxcol);
-          Tali.N_filtered = Tali.Filter(par.max_seqid_db, S, par.coverage_db,
-              par.qid_db, par.qsc_db, par.Ndiff_db);
-          Qali.MergeMasterSlave(hit_cur, Tali, hit_cur.dbfile, par.maxcol);
-
-          if (Qali.N_in >= MAXSEQ)
-            break; // Maximum number of sequences reached
-        }
-
-        // Convert ASCII to int (0-20),throw out all insert states, record their number in I[k][i]
-        Qali.Compress("merged A3M file", par.cons, par.maxres, par.maxcol,
-            par.M, par.Mgaps);
-
-        // Sort out the nseqdis most dissimilacd r sequences for display in the result alignments
-        Qali.FilterForDisplay(par.max_seqid, par.mark, S, par.coverage, par.qid,
-            par.qsc, par.nseqdis);
-
-        // Remove sequences with seq. identity larger than seqid percent (remove the shorter of two)
-        const float COV_ABS = 25;     // min. number of aligned residues
-        int cov_tot = std::max(std::min((int) (COV_ABS / Qali.L * 100 + 0.5), 70),
-            par.coverage);
-        if (v > 2)
-          printf("Filter new alignment with cov %3i%%\n", cov_tot);
-        Qali.N_filtered = Qali.Filter(par.max_seqid, S, cov_tot, par.qid,
-            par.qsc, par.Ndiff);
+      if(new_hits > 0) {
+        mergeHitsToQuery(previous_hits, premerged_hits, seqs_found, cluster_found);
       }
 
       // Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
@@ -2284,6 +2284,9 @@ void HHblits::run(FILE* query_fh, char* query_path) {
 
       if (par.notags)
         q->NeutralizeTags(pb);
+
+
+      v = v1;
 
       // Calculate SSpred if we need to print out alis after each iteration or if last iteration
       // TODO: we should get rid of this... since it calls psipred on the command line and is untested

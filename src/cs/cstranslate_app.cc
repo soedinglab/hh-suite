@@ -113,9 +113,9 @@ class CSTranslateApp : public Application {
     // Prints usage banner to stream.
     virtual void PrintUsage() const;
     // Writes abstract state sequence to outfile
-    void WriteStateSequence(const Sequence<AS219>& seq, string outfile, bool append) const;
+    void WriteStateSequence(const Sequence<AS219>& seq, string outfile, bool append = false) const;
     // Writes abstract state profile to outfile
-    void WriteStateProfile(const CountProfile<AS219>& prof, string outfile, bool append) const;
+    void WriteStateProfile(const CountProfile<AS219>& prof, string outfile, bool append = false) const;
 
     // Parameter wrapper
     CSTranslateAppOptions opts_;
@@ -191,7 +191,7 @@ void CSTranslateApp<Abc>::PrintOptions() const {
 }
 
 template<class Abc>
-void CSTranslateApp<Abc>::WriteStateSequence(const Sequence<AS219>& seq, string outfile, bool append = false) const {
+void CSTranslateApp<Abc>::WriteStateSequence(const Sequence<AS219>& seq, string outfile, bool append) const {
     FILE* fout;
     if (outfile.compare("stdout") == 0)
         fout = stdout;
@@ -211,7 +211,7 @@ void CSTranslateApp<Abc>::WriteStateSequence(const Sequence<AS219>& seq, string 
 }
 
 template<class Abc>
-void CSTranslateApp<Abc>::WriteStateProfile(const CountProfile<AS219>& prof, string outfile, bool append = false) const {
+void CSTranslateApp<Abc>::WriteStateProfile(const CountProfile<AS219>& prof, string outfile, bool append) const {
     FILE* fout;
     if (outfile.compare("stdout") == 0)
         fout = stdout;

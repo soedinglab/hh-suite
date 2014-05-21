@@ -1074,7 +1074,6 @@ void RealignByWorker(Hit& hit) {
 }
 
 void wiggleQSC(Alignment& orig_qali, char query_input_format, Alignment& orig_tali, char template_input_format, size_t nqsc, float* qsc, HitList& recalculated_hitlist) {
-  char v1 = v;
   if (v > 0 && v <= 3)
     v = 1;
   else
@@ -1209,8 +1208,8 @@ int main(int argc, char **argv) {
   char text[IDLEN] = "";        // Extension of template input file (hhm or a3m)
 #ifdef HH_PNG
   int** ali=NULL;              // ali[i][j]=1 if (i,j) is part of an alignment
-#endif
   int Nali;              // number of normally backtraced alignments in dot plot
+#endif
 
   strcpy(par.tfile, "");
   strcpy(par.alnfile, "");
@@ -1483,7 +1482,10 @@ int main(int argc, char **argv) {
       break; // max number of alignments reached
     hit.irep++;
   }
+
+#ifdef HH_PNG
   Nali = hit.irep;
+#endif
 
   if (par.realign) {
     if(v > 0) {

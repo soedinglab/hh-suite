@@ -117,8 +117,7 @@ public:
     static void writeA3MFile(HHblits& hhblits, std::stringstream& out);
 
 	void run(FILE* query_fh, char* query_path);
-
-private:
+protected:
 	// substitution matrix flavours
 	float __attribute__((aligned(16))) P[20][20];
 	float __attribute__((aligned(16))) R[20][20];
@@ -144,7 +143,8 @@ private:
     // verbose mode
 	int v1 = v;
 
-	char input_format = 0; // Set to 1 if input in HMMER format (has already pseudocounts)
+	// Set to 1 if input in HMMER format (has already pseudocounts)
+	char input_format = 0;
 
 	char config_file[NAMELEN];
 
@@ -172,7 +172,11 @@ private:
 	HitList reducedHitlist;
 	int N_searched;           // Number of HMMs searched
 	std::map<int, Alignment> alis;
+	void ViterbiSearch(std::vector<HHDatabaseEntry*>& prefiltered_hits, Hash<Hit>* previous_hits, int db_size);
+	void perform_realign(std::vector<HHDatabaseEntry*>& hits_to_realign, const int premerge, Hash<char>* premerged_hits);
+	void mergeHitsToQuery(Hash<Hit>* previous_hits, Hash<char>* premerged_hits, int& seqs_found, int& cluster_found);
 
+private:
 	static void help(Parameters& par, char all = 0);
 	static void ProcessArguments(int argc, char** argv, Parameters& par);
     HHblitsDatabase* getHHblitsDatabase(HHDatabaseEntry& entry, std::vector<HHblitsDatabase*>& dbs);
@@ -181,10 +185,8 @@ private:
 	void getTemplateHMM(HHDatabaseEntry& entry, char use_global_weights, long& ftellpos, int& format, HMM* t);
 
 	void DoViterbiSearch(std::vector<HHDatabaseEntry*>& prefiltered_hits, Hash<Hit>* previous_hits, bool alignByWorker = true);
-	void ViterbiSearch(std::vector<HHDatabaseEntry*>& prefiltered_hits, Hash<Hit>* previous_hits, int db_size);
 	void RescoreWithViterbiKeepAlignment(int db_size, Hash<Hit>* previous_hits);
 
-	void perform_realign(std::vector<HHDatabaseEntry*>& hits_to_realign, const int premerge, Hash<char>* premerged_hits);
 
 	//redundancy filter
     void wiggleQSC(HitList& hitlist, int n_redundancy, Alignment& Qali,
