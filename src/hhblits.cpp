@@ -11,8 +11,9 @@
 //TODO: get more flexible database reader
 //TODO: add length to HHDatabaseEntry... for Martin
 
-HHblits::HHblits(Parameters& parameters) {
+HHblits::HHblits(Parameters& parameters, std::vector<HHblitsDatabase*>& databases) {
   par = parameters;
+  dbs = databases;
 
   q = NULL;
   q_tmp = NULL;
@@ -21,23 +22,6 @@ HHblits::HHblits(Parameters& parameters) {
   v1 = 0;
 
   N_searched = 0;
-
-  //TODO: multiple databases
-  for(size_t i = 0; i < par.db_bases.size(); i++) {
-	  HHblitsDatabase* db = new HHblitsDatabase(par.db_bases[i].c_str());
-	  dbs.push_back(db);
-  }
-
-  par.dbsize = 0;
-  for (size_t i = 0; i < dbs.size(); i++) {
-    par.dbsize += dbs[i]->cs219_database->db_index->n_entries;
-  }
-
-  if (par.prefilter) {
-    for (size_t i = 0; i < dbs.size(); i++) {
-      dbs[i]->initPrefilter(par.cs_library);
-    }
-  }
 
   // Set (global variable) substitution matrix and derived matrices
   SetSubstitutionMatrix(par.matrix, pb, P, R, S, Sim);
@@ -83,7 +67,6 @@ HHblits::HHblits(Parameters& parameters) {
   }
 
   // Prepare multi-threading - reserve memory for threads, intialize, etc.
-  omp_set_num_threads(par.threads);
   for (int bin = 0; bin < par.threads; bin++) {
     t[bin] = new HMM; // Each bin has a template HMM allocated that was read from the database file
     // Each bin has an object of type Hit allocated ...
@@ -119,6 +102,24 @@ HHblits::~HHblits() {
   DeletePseudocountsEngine(context_lib, crf, pc_hhm_context_engine,
       pc_hhm_context_mode, pc_prefilter_context_engine,
       pc_prefilter_context_mode);
+}
+
+void HHblits::prepareDatabases(Parameters& par, std::vector<HHblitsDatabase*>& databases) {
+  for(size_t i = 0; i < par.db_bases.size(); i++) {
+      HHblitsDatabase* db = new HHblitsDatabase(par.db_bases[i].c_str());
+      databases.push_back(db);
+  }
+
+  par.dbsize = 0;
+  for (size_t i = 0; i < databases.size(); i++) {
+    par.dbsize += databases[i]->cs219_database->db_index->n_entries;
+  }
+
+  if (par.prefilter) {
+    for (size_t i = 0; i < databases.size(); i++) {
+      databases[i]->initPrefilter(par.cs_library);
+    }
+  }
 }
 
 void HHblits::ProcessAllArguments(int argc, char** argv, Parameters& par) {

@@ -2,8 +2,8 @@
 
 #include "hhsearch.h"
 
-HHsearch::HHsearch(Parameters& par) :
-    HHblits(par) {
+HHsearch::HHsearch(Parameters& par, std::vector<HHblitsDatabase*>& databases) :
+    HHblits(par, databases) {
 }
 
 HHsearch::~HHsearch() {

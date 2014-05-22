@@ -88,7 +88,7 @@ class HHblits;
 
 class HHblits {
 public:
-	HHblits(Parameters& parameters);
+	HHblits(Parameters& parameters, std::vector<HHblitsDatabase*>& databases);
 	virtual ~HHblits();
 
 	void Reset();
@@ -115,6 +115,8 @@ public:
     static void writePsiFile(HHblits& hhblits, std::stringstream& out);
     static void writeHMMFile(HHblits& hhblits, std::stringstream& out);
     static void writeA3MFile(HHblits& hhblits, std::stringstream& out);
+
+    static void prepareDatabases(Parameters& par, std::vector<HHblitsDatabase*>& databases);
 
 	void run(FILE* query_fh, char* query_path);
 protected:

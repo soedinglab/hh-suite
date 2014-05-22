@@ -227,7 +227,11 @@ int main(int argc, char **argv) {
   range_start = mpi_rank * batch_size;
   range_end = range_start + batch_size;
 
-  HHblits hhblits(par);
+  std::vector<HHblitsDatabase*> databases;
+  HHblits::prepareDatabases(par, databases);
+
+  omp_set_num_threads(par.threads);
+  HHblits hhblits(par, databases);
 
   // Foreach entry
   if (batch_size > 0) {
@@ -242,6 +246,7 @@ int main(int argc, char **argv) {
 
       FILE* inf = ffindex_fopen_by_entry(data, entry);
       hhblits.run(inf, entry->name);
+      fclose(inf);
 
       for (size_t i = 0; i < outputDatabases.size(); i++) {
         outputDatabases[i].saveOutput(hhblits, entry->name);
@@ -263,6 +268,7 @@ int main(int argc, char **argv) {
 
     FILE* inf = ffindex_fopen_by_entry(data, entry);
     hhblits.run(inf, entry->name);
+    fclose(inf);
 
     for (size_t i = 0; i < outputDatabases.size(); i++) {
       outputDatabases[i].saveOutput(hhblits, entry->name);

@@ -38,7 +38,7 @@ const char HHSEARCH_REFERENCE[] =
 
 class HHsearch: public HHblits {
 public:
-    HHsearch(Parameters& par);
+    HHsearch(Parameters& par, std::vector<HHblitsDatabase*>& databases);
     virtual ~HHsearch();
     void run(FILE* query_fh, char* query_path);
     static void ProcessAllArguments(int argc, char** argv, Parameters& par);

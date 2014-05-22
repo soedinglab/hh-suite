@@ -70,7 +70,7 @@ CS_OBJECTS = $(patsubst %.cc, %.o, $(CS_SOURCES))
 
 HEADERS = hhhitlist.h hhhit.h hhalignment.h hhhmm.h hhfullalignment.h hhfullalignment.h hash.h list.h hhfunc.h hhmatrices.h
 
-TARGETS = hhblits hhblits_mpi hhsearch hhmake hhalign hhfilter hhconsensus cstranslate a3m_extractor a3m_reducer a3m_database_filter ffindex_from_fasta ffindex_from_fasta_with_split 
+TARGETS = hhblits hhblits_omp hhblits_mpi hhsearch hhmake hhalign hhfilter hhconsensus cstranslate a3m_extractor a3m_reducer a3m_database_filter ffindex_from_fasta ffindex_from_fasta_with_split 
 TARGETS_STATIC = hhblits_static hhsearch_static hhmake_static hhalign_static hhfilter_static hhconsensus_static cstranslate_static
 TARGETS_VALGRIND = hhblits_valgrind hhsearch_valgrind hhalign_valgrind
 
@@ -103,6 +103,10 @@ hhblits: hhblits_app.cpp $(HH_OBJECTS) $(CS_OBJECTS)
 
 hhblits_mpi: hhblits_mpi.cpp $(HH_OBJECTS) $(CS_OBJECTS)
 	mpic++ $(CXXFLAGS) -g hhblits_mpi.cpp -o hhblits_mpi $(HH_OBJECTS) $(CS_OBJECTS) $(HHBLITS_LIBS) $(OBJECT_LIBS) $(FFINDEX_DIR)/libffindex.a
+	
+hhblits_omp: hhblits_omp.cpp $(HH_OBJECTS) $(CS_OBJECTS)
+	mpic++ $(CXXFLAGS) -g hhblits_omp.cpp -o hhblits_omp $(HH_OBJECTS) $(CS_OBJECTS) $(HHBLITS_LIBS) $(OBJECT_LIBS) $(FFINDEX_DIR)/libffindex.a
+	
 	
 hhblits_static: hhblits_app.cpp $(HH_OBJECTS) $(SOURCES) $(HEADERS) $(CS_OBJECTS)
 	$(CPP) -static hhblits_app.cpp -o hhblits $(HH_OBJECTS) $(CS_OBJECTS) $(HHBLITS_LIBS)  $(OBJECT_LIBS) $(FFINDEX_DIR)/libffindex.a

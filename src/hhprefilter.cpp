@@ -329,7 +329,7 @@ void Prefilter::checkCSFormat(size_t nr_checks) {
 ////////////////////////////////////////////////////////////////////////
 // Prepare query profile for prefitering
 ////////////////////////////////////////////////////////////////////////
-void Prefilter::stripe_query_profile(HMM* q_tmp, const int prefilter_score_offset, const int prefilter_bit_factor) {
+void Prefilter::stripe_query_profile(HMM* q_tmp, const int prefilter_score_offset, const int prefilter_bit_factor, const int W, unsigned char* qc) {
 	int LQ = q_tmp->L;
 	int a, h, i, j, k;
 
@@ -349,13 +349,6 @@ void Prefilter::stripe_query_profile(HMM* q_tmp, const int prefilter_score_offse
 				sum += (q_tmp->p[i][a] * lib[k].probs[0][a]) / q_tmp->pav[a];
 			query_profile[i + 1][k] = sum;
 		}
-
-	/////////////////////////////////////////
-	// Stripe query profile with chars
-	qc = (unsigned char*) memalign(16,
-			(NUMCOLSTATES + 1) * (LQ + 15) * sizeof(unsigned char),
-			"the striped query profile during prefiltering"); // query profile (states + 1 because of ANY char)
-	W = (LQ + 15) / 16;   // band width = hochgerundetes LQ/16
 
 	for (a = 0; a < NUMCOLSTATES; ++a) {
 		h = a * W * 16;
@@ -454,16 +447,18 @@ void Prefilter::prefilter_db(HMM* q_tmp, Hash<Hit>* previous_hits,
 	Hash<char>* doubled = new Hash<char>;
 	doubled->New(16381, 0);
 
-	stripe_query_profile(q_tmp, prefilter_score_offset, prefilter_bit_factor);
+    unsigned char* qc = (unsigned char*) memalign(16,
+            (NUMCOLSTATES + 1) * (q_tmp->L + 15) * sizeof(unsigned char),
+            "the striped query profile during prefiltering"); // query profile (states + 1 because of ANY char)
+    int W = (q_tmp->L + 15) / 16;   // band width = hochgerundetes LQ/16
+
+	stripe_query_profile(q_tmp, prefilter_score_offset, prefilter_bit_factor, W, qc);
 
 	__m128i ** workspace = new __m128i *[threads];
 
-	int score;
-	double evalue;
 	std::vector < std::pair<double, int> > first_prefilter;
 	std::vector < std::pair<double, int> > hits;
 
-	int thread_id = 0;
 	int count_dbs = 0;
 	int gap_init = prefilter_gap_open + prefilter_gap_extend;
 	int gap_extend = prefilter_gap_extend;
@@ -475,22 +470,20 @@ void Prefilter::prefilter_db(HMM* q_tmp, Hash<Hit>* previous_hits,
 		workspace[i] = (__m128i *) memalign(16, 3 * (LQ + 15) * sizeof(char),
 				"the dynamic programming workspace during prefiltering");
 
-#pragma omp parallel for schedule(static) private(score, thread_id)
+    #pragma omp parallel for schedule(static)
 	// Loop over all database sequences
 	for (size_t n = 0; n < num_dbs; n++) {
-#ifdef _OPENMP
-		thread_id = omp_get_thread_num();
-#endif
+		int thread_id = omp_get_thread_num();
 
 		// Perform search step
-		score = ungapped_sse_score(qc, LQ, first[n], length[n],
+		int score = ungapped_sse_score(qc, LQ, first[n], length[n],
 				prefilter_score_offset, workspace[thread_id]);
 
 		score = score
 				- (int) (prefilter_bit_factor
 						* (log_qlen + flog2(length[n])));
 
-#pragma omp critical
+        #pragma omp critical
 		first_prefilter.push_back(std::pair<double, int>(score, n));
 
 		if (v >= 2 && !(n % 100000)) {
@@ -529,25 +522,23 @@ void Prefilter::prefilter_db(HMM* q_tmp, Hash<Hit>* previous_hits,
 				count_dbs);
 	}
 
-#pragma omp parallel for schedule(static) private(evalue, score, thread_id)
+    #pragma omp parallel for schedule(static)
 	// Loop over all database sequences
 //  for (int n = 0; n < count_dbs; n++) {
 	for (it = first_prefilter.begin(); it < first_prefilter.end(); it++) {
-#ifdef _OPENMP
-		thread_id = omp_get_thread_num();
-#endif
+		int thread_id = omp_get_thread_num();
 
 		int n = (*it).second;
 
 		// Perform search step
-		score = swStripedByte(qc, LQ, first[n], length[n], gap_init, gap_extend,
+		int score = swStripedByte(qc, LQ, first[n], length[n], gap_init, gap_extend,
 				workspace[thread_id], workspace[thread_id] + W,
 				workspace[thread_id] + 2 * W, prefilter_score_offset);
 
-		evalue = factor * length[n] * fpow2(-score / prefilter_bit_factor);
+		double evalue = factor * length[n] * fpow2(-score / prefilter_bit_factor);
 
 		if (evalue < prefilter_evalue_coarse_thresh) {
-#pragma omp critical
+            #pragma omp critical
 			hits.push_back(std::pair<double, int>(evalue, n));
 		}
 	}

@@ -61,7 +61,11 @@ int main(int argc, char **argv) {
   Parameters par;
   HHblits::ProcessAllArguments(argc, argv, par);
 
-  HHblits hhblits(par);
+  std::vector<HHblitsDatabase*> databases;
+  HHblits::prepareDatabases(par, databases);
+
+  omp_set_num_threads(par.threads);
+  HHblits hhblits(par, databases);
 
   FILE* inf;
   if(strcmp(par.infile, "stdin") == 0) {

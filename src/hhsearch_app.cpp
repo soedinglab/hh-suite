@@ -11,7 +11,11 @@ int main(int argc, char **argv) {
   Parameters par;
   HHsearch::ProcessAllArguments(argc, argv, par);
 
-  HHblits hhsearch(par);
+  std::vector<HHblitsDatabase*> databases;
+  HHblits::prepareDatabases(par, databases);
+
+  omp_set_num_threads(par.threads);
+  HHblits hhsearch(par, databases);
 
   FILE* inf;
   if(strcmp(par.infile, "stdin") == 0) {
@@ -27,7 +31,6 @@ int main(int argc, char **argv) {
   }
 
   hhsearch.run(inf, par.infile);
-
   fclose(inf);
 
   hhsearch.writeHHRFile(par.outfile);

@@ -54,8 +54,8 @@ private:
 	int* length;
 
 	// extended column state query profile as char
-	unsigned char* qc;
-	int W;
+//	unsigned char* qc;
+//	int W;
 
 	void init_prefilter(FFindexDatabase* cs219_database);
 
@@ -75,7 +75,7 @@ private:
 		unsigned short bias);
 
 	void checkCSFormat(size_t nr_checks);
-	void stripe_query_profile(HMM* q_tmp, const int prefilter_score_offset, const int prefilter_bit_factor);
+	void stripe_query_profile(HMM* q_tmp, const int prefilter_score_offset, const int prefilter_bit_factor, const int W, unsigned char* qc);
 };
 
 } /* namespace hh */
