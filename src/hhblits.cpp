@@ -2301,12 +2301,15 @@ void HHblits::run(FILE* query_fh, char* query_path) {
       }
 
       if (*par.alisbasename) {
+    	Alignment tmp;
         if (par.allseqs) {
-          alis[round] = Qali_allseqs;
+          tmp = Qali_allseqs;
         }
         else {
-          alis[round] = Qali;
+          tmp = Qali;
         }
+
+        alis[round] = tmp;
       }
 
       v = v1;
