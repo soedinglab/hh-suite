@@ -277,8 +277,7 @@ void Prefilter::init_no_prefiltering(FFindexDatabase* cs219_database, std::vecto
 		prefiltered_entries.push_back(std::string(entry->name));
 	}
 
-	if (v >= 2)
-		std::cout << "Searching " << prefiltered_entries.size() << " database HHMs without prefiltering" << std::endl;
+	HH_LOG(LogLevel::INFO) << "Searching " << prefiltered_entries.size() << " database HHMs without prefiltering" << std::endl;
 }
 
 
@@ -302,9 +301,7 @@ void Prefilter::init_prefilter(FFindexDatabase* cs219_database) {
 	//check if cs219 format is new binary format
 	checkCSFormat(5);
 
-	if (v >= 2) {
-		printf("Searching %zu column state sequences.\n", num_dbs);
-	}
+	HH_LOG(LogLevel::INFO) << "Searching " << num_dbs << " column state sequences." << std::endl;
 }
 
 
@@ -485,11 +482,6 @@ void Prefilter::prefilter_db(HMM* q_tmp, Hash<Hit>* previous_hits,
 
         #pragma omp critical
 		first_prefilter.push_back(std::pair<double, int>(score, n));
-
-		if (v >= 2 && !(n % 100000)) {
-			std::cout << ".";
-			std::cout.flush();
-		}
 	}
 
 	//filter after calculation of ungapped sse score to include at least min_prefilter_hits
@@ -516,11 +508,7 @@ void Prefilter::prefilter_db(HMM* q_tmp, Hash<Hit>* previous_hits,
 	first_prefilter.erase(first_prefilter_begin_erase,
 			first_prefilter_end_erase);
 
-	if (v >= 2) {
-		printf(
-				"\nHMMs passed 1st prefilter (gapless profile-profile alignment)  : %6i\n",
-				count_dbs);
-	}
+	HH_LOG(LogLevel::INFO) << "HMMs passed 1st prefilter (gapless profile-profile alignment)  : " << count_dbs << std::endl;
 
     #pragma omp parallel for schedule(static)
 	// Loop over all database sequences

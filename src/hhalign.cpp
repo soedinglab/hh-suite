@@ -542,8 +542,7 @@ void help_all() {
 void ProcessArguments(int argc, char** argv) {
   //Processing command line input
   for (int i = 1; i < argc; i++) {
-    if (v >= 4)
-      cout << i << "  " << argv[i] << endl; //PRINT
+	HH_LOG(LogLevel::DEBUG1) << i << "  " << argv[i] << endl;
     if (!strcmp(argv[i], "-i")) {
       if (++i >= argc || argv[i][0] == '-') {
         help();
@@ -745,22 +744,11 @@ void ProcessArguments(int argc, char** argv) {
       par.exclstr = new (char[strlen(argv[i]) + 1]);
       strcpy(par.exclstr, argv[i]);
     }
-    else if (!strcmp(argv[i], "-v") && (i < argc - 1) && argv[i + 1][0] != '-')
-      v = atoi(argv[++i]);
-    else if (!strcmp(argv[i], "-v"))
-      v = 2;
-    else if (!strcmp(argv[i], "-v0"))
-      v = 0;
-    else if (!strcmp(argv[i], "-v1"))
-      v = 1;
-    else if (!strcmp(argv[i], "-v2"))
-      v = 2;
-    else if (!strcmp(argv[i], "-v3"))
-      v = 3;
-    else if (!strcmp(argv[i], "-v4"))
-      v = 4;
-    else if (!strcmp(argv[i], "-v5"))
-      v = 5;
+    else if (!strcmp(argv[i], "-v") && (i < argc - 1) && argv[i + 1][0] != '-') {
+		int v = atoi(argv[++i]);
+		par.v = Log::from_int(v);
+		Log::reporting_level() = par.v;
+    }
     else if (!strcmp(argv[i], "-P") && (i < argc - 1))
       pself = atof(argv[++i]);
     else if (!strcmp(argv[i], "-p") && (i < argc - 1))
@@ -926,8 +914,6 @@ void ProcessArguments(int argc, char** argv) {
       else
         cerr << endl << "WARNING: Ignoring unknown argument: -M " << argv[i]
             << "\n";
-    else if (!strcmp(argv[i], "-calm") && (i < argc - 1))
-      par.calm = atoi(argv[++i]);
     else if (!strcmp(argv[i], "-shift") && (i < argc - 1))
       par.shift = atof(argv[++i]);
     else if (!strcmp(argv[i], "-mact") && (i < argc - 1)) {
@@ -976,11 +962,11 @@ void ProcessArguments(int argc, char** argv) {
       else
         strcpy(par.clusterfile, argv[i]);
     }
-    else
-      cerr << endl << "WARNING: Ignoring unknown option " << argv[i]
-          << " ...\n";
-    if (v >= 4)
-      cout << i << "  " << argv[i] << endl; //PRINT
+    else {
+		HH_LOG(LogLevel::WARNING) << endl
+			<< "WARNING: Ignoring unknown option " << argv[i] << " ...\n";
+    }
+    HH_LOG(LogLevel::DEBUG1) << i << "  " << argv[i] << endl;
   } // end of for-loop for command line input
 }
 
@@ -1057,10 +1043,9 @@ void RealignByWorker(Hit& hit) {
     hit_cur = hitlist.ReadNext();
     if (hit_cur.matched_cols < MINCOLS_REALIGN && nhits > 1
         && nhits > par.hitrank) {
-      if (v >= 3)
-        printf("Deleting alignment of %s with length %i\n", hit_cur.name,
-            hit_cur.matched_cols);
-      hitlist.Delete().Delete();      // delete the list record and hit object
+      HH_LOG(LogLevel::DEBUG) << "Deleting alignment of " << hit_cur.name << " with length " << hit_cur.matched_cols << std::endl;
+      // delete the list record and hit object
+      hitlist.Delete().Delete();
       nhits--;
     }
   }
@@ -1074,11 +1059,6 @@ void RealignByWorker(Hit& hit) {
 }
 
 void wiggleQSC(Alignment& orig_qali, char query_input_format, Alignment& orig_tali, char template_input_format, size_t nqsc, float* qsc, HitList& recalculated_hitlist) {
-  if (v > 0 && v <= 3)
-    v = 1;
-  else
-    v -= 2; // Supress verbose output during iterative realignment and realignment
-
   const int COV_ABS = 25;
   int cov_tot = std::max(std::min((int) (COV_ABS / orig_qali.L * 100 + 0.5), 70),
       par.coverage);
@@ -1233,16 +1213,17 @@ int main(int argc, char **argv) {
   RemovePathAndExtension(program_name, argv[0]);
 
   // Enable changing verbose mode before defaults file and command line are processed
+  int v = 2;
   for (int i = 1; i < argc; i++) {
     if (!strcmp(argv[i], "-def"))
       par.readdefaultsfile = 1;
-    else if (argc > 1 && !strcmp(argv[i], "-v0"))
-      v = 0;
-    else if (argc > 1 && !strcmp(argv[i], "-v1"))
-      v = 1;
-    else if (argc > 2 && !strcmp(argv[i], "-v"))
+    else if (argc > 2 && !strcmp(argv[i], "-v")) {
       v = atoi(argv[i + 1]);
+    }
   }
+
+  par.v = Log::from_int(v);
+  Log::reporting_level() = par.v;
 
   par.SetDefaultPaths();
 
@@ -1550,10 +1531,7 @@ int main(int argc, char **argv) {
 
   // Fit EVD (with lamda, mu) to score distribution?
   if (par.forward == 0) {
-    if (par.calm == 3)
-      hitlist.CalculatePvalues(q, par.loc, par.ssm, par.ssw);  // Use NN prediction of lamda and mu
-    else
-      hitlist.GetPvalsFromCalibration(q, par.loc, par.calm, par.ssm, par.ssw);
+    hitlist.CalculatePvalues(q, par.loc, par.ssm, par.ssw);  // Use NN prediction of lamda and mu
   }
   else
     printf(

@@ -995,6 +995,8 @@ void Hit::Backtrace(HMM* q, HMM* t, const float corr, const float ssw, const flo
   i = i2;
   j = j2;     // last aligned pair is (i2,j2)
 
+  bool invalid_alignment = false;
+
   // while (state!=STOP)  because STOP=0
   while (state && i > 0 && j > 0) {
     step++;
@@ -1030,13 +1032,10 @@ void Hit::Backtrace(HMM* q, HMM* t, const float corr, const float ssw, const flo
           state = MM;
         break;
       default:
-    	std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
-        fprintf(stderr,
-            "\tunallowed state value %i occurred during backtracing at step %i, (i,j)=(%i,%i) with template %s\n",
-            state, step, i, j, t->name);
-        fprintf(stderr, "Dumping alignment and terminating:\n");
+    	HH_LOG(LogLevel::ERROR) << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+       	HH_LOG(LogLevel::ERROR) << "\tunallowed state value " << state << " occurred during backtracing at step " << step << ", (i,j)=(" << i << "," << j << ") with template " << t->name << std::endl;
+        HH_LOG(LogLevel::ERROR) << "\tDumping alignment and terminating!" << std::endl;
         state = 0;
-        v = 4;
         break;
     } //end switch (state)
   } //end while (state)
@@ -1045,13 +1044,11 @@ void Hit::Backtrace(HMM* q, HMM* t, const float corr, const float ssw, const flo
   j1 = this->j[step];
 
   if (state != 0) {
-	std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
-    fprintf(stderr,
-        "\treached  (i,j)=(%i,%i) in state value %i at  at step %i  with template %s during backtracing,\n",
-        i, j, state, step, t->name);
-    fprintf(stderr, "Dumping alignment and terminating:\n");
+	HH_LOG(LogLevel::ERROR) << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+	HH_LOG(LogLevel::ERROR) << "\treached  (i,j)=(" << i << "," << j << ") in state value " << state << " at  at step " << step << "  with template " << t->name << " during backtracing" << std::endl;
+    HH_LOG(LogLevel::ERROR) << "\tDumping alignment and terminating!" << std::endl;
     state = 0;
-    v = 100;  //exit
+    invalid_alignment = true;
   }
 
   states[step] = MM;  // first state (STOP state) is set to MM state
@@ -1118,41 +1115,38 @@ void Hit::Backtrace(HMM* q, HMM* t, const float corr, const float ssw, const flo
   }
   //   printf("%-10.10s lamda=%-9f  score=%-9f  logPval=%-9g\n",name,t->lamda,score,logPvalt);
   
-  //DEBUG: Print out Viterbi path and exit
-  if (v >= 4) {
-    printf("NAME=%7.7s score=%7.3f  score_ss=%7.3f\n", name, score, score_ss);
-    printf("step  Q T    i    j  state   score    bt T Q cf ss-score\n");
+	LogLevel actual_log_level = LogLevel::DEBUG1;
+	if(invalid_alignment) {
+		actual_log_level = LogLevel::ERROR;
+	}
 
-    for (step = nsteps; step >= 1; step--) {
-      switch (states[step]) {
-        case MM:
-          printf("%4i  %1c %1c ", step, q->seq[q->nfirst][this->i[step]],
-              seq[nfirst][this->j[step]]);
-          break;
-        case GD:
-        case IM:
-          printf("%4i  - %1c ", step, seq[nfirst][this->j[step]]);
-          break;
-        case DG:
-        case MI:
-          printf("%4i  %1c - ", step, q->seq[q->nfirst][this->i[step]]);
-          break;
-      }
+	if(Log::reporting_level() >= actual_log_level) {
+		HH_LOG(actual_log_level) << "NAME=" << name << " score=" << score << "  score_ss=" << score_ss << std::endl;
+		HH_LOG(actual_log_level) << "step  Q T    i    j  state   score    bt T Q cf ss-score" << std::endl;
 
-      printf("%4i %4i     %2i %7.2f    %2x ", this->i[step], this->j[step],
-          (int) states[step], S[step], btr[this->i[step]][this->j[step]]);
-      printf("%c %c %1i %7.2f\n", i2ss(t->ss_dssp[this->j[step]]),
-          i2ss(q->ss_pred[this->i[step]]), q->ss_conf[this->i[step]] - 1,
-          S_ss[step]);
-    }
+		for (step = nsteps; step >= 1; step--) {
+		  switch (states[step]) {
+			case MM:
+			  HH_LOG(actual_log_level) << step << "  " << q->seq[q->nfirst][this->i[step]] << "  " << seq[nfirst][this->j[step]] << " ";
+			  break;
+			case GD:
+			case IM:
+			  HH_LOG(actual_log_level) << step << "  - " << seq[nfirst][this->j[step]] << " ";
+			  break;
+			case DG:
+			case MI:
+			  HH_LOG(actual_log_level) << step << "  " << q->seq[q->nfirst][this->i[step]] << " - ";
+			  break;
+		  }
 
-    if(v >= 100) {
-      cerr << "Exiting in DEBUG output loop of BacktraceViterbi\n";
-      exit(1);
-    }
+		  HH_LOG(actual_log_level) << this->i[step] << " " << this->j[step] << "     " << (int) states[step] << " " << S[step] << "    " << btr[this->i[step]][this->j[step]] << "    " << std::endl;
+		  HH_LOG(actual_log_level) << i2ss(t->ss_dssp[this->j[step]]) << " " << i2ss(q->ss_pred[this->i[step]]) << " " << q->ss_conf[this->i[step]] - 1 << " " << S_ss[step] << std::endl;
+		}
+	}
+
+  if(invalid_alignment) {
+	  exit(1);
   }
-
-  return;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -1182,13 +1176,11 @@ void Hit::BacktraceMAC(HMM* q, HMM* t, const float corr, const float ssw, const 
   i = i2;
   j = j2;     // last aligned pair is (i2,j2)
 
+  bool invalid_alignment = false;
+
   if (b[i][j] != MM) {
-    if (v > 3) {
-      std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
-      fprintf(stderr,
-          "\tbacktrace does not start in match-match state, but in state %i, (i,j)=(%i,%i)\n",
-          b[i][j], i, j);
-    }
+	HH_LOG(LogLevel::DEBUG1) << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+	HH_LOG(LogLevel::DEBUG1) << "\tbacktrace does not start in match-match state, but in state " << b[i][j] << ", (i,j)=(" << i << "," << j << ")" << std::endl;
     step = 1;
     this->i[step] = i;
     this->j[step] = j;
@@ -1226,12 +1218,10 @@ void Hit::BacktraceMAC(HMM* q, HMM* t, const float corr, const float ssw, const 
         case STOP:
           break;
         default:
-          std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
-          fprintf(stderr,
-              "\tunallowed state value %i occurred during backtracing at step %i, (i,j)=(%i,%i)\n",
-              state, step, i, j);
+          invalid_alignment = true;
+          HH_LOG(LogLevel::ERROR) << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+          HH_LOG(LogLevel::ERROR) << "\tunallowed state value " << state << " occurred during backtracing at step " << step << ", (i,j)=(" << i << "," << j << ")" << std::endl;
           state = 0;
-          v = 4;
           break;
       } //end switch (state)
     } //end while (state)
@@ -1315,35 +1305,42 @@ void Hit::BacktraceMAC(HMM* q, HMM* t, const float corr, const float ssw, const 
   //   printf("%-10.10s lamda=%-9f  score=%-9f  logPval=%-9g\n",name,t->lamda,score,logPvalt);
 
   //DEBUG: Print out MAC alignment path
-  if (v >= 4) {
-    float sum_post = 0.0;
-    printf("NAME=%7.7s score=%7.3f  score_ss=%7.3f\n", name, score, score_ss);
-    printf(
-        "step  Q T    i    j  state   score    T Q cf ss-score   P_post Sum_post\n");
-    for (step = nsteps; step >= 1; step--) {
-      switch (states[step]) {
-        case MM:
-          sum_post += P_posterior[step];
-          printf("%4i  %1c %1c ", step, q->seq[q->nfirst][this->i[step]],
-              seq[nfirst][this->j[step]]);
-          break;
-        case IM:
-          printf("%4i  - %1c ", step, seq[nfirst][this->j[step]]);
-          break;
-        case MI:
-          printf("%4i  %1c - ", step, q->seq[q->nfirst][this->i[step]]);
-          break;
-      }
-      printf("%4i %4i     %2i %7.1f    ", this->i[step], this->j[step],
-          (int) states[step], S[step]);
-      printf("%c %c  %1i  %7.1f  ", i2ss(t->ss_dssp[this->j[step]]),
-          i2ss(q->ss_pred[this->i[step]]), q->ss_conf[this->i[step]] - 1,
-          S_ss[step]);
-      printf("%7.5f  %7.2f\n", P_posterior[step], sum_post);
-    }
+  LogLevel actual_log_level = LogLevel::DEBUG1;
+  if(invalid_alignment) {
+	  actual_log_level = LogLevel::ERROR;
   }
 
-  return;
+  if(Log::reporting_level() >= actual_log_level) {
+	  float sum_post = 0.0;
+	  HH_LOG(actual_log_level) << "NAME=" << name << " score=" << score << "  score_ss=" << score_ss << std::endl;
+	  HH_LOG(actual_log_level) << "step  Q T    i    j  state   score    T Q cf ss-score   P_post Sum_post" << std::endl;
+
+	  for (step = nsteps; step >= 1; step--) {
+		switch (states[step]) {
+		  case MM:
+			sum_post+=P_posterior[step];
+			HH_LOG(actual_log_level) << step << "  " << q->seq[q->nfirst][this->i[step]] << "  " << seq[nfirst][this->j[step]];
+			break;
+		  case GD:
+		  case IM:
+			HH_LOG(actual_log_level) << step << "  - " << seq[nfirst][this->j[step]];
+			break;
+		  case DG:
+		  case MI:
+			HH_LOG(actual_log_level) << step << "  " << q->seq[q->nfirst][this->i[step]] << " - ";
+			break;
+		}
+
+		HH_LOG(actual_log_level) << this->i[step] << " " << this->j[step] << "     " << (int) states[step] << " " << S[step] << "    " << btr[this->i[step]][this->j[step]] << "    " << std::endl;
+		HH_LOG(actual_log_level) << i2ss(t->ss_dssp[this->j[step]]) << " " << i2ss(q->ss_pred[this->i[step]]) << " " << q->ss_conf[this->i[step]] - 1 << " " << S_ss[step] << "  ";
+		HH_LOG(actual_log_level) << P_posterior[step] << "  " << sum_post << std::endl;
+	  }
+  }
+
+  if(invalid_alignment) {
+	  exit(1);
+  }
+
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -1546,11 +1543,8 @@ void Hit::ScoreAlignment(HMM* q, HMM* t, int steps) {
     float substitutionScore =
             Score(q->p[i[step]], t->p[j[step]]);
 
-    if (v > 2) {
-      cout << "Score at step " << step << "!\n";
-      cout << "i: " << i[step] << "  j: " << j[step] << "   score: "
-          << substitutionScore << "\n";
-    }
+    HH_LOG(LogLevel::DEBUG) << "Score at step " << step << "!" << std::endl;
+    HH_LOG(LogLevel::DEBUG) << "i: " << i[step] << "  j: " << j[step] << "   score: " << substitutionScore << std::endl;
     score += substitutionScore;
   }
 }

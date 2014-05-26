@@ -17,6 +17,7 @@
 #include "hhhit.h"
 #include "util.h"
 #include "hhutil.h"
+#include "log.h"
 
 
 extern "C" {

@@ -4,8 +4,6 @@
 //// Global variable declarations
 /////////////////////////////////////////////////////////////////////////////////////
 
-char v;
-
 bool sort_realign_hitpos (Realign_hitpos i, Realign_hitpos j) { return (i.ftellpos < j.ftellpos); }
 
 void Parameters::SetDefaultPaths() {
@@ -24,9 +22,7 @@ void Parameters::SetDefaultPaths() {
 	if (testf)
 		fclose(testf);
 	else {
-		if (v >= 3)
-			std::cerr << "WARNING in HHsuite: Could not open " << cs_library
-					<< "\n";
+		HH_LOG(LogLevel::DEBUG) << "WARNING in HHsuite: Could not open " << cs_library << "\n";
 
 		char program_path[NAMELEN];
 		Pathname(program_path, argv[0]);
@@ -41,9 +37,7 @@ void Parameters::SetDefaultPaths() {
 			if (testf)
 				fclose(testf);
 			else {
-				if (v >= 3)
-					std::cerr << "WARNING in HHsuite: Could not open "
-							<< cs_library << "\n";
+				HH_LOG(LogLevel::DEBUG) << "WARNING in HHsuite: Could not open " << cs_library << "\n";
 
 				strcat(strcpy(hhlib, program_path), "..");
 				strcat(strcpy(hhdata, hhlib), "/data");
@@ -52,9 +46,8 @@ void Parameters::SetDefaultPaths() {
 				testf = fopen(cs_library, "r");
 				if (testf)
 					fclose(testf);
-				else if (v >= 3)
-					std::cerr << "WARNING in HHsuite: Could not open "
-							<< cs_library << "\n";
+				else
+					HH_LOG(LogLevel::DEBUG) << "WARNING in HHsuite: Could not open " << cs_library << "\n";
 			}
 		}
 	}
@@ -72,7 +65,7 @@ void Parameters::SetDefaultPaths() {
 }
 
 void Parameters::SetDefaults() {
-	v = 2;
+	v = LogLevel::INFO;
 
 	maxcol = 32765; // max number of columns in sequence/MSA input files; must be <= LINELEN and >= maxres
 	maxres = 20000;           // max number of states in HMM; must be <= LINELEN

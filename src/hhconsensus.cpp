@@ -133,8 +133,7 @@ void help() {
 void ProcessArguments(int argc, char** argv) {
   // Read command line options
   for (int i = 1; i <= argc - 1; i++) {
-    if (v >= 4)
-      cout << i << "  " << argv[i] << endl; //PRINT
+    HH_LOG(LogLevel::DEBUG1) << i << "  " << argv[i] << endl;
     if (!strcmp(argv[i], "-i")) {
       if (++i >= argc || argv[i][0] == '-') {
         help();
@@ -203,10 +202,11 @@ void ProcessArguments(int argc, char** argv) {
       help();
       exit(0);
     }
-    else if (!strcmp(argv[i], "-v") && (i < argc - 1) && argv[i + 1][0] != '-')
-      v = atoi(argv[++i]);
-    else if (!strcmp(argv[i], "-v0"))
-      v = 0;
+    else if (!strcmp(argv[i], "-v") && (i < argc - 1) && argv[i + 1][0] != '-') {
+		int v = atoi(argv[++i]);
+		par.v = Log::from_int(v);
+		Log::reporting_level() = par.v;
+    }
     else if (!strcmp(argv[i], "-seq") && (i < argc - 1))
       par.nseqdis = atoi(argv[++i]);
     else if (!strcmp(argv[i], "-name") && (i < argc - 1)) {
@@ -299,11 +299,12 @@ void ProcessArguments(int argc, char** argv) {
         strcpy(par.clusterfile, argv[i]);
     }
 
-    else
-      cerr << endl << "WARNING: Ignoring unknown option " << argv[i]
-          << " ...\n";
-    if (v >= 4)
-      cout << i << "  " << argv[i] << endl; //PRINT
+    else {
+		HH_LOG(LogLevel::WARNING) << endl
+			<< "WARNING: Ignoring unknown option " << argv[i] << " ...\n";
+    }
+
+    HH_LOG(LogLevel::DEBUG1) << i << "  " << argv[i] << endl;
   } // end of for-loop for command line input
 }
 
@@ -336,16 +337,16 @@ int main(int argc, char **argv) {
   RemovePathAndExtension(program_name, argv[0]);
   
   // Enable changing verbose mode before defaults file and command line are processed
-  for (int i = 1; i < argc; i++) {
-    if (!strcmp(argv[i], "-def"))
-      par.readdefaultsfile = 1;
-    else if (argc > 1 && !strcmp(argv[i], "-v0"))
-      v = 0;
-    else if (argc > 1 && !strcmp(argv[i], "-v1"))
-      v = 1;
-    else if (argc > 2 && !strcmp(argv[i], "-v"))
-      v = atoi(argv[i + 1]);
-  }
+	int v = 2;
+	for (int i = 1; i < argc; i++) {
+		if (!strcmp(argv[i], "-def"))
+		  par.readdefaultsfile = 1;
+		else if (strcmp(argv[i], "-v") == 0) {
+			v = atoi(argv[i + 1]);
+		}
+	}
+	par.v = Log::from_int(v);
+	Log::reporting_level() = par.v;
 
   par.SetDefaultPaths();
 

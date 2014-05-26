@@ -6,14 +6,13 @@
 void SetBlosumMatrix(const char matrix, const float BlosumXX[], float* pb, float P[20][20])
 {
   int a,b,n=0;
-  if (v>=3) printf("Using the BLOSUM%2i matrix",matrix);
+  HH_LOG(LogLevel::DEBUG) << "Using the BLOSUM " << matrix << " matrix" << std::endl;
   for (a=0; a<20; ++a)
     for (pb[a]=0.0f, b=0; b<=a; ++b,++n)
       P[a][b] = BlosumXX[n];
   for (a=0; a<19; a++)
     for (b=a+1; b<20; ++b)
       P[a][b] = P[b][a];
-  return;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -26,7 +25,7 @@ void SetSubstitutionMatrix(const char matrix, float* pb, float P[20][20], float 
     {
     default:
     case 0:  //Gonnet matrix
-      if (v>=3) std::cout<<"Using the Gonnet matrix ";
+      HH_LOG(LogLevel::DEBUG) << "Using the Gonnet matrix" << std::endl;
       for (a=0; a<20; ++a)
 	for (pb[a]=0.0f, b=0; b<20; ++b)
 	  P[a][b] = 0.000001f*Gonnet[a*20+b];
@@ -77,8 +76,7 @@ void SetSubstitutionMatrix(const char matrix, float* pb, float P[20][20], float 
       S[a][b] = log2(R[a][b]/pb[a]); // S[a][b] = log2(P(a,b)/P(a)/P(b))
   
   // Evaluate sequence identity underlying substitution matrix
-  if (v>=3)
-    {
+  if (Log::reporting_level() >= LogLevel::DEBUG) {
       float id=0.0f;
       float entropy=0.0f; 
       float entropy_pb=0.0f;
@@ -92,59 +90,57 @@ void SetSubstitutionMatrix(const char matrix, float* pb, float P[20][20], float 
 	      mut_info += P[a][b]*S[a][b];
 	    }
       
-      printf(": sequence identity = %2.0f%%; entropy per column = %4.2f bits (out of %4.2f); mutual information = %4.2f bits\n",100*id,entropy,entropy_pb,mut_info);
-    }
+      HH_LOG(LogLevel::DEBUG) << "sequence identity = " << 100*id << " %; entropy per column = " << entropy << " bits (out of " << entropy_pb << "); mutual information = " << mut_info << " bits" << std::endl;
+  }
 
-  if (v>=4) //Debugging: probability matrix and dissimilarity matrix 
-    {
-      std::cout<<"Check matrix: before renormalization sum P(a,b)= "<<sumab<<"...\n";//PRINT
-      std::cout<<"      A    R    N    D    C    Q    E    G    H    I    L    K    M    F    P    S    T    W    Y    V\n";
-      std::cout<<"p[] ";
-      for (a=0; a<20; a++)  printf("%4.1f ",100*pb[a]);
-      std::cout<<std::endl<<"\nSubstitution matrix log2( P(a,b)/p(a)/p(b) ) (in bits):\n";
-      std::cout<<"      A    R    N    D    C    Q    E    G    H    I    L    K    M    F    P    S    T    W    Y    V\n";
+  //Debugging: probability matrix and dissimilarity matrix
+  if (Log::reporting_level() >= LogLevel::DEBUG1) {
+      HH_LOG(LogLevel::DEBUG) << "Check matrix: before renormalization sum P(a,b)= "<<sumab<<"...\n";//PRINT
+      HH_LOG(LogLevel::DEBUG) <<"      A    R    N    D    C    Q    E    G    H    I    L    K    M    F    P    S    T    W    Y    V\n";
+      HH_LOG(LogLevel::DEBUG) <<"p[] ";
+      for (a=0; a<20; a++)  HH_LOG(LogLevel::DEBUG) << 100*pb[a] << " ";
+      HH_LOG(LogLevel::DEBUG) <<std::endl<<"\nSubstitution matrix log2( P(a,b)/p(a)/p(b) ) (in bits):\n";
+      HH_LOG(LogLevel::DEBUG) <<"      A    R    N    D    C    Q    E    G    H    I    L    K    M    F    P    S    T    W    Y    V\n";
       for (b=0; b<20; b++)
 	{
-	  std::cout<<i2aa(b)<<"   ";
-	  for (a=0; a<20; a++)  printf("%4.1f ",S[a][b]);
-	  std::cout<<std::endl;
+      HH_LOG(LogLevel::DEBUG) << i2aa(b) << "   ";
+	  for (a=0; a<20; a++)  HH_LOG(LogLevel::DEBUG) << S[a][b] << " ";
+	  HH_LOG(LogLevel::DEBUG) << std::endl;
 	}
-      std::cout<<std::endl<<"\nOdds matrix P(a,b)/p(a)/p(b):\n";
-      std::cout<<"      A    R    N    D    C    Q    E    G    H    I    L    K    M    F    P    S    T    W    Y    V\n";
+      HH_LOG(LogLevel::DEBUG) << std::endl << "\nOdds matrix P(a,b)/p(a)/p(b):\n";
+      HH_LOG(LogLevel::DEBUG) <<"      A    R    N    D    C    Q    E    G    H    I    L    K    M    F    P    S    T    W    Y    V\n";
       for (b=0; b<20; b++)
 	{
-	  std::cout<<i2aa(b)<<"   ";
-	  for (a=0; a<20; a++)  printf("%4.1f ",P[b][a]/pb[a]/pb[b]);
-	  std::cout<<std::endl;
+    	  HH_LOG(LogLevel::DEBUG) <<i2aa(b)<<"   ";
+	  for (a=0; a<20; a++)  HH_LOG(LogLevel::DEBUG) << P[b][a]/pb[a]/pb[b] << " ";
+	  HH_LOG(LogLevel::DEBUG) <<std::endl;
 	}
-      std::cout<<std::endl<<"\nMatrix of conditional probabilities P(a|b) = P(a,b)/p(b) (in %):\n";
-      std::cout<<"      A    R    N    D    C    Q    E    G    H    I    L    K    M    F    P    S    T    W    Y    V\n";
+      HH_LOG(LogLevel::DEBUG) <<std::endl<<"\nMatrix of conditional probabilities P(a|b) = P(a,b)/p(b) (in %):\n";
+      HH_LOG(LogLevel::DEBUG) <<"      A    R    N    D    C    Q    E    G    H    I    L    K    M    F    P    S    T    W    Y    V\n";
       for (b=0; b<20; b++)
 	{
-	  std::cout<<i2aa(b)<<"   ";
-	  for (a=0; a<20; a++)  printf("%4.1f ",100*R[b][a]);
-	  std::cout<<std::endl;
+      HH_LOG(LogLevel::DEBUG) <<i2aa(b)<<"   ";
+	  for (a=0; a<20; a++)  HH_LOG(LogLevel::DEBUG) << 100*R[b][a] << " ";
+	  HH_LOG(LogLevel::DEBUG) <<std::endl;
 	}
-      std::cout<<std::endl<<"\nProbability matrix P(a,b) (in 10E-6):\n";
-      std::cout<<"      A     R     N     D     C     Q     E     G     H     I     L     K     M     F     P     S     T     W     Y     V\n";
+      HH_LOG(LogLevel::DEBUG) <<std::endl<<"\nProbability matrix P(a,b) (in 10E-6):\n";
+      HH_LOG(LogLevel::DEBUG) <<"      A     R     N     D     C     Q     E     G     H     I     L     K     M     F     P     S     T     W     Y     V\n";
       for (b=0; b<20; b++)
 	{
-	  std::cout<<i2aa(b)<<"   ";
-	  for (a=0; a<20; a++)  printf("%5.0f ",1000000*P[b][a]);
-	  std::cout<<std::endl;
+      HH_LOG(LogLevel::DEBUG) <<i2aa(b)<<"   ";
+	  for (a=0; a<20; a++)  HH_LOG(LogLevel::DEBUG) << 1000000*P[b][a] << " ";
+	  HH_LOG(LogLevel::DEBUG) <<std::endl;
 	}
-      std::cout<<std::endl<<"Similarity matrix P(a,b)^2/P(a,a)/P(b,b) (in %):\n";
-      std::cout<<"      A    R    N    D    C    Q    E    G    H    I    L    K    M    F    P    S    T    W    Y    V\n";
+      HH_LOG(LogLevel::DEBUG) <<std::endl<<"Similarity matrix P(a,b)^2/P(a,a)/P(b,b) (in %):\n";
+      HH_LOG(LogLevel::DEBUG) <<"      A    R    N    D    C    Q    E    G    H    I    L    K    M    F    P    S    T    W    Y    V\n";
       for (b=0; b<20; b++)
 	{
-	  std::cout<<i2aa(b)<<"   ";
-	  for (a=0; a<20; a++)  printf("%4.0f ",100*Sim[b][a]);
-	  std::cout<<std::endl;
+      HH_LOG(LogLevel::DEBUG) <<i2aa(b)<<"   ";
+	  for (a=0; a<20; a++)  HH_LOG(LogLevel::DEBUG) << 100*Sim[b][a] << " ";
+	  HH_LOG(LogLevel::DEBUG) <<std::endl;
 	}
-      std::cout<<std::endl;
-
-
-    }
+      HH_LOG(LogLevel::DEBUG) <<std::endl;
+  }
 }
  
 

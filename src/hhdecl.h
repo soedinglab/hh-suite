@@ -17,16 +17,13 @@
 #include "aa.h"
 #include "crf_pseudocounts-inl.h"
 #include "library_pseudocounts-inl.h"
+#include "log.h"
 
 
 
 /////////////////////////////////////////////////////////////////////////////////////
 //// Global variable declarations
 /////////////////////////////////////////////////////////////////////////////////////
-
-//=2 1: show only warnings 2:verbose mode
-extern char v;
-
 
 const char REFERENCE[]="Remmert M, Biegert A, Hauser A, and Soding J.\nHHblits: Lightning-fast iterative protein sequence searching by HMM-HMM alignment.\nNat. Methods 9:173-175 (2011).\n";
 const char COPYRIGHT[]="(C) Johannes Soeding, Michael Remmert, Andreas Biegert, Andreas Hauser\n";
@@ -161,7 +158,7 @@ public:
   char** argv;            //command line parameters
   char argc;              //dimension of argv
 
-  char v;
+  LogLevel v;
 
   char hhlib[PATH_MAX];   // lib base path e.g. /usr/lib64/hh
   char hhdata[PATH_MAX];  // data base path e.g. /usr/lib64/hh/data

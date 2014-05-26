@@ -58,18 +58,16 @@ void *memalign(size_t boundary, size_t size, const char* what_for)
 /////////////////////////////////////////////////////////////////////////////////////
 //// Execute system command
 /////////////////////////////////////////////////////////////////////////////////////
-void runSystem(std::string cmd, int v)
+void runSystem(std::string cmd)
 {
-  if (v>2)
-    std::cout << "Command: " << cmd << "!\n";
+  HH_LOG(LogLevel::INFO) << "Command: " << cmd << "!\n";
   int res = system(cmd.c_str());
   if (res!=0) 
-    {
-	  std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
-      std::cerr << std::endl << "\tCould not execute '" << cmd << "; "<<strerror(errno)<<std::endl;
+  {
+	  HH_LOG(LogLevel::ERROR) << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+	  HH_LOG(LogLevel::ERROR) << "\tCould not execute '" << cmd << "; "<<strerror(errno)<<std::endl;
       exit(1);
-    }
-    
+  }
 }
 
 
@@ -132,7 +130,7 @@ void ReadDefaultsFile(int& argc_conf, char** argv_conf, char* program_path) {
     if (!strncmp(line,program_name,6)) break;
   // Found line 'program_nameANYTHING'?
   if (!strncmp(line,program_name,6))
-    {
+  {
       // Read in options until end-of-file or empty line
       //while (fgets(line,LINELEN,configf) && strcmp(line,"\n"))
       while (fgets(line,LINELEN,configf))
@@ -156,24 +154,21 @@ void ReadDefaultsFile(int& argc_conf, char** argv_conf, char* program_path) {
               *c='\0';
               argv_conf[argc_conf]=new char[strlen(c_first)+1];
               strcpy(argv_conf[argc_conf++],c_first);
-              if (v>2) printf("Default argument: %s\n",c_first);
+              HH_LOG(LogLevel::DEBUG) << "Default argument: "<< c_first << std::endl;
               c++;
             } while (1);
 	  if (*c=='h' && *(c+1)=='h') break; // Next program found
         } //end read line
-      if (v>=3)
-        {
-          std::cout<<"Arguments read in from .hhdefaults ("<<filename<<"):";
-          for (int argc=1; argc<argc_conf; argc++) std::cout<<(argv_conf[argc][0]=='-'? " ":"")<<argv_conf[argc]<<" ";
-          std::cout<<"\n";
-        }
-      else if (v>=3) std::cout<<"Read in "<<argc_conf<<" default arguments for "<<program_name<<" from "<<filename<<"\n";
-    }
+
+   	  HH_LOG(LogLevel::DEBUG) << "Arguments read in from .hhdefaults ("<<filename<<"):";
+      for (int argc=1; argc<argc_conf; argc++) HH_LOG(LogLevel::DEBUG) << (argv_conf[argc][0]=='-'? " ":"")<<argv_conf[argc]<<" ";
+      HH_LOG(LogLevel::DEBUG) << "\n";
+  }
   else //found no line 'program_name   anything"
-    {
-      if (v>=3) std::cerr<<std::endl<<"WARNING: no default options for \'"<<program_name<<"\' found in "<<filename<<"\n";
-      return; //no line 'program_name   anything' found
-    }
+  {
+	HH_LOG(LogLevel::WARNING) << "WARNING: no default options for \'"<<program_name<<"\' found in "<<filename<<"\n";
+    return; //no line 'program_name   anything' found
+  }
   //   configf.close();
   fclose(configf);
 }

@@ -72,6 +72,8 @@ extern "C" {
 
 #include "hhprefilter.h"
 
+#include "log.h"
+
 const char HHBLITS_REFERENCE[] =
 		"Remmert M., Biegert A., Hauser A., and Soding J.\nHHblits: Lightning-fast iterative protein sequence searching by HMM-HMM alignment.\nNat. Methods 9:173-175 (2011)\n";
 
@@ -143,7 +145,6 @@ protected:
 
 	// HHblits variables
     // verbose mode
-	int v1 = v;
 
 	// Set to 1 if input in HMMER format (has already pseudocounts)
 	char input_format = 0;
