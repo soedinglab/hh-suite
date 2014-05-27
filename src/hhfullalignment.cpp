@@ -197,10 +197,8 @@ void FullAlignment::PrintHeader(std::stringstream& out, HMM* q, Hit& hit) {
   char line[LINELEN];
 
   sprintf(line,
-      "Probab=%-.2f  E-value=%-.2g  Score=%-.2f  Aligned_cols=%i  Identities=%i%%  Similarity=%-.3f  Sum_probs=%.1f\n\n",
-      hit.Probab, hit.Eval, hit.score, hit.matched_cols,
-      iround(100.0 * identities / hit.matched_cols),
-      score_sim / hit.matched_cols, hit.sum_of_probs);
+      "Probab=%-.2f  E-value=%-.2g  Score=%-.2f  Aligned_cols=%i  Identities=%i%%  Similarity=%-.3f  Sum_probs=%.1f  Template_Neff=%-.3f\n\n",
+      hit.Probab, hit.Eval, hit.score, hit.matched_cols, iround(100.0 * identities / hit.matched_cols), score_sim / hit.matched_cols, hit.sum_of_probs, hit.Neff_HMM);
 
   out << line;
 }
