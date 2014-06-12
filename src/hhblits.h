@@ -72,13 +72,17 @@ extern "C" {
 
 #include "hhprefilter.h"
 
+class HHblits;
+
 #include "log.h"
+#include "hhhmmsimd.h"
+#include "hhviterbimatrix.h"
+#include "hhviterbirunner.h"
 
 const char HHBLITS_REFERENCE[] =
 		"Remmert M., Biegert A., Hauser A., and Soding J.\nHHblits: Lightning-fast iterative protein sequence searching by HMM-HMM alignment.\nNat. Methods 9:173-175 (2011)\n";
 
 
-class HHblits;
 //static void writeHHRFile(HHblits& hhblits, std::stringstream& out);
 //static void writeScoresFile(HHblits& hhblits, std::stringstream& out);
 //static void writePairwiseAlisFile(HHblits& hhblits, std::stringstream& out);
@@ -164,6 +168,7 @@ protected:
 	// output A3M alignment with no sequence filtered out (only active with -all option)
 	Alignment Qali_allseqs;
 
+	ViterbiMatrix* viterbiMatrices[MAXBINS];
 	// Each bin has a template HMM allocated that was read from the database file
 	HMM* t[MAXBINS];
 	// Each bin has an object of type Hit allocated with a separate dynamic programming matrix (memory!!)
@@ -175,21 +180,17 @@ protected:
 	HitList reducedHitlist;
 	int N_searched;           // Number of HMMs searched
 	std::map<int, Alignment> alis;
-	void ViterbiSearch(std::vector<HHDatabaseEntry*>& prefiltered_hits, Hash<Hit>* previous_hits, int db_size);
 	void perform_realign(std::vector<HHDatabaseEntry*>& hits_to_realign, const int premerge, Hash<char>* premerged_hits);
 	void mergeHitsToQuery(Hash<Hit>* previous_hits, Hash<char>* premerged_hits, int& seqs_found, int& cluster_found);
+	void add_hits_to_hitlist(std::vector<Hit>& hits, HitList& hitlist);
 
 private:
 	static void help(Parameters& par, char all = 0);
 	static void ProcessArguments(int argc, char** argv, Parameters& par);
-    HHblitsDatabase* getHHblitsDatabase(HHDatabaseEntry& entry, std::vector<HHblitsDatabase*>& dbs);
 
 	void getTemplateA3M(HHblitsDatabase* db, char* entry_name, long& ftellpos, Alignment& tali);
-	void getTemplateHMM(HHDatabaseEntry& entry, char use_global_weights, long& ftellpos, int& format, HMM* t);
 
-	void DoViterbiSearch(std::vector<HHDatabaseEntry*>& prefiltered_hits, Hash<Hit>* previous_hits, bool alignByWorker = true);
-	void RescoreWithViterbiKeepAlignment(int db_size, Hash<Hit>* previous_hits);
-
+	void RescoreWithViterbiKeepAlignment(HMMSimd& q_vec, int db_size, Hash<Hit>* previous_hits);
 
 	//redundancy filter
     void wiggleQSC(HitList& hitlist, int n_redundancy, Alignment& Qali,

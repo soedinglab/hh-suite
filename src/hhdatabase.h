@@ -21,6 +21,7 @@ extern "C" {
 #include "hhprefilter.h"
 #include "hash.h"
 #include "hhhit.h"
+#include "log.h"
 
 
 
@@ -91,7 +92,7 @@ class HHblitsDatabase : HHDatabase {
     FFindexDatabase* header_database = NULL;
 
   private:
-    void getEntriesFromNames(std::vector<std::string>& names, std::vector<HHDatabaseEntry*>& entries);
+    void getEntriesFromNames(std::vector<std::pair<int, std::string>>& names, std::vector<HHDatabaseEntry*>& entries);
     bool checkAndBuildCompressedDatabase(const char* base);
 
     hh::Prefilter* prefilter;
@@ -100,6 +101,17 @@ class HHblitsDatabase : HHDatabase {
 struct HHDatabaseEntry {
 	FFindexDatabase* ffdatabase;
 	ffindex_entry_t* entry;
+	int sequence_length;
+
+	bool operator() (const HHDatabaseEntry* x, const HHDatabaseEntry* y) {
+	  return x->sequence_length > y->sequence_length;
+	}
 };
+
+void getTemplateHMM(Parameters& par, HHDatabaseEntry& entry, std::vector<HHblitsDatabase*>& dbs,
+    char use_global_weights, int& format, float* pb, const float S[20][20], const float Sim[20][20], HMM* t);
+HHblitsDatabase* getHHblitsDatabase(HHDatabaseEntry& entry, std::vector<HHblitsDatabase*>& dbs);
+
+
 
 #endif /* HHDATABASE_H_ */

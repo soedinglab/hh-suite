@@ -67,6 +67,10 @@ HHblits::HHblits(Parameters& parameters,
 
 	// Prepare multi-threading - reserve memory for threads, intialize, etc.
 	for (int bin = 0; bin < par.threads; bin++) {
+      viterbiMatrices[bin] = new ViterbiMatrix();
+      viterbiMatrices[bin]->AllocateBacktraceMatrix(par.maxres, par.maxres);
+
+      //TODO:
 		t[bin] = new HMM; // Each bin has a template HMM allocated that was read from the database file
 		// Each bin has an object of type Hit allocated ...
 		hit[bin] = new Hit;
@@ -285,6 +289,8 @@ void HHblits::Reset() {
 	reducedHitlist.Reset();
 	while (!reducedHitlist.End())
 		reducedHitlist.Delete().Delete();
+
+	N_searched = 0;
 
 	alis.clear();
 }
@@ -1095,11 +1101,11 @@ void HHblits::mergeHitsToQuery(Hash<Hit>* previous_hits,
 		getTemplateA3M(db, hit_cur.entry->entry->name, ftellpos, Tali);
 
 		if (par.allseqs) // need to keep *all* sequences in Qali_allseqs? => merge before filtering
-			Qali_allseqs.MergeMasterSlave(hit_cur, Tali, hit_cur.dbfile,
+			Qali_allseqs.MergeMasterSlave(hit_cur, Tali, hit_cur.name,
 					par.maxcol);
 		Tali.N_filtered = Tali.Filter(par.max_seqid_db, S, par.coverage_db,
 				par.qid_db, par.qsc_db, par.Ndiff_db);
-		Qali.MergeMasterSlave(hit_cur, Tali, hit_cur.dbfile, par.maxcol);
+		Qali.MergeMasterSlave(hit_cur, Tali, hit_cur.name, par.maxcol);
 
 		if (Qali.N_in >= MAXSEQ)
 			break; // Maximum number of sequences reached
@@ -1172,206 +1178,34 @@ void HHblits::getTemplateA3M(HHblitsDatabase* db, char* entry_name,
 			par.Mgaps);
 }
 
-HHblitsDatabase* HHblits::getHHblitsDatabase(HHDatabaseEntry& entry,
-		std::vector<HHblitsDatabase*>& dbs) {
-	for (std::vector<HHblitsDatabase*>::size_type i = 0; i < dbs.size(); i++) {
-		if (dbs[i]->id == entry.ffdatabase->superId) {
-			return dbs[i];
-		}
-	}
 
-	return NULL;
-}
 
-void HHblits::getTemplateHMM(HHDatabaseEntry& entry, char use_global_weights,
-		long& ftellpos, int& format, HMM* t) {
-	if (entry.ffdatabase->isCompressed) {
-		Alignment tali;
+void HHblits::add_hits_to_hitlist(std::vector<Hit>& hits, HitList& hitlist) {
+    for(std::vector<Hit>::size_type i = 0; i != hits.size(); i++) {
+        hits[i].index = N_searched;
+        N_searched++;
+        hitlist.Push(hits[i]);
+    }
 
-		char* data = ffindex_get_data_by_entry(entry.ffdatabase->db_data,
-				entry.entry);
 
-		if (data == NULL) {
-			std::cerr << "Could not fetch data for a3m " << entry.entry->name
-					<< "!" << std::endl;
-			exit(4);
-		}
+    hitlist.N_searched = N_searched;
+    // Sort list according to sortscore
+    HH_LOG(LogLevel::DEBUG) << "Sorting hit list ...\n";
+    hitlist.SortList();
 
-		//TODO: get rid of ftellpos
-		ftellpos = entry.entry->offset;
+    // Use NN prediction of lamda and mu
+    hitlist.CalculatePvalues(q, par.loc, par.ssm, par.ssw);
 
-		HHblitsDatabase* db = getHHblitsDatabase(entry, dbs);
-		if (db == NULL) {
-			//TODO throw error
-			std::cerr << "this should not happen!!!!" << std::endl;
-			exit(0);
-		}
-
-		tali.ReadCompressed(entry.entry, data, db->sequence_database->db_index,
-				db->sequence_database->db_data, db->header_database->db_index,
-				db->header_database->db_data, par.mark, par.maxcol);
-
-		tali.Compress(entry.entry->name, par.cons, par.maxres, par.maxcol,
-				par.M, par.Mgaps);
-
-		tali.N_filtered = tali.Filter(par.max_seqid_db, S, par.coverage_db,
-				par.qid_db, par.qsc_db, par.Ndiff_db);
-		t->name[0] = t->longname[0] = t->fam[0] = '\0';
-		tali.FrequenciesAndTransitions(t, use_global_weights, par.mark,
-				par.cons, par.showcons, par.maxres, pb, Sim);
-
-		format = 0;
-	} else {
-		FILE* dbf = ffindex_fopen_by_entry(entry.ffdatabase->db_data,
-				entry.entry);
-
-		if (dbf != NULL) {
-			ftellpos = ftell(dbf); // record position in dbfile of next HMM to be read
-
-			char line[LINELEN];
-			if (!fgetline(line, LINELEN, dbf)) {
-				std::cerr << "this should not happen!" << std::endl;
-				//TODO: throw error
-			}
-
-			while (strscn(line) == NULL)
-				fgetline(line, LINELEN, dbf); // skip lines that contain only white space
-
-			if (!strncmp(line, "HMMER3", 6))      // read HMMER3 format
-					{
-				format = 1;
-				t->ReadHMMer3(dbf, par.showcons, pb, entry.entry->name);
-				par.hmmer_used = true;
-			} else if (!strncmp(line, "HMMER", 5))      // read HMMER format
-					{
-				format = 1;
-				t->ReadHMMer(dbf, par.showcons, pb, entry.entry->name);
-				par.hmmer_used = true;
-			} else if (!strncmp(line, "HH", 2))    // read HHM format
-					{
-				char path[NAMELEN];
-				Pathname(path, entry.entry->name);
-
-				format = 0;
-				t->Read(dbf, par.maxcol, par.nseqdis, pb, path);
-
-			}
-			//TODO: old hhm format discarded
-			// read a3m alignment
-			else if (line[0] == '#' || line[0] == '>') {
-				Alignment tali;
-				tali.Read(dbf, entry.entry->name, par.mark, par.maxcol,
-						par.nseqdis, line);
-				tali.Compress(entry.entry->name, par.cons, par.maxres,
-						par.maxcol, par.M, par.Mgaps);
-				//              qali.FilterForDisplay(par.max_seqid,par.coverage,par.qid,par.qsc,par.nseqdis);
-				tali.N_filtered = tali.Filter(par.max_seqid_db, S,
-						par.coverage_db, par.qid_db, par.qsc_db, par.Ndiff_db);
-				t->name[0] = t->longname[0] = t->fam[0] = '\0';
-				tali.FrequenciesAndTransitions(t, use_global_weights, par.mark,
-						par.cons, par.showcons, par.maxres, pb, Sim);
-				format = 0;
-			} else {
-				std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": "
-						<< __func__ << ":" << std::endl;
-				std::cerr << "\tunrecognized HMM file format in \'"
-						<< entry.entry->name << "\'. \n";
-				cerr << "Context:\n'" << line << "\n";
-				fgetline(line, LINELEN, dbf);
-				cerr << line << "\n";
-				fgetline(line, LINELEN, dbf);
-				cerr << line << "'\n";
-				exit(1);
-			}
-
-			fclose(dbf);
-			return;
-		}
-	}
-}
-
-void HHblits::DoViterbiSearch(std::vector<HHDatabaseEntry*>& prefiltered_hits,
-		Hash<Hit>* previous_hits, bool alignByWorker) {
-
-	// Search databases
-	for (int bin = 0; bin < par.threads; bin++) {
-		hit[bin]->realign_around_viterbi = false;
-	}
-
-	double filter_cutoff = par.filter_length * par.filter_thresh;
-	par.filter_sum = par.filter_length;
-	par.filter_counter = 0;
-	par.filter_evals = new double[par.filter_length];
-
-	for (int a = 0; a < par.filter_length; a++) {
-		par.filter_evals[a] = 1;
-	}
-
-	// For all the databases comming through prefilter
-#pragma omp parallel for schedule(dynamic, 1)
-	for (size_t idb = 0; idb < prefiltered_hits.size(); idb++) {
-		// Allocate free bin (no need to lock, since slave processes cannot change FREE to other status)
-		int bin = omp_get_thread_num();
-
-		if (!(par.early_stopping_filter && par.filter_sum < filter_cutoff)) {
-#pragma omp critical
-			{
-				hit[bin]->index = N_searched; // give hit a unique index for HMM
-				++N_searched;
-			}
-
-			getTemplateHMM(*prefiltered_hits[idb], 1, hit[bin]->ftellpos,
-					format[bin], t[bin]);
-
-			HH_LOG(LogLevel::DEBUG1) << "Aligning with " << t[bin]->name
-					<< std::endl;
-
-			hit[bin]->dbfile = new char[strlen(
-					prefiltered_hits[idb]->entry->name) + 1];
-			hit[bin]->entry = prefiltered_hits[idb];
-
-			if (alignByWorker)
-				AlignByWorker(par, hit[bin], t[bin], q, format[bin], pb, R, S73,
-						S33, hitlist);
-			else
-				PerformViterbiByWorker(par, hit[bin], t[bin], q, format[bin],
-						pb, R, S73, S33, hitlist, previous_hits);
-		}
-	}
-
-	delete[] par.filter_evals;
-}
-
-void HHblits::ViterbiSearch(std::vector<HHDatabaseEntry*>& prefiltered_hits,
-		Hash<Hit>* previous_hits, int db_size) {
-	// Initialize
-
-	//hand over number of HMMs scanned to hitlist (for E-value calculation)
-	hitlist.N_searched = db_size;
-
-	//////////////////////////////////////////////////////////
-	// Start Viterbi search through db HMMs listed in dbfiles
-	DoViterbiSearch(prefiltered_hits, previous_hits);
-
-	// Sort list according to sortscore
-	HH_LOG(LogLevel::DEBUG) << "Sorting hit list ..." << std::endl;
-	hitlist.SortList();
-
-	// Use NN prediction of lamda and mu
-	hitlist.CalculatePvalues(q, par.loc, par.ssm, par.ssw);
-
-	// Calculate E-values as combination of P-value for Viterbi HMM-HMM comparison and prefilter E-value: E = Ndb P (Epre/Ndb)^alpha
-	if (par.prefilter)
-		hitlist.CalculateHHblitsEvalues(q, par.dbsize, par.alphaa, par.alphab,
-				par.alphac, par.prefilter_evalue_thresh);
-}
+    // Calculate E-values as combination of P-value for Viterbi HMM-HMM comparison and prefilter E-value: E = Ndb P (Epre/Ndb)^alpha
+    if (par.prefilter)
+        hitlist.CalculateHHblitsEvalues(q, par.dbsize, par.alphaa, par.alphab, par.alphac, par.prefilter_evalue_thresh);
+ }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Variant of ViterbiSearch() function for rescoring previously found HMMs with Viterbi algorithm.
 // Perform Viterbi search on each hit object in global hash previous_hits, but keep old alignment
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void HHblits::RescoreWithViterbiKeepAlignment(int db_size,
-		Hash<Hit>* previous_hits) {
+void HHblits::RescoreWithViterbiKeepAlignment(HMMSimd& q_vec, int db_size, Hash<Hit>* previous_hits) {
 	// Initialize
 	std::vector<HHDatabaseEntry*> hits_to_rescore;
 
@@ -1388,7 +1222,32 @@ void HHblits::RescoreWithViterbiKeepAlignment(int db_size,
 
 	//////////////////////////////////////////////////////////
 	// Start Viterbi search through db HMMs listed in dbfiles
-	DoViterbiSearch(hits_to_rescore, previous_hits, false);
+//	DoViterbiSearch(hits_to_rescore, previous_hits, false);
+
+    ViterbiRunner viterbirunner(viterbiMatrices, dbs, par.threads);
+    std::vector<Hit> hits_to_add = viterbirunner.alignment(par, &q_vec, hits_to_rescore, pb, S, Sim, R);
+
+    for(std::vector<Hit>::size_type i = 0; i != hits_to_add.size(); i++) {
+      stringstream ss_tmp;
+      ss_tmp << hits_to_add[i].name << "__" << hits_to_add[i].irep;
+      if (previous_hits->Contains((char*)ss_tmp.str().c_str()))
+      {
+          Hit hit_cur = previous_hits->Remove((char*)ss_tmp.str().c_str());
+          previous_hits->Add((char*)ss_tmp.str().c_str(), hits_to_add[i]);
+          // Overwrite *hit[bin] with alignment, etc. of hit_cur
+          hit_cur.score      = hits_to_add[i].score;
+          hit_cur.score_aass = hits_to_add[i].score_aass;
+          hit_cur.score_ss   = hits_to_add[i].score_ss;
+          hit_cur.Pval       = hits_to_add[i].Pval;
+          hit_cur.Pvalt      = hits_to_add[i].Pvalt;
+          hit_cur.logPval    = hits_to_add[i].logPval;
+          hit_cur.logPvalt   = hits_to_add[i].logPvalt;
+          hit_cur.Eval       = hits_to_add[i].Eval;
+          hit_cur.logEval    = hits_to_add[i].logEval;
+          hit_cur.Probab     = hits_to_add[i].Probab;
+          hitlist.Push(hit_cur);            // insert hit at beginning of list (last repeats first!)
+      }
+    }
 
 	// Sort list according to sortscore
 	HH_LOG(LogLevel::DEBUG) << "Sorting hit list ..." << std::endl;
@@ -1427,6 +1286,7 @@ void HHblits::perform_realign(std::vector<HHDatabaseEntry*>& hits_to_realign,
 	array_plist_phits = new List<void*>*[N_searched];
 	for (int index = 0; index < N_searched; index++)
 		array_plist_phits[index] = NULL; // initialize
+
 
 	// Store all dbfiles and ftell positions of templates to be displayed and realigned
 	hitlist.Reset();
@@ -1505,6 +1365,7 @@ void HHblits::perform_realign(std::vector<HHDatabaseEntry*>& hits_to_realign,
 				<< endl;
 	}
 
+
 	//////////////////////////////////////////////////////////////////////////////////
 	// start premerge:
 	// Align the first premerge templates
@@ -1534,12 +1395,9 @@ void HHblits::perform_realign(std::vector<HHDatabaseEntry*>& hits_to_realign,
 
 			// Forward stream position to start of next database HMM to be realigned
 			hit[bin]->index = hit_cur.index; // give hit a unique index for HMM
-			hit[bin]->dbfile = new char[strlen(hit_cur.dbfile) + 1];
-			strcpy(hit[bin]->dbfile, hit_cur.dbfile); // record db file name from which next HMM is read
 			hit[bin]->irep = 1; // Needed for min_overlap calculation in InitializeForAlignment in hhhit.C
 
-			getTemplateHMM(*hit_cur.entry, par.wg, hit[bin]->ftellpos,
-					format[bin], t[bin]);
+			getTemplateHMM(par, *hit_cur.entry, dbs, par.wg, format[bin], pb, S, Sim, t[bin]);
 
 			HH_LOG(LogLevel::DEBUG1) << "Realigning with " << t[bin]->name << std::endl;
 
@@ -1607,13 +1465,13 @@ void HHblits::perform_realign(std::vector<HHDatabaseEntry*>& hits_to_realign,
 			getTemplateA3M(db, hit[bin]->entry->entry->name, ftellpos, Tali);
 
 			if (par.allseqs) // need to keep *all* sequences in Qali_allseqs? => merge before filtering
-				Qali_allseqs.MergeMasterSlave(*hit[bin], Tali, hit[bin]->dbfile,
+				Qali_allseqs.MergeMasterSlave(*hit[bin], Tali, hit[bin]->name,
 						par.maxcol);
 
 			Tali.N_filtered = Tali.Filter(par.max_seqid_db, S, par.coverage_db,
 					par.qid_db, par.qsc_db, par.Ndiff_db);
 
-			Qali.MergeMasterSlave(*hit[bin], Tali, hit[bin]->dbfile,
+			Qali.MergeMasterSlave(*hit[bin], Tali, hit[bin]->name,
 					par.maxcol);
 
 			// Convert ASCII to int (0-20),throw out all insert states, record their number in I[k][i]
@@ -1663,6 +1521,8 @@ void HHblits::perform_realign(std::vector<HHDatabaseEntry*>& hits_to_realign,
 	// end premerge
 	//////////////////////////////////////////////////////////////////////////////////
 
+
+
 	// Read all HMMs whose position is given in phash_plist_realignhitpos
 #pragma omp parallel for schedule(dynamic, 1)
 	for (size_t idb = 0; idb < hits_to_realign.size(); idb++) {
@@ -1695,13 +1555,7 @@ void HHblits::perform_realign(std::vector<HHDatabaseEntry*>& hits_to_realign,
 				// Give hit[bin] the pointer to the list of pointers to hitlist elements of same template (for realignment)
 				hit[bin]->plist_phits = array_plist_phits[hitpos_curr.index];
 
-				// record db file name from which next HMM is read
-				hit[bin]->dbfile = new char[strlen(
-						hits_to_realign[idb]->entry->name) + 1];
-				strcpy(hit[bin]->dbfile, hits_to_realign[idb]->entry->name);
-
-				getTemplateHMM(*hitpos_curr.entry, par.wg, hit[bin]->ftellpos,
-						format[bin], t[bin]);
+				getTemplateHMM(par, *hitpos_curr.entry, dbs, par.wg, format[bin], pb, S, Sim, t[bin]);
 
 				HH_LOG(LogLevel::DEBUG) << "Realigning with " << t[bin]->name << std::endl;
 
@@ -1844,7 +1698,7 @@ void HHblits::recalculateAlignmentsForDifferentQSC(HitList& hitlist,
 
 			int format;
 			long ftellpos;
-			getTemplateHMM(*hit_ref.entry, 1, ftellpos, format, t);
+			getTemplateHMM(par, *hit_ref.entry, dbs, 1, format, pb, S, Sim, t);
 
 			PrepareTemplateHMM(par, q, t, format, pb, R);
 
@@ -1852,9 +1706,6 @@ void HHblits::recalculateAlignmentsForDifferentQSC(HitList& hitlist,
 			hit.AllocateBacktraceMatrix(q->L + 2, par.maxres + 1);
 			hit.self = 0;
 			hit.realign_around_viterbi = false;
-
-			hit.dbfile = new char[strlen(hit_ref.dbfile) + 1];
-			strcpy(hit.dbfile, hit_ref.dbfile);
 
 			for (int irep = 1; irep <= par.altali; irep++) {
 				hit.irep = irep;
@@ -1890,7 +1741,7 @@ void HHblits::recalculateAlignmentsForDifferentQSC(HitList& hitlist,
 
 			int format;
 			long ftellpos;
-			getTemplateHMM(*hit_ref.entry, par.wg, ftellpos, format, t);
+			getTemplateHMM(par, *hit_ref.entry, dbs, par.wg, format, pb, S, Sim, t);
 
 			PrepareTemplateHMM(par, q, t, format, pb, R);
 			t->Log2LinTransitionProbs(1.0);
@@ -1900,9 +1751,6 @@ void HHblits::recalculateAlignmentsForDifferentQSC(HitList& hitlist,
 			hit.AllocateBacktraceMatrix(q->L + 2, par.maxres + 1);
 			hit.irep = 1;
 			hit.self = 0;
-
-			hit.dbfile = new char[strlen(hit_ref.dbfile) + 1];
-			strcpy(hit.dbfile, hit_ref.dbfile); // record db file name from which next HMM is read
 
 			hit.i1 = hit_ref.i1;
 			hit.i2 = hit_ref.i2;
@@ -2006,12 +1854,12 @@ void HHblits::run(FILE* query_fh, char* query_path) {
 	Hash<char>* premerged_hits = new Hash<char>(1631);
 
 	q = new HMM;
+	HMMSimd q_vec(par.maxres);
 	q_tmp = new HMM;
 
 	// Read query input file (HHM or alignment format) without adding pseudocounts
 	Qali.N_in = 0;
-	ReadQueryFile(par, query_fh, input_format, par.wg, q, Qali, query_path, pb,
-			S, Sim);
+	ReadQueryFile(par, query_fh, input_format, par.wg, q, Qali, query_path, pb, S, Sim);
 
 	if (Qali.N_in - Qali.N_ss > 1)
 		premerge = 0;
@@ -2076,8 +1924,8 @@ void HHblits::run(FILE* query_fh, char* query_path) {
 //      v = v1;
 //    }
 
-		PrepareQueryHMM(par, input_format, q, pc_hhm_context_engine,
-				pc_hhm_context_mode, pb, R);
+		PrepareQueryHMM(par, input_format, q, pc_hhm_context_engine, pc_hhm_context_mode, pb, R);
+		q_vec.MapOneHMM(q);
 
 		////////////////////////////////////////////
 		// Prefiltering
@@ -2100,8 +1948,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
 						par.pc_prefilter_nocontext_c);
 			} else {
 				// Add context specific pseudocounts (now always used, because clusterfile is necessary)
-				q_tmp->AddContextSpecificPseudocounts(
-						pc_prefilter_context_engine, pc_prefilter_context_mode);
+				q_tmp->AddContextSpecificPseudocounts(pc_prefilter_context_engine, pc_prefilter_context_mode);
 			}
 
 			q_tmp->CalculateAminoAcidBackground(pb);
@@ -2138,9 +1985,11 @@ void HHblits::run(FILE* query_fh, char* query_path) {
 				<< " HMMs using HMM-HMM Viterbi alignment" << std::endl;
 
 		// Main Viterbi HMM-HMM search
-		// Starts with empty hitlist (hits of previous iterations were deleted) and creates a hitlist with the hits of this iteration
-		ViterbiSearch(new_entries, previous_hits,
-				(new_entries.size() + old_entries.size()));
+	    ViterbiRunner viterbirunner(viterbiMatrices, dbs, par.threads);
+	    std::vector<Hit> hits_to_add = viterbirunner.alignment(par, &q_vec, new_entries, pb, S, Sim, R);
+
+
+	    add_hits_to_hitlist(hits_to_add, hitlist);
 
 		// check for new hits or end with iteration
 		int new_hits = 0;
@@ -2154,6 +2003,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
 			new_hits++;
 		}
 
+
 		if (new_hits == 0 || round == par.num_rounds) {
 			if (round < par.num_rounds) {
 				HH_LOG(LogLevel::INFO) << "No new hits found in iteration "
@@ -2164,18 +2014,20 @@ void HHblits::run(FILE* query_fh, char* query_path) {
 				HH_LOG(LogLevel::INFO)
 						<< "Rescoring previously found HMMs with Viterbi algorithm"
 						<< std::endl;
-				ViterbiSearch(old_entries, previous_hits,
-						(new_entries.size() + old_entries.size()));
 
-				// Add dbfiles_old to dbfiles_new for realign
-				for (size_t a = 0; a < old_entries.size(); a++) {
-					new_entries.push_back(old_entries[a]);
-				}
+
+		        ViterbiRunner viterbirunner(viterbiMatrices, dbs, par.threads);
+		        std::vector<Hit> hits_to_add = viterbirunner.alignment(par, &q_vec, old_entries, pb, S, Sim, R);
+
+		        add_hits_to_hitlist(hits_to_add, hitlist);
+
+//				// Add dbfiles_old to dbfiles_new for realign
+		        new_entries.insert(new_entries.end(), old_entries.begin(), old_entries.end());
 			} else if (!par.realign_old_hits && previous_hits->Size() > 0) {
 				HH_LOG(LogLevel::INFO)
 						<< "Rescoring previously found HMMs with Viterbi algorithm"
 						<< std::endl;
-				RescoreWithViterbiKeepAlignment(
+				RescoreWithViterbiKeepAlignment(q_vec,
 						new_entries.size() + previous_hits->Size(),
 						previous_hits);
 			}

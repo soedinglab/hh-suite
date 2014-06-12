@@ -7,25 +7,6 @@
 
 #include <errno.h>
 
-#ifdef HH_SSE41
-#include <tmmintrin.h>   // SSSE3
-#include <smmintrin.h>   // SSE4.1
-#define HH_SSE3
-#endif
-
-#ifdef HH_SSE3
-#include <pmmintrin.h>   // SSE3
-#define HH_SSE2
-#endif
-
-#ifdef HH_SSE2
-#ifndef __SUNPRO_C
-#include <emmintrin.h>   // SSE2
-#else
-#include <sunmedia_intrin.h>
-#endif
-#endif
-
 #include <iostream>
 
 #include "hhdecl.h"
@@ -44,11 +25,6 @@ int MemoryError(const char arrayname[], const char* file, const int line, const 
 int SyntaxError(const char* file, const int line, const char* func, const char details[]="");
 
 int InternalError(const char errstr[], const char* file, const int line, const char* func);
-
-/////////////////////////////////////////////////////////////////////////////////////
-//// Replace memalign by posix_memalign (Why? [JS])
-/////////////////////////////////////////////////////////////////////////////////////
-void *memalign(size_t boundary, size_t size, const char* what_for=NULL);
 
 /////////////////////////////////////////////////////////////////////////////////////
 //// Execute system command

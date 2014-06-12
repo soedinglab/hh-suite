@@ -13,6 +13,8 @@
 #include <unistd.h>
 #include <iostream>
 
+class Parameters;
+
 #include "crf.h"
 #include "aa.h"
 #include "crf_pseudocounts-inl.h"

@@ -30,7 +30,7 @@ using std::ofstream;
 //// Constructor
 /////////////////////////////////////////////////////////////////////////////////////
 Hit::Hit() {
-  longname = name = file = dbfile = NULL;
+  longname = name = file = NULL;
   entry = NULL;
   sname = NULL;
   seq = NULL;
@@ -47,6 +47,9 @@ Hit::Hit() {
   Neff_HMM = 0.0;
   realign_around_viterbi = false;
   forward_allocated = false;
+  //TODO: debug
+  ssm1 = 0;
+  ssm2 = 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -82,7 +85,6 @@ void Hit::Delete() {
   delete[] longname;
   delete[] name;
   delete[] file;
-  delete[] dbfile;
   if (sname) {
     for (int k = 0; k < n_display; ++k)
       delete[] sname[k];
@@ -95,7 +97,6 @@ void Hit::Delete() {
   }
 
   longname = name = file = NULL;
-  dbfile = NULL;
   sname = NULL;
   seq = NULL;
 }
@@ -1507,11 +1508,6 @@ void Hit::InitializeBacktrace(HMM* q, HMM* t) {
       strcpy(sname[k], t->sname[k]);
       strcpy(seq[k], t->seq[k]);
     }
-    if (dbfile) {
-      char* ptr = dbfile;
-      dbfile = new char[strlen(ptr) + 1];
-      strcpy(dbfile, ptr);
-    }
   }
 
   n_display = t->n_display;
@@ -1531,6 +1527,58 @@ void Hit::InitializeBacktrace(HMM* q, HMM* t) {
   logPvalt = 0.0;
   Probab = 1.0;
 }
+
+void Hit::initHitFromHMM(HMM * t){
+    this->alt_i = NULL;
+    this->alt_j = NULL;
+    this->P_posterior = NULL;
+    //Copy information about template profile to hit and reset template pointers to avoid destruction
+    this->longname=new(char[strlen(t->longname)+1]);
+    //    printf("%s\n",t->longname);
+    this->name    =new(char[strlen(t->name)+1]);
+    this->file    =new(char[strlen(t->file)+1]);
+    if (!this->file) MemoryError("space for alignments with database HMMs. \nNote that all alignments have to be kept in memory", __FILE__, __LINE__, __func__);
+    strcpy(this->longname,t->longname);
+    strcpy(this->name,t->name);
+    strcpy(this->fam ,t->fam);
+    strcpy(this->sfam ,t->sfam);
+    strcpy(this->fold ,t->fold);
+    strcpy(this->cl ,t->cl);
+    strcpy(this->file,t->file);
+
+    this->sname=new(char*[t->n_display]);
+    this->seq  =new(char*[t->n_display]);
+    if (!this->sname || !this->seq)
+        MemoryError("space for alignments with database HMMs.\nNote that all sequences for display have to be kept in memory", __FILE__, __LINE__, __func__);
+
+
+    // Make deep copy for all further alignments
+    for (int k=0; k<t->n_display; k++)
+    {
+        this->sname[k] = new(char[strlen(t->sname[k])+1]);
+        this->seq[k]   = new(char[strlen(t->seq[k])+1]);
+        strcpy(this->sname[k],t->sname[k]);
+        strcpy(this->seq[k],t->seq[k]);
+    }
+
+    this->n_display=t->n_display;
+    this->ncons  = t->ncons;
+    this->nfirst = t->nfirst;
+    this->nss_dssp = t->nss_dssp;
+    this->nsa_dssp = t->nsa_dssp;
+    this->nss_pred = t->nss_pred;
+    this->nss_conf = t->nss_conf;
+    this->L = t->L;
+    this->Neff_HMM = t->Neff_HMM;
+    this->Eval   = 1.0;
+    this->logEval= 0.0;
+    this->Pval   = 1.0;
+    this->Pvalt  = 1.0;
+    this->logPval = 0.0;
+    this->logPvalt= 0.0;
+    this->Probab = 1.0;
+}
+
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Some score functions 

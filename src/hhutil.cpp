@@ -35,25 +35,6 @@ int InternalError(const char errstr[], const char* file, const int line, const c
 }
 
 
-/////////////////////////////////////////////////////////////////////////////////////
-//// Replace memalign by posix_memalign (Why? [JS])
-/////////////////////////////////////////////////////////////////////////////////////
-void *memalign(size_t boundary, size_t size, const char* what_for)
-{
-  void *pointer;
-  if (posix_memalign(&pointer,boundary,size) != 0) {
-    std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
-
-    std::cerr<<"\tmemalign could not allocate memory of " << size << " bytes, " << strerror(errno);
-    if (what_for!=NULL)
-      std::cerr<<"for "<<what_for;
-
-    std::cerr << std::endl << "\tDo you have >=4GB of RAM per core on your machine? Are your max memory size and stack sizes sufficient? (Check using '$ ulimit -a' under Linux and best set to 'unlimited')"<<std::endl;
-    exit(3);
-  }
-
-  return pointer;
-}
 
 /////////////////////////////////////////////////////////////////////////////////////
 //// Execute system command

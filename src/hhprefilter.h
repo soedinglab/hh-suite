@@ -19,6 +19,7 @@ class Prefilter;
 #include "hash.h"
 #include "hhhit.h"
 #include "hhdatabase.h"
+#include "simd.h"
 
 namespace hh {
 
@@ -28,13 +29,13 @@ public:
 	Prefilter(const char* cs_library, FFindexDatabase* cs219_database);
 	virtual ~Prefilter();
 
-	static void init_no_prefiltering(FFindexDatabase* cs219_database, std::vector<std::string>& prefiltered_entries);
+	static void init_no_prefiltering(FFindexDatabase* cs219_database, std::vector<std::pair<int, std::string>>& prefiltered_entries);
 
 	void prefilter_db(HMM* q_tmp, Hash<Hit>* previous_hits,
 			const int threads, const int prefilter_gap_open, const int prefilter_gap_extend,
 			const int prefilter_score_offset, const int prefilter_bit_factor, const double prefilter_evalue_thresh,
 			const double prefilter_evalue_coarse_thresh, const int preprefilter_smax_thresh, const int min_prefilter_hits, const float R[20][20],
-			std::vector<std::string>& new_prefilter_hits, std::vector<std::string>& old_prefilter_hits);
+			std::vector<std::pair<int, std::string>>& new_prefilter_hits, std::vector<std::pair<int, std::string>>& old_prefilter_hits);
 
 private:
 	const int SHORT_BIAS = 32768;

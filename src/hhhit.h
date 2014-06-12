@@ -60,7 +60,6 @@ class Hit
   char fold[IDLEN];     // fold ID (derived from name)
   char cl[IDLEN];       // class ID (derived from name)
 
-  char* dbfile;         // full database file name from which HMM was read
   long ftellpos;        // start position of HMM in database file
   int index;            // index of HMM in order of reading in (first=0)
   HHDatabaseEntry* entry;
@@ -167,6 +166,9 @@ class Hit
     return hit1.sum_of_probs > hit2.sum_of_probs;
   }
 
+  void initHitFromHMM(HMM * t);
+
+
   // Calculate Evalue, score_aass, Proba from logPval and score_ss
   // Calculate Evalue, score_aass, Proba from logPval and score_ss
   inline void CalcEvalScoreProbab(int N_searched, float lamda, const char loc, const char ssm, const float ssw) {
@@ -195,7 +197,7 @@ private:
   // TP: same superfamily OR MAXSUB score >=0.1
   inline double CalcProbab(const char loc, const char ssm, const float ssw) {
     double s = -score_aass;
-    double t;
+    double t = 0;
     if (s > 200)
       return 100.0;
     if (loc) {
