@@ -266,30 +266,11 @@ void Viterbi::PrintDebug(const HMM * q,const HMM *t,Viterbi::BacktraceScore * ba
     }
 }
 
-//Calculate score between columns i and j of two HMMs (query and template)
-inline float Viterbi::Score(float* qi, float* tj)
-{
-    return fast_log2(ProbFwd(qi,tj));
-}
-
-// Calculate score between columns i and j of two HMMs (query and template)
-inline float Viterbi::ProbFwd(float* qi, float* tj)
-{
-    return ScalarProd20(qi,tj); //
-}
-
-
-// Calculate secondary structure score between columns i and j of two HMMs (query and template)
-inline float Viterbi::ScoreSS(const HMM* q, const HMM* t, const int i, const int j, const int ssm)
-{
-    //TODO
-    return 0.0;
-}
 
 /////////////////////////////////////////////////////////////////////////////////////
 //// Functions that set cell off
 /////////////////////////////////////////////////////////////////////////////////////
-inline void Viterbi::InitializeForAlignment(HMM* q, HMM* t, ViterbiMatrix * matrix,int elem,bool self)
+void Viterbi::InitializeForAlignment(HMM* q, HMM* t, ViterbiMatrix * matrix, int elem, bool self, int par_min_overlap)
 {
     int i,j;
     int min_overlap;
@@ -319,7 +300,7 @@ inline void Viterbi::InitializeForAlignment(HMM* q, HMM* t, ViterbiMatrix * matr
         if (par_min_overlap==0)
             min_overlap = imin(60, (int)(0.333f*imin(q->L,t->L))+1); // automatic minimum overlap
         else
-            min_overlap = imin(par_min_overlap, (int)(0.8f*imin(q->L,t->L)));
+            min_overlap = imin(par_min_overlap, (int)(0.8f*imin(q->L, t->L)));
         
         for (i=0; i<min_overlap; ++i)
             for (j=i-min_overlap+t->L+1; j<=t->L; ++j) // Lt-j+i>=Ovlap => j<=i-Ovlap+Lt => jmax=min{Lt,i-Ovlap+Lt}

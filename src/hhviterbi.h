@@ -92,11 +92,28 @@ public:
     /////////////////////////////////////////////////////////////////////////////////////
     // Set cell off for excl paramenter, ...
     /////////////////////////////////////////////////////////////////////////////////////
-    void InitializeForAlignment(HMM* q, HMM* t, ViterbiMatrix * matrix,int elem,bool self);
+    static void InitializeForAlignment(HMM* q, HMM* t, ViterbiMatrix * matrix,int elem, bool self, int par_min_overlap);
     
-private:
-    
-    
+    //Calculate score between columns i and j of two HMMs (query and template)
+    static inline float Score(float* qi, float* tj)
+    {
+        return fast_log2(ProbFwd(qi,tj));
+    }
+
+    // Calculate score between columns i and j of two HMMs (query and template)
+    static inline float ProbFwd(float* qi, float* tj)
+    {
+        return ScalarProd20(qi,tj); //
+    }
+
+
+    // Calculate secondary structure score between columns i and j of two HMMs (query and template)
+    static inline float ScoreSS(const HMM* q, const HMM* t, const int i, const int j, const int ssm)
+    {
+        //TODO
+        return 0.0;
+    }
+
     static inline simd_float ScalarProd20Vec(simd_float* qi, simd_float* tj)
     {
         _mm_prefetch((char *) &qi[4] , _MM_HINT_T0 );
@@ -136,9 +153,11 @@ private:
         
     }
 
-    static inline float Score(float* qi, float* tj);
-    static inline float ProbFwd(float* qi, float* tj);
-    static inline float ScoreSS(const HMM* q, const HMM* t, const int i, const int j, const int ssm);
+private:
+
+
+
+
     static void PrintDebug(const HMM * q,const HMM *t,Viterbi::BacktraceScore * backtraceScore,Viterbi::BacktraceResult * backtraceResult,
                            const int ssm);
     

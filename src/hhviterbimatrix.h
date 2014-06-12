@@ -13,6 +13,7 @@
 #include "hhhmmsimd.h"
 
 
+
 class ViterbiMatrix {
 public:  
     static const int VEC_SIZE=HMMSimd::VEC_SIZE;

@@ -79,6 +79,10 @@ class HHblits;
 #include "hhviterbimatrix.h"
 #include "hhviterbirunner.h"
 
+#include "hhposteriormatrix.h"
+#include "hhposteriordecoderinputdata.h"
+#include "hhposteriordecoderrunner.h"
+
 const char HHBLITS_REFERENCE[] =
 		"Remmert M., Biegert A., Hauser A., and Soding J.\nHHblits: Lightning-fast iterative protein sequence searching by HMM-HMM alignment.\nNat. Methods 9:173-175 (2011)\n";
 
@@ -169,6 +173,8 @@ protected:
 	Alignment Qali_allseqs;
 
 	ViterbiMatrix* viterbiMatrices[MAXBINS];
+	PosteriorMatrix* posteriorMatrices[MAXBINS];
+
 	// Each bin has a template HMM allocated that was read from the database file
 	HMM* t[MAXBINS];
 	// Each bin has an object of type Hit allocated with a separate dynamic programming matrix (memory!!)
@@ -180,7 +186,7 @@ protected:
 	HitList reducedHitlist;
 	int N_searched;           // Number of HMMs searched
 	std::map<int, Alignment> alis;
-	void perform_realign(std::vector<HHDatabaseEntry*>& hits_to_realign, const int premerge, Hash<char>* premerged_hits);
+	void perform_realign(HMMSimd& q_vec, std::vector<HHDatabaseEntry*>& hits_to_realign, const int premerge, Hash<char>* premerged_hits);
 	void mergeHitsToQuery(Hash<Hit>* previous_hits, Hash<char>* premerged_hits, int& seqs_found, int& cluster_found);
 	void add_hits_to_hitlist(std::vector<Hit>& hits, HitList& hitlist);
 

@@ -89,7 +89,8 @@ inline void ViterbiMatrix::setGapDel(int row,int col,int elem,bool value){
     }
 }
 
-inline void ViterbiMatrix::setMatMat(int row,int col,int elem,unsigned char value){
+//TODO: inline
+void ViterbiMatrix::setMatMat(int row,int col,int elem,unsigned char value){
     //0xF8 11111000
 //    this->bCO_MI_DG_IM_GD_MM_vec[row][(col*VEC_SIZE)+elem]&=(0xF8 ^ value);
 		unsigned char c = 0xF8;

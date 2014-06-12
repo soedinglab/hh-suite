@@ -160,6 +160,8 @@ public:
     friend class CSCounts;
     friend class Viterbi;
     friend class HMMSimd;
+    friend class PosteriorDecoderRunner;
+    friend class PosteriorDecoder;
 };
 
 #endif

@@ -183,9 +183,9 @@ class Hit
 
   /* // Merge HMM with next aligned HMM   */
   /* void MergeHMM(HMM* Q, HMM* t, float wk[]); */
+  char state;          // 0: Start/STOP state  1: MM state  2: GD state (-D)  3: IM state  4: DG state (D-)  5 MI state
   
 private:
-  char state;          // 0: Start/STOP state  1: MM state  2: GD state (-D)  3: IM state  4: DG state (D-)  5 MI state
   char** btr;          // backtracing matrix for all  5 pair states in one bit representation: btr[i][j] = 0|MI|DG|IM|GD|MM = 0|1|1|1|1|111
   char** cell_off;     // cell_off[i][j]=1 means this cell will get score -infinity
   double* scale;       // 
@@ -245,13 +245,14 @@ private:
 
   // Calculate secondary structure score between columns i and j of two HMMs (query and template)
   float ScoreSS(HMM* q, HMM* t, int i, int j, const float ssw, const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]);
-};
 
+};
 
 double Pvalue(double x, double a[]);
 double Pvalue(float x, float lamda, float mu);
 double logPvalue(float x, float lamda, float mu);
 double logPvalue(float x, double a[]);
+int compareHitLengths(const void * a, const void * b);
 
 
 

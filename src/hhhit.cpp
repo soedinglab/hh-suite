@@ -1622,3 +1622,13 @@ float Hit::ScoreSS(HMM* q, HMM* t, int i, int j, int ssm, const float ssw, const
 float Hit::ScoreSS(HMM* q, HMM* t, int i, int j, const float ssw, const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]) {
   return ScoreSS(q, t, i, j, ssm2, ssw, S73, S33);
 }
+
+int compareHitLengths(const void * a, const void * b) {
+
+    Hit* pa = *(Hit**)a;
+    Hit* pb = *(Hit**)b;
+
+//  return (pb->L_template - pa->L_template);
+    return (pb->L - pa->L);
+}
+
