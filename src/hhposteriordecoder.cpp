@@ -148,7 +148,7 @@ void PosteriorDecoder::realign(HMMSimd & q_hmm, HMMSimd & t_hmm,
 //	}
 
 	// Compute SIMD Backward algorithm
-	backwardAlgorithm(q_hmm, t_hmm, p_mm, viterbi_matrix, shift);
+	backwardAlgorithm(q_hmm, t_hmm, hit_vec, p_mm, viterbi_matrix, shift);
 
 
 	// Compute SIMD MAC algorithm
