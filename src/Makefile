@@ -48,7 +48,7 @@ else # ifndef ICC
   endif
 endif # ifndef ICC
 
-CPP = $(CXX) $(CPPFLAGS) $(CXXFLAGS) $(LDFLAGS)
+CPP = $(CXX) $(CPPFLAGS) $(CXXFLAGS) $(LDFLAGS) -pg -g
 CPP_VALGRIND = $(CXX) -g $(CXXFLAGS)
 
 

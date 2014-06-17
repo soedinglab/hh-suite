@@ -106,10 +106,12 @@ struct HHDatabaseEntry {
     FFindexDatabase* ffdatabase;
     ffindex_entry_t* entry;
     int sequence_length;
+};
 
-    bool operator()(const HHDatabaseEntry* x, const HHDatabaseEntry* y) {
-      return x->sequence_length > y->sequence_length;
-    }
+struct HHDatabaseEntryCompare {
+  bool operator()(const HHDatabaseEntry* l, const HHDatabaseEntry* r) {
+    return (*l).sequence_length > (*r).sequence_length;
+  }
 };
 
 void getTemplateHMM(Parameters& par, HHDatabaseEntry& entry,
