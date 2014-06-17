@@ -1255,7 +1255,9 @@ void HHblits::RescoreWithViterbiKeepAlignment(HMMSimd& q_vec, Hash<Hit>* previou
       hit_cur.Probab = hits_to_add[i].Probab;
       hitlist.Push(hit_cur); // insert hit at beginning of list (last repeats first!)
     }
-    hits_to_add[i].Delete();
+    else {
+      hits_to_add[i].Delete();
+    }
   }
 
   // Sort list according to sortscore
@@ -2027,8 +2029,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
 //      v = v1;
 //    }
 
-    PrepareQueryHMM(par, input_format, q, pc_hhm_context_engine,
-        pc_hhm_context_mode, pb, R);
+    PrepareQueryHMM(par, input_format, q, pc_hhm_context_engine, pc_hhm_context_mode, pb, R);
     q_vec.MapOneHMM(q);
 
     ////////////////////////////////////////////

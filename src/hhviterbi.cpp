@@ -29,12 +29,12 @@ void Viterbi::ExcludeAlignment(ViterbiMatrix * matrix,HMMSimd* q_four, HMMSimd* 
 }
 
 
-Viterbi::Viterbi(int maxres,bool local,float penalty_gap_query,float penalty_gap_template, float correlation, int par_min_overlap, float shift){
-    this->maxres=maxres;
+Viterbi::Viterbi(int max_seq_length,bool local,float penalty_gap_query,float penalty_gap_template, float correlation, int par_min_overlap, float shift){
+    this->max_seq_length=max_seq_length;
     this->local = local;
     this->penalty_gap_query = penalty_gap_query;
     this->penalty_gap_template = penalty_gap_template;
-    sMM_DG_MI_GD_IM_vec = (simd_float *) malloc_simd_float(VEC_SIZE*maxres*5*sizeof(float));
+    sMM_DG_MI_GD_IM_vec = (simd_float *) malloc_simd_float(VEC_SIZE*max_seq_length*5*sizeof(float));
     this->correlation = correlation;
     this->par_min_overlap = par_min_overlap;
 //    this->exclstr = new char[strlen(exclstr)+1];
@@ -57,7 +57,7 @@ Viterbi::~Viterbi(){
 // Trace back Viterbi alignment of two profiles based on matrices bXX[][]
 /////////////////////////////////////////////////////////////////////////////////////
 //TODO inline
-Viterbi::BacktraceResult Viterbi::Backtrace(ViterbiMatrix * matrix,int elem,int * start_i,int * start_j)
+Viterbi::BacktraceResult Viterbi::Backtrace(ViterbiMatrix * matrix,int elem,int start_i[VEC_SIZE], int start_j[VEC_SIZE])
 {
     // Trace back trough the matrices bXY[i][j] until first match state is found (STOP-state)
     int step;      // counts steps in path through 5-layered dynamic programming matrix
@@ -68,6 +68,8 @@ Viterbi::BacktraceResult Viterbi::Backtrace(ViterbiMatrix * matrix,int elem,int 
     int * j_steps  = new int[maxAlignmentLength];
     char * states  = new char[maxAlignmentLength];
     
+
+
     // Back-tracing loop
     int matched_cols=0;         // for each MACTH (or STOP) state matched_col is incremented by 1
     step=0;                 // steps through the matrix correspond to alignment columns (from 1 to nsteps)
@@ -122,7 +124,6 @@ Viterbi::BacktraceResult Viterbi::Backtrace(ViterbiMatrix * matrix,int elem,int 
     states[step] = ViterbiMatrix::MM;  // first state (STOP state) is set to MM state
     int nsteps=step;
     
-    
     Viterbi::BacktraceResult result;
     
     result.i_steps = i_steps;
@@ -130,16 +131,17 @@ Viterbi::BacktraceResult Viterbi::Backtrace(ViterbiMatrix * matrix,int elem,int 
     result.states = states;
     result.count = nsteps;
     result.matched_cols = matched_cols;
+
     return result;
 }
 
 //TODO: inline
-Viterbi::ViterbiResult Viterbi::Align(HMMSimd* q, HMMSimd* t,ViterbiMatrix * viterbiMatrix){
-    Viterbi::ViterbiResult result;
+Viterbi::ViterbiResult* Viterbi::Align(HMMSimd* q, HMMSimd* t,ViterbiMatrix * viterbiMatrix, int maxres){
+    Viterbi::ViterbiResult* result = new Viterbi::ViterbiResult();
     if (viterbiMatrix->hasCellOff()==true) {
-        result = this->AlignWithCellOff(q,t,viterbiMatrix);
+        this->AlignWithCellOff(q,t,viterbiMatrix, maxres, result);
     } else {
-        result = this->AlignWithOutCellOff(q,t,viterbiMatrix);
+        this->AlignWithOutCellOff(q,t,viterbiMatrix, maxres, result);
     }
     viterbiMatrix->setCellOff(false); // the ViterbiAlign set all Cell of values to false
 
@@ -150,7 +152,7 @@ Viterbi::ViterbiResult Viterbi::Align(HMMSimd* q, HMMSimd* t,ViterbiMatrix * vit
 //TODO: inline
 Viterbi::BacktraceScore Viterbi::ScoreForBacktrace(HMMSimd* q_four, HMMSimd* t_four,
                                                           int elem,Viterbi::BacktraceResult * backtraceResult,
-                                                          float * alignmentScore,
+                                                          float alignmentScore[VEC_SIZE],
                                                           int ssm1,int ssm2)
 {
     

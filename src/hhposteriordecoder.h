@@ -101,7 +101,7 @@ private:
 	void forwardAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm, std::vector<Hit *> & hit_vec, PosteriorMatrix & p_mm, ViterbiMatrix & viterbi_matrix, float shift);
 	void backwardAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm, PosteriorMatrix & p_mm, ViterbiMatrix & viterbi_matrix, float shift);
 	void macAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm, std::vector<Hit *> & hit_vec, PosteriorMatrix & p_mm,
-			ViterbiMatrix & viterbi_matrix, const simd_int min_overlap, float par_mact);
+			ViterbiMatrix & viterbi_matrix, float par_mact);
 	void backtraceMAC(HMM & q, HMM & t, PosteriorMatrix & p_mm, ViterbiMatrix & backtrace_matrix, const int elem, Hit & hit, float corr);
 	void initializeBacktrace(HMM & t, Hit & hit);
 

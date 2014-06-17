@@ -22,9 +22,9 @@ res        = simdui8_max(res,index_vec);
 // The function is called with q and t
 /////////////////////////////////////////////////////////////////////////////////////
 #ifdef VITERBI_CELLOFF
-Viterbi::ViterbiResult Viterbi::AlignWithCellOff(HMMSimd* q, HMMSimd* t,ViterbiMatrix * viterbiMatrix)
+void Viterbi::AlignWithCellOff(HMMSimd* q, HMMSimd* t,ViterbiMatrix * viterbiMatrix, int maxres, ViterbiResult* result)
 #else
-Viterbi::ViterbiResult Viterbi::AlignWithOutCellOff(HMMSimd* q, HMMSimd* t,ViterbiMatrix * viterbiMatrix)
+void Viterbi::AlignWithOutCellOff(HMMSimd* q, HMMSimd* t,ViterbiMatrix * viterbiMatrix, int maxres, ViterbiResult* result)
 #endif
 {
     
@@ -437,17 +437,13 @@ Viterbi::ViterbiResult Viterbi::AlignWithOutCellOff(HMMSimd* q, HMMSimd* t,Viter
         }    // end for j
     }     // end for i
     
-    Viterbi::ViterbiResult result;
-    for(int seq_index=0; seq_index<VEC_SIZE; seq_index++){
-        result.score[seq_index]=((float*)&score_vec)[seq_index];
-        result.i[seq_index] = ((int*)&i2_vec)[seq_index];
-        result.j[seq_index] = ((int*)&j2_vec)[seq_index];
-        
+    for(int seq_index=0; seq_index < maxres; seq_index++){
+        result->score[seq_index]=((float*)&score_vec)[seq_index];
+        result->i[seq_index] = ((int*)&i2_vec)[seq_index];
+        result->j[seq_index] = ((int*)&j2_vec)[seq_index];
     }
     
     //   printf("Template=%-12.12s  i=%-4i j=%-4i score=%6.3f\n",t->name,i2,j2,score);
-    
-    return result;
 }
 
 

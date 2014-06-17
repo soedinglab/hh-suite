@@ -52,25 +52,25 @@ public:
     // Align
     // Alignes two HMMSimd objects
     /////////////////////////////////////////////////////////////////////////////////////
-    ViterbiResult Align(HMMSimd* q, HMMSimd* t,ViterbiMatrix * viterbiMatrix);
+    ViterbiResult* Align(HMMSimd* q, HMMSimd* t, ViterbiMatrix * viterbiMatrix, int maxres);
     
     /////////////////////////////////////////////////////////////////////////////////////
     // Align
     // Alignes two HMMSimd objects
     /////////////////////////////////////////////////////////////////////////////////////
-    ViterbiResult AlignWithOutCellOff(HMMSimd* q, HMMSimd* t,ViterbiMatrix * viterbiMatrix);
+    void AlignWithOutCellOff(HMMSimd* q, HMMSimd* t,ViterbiMatrix * viterbiMatrix, int maxres, ViterbiResult* result);
     
     /////////////////////////////////////////////////////////////////////////////////////
     // Align with Cell Off
     // Alignes two HMMSimd objects and excludes alignments
     /////////////////////////////////////////////////////////////////////////////////////
-    ViterbiResult AlignWithCellOff(HMMSimd* q, HMMSimd* t,ViterbiMatrix * viterbiMatrix);
+    void AlignWithCellOff(HMMSimd* q, HMMSimd* t,ViterbiMatrix * viterbiMatrix, int maxres, ViterbiResult* result);
     
     /////////////////////////////////////////////////////////////////////////////////////
     // Backtrace
     // Makes backtrace from start i, j position.
     /////////////////////////////////////////////////////////////////////////////////////
-    static BacktraceResult Backtrace(ViterbiMatrix * matrix,int elem,int * start_i,int * start_j);
+    static BacktraceResult Backtrace(ViterbiMatrix * matrix,int elem,int start_i[VEC_SIZE], int start_j[VEC_SIZE]);
     
     
     /////////////////////////////////////////////////////////////////////////////////////
@@ -79,7 +79,7 @@ public:
     /////////////////////////////////////////////////////////////////////////////////////
     BacktraceScore  ScoreForBacktrace(HMMSimd* q_four, HMMSimd* t_four,int elem,
                                                       Viterbi::BacktraceResult *backtraceResult,
-                                                      float * alignmentScore, int ssm1,int ssm2);
+                                                      float alignmentScore[VEC_SIZE], int ssm1,int ssm2);
     
     /////////////////////////////////////////////////////////////////////////////////////
     // ExcludeAlignment
@@ -161,12 +161,12 @@ private:
     static void PrintDebug(const HMM * q,const HMM *t,Viterbi::BacktraceScore * backtraceScore,Viterbi::BacktraceResult * backtraceResult,
                            const int ssm);
     
-    int maxres;
     bool local;
     float penalty_gap_query;
     float penalty_gap_template;
     float correlation;
     int par_min_overlap;
+    int max_seq_length;
     float shift;
 //    char* exclstr;
     // sMM[i][j] = score of best alignment up to indices (i,j) ending in (Match,Match)

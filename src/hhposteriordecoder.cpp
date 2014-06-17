@@ -115,8 +115,6 @@ void PosteriorDecoder::realign(HMMSimd & q_hmm, HMMSimd & t_hmm,
 		ViterbiMatrix & viterbi_matrix,
 		std::vector<std::vector<PosteriorDecoder::MACBacktraceResult *> * > & alignment_exclusion_vec, int par_min_overlap, float shift, float mact, float corr) {
 
-	simd_int min_overlap;
-
 	// For DEBUGGING
 //	char * nam = "PF07714";
 //	int elem_idx = 0;
@@ -154,7 +152,7 @@ void PosteriorDecoder::realign(HMMSimd & q_hmm, HMMSimd & t_hmm,
 
 
 	// Compute SIMD MAC algorithm
-	macAlgorithm(q_hmm, t_hmm, hit_vec, p_mm, viterbi_matrix, min_overlap, mact);
+	macAlgorithm(q_hmm, t_hmm, hit_vec, p_mm, viterbi_matrix, mact);
 
 	for (int elem = 0; elem < num_t; elem++) {
 //		HMM * curr_t_hmm = t_hmm.GetHMM(elem);
@@ -196,9 +194,18 @@ void PosteriorDecoder::initializeForAlignment(HMM & q, HMM & t, Hit* hit, Viterb
 	t.tr[t.L][D2M] = 0.0;
 	t.tr[t.L][D2D] = -FLT_MAX;
 	//    if (alt_i && alt_i->Size()>0) delete alt_i;
+
+	if(hit->alt_i) {
+	  delete hit->alt_i;
+	}
 	hit->alt_i = new std::vector<int>();
 	//    if (alt_j && alt_j->Size()>0) delete alt_j;
+
+    if(hit->alt_j) {
+      delete hit->alt_j;
+    }
 	hit->alt_j = new std::vector<int>();
+
 
 	hit->realign_around_viterbi = true;
 

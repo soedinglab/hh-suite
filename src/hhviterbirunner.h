@@ -15,7 +15,6 @@ class ViterbiConsumerThread
     Parameters par;
 	HMMSimd* q_simd;
 	HMMSimd* t_hmm_simd;
-	Hit* hit_cur;
 	ViterbiMatrix* viterbiMatrix;
     int job_size;
 
@@ -29,14 +28,12 @@ class ViterbiConsumerThread
     	t_hmm_simd(t_hmm_simd),
     	viterbiMatrix(pviterbiMatrix),
     	job_size(0) {
-                hit_cur = new Hit();
                 viterbiAlgo = new Viterbi(par.maxres, par.loc, par.egq, par.egt,
                     par.corr, par.min_overlap, par.shift);
 		}
 
     ~ViterbiConsumerThread(){
         delete viterbiAlgo;
-        delete hit_cur;
     }
 
     std::vector<Hit> hits;

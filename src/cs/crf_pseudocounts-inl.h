@@ -78,7 +78,7 @@ void CrfPseudocounts<Abc>::AddToProfile(const CountProfile<Abc>& cp, Profile<Abc
   int len = static_cast<int>(cp.length());
 
   // Calculate and add pseudocounts for each sequence window X_i separately
-#pragma omp parallel for schedule(static)
+  #pragma omp parallel for schedule(static)
   for (int i = 0; i < len; ++i) {
     double* ppi = &pp[i][0];
 

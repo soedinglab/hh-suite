@@ -30,7 +30,7 @@ res        = simdui8_max(res,index_mask);
 
 void PosteriorDecoder::macAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm,
 		std::vector<Hit *> & hit_vec, PosteriorMatrix & p_mm,
-		ViterbiMatrix & viterbi_matrix, const simd_int min_overlap, float par_mact) {
+		ViterbiMatrix & viterbi_matrix, float par_mact) {
 
   //  char * nam = "PF07714";
   //  int elem_idx = 0;
