@@ -12,28 +12,29 @@ class ViterbiConsumerThread
 {
 	int thread_id;
     Viterbi * viterbiAlgo;
+    Parameters par;
 	HMMSimd* q_simd;
 	HMMSimd* t_hmm_simd;
-	Hit* hit_cur;     
-    
+	Hit* hit_cur;
 	ViterbiMatrix* viterbiMatrix;
     int job_size;
 
     
   public:
 
-    ViterbiConsumerThread(int pthread_id, Viterbi* vit, HMMSimd* q_simd, HMMSimd* t_hmm_simd, ViterbiMatrix* pviterbiMatrix) :
+    ViterbiConsumerThread(int pthread_id, Parameters& par, HMMSimd* q_simd, HMMSimd* t_hmm_simd, ViterbiMatrix* pviterbiMatrix) :
     	thread_id(pthread_id),
-    	viterbiAlgo(vit),
+    	par(par),
     	q_simd(q_simd),
     	t_hmm_simd(t_hmm_simd),
     	viterbiMatrix(pviterbiMatrix),
     	job_size(0) {
                 hit_cur = new Hit();
+                viterbiAlgo = new Viterbi(par.maxres, par.loc, par.egq, par.egt,
+                    par.corr, par.min_overlap, par.shift);
 		}
 
     ~ViterbiConsumerThread(){
-        std::cout << "Destruct ViterbiConsumerThread" << std::endl;
         delete viterbiAlgo;
         delete hit_cur;
     }

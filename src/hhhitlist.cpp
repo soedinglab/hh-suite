@@ -15,6 +15,20 @@ using std::cout;
 using std::cerr;
 using std::endl;
 
+
+SearchCounter::SearchCounter() {}
+
+SearchCounter::~SearchCounter() {}
+
+int SearchCounter::getCounter() {
+  return already_seen.size();
+}
+
+void SearchCounter::append(std::string id) {
+  already_seen.insert(id);
+}
+
+
 /////////////////////////////////////////////////////////////////////////////////////
 // Print summary listing of hits
 /////////////////////////////////////////////////////////////////////////////////////

@@ -31,20 +31,40 @@ void ViterbiConsumerThread::align(int maxres) {
         q_simd, t_hmm_simd, elem, &backtraceResult, viterbiResult.score, 0, 0);
     // Overwrite *hit[bin] with Viterbi scores, Probabilities etc. of hit_cur
     hit_cur->lastrep = (backtraceScore.score <= SMIN) ? 1 : 0;
+
     hit_cur->initHitFromHMM(curr_t_hmm);
+
     hit_cur->realign_around_viterbi = false;
     hit_cur->score = backtraceScore.score;
     hit_cur->score_ss = backtraceScore.score_ss;
     hit_cur->score_aass = backtraceScore.score_aass;
     hit_cur->score_sort = backtraceScore.score_sort;
+    if(hit_cur->S) {
+      delete [] hit_cur->S;
+    }
     hit_cur->S = backtraceScore.S;
+    if(hit_cur->S_ss) {
+      delete [] hit_cur->S_ss;
+    }
     hit_cur->S_ss = backtraceScore.S_ss;
 
     hit_cur->i1 = backtraceResult.i_steps[backtraceResult.count];
     hit_cur->j1 = backtraceResult.j_steps[backtraceResult.count];
+
+    if(hit_cur->i) {
+      delete [] hit_cur->i;
+    }
     hit_cur->i = backtraceResult.i_steps;
+
+    if(hit_cur->j) {
+      delete [] hit_cur->j;
+    }
     hit_cur->j = backtraceResult.j_steps;
     hit_cur->nsteps = backtraceResult.count;
+
+    if(hit_cur->states) {
+      delete [] hit_cur->states;
+    }
     hit_cur->states = backtraceResult.states;
 
     hit_cur->matched_cols = backtraceResult.matched_cols;
@@ -76,10 +96,9 @@ std::vector<Hit> ViterbiRunner::alignment(Parameters& par, HMMSimd * q_simd,
   HMM t_hmm[(HMMSimd::VEC_SIZE * thread_count)];
   std::vector<ViterbiConsumerThread *> threads;
   for (int thread_id = 0; thread_id < thread_count; thread_id++) {
-    Viterbi * viterbiAlgo = new Viterbi(par.maxres, par.loc, par.egq, par.egt,
-        par.corr, par.min_overlap, par.shift);
-    ViterbiConsumerThread * thread = new ViterbiConsumerThread(thread_id,
-        viterbiAlgo, q_simd, t_hmm_simd[thread_id], viterbiMatrix[thread_id]);
+
+    ViterbiConsumerThread * thread = new ViterbiConsumerThread(thread_id, par, q_simd, t_hmm_simd[thread_id],
+        viterbiMatrix[thread_id]);
     threads.push_back(thread);
   }
   // Initialize
@@ -92,7 +111,7 @@ std::vector<Hit> ViterbiRunner::alignment(Parameters& par, HMMSimd * q_simd,
 
   // all has to be aligned
   for (int alignment = 0; alignment < par.altali; alignment++) {
-    std::cout << "Alignment: " << alignment << std::endl;
+    HH_LOG(LogLevel::INFO) << "Alternative alignment: " << alignment << std::endl;
     //sort by length to improve performance.
     //desc sort (for better utilisation of threads)
     sort(dbfiles_to_align.begin(), dbfiles_to_align.end(),
@@ -117,12 +136,10 @@ std::vector<Hit> ViterbiRunner::alignment(Parameters& par, HMMSimd * q_simd,
 
         int format_tmp = 0;
         char wg = 1;
-        getTemplateHMM(par, *entry, databases, wg, format_tmp, pb, S, Sim,
-            &t_hmm[current_t_index + i]);
+        getTemplateHMM(par, *entry, databases, wg, format_tmp, pb, S, Sim, &t_hmm[current_t_index + i]);
         t_hmm[current_t_index + i].entry = entry;
 
-        PrepareTemplateHMM(par, q, &t_hmm[current_t_index + i], format_tmp, pb,
-            R);
+        PrepareTemplateHMM(par, q, &t_hmm[current_t_index + i], format_tmp, pb, R);
         templates_to_align.push_back(&t_hmm[current_t_index + i]);
       }
       t_hmm_simd[current_thread_id]->MapHMMVector(templates_to_align);
@@ -134,13 +151,17 @@ std::vector<Hit> ViterbiRunner::alignment(Parameters& par, HMMSimd * q_simd,
     // merge thread results
     // search hits for next alignment
     dbfiles_to_align.clear();
-    std::cout << "Merge Results" << std::endl;
-    merge_thread_results(ret_hits, dbfiles_to_align, excludeAlignments, threads,
-        alignment);
+    HH_LOG(LogLevel::DEBUG) << "Merge Results" << std::endl;
+    merge_thread_results(ret_hits, dbfiles_to_align, excludeAlignments, threads, alignment);
     for (unsigned int thread = 0; thread < threads.size(); thread++) {
       threads[thread]->clear();
     }
   }         // Alignment loop
+
+  for (unsigned int thread = 0; thread < threads.size(); thread++) {
+    delete threads[thread];
+  }
+  threads.clear();
 
   for (int i = 0; i < thread_count; i++) {
     delete t_hmm_simd[i];

@@ -17,6 +17,8 @@
 #include <cmath>
 #include <climits>
 #include <float.h>
+#include <vector>
+#include <string>
 
 #include "util-inl.h"
 
@@ -38,6 +40,8 @@
 #include <sunmedia_intrin.h>
 #endif
 #endif
+
+void split(const std::string& s, char c, std::vector<std::string>& v);
 
 char *substr(char* substr, char* str, int a, int b);
 

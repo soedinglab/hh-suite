@@ -5,13 +5,11 @@
  *      Author: meiermark
  */
 
-
 #ifndef HHDATABASE_H_
 #define HHDATABASE_H_
 
 class HHDatabaseEntry;
 class FFindexDatabase;
-
 
 extern "C" {
 #include <ffindex.h>
@@ -23,11 +21,10 @@ extern "C" {
 #include "hhhit.h"
 #include "log.h"
 
-
-
 class FFindexDatabase {
   public:
-    FFindexDatabase(char* data_filename, char* index_filename, int superId, bool isCompressed);
+    FFindexDatabase(char* data_filename, char* index_filename, int superId,
+        bool isCompressed);
     virtual ~FFindexDatabase();
 
     ffindex_index_t* db_index = NULL;
@@ -50,10 +47,11 @@ class HHDatabase {
     virtual ~HHDatabase();
 
   protected:
-    void buildDatabaseName(const char* base, const char* extension, const char* suffix, char* databaseName);
+    void buildDatabaseName(const char* base, const char* extension,
+        const char* suffix, char* databaseName);
 };
 
-class HHsearchDatabase : HHDatabase {
+class HHsearchDatabase: HHDatabase {
   public:
     HHsearchDatabase(char* base);
     ~HHsearchDatabase();
@@ -63,19 +61,24 @@ class HHsearchDatabase : HHDatabase {
   private:
 };
 
-class HHblitsDatabase : HHDatabase {
+class HHblitsDatabase: HHDatabase {
   public:
     HHblitsDatabase(const char* base);
     ~HHblitsDatabase();
 
     void initPrefilter(const char* cs_library);
     void initNoPrefilter(std::vector<HHDatabaseEntry*>& new_prefilter_hits);
-    void prefilter_db(HMM* q_tmp, Hash<Hit>* previous_hits,
-			const int threads, const int prefilter_gap_open, const int prefilter_gap_extend,
-			const int prefilter_score_offset, const int prefilter_bit_factor,
-			const double prefilter_evalue_thresh, const double prefilter_evalue_coarse_thresh,
-			const int preprefilter_smax_thresh, const int min_prefilter_hits, const float R[20][20],
-			std::vector<HHDatabaseEntry*>& new_entries, std::vector<HHDatabaseEntry*>& old_entries);
+    void initSelected(std::vector<std::string>& selected_templates,
+        std::vector<HHDatabaseEntry*>& new_entries);
+
+    void prefilter_db(HMM* q_tmp, Hash<Hit>* previous_hits, const int threads,
+        const int prefilter_gap_open, const int prefilter_gap_extend,
+        const int prefilter_score_offset, const int prefilter_bit_factor,
+        const double prefilter_evalue_thresh,
+        const double prefilter_evalue_coarse_thresh,
+        const int preprefilter_smax_thresh, const int min_prefilter_hits,
+        const float R[20][20], std::vector<HHDatabaseEntry*>& new_entries,
+        std::vector<HHDatabaseEntry*>& old_entries);
 
     char* basename;
 
@@ -92,26 +95,27 @@ class HHblitsDatabase : HHDatabase {
     FFindexDatabase* header_database = NULL;
 
   private:
-    void getEntriesFromNames(std::vector<std::pair<int, std::string>>& names, std::vector<HHDatabaseEntry*>& entries);
+    void getEntriesFromNames(std::vector<std::pair<int, std::string>>& names,
+        std::vector<HHDatabaseEntry*>& entries);
     bool checkAndBuildCompressedDatabase(const char* base);
 
     hh::Prefilter* prefilter;
 };
 
 struct HHDatabaseEntry {
-	FFindexDatabase* ffdatabase;
-	ffindex_entry_t* entry;
-	int sequence_length;
+    FFindexDatabase* ffdatabase;
+    ffindex_entry_t* entry;
+    int sequence_length;
 
-	bool operator() (const HHDatabaseEntry* x, const HHDatabaseEntry* y) {
-	  return x->sequence_length > y->sequence_length;
-	}
+    bool operator()(const HHDatabaseEntry* x, const HHDatabaseEntry* y) {
+      return x->sequence_length > y->sequence_length;
+    }
 };
 
-void getTemplateHMM(Parameters& par, HHDatabaseEntry& entry, std::vector<HHblitsDatabase*>& dbs,
-    char use_global_weights, int& format, float* pb, const float S[20][20], const float Sim[20][20], HMM* t);
-HHblitsDatabase* getHHblitsDatabase(HHDatabaseEntry& entry, std::vector<HHblitsDatabase*>& dbs);
-
-
+void getTemplateHMM(Parameters& par, HHDatabaseEntry& entry,
+    std::vector<HHblitsDatabase*>& dbs, char use_global_weights, int& format,
+    float* pb, const float S[20][20], const float Sim[20][20], HMM* t);
+HHblitsDatabase* getHHblitsDatabase(HHDatabaseEntry& entry,
+    std::vector<HHblitsDatabase*>& dbs);
 
 #endif /* HHDATABASE_H_ */

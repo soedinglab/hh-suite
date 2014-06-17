@@ -40,14 +40,12 @@ private:
 	const int m_n_threads;			// Number of threads used to process m_worker_queue
 
 	std::vector<PosteriorDecoder*> * initializeConsumerThreads(char loc);
-	std::vector<PosteriorDecoder::MACBacktraceResult *>* findAlignmentsToExclude(char * file,
-			std::map<std::string, std::vector<PosteriorDecoder::MACBacktraceResult *> > & alignments_to_exclude);
 	void reinitializeSelectedMembers();
 	void calcNElementsToSubmit();
 	void initializeQueryHMMTransitions(HMM & q);
 	void cleanupThread(std::vector<PosteriorDecoder*> * threads);
 	void mergeThreadResults(int irep_counter,
-			std::map<std::string, std::vector<PosteriorDecoder::MACBacktraceResult *> > & alignments_to_exclude);
+			std::map<std::string, std::vector<PosteriorDecoder::MACBacktraceResult *> *> & alignments_to_exclude);
 
 };
 

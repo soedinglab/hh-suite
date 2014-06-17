@@ -64,6 +64,8 @@ PosteriorDecoder::PosteriorDecoder(int maxres, bool local, int q_length) :
 	m_s_curr = malloc_simd_float(m_max_res * sizeof(simd_float));
 	m_s_prev = malloc_simd_float(m_max_res * sizeof(simd_float));
 
+	p_last_col = malloc_simd_float(q_length * sizeof(simd_float));
+
 	m_p_min = (m_local ? simdf32_set(0.0f) : simdf32_set(-FLT_MAX));
 	m_p_min_scalar = (m_local ? 0.0f : -FLT_MAX);
 
@@ -79,24 +81,28 @@ PosteriorDecoder::PosteriorDecoder(int maxres, bool local, int q_length) :
 
 PosteriorDecoder::~PosteriorDecoder() {
 	// TODO Auto-generated destructor stub
-	delete m_mm_prev;
-	delete m_gd_prev;
-	delete m_dg_prev;
-	delete m_im_prev;
-	delete m_mi_prev;
+	free(m_mm_prev);
+	free(m_gd_prev);
+	free(m_dg_prev);
+	free(m_im_prev);
+	free(m_mi_prev);
 
-	delete m_mm_curr;
-	delete m_gd_curr;
-	delete m_dg_curr;
-	delete m_im_curr;
-	delete m_mi_curr;
+	free(m_mm_curr);
+	free(m_gd_curr);
+	free(m_dg_curr);
+	free(m_im_curr);
+	free(m_mi_curr);
 
-	delete m_s_curr;
-	delete m_s_prev;
+	free(m_s_curr);
+	free(m_s_prev);
+
+	free(p_last_col);
 
 	for (int elem = 0; elem < VEC_SIZE; elem++) {
-		delete(m_temp_hit_vec.at(elem));
+//	  m_temp_hit_vec.at(elem)->Delete();
+	  delete(m_temp_hit_vec.at(elem));
 	}
+	m_temp_hit_vec.clear();
 
 }
 
@@ -110,7 +116,6 @@ void PosteriorDecoder::realign(HMMSimd & q_hmm, HMMSimd & t_hmm,
 		std::vector<std::vector<PosteriorDecoder::MACBacktraceResult *> * > & alignment_exclusion_vec, int par_min_overlap, float shift, float mact, float corr) {
 
 	simd_int min_overlap;
-	int * min_overlap_ptr = (int *)&min_overlap;
 
 	// For DEBUGGING
 //	char * nam = "PF07714";
@@ -128,26 +133,24 @@ void PosteriorDecoder::realign(HMMSimd & q_hmm, HMMSimd & t_hmm,
 //		}
 
 		HMM * curr_t_hmm = t_hmm.GetHMM(elem);
-			// Set min_overlap vector values
-		min_overlap_ptr[elem] = hit_vec.at(elem)->min_overlap;
 
 		// Store some hit values temporary
-		memorizeHitValues(*hit_vec.at(elem), elem);
+		memorizeHitValues(hit_vec.at(elem), elem);
 
 		// Clear current Viterbi path and also exclude previous found MAC alignments (from earlier alignments)
-		initializeForAlignment(curr_q_hmm, *curr_t_hmm, *hit_vec.at(elem), viterbi_matrix, elem,
+		initializeForAlignment(curr_q_hmm, *curr_t_hmm, hit_vec.at(elem), viterbi_matrix, elem,
 				*alignment_exclusion_vec.at(elem), t_hmm.L, par_min_overlap);
 	}
 
 	// Compute SIMD Forward algorithm
 	forwardAlgorithm(q_hmm, t_hmm, hit_vec, p_mm, viterbi_matrix, shift);
 
-	for (int elem = 0; elem < num_t; elem++) {
-		printf("%s: %20.20f\n", hit_vec.at(elem)->file, hit_vec.at(elem)->Pforward);
-	}
+//	for (int elem = 0; elem < num_t; elem++) {
+//		printf("%s: %20.20f\n", hit_vec.at(elem)->file, hit_vec.at(elem)->Pforward);
+//	}
 
 	// Compute SIMD Backward algorithm
-	backwardAlgorithm(q_hmm, t_hmm, hit_vec, p_mm, viterbi_matrix, shift);
+	backwardAlgorithm(q_hmm, t_hmm, p_mm, viterbi_matrix, shift);
 
 
 	// Compute SIMD MAC algorithm
@@ -179,7 +182,7 @@ void PosteriorDecoder::realign(HMMSimd & q_hmm, HMMSimd & t_hmm,
 //	- Exclude previously found alignments (including MAC and Viterbi)
 //			--> Initialization of cell off matrix
 /////////////////////////////////////////////////////////////////////////////////////////////////
-void PosteriorDecoder::initializeForAlignment(HMM & q, HMM & t, Hit & hit, ViterbiMatrix & celloff_matrix, const int elem,
+void PosteriorDecoder::initializeForAlignment(HMM & q, HMM & t, Hit* hit, ViterbiMatrix & celloff_matrix, const int elem,
 		std::vector<PosteriorDecoder::MACBacktraceResult *> & alignment_to_exclude, const int t_max_L, int par_min_overlap) {
 
 	// First alignment of this pair of HMMs?
@@ -193,14 +196,14 @@ void PosteriorDecoder::initializeForAlignment(HMM & q, HMM & t, Hit & hit, Viter
 	t.tr[t.L][D2M] = 0.0;
 	t.tr[t.L][D2D] = -FLT_MAX;
 	//    if (alt_i && alt_i->Size()>0) delete alt_i;
-	hit.alt_i = new std::vector<int>();
+	hit->alt_i = new std::vector<int>();
 	//    if (alt_j && alt_j->Size()>0) delete alt_j;
-	hit.alt_j = new std::vector<int>();
+	hit->alt_j = new std::vector<int>();
 
-	hit.realign_around_viterbi = true;
+	hit->realign_around_viterbi = true;
 
 	// Call Viterbi - InitializeForAlignment
-	Viterbi::InitializeForAlignment(&q, &t, &celloff_matrix, elem, hit.self, par_min_overlap);
+	Viterbi::InitializeForAlignment(&q, &t, &celloff_matrix, elem, hit->self, par_min_overlap);
 
 	for (int idx = 0; idx < (int) alignment_to_exclude.size(); idx++) {
 		// Mask out previous found MAC alignments
@@ -208,7 +211,7 @@ void PosteriorDecoder::initializeForAlignment(HMM & q, HMM & t, Hit & hit, Viter
 	}
 
 	// Mask out the Viterbi alignment of the current hit
-	if (hit.realign_around_viterbi) {
+	if (hit->realign_around_viterbi) {
 		maskViterbiAlignment(q.L, t.L, celloff_matrix, elem, hit);
 	}
 
@@ -226,25 +229,25 @@ void PosteriorDecoder::initializeForAlignment(HMM & q, HMM & t, Hit & hit, Viter
 // Exclude Viterbi alignment of a hit
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void PosteriorDecoder::maskViterbiAlignment(const int q_length, const int t_length,
-					ViterbiMatrix & celloff_matrix, const int elem, const Hit & hit) const {
+					ViterbiMatrix & celloff_matrix, const int elem, const Hit * hit) const {
 
 	int i, j;
 
 	// Cross out regions
 	for (i = 1; i <= q_length; ++i)
 		for (j = 1; j <= t_length; ++j)
-			if (!((i < hit.i1 && j < hit.j1) || (i > hit.i2 && j > hit.j2)))
+			if (!((i < hit->i1 && j < hit->j1) || (i > hit->i2 && j > hit->j2)))
 				celloff_matrix.setCellOff(i, j, elem, true);
 
 //	maskViterbiAlignment(q_length, t_length, celloff_matrix, elem, alignment);
 	// Clear Viterbi path
-	for (int step = hit.nsteps; step >= 1; step--) {
+	for (int step = hit->nsteps; step >= 1; step--) {
 		int path_width = 40;
-		for (i = imax(1, hit.i[step] - path_width); i <= imin(q_length, hit.i[step] + path_width); ++i)
-			celloff_matrix.setCellOff(i, hit.j[step], elem, false);
+		for (i = imax(1, hit->i[step] - path_width); i <= imin(q_length, hit->i[step] + path_width); ++i)
+			celloff_matrix.setCellOff(i, hit->j[step], elem, false);
 
-		for (j = imax(1, hit.j[step] - path_width); j <= imin(t_length, hit.j[step] + path_width); ++j)
-			celloff_matrix.setCellOff(hit.i[step], j, elem, false);
+		for (j = imax(1, hit->j[step] - path_width); j <= imin(t_length, hit->j[step] + path_width); ++j)
+			celloff_matrix.setCellOff(hit->i[step], j, elem, false);
 	}
 
 }
@@ -275,19 +278,19 @@ void PosteriorDecoder::excludeMACAlignment(const int q_length, const int t_lengt
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Memorize values that are going to be restored after computation
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-void PosteriorDecoder::memorizeHitValues(Hit & curr_hit, const int i) {
+void PosteriorDecoder::memorizeHitValues(Hit * curr_hit, const int i) {
 
-	m_temp_hit_vec.at(i)->score      = curr_hit.score;
-	m_temp_hit_vec.at(i)->score_ss   = curr_hit.score_ss;
-	m_temp_hit_vec.at(i)->score_aass = curr_hit.score_aass;
-	m_temp_hit_vec.at(i)->score_sort = curr_hit.score_sort;
-	m_temp_hit_vec.at(i)->Pval       = curr_hit.Pval;
-	m_temp_hit_vec.at(i)->Pvalt      = curr_hit.Pvalt;
-	m_temp_hit_vec.at(i)->logPval    = curr_hit.logPval;
-	m_temp_hit_vec.at(i)->logPvalt   = curr_hit.logPvalt;
-	m_temp_hit_vec.at(i)->Eval       = curr_hit.Eval;
-	m_temp_hit_vec.at(i)->logEval    = curr_hit.logEval;
-	m_temp_hit_vec.at(i)->Probab     = curr_hit.Probab;
+	m_temp_hit_vec.at(i)->score      = curr_hit->score;
+	m_temp_hit_vec.at(i)->score_ss   = curr_hit->score_ss;
+	m_temp_hit_vec.at(i)->score_aass = curr_hit->score_aass;
+	m_temp_hit_vec.at(i)->score_sort = curr_hit->score_sort;
+	m_temp_hit_vec.at(i)->Pval       = curr_hit->Pval;
+	m_temp_hit_vec.at(i)->Pvalt      = curr_hit->Pvalt;
+	m_temp_hit_vec.at(i)->logPval    = curr_hit->logPval;
+	m_temp_hit_vec.at(i)->logPvalt   = curr_hit->logPvalt;
+	m_temp_hit_vec.at(i)->Eval       = curr_hit->Eval;
+	m_temp_hit_vec.at(i)->logEval    = curr_hit->logEval;
+	m_temp_hit_vec.at(i)->Probab     = curr_hit->Probab;
 
 }
 

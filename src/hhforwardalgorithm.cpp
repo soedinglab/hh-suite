@@ -77,7 +77,7 @@ void PosteriorDecoder::forwardAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm,
 
 
       // for global alignment
-      simd_float * p_last_col = malloc_simd_float(q_hmm.L * sizeof(simd_float));  // store forward probability in last column
+//      simd_float * p_last_col = malloc_simd_float(q_hmm.L * sizeof(simd_float));  // store forward probability in last column
 
       simd_int j_vec = simdi32_set(0);
 

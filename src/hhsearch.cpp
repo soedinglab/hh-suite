@@ -535,7 +535,7 @@ void HHsearch::ProcessArguments(int argc, char** argv, Parameters& par) {
 		} else if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "-help")) {
 			help(par, 1);
 			exit(0);
-		} else if (!strcmp(argv[i], "-excl")) {
+		} else if (!strcmp(argv[i], "-v")) {
 			if (++i >= argc) {
 				help(par);
 				exit(4);
@@ -754,14 +754,17 @@ void HHsearch::run(FILE* query_fh, char* query_path) {
 	Hash<char>* premerged_hits = new Hash<char>(1631);
 
 	q = new HMM;
+	HMMSimd q_vec(par.maxres);
 	q_tmp = new HMM;
 
 	// Read input file (HMM, HHM, or alignment format), and add pseudocounts etc.
 	Qali.N_in = 0;
+	char input_format = 0;
 	ReadQueryFile(par, query_fh, input_format, par.wg, q, Qali, query_path, pb,
 			S, Sim);
 	PrepareQueryHMM(par, input_format, q, pc_hhm_context_engine,
 			pc_hhm_context_mode, pb, R);
+    q_vec.MapOneHMM(q);
 
 	// Reset lamda?
 	//TODO
@@ -776,8 +779,6 @@ void HHsearch::run(FILE* query_fh, char* query_path) {
 
 	// Search databases
 
-	N_searched = 0;
-
 	std::vector<HHDatabaseEntry*> new_entries;
 	if (!par.prefilter) {
 		for (size_t i = 0; i < dbs.size(); i++) {
@@ -785,8 +786,11 @@ void HHsearch::run(FILE* query_fh, char* query_path) {
 		}
 	}
 
-	ViterbiSearch(new_entries, previous_hits, new_entries.size());
-	hitlist.N_searched = N_searched;
+    ViterbiRunner viterbirunner(viterbiMatrices, dbs, par.threads);
+    std::vector<Hit> hits_to_add = viterbirunner.alignment(par, &q_vec, new_entries, pb, S, Sim, R);
+
+    hitlist.N_searched = new_entries.size();
+    add_hits_to_hitlist(hits_to_add, hitlist);
 
 //TODO
 //  if (v1 >= 2)
@@ -860,7 +864,7 @@ void HHsearch::run(FILE* query_fh, char* query_path) {
 
 	// Realign hits with MAC algorithm
 	if (par.realign && par.forward != 2) {
-		perform_realign(new_entries, premerge, premerged_hits);
+		perform_realign(q_vec, new_entries, premerge, premerged_hits);
 	}
 
 	// Write HMM to output file without pseudocounts
@@ -877,4 +881,9 @@ void HHsearch::run(FILE* query_fh, char* query_path) {
 
 	if (par.notags)
 		q->NeutralizeTags(pb);
+
+	for(size_t i = 0; i < new_entries.size(); i++) {
+	  delete new_entries[i];
+	}
+	new_entries.clear();
 }

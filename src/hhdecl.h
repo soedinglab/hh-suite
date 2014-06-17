@@ -89,19 +89,6 @@ enum pair_states {STOP=0,MM=2,GD=3,IM=4,DG=5,MI=6};
 #include "hhdatabase.h"
 
 
-// Class to store data about hit to realign
-class Realign_hitpos
-{
-public:
-  int index;         // index of template in dbfile (1,2,..)
-  long ftellpos;     // position of template in dbfile
-  HHDatabaseEntry* entry;
-  int operator<(const Realign_hitpos& realign_hitpos) {return ftellpos<realign_hitpos.ftellpos;}
-};
-
-bool sort_realign_hitpos (Realign_hitpos i, Realign_hitpos j);
-
-
 // Pseudocounts
 namespace Pseudocounts {
 enum Admix {

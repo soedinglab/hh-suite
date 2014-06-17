@@ -171,6 +171,16 @@ void HHblitsDatabase::initNoPrefilter(
   getEntriesFromNames(new_entry_names, new_entries);
 }
 
+void HHblitsDatabase::initSelected(
+    std::vector<std::string>& selected_templates,
+    std::vector<HHDatabaseEntry*>& new_entries) {
+
+  std::vector<std::pair<int, std::string>> new_entry_names;
+  hh::Prefilter::init_selected(cs219_database, selected_templates, new_entry_names);
+
+  getEntriesFromNames(new_entry_names, new_entries);
+}
+
 void HHblitsDatabase::prefilter_db(HMM* q_tmp, Hash<Hit>* previous_hits,
     const int threads, const int prefilter_gap_open,
     const int prefilter_gap_extend, const int prefilter_score_offset,

@@ -169,58 +169,36 @@ void PosteriorDecoder::backtraceMAC(HMM & q, HMM & t, PosteriorMatrix & p_mm, Vi
 // Allocate memory for data of new alignment (sequence names, alignment, scores,...)
 /////////////////////////////////////////////////////////////////////////////////////
 void PosteriorDecoder::initializeBacktrace(HMM & t, Hit & hit) {
-	//Copy information about template profile to hit and reset template pointers to avoid destruction
-	hit.longname = new (char[strlen(t.longname) + 1]);
-	hit.name = new (char[strlen(t.name) + 1]);
-	hit.file = new (char[strlen(t.file) + 1]);
-	if (!hit.file)
-		MemoryError(
-				"space for alignments with database HMMs. \nNote that all alignments have to be kept in memory", __FILE__, __LINE__, __func__);
-	strcpy(hit.longname, t.longname);
-	strcpy(hit.name, t.name);
-	strcpy(hit.fam, t.fam);
-	strcpy(hit.sfam, t.sfam);
-	strcpy(hit.fold, t.fold);
-	strcpy(hit.cl, t.cl);
-	strcpy(hit.file, t.file);
-
 	// Allocate new space
+    if(hit.i) {
+      delete[] hit.i;
+    }
 	hit.i = new (int[hit.i2 + hit.j2 + 2]);
+
+	if(hit.j) {
+	  delete[] hit.j;
+	}
 	hit.j = new (int[hit.i2 + hit.j2 + 2]);
+
+	if(hit.states) {
+	  delete[] hit.states;
+	}
 	hit.states = new (char[hit.i2 + hit.j2 + 2]);
-	hit.S = hit.S_ss = hit.P_posterior = NULL;
 
-	hit.sname = new (char*[t.n_display]);
-	hit.seq = new (char*[t.n_display]);
-	if (!hit.sname || !hit.seq)
-		MemoryError(
-				"space for alignments with database HMMs.\nNote that all sequences for display have to be kept in memory", __FILE__, __LINE__, __func__);
-
-
-	// Make deep copy for alignment
-	for (int k = 0; k < t.n_display; k++) {
-		hit.sname[k] = new (char[strlen(t.sname[k]) + 1]);
-		hit.seq[k] = new (char[strlen(t.seq[k]) + 1]);
-		strcpy(hit.sname[k], t.sname[k]);
-		strcpy(hit.seq[k], t.seq[k]);
+	if(hit.S) {
+	  delete[] hit.S;
+	  hit.S = NULL;
 	}
 
-	hit.n_display = t.n_display;
-	hit.ncons = t.ncons;
-	hit.nfirst = t.nfirst;
-	hit.nss_dssp = t.nss_dssp;
-	hit.nsa_dssp = t.nsa_dssp;
-	hit.nss_pred = t.nss_pred;
-	hit.nss_conf = t.nss_conf;
-	hit.L = t.L;
-	hit.Neff_HMM = t.Neff_HMM;
-	hit.Eval = 1.0;
-	hit.logEval = 0.0;
-	hit.Pval = 1.0;
-	hit.Pvalt = 1.0;
-	hit.logPval = 0.0;
-	hit.logPvalt = 0.0;
-	hit.Probab = 1.0;
+	if(hit.S_ss) {
+	  delete[] hit.S_ss;
+	  hit.S_ss = NULL;
+	}
+
+	if(hit.P_posterior) {
+	  delete[] hit.P_posterior;
+	  hit.P_posterior = NULL;
+	}
 }
 
 

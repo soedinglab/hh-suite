@@ -19,7 +19,7 @@
 using std::swap;
 
 void PosteriorDecoder::backwardAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm,
-		std::vector<Hit *> & hit_vec, PosteriorMatrix & p_mm,
+		PosteriorMatrix & p_mm,
 		ViterbiMatrix & viterbi_matrix, float shift) {
 
 

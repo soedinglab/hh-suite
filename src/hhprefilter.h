@@ -30,6 +30,7 @@ public:
 	virtual ~Prefilter();
 
 	static void init_no_prefiltering(FFindexDatabase* cs219_database, std::vector<std::pair<int, std::string>>& prefiltered_entries);
+	static void init_selected(FFindexDatabase* cs219_database, std::vector<std::string> templates, std::vector<std::pair<int, std::string>>& prefiltered_entries);
 
 	void prefilter_db(HMM* q_tmp, Hash<Hit>* previous_hits,
 			const int threads, const int prefilter_gap_open, const int prefilter_gap_extend,

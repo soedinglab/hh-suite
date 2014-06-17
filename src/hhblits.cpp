@@ -9,7 +9,6 @@
 
 //TODO: get rid of exit(1)... throw errors
 //TODO: get more flexible database reader
-//TODO: add length to HHDatabaseEntry... for Martin
 
 HHblits::HHblits(Parameters& parameters,
     std::vector<HHblitsDatabase*>& databases) {
@@ -18,8 +17,6 @@ HHblits::HHblits(Parameters& parameters,
 
   q = NULL;
   q_tmp = NULL;
-
-  N_searched = 0;
 
   // Set (global variable) substitution matrix and derived matrices
   SetSubstitutionMatrix(par.matrix, pb, P, R, S, Sim);
@@ -70,17 +67,7 @@ HHblits::HHblits(Parameters& parameters,
     viterbiMatrices[bin]->AllocateBacktraceMatrix(par.maxres, par.maxres);
     posteriorMatrices[bin] = new PosteriorMatrix(par.maxres + 1);
     posteriorMatrices[bin]->allocateMatrix(par.maxres + 1);
-
-    //TODO:
-    t[bin] = new HMM; // Each bin has a template HMM allocated that was read from the database file
-    // Each bin has an object of type Hit allocated ...
-    hit[bin] = new Hit;
-    // ...with a separate dynamic programming matrix (memory!!)
-    hit[bin]->AllocateBacktraceMatrix(par.maxres, par.maxres);
-    // Allocate memory for matrix and set to 0
-    hit[bin]->AllocateForwardMatrix(par.maxres, par.maxres);
   }
-  format = new int[par.threads];
 }
 
 HHblits::~HHblits() {
@@ -92,16 +79,10 @@ HHblits::~HHblits() {
   dbs.clear();
 
   for (int bin = 0; bin < par.threads; bin++) {
-    hit[bin]->DeleteBacktraceMatrix(par.maxres);
-    hit[bin]->DeleteForwardMatrix(par.maxres);
+    viterbiMatrices[bin]->DeleteBacktraceMatrix(par.maxres);
+    delete viterbiMatrices[bin];
+    delete posteriorMatrices[bin];
   }
-
-  for (int bin = 0; bin < par.threads; bin++) {
-    delete hit[bin];
-    delete t[bin];
-  }
-
-  delete[] format;
 
   DeletePseudocountsEngine(context_lib, crf, pc_hhm_context_engine,
       pc_hhm_context_mode, pc_prefilter_context_engine,
@@ -289,8 +270,6 @@ void HHblits::Reset() {
   reducedHitlist.Reset();
   while (!reducedHitlist.End())
     reducedHitlist.Delete().Delete();
-
-  N_searched = 0;
 
   alis.clear();
 }
@@ -1140,8 +1119,7 @@ void HHblits::mergeHitsToQuery(Hash<Hit>* previous_hits,
     }
 
     Alignment Tali;
-    long ftellpos;
-    getTemplateA3M(db, hit_cur.entry->entry->name, ftellpos, Tali);
+    getTemplateA3M(db, hit_cur.entry->entry->name, Tali);
 
     if (par.allseqs) // need to keep *all* sequences in Qali_allseqs? => merge before filtering
       Qali_allseqs.MergeMasterSlave(hit_cur, Tali, hit_cur.name, par.maxcol);
@@ -1173,8 +1151,7 @@ void HHblits::mergeHitsToQuery(Hash<Hit>* previous_hits,
       par.Ndiff);
 }
 
-void HHblits::getTemplateA3M(HHblitsDatabase* db, char* entry_name,
-    long& ftellpos, Alignment& tali) {
+void HHblits::getTemplateA3M(HHblitsDatabase* db, char* entry_name, Alignment& tali) {
   if (db->use_compressed) {
     ffindex_entry_t* entry = ffindex_get_entry_by_name(
         db->ca3m_database->db_index, entry_name);
@@ -1187,7 +1164,6 @@ void HHblits::getTemplateA3M(HHblitsDatabase* db, char* entry_name,
       exit(4);
     }
 
-    ftellpos = entry->offset;
     tali.ReadCompressed(entry, data, db->sequence_database->db_index,
         db->sequence_database->db_data, db->header_database->db_index,
         db->header_database->db_data, par.mark, par.maxcol);
@@ -1200,8 +1176,6 @@ void HHblits::getTemplateA3M(HHblitsDatabase* db, char* entry_name,
       cerr << endl << "Error: opening A3M " << entry_name << std::endl;
       exit(4);
     }
-
-    ftellpos = ftell(dbf);
 
     char line[LINELEN];
     if (!fgetline(line, LINELEN, dbf)) {
@@ -1221,12 +1195,9 @@ void HHblits::getTemplateA3M(HHblitsDatabase* db, char* entry_name,
 
 void HHblits::add_hits_to_hitlist(std::vector<Hit>& hits, HitList& hitlist) {
   for (std::vector<Hit>::size_type i = 0; i != hits.size(); i++) {
-    hits[i].index = N_searched;
-    N_searched++;
     hitlist.Push(hits[i]);
   }
 
-  hitlist.N_searched = N_searched;
   // Sort list according to sortscore
   HH_LOG(LogLevel::DEBUG) << "Sorting hit list ...\n";
   hitlist.SortList();
@@ -1244,8 +1215,7 @@ void HHblits::add_hits_to_hitlist(std::vector<Hit>& hits, HitList& hitlist) {
 // Variant of ViterbiSearch() function for rescoring previously found HMMs with Viterbi algorithm.
 // Perform Viterbi search on each hit object in global hash previous_hits, but keep old alignment
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void HHblits::RescoreWithViterbiKeepAlignment(HMMSimd& q_vec, int db_size,
-    Hash<Hit>* previous_hits) {
+void HHblits::RescoreWithViterbiKeepAlignment(HMMSimd& q_vec, Hash<Hit>* previous_hits) {
   // Initialize
   std::vector<HHDatabaseEntry*> hits_to_rescore;
 
@@ -1257,8 +1227,6 @@ void HHblits::RescoreWithViterbiKeepAlignment(HMMSimd& q_vec, int db_size,
       hits_to_rescore.push_back(hit_cur.entry);
     }
   }
-
-  hitlist.N_searched = db_size; //hand over number of HMMs scanned to hitlist (for E-value calculation)
 
   //////////////////////////////////////////////////////////
   // Start Viterbi search through db HMMs listed in dbfiles
@@ -1287,6 +1255,7 @@ void HHblits::RescoreWithViterbiKeepAlignment(HMMSimd& q_vec, int db_size,
       hit_cur.Probab = hits_to_add[i].Probab;
       hitlist.Push(hit_cur); // insert hit at beginning of list (last repeats first!)
     }
+    hits_to_add[i].Delete();
   }
 
   // Sort list according to sortscore
@@ -1343,7 +1312,8 @@ void HHblits::perform_realign(HMMSimd& q_vec, std::vector<HHDatabaseEntry*>& hit
       nhits++;
       continue;
     }
-    if (nhits >= par.premerge) {
+    //TODO:
+    if (true) { //nhits >= par.premerge) {
       hit_vector.push_back(hitlist.ReadCurrentAddress());
       n_realignments++;
     }
@@ -1740,238 +1710,242 @@ void HHblits::perform_realign(HMMSimd& q_vec, std::vector<HHDatabaseEntry*>& hit
 //  delete[] (array_plist_phits);
 //}
 
-void HHblits::reduceRedundancyOfHitList(int n_redundancy, int query_length,
-    HitList& hitlist, HitList& reducedHitList) {
-  int* coverage = new int[query_length + 1];
-  for (int i = 0; i <= query_length; i++) {
-    coverage[i] = 0;
-  }
+//void HHblits::reduceRedundancyOfHitList(int n_redundancy, int query_length,
+//    HitList& hitlist, HitList& reducedHitList) {
+//  int* coverage = new int[query_length + 1];
+//  for (int i = 0; i <= query_length; i++) {
+//    coverage[i] = 0;
+//  }
+//
+//  int total = 0;
+//
+//  hitlist.Reset();
+//  while (!hitlist.End()) {
+//    Hit hit_cur = hitlist.ReadNext();
+//
+//    if (!hit_cur.P_posterior) {
+//      continue;
+//    }
+//    total++;
+//
+//    //calculate actual coverage
+//    int length_actual_coverage = 0;
+//    for (int alignment_index = 1; alignment_index <= hit_cur.nsteps;
+//        alignment_index++) {
+//      length_actual_coverage +=
+//          (hit_cur.P_posterior[alignment_index] > 0.5) ? 1 : 0;
+//    }
+//
+//    int length_actual_contribution = 0;
+//    for (int alignment_index = 1; alignment_index <= hit_cur.nsteps;
+//        alignment_index++) {
+//      int i = hit_cur.i[alignment_index];
+//      if (hit_cur.P_posterior[alignment_index] > 0.5
+//          && coverage[i] < n_redundancy) {
+//        length_actual_contribution++;
+//      }
+//    }
+//
+//    if (length_actual_contribution > 0.5 * length_actual_coverage) {
+//      reducedHitList.Insert(hit_cur);
+//
+//      //update coverage
+//      for (int alignment_index = 1; alignment_index <= hit_cur.nsteps;
+//          alignment_index++) {
+//        int i = hit_cur.i[alignment_index];
+//
+//        coverage[i] += (hit_cur.P_posterior[alignment_index] > 0.5) ? 1 : 0;
+//      }
+//    }
+//  }
+//
+//  delete[] coverage;
+//}
 
-  int total = 0;
+//void HHblits::recalculateAlignmentsForDifferentQSC(HitList& hitlist,
+//    Alignment& Qali, char inputformat, float* qsc, size_t nqsc,
+//    HitList& recalculated_hitlist) {
+//  const int COV_ABS = 25;
+//  int cov_tot = std::max(std::min((int) (COV_ABS / Qali.L * 100 + 0.5), 70),
+//      par.coverage);
+//
+//  Alignment qali;
+//  qali = Qali;
+//  HMM* q = new HMM();
+//
+//  HitList realigned_viterbi_hitlist;
+//
+//  for (size_t qsc_index = 0; qsc_index < nqsc; qsc_index++) {
+//    float actual_qsc = qsc[qsc_index];
+//
+//    qali.Compress("filtered A3M file", par.cons, par.maxres, par.maxcol, par.M,
+//        par.Mgaps);
+//    qali.N_filtered = qali.Filter(par.max_seqid, S, cov_tot, par.qid,
+//        actual_qsc, par.Ndiff);
+//    qali.FrequenciesAndTransitions(q, par.wg, par.mark, par.cons, par.showcons,
+//        par.maxres, pb, Sim, NULL, false);
+//    PrepareQueryHMM(par, inputformat, q, pc_hhm_context_engine,
+//        pc_hhm_context_mode, pb, R);
+//
+//    hitlist.Reset();
+//    while (!hitlist.End()) {
+//      Hit hit_ref = hitlist.ReadNext();
+//
+//      HMM* t = new HMM();
+//
+//      int format;
+//      long ftellpos;
+//      getTemplateHMM(par, *hit_ref.entry, dbs, 1, format, pb, S, Sim, t);
+//
+//      PrepareTemplateHMM(par, q, t, format, pb, R);
+//
+//      Hit hit;
+//      hit.AllocateBacktraceMatrix(q->L + 2, par.maxres + 1);
+//      hit.self = 0;
+//      hit.realign_around_viterbi = false;
+//
+//      for (int irep = 1; irep <= par.altali; irep++) {
+//        hit.irep = irep;
+//        hit.Viterbi(q, t, par.loc, par.ssm, par.maxres, par.min_overlap,
+//            par.shift, par.egt, par.egq, par.ssw, par.exclstr, S73, S33);
+//
+//        if (hit.irep > 1 && hit.score <= SMIN)
+//          break;
+//
+//        hit.Backtrace(q, t, par.corr, par.ssw, S73, S33);
+//        realigned_viterbi_hitlist.Push(hit);
+//      }
+//
+//      hit.DeleteBacktraceMatrix(q->L + 2);
+//
+//      delete t;
+//    }
+//
+//    realigned_viterbi_hitlist.CalculatePvalues(q, par.loc, par.ssm, par.ssw);
+//    realigned_viterbi_hitlist.CalculateHHblitsEvalues(q, par.dbsize, par.alphaa,
+//        par.alphab, par.alphac, par.prefilter_evalue_thresh);
+//
+//    q->Log2LinTransitionProbs(1.0);
+//
+//    realigned_viterbi_hitlist.Reset();
+//    while (!realigned_viterbi_hitlist.End()) {
+//      Hit hit_ref = realigned_viterbi_hitlist.ReadNext();
+//
+//      HMM* t = new HMM();
+//
+//      int format;
+//      long ftellpos;
+//      getTemplateHMM(par, *hit_ref.entry, dbs, par.wg, format, pb, S, Sim, t);
+//
+//      PrepareTemplateHMM(par, q, t, format, pb, R);
+//      t->Log2LinTransitionProbs(1.0);
+//
+//      Hit hit;
+//      hit.AllocateForwardMatrix(q->L + 2, par.maxres + 1);
+//      hit.AllocateBacktraceMatrix(q->L + 2, par.maxres + 1);
+//      hit.irep = 1;
+//      hit.self = 0;
+//
+//      hit.i1 = hit_ref.i1;
+//      hit.i2 = hit_ref.i2;
+//      hit.j1 = hit_ref.j1;
+//      hit.j2 = hit_ref.j2;
+//      hit.nsteps = hit_ref.nsteps;
+//      hit.i = hit_ref.i;
+//      hit.j = hit_ref.j;
+//      hit.realign_around_viterbi = false;
+//
+//      // Align q to template in *hit[bin]
+//      hit.Forward(q, t, par.ssm, par.min_overlap, par.loc, par.shift, par.ssw,
+//          par.exclstr, S73, S33);
+//      hit.Backward(q, t, par.loc, par.shift, par.ssw, S73, S33);
+//      hit.MACAlignment(q, t, par.loc, par.mact, par.macins);
+//      hit.BacktraceMAC(q, t, par.corr, par.ssw, S73, S33);
+//
+//      // Overwrite *hit[bin] with Viterbi scores, Probabilities etc. of hit_cur
+//      hit.score = hit_ref.score;
+//      hit.score_ss = hit_ref.score_ss;
+//      hit.score_aass = hit_ref.score_aass;
+//      hit.score_sort = hit_ref.score_sort;
+//      hit.Pval = hit_ref.Pval;
+//      hit.Pvalt = hit_ref.Pvalt;
+//      hit.logPval = hit_ref.logPval;
+//      hit.logPvalt = hit_ref.logPvalt;
+//      hit.Eval = hit_ref.Eval;
+//      hit.logEval = hit_ref.logEval;
+//      hit.Probab = hit_ref.Probab;
+//
+//      hit.DeleteForwardMatrix(q->L + 2);
+//      hit.DeleteBacktraceMatrix(q->L + 2);
+//
+//      if (hit.matched_cols >= MINCOLS_REALIGN) {
+//        recalculated_hitlist.Insert(hit);
+//      }
+//
+//      delete t;
+//    }
+//
+//    realigned_viterbi_hitlist.Reset();
+//    while (!realigned_viterbi_hitlist.End()) {
+//      realigned_viterbi_hitlist.Delete().Delete();
+//    }
+//  }
+//
+//  delete q;
+//}
 
-  hitlist.Reset();
-  while (!hitlist.End()) {
-    Hit hit_cur = hitlist.ReadNext();
+//void HHblits::uniqueHitlist(HitList& hitlist) {
+//  std::set<std::string> ids;
+//
+//  hitlist.Reset();
+//  while (!hitlist.End()) {
+//    Hit hit_cur = hitlist.ReadNext();
+//
+//    std::string id = std::string(hit_cur.name);
+//
+//    if (ids.find(id) != ids.end()) {
+//      hitlist.Delete();
+//    }
+//    else {
+//      ids.insert(id);
+//    }
+//  }
+//}
 
-    if (!hit_cur.P_posterior) {
-      continue;
-    }
-    total++;
-
-    //calculate actual coverage
-    int length_actual_coverage = 0;
-    for (int alignment_index = 1; alignment_index <= hit_cur.nsteps;
-        alignment_index++) {
-      length_actual_coverage +=
-          (hit_cur.P_posterior[alignment_index] > 0.5) ? 1 : 0;
-    }
-
-    int length_actual_contribution = 0;
-    for (int alignment_index = 1; alignment_index <= hit_cur.nsteps;
-        alignment_index++) {
-      int i = hit_cur.i[alignment_index];
-      if (hit_cur.P_posterior[alignment_index] > 0.5
-          && coverage[i] < n_redundancy) {
-        length_actual_contribution++;
-      }
-    }
-
-    if (length_actual_contribution > 0.5 * length_actual_coverage) {
-      reducedHitList.Insert(hit_cur);
-
-      //update coverage
-      for (int alignment_index = 1; alignment_index <= hit_cur.nsteps;
-          alignment_index++) {
-        int i = hit_cur.i[alignment_index];
-
-        coverage[i] += (hit_cur.P_posterior[alignment_index] > 0.5) ? 1 : 0;
-      }
-    }
-  }
-
-  delete[] coverage;
-}
-
-void HHblits::recalculateAlignmentsForDifferentQSC(HitList& hitlist,
-    Alignment& Qali, char inputformat, float* qsc, size_t nqsc,
-    HitList& recalculated_hitlist) {
-  const int COV_ABS = 25;
-  int cov_tot = std::max(std::min((int) (COV_ABS / Qali.L * 100 + 0.5), 70),
-      par.coverage);
-
-  Alignment qali;
-  qali = Qali;
-  HMM* q = new HMM();
-
-  HitList realigned_viterbi_hitlist;
-
-  for (size_t qsc_index = 0; qsc_index < nqsc; qsc_index++) {
-    float actual_qsc = qsc[qsc_index];
-
-    qali.Compress("filtered A3M file", par.cons, par.maxres, par.maxcol, par.M,
-        par.Mgaps);
-    qali.N_filtered = qali.Filter(par.max_seqid, S, cov_tot, par.qid,
-        actual_qsc, par.Ndiff);
-    qali.FrequenciesAndTransitions(q, par.wg, par.mark, par.cons, par.showcons,
-        par.maxres, pb, Sim, NULL, false);
-    PrepareQueryHMM(par, inputformat, q, pc_hhm_context_engine,
-        pc_hhm_context_mode, pb, R);
-
-    hitlist.Reset();
-    while (!hitlist.End()) {
-      Hit hit_ref = hitlist.ReadNext();
-
-      HMM* t = new HMM();
-
-      int format;
-      long ftellpos;
-      getTemplateHMM(par, *hit_ref.entry, dbs, 1, format, pb, S, Sim, t);
-
-      PrepareTemplateHMM(par, q, t, format, pb, R);
-
-      Hit hit;
-      hit.AllocateBacktraceMatrix(q->L + 2, par.maxres + 1);
-      hit.self = 0;
-      hit.realign_around_viterbi = false;
-
-      for (int irep = 1; irep <= par.altali; irep++) {
-        hit.irep = irep;
-        hit.Viterbi(q, t, par.loc, par.ssm, par.maxres, par.min_overlap,
-            par.shift, par.egt, par.egq, par.ssw, par.exclstr, S73, S33);
-
-        if (hit.irep > 1 && hit.score <= SMIN)
-          break;
-
-        hit.Backtrace(q, t, par.corr, par.ssw, S73, S33);
-        realigned_viterbi_hitlist.Push(hit);
-      }
-
-      hit.DeleteBacktraceMatrix(q->L + 2);
-
-      delete t;
-    }
-
-    realigned_viterbi_hitlist.CalculatePvalues(q, par.loc, par.ssm, par.ssw);
-    realigned_viterbi_hitlist.CalculateHHblitsEvalues(q, par.dbsize, par.alphaa,
-        par.alphab, par.alphac, par.prefilter_evalue_thresh);
-
-    q->Log2LinTransitionProbs(1.0);
-
-    realigned_viterbi_hitlist.Reset();
-    while (!realigned_viterbi_hitlist.End()) {
-      Hit hit_ref = realigned_viterbi_hitlist.ReadNext();
-
-      HMM* t = new HMM();
-
-      int format;
-      long ftellpos;
-      getTemplateHMM(par, *hit_ref.entry, dbs, par.wg, format, pb, S, Sim, t);
-
-      PrepareTemplateHMM(par, q, t, format, pb, R);
-      t->Log2LinTransitionProbs(1.0);
-
-      Hit hit;
-      hit.AllocateForwardMatrix(q->L + 2, par.maxres + 1);
-      hit.AllocateBacktraceMatrix(q->L + 2, par.maxres + 1);
-      hit.irep = 1;
-      hit.self = 0;
-
-      hit.i1 = hit_ref.i1;
-      hit.i2 = hit_ref.i2;
-      hit.j1 = hit_ref.j1;
-      hit.j2 = hit_ref.j2;
-      hit.nsteps = hit_ref.nsteps;
-      hit.i = hit_ref.i;
-      hit.j = hit_ref.j;
-      hit.realign_around_viterbi = false;
-
-      // Align q to template in *hit[bin]
-      hit.Forward(q, t, par.ssm, par.min_overlap, par.loc, par.shift, par.ssw,
-          par.exclstr, S73, S33);
-      hit.Backward(q, t, par.loc, par.shift, par.ssw, S73, S33);
-      hit.MACAlignment(q, t, par.loc, par.mact, par.macins);
-      hit.BacktraceMAC(q, t, par.corr, par.ssw, S73, S33);
-
-      // Overwrite *hit[bin] with Viterbi scores, Probabilities etc. of hit_cur
-      hit.score = hit_ref.score;
-      hit.score_ss = hit_ref.score_ss;
-      hit.score_aass = hit_ref.score_aass;
-      hit.score_sort = hit_ref.score_sort;
-      hit.Pval = hit_ref.Pval;
-      hit.Pvalt = hit_ref.Pvalt;
-      hit.logPval = hit_ref.logPval;
-      hit.logPvalt = hit_ref.logPvalt;
-      hit.Eval = hit_ref.Eval;
-      hit.logEval = hit_ref.logEval;
-      hit.Probab = hit_ref.Probab;
-
-      hit.DeleteForwardMatrix(q->L + 2);
-      hit.DeleteBacktraceMatrix(q->L + 2);
-
-      if (hit.matched_cols >= MINCOLS_REALIGN) {
-        recalculated_hitlist.Insert(hit);
-      }
-
-      delete t;
-    }
-
-    realigned_viterbi_hitlist.Reset();
-    while (!realigned_viterbi_hitlist.End()) {
-      realigned_viterbi_hitlist.Delete().Delete();
-    }
-  }
-
-  delete q;
-}
-
-void HHblits::uniqueHitlist(HitList& hitlist) {
-  std::set<std::string> ids;
-
-  hitlist.Reset();
-  while (!hitlist.End()) {
-    Hit hit_cur = hitlist.ReadNext();
-
-    std::string id = std::string(hit_cur.name);
-
-    if (ids.find(id) != ids.end()) {
-      hitlist.Delete();
-    }
-    else {
-      ids.insert(id);
-    }
-  }
-}
-
-void HHblits::wiggleQSC(HitList& hitlist, int n_redundancy, Alignment& Qali,
-    char inputformat, float* qsc, size_t nqsc, HitList& reducedFinalHitList) {
-  int query_length = Qali.L;
-  HitList* reducedHitList = new HitList();
-  //  HitList* wiggledHitList = new HitList();
-
-  //filter by 2*n_redundancy
-  reduceRedundancyOfHitList(2 * n_redundancy, query_length, hitlist,
-      *reducedHitList);
-
-  //recalculate alignments for different qsc and choose best alignment for each template
-  recalculateAlignmentsForDifferentQSC(*reducedHitList, Qali, inputformat, qsc,
-      nqsc, reducedFinalHitList);  //*wiggledHitList);
-  //  uniqueHitlist(*wiggledHitList);
-
-  //filter by n_redundancy
-  //  reduceRedundancyOfHitList(n_redundancy, query_length, *wiggledHitList, reducedFinalHitList);
-}
-
-void HHblits::wiggleQSC(int n_redundancy, float* qsc, size_t nqsc,
-    HitList& reducedFinalHitList) {
-  wiggleQSC(hitlist, n_redundancy, Qali, input_format, qsc, nqsc,
-      reducedFinalHitList);
-  reducedFinalHitList.N_searched = hitlist.N_searched;
-}
+//void HHblits::wiggleQSC(HitList& hitlist, int n_redundancy, Alignment& Qali,
+//    char inputformat, float* qsc, size_t nqsc, HitList& reducedFinalHitList) {
+//  int query_length = Qali.L;
+//  HitList* reducedHitList = new HitList();
+//  //  HitList* wiggledHitList = new HitList();
+//
+//  //filter by 2*n_redundancy
+//  reduceRedundancyOfHitList(2 * n_redundancy, query_length, hitlist,
+//      *reducedHitList);
+//
+//  //recalculate alignments for different qsc and choose best alignment for each template
+//  recalculateAlignmentsForDifferentQSC(*reducedHitList, Qali, inputformat, qsc,
+//      nqsc, reducedFinalHitList);  //*wiggledHitList);
+//  //  uniqueHitlist(*wiggledHitList);
+//
+//  //filter by n_redundancy
+//  //  reduceRedundancyOfHitList(n_redundancy, query_length, *wiggledHitList, reducedFinalHitList);
+//}
+//
+//void HHblits::wiggleQSC(int n_redundancy, float* qsc, size_t nqsc,
+//    HitList& reducedFinalHitList) {
+//  //TODO: parameter
+//  char input_format = 1;
+//  wiggleQSC(hitlist, n_redundancy, Qali, input_format, qsc, nqsc,
+//      reducedFinalHitList);
+//  reducedFinalHitList.N_searched = hitlist.N_searched;
+//}
 
 void HHblits::run(FILE* query_fh, char* query_path) {
   int cluster_found = 0;
   int seqs_found = 0;
   int premerge = par.premerge;
+
+  SearchCounter search_counter;
 
   Hit hit_cur;
   Hash<Hit>* previous_hits = new Hash<Hit>(1631, hit_cur);
@@ -1983,8 +1957,8 @@ void HHblits::run(FILE* query_fh, char* query_path) {
 
   // Read query input file (HHM or alignment format) without adding pseudocounts
   Qali.N_in = 0;
-  ReadQueryFile(par, query_fh, input_format, par.wg, q, Qali, query_path, pb, S,
-      Sim);
+  char input_format;
+  ReadQueryFile(par, query_fh, input_format, par.wg, q, Qali, query_path, pb, S, Sim);
 
   if (Qali.N_in - Qali.N_ss > 1)
     premerge = 0;
@@ -2008,8 +1982,11 @@ void HHblits::run(FILE* query_fh, char* query_path) {
     for (size_t i = 0; i < dbs.size(); i++) {
       dbs[i]->initNoPrefilter(new_entries);
     }
-    all_entries.insert(all_entries.end(), new_entries.begin(),
-        new_entries.end());
+    all_entries.insert(all_entries.end(), new_entries.begin(), new_entries.end());
+
+    for(size_t i = 0; i < all_entries.size(); i++) {
+      search_counter.append(std::string(all_entries[i]->entry->name));
+    }
   }
 
   //////////////////////////////////////////////////////////////////////////////////
@@ -2089,11 +2066,18 @@ void HHblits::run(FILE* query_fh, char* query_path) {
             par.preprefilter_smax_thresh, par.min_prefilter_hits, R,
             new_entries, old_entries);
       }
+
+      for(size_t i = 0; i < new_entries.size(); i++) {
+        search_counter.append(std::string(new_entries[i]->entry->name));
+      }
+
       all_entries.insert(all_entries.end(), new_entries.begin(),
           new_entries.end());
       all_entries.insert(all_entries.end(), old_entries.begin(),
           old_entries.end());
     }
+
+    hitlist.N_searched = search_counter.getCounter();
 
     if (new_entries.size() == 0) {
       HH_LOG(LogLevel::INFO) << "No HMMs pass prefilter => Stop searching!"
@@ -2113,8 +2097,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
 
     // Main Viterbi HMM-HMM search
     ViterbiRunner viterbirunner(viterbiMatrices, dbs, par.threads);
-    std::vector<Hit> hits_to_add = viterbirunner.alignment(par, &q_vec,
-        new_entries, pb, S, Sim, R);
+    std::vector<Hit> hits_to_add = viterbirunner.alignment(par, &q_vec, new_entries, pb, S, Sim, R);
 
     add_hits_to_hitlist(hits_to_add, hitlist);
 
@@ -2155,8 +2138,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
         HH_LOG(LogLevel::INFO)
             << "Rescoring previously found HMMs with Viterbi algorithm"
             << std::endl;
-        RescoreWithViterbiKeepAlignment(q_vec,
-            new_entries.size() + previous_hits->Size(), previous_hits);
+        RescoreWithViterbiKeepAlignment(q_vec, previous_hits);
       }
     }
 
@@ -2281,10 +2263,10 @@ void HHblits::run(FILE* query_fh, char* query_path) {
         << " We recommend to use HHMs build by hhmake." << std::endl;
   }
 
-  if (*par.reduced_outfile) {
-    float qscs[] = { -20, 0, 0.1, 0.2 };
-    wiggleQSC(par.n_redundancy, qscs, 4, reducedHitlist);
-  }
+//  if (*par.reduced_outfile) {
+//    float qscs[] = { -20, 0, 0.1, 0.2 };
+//    wiggleQSC(par.n_redundancy, qscs, 4, reducedHitlist);
+//  }
 
   for (size_t i = 0; i < all_entries.size(); i++) {
     delete all_entries[i];

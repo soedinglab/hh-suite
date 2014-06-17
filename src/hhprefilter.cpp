@@ -268,6 +268,21 @@ namespace hh {
         << " database HHMs without prefiltering" << std::endl;
   }
 
+  void Prefilter::init_selected(FFindexDatabase* cs219_database,
+      std::vector<std::string> templates,
+      std::vector<std::pair<int, std::string>>& prefiltered_entries) {
+
+    ffindex_index_t* db_index = cs219_database->db_index;
+
+    for (size_t n = 0; n < templates.size(); n++) {
+      ffindex_entry_t* entry = ffindex_get_entry_by_name(db_index, const_cast<char *>(templates[n].c_str()));
+
+      prefiltered_entries.push_back(
+          std::make_pair<int, std::string>(entry->length,
+              std::string(entry->name)));
+    }
+  }
+
 //////////////////////////////////////////////////////////////
 // Reading in column state sequences for prefiltering
 //////////////////////////////////////////////////////////////

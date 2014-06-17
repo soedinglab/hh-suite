@@ -11,6 +11,7 @@
 #include <time.h>     // clock
 #include <ctype.h>    // islower, isdigit etc
 #include <sstream>
+#include <set>
 
 #include "hhhitlist-inl.h"
 #include "hhhit.h"
@@ -21,6 +22,18 @@
 
 #ifndef HHHITLIST_H
 #define HHHITLIST_H
+
+class SearchCounter {
+  public:
+    SearchCounter();
+    ~SearchCounter();
+
+    int getCounter();
+    void append(std::string id);
+
+  private:
+    std::set<std::string> already_seen;
+};
 
 /////////////////////////////////////////////////////////////////////////////////////
 // HitList is a list of hits of type Hit which can be operated upon by several anaylsis methods 

@@ -43,7 +43,7 @@ Viterbi::Viterbi(int maxres,bool local,float penalty_gap_query,float penalty_gap
 }
 
 Viterbi::~Viterbi(){
-    delete sMM_DG_MI_GD_IM_vec;
+    free(sMM_DG_MI_GD_IM_vec);
 //    delete exclstr;
 }
 

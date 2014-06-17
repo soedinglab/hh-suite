@@ -14,6 +14,8 @@
 static const int VEC_SIZE = HMMSimd::VEC_SIZE;
 static const int IDX_CORR = HMMSimd::VEC_SIZE - 1;
 
+#include "hhposteriormatrix-inl.h"
+
 class PosteriorMatrix {
 public:
 	PosteriorMatrix(const int q_length);

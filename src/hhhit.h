@@ -60,10 +60,7 @@ class Hit
   char fold[IDLEN];     // fold ID (derived from name)
   char cl[IDLEN];       // class ID (derived from name)
 
-  long ftellpos;        // start position of HMM in database file
-  int index;            // index of HMM in order of reading in (first=0)
   HHDatabaseEntry* entry;
-  List<void*>* plist_phits; // points to a list of pointers to hitlist elements of same template (for realignment)
   
   float score;          // Score of alignment (i.e. of Viterbi path)
   float score_sort;     // score to sort hits in output list (negative means first/best!)
@@ -92,7 +89,6 @@ class Hit
   int nfirst;           // index of query sequence in seq[]
   int ncons;            // index of consensus sequence
   
-  float** P_MM;        // Posterior probability matrix, filled in Forward and Backward algorithms
   int nsteps;           // index for last step in Viterbi path; (first=1)
   int* i;               // i[step] = query match state at step of Viterbi path
   int* j;               // j[step] = template match state at step of Viterbi path
@@ -110,12 +106,10 @@ class Hit
   int ssm1;             // SS scoring AFTER  alignment? 0:no  1:yes; t->dssp q->psipred  2:yes; q->dssp t->psipred
   int ssm2;             // SS scoring DURING alignment? 0:no  1:yes; t->dssp q->psipred  2:yes; q->dssp t->psipred
   char self;            // 0: align two different HMMs  1: align HMM with itself
-  int min_overlap;      // Minimum overlap between query and template
   float sum_of_probs;   // sum of probabilities for Maximum ACcuracy alignment (if dssp states defined, only aligned pairs with defined dssp state contribute to sum)
   float Neff_HMM;       // Diversity of underlying alignment
 
   bool realign_around_viterbi;
-  bool forward_allocated;
 
   // Constructor (only set pointers to NULL)
   Hit();
@@ -124,36 +118,8 @@ class Hit
   // Free all allocated memory (to delete list of hits)
   void Delete();
 
-  // Allocate/delete memory for dynamic programming matrix
-  void AllocateBacktraceMatrix(int Nq, int Nt);
-  void DeleteBacktraceMatrix(int Nq);
-  void AllocateForwardMatrix(int Nq, int Nt);
-  void DeleteForwardMatrix(int Nq);
-  
   void AllocateIndices(int len);
   void DeleteIndices();
-
-  // Compare an HMM with overlapping subalignments
-  void Viterbi(HMM* q, HMM* t, const char loc, const char ssm, const int maxres, const int par_min_overlap, const float shift, const float egt, const float egq, const float ssw, const char* exclstr, const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]);
-
-  // Compare two HMMs with each other in lin space
-  void Forward(HMM* q, HMM* t, const char ssm, const int par_min_overlap, const char loc, const float shift, const float ssw, const char* exclstr, const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]);
-
-  // Compare two HMMs with each other in lin space
-  void Backward(HMM* q, HMM* t, const char loc, const float shift, const float ssw, const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]);
-
-   // Find maximum accuracy alignment (after running Forward and Backward algorithms)
-  void MACAlignment(HMM* q, HMM* t, const char loc, const double mact, const double macins);
-
-  // Trace back alignment of two profiles based on matrices btr[][]
-  void Backtrace(HMM* q, HMM* t, const float corr, const float ssw, const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]);
-
-  // Trace back MAC alignment of two profiles based on matrix btr[][]
-  void BacktraceMAC(HMM* q, HMM* t, const float corr, const float ssw, const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]);
-
-
-  // Calculate score for a given alignment
-  void ScoreAlignment(HMM* q, HMM* t, int steps);
 
   // Comparison (used to sort list of hits)
   int operator<(const Hit& hit2)  {return score_sort<hit2.score_sort;}
@@ -167,7 +133,6 @@ class Hit
   }
 
   void initHitFromHMM(HMM * t);
-
 
   // Calculate Evalue, score_aass, Proba from logPval and score_ss
   // Calculate Evalue, score_aass, Proba from logPval and score_ss
@@ -184,15 +149,9 @@ class Hit
   /* // Merge HMM with next aligned HMM   */
   /* void MergeHMM(HMM* Q, HMM* t, float wk[]); */
   char state;          // 0: Start/STOP state  1: MM state  2: GD state (-D)  3: IM state  4: DG state (D-)  5 MI state
+  int min_overlap;
   
 private:
-  char** btr;          // backtracing matrix for all  5 pair states in one bit representation: btr[i][j] = 0|MI|DG|IM|GD|MM = 0|1|1|1|1|111
-  char** cell_off;     // cell_off[i][j]=1 means this cell will get score -infinity
-  double* scale;       // 
-
-  void InitializeBacktrace(HMM* q, HMM* t);
-  void InitializeForAlignment(HMM* q, HMM* t, const int min_overlap, const char ssm, const char* exclstr, bool vit=true);
-
   // Calculate probability of true positive : p_TP(score)/( p_TP(score)+p_FP(score) )
   // TP: same superfamily OR MAXSUB score >=0.1
   inline double CalcProbab(const char loc, const char ssm, const float ssw) {
@@ -240,12 +199,6 @@ private:
 
     return 100.0 / (1.0 + t * t); // ??? JS Jul'12
   }
-
-  float ScoreSS(HMM* q, HMM* t, int i, int j, int ssm, const float ssw, const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]);
-
-  // Calculate secondary structure score between columns i and j of two HMMs (query and template)
-  float ScoreSS(HMM* q, HMM* t, int i, int j, const float ssw, const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]);
-
 };
 
 double Pvalue(double x, double a[]);
@@ -253,7 +206,5 @@ double Pvalue(float x, float lamda, float mu);
 double logPvalue(float x, float lamda, float mu);
 double logPvalue(float x, double a[]);
 int compareHitLengths(const void * a, const void * b);
-
-
 
 #endif

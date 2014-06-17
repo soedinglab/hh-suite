@@ -6,6 +6,20 @@
 // Arithmetics
 /////////////////////////////////////////////////////////////////////////////////////
 
+void split(const std::string& s, char c, std::vector<std::string>& v) {
+  std::string::size_type i = 0;
+  std::string::size_type j = s.find(c);
+
+  while (j != std::string::npos) {
+    v.push_back(s.substr(i, j - i));
+    i = ++j;
+    j = s.find(c, j);
+  }
+
+  if (j == std::string::npos) {
+    v.push_back(s.substr(i, s.length()));
+  }
+}
 
 // copies substring str[a,b] into substr and returns substr
 char *substr(char* substr, char* str, int a, int b) {
@@ -26,7 +40,6 @@ char *substr(char* substr, char* str, int a, int b) {
   *dest = '\0';
   return substr;
 }
-
 
 // Similar to Perl's tr/abc/ABC/: Replaces all chars in str found in one list with characters from the second list
 // Returns the number of replaced characters
@@ -228,7 +241,6 @@ float strflta(char*& ptr, float deflt) {
   return i;
 }
 
-
 // QSort sorting routine. time complexity of O(N ln(N)) on average
 // Sorts the index array k between elements i='left' and i='right' in such a way that afterwards
 // v[k[i]] is sorted downwards (up=-1) or upwards (up=+1)
@@ -260,7 +272,6 @@ void QSortInt(int v[], int k[], int left, int right, int up) {
   QSortInt(v, k, left, last - 1, up);
   QSortInt(v, k, last + 1, right, up);
 }
-
 
 // QSort sorting routine. time complexity of O(N ln(N)) on average
 // Sorts the index array k between elements i='left' and i='right' in such a way that afterwards
@@ -356,7 +367,6 @@ __m128 _mm_flog2_ps(__m128 X)
   return R;
 }
 #endif
-
 
 void readU16(char** ptr, uint16_t &result) {
   unsigned char array[2];

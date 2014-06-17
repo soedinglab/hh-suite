@@ -11,17 +11,6 @@
 #include "hhviterbimatrix.h"
 
 
-/* a=target variable, b=bit number to act upon 0-n */
-#define BIT_SET(a,b) ((a) |= (1<<(b)))
-#define BIT_CLEAR(a,b) ((a) &= ~(1<<(b)))
-#define BIT_FLIP(a,b) ((a) ^= (1<<(b)))
-#define BIT_CHECK(a,b) ((a) & (1<<(b)))
-
-/* x=target variable, y=mask */
-#define BITMASK_SET(x,y) ((x) |= (y))
-#define BITMASK_CLEAR(x,y) ((x) &= (~(y)))
-#define BITMASK_FLIP(x,y) ((x) ^= (y))
-#define BITMASK_CHECK(x,y) ((x) & (y))
 
 ViterbiMatrix::ViterbiMatrix(){
     this->bCO_MI_DG_IM_GD_MM_vec=NULL;
@@ -32,115 +21,6 @@ ViterbiMatrix::ViterbiMatrix(){
 ViterbiMatrix::~ViterbiMatrix(){
 }
 
-//TODO: inline
-bool ViterbiMatrix::ViterbiMatrix::hasCellOff(){
-    return this->cellOff;
-}
-
-//TODO: inline
-unsigned char * ViterbiMatrix::ViterbiMatrix::getRow(int row){
-    return this->bCO_MI_DG_IM_GD_MM_vec[row];
-}
-
-//TODO: inline
-void ViterbiMatrix::setCellOff(bool value){
-    this->cellOff = value;
-}
-
-//TODO: inline
-void ViterbiMatrix::setCellOff(int row,int col,int elem,bool value){
-    if(value){
-        BIT_SET(this->bCO_MI_DG_IM_GD_MM_vec[row][(col*VEC_SIZE)+elem],7);
-        this->setCellOff(true);
-    }else{
-        BIT_CLEAR(this->bCO_MI_DG_IM_GD_MM_vec[row][(col*VEC_SIZE)+elem], 7);
-    }
-}
-
-inline void ViterbiMatrix::setMatIns(int row,int col,int elem,bool value){
-    if(value){
-        BIT_SET(this->bCO_MI_DG_IM_GD_MM_vec[row][(col*VEC_SIZE)+elem],6);
-    }else{
-        BIT_CLEAR(this->bCO_MI_DG_IM_GD_MM_vec[row][(col*VEC_SIZE)+elem], 6);
-    }
-}
-
-inline void ViterbiMatrix::setDelGap(int row,int col,int elem,bool value){
-    if(value){
-        BIT_SET(this->bCO_MI_DG_IM_GD_MM_vec[row][(col*VEC_SIZE)+elem],5);
-    }else{
-        BIT_CLEAR(this->bCO_MI_DG_IM_GD_MM_vec[row][(col*VEC_SIZE)+elem], 5);
-    }
-}
-
-inline void ViterbiMatrix::setInsMat(int row,int col,int elem,bool value){
-    if(value){
-        BIT_SET(this->bCO_MI_DG_IM_GD_MM_vec[row][(col*VEC_SIZE)+elem],4);
-    }else{
-        BIT_CLEAR(this->bCO_MI_DG_IM_GD_MM_vec[row][(col*VEC_SIZE)+elem], 4);
-    }
-}
-
-inline void ViterbiMatrix::setGapDel(int row,int col,int elem,bool value){
-    if(value){
-        BIT_SET(this->bCO_MI_DG_IM_GD_MM_vec[row][(col*VEC_SIZE)+elem],3);
-    }else{
-        BIT_CLEAR(this->bCO_MI_DG_IM_GD_MM_vec[row][(col*VEC_SIZE)+elem], 3);
-    }
-}
-
-//TODO: inline
-void ViterbiMatrix::setMatMat(int row,int col,int elem,unsigned char value){
-    //0xF8 11111000
-//    this->bCO_MI_DG_IM_GD_MM_vec[row][(col*VEC_SIZE)+elem]&=(0xF8 ^ value);
-		unsigned char c = 0xF8;
-		this->bCO_MI_DG_IM_GD_MM_vec[row][(col*VEC_SIZE)+elem] =
-				(this->bCO_MI_DG_IM_GD_MM_vec[row][(col*VEC_SIZE)+elem] & c) | value;
-}
-
-inline bool ViterbiMatrix::getCellOff(int row,int col,int elem){
-    unsigned char vCO_MI_DG_GD_MM=this->bCO_MI_DG_IM_GD_MM_vec[row][(col*VEC_SIZE)+elem];
-    return (bool) (vCO_MI_DG_GD_MM & 128);
-}
-
-//TODO: inline
-bool ViterbiMatrix::getMatIns(int row,int col,int elem){
-    unsigned char vCO_MI_DG_GD_MM=this->bCO_MI_DG_IM_GD_MM_vec[row][(col*VEC_SIZE)+elem];
-    return (bool) (vCO_MI_DG_GD_MM & 64);
-}
-
-//TODO: inline
-bool ViterbiMatrix::getDelGap(int row,int col,int elem){
-    unsigned char vCO_MI_DG_GD_MM=this->bCO_MI_DG_IM_GD_MM_vec[row][(col*VEC_SIZE)+elem];
-    return (bool) (vCO_MI_DG_GD_MM & 32);
-}
-
-//TODO: inline
-bool ViterbiMatrix::getInsMat(int row,int col,int elem){
-    unsigned char vCO_MI_DG_GD_MM=this->bCO_MI_DG_IM_GD_MM_vec[row][(col*VEC_SIZE)+elem];
-    return (bool) (vCO_MI_DG_GD_MM & 16);
-}
-
-//TODO: inline
-bool ViterbiMatrix::getGapDel(int row,int col,int elem){
-    unsigned char vCO_MI_DG_GD_MM=this->bCO_MI_DG_IM_GD_MM_vec[row][(col*VEC_SIZE)+elem];
-    return (bool) (vCO_MI_DG_GD_MM & 8);
-}
-
-//TODO: inline
-int  ViterbiMatrix::getMatMat(int row,int col,int elem){
-    unsigned char vCO_MI_DG_GD_MM=this->bCO_MI_DG_IM_GD_MM_vec[row][(col*VEC_SIZE)+elem];
-    return (int) (vCO_MI_DG_GD_MM & 7);
-}
-
-inline void ViterbiMatrix::printCellOff(int row_size,int col_size,int elem){
-    for(int row = 0; row < row_size; row++){
-        for(int col = 0; col < col_size;col++){
-            std::cout << getCellOff(row,col,elem) << " ";
-        }
-        std::cout << std::endl;
-    }
-}
 
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -173,7 +53,7 @@ void ViterbiMatrix::DeleteBacktraceMatrix(int Nq)
 {
     int i;
     for (i=0; i<Nq; ++i) {
-        delete[] this->bCO_MI_DG_IM_GD_MM_vec[i];
+        free(this->bCO_MI_DG_IM_GD_MM_vec[i]);
     }
     delete[] this->bCO_MI_DG_IM_GD_MM_vec;
     this->bCO_MI_DG_IM_GD_MM_vec=NULL;

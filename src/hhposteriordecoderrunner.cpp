@@ -41,7 +41,7 @@ void PosteriorDecoderRunner::executeComputation(Parameters& par, float* pb, cons
   int irep_counter = 0;
 
   // Alignments that are excluded for the next irep-run
-  std::map<std::string, std::vector<PosteriorDecoder::MACBacktraceResult *> > alignments_to_exclude;
+  std::map<std::string, std::vector<PosteriorDecoder::MACBacktraceResult *>* > alignments_to_exclude;
 
   // Initialize selected query transitions
   initializeQueryHMMTransitions(*m_q_simd.GetHMM(0));
@@ -49,7 +49,7 @@ void PosteriorDecoderRunner::executeComputation(Parameters& par, float* pb, cons
   // Routine to start consumer threads
   std::vector<PosteriorDecoder*> * threads = initializeConsumerThreads(par.loc);
 
-  HMMSimd** t_hmm_simd = new HMMSimd*[m_n_threads];
+  HMMSimd* t_hmm_simd[m_n_threads];
   for (int i = 0; i < m_n_threads; i++) {
     t_hmm_simd[i] = new HMMSimd(par.maxres);
   }
@@ -88,7 +88,15 @@ void PosteriorDecoderRunner::executeComputation(Parameters& par, float* pb, cons
         char wg = 0;
         getTemplateHMM(par, *hit_cur->entry, m_databases, wg, format_tmp, pb, S, Sim, &t_hmm[current_t_index + i]);
 
-        alignment_exclusions.push_back(findAlignmentsToExclude(hit_cur->file, alignments_to_exclude));
+        if (alignments_to_exclude.find(std::string(hit_cur->file)) != alignments_to_exclude.end()) {
+          alignment_exclusions.push_back(alignments_to_exclude.at(std::string(hit_cur->file)));
+        }
+        else {
+          std::vector< PosteriorDecoder::MACBacktraceResult *>* vec = new std::vector<PosteriorDecoder::MACBacktraceResult *>();
+          alignment_exclusions.push_back(vec);
+          alignments_to_exclude[std::string(hit_cur->file)] = vec;
+        }
+
 
         PrepareTemplateHMM(par, q_hmm, &t_hmm[current_t_index + i], format_tmp, pb, R);
         templates_to_align.push_back(&t_hmm[current_t_index + i]);
@@ -102,6 +110,20 @@ void PosteriorDecoderRunner::executeComputation(Parameters& par, float* pb, cons
     mergeThreadResults(irep_counter, alignments_to_exclude);
   }	// end - outer map
 
+  std::map<std::string, std::vector<PosteriorDecoder::MACBacktraceResult *>* >::iterator it;
+  for(it = alignments_to_exclude.begin(); it != alignments_to_exclude.end(); it++) {
+    for(int i = 0; i < (*it).second->size(); i++) {
+      delete (*it).second->at(i);
+    }
+    (*it).second->clear();
+    delete (*it).second;
+  }
+  alignments_to_exclude.clear();
+
+  for (int i = 0; i < m_n_threads; i++) {
+    delete t_hmm_simd[i];
+  }
+
   cleanupThread(threads);
 }
 
@@ -110,7 +132,7 @@ void PosteriorDecoderRunner::executeComputation(Parameters& par, float* pb, cons
 //		have to be excluded in the next run (previous found MAC alignments).
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void PosteriorDecoderRunner::mergeThreadResults(int irep_counter,
-    std::map<std::string, std::vector<PosteriorDecoder::MACBacktraceResult *> > & alignments_to_exclude) {
+    std::map<std::string, std::vector<PosteriorDecoder::MACBacktraceResult *> *> & alignments_to_exclude) {
 
   std::vector<Hit *> hits = m_alignments.at(irep_counter);
   for (int hit_elem = 0; hit_elem < (int) hits.size(); hit_elem++) {
@@ -120,8 +142,12 @@ void PosteriorDecoderRunner::mergeThreadResults(int irep_counter,
         new PosteriorDecoder::MACBacktraceResult;
     mac_btr->alt_i = hit.alt_i;
     mac_btr->alt_j = hit.alt_j;
+
     // Add mac and viterbi backtrace result to alignments_to_exclude
-    alignments_to_exclude[std::string(hit.file)].push_back(mac_btr);
+    if(alignments_to_exclude.find(std::string(hit.file)) == alignments_to_exclude.end()) {
+      alignments_to_exclude[std::string(hit.file)] = new std::vector<PosteriorDecoder::MACBacktraceResult *>();
+    }
+    alignments_to_exclude[std::string(hit.file)]->push_back(mac_btr);
   }
 }
 
@@ -151,26 +177,6 @@ void PosteriorDecoderRunner::cleanupThread(
   threads->clear();
 
   delete threads;
-
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
-// Find previously found alignments for exclusion for the next run
-///////////////////////////////////////////////////////////////////////////////////////////////////
-std::vector<PosteriorDecoder::MACBacktraceResult *>* PosteriorDecoderRunner::findAlignmentsToExclude(char * file,
-    std::map<std::string, std::vector<PosteriorDecoder::MACBacktraceResult *> > & alignments_to_exclude) {
-
-//  if (v > 2) {
-//    printAlignmentsToExclude(alignments_to_exclude);
-//  }
-
-  //TODO: bug???
-  if (alignments_to_exclude.count(std::string(file)) > 0) {
-    return &alignments_to_exclude.at(std::string(file));
-  }
-  else {
-    return new std::vector<PosteriorDecoder::MACBacktraceResult *>();
-  }
 
 }
 

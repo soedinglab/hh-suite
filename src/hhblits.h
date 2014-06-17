@@ -86,16 +86,6 @@ class HHblits;
 const char HHBLITS_REFERENCE[] =
 		"Remmert M., Biegert A., Hauser A., and Soding J.\nHHblits: Lightning-fast iterative protein sequence searching by HMM-HMM alignment.\nNat. Methods 9:173-175 (2011)\n";
 
-
-//static void writeHHRFile(HHblits& hhblits, std::stringstream& out);
-//static void writeScoresFile(HHblits& hhblits, std::stringstream& out);
-//static void writePairwiseAlisFile(HHblits& hhblits, std::stringstream& out);
-//static void writeAlitabFile(HHblits& hhblits, std::stringstream& out);
-//static void writeReducedHHRFile(HHblits& hhblits, std::stringstream& out);
-//static void writePsiFile(HHblits& hhblits, std::stringstream& out);
-//static void writeHMMFile(HHblits& hhblits, std::stringstream& out);
-//static void writeA3MFile(HHblits& hhblits, std::stringstream& out);
-
 class HHblits {
 public:
 	HHblits(Parameters& parameters, std::vector<HHblitsDatabase*>& databases);
@@ -155,8 +145,6 @@ protected:
     // verbose mode
 
 	// Set to 1 if input in HMMER format (has already pseudocounts)
-	char input_format = 0;
-
 	char config_file[NAMELEN];
 
 	//database filenames
@@ -175,40 +163,33 @@ protected:
 	ViterbiMatrix* viterbiMatrices[MAXBINS];
 	PosteriorMatrix* posteriorMatrices[MAXBINS];
 
-	// Each bin has a template HMM allocated that was read from the database file
-	HMM* t[MAXBINS];
-	// Each bin has an object of type Hit allocated with a separate dynamic programming matrix (memory!!)
-	Hit* hit[MAXBINS];
-	// format[bin] = 0 if in HHsearch format => add pcs; format[bin] = 1 if in HMMER format => no pcs
-	int* format;
-
 	HitList hitlist; // list of hits with one Hit object for each pairwise comparison done
 	HitList reducedHitlist;
-	int N_searched;           // Number of HMMs searched
 	std::map<int, Alignment> alis;
 	void perform_realign(HMMSimd& q_vec, std::vector<HHDatabaseEntry*>& hits_to_realign, const int premerge, Hash<char>* premerged_hits);
 	void mergeHitsToQuery(Hash<Hit>* previous_hits, Hash<char>* premerged_hits, int& seqs_found, int& cluster_found);
 	void add_hits_to_hitlist(std::vector<Hit>& hits, HitList& hitlist);
 
+
 private:
 	static void help(Parameters& par, char all = 0);
 	static void ProcessArguments(int argc, char** argv, Parameters& par);
 
-	void getTemplateA3M(HHblitsDatabase* db, char* entry_name, long& ftellpos, Alignment& tali);
+	void getTemplateA3M(HHblitsDatabase* db, char* entry_name, Alignment& tali);
 
-	void RescoreWithViterbiKeepAlignment(HMMSimd& q_vec, int db_size, Hash<Hit>* previous_hits);
+	void RescoreWithViterbiKeepAlignment(HMMSimd& q_vec, Hash<Hit>* previous_hits);
 
-	//redundancy filter
-    void wiggleQSC(HitList& hitlist, int n_redundancy, Alignment& Qali,
-            char inputformat, float* qsc, size_t nqsc,
-            HitList& reducedFinalHitList);
-    void wiggleQSC(int n_redundancy, float* qsc, size_t nqsc, HitList& reducedFinalHitList);
-	void reduceRedundancyOfHitList(int n_redundancy, int query_length,
-			HitList& hitlist, HitList& reducedHitList);
-	void recalculateAlignmentsForDifferentQSC(HitList& hitlist, Alignment& Qali,
-			char inputformat, float* qsc, size_t nqsc,
-			HitList& recalculated_hitlist);
-	void uniqueHitlist(HitList& hitlist);
+//	//redundancy filter
+//    void wiggleQSC(HitList& hitlist, int n_redundancy, Alignment& Qali,
+//            char inputformat, float* qsc, size_t nqsc,
+//            HitList& reducedFinalHitList);
+//    void wiggleQSC(int n_redundancy, float* qsc, size_t nqsc, HitList& reducedFinalHitList);
+//	void reduceRedundancyOfHitList(int n_redundancy, int query_length,
+//			HitList& hitlist, HitList& reducedHitList);
+//	void recalculateAlignmentsForDifferentQSC(HitList& hitlist, Alignment& Qali,
+//			char inputformat, float* qsc, size_t nqsc,
+//			HitList& recalculated_hitlist);
+//	void uniqueHitlist(HitList& hitlist);
 };
 
 #endif /* HHBLITS_H_ */

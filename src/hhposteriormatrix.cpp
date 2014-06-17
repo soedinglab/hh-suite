@@ -19,8 +19,9 @@ PosteriorMatrix::~PosteriorMatrix() {
 //	printf("Posterior matrix --> ~destructor\n");
 	if (m_probabilities) {
 			for (int i = 0; i < m_q_length; i++) {
-					delete[] m_probabilities[i];
+					free(m_probabilities[i]);
 			}
+			delete[] m_probabilities;
 	}
 }
 

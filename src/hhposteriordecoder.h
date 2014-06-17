@@ -76,6 +76,7 @@ private:
 
 	simd_float * m_s_curr;		// MAC scores - current
 	simd_float * m_s_prev;		// MAC scores - previous
+	simd_float * p_last_col;
 
 
 //	PosteriorSharedVariables m_column_vars;
@@ -98,18 +99,18 @@ private:
 	std::vector<Hit *> m_temp_hit_vec;
 
 	void forwardAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm, std::vector<Hit *> & hit_vec, PosteriorMatrix & p_mm, ViterbiMatrix & viterbi_matrix, float shift);
-	void backwardAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm, std::vector<Hit *> & hit_vec, PosteriorMatrix & p_mm, ViterbiMatrix & viterbi_matrix, float shift);
+	void backwardAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm, PosteriorMatrix & p_mm, ViterbiMatrix & viterbi_matrix, float shift);
 	void macAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm, std::vector<Hit *> & hit_vec, PosteriorMatrix & p_mm,
 			ViterbiMatrix & viterbi_matrix, const simd_int min_overlap, float par_mact);
 	void backtraceMAC(HMM & q, HMM & t, PosteriorMatrix & p_mm, ViterbiMatrix & backtrace_matrix, const int elem, Hit & hit, float corr);
 	void initializeBacktrace(HMM & t, Hit & hit);
 
-	void initializeForAlignment(HMM & q, HMM & t, Hit & hit, ViterbiMatrix & viterbi_matrix, const int elem,
+	void initializeForAlignment(HMM & q, HMM & t, Hit * hit, ViterbiMatrix & viterbi_matrix, const int elem,
 			std::vector<MACBacktraceResult *> & alignment_to_exclude,
 			const int t_max_L, int par_min_overlap);
 	void maskViterbiAlignment(const int q_length, const int t_length, ViterbiMatrix & celloff_matrix,
-																									const int elem, const Hit & hit) const;
-	void memorizeHitValues(Hit & curr_hit, const int i);
+																									const int elem, const Hit * hit) const;
+	void memorizeHitValues(Hit * curr_hit, const int i);
 	void restoreHitValues(Hit & curr_hit, const int i);
 
 	void setGlobalColumnPForward(simd_float * column, const simd_int & j_vec, const int i_count, const simd_float & values);
