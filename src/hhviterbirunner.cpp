@@ -108,11 +108,6 @@ std::vector<Hit> ViterbiRunner::alignment(Parameters& par, HMMSimd * q_simd,
 
     #pragma omp parallel for schedule(dynamic, 1)
     for (unsigned int idb = 0; idb < dbfiles_to_align.size(); idb += HMMSimd::VEC_SIZE) {
-      std::cout << dbfiles_to_align[idb]->sequence_length << std::endl;
-      std::cout << dbfiles_to_align[idb+1]->sequence_length << std::endl;
-      std::cout << dbfiles_to_align[idb+2]->sequence_length << std::endl;
-      std::cout << dbfiles_to_align[idb+3]->sequence_length << std::endl;
-
       // find next free worker thread
       const int current_thread_id = omp_get_thread_num();
       const int current_t_index = (current_thread_id * HMMSimd::VEC_SIZE);
