@@ -25,7 +25,7 @@ ifdef ICC
   OBJECT_LIBS = -openmp
 else # ifndef ICC
   CXX = g++
-  CXXFLAGS += -g -std=c++11 -O3 -Wall -Wno-vla -Wno-deprecated -Wno-char-subscripts -fno-strict-aliasing -I$(CS_DIR) $(BITS_FLAG) -I$(FFINDEX_DIR) -fopenmp
+  CXXFLAGS += -g -std=c++11 -ffast-math -O3 -Wall -Wno-vla -Wno-deprecated -Wno-char-subscripts -fno-strict-aliasing -I$(CS_DIR) $(BITS_FLAG) -I$(FFINDEX_DIR) -fopenmp
   HHSEARCH_LIBS = -lpthread
   HHBLITS_LIBS = -lpthread -fopenmp
   CS_LIBS = -fopenmp
@@ -34,7 +34,7 @@ else # ifndef ICC
 	ifdef AVX2
 	CXXFLAGS += -DAVX2_SUPPORT -mavx2
 	else
-	CXXFLAGS += -DSSE -msse2
+	CXXFLAGS += -DSSE -msse3
 	endif
   ifeq ($(OS), Darwin)
     CXXFLAGS+=-DHH_MAC -Wa,-q
