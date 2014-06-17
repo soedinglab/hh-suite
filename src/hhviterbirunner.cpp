@@ -103,13 +103,11 @@ std::vector<Hit> ViterbiRunner::alignment(Parameters& par, HMMSimd * q_simd,
     HH_LOG(LogLevel::INFO) << "Alternative alignment: " << alignment << std::endl;
     //sort by length to improve performance.
     //desc sort (for better utilisation of threads)
-    sort(dbfiles_to_align.begin(), dbfiles_to_align.end(),
-        std::greater<HHDatabaseEntry*>());
+    sort(dbfiles_to_align.begin(), dbfiles_to_align.end(), HHDatabaseEntryCompare());
     // read in data for thread
 
     #pragma omp parallel for schedule(dynamic, 1)
     for (unsigned int idb = 0; idb < dbfiles_to_align.size(); idb += HMMSimd::VEC_SIZE) {
-
       // find next free worker thread
       const int current_thread_id = omp_get_thread_num();
       const int current_t_index = (current_thread_id * HMMSimd::VEC_SIZE);
