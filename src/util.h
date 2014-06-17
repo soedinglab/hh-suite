@@ -22,25 +22,6 @@
 
 #include "util-inl.h"
 
-#ifdef HH_SSE41
-#include <tmmintrin.h>   // SSSE3
-#include <smmintrin.h>   // SSE4.1
-#define HH_SSE3
-#endif
-
-#ifdef HH_SSE3
-#include <pmmintrin.h>   // SSE3
-#define HH_SSE2
-#endif
-
-#ifdef HH_SSE2
-#ifndef __SUNPRO_C
-#include <emmintrin.h>   // SSE2
-#else
-#include <sunmedia_intrin.h>
-#endif
-#endif
-
 void split(const std::string& s, char c, std::vector<std::string>& v);
 
 char *substr(char* substr, char* str, int a, int b);
@@ -90,10 +71,5 @@ void QSortFloat(float v[], int k[], int left, int right, int up = +1);
 void readU16(char** ptr, uint16_t &result);
 
 void readU32(char** ptr, uint32_t &result);
-
-#ifdef HH_SSE2
-__m128 _mm_flog2_ps(__m128 X);
-#endif
-
 
 #endif /* UTIL_H_ */

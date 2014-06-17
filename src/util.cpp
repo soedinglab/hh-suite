@@ -306,68 +306,6 @@ void QSortFloat(float v[], int k[], int left, int right, int up) {
   QSortFloat(v, k, last + 1, right, up);
 }
 
-// Fast SSE2 log2 for four floats
-// Calculate integer of log2 for four floats in parallel with SSE2
-// Maximum deviation: +/- 2.1E-5
-// Run time: ~5.6ns on Intel core2 2.13GHz.
-// For a negative argument, nonsense is returned. Otherwise, when <1E-38, a value
-// close to -126 is returned and when >1.7E38, +128 is returned.
-// The function makes use of the representation of 4-byte floating point numbers:
-// seee eeee emmm mmmm mmmm mmmm mmmm mmmm
-// s is the sign, eee eee e gives the exponent + 127 (in hex: 0x7f).
-// The following 23 bits give the mantisse, the binary digits after the decimal
-// point:  x = (-1)^s * 1.mmmmmmmmmmmmmmmmmmmmmmm * 2^(eeeeeeee-127)
-// Therefore,  log2(x) = eeeeeeee-127 + log2(1.mmmmmm...)
-//                     = eeeeeeee-127 + log2(1+y),  where y = 0.mmmmmm...
-//                     ~ eeeeeeee-127 + ((a*y+b)*y+c)*y
-// The coefficients a, b  were determined by a least squares fit, and c=1-a-b to get 1 at y=1.
-// Lower/higher order polynomials may be used for faster or more precise calculation:
-// Order 1: log2(1+y) ~ y
-// Order 2: log2(1+y) = (a*y + 1-a)*y, a=-0.3427
-//  => max dev = +/- 8E-3, run time ~ 3.8ns
-// Order 3: log2(1+y) = ((a*y+b)*y + 1-a-b)*y, a=0.1564, b=-0.5773
-//  => max dev = +/- 1E-3, run time ~ 4.4ns
-// Order 4: log2(1+y) = (((a*y+b)*y+c)*y + 1-a-b-c)*y, a=-0.0803 b=0.3170 c=-0.6748
-//  => max dev = +/- 1.4E-4, run time ~ 5.0ns?
-// Order 5: log2(1+y) = ((((a*y+b)*y+c)*y+d)*y + 1-a-b-c-d)*y, a=0.0440047 b=-0.1903190 c=0.4123442 d=-0.7077702
-//  => max dev = +/- 2.1E-5, run time ~ 5.6ns?
-
-#ifdef HH_SSE2
-__m128 _mm_flog2_ps(__m128 X)
-{
-  const __m128i CONST32_0x7f = _mm_set_epi32(0x7f,0x7f,0x7f,0x7f);
-  const __m128i CONST32_0x7fffff = _mm_set_epi32(0x7fffff,0x7fffff,0x7fffff,0x7fffff);
-  const __m128i CONST32_0x3f800000 = _mm_set_epi32(0x3f800000,0x3f800000,0x3f800000,0x3f800000);
-  const __m128 CONST32_1f = _mm_set_ps(1.0,1.0,1.0,1.0);
-  // const float a=0.1564, b=-0.5773, c=1.0-a-b;  // third order
-  const float a=0.0440047, b=-0.1903190, c=0.4123442, d=-0.7077702, e=1.0-a-b-c-d;// fifth order
-  const __m128 CONST32_A = _mm_set_ps(a,a,a,a);
-  const __m128 CONST32_B = _mm_set_ps(b,b,b,b);
-  const __m128 CONST32_C = _mm_set_ps(c,c,c,c);
-  const __m128 CONST32_D = _mm_set_ps(d,d,d,d);
-  const __m128 CONST32_E = _mm_set_ps(e,e,e,e);
-  __m128i E;// exponents of X
-  __m128 R;//  result
-
-  E = _mm_srli_epi32((__m128i) X, 23);// shift right by 23 bits to obtain exponent+127
-  E = _mm_sub_epi32(E, CONST32_0x7f);// subtract 127 = 0x7f
-  X = (__m128) _mm_and_si128((__m128i) X, CONST32_0x7fffff);// mask out exponent => mantisse
-  X = (__m128) _mm_or_si128((__m128i) X, CONST32_0x3f800000);// set exponent to 127 (i.e., 0)
-  X = _mm_sub_ps(X, CONST32_1f);// subtract one from mantisse
-  R = _mm_mul_ps(X, CONST32_A);// R = a*X
-  R = _mm_add_ps(R, CONST32_B);// R = a*X+b
-  R = _mm_mul_ps(R, X);// R = (a*X+b)*X
-  R = _mm_add_ps(R, CONST32_C);// R = (a*X+b)*X+c
-  R = _mm_mul_ps(R, X);// R = ((a*X+b)*X+c)*X
-  R = _mm_add_ps(R, CONST32_D);// R = ((a*X+b)*X+c)*X+d
-  R = _mm_mul_ps(R, X);// R = (((a*X+b)*X+c)*X+d)*X
-  R = _mm_add_ps(R, CONST32_E);// R = (((a*X+b)*X+c)*X+d)*X+e
-  R = _mm_mul_ps(R, X);// R = ((((a*X+b)*X+c)*X+d)*X+e)*X ~ log2(1+X) !!
-  R = _mm_add_ps(R, _mm_cvtepi32_ps(E));// convert integer exponent to float and add to mantisse
-  return R;
-}
-#endif
-
 void readU16(char** ptr, uint16_t &result) {
   unsigned char array[2];
 

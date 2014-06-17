@@ -1943,6 +1943,7 @@ void HHblits::perform_realign(HMMSimd& q_vec, std::vector<HHDatabaseEntry*>& hit
 //}
 
 void HHblits::run(FILE* query_fh, char* query_path) {
+  Log::reporting_level() = LogLevel::INFO;
   int cluster_found = 0;
   int seqs_found = 0;
   int premerge = par.premerge;

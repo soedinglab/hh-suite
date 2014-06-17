@@ -270,7 +270,7 @@ void PosteriorDecoder::excludeMACAlignment(const int q_length, const int t_lengt
 	if (alignment.alt_i && alignment.alt_j) {
 		alignment.alt_i->clear();
 		alignment.alt_j->clear();
-		for(int q = 0; q < alignment.alt_i->size(); q++) {
+		for(size_t q = 0; q < alignment.alt_i->size(); q++) {
 			i = alignment.alt_i->at(q);
 			j = alignment.alt_j->at(q);
 

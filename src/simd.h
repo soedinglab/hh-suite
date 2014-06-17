@@ -9,7 +9,7 @@
 #ifndef SIMD_H
 #define SIMD_H
 #include <stdlib.h>
-#define SSE
+
 #ifdef AVX512_SUPPORT
 #define AVX2_SUPPORT
 #endif
@@ -41,10 +41,10 @@ typedef __m512d simd_double;
 #define simdf64_setzero(x)  _mm512_setzero_pd()
 #define simdf64_gt(x,y)     _mm512_cmpnle_pd_mask(x,y)
 #define simdf64_lt(x,y)     _mm512_cmplt_pd_mask(x,y)
-#define simdf_or(x,y)       _mm512_or_si512(x,y)
-#define simdf_and(x,y)      _mm512_and_si512 (x,y)
-#define simdf_andnot(x,y)   _mm512_andnot_si512(x,y)
-#define simdf_xor(x,y)      _mm512_xor_si512(x,y)
+#define simdf64_or(x,y)       _mm512_or_si512(x,y)
+#define simdf64_and(x,y)      _mm512_and_si512 (x,y)
+#define simdf64_andnot(x,y)   _mm512_andnot_si512(x,y)
+#define simdf64_xor(x,y)      _mm512_xor_si512(x,y)
 #endif //SIMD_DOUBLE
 // float support
 #ifndef SIMD_FLOAT
@@ -64,10 +64,10 @@ typedef __m512  simd_float;
 #define simdf32_setzero(x)  _mm512_setzero_ps()
 #define simdf32_gt(x,y)     _mm512_cmpnle_ps_mask(x,y)
 #define simdf32_lt(x,y)     _mm512_cmplt_ps_mask(x,y)
-#define simdf_or(x,y)       _mm512_or_si512(x,y)
-#define simdf_and(x,y)      _mm512_and_si512(x,y)
-#define simdf_andnot(x,y)   _mm512_andnot_si512(x,y)
-#define simdf_xor(x,y)      _mm512_xor_si512(x,y)
+#define simdf32_or(x,y)       _mm512_or_si512(x,y)
+#define simdf32_and(x,y)      _mm512_and_si512(x,y)
+#define simdf32_andnot(x,y)   _mm512_andnot_si512(x,y)
+#define simdf32_xor(x,y)      _mm512_xor_si512(x,y)
 #define simdf32_f2i(x) 	    _mm512_cvtps_epi32(x)  // convert s.p. float to integer
 #define simdf_f2icast(x)  _mm512_castps_si512 (x)
 
@@ -172,10 +172,10 @@ typedef __m256d simd_double;
 #define simdf64_setzero(x)  _mm256_setzero_pd()
 #define simdf64_gt(x,y)     _mm256_cmp_pd(x,y,_CMP_GT_OS)
 #define simdf64_lt(x,y)     _mm256_cmp_pd(x,y,_CMP_LT_OS)
-#define simdf_or(x,y)     _mm256_or_pd(x,y)
-#define simdf_and(x,y)    _mm256_and_pd(x,y)
-#define simdf_andnot(x,y) _mm256_andnot_pd(x,y)
-#define simdf_xor(x,y)    _mm256_xor_pd(x,y)
+#define simdf64_or(x,y)     _mm256_or_pd(x,y)
+#define simdf64_and(x,y)    _mm256_and_pd(x,y)
+#define simdf64_andnot(x,y) _mm256_andnot_pd(x,y)
+#define simdf64_xor(x,y)    _mm256_xor_pd(x,y)
 #endif //SIMD_DOUBLE
 // float support (usable with AVX1)
 #ifndef SIMD_FLOAT
@@ -195,10 +195,10 @@ typedef __m256 simd_float;
 #define simdf32_setzero(x)  _mm256_setzero_ps()
 #define simdf32_gt(x,y)     _mm256_cmp_ps(x,y,_CMP_GT_OS)
 #define simdf32_lt(x,y)     _mm256_cmp_ps(x,y,_CMP_LT_OS)
-#define simdf_or(x,y)       _mm256_or_ps(x,y)
-#define simdf_and(x,y)      _mm256_and_ps(x,y)
-#define simdf_andnot(x,y)   _mm256_andnot_ps(x,y)
-#define simdf_xor(x,y)      _mm256_xor_ps(x,y)
+#define simdf32_or(x,y)       _mm256_or_ps(x,y)
+#define simdf32_and(x,y)      _mm256_and_ps(x,y)
+#define simdf32_andnot(x,y)   _mm256_andnot_ps(x,y)
+#define simdf32_xor(x,y)      _mm256_xor_ps(x,y)
 #define simdf32_f2i(x) 	    _mm256_cvtps_epi32(x)  // convert s.p. float to integer
 #define simdf_f2icast(x)  _mm256_castps_si256(x) // compile time cast
 #endif //SIMD_FLOAT
@@ -225,10 +225,10 @@ typedef __m128d simd_double;
 #define simdf64_setzero(x)  _mm_setzero_pd()
 #define simdf64_gt(x,y)     _mm_cmpgt_pd(x,y)
 #define simdf64_lt(x,y)     _mm_cmplt_pd(x,y)
-#define simdf_or(x,y)     _mm_or_pd(x,y)
-#define simdf_and(x,y)    _mm_and_pd(x,y)
-#define simdf_andnot(x,y) _mm_andnot_pd(x,y)
-#define simdf_xor(x,y)    _mm_xor_pd(x,y)
+#define simdf64_or(x,y)     _mm_or_pd(x,y)
+#define simdf64_and(x,y)    _mm_and_pd(x,y)
+#define simdf64_andnot(x,y) _mm_andnot_pd(x,y)
+#define simdf64_xor(x,y)    _mm_xor_pd(x,y)
 #endif //SIMD_DOUBLE
 
 // float support
@@ -249,10 +249,10 @@ typedef __m128  simd_float;
 #define simdf32_setzero(x)  _mm_setzero_ps()
 #define simdf32_gt(x,y)     _mm_cmpgt_ps(x,y)
 #define simdf32_lt(x,y)     _mm_cmplt_ps(x,y)
-#define simdf_or(x,y)       _mm_or_ps(x,y)
-#define simdf_and(x,y)      _mm_and_ps(x,y)
-#define simdf_andnot(x,y)   _mm_andnot_ps(x,y)
-#define simdf_xor(x,y)      _mm_xor_ps(x,y)
+#define simdf32_or(x,y)       _mm_or_ps(x,y)
+#define simdf32_and(x,y)      _mm_and_ps(x,y)
+#define simdf32_andnot(x,y)   _mm_andnot_ps(x,y)
+#define simdf32_xor(x,y)      _mm_xor_ps(x,y)
 #define simdf32_f2i(x) 	    _mm_cvtps_epi32(x)  // convert s.p. float to integer
 #define simdf_f2icast(x)  _mm_castps_si128(x) // compile time cast
 #endif //SIMD_FLOAT

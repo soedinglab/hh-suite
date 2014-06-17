@@ -183,8 +183,8 @@ Viterbi::BacktraceScore Viterbi::ScoreForBacktrace(HMMSimd* q_four, HMMSimd* t_f
         switch(states[step])
         {
             case ViterbiMatrix::MM:
-                S[step]    = Viterbi::Score(q->p[i_steps[step]],t->p[j_steps[step]]);
-                S_ss[step] = Viterbi::ScoreSS(q,t,i_steps[step],j_steps[step],ssm);
+                S[step]    = Score(q->p[i_steps[step]],t->p[j_steps[step]]);
+                S_ss[step] = ScoreSS(q,t,i_steps[step],j_steps[step],ssm);
                 score_ss += S_ss[step];
                 break;
             case ViterbiMatrix::MI: //if gap in template

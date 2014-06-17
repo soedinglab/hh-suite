@@ -212,7 +212,7 @@ void PosteriorDecoder::backwardAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm,
 
           // If j >= t.L replace value by 0.0f otherwise keep the value, respectively
           simd_float mask_gt = (simd_float)simdi32_gt(j_vec_prev, m_t_lengths_ge);
-          mm_curr_j_1 = simdf_andnot(mask_gt, mm_curr_j_1);
+          mm_curr_j_1 = simdf32_andnot(mask_gt, mm_curr_j_1);
 
           p_mm_i_j_1 = simdf32_load((float *)&p_mm_row_ptr[j+1]);
           // Cell of logic

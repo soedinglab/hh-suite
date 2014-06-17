@@ -71,7 +71,6 @@ void Viterbi::AlignWithOutCellOff(HMMSimd* q, HMMSimd* t,ViterbiMatrix * viterbi
     const simd_int im_mm_vec     = simdi32_set(16);//   00010000
     const simd_int dg_mm_vec     = simdi32_set(32);//   00100000
     const simd_int mi_mm_vec     = simdi32_set(64);//   01000000
-    const __m128i tmp_vec        = _mm_set_epi32(0x40000000,0x00400000,0x00004000,0x00000040);//01000000010000000100000001000000
 #ifdef AVX2_SUPPORT
     const simd_int co_vec               = _mm256_inserti128_si256(_mm256_castsi128_si256(tmp_vec), tmp_vec, 1);
     const simd_int shuffle_mask_extract = _mm256_setr_epi8(0,  4,  8,  12, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -88,8 +87,12 @@ void Viterbi::AlignWithOutCellOff(HMMSimd* q, HMMSimd* t,ViterbiMatrix * viterbi
 
     const simd_int float_min_vec     = (simd_int) _mm256_set1_ps(-FLT_MAX);
 #else
+
+#ifdef VITERBI_CELLOFF
+    const __m128i tmp_vec        = _mm_set_epi32(0x40000000,0x00400000,0x00004000,0x00000040);//01000000010000000100000001000000
     const simd_int co_vec = tmp_vec;
     const simd_int float_min_vec = (simd_int) simdf32_set(-FLT_MAX);
+#endif
     
 
 #endif

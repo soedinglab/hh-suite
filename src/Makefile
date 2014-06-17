@@ -18,7 +18,7 @@ CFLAGS+=-std=c99 -O2 -g -fPIC -Wall -pedantic $(INC)
 
 ifdef ICC
   CXX = env LANG=C icc
-  CXXFLAGS += -fast -Wall -fno-strict-aliasing -finline-functions -funroll-loops -fp-model fast=2 -fast-transcendentals -wd981 -wd383 -wd2259 -wd1572 -D HH_SSE3 -I$(CS_DIR) -I$(FFINDEX_DIR)
+  CXXFLAGS += -fast -Wall -fno-strict-aliasing -finline-functions -funroll-loops -fp-model fast=2 -fast-transcendentals -wd981 -wd383 -wd2259 -wd1572 -I$(CS_DIR) -I$(FFINDEX_DIR)
   HHSEARCH_LIBS = -lpthread -lrt -openmp
   HHBLITS_LIBS = -lpthread -lrt -openmp
   CS_LIBS = -openmp
@@ -31,25 +31,16 @@ else # ifndef ICC
   CS_LIBS = -fopenmp
   HHALIGN_LIBS = 
   OBJECT_LIBS = -fopenmp
-  ifdef WITH_NATIVE
-    CXXFLAGS += -march=native
-  endif
-  ifdef WITH_SSE41
-    CXXFLAGS += -DHH_SSE41 -msse4.1 -DHH_SSSE3 -mssse3
-  else
-    ifndef NO_SSE2
-      ifdef NO_SSE3
-        CXXFLAGS += -DHH_SSE2 -msse2
-      else
-        CXXFLAGS += -DHH_SSE3 -msse3
-      endif
-    endif
-  endif
+	ifdef AVX2
+	CXXFLAGS += -DAVX2_SUPPORT -mavx2
+	else
+	CXXFLAGS += -DSSE -msse2
+	endif
   ifeq ($(OS), Darwin)
-    CXXFLAGS+=-DHH_MAC
+    CXXFLAGS+=-DHH_MAC -Wa,-q
   endif
   ifeq ($(OS), Linux)
-    HHSEARCH_LIBS = -lpthread -lrt
+    HHSEARCH_LIBS = -lrt
     HHBLITS_LIBS +=-lrt
     ifndef NO_PNG
       HHALIGN_LIBS = -DNO_FREETYPE -DHH_PNG -lpng -lz

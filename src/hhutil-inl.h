@@ -316,61 +316,6 @@ inline void sout(std::stringstream& out, int d) {
 }
 
 
-// Calculate scalar product between 20 dimensional float vectors qi and tj
-inline float ScalarProd20(const float* qi, const float* tj)
-{
-
-#ifndef HH_SSE2
-  return  tj[0] *qi[0] +tj[1] *qi[1] +tj[2] *qi[2] +tj[3] *qi[3] +tj[4] *qi[4]
-    +tj[5] *qi[5] +tj[6] *qi[6] +tj[7] *qi[7] +tj[8] *qi[8] +tj[9] *qi[9]
-    +tj[10]*qi[10]+tj[11]*qi[11]+tj[12]*qi[12]+tj[13]*qi[13]+tj[14]*qi[14]
-    +tj[15]*qi[15]+tj[16]*qi[16]+tj[17]*qi[17]+tj[18]*qi[18]+tj[19]*qi[19];
-#endif
-
-#ifdef HH_SSE2
-  float __attribute__((aligned(16))) res;
-  __m128 P; // query 128bit SSE2 register holding 4 floats
-  __m128 R; // result
-  __m128* Qi = (__m128*) qi;
-  __m128* Tj = (__m128*) tj;
-
-#ifdef HH_SSE41
-  R = _mm_dp_ps(*(Qi++),*(Tj++),0xFF); // dot product
-  P = _mm_dp_ps(*(Qi++),*(Tj++),0xFF); // dot product
-  R = _mm_add_ps(R,P);
-  P = _mm_dp_ps(*(Qi++),*(Tj++),0xFF);
-  R = _mm_add_ps(R,P);
-  P = _mm_dp_ps(*(Qi++),*(Tj++),0xFF);
-  R = _mm_add_ps(R,P);
-  P = _mm_dp_ps(*Qi,*Tj,0xFF);
-  R = _mm_add_ps(R,P);
-#else
-  R = _mm_mul_ps(*(Qi++),*(Tj++));
-  P = _mm_mul_ps(*(Qi++),*(Tj++));
-  R = _mm_add_ps(R,P);
-  P = _mm_mul_ps(*(Qi++),*(Tj++));
-  R = _mm_add_ps(R,P);
-  P = _mm_mul_ps(*(Qi++),*(Tj++));
-  R = _mm_add_ps(R,P);
-  P = _mm_mul_ps(*Qi,*Tj);
-  R = _mm_add_ps(R,P);
-#ifdef HH_SSE3
-  R = _mm_hadd_ps(R,R);
-  R = _mm_hadd_ps(R,R);
-#else // equivalent SSE2 code
-  P = _mm_shuffle_ps(R,R, _MM_SHUFFLE(2,0,2,0));
-  R = _mm_shuffle_ps(R,R, _MM_SHUFFLE(3,1,3,1));
-  R = _mm_add_ps(R,P);
-  P = _mm_shuffle_ps(R,R, _MM_SHUFFLE(2,0,2,0));
-  R = _mm_shuffle_ps(R,R, _MM_SHUFFLE(3,1,3,1));
-  R = _mm_add_ps(R,P);
-#endif // end SSE2 code
-#endif // end ifndef HH_SSE41
-  _mm_store_ss(&res, R);
-  return res;
-#endif // end ifdef HH_SSE2
-}
-
 /////////////////////////////////////////////////////////////////////////////////////
 //// Takes family code (eg. a.1.2.3) and returns strings 'a', 'a.1', and 'a.1.2'
 /////////////////////////////////////////////////////////////////////////////////////
@@ -439,9 +384,9 @@ inline simd_float simdf32_fpow2(simd_float X) {
     // The correct FLT_MAX_EXP value is written to the right place
     maskedMax = simdf32_gt(X, CONST32_FLTMAXEXP);
     maskedMin = simdf32_gt(X, CONST32_FLTMINEXP);
-    maskedMin = simdf_xor(maskedMin, maskedMax);
+    maskedMin = simdf32_xor(maskedMin, maskedMax);
     // If a value is bigger than FLT_MAX_EXP --> replace the later result with FLTMAX
-    maskedMax = simdf_and(CONST32_FLTMAX, simdf32_gt(X, CONST32_FLTMAXEXP));
+    maskedMax = simdf32_and(CONST32_FLTMAX, simdf32_gt(X, CONST32_FLTMAXEXP));
 
     tx = simdf32_add((simd_float ) CONST32_3shift22, simdf32_sub(X, CONST32_05f)); // temporary value for truncation: x-0.5 is added to a large integer (3<<22),
                                                                              // 3<<22 = (1.1bin)*2^23 = (1.1bin)*2^(150-127),
@@ -472,9 +417,9 @@ inline simd_float simdf32_fpow2(simd_float X) {
     *xPtr = simdi32_add(*xPtr, lxExp); // add integer power of 2 to exponent
 
     // Add all Values that are greater than min and less than max
-    result = simdf_and(maskedMin, X);
+    result = simdf32_and(maskedMin, X);
     // Add MAX_FLT values where entry values were > FLT_MAX_EXP
-    result = simdf_or(result, maskedMax);
+    result = simdf32_or(result, maskedMax);
 
     return result;
 }
@@ -558,7 +503,7 @@ inline simd_float log2f4(simd_float x)
 
     simd_float e = simdi32_i2f(simdi32_sub(simdi32_srli(simdi_and(i, exp), 23), simdi32_set(127)));
 
-    simd_float m = simdf_or(simdi_i2fcast(simdi_and(i, mant)), one);
+    simd_float m = simdf32_or(simdi_i2fcast(simdi_and(i, mant)), one);
 
     simd_float p;
 

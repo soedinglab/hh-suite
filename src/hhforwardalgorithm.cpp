@@ -483,8 +483,8 @@ void PosteriorDecoder::forwardAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm,
           for (j = 1; j <= t_hmm.L; j++) {
               j_vec = simdi32_set(j);
               const simd_float mask_lt = (simd_float)simdi32_lt(j_vec, m_t_lengths_le);
-              values = simdf_or(simdf_andnot(mask_lt, m_p_forward),
-                                                  simdf_and(mask_lt, p_mm_row_ptr[j]));
+              values = simdf32_or(simdf32_andnot(mask_lt, m_p_forward),
+                                                  simdf32_and(mask_lt, p_mm_row_ptr[j]));
               m_p_forward = simd_flog2_sum_fpow2(
                                               m_p_forward,
                                               values
@@ -505,8 +505,8 @@ void PosteriorDecoder::setGlobalColumnPForward(simd_float * column,	const simd_i
 	// andnot: 	to keep values that are already in column
 	// and:			to add the new values
 	simd_float col_i_vec = simdf32_load((float *)&column[i_count]);
-	col_i_vec = simdf_or(simdf_andnot(mask_lt, col_i_vec),
-														 simdf_and(mask_lt, values));
+	col_i_vec = simdf32_or(simdf32_andnot(mask_lt, col_i_vec),
+														 simdf32_and(mask_lt, values));
 	simdf32_store((float *)&column[i_count], col_i_vec);
 
 }

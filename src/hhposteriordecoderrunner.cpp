@@ -112,7 +112,7 @@ void PosteriorDecoderRunner::executeComputation(Parameters& par, float* pb, cons
 
   std::map<std::string, std::vector<PosteriorDecoder::MACBacktraceResult *>* >::iterator it;
   for(it = alignments_to_exclude.begin(); it != alignments_to_exclude.end(); it++) {
-    for(int i = 0; i < (*it).second->size(); i++) {
+    for(size_t i = 0; i < (*it).second->size(); i++) {
       delete (*it).second->at(i);
     }
     (*it).second->clear();
@@ -171,7 +171,7 @@ std::vector<PosteriorDecoder*> * PosteriorDecoderRunner::initializeConsumerThrea
 void PosteriorDecoderRunner::cleanupThread(
     std::vector<PosteriorDecoder*> * threads) {
 
-  for(int i = 0; i < threads->size(); i++) {
+  for(size_t i = 0; i < threads->size(); i++) {
     delete threads->at(i);
   }
   threads->clear();
