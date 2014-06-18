@@ -4,6 +4,7 @@
 #include "hhhmmsimd.h"
 #include "hhviterbimatrix.h"
 #include "hhviterbi.h"
+#include "hhhitlist.h"
 #include "hhfunc.h"
 #include <vector>
 #include <map>
@@ -68,6 +69,9 @@ private:
 	void exclude_alignments(int maxResElem, HMMSimd* q_simd, HMMSimd* t_hmm_simd,
                             std::map<std::string ,std::vector<Viterbi::BacktraceResult > >  &excludeAlignments,
 							ViterbiMatrix* viterbiMatrix);
+    
+    float calculateEarlyStop(Parameters& par, HMM * q, std::vector<Hit> &all_hits, unsigned int startPos);
+
 };
 
 #endif
