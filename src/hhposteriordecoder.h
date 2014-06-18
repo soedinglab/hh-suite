@@ -78,6 +78,9 @@ private:
 	simd_float * m_s_prev;		// MAC scores - previous
 	simd_float * p_last_col;
 
+	simd_float * m_backward_profile;
+	simd_float * m_forward_profile;
+
 
 //	PosteriorSharedVariables m_column_vars;
 
@@ -103,6 +106,7 @@ private:
 	void macAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm, std::vector<Hit *> & hit_vec, PosteriorMatrix & p_mm,
 			ViterbiMatrix & viterbi_matrix, float par_mact);
 	void backtraceMAC(HMM & q, HMM & t, PosteriorMatrix & p_mm, ViterbiMatrix & backtrace_matrix, const int elem, Hit & hit, float corr);
+	void writeProfilesToHits(HMM & q, HMM & t, PosteriorMatrix & p_mm, const int elem, Hit & hit);
 	void initializeBacktrace(HMM & t, Hit & hit);
 
 	void initializeForAlignment(HMM & q, HMM & t, Hit * hit, ViterbiMatrix & viterbi_matrix, const int elem,

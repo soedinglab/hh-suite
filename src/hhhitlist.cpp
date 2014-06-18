@@ -469,3 +469,270 @@ void HitList::CalculatePvalues(HMM* q, const char loc, const char ssm, const flo
   SortList();
   Reset();
 }
+
+
+void HitList::PrintMatrices(HMM* q, const char* matricesOutputFileName, const size_t max_number_matrices, const float S[20][20]) {
+	std::stringstream out_ss(
+			std::stringstream::in | std::stringstream::out
+					| std::stringstream::binary);
+	PrintMatrices(q, out_ss, max_number_matrices, S);
+
+	if (strcmp(matricesOutputFileName, "stdout") == 0) {
+		std::cout << out_ss.str();
+	} else {
+		std::ofstream out(matricesOutputFileName, std::ios::out | std::ios::binary);
+		if (!out.good()) {
+			std::cerr << "Warning in " << __FILE__ << ":" << __LINE__ << ": "
+					<< __func__ << ":" << std::endl;
+			std::cerr << "\tcould not open \'" << matricesOutputFileName
+					<< std::endl;
+			return;
+		}
+
+		out << out_ss.str();
+
+		out.close();
+	}
+}
+
+void HitList::PrintMatrices(HMM* q, std::stringstream& out, const size_t max_number_matrices, const float S[20][20]) {
+	//limit matrices to par.max_number_matrices
+	std::vector<Hit> hits;
+
+	const float tolerance = 0.01;
+
+	Reset();
+	while (!End()) {
+	  Hit hit_cur = ReadNext();
+
+	  if(!hit_cur.forward_profile || !hit_cur.backward_profile) {
+		  continue;
+	  }
+
+	  float forward_profile_sum = 0.0;
+	  float backward_profile_sum = 0.0;
+
+	  for(int i = 1; i <= q->L; i++) {
+		  forward_profile_sum += hit_cur.forward_profile[i];
+		  backward_profile_sum += hit_cur.backward_profile[i];
+	  }
+
+	  if(forward_profile_sum < 1.0 + tolerance && forward_profile_sum > 1.0 - tolerance
+			  && backward_profile_sum < 1.0 + tolerance && backward_profile_sum > 1.0 - tolerance) {
+		  hits.push_back(hit_cur);
+	  }
+	}
+
+
+	std::vector<bool> picked_alignments(hits.size(), true);
+	unsigned int chosen = hits.size();
+	float matix_probability_threshold = 20;
+
+	if (hits.size() == 0) {
+		HH_LOG(LogLevel::WARNING) << "There are no alignment matrices to print!" << std::endl;
+	}
+
+	//remove duplicate alignments (mostly alignments which were realigned afterwards)
+	for (int index1 = hits.size() - 1; index1 >= 0; index1--) {
+		Hit it = hits[index1];
+		if (it.Probab < matix_probability_threshold) {
+			picked_alignments[index1] = false;
+			chosen--;
+		} else if (picked_alignments[index1]) {
+			for (int index2 = index1 - 1; index2 >= 0; index2--) {
+				Hit it_comp = hits[index2];
+
+				if ((picked_alignments[index2] && strcmp(it.name, it_comp.name) == 0 && it.irep == it_comp.irep)
+						|| it.Probab < matix_probability_threshold) {
+					picked_alignments[index2] = false;
+					chosen--;
+				}
+			}
+		}
+	}
+
+	float** similarity_scores = new float*[hits.size()];
+	for (unsigned int i = 0; i < hits.size(); i++) {
+		similarity_scores[i] = new float[hits.size()];
+	}
+
+	for (unsigned int k = 0; k < hits.size(); k++) {
+		similarity_scores[k][k] = 1.0;
+		for (unsigned int k_comp = k + 1; k_comp < hits.size(); k_comp++) {
+			similarity_scores[k][k_comp] = 0;
+
+			Hit it = hits[k];
+			Hit it_comp = hits[k_comp];
+
+			for (int i = 1; i <= q->L; i++) {
+				similarity_scores[k][k_comp] += pow(
+						it.forward_profile[i] * it_comp.forward_profile[i], 0.5)
+						+ pow(it.backward_profile[i] * it_comp.backward_profile[i], 0.5);
+			}
+
+			similarity_scores[k][k_comp] /= 2.0;
+			similarity_scores[k_comp][k] = similarity_scores[k][k_comp];
+		}
+	}
+
+	//remove too similar alignments
+	while (chosen > max_number_matrices) {
+		float max_value = 0.0;
+		int max_index = 0;
+
+		for (unsigned int k = 0; k < hits.size(); k++) {
+			float summed_similarity = 0;
+			for (unsigned int k_prim = 0; k_prim < hits.size(); k_prim++) {
+				if (picked_alignments[k_prim] && picked_alignments[k]) {
+					summed_similarity += similarity_scores[k][k_prim];
+				}
+			}
+
+			if (summed_similarity > max_value) {
+				max_value = summed_similarity;
+				max_index = k;
+			}
+		}
+
+		picked_alignments[max_index] = false;
+		chosen--;
+	}
+
+	for (unsigned int k = 0; k < hits.size(); k++) {
+		delete[] similarity_scores[k];
+	}
+	delete[] similarity_scores;
+
+	HH_LOG(LogLevel::INFO) << "Printing alignment matrices..." << std::endl;
+	HH_LOG(LogLevel::INFO) << "Total number of alignments    : " << hits.size() << std::endl;
+	HH_LOG(LogLevel::INFO) << "Number of accepted alignments : " << chosen << std::endl;
+
+	if (chosen == 0) {
+		HH_LOG(LogLevel::WARNING) << "Warning: No homologs found for printing matrix!" << std::endl;
+		return;
+	}
+
+	//set outputstream
+	const unsigned short int delimiter_16_bit = 0;
+	const unsigned char delimiter_8_bit = 0;
+
+	out.write(q->name, strlen(q->name));
+	out.write(reinterpret_cast<const char*>(&delimiter_8_bit), sizeof(delimiter_8_bit));
+
+	unsigned short int query_length = q->L;
+	writeU16(out, query_length);
+
+	for (size_t index = 0; index < hits.size(); index++) {
+		if (!picked_alignments[index]) {
+			continue;
+		}
+
+		Hit it = hits[index];
+
+		const char* name = it.name;
+
+		out.write(name, strlen(it.name));
+		out.write(reinterpret_cast<const char*>(&delimiter_8_bit), sizeof(delimiter_8_bit));
+		unsigned short int template_length = it.L;
+		writeU16(out, template_length);
+
+		unsigned char ali_probability = it.Probab;
+		out.write(reinterpret_cast<const char*>(&ali_probability), sizeof(unsigned char));
+
+		unsigned short int alignment_similarity;
+		float_to_16_bit(it.calculateSimilarity(q, S), alignment_similarity);
+		writeU16(out, alignment_similarity);
+
+		unsigned short int forwardProbability;
+		float printForwardThreshold;
+		float_to_16_bit(0.0, forwardProbability);
+		bit_16_to_float(forwardProbability, printForwardThreshold);
+
+		unsigned short int startPrintForward = q->L;
+		unsigned short int endPrintForward = 0;
+
+		for (unsigned short int i = 1; i <= q->L; i++) {
+			float_to_16_bit(it.forward_profile[i], forwardProbability);
+			if (it.forward_profile[i] > printForwardThreshold) {
+				startPrintForward = std::min(i, startPrintForward);
+				endPrintForward = std::max(i, endPrintForward);
+			}
+		}
+
+		writeU16(out, startPrintForward);
+
+		for (unsigned short int i = startPrintForward; i <= endPrintForward;
+				i++) {
+			if (it.forward_profile[i] > 2 * printForwardThreshold) {
+				float_to_16_bit(it.forward_profile[i], forwardProbability);
+				writeU16(out, forwardProbability);
+			} else {
+				float_to_16_bit(2 * printForwardThreshold, forwardProbability);
+
+				writeU16(out, forwardProbability);
+			}
+		}
+
+		writeU16(out, delimiter_16_bit);
+
+		unsigned short int backwardProbability;
+		float printBackwardThreshold;
+		float_to_16_bit(0.0, backwardProbability);
+		bit_16_to_float(backwardProbability, printBackwardThreshold);
+
+		unsigned short int startPrintBackward = q->L;
+		unsigned short int endPrintBackward = 0;
+
+		for (unsigned short int i = 1; i <= q->L; i++) {
+			float_to_16_bit(it.backward_profile[i], backwardProbability);
+			if (it.backward_profile[i] > printBackwardThreshold) {
+				startPrintBackward = std::min(i, startPrintBackward);
+				endPrintBackward = std::max(i, endPrintBackward);
+			}
+		}
+
+		writeU16(out, startPrintBackward);
+
+		for (unsigned short int i = startPrintBackward; i <= endPrintBackward;
+				i++) {
+			if (it.backward_profile[i] > 2 * printBackwardThreshold) {
+				float_to_16_bit(it.backward_profile[i], backwardProbability);
+				writeU16(out, backwardProbability);
+			} else {
+				float_to_16_bit(2 * printBackwardThreshold,
+						backwardProbability);
+				writeU16(out, backwardProbability);
+			}
+		}
+
+		writeU16(out, delimiter_16_bit);
+
+		unsigned char posteriorProbability;
+
+		int last_i = -1;
+		int last_j = -1;
+		for (size_t posterior_index = 0; posterior_index < it.posterior_probabilities.size(); posterior_index++) {
+			Posterior_Triple* triple = it.posterior_probabilities[posterior_index];
+
+			float_to_8_bit(triple->posterior_probability, posteriorProbability);
+
+			if (last_i != triple->query_pos || last_j + 1 != triple->template_pos) {
+				if (last_i != -1 && last_j != -1) {
+					out.write(reinterpret_cast<const char*>(&delimiter_8_bit),
+							sizeof(delimiter_8_bit));
+				}
+				writeU16(out, triple->query_pos);
+				writeU16(out, triple->template_pos);
+			}
+
+			out.write(reinterpret_cast<const char*>(&posteriorProbability),
+					sizeof(unsigned char));
+
+			last_i = triple->query_pos;
+			last_j = triple->template_pos;
+		}
+		out.write(reinterpret_cast<const char*>(&delimiter_8_bit), sizeof(delimiter_8_bit));
+		writeU16(out, delimiter_16_bit);
+	}
+	out.flush();
+}

@@ -515,18 +515,21 @@ void PosteriorDecoder::forwardAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm,
 			const simd_float mask_lt = (simd_float)simdi32_lt(j_vec, m_t_lengths_le);
 			values = simdf32_or(simdf32_andnot(mask_lt, m_p_forward),
                                 simdf32_and(mask_lt, p_mm_row_ptr[j]));
-			m_p_forward = simd_flog2_sum_fpow2(
-                                               m_p_forward,
-                                               values
-                                               );
+			m_p_forward = simd_flog2_sum_fpow2(m_p_forward, values);
 		}
         
+	}
+
+	for (i = 1; i <= q_hmm.L; i++) {
+		m_forward_profile[i] = simdf32_set(0);
+		for (j = 1; j <= t_hmm.L; j++) {
+			m_forward_profile[i] = simdf32_add(m_forward_profile[i], simdf32_fpow2(simdf32_sub(p_mm.getValue(i, j), m_p_forward)));
+		}
 	}
     
 	for (int elem = 0; elem < (int)hit_vec.size(); elem++) {
 		hit_vec.at(elem)->Pforward = ((float *)&m_p_forward)[elem];
 	}
-
   }
 
 void PosteriorDecoder::setGlobalColumnPForward(simd_float * column,	const simd_int & j_vec, const int i_count, const simd_float & values) {

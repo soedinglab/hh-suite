@@ -73,6 +73,9 @@ PosteriorDecoder::PosteriorDecoder(int maxres, bool local, int q_length) :
 	m_t_lengths_le = simdi32_set(0);
 	m_t_lengths_ge = simdi32_set(0);
 
+	m_backward_profile = malloc_simd_float(m_max_res * sizeof(simd_float));
+	m_forward_profile = malloc_simd_float(m_max_res * sizeof(simd_float));
+
 	for (int elem = 0; elem < VEC_SIZE; elem++) {
 		m_temp_hit_vec.push_back(new Hit);
 	}
@@ -97,6 +100,9 @@ PosteriorDecoder::~PosteriorDecoder() {
 	free(m_s_prev);
 
 	free(p_last_col);
+
+	free(m_backward_profile);
+	free(m_forward_profile);
 
 	for (int elem = 0; elem < VEC_SIZE; elem++) {
 //	  m_temp_hit_vec.at(elem)->Delete();
@@ -143,6 +149,19 @@ void PosteriorDecoder::realign(HMMSimd & q_hmm, HMMSimd & t_hmm,
 	// Compute SIMD Forward algorithm
 	forwardAlgorithm(q_hmm, t_hmm, hit_vec, p_mm, viterbi_matrix, shift);
 
+//	simd_float sum = simdf32_set(0);
+//	for(int i = 1; i <= q_hmm.L; i++) {
+//		sum = simdf32_add(sum, forward_profile[i]);
+//	}
+//
+//	float result[4];
+//	simdf32_store(result, sum);
+//
+//	for(int elem = 0; elem < num_t; elem++) {
+//		std::cout << "forward: " << result[elem] << std::endl;
+//	}
+
+
 //	for (int elem = 0; elem < num_t; elem++) {
 //		printf("%s: %20.20f\n", hit_vec.at(elem)->file, hit_vec.at(elem)->Pforward);
 //	}
@@ -150,6 +169,17 @@ void PosteriorDecoder::realign(HMMSimd & q_hmm, HMMSimd & t_hmm,
 	// Compute SIMD Backward algorithm
 	backwardAlgorithm(q_hmm, t_hmm, hit_vec, p_mm, viterbi_matrix, shift);
 
+//	simd_float sum = simdf32_set(0);
+//	for(int i = 1; i <= q_hmm.L; i++) {
+//		sum = simdf32_add(sum, backward_profile[i]);
+//	}
+//
+//	float result[4];
+//	simdf32_store(result, sum);
+//
+//	for(int elem = 0; elem < num_t; elem++) {
+//		std::cout << "backward: " << result[elem] << std::endl;
+//	}
 
 	// Compute SIMD MAC algorithm
 	macAlgorithm(q_hmm, t_hmm, hit_vec, p_mm, viterbi_matrix, mact);
@@ -160,6 +190,7 @@ void PosteriorDecoder::realign(HMMSimd & q_hmm, HMMSimd & t_hmm,
 		backtraceMAC(curr_q_hmm, *t_hmm.GetHMM(elem), p_mm, viterbi_matrix, elem, *hit_vec.at(elem), corr);
 		// Restore selected values
 		restoreHitValues(*hit_vec.at(elem), elem);
+		writeProfilesToHits(curr_q_hmm, *t_hmm.GetHMM(elem), p_mm, elem, *hit_vec.at(elem));
 	}
 
 	// Print posterior matrix values of selected alignment

@@ -79,6 +79,8 @@ public:
   void PrintScoreFile(HMM* q, char* outputfile);
   void PrintScoreFile(HMM* q, std::stringstream& outputstream);
 
+  void PrintMatrices(HMM* q, const char* matricesOutputFileName, const size_t max_number_matrices, const float S[20][20]);
+  void PrintMatrices(HMM* q, std::stringstream& out, const size_t max_number_matrices, const float S[20][20]);
   
   // Write alignments in tabular output
   void WriteToAlifile(HMM* q, char* alitabfile, bool scop_only=false);

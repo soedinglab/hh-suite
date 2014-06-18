@@ -93,4 +93,5 @@ int main(int argc, char **argv) {
   hhblits.writePsiFile(par.psifile);
   hhblits.writeHMMFile(par.hhmfile);
   hhblits.writeA3MFile(par.alnfile);
+  hhblits.writeMatricesFile(par.matrices_output_file);
 }

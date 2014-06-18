@@ -398,7 +398,6 @@ void getTemplateHMM(Parameters& par, HHDatabaseEntry& entry, std::vector<HHblits
             }
 
             fclose(dbf);
-            return;
         }
     }
 }

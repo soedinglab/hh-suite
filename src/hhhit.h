@@ -26,6 +26,19 @@ class Hit;
 
 #include "hhhit-inl.h"
 
+struct Posterior_Triple {
+	int query_pos;
+	int template_pos;
+	float posterior_probability;
+
+	Posterior_Triple(int query_pos, int template_pos, float posterior_probability) {
+		this->query_pos = query_pos;
+		this->template_pos = template_pos;
+		this->posterior_probability = posterior_probability;
+	}
+};
+
+
 /////////////////////////////////////////////////////////////////////////////////////
 // // Describes an alignment of two profiles. Used as list element in Hits : List<Hit> 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -43,6 +56,10 @@ class Hit
 
   HHDatabaseEntry* entry;
   
+  float* forward_profile;
+  float* backward_profile;
+  std::vector<Posterior_Triple*> posterior_probabilities;
+
   float score;          // Score of alignment (i.e. of Viterbi path)
   float score_sort;     // score to sort hits in output list (negative means first/best!)
   float score_aass;     // first: just hit.score, then hit.logPval-SSSCORE2NATLOG*hit.score_ss;(negative means best!)
@@ -114,6 +131,9 @@ class Hit
   }
 
   void initHitFromHMM(HMM * t);
+
+  float estimateAlignmentQuality(HMM* q);
+  float calculateSimilarity(HMM* q, const float S[20][20]);
 
   // Calculate Evalue, score_aass, Proba from logPval and score_ss
   // Calculate Evalue, score_aass, Proba from logPval and score_ss

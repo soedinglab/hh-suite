@@ -28,6 +28,8 @@ Hit::Hit() {
   //TODO: debug
   ssm1 = 0;
   ssm2 = 0;
+  forward_profile = NULL;
+  backward_profile = NULL;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -74,6 +76,19 @@ void Hit::Delete() {
     delete[] seq;
   }
 
+  if(backward_profile) {
+	  delete[] backward_profile;
+  }
+
+  if(forward_profile) {
+	  delete[] forward_profile;
+  }
+
+  for(size_t i = 0; i < posterior_probabilities.size(); i++) {
+	  delete posterior_probabilities[i];
+  }
+  posterior_probabilities.clear();
+
   longname = name = file = NULL;
   sname = NULL;
   seq = NULL;
@@ -91,6 +106,42 @@ void Hit::DeleteIndices() {
   delete[] i;
   delete[] j;
 }
+
+float Hit::calculateSimilarity(HMM* q, const float S[20][20]) {
+	float alignment_similarity = 0.0;
+
+	char template_mapping[MAXRES];
+	char query_mapping[MAXRES];
+
+	char c;
+	int l = 1;
+	int i = 1;
+	while ((c = seq[nfirst][l++])) {
+		if (c != '.' && !(c >= 'a' && c <= 'z'))
+			template_mapping[i++] = c;
+	}
+
+	l = 1;
+	i = 1;
+	while ((c = q->seq[q->nfirst][l++])) {
+		if (c != '.' && !(c >= 'a' && c <= 'z'))
+			query_mapping[i++] = c;
+	}
+
+	for (int step = nsteps; step >= 1; step--) {
+		char state = states[step];
+		if (state == MM) {
+		  char qc = query_mapping[this->i[step]];
+		  char tc = template_mapping[j[step]];
+		  alignment_similarity += S[aa2i(qc)][aa2i(tc)];
+		}
+	}
+
+	alignment_similarity /= matched_cols;
+
+	return alignment_similarity;
+}
+
 
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -212,6 +263,32 @@ void Hit::initHitFromHMM(HMM * t){
     this->logPvalt= 0.0;
     this->Probab = 1.0;
 }
+
+float Hit::estimateAlignmentQuality(HMM* q) {
+	  const float biases[5] = {1.004681, 3.927253, -36.391424, -0.3767489, 0.0197167};
+	  const float out_bias = -12.7733130;
+
+	  const float out_weights[5] = {-0.2237661, 13.7567823, -1.0593247, 5.7120146, -5.8497739};
+	  const float in_weights[10] = {21.419840, -43.118904, 20.178319, -2.598612, -1.512682, 9.677802, 6.2671908, -2.5100477, 5.7690630, -2.4830519};
+
+	  float sum = out_bias;
+	  for(int n = 0; n < 5; n++) {
+	     float tmp = biases[n] + in_weights[n*2] * (sum_of_probs / q->L) + in_weights[n*2+1] * (score / q->L);
+	     if(tmp < -15) {
+	        tmp = 0.0;
+	     }
+	     else if(tmp > 15) {
+	        tmp = 1.0;
+	     }
+	     else {
+	        tmp = (1.0/(1.0+exp(-tmp)));
+	     }
+	     sum += out_weights[n] * tmp;
+	  }
+
+	  return sum;
+}
+
 
 
 int compareHitLengths(const void * a, const void * b) {
