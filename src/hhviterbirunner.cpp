@@ -98,14 +98,14 @@ std::vector<Hit> ViterbiRunner::alignment(Parameters& par, HMMSimd * q_simd,
     std::copy(dbfiles.begin(), dbfiles.end(),
               std::back_inserter(dbfiles_to_align));
 
-
+    //par.early_stopping_filter = false;
     // all has to be aligned
     for (int alignment = 0; alignment < par.altali; alignment++) {
         HH_LOG(LogLevel::INFO) << "Alternative alignment: " << alignment << std::endl;
         unsigned int elementToAlignCount = dbfiles_to_align.size();
         unsigned int seqBlockSize = elementToAlignCount;
         if(alignment == 0){
-            seqBlockSize = 1000;
+            seqBlockSize = 2000;
         }
         
         for(unsigned int seqJunkStart = 0; seqJunkStart <  elementToAlignCount; seqJunkStart += seqBlockSize ){
@@ -124,11 +124,10 @@ std::vector<Hit> ViterbiRunner::alignment(Parameters& par, HMMSimd * q_simd,
                 std::vector<HMM *> templates_to_align;
                 
                 // read in alignment
-                int maxResElem = imin(seqJunkSize - (idb),
+                int maxResElem = imin((seqJunkStart + seqJunkSize) - (idb),
                                       HMMSimd::VEC_SIZE);
                 
                 for (int i = 0; i < maxResElem; i++) {
-
                     HHDatabaseEntry* entry = dbfiles_to_align.at(idb + i);
                     
                     int format_tmp = 0;
@@ -189,7 +188,7 @@ std::vector<Hit> ViterbiRunner::alignment(Parameters& par, HMMSimd * q_simd,
 
 float ViterbiRunner::calculateEarlyStop(Parameters& par, HMM * q, std::vector<Hit> &all_hits,
                                         unsigned int startPos){
-    float early_stop_result = 200;
+    float early_stop_result = all_hits.size();
     for (unsigned int hit = startPos; hit < all_hits.size(); hit++) {
         Hit current_hit = all_hits[hit];
         float q_len = log(q->L) / LOG1000;
