@@ -90,7 +90,7 @@ hhsearch: hhsearch_app.cpp $(HH_OBJECTS) $(SOURCES) $(HEADERS) $(CS_OBJECTS)
 	$(CPP) hhsearch_app.cpp -o hhsearch $(HH_OBJECTS) $(CS_OBJECTS) $(HHSEARCH_LIBS) $(OBJECT_LIBS) $(FFINDEX_DIR)/libffindex.a
 
 hhsearch_static: hhsearch.cpp $(HH_OBJECTS) $(SOURCES) $(HEADERS) $(CS_OBJECTS)
-	$(CPP) -static hhsearch.cpp -o hhsearch $(HH_OBJECTS) $(CS_OBJECTS) $(HHSEARCH_LIBS) $(OBJECT_LIBS)
+	$(CPP) -static hhsearch_app.cpp -o hhsearch $(HH_OBJECTS) $(CS_OBJECTS) $(HHSEARCH_LIBS) $(OBJECT_LIBS) $(FFINDEX_DIR)/libffindex.a
 
 hhsearch_valgrind: hhsearch.cpp $(HH_OBJECTS) $(SOURCES) $(HEADERS) $(CS_OBJECTS)
 	$(CPP_VALGRIND) hhsearch.cpp -o hhsearch_valgrind $(HH_OBJECTS) $(CS_OBJECTS) $(HHSEARCH_LIBS) $(OBJECT_LIBS)
@@ -115,13 +115,13 @@ hhmake: hhmake.cpp $(HH_OBJECTS) $(SOURCES) $(HEADERS) $(CS_OBJECTS)
 	$(CPP) hhmake.cpp -o hhmake $(HH_OBJECTS) $(CS_OBJECTS) $(OBJECT_LIBS) $(FFINDEX_DIR)/libffindex.a
 
 hhmake_static: hhmake.cpp $(HH_OBJECTS) $(SOURCES) $(HEADERS) $(CS_OBJECTS)
-	$(CPP) -static hhmake.cpp -o hhmake $(HH_OBJECTS) $(CS_OBJECTS) $(OBJECT_LIBS)
+	$(CPP) -static hhmake.cpp -o hhmake $(HH_OBJECTS) $(CS_OBJECTS) $(OBJECT_LIBS) $(FFINDEX_DIR)/libffindex.a
 
 hhalign: hhalign.cpp $(HH_OBJECTS) $(SOURCES) $(HEADERS) $(CS_OBJECTS)
 	$(CPP) hhalign.cpp -o hhalign $(HH_OBJECTS) $(CS_OBJECTS) $(HHALIGN_LIBS) $(OBJECT_LIBS) $(FFINDEX_DIR)/libffindex.a
 
 hhalign_static: hhalign.cpp $(HH_OBJECTS) $(SOURCES) $(HEADERS) $(CS_OBJECTS)
-	$(CPP) -static hhalign.cpp -o hhalign $(HH_OBJECTS) $(CS_OBJECTS) $(HHALIGN_LIBS) $(OBJECT_LIBS)
+	$(CPP) -static hhalign.cpp -o hhalign $(HH_OBJECTS) $(CS_OBJECTS) $(HHALIGN_LIBS) $(OBJECT_LIBS) $(FFINDEX_DIR)/libffindex.a
 
 hhalign_valgrind: hhalign.cpp $(HH_OBJECTS) $(SOURCES) $(HEADERS) $(CS_OBJECTS)
 	$(CPP_VALGRIND) hhalign.cpp -o hhalign_valgrind $(HH_OBJECTS) $(CS_OBJECTS) $(HHALIGN_LIBS) $(OBJECT_LIBS)
@@ -130,7 +130,7 @@ hhfilter: hhfilter.cpp $(HH_OBJECTS) $(SOURCES) $(HEADERS) $(CS_OBJECTS)
 	$(CPP) hhfilter.cpp -o hhfilter $(HH_OBJECTS) $(CS_OBJECTS) $(OBJECT_LIBS) $(FFINDEX_DIR)/libffindex.a
 
 hhfilter_static: hhfilter.cpp $(HH_OBJECTS) $(SOURCES) $(HEADERS) $(CS_OBJECTS)
-	$(CPP) -static hhfilter.cpp -o hhfilter $(HH_OBJECTS) $(CS_OBJECTS) $(OBJECT_LIBS)
+	$(CPP) -static hhfilter.cpp -o hhfilter $(HH_OBJECTS) $(CS_OBJECTS) $(OBJECT_LIBS) $(FFINDEX_DIR)/libffindex.a
 
 hhfilter_valgrind: hhfilter.cpp $(HH_OBJECTS) $(SOURCES) $(HEADERS)$(CS_OBJECTS)
 	$(CPP_VALGRIND) hhfilter.cpp -o hhfilter_valgrind $(HH_OBJECTS) $(CS_OBJECTS) $(OBJECT_LIBS)
@@ -139,7 +139,7 @@ hhconsensus: hhconsensus.cpp $(HH_OBJECTS) $(SOURCES) $(HEADERS) $(CS_OBJECTS)
 	$(CPP) hhconsensus.cpp -o hhconsensus $(HH_OBJECTS) $(CS_OBJECTS) $(OBJECT_LIBS) $(FFINDEX_DIR)/libffindex.a
 
 hhconsensus_static: hhconsensus.cpp $(HH_OBJECTS) $(SOURCES) $(HEADERS) $(CS_OBJECTS)
-	$(CPP) -static hhconsensus.cpp -o hhconsensus $(HH_OBJECTS) $(CS_OBJECTS) $(OBJECT_LIBS)
+	$(CPP) -static hhconsensus.cpp -o hhconsensus $(HH_OBJECTS) $(CS_OBJECTS) $(OBJECT_LIBS) $(FFINDEX_DIR)/libffindex.a
 
 hhconsensus_valgrind: hhconsensus.cpp $(HH_OBJECTS) $(SOURCES) $(HEADERS) $(CS_OBJECTS)
 	$(CPP_VALGRIND) hhconsensus.cpp -o hhconsensus_valgrind $(HH_OBJECTS) $(CS_OBJECTS) $(OBJECT_LIBS)
