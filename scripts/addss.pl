@@ -877,10 +877,10 @@ sub OpenPDBfile() {
 	}
 	if ( -e $pdbfile . "pdb$pdbcode.ent" ) { $pdbfile .= "pdb$pdbcode.ent"; }
 	elsif ( -e $pdbfile . "pdb$pdbcode.ent.gz" ) {
-		$pdbfile = "gunzip -c $pdbfile" . "pdb$pdbcode.ent.gz |";
+		$pdbfile .= "pdb$pdbcode.ent.gz";
 	}
 	elsif ( -e $pdbfile . "pdb$pdbcode.ent.Z" ) {
-		$pdbfile = "gunzip -c $pdbfile" . "pdb$pdbcode.ent.Z |";
+		$pdbfile .= "pdb$pdbcode.ent.Z";
 	}
 	elsif ( -e $pdbfile . "$pdbcode.pdb" ) { $pdbfile . "$pdbcode.pdb"; }
 	else {
@@ -896,7 +896,13 @@ sub OpenPDBfile() {
 		}
 		return "";
 	}
-	return $pdbfile;
+
+	if ( $pdbfile =~ /\.(Z|gz)$/i ) {
+		return "gunzip -c $pdbfile";
+	}
+	else {
+		return "cat $pdbfile";
+	}
 }
 
 #....+....1....+....2....+....3....+....4
