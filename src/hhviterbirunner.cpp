@@ -104,7 +104,8 @@ std::vector<Hit> ViterbiRunner::alignment(Parameters& par, HMMSimd * q_simd,
         HH_LOG(LogLevel::INFO) << "Alternative alignment: " << alignment << std::endl;
         unsigned int elementToAlignCount = dbfiles_to_align.size();
         unsigned int seqBlockSize = elementToAlignCount;
-        if(alignment == 0){
+        
+        if(alignment == 0 && par.early_stopping_filter){
             seqBlockSize = 2000;
         }
         
