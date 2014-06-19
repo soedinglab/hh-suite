@@ -63,7 +63,7 @@ private:
 
 	int ungapped_sse_score(const unsigned char* query_profile,
 		const int query_length, const unsigned char* db_sequence,
-		const int dbseq_length, const unsigned char score_offset, __m128i* workspace);
+		const int dbseq_length, const unsigned char score_offset, simd_int* workspace);
 
 	int swStripedByte(unsigned char *querySeq,
 		int queryLength,
@@ -71,9 +71,9 @@ private:
 		int dbLength,
 		unsigned short gapOpen,
 		unsigned short gapExtend,
-		__m128i *pvHLoad,
-		__m128i *pvHStore,
-		__m128i *pvE,
+		simd_int *pvHLoad,
+		simd_int *pvHStore,
+		simd_int *pvE,
 		unsigned short bias);
 
 	void checkCSFormat(size_t nr_checks);

@@ -43,7 +43,7 @@ namespace hh {
       simd_int *pvE, unsigned short bias) {
     int i, j;
 
-    int cmp;
+    unsigned int cmp;
     int element_count = (VECSIZE_INT * 4);
 
     int iter = (queryLength + (element_count - 1)) / element_count; // width of bands in query and score matrix = hochgerundetes LQ/16
@@ -594,11 +594,11 @@ namespace hh {
     Hash<char>* doubled = new Hash<char>;
     doubled->New(16381, 0);
 
-    unsigned char* qc = (unsigned char*) mem_align(16,
-        (NUMCOLSTATES + 1) * (q_tmp->L + 15) * sizeof(unsigned char)); // query profile (states + 1 because of ANY char)
     int element_count = (VECSIZE_INT * 4);
+    //W = (LQ+15) / 16;   // band width = hochgerundetes LQ/16
     int W = (q_tmp->L + (element_count - 1)) / element_count;
-
+    // query profile (states + 1 because of ANY char)
+    unsigned char* qc = (unsigned char*)malloc_simd_int((NUMCOLSTATES+1)*(q_tmp->L+element_count)*sizeof(unsigned char));
     stripe_query_profile(q_tmp, prefilter_score_offset, prefilter_bit_factor, W, qc);
 
     simd_int ** workspace = new simd_int *[threads];
@@ -632,7 +632,6 @@ namespace hh {
 #pragma omp critical
       first_prefilter.push_back(std::pair<int, int>(score, n));
     }
-
     //filter after calculation of ungapped sse score to include at least min_prefilter_hits
     std::vector<std::pair<int, int> >::iterator it;
 
