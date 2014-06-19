@@ -109,11 +109,10 @@ std::vector<Hit> ViterbiRunner::alignment(Parameters& par, HMMSimd * q_simd,
         }
         
         for(unsigned int seqJunkStart = 0; seqJunkStart <  elementToAlignCount; seqJunkStart += seqBlockSize ){
-            std::cout << "Start " << seqJunkStart << std::endl;
             //sort by length to improve performance.
             //desc sort (for better utilisation ofthreads)
             unsigned int seqJunkSize = imin(elementToAlignCount - (seqJunkStart), seqBlockSize);
-//            sort(dbfiles_to_align.begin() + seqJunkStart, dbfiles_to_align.begin() + (seqJunkStart + seqJunkSize), HHDatabaseEntryCompare());
+            sort(dbfiles_to_align.begin() + seqJunkStart, dbfiles_to_align.begin() + (seqJunkStart + seqJunkSize), HHDatabaseEntryCompare());
             // read in data for thread
             
 #pragma omp parallel for schedule(dynamic, 1)
