@@ -149,7 +149,7 @@ std::vector<Hit> ViterbiRunner::alignment(Parameters& par, HMMSimd * q_simd,
             } // idb loop
             // merge thread results
             // search hits for next alignment
-            HH_LOG(LogLevel::INFO) << (seqJunkStart + seqJunkSize) <<  " alignmnts done" << std::endl;
+            HH_LOG(LogLevel::INFO) << (seqJunkStart + seqJunkSize) <<  " alignments done" << std::endl;
 
             merge_thread_results(ret_hits, dbfiles_to_align, excludeAlignments, threads, alignment);
             for (unsigned int thread = 0; thread < threads.size(); thread++) {
