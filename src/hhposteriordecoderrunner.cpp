@@ -33,7 +33,7 @@ PosteriorDecoderRunner::~PosteriorDecoderRunner() {
 
 }
 
-void PosteriorDecoderRunner::executeComputation(Parameters& par, float* pb, const float S[20][20],
+void PosteriorDecoderRunner::executeComputation(Parameters& par, const float qsc, float* pb, const float S[20][20],
     const float Sim[20][20], const float R[20][20]) {
 
   HMM * q_hmm = m_q_simd.GetHMM(0);	// Initialize single query HMM for PrepareTemplateHMM
@@ -86,7 +86,7 @@ void PosteriorDecoderRunner::executeComputation(Parameters& par, float* pb, cons
 
         int format_tmp = 0;
         char wg = 0;
-        getTemplateHMM(par, *hit_cur->entry, m_databases, wg, format_tmp, pb, S, Sim, &t_hmm[current_t_index + i]);
+        getTemplateHMM(par, *hit_cur->entry, m_databases, wg, qsc, format_tmp, pb, S, Sim, &t_hmm[current_t_index + i]);
 
         if (alignments_to_exclude.find(std::string(hit_cur->file)) != alignments_to_exclude.end()) {
           alignment_exclusions.push_back(alignments_to_exclude.at(std::string(hit_cur->file)));

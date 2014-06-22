@@ -73,8 +73,8 @@ PosteriorDecoder::PosteriorDecoder(int maxres, bool local, int q_length) :
 	m_t_lengths_le = simdi32_set(0);
 	m_t_lengths_ge = simdi32_set(0);
 
-	m_backward_profile = malloc_simd_float(m_max_res * sizeof(simd_float));
-	m_forward_profile = malloc_simd_float(m_max_res * sizeof(simd_float));
+	m_backward_profile = malloc_simd_float((q_length + 1) * sizeof(simd_float));
+	m_forward_profile = malloc_simd_float((q_length + 1) * sizeof(simd_float));
 
 	for (int elem = 0; elem < VEC_SIZE; elem++) {
 		m_temp_hit_vec.push_back(new Hit);

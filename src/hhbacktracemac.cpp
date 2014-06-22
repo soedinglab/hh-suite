@@ -138,6 +138,7 @@ void PosteriorDecoder::backtraceMAC(HMM & q, HMM & t, PosteriorMatrix & p_mm, Vi
 			hit.S_ss[step] = ScoreSS(&q, &t, i, j, ssm);
 			hit.score_ss += hit.S_ss[step];
 //			hit.P_posterior[step] = powf(2, p_mm.getSingleValue(hit.i[step], hit.j[step], elem));
+			std::cout << hit.i[step] << "\t" << hit.j[step] << "\t" << q.L << "\t" << t.L << "\t" << p_mm.getSingleValue(hit.i[step], hit.j[step], elem) << std::endl;
 			hit.P_posterior[step] = fpow2(p_mm.getSingleValue(hit.i[step], hit.j[step], elem));
 			// Add probability to sum of probs if no dssp states given or dssp states exist and state is resolved in 3D structure
 			if (t.nss_dssp<0 || t.ss_dssp[j]>0)

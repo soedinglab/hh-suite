@@ -51,7 +51,7 @@ public:
     ViterbiRunner(ViterbiMatrix ** viterbiMatrix, std::vector<HHblitsDatabase*> &databases, int threads)
     : viterbiMatrix(viterbiMatrix), databases(databases), thread_count(threads) { }
 
-	std::vector<Hit> alignment(Parameters& par, HMMSimd * q_simd, std::vector<HHDatabaseEntry*>  dbfiles, float* pb, const float S[20][20], const float Sim[20][20], const float R[20][20]);
+	std::vector<Hit> alignment(Parameters& par, HMMSimd * q_simd, std::vector<HHDatabaseEntry*> dbfiles, const float qsc, float* pb, const float S[20][20], const float Sim[20][20], const float R[20][20]);
     
 private:
     ViterbiMatrix** viterbiMatrix;

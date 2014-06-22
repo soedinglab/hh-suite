@@ -1243,7 +1243,7 @@ void HHblits::RescoreWithViterbiKeepAlignment(HMMSimd& q_vec, Hash<Hit>* previou
 
   ViterbiRunner viterbirunner(viterbiMatrices, dbs, par.threads);
   std::vector<Hit> hits_to_add = viterbirunner.alignment(par, &q_vec,
-      hits_to_rescore, pb, S, Sim, R);
+      hits_to_rescore, par.qsc_db, pb, S, Sim, R);
 
   for (std::vector<Hit>::size_type i = 0; i != hits_to_add.size(); i++) {
     stringstream ss_tmp;
@@ -1317,8 +1317,9 @@ void HHblits::perform_realign(HMMSimd& q_vec, std::vector<HHDatabaseEntry*>& hit
         continue;
     }
 
-    if (hit_cur.L > Lmax)
+    if (hit_cur.L > Lmax) {
       Lmax = hit_cur.L;
+    }
     if (hit_cur.L > Lmaxmem) {
       nhits++;
       continue;
@@ -1348,7 +1349,7 @@ void HHblits::perform_realign(HMMSimd& q_vec, std::vector<HHDatabaseEntry*>& hit
   HH_LOG(LogLevel::INFO) << "Realigning " << nhits
       << " HMM-HMM alignments using Maximum Accuracy algorithm" << std::endl;
 
-  runner.executeComputation(par, pb, S, Sim, R);
+  runner.executeComputation(par, par.qsc_db, pb, S, Sim, R);
 
   // Delete all hitlist entries with too short alignments
   nhits = 0;
@@ -2108,7 +2109,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
 
     // Main Viterbi HMM-HMM search
     ViterbiRunner viterbirunner(viterbiMatrices, dbs, par.threads);
-    std::vector<Hit> hits_to_add = viterbirunner.alignment(par, &q_vec, new_entries, pb, S, Sim, R);
+    std::vector<Hit> hits_to_add = viterbirunner.alignment(par, &q_vec, new_entries, par.qsc_db, pb, S, Sim, R);
 
     add_hits_to_hitlist(hits_to_add, hitlist);
 
@@ -2137,7 +2138,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
 
         ViterbiRunner viterbirunner(viterbiMatrices, dbs, par.threads);
         std::vector<Hit> hits_to_add = viterbirunner.alignment(par, &q_vec,
-            old_entries, pb, S, Sim, R);
+            old_entries, par.qsc_db, pb, S, Sim, R);
 
         add_hits_to_hitlist(hits_to_add, hitlist);
 

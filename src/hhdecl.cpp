@@ -66,7 +66,7 @@ void Parameters::SetDefaults() {
 	v = LogLevel::INFO;
 
 	maxcol = 32765; // max number of columns in sequence/MSA input files; must be <= LINELEN and >= maxres
-	maxres = 20000;           // max number of states in HMM; must be <= LINELEN
+	maxres = 1000;           // max number of states in HMM; must be <= LINELEN
 	maxnumdb = 20000;          // max number of hits allowed past prefilter
 	maxnumdb_no_prefilter = 20000;    // max number of hits without prefiltering
 
