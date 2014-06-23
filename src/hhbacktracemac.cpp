@@ -9,6 +9,46 @@
 #include "hhviterbi.h"
 #include <stddef.h>
 
+void PosteriorDecoder::writeProfilesToHits(HMM & q, HMM & t, PosteriorMatrix & p_mm, const int elem, Hit & hit) {
+	if(hit.forward_profile) {
+		delete[] hit.forward_profile;
+	}
+
+	if(hit.backward_profile) {
+		delete[] hit.backward_profile;
+	}
+
+	hit.backward_profile = new float[q.L + 1];
+	hit.forward_profile = new float[q.L + 1];
+
+	float result[4];
+	for(int i = 1; i <= q.L; i++) {
+		simdf32_store(result, m_forward_profile[i]);
+		hit.forward_profile[i] = result[elem];
+
+		simdf32_store(result, m_backward_profile[i]);
+		hit.backward_profile[i] = result[elem];
+
+//		std::cout << t.name << "_" << hit.irep << "\t" << hit.backward_profile[i] << "\t" << hit.forward_profile[i] << std::endl;
+	}
+
+	for(size_t i = 0; i < hit.posterior_probabilities.size(); i++) {
+		delete hit.posterior_probabilities[i];
+	}
+	hit.posterior_probabilities.clear();
+
+	for(int i = 1; i <= q.L; i++) {
+		for(int j = 1; j <= t.L; j++) {
+			float posterior = fpow2(p_mm.getSingleValue(i, j, elem));
+			if(posterior >= POSTERIOR_PROBABILITY_THRESHOLD) {
+				Posterior_Triple* triple = new Posterior_Triple(i, j, posterior);
+				hit.posterior_probabilities.push_back(triple);
+//				std::cout << t.name << "_" << hit.irep << "\t" << i << "\t" << j << "\t" << posterior << std::endl;
+			}
+		}
+	}
+}
+
 void PosteriorDecoder::backtraceMAC(HMM & q, HMM & t, PosteriorMatrix & p_mm, ViterbiMatrix & backtrace_matrix, const int elem, Hit & hit, float corr) {
 
 	// Trace back trough the matrix b[i][j] until STOP state is found

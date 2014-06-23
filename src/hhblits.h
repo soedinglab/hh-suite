@@ -92,6 +92,7 @@ public:
 	virtual ~HHblits();
 
 	void Reset();
+
 	static void ProcessAllArguments(int argc, char** argv, Parameters& par);
 
     //writer for non-mpi version
@@ -104,6 +105,7 @@ public:
     void writePsiFile(char* psiFile);
     void writeHMMFile(char* HMMFile);
     void writeA3MFile(char* A3MFile);
+    void writeMatricesFile(char* matricesOutputFileName);
 
     //output writer for mpi version
     std::map<int, Alignment>& getAlis();
@@ -115,6 +117,7 @@ public:
     static void writePsiFile(HHblits& hhblits, std::stringstream& out);
     static void writeHMMFile(HHblits& hhblits, std::stringstream& out);
     static void writeA3MFile(HHblits& hhblits, std::stringstream& out);
+    static void writeMatricesFile(HHblits& hhblits, stringstream& out);
 
     static void prepareDatabases(Parameters& par, std::vector<HHblitsDatabase*>& databases);
 
@@ -166,6 +169,7 @@ protected:
 	HitList hitlist; // list of hits with one Hit object for each pairwise comparison done
 	HitList reducedHitlist;
 	std::map<int, Alignment> alis;
+
 	void perform_realign(HMMSimd& q_vec, std::vector<HHDatabaseEntry*>& hits_to_realign, const int premerge, Hash<char>* premerged_hits);
 	void mergeHitsToQuery(Hash<Hit>* previous_hits, Hash<char>* premerged_hits, int& seqs_found, int& cluster_found);
 	void add_hits_to_hitlist(std::vector<Hit>& hits, HitList& hitlist);

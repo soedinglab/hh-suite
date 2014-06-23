@@ -5,7 +5,6 @@
  *      Author: meiermark
  */
 
-#include <mpi.h>
 #include <stdio.h>
 #include "hhdecl.h"
 #include "hhblits.h"
@@ -98,6 +97,7 @@ void makeOutputFFIndex(char* par, void (*print)(HHblits&, std::stringstream&),
   }
 }
 
+
 int main(int argc, char **argv) {
   Parameters par;
   HHblits::ProcessAllArguments(argc, argv, par);
@@ -145,6 +145,7 @@ int main(int argc, char **argv) {
   makeOutputFFIndex(par.psifile, &HHblits::writePsiFile, outputDatabases);
   makeOutputFFIndex(par.hhmfile, &HHblits::writeHMMFile, outputDatabases);
   makeOutputFFIndex(par.alnfile, &HHblits::writeA3MFile, outputDatabases);
+  makeOutputFFIndex(par.matrices_output_file, &HHblits::writeMatricesFile, outputDatabases);
 
   std::vector<HHblitsDatabase*> databases;
   HHblits::prepareDatabases(par, databases);

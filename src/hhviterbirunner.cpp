@@ -73,30 +73,30 @@ void ViterbiConsumerThread::align(int maxres) {
 
 
 std::vector<Hit> ViterbiRunner::alignment(Parameters& par, HMMSimd * q_simd,
-                                          std::vector<HHDatabaseEntry*> dbfiles, float* pb, const float S[20][20],
-                                          const float Sim[20][20], const float R[20][20]) {
+    std::vector<HHDatabaseEntry*> dbfiles, const float qsc, float* pb, const float S[20][20],
+    const float Sim[20][20], const float R[20][20]) {
+
     HMM * q = q_simd->GetHMM(0);
-    
+
     HMMSimd** t_hmm_simd = new HMMSimd*[thread_count];
     for (int i = 0; i < thread_count; i++) {
         t_hmm_simd[i] = new HMMSimd(par.maxres);
     }
-    
+
     HMM t_hmm[(HMMSimd::VEC_SIZE * thread_count)];
     std::vector<ViterbiConsumerThread *> threads;
     for (int thread_id = 0; thread_id < thread_count; thread_id++) {
-        
         ViterbiConsumerThread * thread = new ViterbiConsumerThread(thread_id, par, q_simd, t_hmm_simd[thread_id],
                                                                    viterbiMatrix[thread_id]);
         threads.push_back(thread);
     }
+
     // Initialize
     std::vector<Hit> ret_hits;
     std::vector<HHDatabaseEntry*> dbfiles_to_align;
     std::map<std::string, std::vector<Viterbi::BacktraceResult> > excludeAlignments;
     // For all the databases comming through prefilter
-    std::copy(dbfiles.begin(), dbfiles.end(),
-              std::back_inserter(dbfiles_to_align));
+    std::copy(dbfiles.begin(), dbfiles.end(), std::back_inserter(dbfiles_to_align));
 
     //par.early_stopping_filter = false;
     // all has to be aligned
@@ -133,7 +133,7 @@ std::vector<Hit> ViterbiRunner::alignment(Parameters& par, HMMSimd * q_simd,
                     
                     int format_tmp = 0;
                     char wg = 1;
-                    getTemplateHMM(par, *entry, databases, wg, format_tmp, pb, S, Sim, &t_hmm[current_t_index + i]);
+                    getTemplateHMM(par, *entry, databases, wg, qsc, format_tmp, pb, S, Sim, &t_hmm[current_t_index + i]);
                     t_hmm[current_t_index + i].entry = entry;
                     
                     PrepareTemplateHMM(par, q, &t_hmm[current_t_index + i], format_tmp, pb, R);

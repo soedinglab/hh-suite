@@ -66,7 +66,7 @@ void Parameters::SetDefaults() {
 	v = LogLevel::INFO;
 
 	maxcol = 32765; // max number of columns in sequence/MSA input files; must be <= LINELEN and >= maxres
-	maxres = 20000;           // max number of states in HMM; must be <= LINELEN
+	maxres = 10000;           // max number of states in HMM; must be <= LINELEN
 	maxnumdb = 20000;          // max number of hits allowed past prefilter
 	maxnumdb_no_prefilter = 20000;    // max number of hits without prefiltering
 
@@ -216,6 +216,7 @@ void Parameters::SetDefaults() {
 	strcpy(infile, ""); // was reverted back from 'strcpy(infile,"stdin");' (to show help list when no options are given)
 	strcpy(outfile, "");
 	strcpy(reduced_outfile, "");
+	strcpy(matrices_output_file, "");
 	strcpy(pairwisealisfile, "");
 	strcpy(scorefile, "");
 	strcpy(indexfile, "");
@@ -225,9 +226,11 @@ void Parameters::SetDefaults() {
 	strcpy(psifile, "");
 	strcpy(alitabfile, "");
 	strcpy(alisbasename, "");
+	strcpy(queries_to_template_file, "");
 	exclstr = NULL;
 
 	n_redundancy = 10;
+	max_number_matrices = 100;
 
 	// parameters for context-specific pseudocounts
 	csb = 0.85;
@@ -250,3 +253,5 @@ void Parameters::SetDefaults() {
 Parameters::Parameters() {
 	SetDefaults();
 }
+
+

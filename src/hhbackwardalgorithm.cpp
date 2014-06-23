@@ -22,8 +22,6 @@ void PosteriorDecoder::backwardAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm, std::
                                          PosteriorMatrix & p_mm,
                                          ViterbiMatrix & viterbi_matrix, float shift) {
     
-    
-    
 	int i,j;      //query and template match state indices
 	m_t_lengths_le = simdi32_add(*t_hmm.lengths, simdi32_set(1));	// add one because of lt comparison
     
@@ -68,6 +66,10 @@ void PosteriorDecoder::backwardAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm, std::
     
 	simd_float p_mm_i_j = simdf32_set(-FLT_MAX);
 	simd_float p_mm_i_j_1 = simdf32_set(-FLT_MAX);
+
+	for(int i = 1; i <= q_hmm.L; i++) {
+		m_backward_profile[i] = simdf32_set(0);
+	}
     
 	simd_float * p_mm_row_ptr = NULL;
     
@@ -148,6 +150,7 @@ void PosteriorDecoder::backwardAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm, std::
 	//	Backward probability calculation
 	// 	Backward algorithm
 	// 	Loop through query positions i
+
 	for (i = q_hmm.L - 1; i >= 1; i--) {
 		p_mm_row_ptr = p_mm.getRow(i);	// pointer to a row of the posterior probability matrix
 		const unsigned int start_pos_tr_i = i * 7;	// start position for indexing query transitions
@@ -354,6 +357,9 @@ void PosteriorDecoder::backwardAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm, std::
             //				fprintf(stdout, "p_mm: %2.20f\n", ((float *)&p_mm_row_ptr[j])[elem_idx]);
             //			}
             
+			simd_float actual_backward = simdf32_mul(Viterbi::ScalarProd20Vec((simd_float *) q_hmm.p[i],(simd_float *) t_hmm.p[j]),
+					simdf32_fpow2(simdf32_sub(simdf32_add(score_offset_shift, mm_curr_j), m_p_forward)));
+			m_backward_profile[i] = simdf32_add(m_backward_profile[i], actual_backward);
 		}	// end for j
         
 		// Swap pointers so that previous becomes current and vice versa
@@ -364,6 +370,5 @@ void PosteriorDecoder::backwardAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm, std::
 		swap(m_gd_prev, m_gd_curr);
         
 	}	// end for i
-    
 }
 

@@ -249,7 +249,6 @@ void HHblits::ProcessAllArguments(int argc, char** argv, Parameters& par) {
     par.macins = 0.999;
   else if (par.macins < 0)
     par.macins = 0.0;
-
 }
 
 void HHblits::Reset() {
@@ -724,6 +723,16 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
       }
       else
         strcpy(par.outfile, argv[i]);
+    }
+    else if (!strcmp(argv[i], "-omat")) {
+      if (++i >= argc || argv[i][0] == '-') {
+        help(par);
+        cerr << endl << "Error in " << program_name
+            << ": no output file following -omat\n";
+        exit(4);
+      }
+      else
+        strcpy(par.matrices_output_file, argv[i]);
     }
     else if (!strcmp(argv[i], "-ored")) {
       if (++i >= argc || argv[i][0] == '-') {
@@ -1234,7 +1243,7 @@ void HHblits::RescoreWithViterbiKeepAlignment(HMMSimd& q_vec, Hash<Hit>* previou
 
   ViterbiRunner viterbirunner(viterbiMatrices, dbs, par.threads);
   std::vector<Hit> hits_to_add = viterbirunner.alignment(par, &q_vec,
-      hits_to_rescore, pb, S, Sim, R);
+      hits_to_rescore, par.qsc_db, pb, S, Sim, R);
 
   for (std::vector<Hit>::size_type i = 0; i != hits_to_add.size(); i++) {
     stringstream ss_tmp;
@@ -1308,8 +1317,9 @@ void HHblits::perform_realign(HMMSimd& q_vec, std::vector<HHDatabaseEntry*>& hit
         continue;
     }
 
-    if (hit_cur.L > Lmax)
+    if (hit_cur.L > Lmax) {
       Lmax = hit_cur.L;
+    }
     if (hit_cur.L > Lmaxmem) {
       nhits++;
       continue;
@@ -1339,7 +1349,7 @@ void HHblits::perform_realign(HMMSimd& q_vec, std::vector<HHDatabaseEntry*>& hit
   HH_LOG(LogLevel::INFO) << "Realigning " << nhits
       << " HMM-HMM alignments using Maximum Accuracy algorithm" << std::endl;
 
-  runner.executeComputation(par, pb, S, Sim, R);
+  runner.executeComputation(par, par.qsc_db, pb, S, Sim, R);
 
   // Delete all hitlist entries with too short alignments
   nhits = 0;
@@ -2099,7 +2109,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
 
     // Main Viterbi HMM-HMM search
     ViterbiRunner viterbirunner(viterbiMatrices, dbs, par.threads);
-    std::vector<Hit> hits_to_add = viterbirunner.alignment(par, &q_vec, new_entries, pb, S, Sim, R);
+    std::vector<Hit> hits_to_add = viterbirunner.alignment(par, &q_vec, new_entries, par.qsc_db, pb, S, Sim, R);
 
     add_hits_to_hitlist(hits_to_add, hitlist);
 
@@ -2128,7 +2138,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
 
         ViterbiRunner viterbirunner(viterbiMatrices, dbs, par.threads);
         std::vector<Hit> hits_to_add = viterbirunner.alignment(par, &q_vec,
-            old_entries, pb, S, Sim, R);
+            old_entries, par.qsc_db, pb, S, Sim, R);
 
         add_hits_to_hitlist(hits_to_add, hitlist);
 
@@ -2423,3 +2433,14 @@ void HHblits::writeA3MFile(HHblits& hhblits, std::stringstream& out) {
   else
     hhblits.Qali.WriteToFile(out, "a3m");
 }
+
+void HHblits::writeMatricesFile(char* matricesOutputFileName) {
+  if (*matricesOutputFileName) {
+	  hitlist.PrintMatrices(q, matricesOutputFileName, par.max_number_matrices, S);
+  }
+}
+
+void HHblits::writeMatricesFile(HHblits& hhblits, stringstream& out) {
+  hhblits.hitlist.PrintMatrices(hhblits.q, out, hhblits.par.max_number_matrices, hhblits.S);
+}
+

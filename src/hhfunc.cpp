@@ -71,12 +71,10 @@ void ReadQueryFile(Parameters& par, FILE* inf, char& input_format,
     ali_tmp.Compress(infile, par.cons, par.maxres, par.maxcol, par.M, par.Mgaps);
 
     // Sort out the nseqdis most dissimilar sequences for display in the output alignments
-    ali_tmp.FilterForDisplay(par.max_seqid, par.mark, S, par.coverage, par.qid,
-        par.qsc, par.nseqdis);
+    ali_tmp.FilterForDisplay(par.max_seqid, par.mark, S, par.coverage, par.qid, par.qsc, par.nseqdis);
 
     // Remove sequences with seq. identity larger than seqid percent (remove the shorter of two)
-    ali_tmp.N_filtered = ali_tmp.Filter(par.max_seqid, S, par.coverage, par.qid,
-        par.qsc, par.Ndiff);
+    ali_tmp.N_filtered = ali_tmp.Filter(par.max_seqid, S, par.coverage, par.qid, par.qsc, par.Ndiff);
 
     if (par.Neff >= 0.999)
     	ali_tmp.FilterNeff(use_global_weights, par.mark, par.cons, par.showcons,

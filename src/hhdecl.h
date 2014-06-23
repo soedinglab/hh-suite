@@ -59,6 +59,7 @@ const float PLTY_GAPOPEN=6.0f; // for -qsc option (filter for min similarity to 
 const float PLTY_GAPEXTD=1.0f; // for -qsc option (filter for min similarity to query): 1 bit to extend gap
 const int MINCOLS_REALIGN=6; // hits with MAC alignments with fewer matched columns will be deleted in hhsearch hitlist; must be at least 2 to avoid nonsense MAC alignments starting from the left/upper edge
 const float LOG1000=log(1000.0);
+const float POSTERIOR_PROBABILITY_THRESHOLD = 0.01;
 
 //TODO: not yet used
 //maximum number of bins (positions in thread queue)
@@ -131,15 +132,6 @@ struct Params {
 
 };
 
-// Structure to store data for HHblits early stopping filter
-struct Early_Stopping {
-  int length;       // Length of array of 1/evalues
-  int counter;      // counter for evalue array
-  double* evals;    // array of last 1/evalues
-  double thresh;    // Threshold for early stopping
-  double sum;       // sum of evalues in array
-};
-
 class Parameters          // Parameters for gap penalties and pseudocounts
 {
 public:
@@ -154,6 +146,7 @@ public:
   char infile[NAMELEN];   // input filename
   char outfile[NAMELEN];  // output filename
   char reduced_outfile[NAMELEN];
+  char matrices_output_file[NAMELEN];
   char pairwisealisfile[NAMELEN]; // output filename with pairwise alignments
   char alisbasename[NAMELEN];
   char alnfile[NAMELEN];  // name of output alignment file in A3M format (for iterative search)
@@ -164,6 +157,7 @@ public:
   char tfile[NAMELEN];    // template filename (in hhalign)
   char wfile[NAMELEN];    // weights file generated with hhformat
   char alitabfile[NAMELEN]; // where to write pairs of aligned residues (-atab option)
+  char queries_to_template_file[NAMELEN];
   char* exclstr;          // optional string containing list of excluded residues, e.g. '1-33,97-168'
   int aliwidth;           // number of characters per line in output alignments for HMM search
   char append;            // append to output file? (hhmake)
@@ -324,6 +318,7 @@ public:
   int min_prefilter_hits;
 
   int n_redundancy;
+  size_t max_number_matrices;
 
   //hhblits specific variables
   int num_rounds;
@@ -342,5 +337,6 @@ public:
   void SetDefaults();
   Parameters();
 };
+
 
 #endif /* HHDECL_H_ */
