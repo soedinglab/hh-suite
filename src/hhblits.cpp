@@ -2335,7 +2335,7 @@ void HHblits::writePairwiseAlisFile(char* pairwiseAlisFile, char outformat) {
 
 void HHblits::writeAlitabFile(char* alitabFile) {
   if (*alitabFile) {
-    hitlist.WriteToAlifile(q, alitabFile, par.alitab_scop);
+    hitlist.WriteToAlifile(q, alitabFile, par.b, par.B, par.z, par.Z, par.p, par.E);
   }
 }
 
@@ -2404,7 +2404,8 @@ void HHblits::writePairwiseAlisFile(HHblits& hhblits, std::stringstream& out) {
 }
 
 void HHblits::writeAlitabFile(HHblits& hhblits, std::stringstream& out) {
-  hhblits.hitlist.WriteToAlifile(hhblits.q, out, hhblits.par.alitab_scop);
+  hhblits.hitlist.WriteToAlifile(hhblits.q, out, hhblits.par.b,
+      hhblits.par.B, hhblits.par.z, hhblits.par.Z, hhblits.par.p, hhblits.par.E);
 }
 
 void HHblits::writeReducedHHRFile(HHblits& hhblits, std::stringstream& out) {

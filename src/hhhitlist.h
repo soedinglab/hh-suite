@@ -83,8 +83,13 @@ public:
   void PrintMatrices(HMM* q, std::stringstream& out, const size_t max_number_matrices, const float S[20][20]);
   
   // Write alignments in tabular output
-  void WriteToAlifile(HMM* q, char* alitabfile, bool scop_only=false);
-  void WriteToAlifile(HMM* q, std::stringstream& out, bool scop_only=false);
+  void WriteToAlifile(HMM* q, char* alitabfile,
+      const int b, const int B, const int z, const int Z,
+      const float p, const double E);
+
+  void WriteToAlifile(HMM* q, std::stringstream& out,
+      const int b, const int B, const int z, const int Z,
+      const float p, const double E);
 
   // Calculate HHblits composite E-values 
   void CalculateHHblitsEvalues(HMM* q, const int dbsize,

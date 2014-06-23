@@ -355,8 +355,7 @@ void CalculateSS(HMM* q, const int maxres, const char* psipred_data,
 /////////////////////////////////////////////////////////////////////////////////////
 // Write alignment in tab format (option -atab)
 /////////////////////////////////////////////////////////////////////////////////////
-void WriteToAlifile(FILE* alitabf, Hit* hit, const char forward,
-    const char realign) {
+void WriteToAlifile(FILE* alitabf, Hit* hit, const char forward, const char realign) {
   if (hit->P_posterior != NULL && (forward == 2 || realign)) {
     if (hit->nss_dssp >= 0) {
       // secondary structure determined by dssp 0:-  1:H  2:E  3:C  4:S  5:T  6:G  7:B
