@@ -20,7 +20,7 @@ public:
 			PosteriorMatrix** posterior_matrices, ViterbiMatrix** backtrace_matrix, const int n_threads);
 	virtual ~PosteriorDecoderRunner();
 
-	void executeComputation(Parameters& par, float* pb, const float S[20][20],
+	void executeComputation(Parameters& par, const float qsc, float* pb, const float S[20][20],
 	    const float Sim[20][20], const float R[20][20]);
 
 protected:

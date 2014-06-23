@@ -15,10 +15,13 @@
 ViterbiMatrix::ViterbiMatrix(){
     this->bCO_MI_DG_IM_GD_MM_vec=NULL;
     this->cellOff = false;
+    this->max_query_length = 0;
+    this->max_template_length = 0;
 }
 
 
 ViterbiMatrix::~ViterbiMatrix(){
+  DeleteBacktraceMatrix();
 }
 
 
@@ -28,10 +31,19 @@ ViterbiMatrix::~ViterbiMatrix(){
 /////////////////////////////////////////////////////////////////////////////////////
 void ViterbiMatrix::AllocateBacktraceMatrix(int Nq, int Nt)
 {
-    int i;
+  Nq += 1;
+  Nt += 1;
+
+    if(Nq > max_query_length || Nt > max_template_length) {
+      DeleteBacktraceMatrix();
+    }
+    else {
+      return;
+    }
+
     this->bCO_MI_DG_IM_GD_MM_vec=new(unsigned char*[Nq]);
     
-    for (i=0; i<Nq; ++i)
+    for (int i=0; i<Nq; ++i)
     {
         this->bCO_MI_DG_IM_GD_MM_vec[i]=(unsigned char *)malloc_simd_float(VEC_SIZE*Nt*sizeof(unsigned char));
         memset(this->bCO_MI_DG_IM_GD_MM_vec[i], 0, VEC_SIZE*Nt*sizeof(unsigned char));
@@ -43,6 +55,9 @@ void ViterbiMatrix::AllocateBacktraceMatrix(int Nq, int Nt)
             exit(3);
         }
     }
+
+    max_query_length = Nq;
+    max_template_length = Nt;
 }
 
 
@@ -50,14 +65,16 @@ void ViterbiMatrix::AllocateBacktraceMatrix(int Nq, int Nt)
 /////////////////////////////////////////////////////////////////////////////////////
 //// Delete memory for dynamic programming matrix
 /////////////////////////////////////////////////////////////////////////////////////
-void ViterbiMatrix::DeleteBacktraceMatrix(int Nq)
-{
-    int i;
-    for (i=0; i<Nq; ++i) {
-        free(this->bCO_MI_DG_IM_GD_MM_vec[i]);
-    }
-    delete[] this->bCO_MI_DG_IM_GD_MM_vec;
-    this->bCO_MI_DG_IM_GD_MM_vec=NULL;
+void ViterbiMatrix::DeleteBacktraceMatrix() {
+  if(max_query_length == 0) {
+    return;
+  }
+
+  for (int i=0; i < max_query_length; ++i) {
+      free(this->bCO_MI_DG_IM_GD_MM_vec[i]);
+  }
+  delete[] this->bCO_MI_DG_IM_GD_MM_vec;
+  this->bCO_MI_DG_IM_GD_MM_vec = NULL;
 }
 
 #endif

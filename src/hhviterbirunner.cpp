@@ -73,8 +73,9 @@ void ViterbiConsumerThread::align(int maxres) {
 
 
 std::vector<Hit> ViterbiRunner::alignment(Parameters& par, HMMSimd * q_simd,
-                                          std::vector<HHDatabaseEntry*> dbfiles, float* pb, const float S[20][20],
-                                          const float Sim[20][20], const float R[20][20]) {
+    std::vector<HHDatabaseEntry*> dbfiles, const float qsc, float* pb, const float S[20][20],
+    const float Sim[20][20], const float R[20][20]) {
+
     HMM * q = q_simd->GetHMM(0);
     
     // Initialize memory
@@ -87,12 +88,12 @@ std::vector<Hit> ViterbiRunner::alignment(Parameters& par, HMMSimd * q_simd,
                                                                    viterbiMatrix[thread_id]);
         threads.push_back(thread);
     }
+
     std::vector<Hit> ret_hits;
     std::vector<HHDatabaseEntry*> dbfiles_to_align;
     std::map<std::string, std::vector<Viterbi::BacktraceResult> > excludeAlignments;
     // For all the databases comming through prefilter
-    std::copy(dbfiles.begin(), dbfiles.end(),
-              std::back_inserter(dbfiles_to_align));
+    std::copy(dbfiles.begin(), dbfiles.end(), std::back_inserter(dbfiles_to_align));
 
     // loop to detect second/thrid/... best alignemtns
     for (int alignment = 0; alignment < par.altali; alignment++) {
@@ -130,7 +131,7 @@ std::vector<Hit> ViterbiRunner::alignment(Parameters& par, HMMSimd * q_simd,
                     
                     int format_tmp = 0;
                     char wg = 1;
-                    getTemplateHMM(par, *entry, databases, wg, format_tmp, pb, S, Sim, &t_hmm[current_t_index + i]);
+                    getTemplateHMM(par, *entry, databases, wg, qsc, format_tmp, pb, S, Sim, &t_hmm[current_t_index + i]);
                     t_hmm[current_t_index + i].entry = entry;
                     
                     PrepareTemplateHMM(par, q, &t_hmm[current_t_index + i], format_tmp, pb, R);

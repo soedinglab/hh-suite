@@ -302,7 +302,7 @@ bool HHblitsDatabase::checkAndBuildCompressedDatabase(const char* base) {
 
 
 void getTemplateHMM(Parameters& par, HHDatabaseEntry& entry, std::vector<HHblitsDatabase*>& dbs,
-    char use_global_weights, int& format, float* pb, const float S[20][20], const float Sim[20][20], HMM* t) {
+    char use_global_weights, const float qsc, int& format, float* pb, const float S[20][20], const float Sim[20][20], HMM* t) {
     if (entry.ffdatabase->isCompressed) {
         Alignment tali;
 
@@ -330,7 +330,7 @@ void getTemplateHMM(Parameters& par, HHDatabaseEntry& entry, std::vector<HHblits
                 par.M, par.Mgaps);
 
         tali.N_filtered = tali.Filter(par.max_seqid_db, S, par.coverage_db,
-                par.qid_db, par.qsc_db, par.Ndiff_db);
+                par.qid_db, qsc, par.Ndiff_db);
         t->name[0] = t->longname[0] = t->fam[0] = '\0';
         tali.FrequenciesAndTransitions(t, use_global_weights, par.mark,
                 par.cons, par.showcons, par.maxres, pb, Sim);
@@ -379,7 +379,7 @@ void getTemplateHMM(Parameters& par, HHDatabaseEntry& entry, std::vector<HHblits
                         par.maxcol, par.M, par.Mgaps);
                 //              qali.FilterForDisplay(par.max_seqid,par.coverage,par.qid,par.qsc,par.nseqdis);
                 tali.N_filtered = tali.Filter(par.max_seqid_db, S,
-                        par.coverage_db, par.qid_db, par.qsc_db, par.Ndiff_db);
+                        par.coverage_db, par.qid_db, qsc, par.Ndiff_db);
                 t->name[0] = t->longname[0] = t->fam[0] = '\0';
                 tali.FrequenciesAndTransitions(t, use_global_weights, par.mark,
                         par.cons, par.showcons, par.maxres, pb, Sim);
@@ -398,7 +398,6 @@ void getTemplateHMM(Parameters& par, HHDatabaseEntry& entry, std::vector<HHblits
             }
 
             fclose(dbf);
-            return;
         }
     }
 }
@@ -411,6 +410,16 @@ HHblitsDatabase* getHHblitsDatabase(HHDatabaseEntry& entry, std::vector<HHblitsD
     }
 
     return NULL;
+}
+
+int getMaxTemplateLength(std::vector<HHDatabaseEntry*>& entries) {
+  int max_template_length = 0;
+
+  for(size_t i = 0; i < entries.size(); i++) {
+    max_template_length = std::max(max_template_length, entries[i]->sequence_length);
+  }
+
+  return max_template_length;
 }
 
 

@@ -786,8 +786,13 @@ void HHsearch::run(FILE* query_fh, char* query_path) {
 		}
 	}
 
+	int max_template_length = getMaxTemplateLength(new_entries);
+	for(int i = 0; i < par.threads; i++) {
+	  viterbiMatrices[i]->AllocateBacktraceMatrix(q->L, max_template_length);
+	}
+
     ViterbiRunner viterbirunner(viterbiMatrices, dbs, par.threads);
-    std::vector<Hit> hits_to_add = viterbirunner.alignment(par, &q_vec, new_entries, pb, S, Sim, R);
+    std::vector<Hit> hits_to_add = viterbirunner.alignment(par, &q_vec, new_entries, par.qsc_db, pb, S, Sim, R);
 
     hitlist.N_searched = new_entries.size();
     add_hits_to_hitlist(hits_to_add, hitlist);

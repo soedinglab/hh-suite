@@ -64,9 +64,7 @@ HHblits::HHblits(Parameters& parameters,
   // Prepare multi-threading - reserve memory for threads, intialize, etc.
   for (int bin = 0; bin < par.threads; bin++) {
     viterbiMatrices[bin] = new ViterbiMatrix();
-    viterbiMatrices[bin]->AllocateBacktraceMatrix(par.maxres, par.maxres);
-    posteriorMatrices[bin] = new PosteriorMatrix(par.maxres + 1);
-    posteriorMatrices[bin]->allocateMatrix(par.maxres + 1);
+    posteriorMatrices[bin] = new PosteriorMatrix();
   }
 }
 
@@ -79,7 +77,6 @@ HHblits::~HHblits() {
   dbs.clear();
 
   for (int bin = 0; bin < par.threads; bin++) {
-    viterbiMatrices[bin]->DeleteBacktraceMatrix(par.maxres);
     delete viterbiMatrices[bin];
     delete posteriorMatrices[bin];
   }
@@ -249,7 +246,6 @@ void HHblits::ProcessAllArguments(int argc, char** argv, Parameters& par) {
     par.macins = 0.999;
   else if (par.macins < 0)
     par.macins = 0.0;
-
 }
 
 void HHblits::Reset() {
@@ -724,6 +720,16 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
       }
       else
         strcpy(par.outfile, argv[i]);
+    }
+    else if (!strcmp(argv[i], "-omat")) {
+      if (++i >= argc || argv[i][0] == '-') {
+        help(par);
+        cerr << endl << "Error in " << program_name
+            << ": no output file following -omat\n";
+        exit(4);
+      }
+      else
+        strcpy(par.matrices_output_file, argv[i]);
     }
     else if (!strcmp(argv[i], "-ored")) {
       if (++i >= argc || argv[i][0] == '-') {
@@ -1234,7 +1240,7 @@ void HHblits::RescoreWithViterbiKeepAlignment(HMMSimd& q_vec, Hash<Hit>* previou
 
   ViterbiRunner viterbirunner(viterbiMatrices, dbs, par.threads);
   std::vector<Hit> hits_to_add = viterbirunner.alignment(par, &q_vec,
-      hits_to_rescore, pb, S, Sim, R);
+      hits_to_rescore, par.qsc_db, pb, S, Sim, R);
 
   for (std::vector<Hit>::size_type i = 0; i != hits_to_add.size(); i++) {
     stringstream ss_tmp;
@@ -1308,8 +1314,9 @@ void HHblits::perform_realign(HMMSimd& q_vec, std::vector<HHDatabaseEntry*>& hit
         continue;
     }
 
-    if (hit_cur.L > Lmax)
+    if (hit_cur.L > Lmax) {
       Lmax = hit_cur.L;
+    }
     if (hit_cur.L > Lmaxmem) {
       nhits++;
       continue;
@@ -1323,6 +1330,9 @@ void HHblits::perform_realign(HMMSimd& q_vec, std::vector<HHDatabaseEntry*>& hit
   }
 
   int t_maxres = Lmax + 2;
+  for(int i = 0; i < par.threads; i++) {
+    posteriorMatrices[i]->allocateMatrix(q->L, t_maxres);
+  }
 
   // Sort hits in descending order
   std::qsort(&hit_vector[0], hit_vector.size(), sizeof(Hit*), compareHitLengths);
@@ -1339,7 +1349,7 @@ void HHblits::perform_realign(HMMSimd& q_vec, std::vector<HHDatabaseEntry*>& hit
   HH_LOG(LogLevel::INFO) << "Realigning " << nhits
       << " HMM-HMM alignments using Maximum Accuracy algorithm" << std::endl;
 
-  runner.executeComputation(par, pb, S, Sim, R);
+  runner.executeComputation(par, par.qsc_db, pb, S, Sim, R);
 
   // Delete all hitlist entries with too short alignments
   nhits = 0;
@@ -2079,6 +2089,11 @@ void HHblits::run(FILE* query_fh, char* query_path) {
           old_entries.end());
     }
 
+    int max_template_length = getMaxTemplateLength(new_entries);
+    for(int i = 0; i < par.threads; i++) {
+      viterbiMatrices[i]->AllocateBacktraceMatrix(q->L, max_template_length);
+    }
+
     hitlist.N_searched = search_counter.getCounter();
 
     if (new_entries.size() == 0) {
@@ -2099,7 +2114,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
 
     // Main Viterbi HMM-HMM search
     ViterbiRunner viterbirunner(viterbiMatrices, dbs, par.threads);
-    std::vector<Hit> hits_to_add = viterbirunner.alignment(par, &q_vec, new_entries, pb, S, Sim, R);
+    std::vector<Hit> hits_to_add = viterbirunner.alignment(par, &q_vec, new_entries, par.qsc_db, pb, S, Sim, R);
 
     add_hits_to_hitlist(hits_to_add, hitlist);
 
@@ -2128,7 +2143,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
 
         ViterbiRunner viterbirunner(viterbiMatrices, dbs, par.threads);
         std::vector<Hit> hits_to_add = viterbirunner.alignment(par, &q_vec,
-            old_entries, pb, S, Sim, R);
+            old_entries, par.qsc_db, pb, S, Sim, R);
 
         add_hits_to_hitlist(hits_to_add, hitlist);
 
@@ -2320,7 +2335,7 @@ void HHblits::writePairwiseAlisFile(char* pairwiseAlisFile, char outformat) {
 
 void HHblits::writeAlitabFile(char* alitabFile) {
   if (*alitabFile) {
-    hitlist.WriteToAlifile(q, alitabFile, par.alitab_scop);
+    hitlist.WriteToAlifile(q, alitabFile, par.b, par.B, par.z, par.Z, par.p, par.E);
   }
 }
 
@@ -2389,7 +2404,8 @@ void HHblits::writePairwiseAlisFile(HHblits& hhblits, std::stringstream& out) {
 }
 
 void HHblits::writeAlitabFile(HHblits& hhblits, std::stringstream& out) {
-  hhblits.hitlist.WriteToAlifile(hhblits.q, out, hhblits.par.alitab_scop);
+  hhblits.hitlist.WriteToAlifile(hhblits.q, out, hhblits.par.b,
+      hhblits.par.B, hhblits.par.z, hhblits.par.Z, hhblits.par.p, hhblits.par.E);
 }
 
 void HHblits::writeReducedHHRFile(HHblits& hhblits, std::stringstream& out) {
@@ -2423,3 +2439,14 @@ void HHblits::writeA3MFile(HHblits& hhblits, std::stringstream& out) {
   else
     hhblits.Qali.WriteToFile(out, "a3m");
 }
+
+void HHblits::writeMatricesFile(char* matricesOutputFileName) {
+  if (*matricesOutputFileName) {
+	  hitlist.PrintMatrices(q, matricesOutputFileName, par.max_number_matrices, S);
+  }
+}
+
+void HHblits::writeMatricesFile(HHblits& hhblits, stringstream& out) {
+  hhblits.hitlist.PrintMatrices(hhblits.q, out, hhblits.par.max_number_matrices, hhblits.S);
+}
+

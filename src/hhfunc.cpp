@@ -71,12 +71,10 @@ void ReadQueryFile(Parameters& par, FILE* inf, char& input_format,
     ali_tmp.Compress(infile, par.cons, par.maxres, par.maxcol, par.M, par.Mgaps);
 
     // Sort out the nseqdis most dissimilar sequences for display in the output alignments
-    ali_tmp.FilterForDisplay(par.max_seqid, par.mark, S, par.coverage, par.qid,
-        par.qsc, par.nseqdis);
+    ali_tmp.FilterForDisplay(par.max_seqid, par.mark, S, par.coverage, par.qid, par.qsc, par.nseqdis);
 
     // Remove sequences with seq. identity larger than seqid percent (remove the shorter of two)
-    ali_tmp.N_filtered = ali_tmp.Filter(par.max_seqid, S, par.coverage, par.qid,
-        par.qsc, par.Ndiff);
+    ali_tmp.N_filtered = ali_tmp.Filter(par.max_seqid, S, par.coverage, par.qid, par.qsc, par.Ndiff);
 
     if (par.Neff >= 0.999)
     	ali_tmp.FilterNeff(use_global_weights, par.mark, par.cons, par.showcons,
@@ -357,8 +355,7 @@ void CalculateSS(HMM* q, const int maxres, const char* psipred_data,
 /////////////////////////////////////////////////////////////////////////////////////
 // Write alignment in tab format (option -atab)
 /////////////////////////////////////////////////////////////////////////////////////
-void WriteToAlifile(FILE* alitabf, Hit* hit, const char forward,
-    const char realign) {
+void WriteToAlifile(FILE* alitabf, Hit* hit, const char forward, const char realign) {
   if (hit->P_posterior != NULL && (forward == 2 || realign)) {
     if (hit->nss_dssp >= 0) {
       // secondary structure determined by dssp 0:-  1:H  2:E  3:C  4:S  5:T  6:G  7:B

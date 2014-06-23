@@ -7,35 +7,40 @@
 
 #include "hhposteriormatrix.h"
 
-PosteriorMatrix::PosteriorMatrix(int q_length) :
-		m_q_length(q_length) {
-
-		m_probabilities = new (simd_float * [m_q_length]);
+PosteriorMatrix::PosteriorMatrix() {
 		m_allocated = false;
 
+		m_probabilities = NULL;
+
+		m_q_max_length = 0;
+		m_t_max_length = 0;
 }
 
 PosteriorMatrix::~PosteriorMatrix() {
-//	printf("Posterior matrix --> ~destructor\n");
-	if (m_probabilities) {
-			for (int i = 0; i < m_q_length; i++) {
-					free(m_probabilities[i]);
-			}
-			delete[] m_probabilities;
-	}
+  DeleteProbabilityMatrix();
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // Allocate memory in 2nd dimension
 ///////////////////////////////////////////////////////////////////////////////////////////////
-void PosteriorMatrix::allocateMatrix(const int t_length_max) {
+void PosteriorMatrix::allocateMatrix(int q_length_max, int t_length_max) {
+  q_length_max += 1;
+  t_length_max += 1;
 
+  if(q_length_max > m_q_max_length || t_length_max > m_t_max_length) {
+    DeleteProbabilityMatrix();
+  }
+  else {
+    return;
+  }
+
+    m_probabilities = new (simd_float * [q_length_max]);
 //	printf("p_mm: Allocate 2nd dimension of m_p_mm\n");
 
-	for (int i = 0; i < m_q_length; i++) {
-		m_probabilities[i] = malloc_simd_float(t_length_max * sizeof(simd_float));
+	for (int i = 0; i < q_length_max; i++) {
+		m_probabilities[i] = malloc_simd_float((t_length_max) * sizeof(simd_float));
 		if (!m_probabilities[i]) {
-			fprintf(stderr,"Error: out of memory while allocating row %i (out of %i) for dynamic programming matrices \n", i+1, m_q_length);
+			fprintf(stderr,"Error: out of memory while allocating row %i (out of %i) for dynamic programming matrices \n", i+1, q_length_max);
 			fprintf(stderr,"Please decrease your memory requirements to the available memory using option -maxmem <GBs>\n");
 			fprintf(stderr,"You may want to check and increase your stack size limit (Linux: ulimit -a)\n");
 			exit(3);
@@ -43,7 +48,22 @@ void PosteriorMatrix::allocateMatrix(const int t_length_max) {
 	}
 	m_allocated = true;
 
+	m_q_max_length = q_length_max;
+	m_t_max_length = t_length_max;
 };
+
+void PosteriorMatrix::DeleteProbabilityMatrix() {
+  if(m_q_max_length == 0) {
+    return;
+  }
+
+  for (int i = 0; i < m_q_max_length; i++) {
+          free(m_probabilities[i]);
+  }
+  delete[] m_probabilities;
+
+  m_probabilities = NULL;
+}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // Return a simd_float pointer to a single row

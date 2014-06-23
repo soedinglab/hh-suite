@@ -215,6 +215,8 @@ int main(int argc, char **argv) {
       outputDatabases);
   makeOutputFFIndex(par.alnfile, mpi_rank, &HHblits::writeA3MFile,
       outputDatabases);
+  makeOutputFFIndex(par.matrices_output_file, mpi_rank, &HHblits::writeMatricesFile,
+      outputDatabases);
 
 //	initOutputFFDatabase(par.alisbasename, mpi_rank, print_alis, alis_data_fh, alis_index_fh);
 
