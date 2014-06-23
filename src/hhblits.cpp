@@ -64,9 +64,7 @@ HHblits::HHblits(Parameters& parameters,
   // Prepare multi-threading - reserve memory for threads, intialize, etc.
   for (int bin = 0; bin < par.threads; bin++) {
     viterbiMatrices[bin] = new ViterbiMatrix();
-    viterbiMatrices[bin]->AllocateBacktraceMatrix(par.maxres, par.maxres);
-    posteriorMatrices[bin] = new PosteriorMatrix(par.maxres + 1);
-    posteriorMatrices[bin]->allocateMatrix(par.maxres + 1);
+    posteriorMatrices[bin] = new PosteriorMatrix();
   }
 }
 
@@ -79,7 +77,6 @@ HHblits::~HHblits() {
   dbs.clear();
 
   for (int bin = 0; bin < par.threads; bin++) {
-    viterbiMatrices[bin]->DeleteBacktraceMatrix(par.maxres);
     delete viterbiMatrices[bin];
     delete posteriorMatrices[bin];
   }
@@ -1333,6 +1330,9 @@ void HHblits::perform_realign(HMMSimd& q_vec, std::vector<HHDatabaseEntry*>& hit
   }
 
   int t_maxres = Lmax + 2;
+  for(int i = 0; i < par.threads; i++) {
+    posteriorMatrices[i]->allocateMatrix(q->L, t_maxres);
+  }
 
   // Sort hits in descending order
   std::qsort(&hit_vector[0], hit_vector.size(), sizeof(Hit*), compareHitLengths);
@@ -2087,6 +2087,11 @@ void HHblits::run(FILE* query_fh, char* query_path) {
           new_entries.end());
       all_entries.insert(all_entries.end(), old_entries.begin(),
           old_entries.end());
+    }
+
+    int max_template_length = getMaxTemplateLength(new_entries);
+    for(int i = 0; i < par.threads; i++) {
+      viterbiMatrices[i]->AllocateBacktraceMatrix(q->L, max_template_length);
     }
 
     hitlist.N_searched = search_counter.getCounter();

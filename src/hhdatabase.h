@@ -117,7 +117,10 @@ struct HHDatabaseEntryCompare {
 void getTemplateHMM(Parameters& par, HHDatabaseEntry& entry,
     std::vector<HHblitsDatabase*>& dbs, char use_global_weights, const float qsc, int& format,
     float* pb, const float S[20][20], const float Sim[20][20], HMM* t);
+
 HHblitsDatabase* getHHblitsDatabase(HHDatabaseEntry& entry,
     std::vector<HHblitsDatabase*>& dbs);
+
+int getMaxTemplateLength(std::vector<HHDatabaseEntry*>& entries);
 
 #endif /* HHDATABASE_H_ */

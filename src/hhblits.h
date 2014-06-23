@@ -122,6 +122,7 @@ public:
     static void prepareDatabases(Parameters& par, std::vector<HHblitsDatabase*>& databases);
 
 	void run(FILE* query_fh, char* query_path);
+
 protected:
 	// substitution matrix flavours
 	float __attribute__((aligned(16))) P[20][20];
@@ -173,7 +174,6 @@ protected:
 	void perform_realign(HMMSimd& q_vec, std::vector<HHDatabaseEntry*>& hits_to_realign, const int premerge, Hash<char>* premerged_hits);
 	void mergeHitsToQuery(Hash<Hit>* previous_hits, Hash<char>* premerged_hits, int& seqs_found, int& cluster_found);
 	void add_hits_to_hitlist(std::vector<Hit>& hits, HitList& hitlist);
-
 
 private:
 	static void help(Parameters& par, char all = 0);

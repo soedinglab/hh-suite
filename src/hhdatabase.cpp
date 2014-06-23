@@ -412,4 +412,14 @@ HHblitsDatabase* getHHblitsDatabase(HHDatabaseEntry& entry, std::vector<HHblitsD
     return NULL;
 }
 
+int getMaxTemplateLength(std::vector<HHDatabaseEntry*>& entries) {
+  int max_template_length = 0;
+
+  for(size_t i = 0; i < entries.size(); i++) {
+    max_template_length = std::max(max_template_length, entries[i]->sequence_length);
+  }
+
+  return max_template_length;
+}
+
 

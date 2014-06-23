@@ -16,10 +16,10 @@ static const int IDX_CORR = HMMSimd::VEC_SIZE - 1;
 
 class PosteriorMatrix {
 public:
-	PosteriorMatrix(const int q_length);
+	PosteriorMatrix();
 	virtual ~PosteriorMatrix();
 
-	void allocateMatrix(const int t_length_max);
+	void allocateMatrix(const int q_length_max, const int t_length_max);
 
 	simd_float * getRow(const int row) const;
 
@@ -33,12 +33,14 @@ public:
 	void setAllocated(bool allocated);
 
 private:
+	int m_q_max_length;
+	int m_t_max_length;
 
-	const int m_q_length;
 	simd_float ** m_probabilities;
 	bool m_allocated;
 //	float ** m_p_mm;
 
+	void DeleteProbabilityMatrix();
 };
 
 

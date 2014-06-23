@@ -530,6 +530,8 @@ void PosteriorDecoder::forwardAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm,
 	for (int elem = 0; elem < (int)hit_vec.size(); elem++) {
 		hit_vec.at(elem)->Pforward = ((float *)&m_p_forward)[elem];
 	}
+
+	free(p_last_col);
   }
 
 void PosteriorDecoder::setGlobalColumnPForward(simd_float * column,	const simd_int & j_vec, const int i_count, const simd_float & values) {
