@@ -27,18 +27,18 @@
 
 #include "hhalign_ori.h"
 
-HHalign::HHalign(Parameters& par, std::vector<HHblitsDatabase*>& databases) :
+HHalign_mult::HHalign_mult(Parameters& par, std::vector<HHblitsDatabase*>& databases) :
 		HHblits(par, databases) {
 }
 
-HHalign::~HHalign() {
+HHalign_mult::~HHalign_mult() {
 
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Help functions
 /////////////////////////////////////////////////////////////////////////////////////
-void HHalign::help(Parameters& par, char all) {
+void HHalign_mult::help(Parameters& par, char all) {
   printf("\n");
   printf("HHalign %s\n", VERSION_AND_DATE);
   printf(
@@ -420,7 +420,7 @@ void HHalign::help(Parameters& par, char all) {
 /////////////////////////////////////////////////////////////////////////////////////
 //// Processing input options from command line and .hhdefaults file
 /////////////////////////////////////////////////////////////////////////////////////
-void HHalign::ProcessAllArguments(int argc, char** argv, Parameters& par) {
+void HHalign_mult::ProcessAllArguments(int argc, char** argv, Parameters& par) {
   par.argv = argv;
   par.argc = argc;
 
@@ -500,7 +500,7 @@ void HHalign::ProcessAllArguments(int argc, char** argv, Parameters& par) {
     par.macins = 0.0;
 }
 
-void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
+void HHalign_mult::ProcessArguments(int argc, char** argv, Parameters& par) {
   for (int i = 1; i < argc; i++) {
     HH_LOG(LogLevel::DEBUG1) << i << "  " << argv[i] << endl;
     if (!strcmp(argv[i], "-i")) {
@@ -558,7 +558,7 @@ void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
       else
         strcpy(par.outfile, argv[i]);
     }
-    else if (!strcmp(argv[i], "-ored")) {
+    else if (!strcmp(argv[i], "-oopt")) {
       if (++i >= argc) {
         help(par);
         std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": "
@@ -567,7 +567,7 @@ void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
         exit(4);
       }
       else
-        strcpy(par.reduced_outfile, argv[i]);
+        strcpy(par.opt_outfile, argv[i]);
     }
     else if (!strcmp(argv[i], "-ofas")) {
       par.outformat = 1;
@@ -1015,119 +1015,8 @@ void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
 //  recalculated_hitlist.SortList(&Hit::compare_sum_of_probs);
 //}
 
-void HHalign::optimizeQSC(HitList& input_list, HMMSimd& q_vec, char query_input_format, HitList& output_list) {
-	const int COV_ABS = 25;
-	const int cov_tot = std::max(std::min((int) (COV_ABS / q->L * 100 + 0.5), 70), par.coverage);
 
-	const int nqsc = 6;
-	float qscs[nqsc] = {-20, 0, 0.1, 0.2, 0.3, 0.4};
-
-
-	input_list.Reset();
-	while (!input_list.End()) {
-		Hit hit_cur = input_list.ReadNext();
-
-		std::vector<HHDatabaseEntry*> selected_entries;
-		selected_entries.push_back(hit_cur.entry);
-
-		float best_alignment_quality = -FLT_MAX;
-		HitList best_alignments;
-
-		for(int i = 0; i < nqsc; i++) {
-			float actual_qsc = qscs[i];
-
-			HitList tmp_list;
-			tmp_list.N_searched = input_list.N_searched;
-
-			Qali.Compress("filtered A3M file", par.cons, par.maxres, par.maxcol, par.M, par.Mgaps);
-			Qali.N_filtered = Qali.Filter(par.max_seqid, S, cov_tot, par.qid, actual_qsc, par.Ndiff);
-			Qali.FrequenciesAndTransitions(q, par.wg, par.mark, par.cons, par.showcons, par.maxres, pb, Sim, NULL, false);
-			PrepareQueryHMM(par, query_input_format, q, pc_hhm_context_engine, pc_hhm_context_mode, pb, R);
-
-			q_vec.MapOneHMM(q);
-
-			ViterbiRunner viterbirunner(viterbiMatrices, dbs, par.threads);
-			std::vector<Hit> hits_to_add = viterbirunner.alignment(par, &q_vec, selected_entries, actual_qsc, pb, S, Sim, R);
-
-			add_hits_to_hitlist(hits_to_add, tmp_list);
-
-			std::vector<Hit *> hit_vector;
-			std::vector<HHDatabaseEntry*> hits_to_realign;
-
-			int t_maxres = 0;
-			int n_realignments = 0;
-			tmp_list.Reset();
-			while (!tmp_list.End()) {
-				Hit hit_cur = tmp_list.ReadNext();
-				t_maxres = std::max(t_maxres, hit_cur.L + 2);
-				hits_to_realign.push_back(hit_cur.entry);
-				hit_vector.push_back(tmp_list.ReadCurrentAddress());
-				n_realignments++;
-			}
-
-			std::qsort(&hit_vector[0], hit_vector.size(), sizeof(Hit*), compareHitLengths);
-
-			std::map<short int, std::vector<Hit *> > alignments;
-			for (int elem = 0; elem < (int) hit_vector.size(); elem++) {
-				alignments[hit_vector.at(elem)->irep].push_back(hit_vector.at(elem));
-			}
-
-			PosteriorDecoderRunnerInputData input_data(dbs, hits_to_realign, alignments, n_realignments, t_maxres);
-
-			// Initialize a Null-value as a return value if not items are available anymore
-			PosteriorDecoderRunner runner(input_data, q_vec, posteriorMatrices, viterbiMatrices, par.threads);
-
-			runner.executeComputation(par, actual_qsc, pb, S, Sim, R);
-
-			//check if actual qsc produced the best alignment so far
-			bool new_best_hit = false;
-
-			tmp_list.Reset();
-			while (!tmp_list.End()) {
-				Hit hit_cur = tmp_list.ReadNext();
-				float cur_ali_quality = hit_cur.estimateAlignmentQuality(q);
-				std::cout << hit_cur.name << "_" << hit_cur.irep << "\t" << actual_qsc << "\t" << cur_ali_quality << std::endl;
-				if(cur_ali_quality > best_alignment_quality) {
-					best_alignment_quality = cur_ali_quality;
-					new_best_hit = true;
-					break;
-				}
-			}
-
-			if(new_best_hit) {
-				//delete old hits
-				best_alignments.Reset();
-				while (!best_alignments.End()) {
-					best_alignments.Delete().Delete();
-				}
-
-				//copy new hits
-				tmp_list.Reset();
-				while (!tmp_list.End()) {
-					Hit hit_cur = tmp_list.ReadNext();
-					best_alignments.Push(hit_cur);
-				}
-			}
-			else {
-				//delete hits for actual qsc
-				tmp_list.Reset();
-				while (!tmp_list.End()) {
-					tmp_list.Delete().Delete();
-				}
-			}
-		}
-
-		//copy best qsc hit to output_list
-		best_alignments.Reset();
-		while (!best_alignments.End()) {
-			Hit hit_cur = best_alignments.ReadNext();
-			output_list.Push(hit_cur);
-			best_alignments.Delete();
-		}
-	}
-}
-
-void HHalign::run(FILE* query_fh, char* query_path, std::vector<std::string>& templates) {
+void HHalign_mult::run(FILE* query_fh, char* query_path, std::vector<std::string>& templates) {
   int cluster_found = 0;
   int seqs_found = 0;
   int premerge = par.premerge;
@@ -1151,7 +1040,7 @@ void HHalign::run(FILE* query_fh, char* query_path, std::vector<std::string>& te
   if (par.notags)
     q->NeutralizeTags(pb);
 
-  std::vector<HHDatabaseEntry*> selected_entries;
+  std::vector<HHEntry*> selected_entries;
   for (size_t i = 0; i < dbs.size(); i++) {
     dbs[i]->initSelected(templates, selected_entries);
   }
@@ -1183,7 +1072,6 @@ void HHalign::run(FILE* query_fh, char* query_path, std::vector<std::string>& te
   if (par.notags)
       q->NeutralizeTags(pb);
 
-  //DEBUG
   HitList opt_hitlist;
   optimizeQSC(hitlist, q_vec, input_format, opt_hitlist);
 
@@ -1193,7 +1081,7 @@ void HHalign::run(FILE* query_fh, char* query_path, std::vector<std::string>& te
   selected_entries.clear();
 }
 
-void HHalign::writeHHRFile(HHalign& hhalign, std::stringstream& out) {
+void HHalign_mult::writeHHRFile(HHalign_mult& hhalign, std::stringstream& out) {
 	hhalign.hitlist.PrintHHR(hhalign.q, out, hhalign.par.maxdbstrlen,
 			hhalign.par.showconf, hhalign.par.showcons, hhalign.par.showdssp,
 			hhalign.par.showpred, hhalign.par.b, hhalign.par.B, hhalign.par.z,

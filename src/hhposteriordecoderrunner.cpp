@@ -21,7 +21,7 @@ PosteriorDecoderRunner::PosteriorDecoderRunner(
     PosteriorDecoderRunnerInputData & data_container, HMMSimd & q_simd,
     PosteriorMatrix** posterior_matrices,
     ViterbiMatrix** backtrace_matrix, const int n_threads) :
-    m_databases(data_container.databases), m_dbfiles(data_container.dbfiles), m_alignments(
+        m_dbfiles(data_container.dbentries), m_alignments(
         data_container.alignments), m_q_simd(q_simd), m_n_t_hmms(
         data_container.n_t_hmms_to_align), m_t_maxres(data_container.t_maxres), m_posterior_matrices(
         posterior_matrices), m_backtrace_matrix(backtrace_matrix), m_n_threads(
@@ -86,7 +86,7 @@ void PosteriorDecoderRunner::executeComputation(Parameters& par, const float qsc
 
         int format_tmp = 0;
         char wg = 0;
-        getTemplateHMM(par, *hit_cur->entry, m_databases, wg, qsc, format_tmp, pb, S, Sim, &t_hmm[current_t_index + i]);
+        hit_cur->entry->getTemplateHMM(par, wg, qsc, format_tmp, pb, S, Sim, &t_hmm[current_t_index + i]);
 
         if (alignments_to_exclude.find(std::string(hit_cur->file)) != alignments_to_exclude.end()) {
           alignment_exclusions.push_back(alignments_to_exclude.at(std::string(hit_cur->file)));

@@ -1,12 +1,12 @@
 /*
  * hhalign.h
  *
- *  Created on: Jun 16, 2014
+ *  Created on: Jun 24, 2014
  *      Author: meiermark
  */
 
-#ifndef HHALIGN_ORI_H_
-#define HHALIGN_ORI_H_
+#ifndef HHALIGN_H_
+#define HHALIGN_H_
 
 #include <iostream>   // cin, cout, cerr
 #include <fstream>    // ofstream, ifstream
@@ -56,20 +56,16 @@ using std::ofstream;
 
 #include "hhblits.h"
 
-class HHalign_mult : public HHblits {
+class HHalign : public HHblits {
   public:
-    HHalign_mult(Parameters& par, std::vector<HHblitsDatabase*>& databases);
-    virtual ~HHalign_mult();
-    void run(FILE* query_fh, char* query_path, std::vector<std::string>& templates);
+    HHalign(Parameters& par, std::vector<HHblitsDatabase*>& databases);
+    virtual ~HHalign();
+    void run(FILE* query_fh, char* query_path, char* template_path);
     static void ProcessAllArguments(int argc, char** argv, Parameters& par);
-
-    static void writeHHRFile(HHalign_mult& hhalign, std::stringstream& out);
 
   private:
     static void help(Parameters& par, char all=0);
     static void ProcessArguments(int argc, char** argv, Parameters& par);
 };
 
-
-
-#endif /* HHALIGN_ORI_H_ */
+#endif /* HHALIGN_H_ */

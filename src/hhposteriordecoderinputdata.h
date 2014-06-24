@@ -18,18 +18,16 @@ class PosteriorDecoderRunnerInputData {
 
 public:
 	PosteriorDecoderRunnerInputData(std::vector<HHblitsDatabase*> & databases,
-			std::vector<HHDatabaseEntry*> & dbfiles,
+			std::vector<HHEntry*> & dbfiles,
 			std::map<short int, std::vector<Hit *> > & alignments,
 			const int n_t_hmms_to_align,
 			const int t_maxres) :
-            databases(databases),
-            dbfiles(dbfiles),
+            dbentries(dbfiles),
             alignments(alignments),
             n_t_hmms_to_align(n_t_hmms_to_align),
             t_maxres(t_maxres) {};
 
-	std::vector<HHblitsDatabase*> & databases;	// databases used to read HMMs from
-	std::vector<HHDatabaseEntry* > & dbfiles;					// database files
+	std::vector<HHEntry* > & dbentries;					// database files
 	// This map includes structured hit objects:
 	// 	outer map: key = irep; inner map: key = dbfile
 	// 	This is to make sure that no hits from the same template HMM are processed in one vector!

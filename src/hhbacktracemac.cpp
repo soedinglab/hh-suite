@@ -73,7 +73,7 @@ void PosteriorDecoder::backtraceMAC(HMM & q, HMM & t, PosteriorMatrix & p_mm, Vi
 		if (Log::reporting_level() > LogLevel::DEBUG)
 		  fprintf(stderr,"Error: backtrace does not start in match-match state, but in state %i, (i,j)=(%i,%i)\n",backtrace_matrix.getMatMat(i, j, elem),i,j);
 
-		step = 1;
+		step = 0;
 		hit.i[step] = i;
 		hit.j[step] = j;
 		hit.alt_i->push_back(i);
