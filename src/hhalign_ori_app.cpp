@@ -25,14 +25,14 @@ struct OutputFFIndex {
     FILE* index_fh;
     size_t offset;
     size_t number_entries;
-    void (*print)(HHalign&, std::stringstream&);
+    void (*print)(HHalign_mult&, std::stringstream&);
 
     void close() {
       fclose(data_fh);
       fclose(index_fh);
     }
 
-    void saveOutput(HHalign& hhalign, char* name) {
+    void saveOutput(HHalign_mult& hhalign, char* name) {
       std::stringstream out;
       print(hhalign, out);
 
@@ -196,9 +196,9 @@ int main(int argc, char **argv) {
 	omp_set_num_threads(threads);
 	par.threads = 1;
 
-	HHalign* hhalign_instances[255];
+	HHalign_mult* hhalign_instances[255];
 	for (int i = 0; i < threads; i++) {
-		hhalign_instances[i] = new HHalign(par, databases);
+		hhalign_instances[i] = new HHalign_mult(par, databases);
 	}
 
 //	#pragma omp parallel for
