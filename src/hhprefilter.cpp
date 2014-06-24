@@ -398,185 +398,7 @@ namespace hh {
       free(query_profile[i]);
     delete[] query_profile;
   }
-//
-//
-//    int LQ = q_tmp->L;
-//    float** query_profile = NULL;
-//    int a, h, i, j, k;
-//
-//    // Build query profile with 219 column states
-//    query_profile = new float*[LQ + 1];
-//    for (i = 0; i < LQ + 1; ++i)
-//      query_profile[i] = (float*) malloc_simd_int(NUMCOLSTATES * sizeof(float));
-//
-//    const cs::ContextLibrary<cs::AA>& lib = *cs_lib;
-//
-//    // log (S(i,k)) = log ( SUM_a p(i,a) * p(k,a) / f(a) )   k: column state, i: pos in ali, a: amino acid
-//    for (i = 0; i < LQ; ++i)
-//      for (k = 0; k < NUMCOLSTATES; ++k) {
-//        float sum = 0;
-//        for (a = 0; a < 20; ++a)
-//          sum += ((q_tmp->p[i][a] * lib[k].probs[0][a]) / q_tmp->pav[a]);
-//        query_profile[i + 1][k] = sum;
-//      }
-//
-//    /////////////////////////////////////////
-//    // Stripe query profile with chars
-//    int element_count = (VECSIZE_INT * 4);
-//    qc = (unsigned char*) malloc_simd_int(
-//        (NUMCOLSTATES + 1) * (LQ + element_count) * sizeof(unsigned char)); // query profile (states + 1 because of ANY char)
-//    //W = (LQ+15) / 16;   // band width = hochgerundetes LQ/16
-//
-//    for (a = 0; a < NUMCOLSTATES; ++a) {
-//      h = a * W * element_count;
-//      for (i = 0; i < W; ++i) {
-//        j = i;
-//        for (k = 0; k < element_count; ++k) {
-//          if (j >= LQ)
-//            qc[h] = (unsigned char) prefilter_score_offset;
-//          else {
-//            float dummy = flog2(query_profile[j + 1][a])
-//                * prefilter_bit_factor + prefilter_score_offset + 0.5;
-//            if (dummy > 255.0)
-//              qc[h] = 255;
-//            else if (dummy < 0)
-//              qc[h] = 0;
-//            else
-//              qc[h] = (unsigned char) dummy; // 1/3 bits & make scores >=0 everywhere
-//          }
-//          ++h;
-//          j += W;
-//        }
-//      }
-//    }
-//
-//    // Add extra ANY-state (220'th state)
-//    h = NUMCOLSTATES * W * element_count;
-//    for (i = 0; i < W; ++i) {
-//      j = i;
-//      for (k = 0; k < element_count; ++k) {
-//        if (j >= LQ)
-//          qc[h] = (unsigned char) prefilter_score_offset;
-//        else
-//          qc[h] = (unsigned char) (prefilter_score_offset - 1);
-//        h++;
-//        j += W;
-//      }
-//    }
-//
-//    for (i = 0; i < LQ + 1; ++i)
-//      free(query_profile[i]);
-//    delete[] query_profile;
-//  }
 
-//////////////////////////////////////////////////////////////////////////
-//// Prepare query profile for prefitering
-//////////////////////////////////////////////////////////////////////////
-//  void Prefilter::stripe_query_profile(HMM* q_tmp,
-//      const int prefilter_score_offset, const int prefilter_bit_factor,
-//      const int W, unsigned char* qc) {
-//    int LQ = q_tmp->L;
-//    int a, h, i, j, k;
-//
-//    // Build query profile with 219 column states
-//    float** query_profile = new float*[LQ + 1];
-//    for (i = 0; i < LQ + 1; ++i)
-//      query_profile[i] = (float*) memalign(16, NUMCOLSTATES * sizeof(float),
-//          "the query profile during prefiltering");
-//
-//    const cs::ContextLibrary<cs::AA>& lib = *cs_lib;
-//
-//    // log S(i,k) = log ( SUM_a p(i,a) * p(k,a) / f(a) )   k: column state, i: pos in ali, a: amino acid
-//    for (i = 0; i < LQ; ++i)
-//      for (k = 0; k < NUMCOLSTATES; ++k) {
-//        float sum = 0;
-//        for (a = 0; a < 20; ++a)
-//          sum += (q_tmp->p[i][a] * lib[k].probs[0][a]) / q_tmp->pav[a];
-//        query_profile[i + 1][k] = sum;
-//      }
-//
-//    for (a = 0; a < NUMCOLSTATES; ++a) {
-//      h = a * W * 16;
-//      for (i = 0; i < W; ++i) {
-//        j = i;
-//        for (k = 0; k < 16; ++k) {
-//          if (j >= LQ)
-//            qc[h] = (unsigned char) prefilter_score_offset;
-//          else {
-//            float dummy = flog2(query_profile[j + 1][a]) * prefilter_bit_factor
-//                + prefilter_score_offset + 0.5;
-//            // if (dummy>255.0) qc[h] = 255;
-//            // else if (dummy<0) qc[h] = 0;
-//            // else qc[h] = (unsigned char) dummy;  // 1/3 bits & make scores >=0 everywhere
-//            qc[h] = (unsigned char) fmax(0.0, fmin(255.0, dummy));
-//          }
-//          ++h;
-//          j += W;
-//        }
-//      }
-//    }
-//
-//    // Add extra ANY-state (220'th state)
-//    h = NUMCOLSTATES * W * 16;
-//    for (i = 0; i < W; ++i) {
-//      j = i;
-//      for (k = 0; k < 16; ++k) {
-//        if (j >= LQ)
-//          qc[h] = (unsigned char) prefilter_score_offset;
-//        else
-//          qc[h] = (unsigned char) (prefilter_score_offset - 1);
-//        h++;
-//        j += W;
-//      }
-//    }
-//
-//    //////////////////////////////////////////////+
-//    // Stripe query profile with shorts
-//    unsigned short* qw = (unsigned short*) memalign(16,
-//        (NUMCOLSTATES + 1) * (LQ + 7) * sizeof(unsigned short),
-//        "the striped 2B query profile during prefiltering"); // query profile (states + 1 because of ANY char)
-//    int Ww = (LQ + 7) / 8;
-//
-//    /////////////////////////////////////////
-//    // Stripe query profile
-//    for (a = 0; a < NUMCOLSTATES; ++a) {
-//      h = a * Ww * 8;
-//      for (i = 0; i < Ww; ++i) {
-//        j = i;
-//        for (k = 0; k < 8; ++k) {
-//          if (j >= LQ)
-//            qw[h] = 0;
-//          else {
-//            float dummy = flog2(query_profile[j + 1][a]) * prefilter_bit_factor;
-//            qw[h] = (unsigned short) dummy; // 1/3 bits & make scores >=0 everywhere
-//          }
-//          ++h;
-//          j += Ww;
-//        }
-//      }
-//    }
-//
-//    // Add extra ANY-state
-//    h = NUMCOLSTATES * Ww * 8;
-//    for (i = 0; i < Ww; ++i) {
-//      j = i;
-//      for (k = 0; k < 8; ++k) {
-//        if (j >= LQ)
-//          qw[h] = 0;
-//        else
-//          qw[h] = (unsigned short) -1;
-//        h++;
-//        j += W;
-//      }
-//    }
-//
-//    free(qw);
-//
-//    for (i = 0; i < LQ + 1; ++i)
-//      free(query_profile[i]);
-//    delete[] query_profile;
-//  }
-//////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////
 // Main prefilter function
@@ -586,7 +408,7 @@ namespace hh {
       const int prefilter_gap_extend, const int prefilter_score_offset,
       const int prefilter_bit_factor, const double prefilter_evalue_thresh,
       const double prefilter_evalue_coarse_thresh,
-      const int preprefilter_smax_thresh, const int min_prefilter_hits,
+      const int preprefilter_smax_thresh, const int min_prefilter_hits, const int maxnumdb,
       const float R[20][20],
       std::vector<std::pair<int, std::string>>& new_prefilter_hits,
       std::vector<std::pair<int, std::string>>& old_prefilter_hits) {
@@ -709,6 +531,7 @@ namespace hh {
 
     for (it2 = hits.begin(); it2 < hits.end(); it2++) {
       // Add hit to dbfiles
+      count_dbs++;
       char db_name[NAMELEN];
       strcpy(db_name, dbnames[(*it2).second]);
 
@@ -732,8 +555,18 @@ namespace hh {
           new_prefilter_hits.push_back(result);
         }
       }
+      if (count_dbs >= maxnumdb)
+      {
+        HH_LOG(LogLevel::WARNING)
+        << "Number of hits passing 2nd prefilter (reduced from " << hits.size() << " to allowed maximum of " << maxnumdb << ").\n"
+        <<"You can increase the allowed maximum using the -maxfilt <max> option.\n";
+        break;
+      }
     }
 
+
+      
+      
     // Free memory
     free(qc);
     for (int i = 0; i < threads; i++)

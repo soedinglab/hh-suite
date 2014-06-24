@@ -2075,7 +2075,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
             par.prefilter_gap_open, par.prefilter_gap_extend,
             par.prefilter_score_offset, par.prefilter_bit_factor,
             par.prefilter_evalue_thresh, par.prefilter_evalue_coarse_thresh,
-            par.preprefilter_smax_thresh, par.min_prefilter_hits, R,
+            par.preprefilter_smax_thresh, par.min_prefilter_hits, par.maxnumdb, R,
             new_entries, old_entries);
       }
 

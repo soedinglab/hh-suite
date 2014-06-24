@@ -187,7 +187,7 @@ void HHblitsDatabase::prefilter_db(HMM* q_tmp, Hash<Hit>* previous_hits,
     const int prefilter_bit_factor, const double prefilter_evalue_thresh,
     const double prefilter_evalue_coarse_thresh,
     const int preprefilter_smax_thresh, const int min_prefilter_hits,
-    const float R[20][20], std::vector<HHDatabaseEntry*>& new_entries,
+    const int maxnumbdb, const float R[20][20], std::vector<HHDatabaseEntry*>& new_entries,
     std::vector<HHDatabaseEntry*>& old_entries) {
 
   std::vector<std::pair<int, std::string>> prefiltered_new_entry_names;
@@ -196,7 +196,7 @@ void HHblitsDatabase::prefilter_db(HMM* q_tmp, Hash<Hit>* previous_hits,
   prefilter->prefilter_db(q_tmp, previous_hits, threads, prefilter_gap_open,
       prefilter_gap_extend, prefilter_score_offset, prefilter_bit_factor,
       prefilter_evalue_thresh, prefilter_evalue_coarse_thresh,
-      preprefilter_smax_thresh, min_prefilter_hits, R,
+      preprefilter_smax_thresh, min_prefilter_hits, maxnumbdb, R,
       prefiltered_new_entry_names, prefiltered_old_entry_names);
 
   getEntriesFromNames(prefiltered_new_entry_names, new_entries);

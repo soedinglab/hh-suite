@@ -76,7 +76,7 @@ class HHblitsDatabase: HHDatabase {
         const int prefilter_score_offset, const int prefilter_bit_factor,
         const double prefilter_evalue_thresh,
         const double prefilter_evalue_coarse_thresh,
-        const int preprefilter_smax_thresh, const int min_prefilter_hits,
+        const int preprefilter_smax_thresh, const int min_prefilter_hits, const int maxnumbdb,
         const float R[20][20], std::vector<HHDatabaseEntry*>& new_entries,
         std::vector<HHDatabaseEntry*>& old_entries);
 
