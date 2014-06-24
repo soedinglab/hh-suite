@@ -50,7 +50,7 @@ public:
     float* Neff_D;            // Neff_D[i] = diversity of subalignment of seqs that have delete in col i
     float Neff_HMM;           // average number of Neff over total length of HMM
 
-    HHDatabaseEntry* entry;
+    HHEntry* entry;
     char* longname;           // Full name of first sequence of original alignment (NAME field)
     char name[NAMELEN];       // HMM name = first word in longname in lower case
     char file[NAMELEN];       // Basename (with path, without extension) of alignment file that was used to construct the HMM

@@ -28,8 +28,7 @@ protected:
 
 private:
 
-	std::vector<HHblitsDatabase* > & m_databases;
-	std::vector<HHDatabaseEntry* > & m_dbfiles;
+	std::vector<HHEntry* > & m_dbfiles;
 	// map-key: irep of hits (1,2,...); vector: contains hits respectively to their irep value
 	std::map<short int, std::vector<Hit *> > & m_alignments;
 	HMMSimd & m_q_simd;				// Four equal query HMMs

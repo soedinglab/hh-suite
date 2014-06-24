@@ -101,19 +101,19 @@ public:
     void writeScoresFile(char* scoresFile);
     void writePairwiseAlisFile(char* pairwieseAlisFile, char outformat);
     void writeAlitabFile(char* alitabFile);
-    void writeReducedHHRFile(char* reduceHHRFile);
+    void writeOptimizedHHRFile(char* reduceHHRFile);
     void writePsiFile(char* psiFile);
     void writeHMMFile(char* HMMFile);
     void writeA3MFile(char* A3MFile);
     void writeMatricesFile(char* matricesOutputFileName);
 
     //output writer for mpi version
-    std::map<int, Alignment>& getAlis();
+    std::map<int, Alignment*>& getAlis();
     static void writeHHRFile(HHblits& hhblits, std::stringstream& out);
     static void writeScoresFile(HHblits& hhblits, std::stringstream& out);
     static void writePairwiseAlisFile(HHblits& hhblits, std::stringstream& out);
     static void writeAlitabFile(HHblits& hhblits, std::stringstream& out);
-    static void writeReducedHHRFile(HHblits& hhblits, std::stringstream& out);
+    static void writeOptimizedHHRFile(HHblits& hhblits, std::stringstream& out);
     static void writePsiFile(HHblits& hhblits, std::stringstream& out);
     static void writeHMMFile(HHblits& hhblits, std::stringstream& out);
     static void writeA3MFile(HHblits& hhblits, std::stringstream& out);
@@ -168,18 +168,17 @@ protected:
 	PosteriorMatrix* posteriorMatrices[MAXBINS];
 
 	HitList hitlist; // list of hits with one Hit object for each pairwise comparison done
-	HitList reducedHitlist;
-	std::map<int, Alignment> alis;
+	HitList optimized_hitlist;
+	std::map<int, Alignment*> alis;
 
-	void perform_realign(HMMSimd& q_vec, std::vector<HHDatabaseEntry*>& hits_to_realign, const int premerge, Hash<char>* premerged_hits);
+	void perform_realign(HMMSimd& q_vec, std::vector<HHEntry*>& hits_to_realign, const int premerge, Hash<char>* premerged_hits);
 	void mergeHitsToQuery(Hash<Hit>* previous_hits, Hash<char>* premerged_hits, int& seqs_found, int& cluster_found);
 	void add_hits_to_hitlist(std::vector<Hit>& hits, HitList& hitlist);
+	void optimizeQSC(HitList& input_list, HMMSimd& q_vec, char query_input_format, HitList& output_list);
 
 private:
 	static void help(Parameters& par, char all = 0);
 	static void ProcessArguments(int argc, char** argv, Parameters& par);
-
-	void getTemplateA3M(HHblitsDatabase* db, char* entry_name, Alignment& tali);
 
 	void RescoreWithViterbiKeepAlignment(HMMSimd& q_vec, Hash<Hit>* previous_hits);
 

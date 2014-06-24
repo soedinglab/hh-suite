@@ -765,6 +765,7 @@ void HHsearch::run(FILE* query_fh, char* query_path) {
 	PrepareQueryHMM(par, input_format, q, pc_hhm_context_engine,
 			pc_hhm_context_mode, pb, R);
     q_vec.MapOneHMM(q);
+    *q_tmp = *q;
 
 	// Reset lamda?
 	//TODO
@@ -779,7 +780,7 @@ void HHsearch::run(FILE* query_fh, char* query_path) {
 
 	// Search databases
 
-	std::vector<HHDatabaseEntry*> new_entries;
+	std::vector<HHEntry*> new_entries;
 	if (!par.prefilter) {
 		for (size_t i = 0; i < dbs.size(); i++) {
 			dbs[i]->initNoPrefilter(new_entries);

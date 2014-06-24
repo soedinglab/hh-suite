@@ -89,7 +89,7 @@ int main(int argc, char **argv) {
   hhblits.writeScoresFile(par.scorefile);
   hhblits.writePairwiseAlisFile(par.pairwisealisfile, par.outformat);
   hhblits.writeAlitabFile(par.alitabfile);
-  hhblits.writeReducedHHRFile(par.reduced_outfile);
+  hhblits.writeOptimizedHHRFile(par.opt_outfile);
   hhblits.writePsiFile(par.psifile);
   hhblits.writeHMMFile(par.hhmfile);
   hhblits.writeA3MFile(par.alnfile);

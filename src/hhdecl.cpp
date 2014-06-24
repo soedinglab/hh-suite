@@ -66,7 +66,7 @@ void Parameters::SetDefaults() {
 	v = LogLevel::INFO;
 
 	maxcol = 32765; // max number of columns in sequence/MSA input files; must be <= LINELEN and >= maxres
-	maxres = 10000;           // max number of states in HMM; must be <= LINELEN
+	maxres = 20000;           // max number of states in HMM; must be <= LINELEN
 	maxnumdb = 20000;          // max number of hits allowed past prefilter
 	maxnumdb_no_prefilter = 20000;    // max number of hits without prefiltering
 
@@ -215,7 +215,7 @@ void Parameters::SetDefaults() {
 
 	strcpy(infile, ""); // was reverted back from 'strcpy(infile,"stdin");' (to show help list when no options are given)
 	strcpy(outfile, "");
-	strcpy(reduced_outfile, "");
+	strcpy(opt_outfile, "");
 	strcpy(matrices_output_file, "");
 	strcpy(pairwisealisfile, "");
 	strcpy(scorefile, "");

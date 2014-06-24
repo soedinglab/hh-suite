@@ -5,8 +5,8 @@
  *      Author: meiermark
  */
 
-#ifndef HHALIGN_H_
-#define HHALIGN_H_
+#ifndef HHALIGN_ORI_H_
+#define HHALIGN_ORI_H_
 
 #include <iostream>   // cin, cout, cerr
 #include <fstream>    // ofstream, ifstream
@@ -56,21 +56,20 @@ using std::ofstream;
 
 #include "hhblits.h"
 
-class HHalign : public HHblits {
+class HHalign_mult : public HHblits {
   public:
-    HHalign(Parameters& par, std::vector<HHblitsDatabase*>& databases);
-    virtual ~HHalign();
+    HHalign_mult(Parameters& par, std::vector<HHblitsDatabase*>& databases);
+    virtual ~HHalign_mult();
     void run(FILE* query_fh, char* query_path, std::vector<std::string>& templates);
     static void ProcessAllArguments(int argc, char** argv, Parameters& par);
 
-    static void writeHHRFile(HHalign& hhalign, std::stringstream& out);
+    static void writeHHRFile(HHalign_mult& hhalign, std::stringstream& out);
 
   private:
     static void help(Parameters& par, char all=0);
     static void ProcessArguments(int argc, char** argv, Parameters& par);
-    void optimizeQSC(HitList& input_list, HMMSimd& q_vec, char query_input_format, HitList& output_list);
 };
 
 
 
-#endif /* HHALIGN_H_ */
+#endif /* HHALIGN_ORI_H_ */

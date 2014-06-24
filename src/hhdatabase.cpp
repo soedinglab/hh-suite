@@ -23,11 +23,7 @@
 #include "util-inl.h"
 
 FFindexDatabase::FFindexDatabase(char* data_filename, char* index_filename,
-    int superId, bool isCompressed) {
-  static int runaway;
-  this->id = runaway++;
-
-  this->superId = superId;
+    bool isCompressed) {
 
   this->isCompressed = isCompressed;
 
@@ -83,29 +79,7 @@ void HHDatabase::buildDatabaseName(const char* base, const char* extension,
   strcat(databaseName, suffix);
 }
 
-HHsearchDatabase::HHsearchDatabase(char* base) {
-  char index_filename[NAMELEN];
-  char data_filename[NAMELEN];
-
-  basename = new char[strlen(base) + 1];
-  strcpy(basename, base);
-
-  buildDatabaseName(base, "", ".ffdata", data_filename);
-  buildDatabaseName(base, "", ".ffindex", index_filename);
-
-  //TODO:
-  database = new FFindexDatabase(data_filename, index_filename, 0, false);
-}
-
-HHsearchDatabase::~HHsearchDatabase() {
-  delete[] basename;
-  delete database;
-}
-
 HHblitsDatabase::HHblitsDatabase(const char* base) {
-  static int runaway;
-  id = runaway++;
-
   basename = new char[strlen(base) + 1];
   strcpy(basename, base);
 
@@ -116,7 +90,7 @@ HHblitsDatabase::HHblitsDatabase(const char* base) {
   buildDatabaseName(base, "cs219", ".ffindex", cs219_index_filename);
 
   cs219_database = new FFindexDatabase(cs219_data_filename,
-      cs219_index_filename, id, use_compressed);
+      cs219_index_filename, use_compressed);
 
   if (!checkAndBuildCompressedDatabase(base)) {
     char a3m_index_filename[NAMELEN];
@@ -131,10 +105,8 @@ HHblitsDatabase::HHblitsDatabase(const char* base) {
     buildDatabaseName(base, "hhm", ".ffdata", hhm_data_filename);
     buildDatabaseName(base, "hhm", ".ffindex", hhm_index_filename);
 
-    a3m_database = new FFindexDatabase(a3m_data_filename, a3m_index_filename,
-        id, use_compressed);
-    hhm_database = new FFindexDatabase(hhm_data_filename, hhm_index_filename,
-        id, use_compressed);
+    a3m_database = new FFindexDatabase(a3m_data_filename, a3m_index_filename, use_compressed);
+    hhm_database = new FFindexDatabase(hhm_data_filename, hhm_index_filename, use_compressed);
   }
 
   prefilter = NULL;
@@ -164,19 +136,19 @@ void HHblitsDatabase::initPrefilter(const char* cs_library) {
 }
 
 void HHblitsDatabase::initNoPrefilter(
-    std::vector<HHDatabaseEntry*>& new_entries) {
+    std::vector<HHEntry*>& new_entries) {
   std::vector<std::pair<int, std::string>> new_entry_names;
   hh::Prefilter::init_no_prefiltering(cs219_database, new_entry_names);
 
   getEntriesFromNames(new_entry_names, new_entries);
 }
 
-void HHblitsDatabase::initSelected(
-    std::vector<std::string>& selected_templates,
-    std::vector<HHDatabaseEntry*>& new_entries) {
+void HHblitsDatabase::initSelected(std::vector<std::string>& selected_templates,
+    std::vector<HHEntry*>& new_entries) {
 
   std::vector<std::pair<int, std::string>> new_entry_names;
-  hh::Prefilter::init_selected(cs219_database, selected_templates, new_entry_names);
+  hh::Prefilter::init_selected(cs219_database, selected_templates,
+      new_entry_names);
 
   getEntriesFromNames(new_entry_names, new_entries);
 }
@@ -187,8 +159,8 @@ void HHblitsDatabase::prefilter_db(HMM* q_tmp, Hash<Hit>* previous_hits,
     const int prefilter_bit_factor, const double prefilter_evalue_thresh,
     const double prefilter_evalue_coarse_thresh,
     const int preprefilter_smax_thresh, const int min_prefilter_hits,
-    const int maxnumbdb, const float R[20][20], std::vector<HHDatabaseEntry*>& new_entries,
-    std::vector<HHDatabaseEntry*>& old_entries) {
+    const int maxnumbdb, const float R[20][20], std::vector<HHEntry*>& new_entries,
+    std::vector<HHEntry*>& old_entries) {
 
   std::vector<std::pair<int, std::string>> prefiltered_new_entry_names;
   std::vector<std::pair<int, std::string>> prefiltered_old_entry_names;
@@ -203,27 +175,27 @@ void HHblitsDatabase::prefilter_db(HMM* q_tmp, Hash<Hit>* previous_hits,
   getEntriesFromNames(prefiltered_old_entry_names, old_entries);
 }
 
-void HHblitsDatabase::getEntriesFromNames(std::vector<std::pair<int, std::string>>& hits,
-    std::vector<HHDatabaseEntry*>& entries) {
+void HHblitsDatabase::getEntriesFromNames(
+    std::vector<std::pair<int, std::string>>& hits,
+    std::vector<HHEntry*>& entries) {
   for (size_t i = 0; i < hits.size(); i++) {
     ffindex_entry_t* entry;
 
     if (use_compressed) {
-      entry = ffindex_get_entry_by_name(ca3m_database->db_index, const_cast<char*>(hits[i].second.c_str()));
+      entry = ffindex_get_entry_by_name(ca3m_database->db_index,
+          const_cast<char*>(hits[i].second.c_str()));
       if (entry == NULL) {
         //TODO: error
-        HH_LOG(LogLevel::WARNING) << "warning: could not fetch entry from compressed a3m!"
+        HH_LOG(LogLevel::WARNING)
+            << "warning: could not fetch entry from compressed a3m!"
             << std::endl;
         HH_LOG(LogLevel::WARNING) << "\tentry: " << hits[i].second << std::endl;
-        HH_LOG(LogLevel::WARNING) << "\tdb: " << ca3m_database->data_filename << std::endl;
+        HH_LOG(LogLevel::WARNING) << "\tdb: " << ca3m_database->data_filename
+            << std::endl;
         continue;
       }
 
-      HHDatabaseEntry* hhentry = new HHDatabaseEntry();
-      hhentry->entry = entry;
-      hhentry->ffdatabase = ca3m_database;
-      hhentry->sequence_length = hits[i].first;
-
+      HHEntry* hhentry = new HHDatabaseEntry(hits[i].first, this, ca3m_database, entry);
       entries.push_back(hhentry);
     }
     else {
@@ -231,10 +203,7 @@ void HHblitsDatabase::getEntriesFromNames(std::vector<std::pair<int, std::string
           const_cast<char*>(hits[i].second.c_str()));
 
       if (entry != NULL) {
-        HHDatabaseEntry* hhentry = new HHDatabaseEntry();
-        hhentry->entry = entry;
-        hhentry->ffdatabase = hhm_database;
-        hhentry->sequence_length = hits[i].first;
+        HHEntry* hhentry = new HHDatabaseEntry(hits[i].first, this, hhm_database, entry);
         entries.push_back(hhentry);
         continue;
       }
@@ -243,18 +212,18 @@ void HHblitsDatabase::getEntriesFromNames(std::vector<std::pair<int, std::string
           const_cast<char*>(hits[i].second.c_str()));
 
       if (entry != NULL) {
-        HHDatabaseEntry* hhentry = new HHDatabaseEntry();
-        hhentry->entry = entry;
-        hhentry->ffdatabase = a3m_database;
-        hhentry->sequence_length = hits[i].first;
+        HHEntry* hhentry = new HHDatabaseEntry(hits[i].first, this, a3m_database, entry);
         entries.push_back(hhentry);
       }
       else {
         //TODO: error
-        HH_LOG(LogLevel::WARNING) << "warning: could not fetch entry from a3m or hhm!" << std::endl;
+        HH_LOG(LogLevel::WARNING)
+            << "warning: could not fetch entry from a3m or hhm!" << std::endl;
         HH_LOG(LogLevel::WARNING) << "\tentry: " << hits[i].second << std::endl;
-        HH_LOG(LogLevel::WARNING) << "\ta3m_db: " << a3m_database->data_filename << std::endl;
-        HH_LOG(LogLevel::WARNING) << "\thhm_db: " << hhm_database->data_filename << std::endl;
+        HH_LOG(LogLevel::WARNING) << "\ta3m_db: " << a3m_database->data_filename
+            << std::endl;
+        HH_LOG(LogLevel::WARNING) << "\thhm_db: " << hhm_database->data_filename
+            << std::endl;
         continue;
       }
     }
@@ -287,11 +256,11 @@ bool HHblitsDatabase::checkAndBuildCompressedDatabase(const char* base) {
     use_compressed = true;
 
     ca3m_database = new FFindexDatabase(ca3m_data_filename, ca3m_index_filename,
-        id, use_compressed);
+        use_compressed);
     sequence_database = new FFindexDatabase(sequence_data_filename,
-        sequence_index_filename, id, use_compressed);
+        sequence_index_filename, use_compressed);
     header_database = new FFindexDatabase(header_data_filename,
-        header_index_filename, id, use_compressed);
+        header_index_filename, use_compressed);
   }
   else {
     use_compressed = false;
@@ -300,123 +269,281 @@ bool HHblitsDatabase::checkAndBuildCompressedDatabase(const char* base) {
   return use_compressed;
 }
 
+HHEntry::HHEntry(int sequence_length) {
+  this->sequence_length = sequence_length;
+}
 
-void getTemplateHMM(Parameters& par, HHDatabaseEntry& entry, std::vector<HHblitsDatabase*>& dbs,
-    char use_global_weights, const float qsc, int& format, float* pb, const float S[20][20], const float Sim[20][20], HMM* t) {
-    if (entry.ffdatabase->isCompressed) {
-        Alignment tali;
+HHEntry::~HHEntry() {}
 
-        char* data = ffindex_get_data_by_entry(entry.ffdatabase->db_data,
-                entry.entry);
+HHDatabaseEntry::HHDatabaseEntry(int sequence_length,
+    HHblitsDatabase* hhdatabase, FFindexDatabase* ffdatabase,
+    ffindex_entry_t* entry) : HHEntry(sequence_length) {
+  this->hhdatabase = hhdatabase;
+  this->ffdatabase = ffdatabase;
+  this->entry = entry;
+}
 
-        if (data == NULL) {
-            std::cerr << "Could not fetch data for a3m " << entry.entry->name
-                    << "!" << std::endl;
-            exit(4);
-        }
+HHDatabaseEntry::~HHDatabaseEntry() {}
 
-        HHblitsDatabase* db = getHHblitsDatabase(entry, dbs);
-        if (db == NULL) {
-            //TODO throw error
-            std::cerr << "this should not happen!!!!" << std::endl;
-            exit(0);
-        }
+void HHDatabaseEntry::getTemplateHMM(Parameters& par, char use_global_weights,
+    const float qsc, int& format, float* pb, const float S[20][20],
+    const float Sim[20][20], HMM* t) {
+  if (ffdatabase->isCompressed) {
+    Alignment tali;
 
-        tali.ReadCompressed(entry.entry, data, db->sequence_database->db_index,
-                db->sequence_database->db_data, db->header_database->db_index,
-                db->header_database->db_data, par.mark, par.maxcol);
+    char* data = ffindex_get_data_by_entry(ffdatabase->db_data, entry);
 
-        tali.Compress(entry.entry->name, par.cons, par.maxres, par.maxcol,
-                par.M, par.Mgaps);
+    if (data == NULL) {
+      std::cerr << "Could not fetch data for a3m " << entry->name << "!"
+          << std::endl;
+      exit(4);
+    }
 
-        tali.N_filtered = tali.Filter(par.max_seqid_db, S, par.coverage_db,
-                par.qid_db, qsc, par.Ndiff_db);
-        t->name[0] = t->longname[0] = t->fam[0] = '\0';
-        tali.FrequenciesAndTransitions(t, use_global_weights, par.mark,
-                par.cons, par.showcons, par.maxres, pb, Sim);
+    tali.ReadCompressed(entry, data, hhdatabase->sequence_database->db_index,
+        hhdatabase->sequence_database->db_data,
+        hhdatabase->header_database->db_index,
+        hhdatabase->header_database->db_data, par.mark, par.maxcol);
+
+    tali.Compress(entry->name, par.cons, par.maxres, par.maxcol, par.M,
+        par.Mgaps);
+
+    tali.N_filtered = tali.Filter(par.max_seqid_db, S, par.coverage_db,
+        par.qid_db, qsc, par.Ndiff_db);
+    t->name[0] = t->longname[0] = t->fam[0] = '\0';
+    tali.FrequenciesAndTransitions(t, use_global_weights, par.mark, par.cons,
+        par.showcons, par.maxres, pb, Sim);
+
+    format = 0;
+  }
+  else {
+    FILE* dbf = ffindex_fopen_by_entry(ffdatabase->db_data, entry);
+    char* name = new char[strlen(entry->name)+1];
+    strcpy(name, entry->name);
+    HHEntry::getTemplateHMM(dbf, name, par, use_global_weights, qsc, format, pb, S, Sim, t);
+    fclose(dbf);
+  }
+}
+
+
+void HHDatabaseEntry::getTemplateA3M(Parameters& par, float* pb, const float S[20][20],
+    const float Sim[20][20], Alignment& tali) {
+  if (hhdatabase->use_compressed) {
+    ffindex_entry_t* entry = ffindex_get_entry_by_name(
+        hhdatabase->ca3m_database->db_index, this->entry->name);
+
+    if(entry == NULL) {
+      HH_LOG(LogLevel::ERROR) << "Could not fetch entry " << this->entry->name << " from compressed hhblits database!" << std::endl;
+      exit(1);
+    }
+
+    char* data = ffindex_get_data_by_entry(hhdatabase->ca3m_database->db_data,
+        entry);
+
+    if (data == NULL) {
+      std::cerr << "Could not fetch data for a3m " << entry->name << "!"
+          << std::endl;
+      exit(4);
+    }
+
+    tali.ReadCompressed(entry, data, hhdatabase->sequence_database->db_index,
+        hhdatabase->sequence_database->db_data,
+        hhdatabase->header_database->db_index,
+        hhdatabase->header_database->db_data, par.mark, par.maxcol);
+  }
+  else {
+    FILE* dbf = ffindex_fopen_by_name(hhdatabase->a3m_database->db_data,
+        hhdatabase->a3m_database->db_index, entry->name);
+
+    if (dbf == NULL) {
+      std::cerr << std::endl << "Error: opening A3M " << entry->name
+          << std::endl;
+      exit(4);
+    }
+
+    char line[LINELEN];
+    if (!fgetline(line, LINELEN, dbf)) {
+      std::cerr << "this should not happen!" << std::endl;
+      //TODO: throw error
+    }
+
+    while (strscn(line) == NULL)
+      fgetline(line, LINELEN, dbf); // skip lines that contain only white space
+
+    tali.Read(dbf, entry->name, par.mark, par.maxcol, par.nseqdis, line);
+    fclose(dbf);
+  }
+
+  tali.Compress(entry->name, par.cons, par.maxres, par.maxcol, par.M, par.Mgaps);
+}
+
+
+void HHEntry::getTemplateHMM(FILE* dbf, char* name, Parameters& par, char use_global_weights,
+    const float qsc, int& format, float* pb, const float S[20][20],
+    const float Sim[20][20], HMM* t) {
+    if (dbf != NULL) {
+      char line[LINELEN];
+      if (!fgetline(line, LINELEN, dbf)) {
+        std::cerr << "this should not happen!" << std::endl;
+        //TODO: throw error
+      }
+
+      while (strscn(line) == NULL)
+        fgetline(line, LINELEN, dbf); // skip lines that contain only white space
+
+      if (!strncmp(line, "HMMER3", 6))      // read HMMER3 format
+          {
+        format = 1;
+        t->ReadHMMer3(dbf, par.showcons, pb, name);
+        par.hmmer_used = true;
+      }
+      else if (!strncmp(line, "HMMER", 5))      // read HMMER format
+          {
+        format = 1;
+        t->ReadHMMer(dbf, par.showcons, pb, name);
+        par.hmmer_used = true;
+      }
+      else if (!strncmp(line, "HH", 2))    // read HHM format
+          {
+        char path[NAMELEN];
+        Pathname(path, name);
 
         format = 0;
-    } else {
-        FILE* dbf = ffindex_fopen_by_entry(entry.ffdatabase->db_data,
-                entry.entry);
+        t->Read(dbf, par.maxcol, par.nseqdis, pb, path);
+      }
+      //TODO: old hhm format discarded
+      // read a3m alignment
+      else if (line[0] == '#' || line[0] == '>') {
+        Alignment tali;
+        tali.Read(dbf, name, par.mark, par.maxcol, par.nseqdis, line);
+        tali.Compress(name, par.cons, par.maxres, par.maxcol, par.M,
+            par.Mgaps);
+        //              qali.FilterForDisplay(par.max_seqid,par.coverage,par.qid,par.qsc,par.nseqdis);
+        tali.N_filtered = tali.Filter(par.max_seqid_db, S, par.coverage_db,
+            par.qid_db, qsc, par.Ndiff_db);
+        t->name[0] = t->longname[0] = t->fam[0] = '\0';
+        tali.FrequenciesAndTransitions(t, use_global_weights, par.mark,
+            par.cons, par.showcons, par.maxres, pb, Sim);
+        format = 0;
+      }
+      else {
+        std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": "
+            << __func__ << ":" << std::endl;
+        std::cerr << "\tunrecognized HMM file format in \'" << name
+            << "\'. \n";
+        std::cerr << "Context:\n'" << line << "\n";
+        fgetline(line, LINELEN, dbf);
+        std::cerr << line << "\n";
+        fgetline(line, LINELEN, dbf);
+        std::cerr << line << "'\n";
+        exit(1);
+      }
 
-        if (dbf != NULL) {
-            char line[LINELEN];
-            if (!fgetline(line, LINELEN, dbf)) {
-                std::cerr << "this should not happen!" << std::endl;
-                //TODO: throw error
-            }
-
-            while (strscn(line) == NULL)
-                fgetline(line, LINELEN, dbf); // skip lines that contain only white space
-
-            if (!strncmp(line, "HMMER3", 6))      // read HMMER3 format
-                    {
-                format = 1;
-                t->ReadHMMer3(dbf, par.showcons, pb, entry.entry->name);
-                par.hmmer_used = true;
-            } else if (!strncmp(line, "HMMER", 5))      // read HMMER format
-                    {
-                format = 1;
-                t->ReadHMMer(dbf, par.showcons, pb, entry.entry->name);
-                par.hmmer_used = true;
-            } else if (!strncmp(line, "HH", 2))    // read HHM format
-                    {
-                char path[NAMELEN];
-                Pathname(path, entry.entry->name);
-
-                format = 0;
-                t->Read(dbf, par.maxcol, par.nseqdis, pb, path);
-
-            }
-            //TODO: old hhm format discarded
-            // read a3m alignment
-            else if (line[0] == '#' || line[0] == '>') {
-                Alignment tali;
-                tali.Read(dbf, entry.entry->name, par.mark, par.maxcol,
-                        par.nseqdis, line);
-                tali.Compress(entry.entry->name, par.cons, par.maxres,
-                        par.maxcol, par.M, par.Mgaps);
-                //              qali.FilterForDisplay(par.max_seqid,par.coverage,par.qid,par.qsc,par.nseqdis);
-                tali.N_filtered = tali.Filter(par.max_seqid_db, S,
-                        par.coverage_db, par.qid_db, qsc, par.Ndiff_db);
-                t->name[0] = t->longname[0] = t->fam[0] = '\0';
-                tali.FrequenciesAndTransitions(t, use_global_weights, par.mark,
-                        par.cons, par.showcons, par.maxres, pb, Sim);
-                format = 0;
-            } else {
-                std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": "
-                        << __func__ << ":" << std::endl;
-                std::cerr << "\tunrecognized HMM file format in \'"
-                        << entry.entry->name << "\'. \n";
-                std::cerr << "Context:\n'" << line << "\n";
-                fgetline(line, LINELEN, dbf);
-                std::cerr << line << "\n";
-                fgetline(line, LINELEN, dbf);
-                std::cerr << line << "'\n";
-                exit(1);
-            }
-
-            fclose(dbf);
-        }
     }
 }
 
-HHblitsDatabase* getHHblitsDatabase(HHDatabaseEntry& entry, std::vector<HHblitsDatabase*>& dbs) {
-    for (std::vector<HHblitsDatabase*>::size_type i = 0; i < dbs.size(); i++) {
-        if (dbs[i]->id == entry.ffdatabase->superId) {
-            return dbs[i];
-        }
-    }
-
-    return NULL;
+char* HHDatabaseEntry::getName() {
+  return entry->name;
 }
 
-int getMaxTemplateLength(std::vector<HHDatabaseEntry*>& entries) {
+HHFileEntry::HHFileEntry(char* file) : HHEntry(MAXRES) {
+  this->file = new char[strlen(file) + 1];
+  strcpy(this->file, file);
+}
+
+HHFileEntry::~HHFileEntry() {
+  delete[] file;
+}
+
+void HHFileEntry::getTemplateHMM(Parameters& par, char use_global_weights,
+    const float qsc, int& format, float* pb, const float S[20][20],
+    const float Sim[20][20], HMM* t) {
+
+  FILE * dbf = fopen(file, "r");
+  HHEntry::getTemplateHMM(dbf, file, par, use_global_weights, qsc, format, pb, S, Sim, t);
+  fclose(dbf);
+}
+
+void HHFileEntry::getTemplateA3M(Parameters& par, float* pb, const float S[20][20],
+    const float Sim[20][20], Alignment& tali) {
+
+  char line[LINELEN];
+  HMM* t = new HMM();
+
+  FILE* inf = fopen(file, "r");
+
+  if (!fgetline(line, LINELEN, inf)) {
+    HH_LOG(LogLevel::ERROR) << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+    HH_LOG(LogLevel::ERROR) << "\t" << file << " is empty!\n";
+    exit(4);
+  }
+
+  while (strscn(line) == NULL)
+    fgetline(line, LINELEN, inf); // skip lines that contain only white space
+
+  // Is infile a HMMER file?
+  if (!strncmp(line, "HMMER", 5)) {
+    // Uncomment this line to allow HMMER2/HMMER3 models as queries:
+    HH_LOG(LogLevel::ERROR) << "Error: Use of HMMER format as input will result in severe loss of sensitivity!\n";
+  }
+  // ... or is it an hhm file?
+  else if (!strncmp(line, "NAME", 4) || !strncmp(line, "HH", 2)) {
+    char path[NAMELEN];
+    Pathname(path, file);
+
+    HH_LOG(LogLevel::INFO) << "Query file is in HHM format\n";
+
+    // Rewind to beginning of line and read query hhm file
+    rewind(inf);
+    t->Read(inf, par.maxcol, par.nseqdis, pb, path);
+
+    Alignment ali_tmp;
+    ali_tmp.GetSeqsFromHMM(t);
+    ali_tmp.Compress(file, par.cons, par.maxres, par.maxcol, par.M, par.Mgaps);
+    tali = ali_tmp;
+  }
+  // ... or is it an alignment file
+  else if (line[0] == '#' || line[0] == '>') {
+    if (par.calibrate) {
+      HH_LOG(LogLevel::ERROR) << "Error in " << __FILE__ << ":" << __LINE__ << ": "
+          << __func__ << ":" << std::endl;
+      HH_LOG(LogLevel::ERROR) << "\tonly HHM files can be calibrated.\n";
+      HH_LOG(LogLevel::ERROR) << "\tBuild an HHM file from your alignment with hhmake and rerun with the hhm file" << std::endl;
+      exit(1);
+    }
+
+    Alignment ali_tmp;
+
+    // Read alignment from infile into matrix X[k][l] as ASCII (and supply first line as extra argument)
+    ali_tmp.Read(inf, file, par.mark, par.maxcol, par.nseqdis, line);
+
+    // Convert ASCII to int (0-20),throw out all insert states, record their number in I[k][i]
+    // and store marked sequences in name[k] and seq[k]
+    ali_tmp.Compress(file, par.cons, par.maxres, par.maxcol, par.M, par.Mgaps);
+
+    tali = ali_tmp;
+  }
+  else {
+    HH_LOG(LogLevel::ERROR) << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+    HH_LOG(LogLevel::ERROR) << "\tunrecognized input file format in \'" << file << "\'\n";
+    HH_LOG(LogLevel::ERROR) << "\tline = " << line << "\n";
+    exit(1);
+  }
+
+  fclose(inf);
+
+  delete t;
+}
+
+char* HHFileEntry::getName() {
+  return file;
+}
+
+int getMaxTemplateLength(std::vector<HHEntry*>& entries) {
   int max_template_length = 0;
 
-  for(size_t i = 0; i < entries.size(); i++) {
-    max_template_length = std::max(max_template_length, entries[i]->sequence_length);
+  for (size_t i = 0; i < entries.size(); i++) {
+    max_template_length = std::max(max_template_length,
+        entries[i]->sequence_length);
   }
 
   return max_template_length;

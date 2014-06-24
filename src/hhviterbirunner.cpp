@@ -73,7 +73,7 @@ void ViterbiConsumerThread::align(int maxres) {
 
 
 std::vector<Hit> ViterbiRunner::alignment(Parameters& par, HMMSimd * q_simd,
-    std::vector<HHDatabaseEntry*> dbfiles, const float qsc, float* pb, const float S[20][20],
+    std::vector<HHEntry*> dbfiles, const float qsc, float* pb, const float S[20][20],
     const float Sim[20][20], const float R[20][20]) {
 
     HMM * q = q_simd->GetHMM(0);
@@ -90,7 +90,7 @@ std::vector<Hit> ViterbiRunner::alignment(Parameters& par, HMMSimd * q_simd,
     }
 
     std::vector<Hit> ret_hits;
-    std::vector<HHDatabaseEntry*> dbfiles_to_align;
+    std::vector<HHEntry*> dbfiles_to_align;
     std::map<std::string, std::vector<Viterbi::BacktraceResult> > excludeAlignments;
     // For all the databases comming through prefilter
     std::copy(dbfiles.begin(), dbfiles.end(), std::back_inserter(dbfiles_to_align));
@@ -127,11 +127,12 @@ std::vector<Hit> ViterbiRunner::alignment(Parameters& par, HMMSimd * q_simd,
                                       HMMSimd::VEC_SIZE);
                 
                 for (int i = 0; i < maxResElem; i++) {
-                    HHDatabaseEntry* entry = dbfiles_to_align.at(idb + i);
+                    HHEntry* entry = dbfiles_to_align.at(idb + i);
                     
                     int format_tmp = 0;
                     char wg = 1;
-                    getTemplateHMM(par, *entry, databases, wg, qsc, format_tmp, pb, S, Sim, &t_hmm[current_t_index + i]);
+
+                    entry->getTemplateHMM(par, wg, qsc, format_tmp, pb, S, Sim, &t_hmm[current_t_index + i]);
                     t_hmm[current_t_index + i].entry = entry;
                     
                     PrepareTemplateHMM(par, q, &t_hmm[current_t_index + i], format_tmp, pb, R);
@@ -219,7 +220,7 @@ float ViterbiRunner::calculateEarlyStop(Parameters& par, HMM * q, std::vector<Hi
 }
 
 void ViterbiRunner::merge_thread_results(std::vector<Hit> &all_hits,
-                                         std::vector<HHDatabaseEntry*> &dbfiles_to_align,
+                                         std::vector<HHEntry*> &dbfiles_to_align,
                                          std::map<std::string, std::vector<Viterbi::BacktraceResult> > &excludeAlignments,
                                          std::vector<ViterbiConsumerThread *> &threads, int alignment) {
     for (unsigned int thread = 0; thread < threads.size(); thread++) {
@@ -235,7 +236,7 @@ void ViterbiRunner::merge_thread_results(std::vector<Hit> &all_hits,
                 backtraceResult.i_steps = current_hit.i;
                 backtraceResult.j_steps = current_hit.j;
                 backtraceResult.count = current_hit.nsteps;
-                excludeAlignments[std::string(current_hit.entry->entry->name)].push_back(
+                excludeAlignments[std::string(current_hit.entry->getName())].push_back(
                                                                                          backtraceResult);
             }
         }
@@ -248,8 +249,8 @@ void ViterbiRunner::exclude_alignments(int maxResElem, HMMSimd* q_simd,
                                        ViterbiMatrix* viterbiMatrix) {
     for (int elem = 0; elem < maxResElem; elem++) {
         HMM * curr_t_hmm = t_hmm_simd->GetHMM(elem);
-        if (excludeAlignments[std::string(curr_t_hmm->entry->entry->name)].size() > 0) {
-            std::vector<Viterbi::BacktraceResult> to_exclude = excludeAlignments[std::string(curr_t_hmm->entry->entry->name)];
+        if (excludeAlignments[std::string(curr_t_hmm->entry->getName())].size() > 0) {
+            std::vector<Viterbi::BacktraceResult> to_exclude = excludeAlignments[std::string(curr_t_hmm->entry->getName())];
             for (unsigned int i = 0; i < to_exclude.size(); i++) {
                 Viterbi::BacktraceResult backtraceResult = to_exclude[i];
                 Viterbi::ExcludeAlignment(viterbiMatrix, q_simd, t_hmm_simd, elem,

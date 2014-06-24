@@ -54,7 +54,7 @@ class Hit
   char fold[IDLEN];     // fold ID (derived from name)
   char cl[IDLEN];       // class ID (derived from name)
 
-  HHDatabaseEntry* entry;
+  HHEntry* entry;
   
   float* forward_profile;
   float* backward_profile;

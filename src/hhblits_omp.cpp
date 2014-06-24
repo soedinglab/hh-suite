@@ -141,7 +141,7 @@ int main(int argc, char **argv) {
   makeOutputFFIndex(par.scorefile, &HHblits::writeScoresFile, outputDatabases);
   makeOutputFFIndex(par.pairwisealisfile, &HHblits::writePairwiseAlisFile, outputDatabases);
   makeOutputFFIndex(par.alitabfile, &HHblits::writeAlitabFile, outputDatabases);
-  makeOutputFFIndex(par.reduced_outfile, &HHblits::writeReducedHHRFile, outputDatabases);
+  makeOutputFFIndex(par.opt_outfile, &HHblits::writeOptimizedHHRFile, outputDatabases);
   makeOutputFFIndex(par.psifile, &HHblits::writePsiFile, outputDatabases);
   makeOutputFFIndex(par.hhmfile, &HHblits::writeHMMFile, outputDatabases);
   makeOutputFFIndex(par.alnfile, &HHblits::writeA3MFile, outputDatabases);
