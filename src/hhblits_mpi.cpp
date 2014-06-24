@@ -48,9 +48,19 @@ struct OutputFFIndex {
       FILE *data_file = NULL, *index_file = NULL;
       size_t offset = 0;
 
-      char fh_mode[] = "w";
-      ffindex_index_open(data_filename, index_filename, fh_mode, &data_file, &index_file, &offset);
-      //TODO: check error
+      data_file  = fopen(data_filename, "w");
+      if( data_file == NULL) {
+        HH_LOG(LogLevel::ERROR) << "Could not open " << data_filename << std::endl;
+        exit(1);
+      }
+
+      index_file = fopen(index_filename, "w");
+      if(index_file == NULL) {
+        HH_LOG(LogLevel::ERROR) << "Could not open " << index_filename << std::endl;
+        exit(1);
+      }
+
+      offset = 0;
 
       /* Append other ffindexes */
       for (int i = 0; i < mpi_num_procs; i++) {
@@ -76,8 +86,11 @@ struct OutputFFIndex {
         ffindex_index_t* index_to_add = ffindex_index_parse(index_file_to_add,
             0);
 
-        ffindex_insert_ffindex(data_file, index_file, &offset, data_to_add,
-            index_to_add);
+        for(size_t entry_i = 0; entry_i < index_to_add->n_entries; entry_i++)
+        {
+          ffindex_entry_t *entry = ffindex_get_entry_by_index(index_to_add, entry_i);
+          ffindex_insert_memory(data_file, index_file, &offset, ffindex_get_data_by_entry(data_to_add, entry), entry->length - 1, entry->name);
+        }
 
         fclose(data_file_to_add);
         fclose(index_file_to_add);
@@ -207,8 +220,8 @@ int main(int argc, char **argv) {
       &HHblits::writePairwiseAlisFile, outputDatabases);
   makeOutputFFIndex(par.alitabfile, mpi_rank, &HHblits::writeAlitabFile,
       outputDatabases);
-  makeOutputFFIndex(par.reduced_outfile, mpi_rank,
-      &HHblits::writeReducedHHRFile, outputDatabases);
+  makeOutputFFIndex(par.opt_outfile, mpi_rank,
+      &HHblits::writeOptimizedHHRFile, outputDatabases);
   makeOutputFFIndex(par.psifile, mpi_rank, &HHblits::writePsiFile,
       outputDatabases);
   makeOutputFFIndex(par.hhmfile, mpi_rank, &HHblits::writeHMMFile,
