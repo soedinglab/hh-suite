@@ -19,15 +19,13 @@ void PosteriorDecoder::writeProfilesToHits(HMM & q, HMM & t, PosteriorMatrix & p
 	}
 
 	hit.backward_profile = new float[q.L + 1];
-	hit.forward_profile = new float[q.L + 1];
+	hit.forward_profile  = new float[q.L + 1];
 
-	float result[4];
 	for(int i = 1; i <= q.L; i++) {
-		simdf32_store(result, m_forward_profile[i]);
-		hit.forward_profile[i] = result[elem];
-
-		simdf32_store(result, m_backward_profile[i]);
-		hit.backward_profile[i] = result[elem];
+        float * f_forward_profile = (float *) &m_forward_profile[i];
+		hit.forward_profile[i] = f_forward_profile[elem];
+        float * f_backward_profile = (float *) &m_backward_profile[i];
+		hit.backward_profile[i] = f_backward_profile[elem];
 
 //		std::cout << t.name << "_" << hit.irep << "\t" << hit.backward_profile[i] << "\t" << hit.forward_profile[i] << std::endl;
 	}

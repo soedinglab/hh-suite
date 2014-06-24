@@ -220,11 +220,11 @@ void Viterbi::AlignWithOutCellOff(HMMSimd* q, HMMSimd* t,ViterbiMatrix * viterbi
             simd_int res5 = simdf_f2icast(simdf32_eq(mi_m2m_d2m_vec, sMM_i_j)); // 0 0 0 0
             res5 = simdi_and(mi_vec, res5);
             
-            res1 = _mm_max_epu8(res1,res2);
-            res3 = _mm_max_epu8(res3,res4);
-            res5 = _mm_max_epu8(res1,res5);
-            res4 = _mm_max_epu8(res5,res3);
-            byte_result_vec =  _mm_max_epu8(res4, byte_result_vec);
+            res1 = simdui8_max(res1,res2);
+            res3 = simdui8_max(res3,res4);
+            res5 = simdui8_max(res1,res5);
+            res4 = simdui8_max(res5,res3);
+            byte_result_vec =  simdui8_max(res4, byte_result_vec);
             
             
             //for(int i = 0; i < 4; i++){
