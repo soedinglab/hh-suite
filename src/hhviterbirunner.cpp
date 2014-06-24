@@ -158,10 +158,12 @@ std::vector<Hit> ViterbiRunner::alignment(Parameters& par, HMMSimd * q_simd,
             {
                 float early_stopping_sum = calculateEarlyStop(par, q, ret_hits, seqJunkStart);
                 float filter_cutoff = seqJunkSize * par.filter_thresh;
-                HH_LOG(LogLevel::DEBUG) << "Stop after DB-HHM: " << (seqJunkStart + seqJunkSize) << " early_stop_sum: "
-                << early_stopping_sum << " filter cutoff: " << filter_cutoff << "\n";
-                if( early_stopping_sum < filter_cutoff)
+                
+                if( early_stopping_sum < filter_cutoff){
+                    HH_LOG(LogLevel::INFO) << "Stop after DB-HHM: " << (seqJunkStart + seqJunkSize) << " because early stop  "
+                    << early_stopping_sum << " < filter cutoff " << filter_cutoff << "\n";
                     break; // stop junk loop and just find alternative alignments
+                }
             }
         } // junk loop
         // earse first elements. These are the elements from alignment run before,
