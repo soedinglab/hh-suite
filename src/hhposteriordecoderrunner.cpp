@@ -63,7 +63,7 @@ void PosteriorDecoderRunner::executeComputation(Parameters& par, const float qsc
   //		The index counter of the vector therefore is the irep number
   for (std::map<short int, std::vector<Hit *> >::iterator outer_map =
       m_alignments.begin(); outer_map != m_alignments.end(); outer_map++) {
-    irep_counter++;
+    irep_counter = outer_map->first;
     // Vector contains hits
     std::vector<Hit *> & hits = outer_map->second;
     #pragma omp parallel for schedule(dynamic, 1)
@@ -134,20 +134,22 @@ void PosteriorDecoderRunner::executeComputation(Parameters& par, const float qsc
 void PosteriorDecoderRunner::mergeThreadResults(int irep_counter,
     std::map<std::string, std::vector<PosteriorDecoder::MACBacktraceResult *> *> & alignments_to_exclude) {
 
-  std::vector<Hit *> hits = m_alignments.at(irep_counter);
-  for (int hit_elem = 0; hit_elem < (int) hits.size(); hit_elem++) {
-    Hit & hit = *hits.at(hit_elem);
-    // Initialize MACBacktraceResult object
-    PosteriorDecoder::MACBacktraceResult * mac_btr =
-        new PosteriorDecoder::MACBacktraceResult;
-    mac_btr->alt_i = hit.alt_i;
-    mac_btr->alt_j = hit.alt_j;
+  if(m_alignments.find(irep_counter) != m_alignments.end()) {
+    std::vector<Hit *> hits = m_alignments.at(irep_counter);
+    for (int hit_elem = 0; hit_elem < (int) hits.size(); hit_elem++) {
+      Hit & hit = *hits.at(hit_elem);
+      // Initialize MACBacktraceResult object
+      PosteriorDecoder::MACBacktraceResult * mac_btr =
+          new PosteriorDecoder::MACBacktraceResult;
+      mac_btr->alt_i = hit.alt_i;
+      mac_btr->alt_j = hit.alt_j;
 
-    // Add mac and viterbi backtrace result to alignments_to_exclude
-    if(alignments_to_exclude.find(std::string(hit.file)) == alignments_to_exclude.end()) {
-      alignments_to_exclude[std::string(hit.file)] = new std::vector<PosteriorDecoder::MACBacktraceResult *>();
+      // Add mac and viterbi backtrace result to alignments_to_exclude
+      if(alignments_to_exclude.find(std::string(hit.file)) == alignments_to_exclude.end()) {
+        alignments_to_exclude[std::string(hit.file)] = new std::vector<PosteriorDecoder::MACBacktraceResult *>();
+      }
+      alignments_to_exclude[std::string(hit.file)]->push_back(mac_btr);
     }
-    alignments_to_exclude[std::string(hit.file)]->push_back(mac_btr);
   }
 }
 
