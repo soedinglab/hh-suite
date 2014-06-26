@@ -87,7 +87,8 @@ void PosteriorDecoderRunner::executeComputation(Parameters& par, const float qsc
         int format_tmp = 0;
         char wg = 0;
         hit_cur->entry->getTemplateHMM(par, wg, qsc, format_tmp, pb, S, Sim, &t_hmm[current_t_index + i]);
-
+#pragma omp critical // because alignments_to_exclude get changed
+{
         if (alignments_to_exclude.find(std::string(hit_cur->file)) != alignments_to_exclude.end()) {
           alignment_exclusions.push_back(alignments_to_exclude.at(std::string(hit_cur->file)));
         }
@@ -96,7 +97,7 @@ void PosteriorDecoderRunner::executeComputation(Parameters& par, const float qsc
           alignment_exclusions.push_back(vec);
           alignments_to_exclude[std::string(hit_cur->file)] = vec;
         }
-
+}
 
         PrepareTemplateHMM(par, q_hmm, &t_hmm[current_t_index + i], format_tmp, pb, R);
         templates_to_align.push_back(&t_hmm[current_t_index + i]);
@@ -104,7 +105,8 @@ void PosteriorDecoderRunner::executeComputation(Parameters& par, const float qsc
       t_hmm_simd[current_thread_id]->MapHMMVector(templates_to_align);
       // start next job
       threads->at(current_thread_id)->realign(m_q_simd, *t_hmm_simd[current_thread_id], hit_items,
-          *m_posterior_matrices[current_thread_id], *m_backtrace_matrix[current_thread_id], alignment_exclusions, par.min_overlap, par.shift, par.mact, par.corr);
+          *m_posterior_matrices[current_thread_id], *m_backtrace_matrix[current_thread_id], alignment_exclusions,
+                                              par.min_overlap, par.shift, par.mact, par.corr);
     } // idb loop
 
     mergeThreadResults(irep_counter, alignments_to_exclude);

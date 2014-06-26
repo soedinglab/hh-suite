@@ -486,10 +486,10 @@ namespace hh {
 #pragma omp parallel for schedule(static)
     // Loop over all database sequences
 //  for (int n = 0; n < count_dbs; n++) {
-    for (it = first_prefilter.begin(); it < first_prefilter.end(); it++) {
+    for (size_t i = 0; i < first_prefilter.size(); i++) {
       int thread_id = omp_get_thread_num();
 
-      int n = (*it).second;
+      int n = first_prefilter[i].second;
 
       // Perform search step
       int score = swStripedByte(qc, LQ, first[n], length[n], gap_init,
