@@ -48,7 +48,6 @@ PosteriorDecoder::PosteriorDecoder(int maxres, bool local, int q_length) :
 	m_q_length(q_length) {
 
 	m_jmin = 1;
-
 	m_mm_prev = malloc_simd_float(m_max_res * sizeof(simd_float));
 	m_gd_prev = malloc_simd_float(m_max_res * sizeof(simd_float));
 	m_dg_prev = malloc_simd_float(m_max_res * sizeof(simd_float));
@@ -66,12 +65,12 @@ PosteriorDecoder::PosteriorDecoder(int maxres, bool local, int q_length) :
 
 	p_last_col = malloc_simd_float(q_length * sizeof(simd_float));
 
-	m_p_min = (m_local ? simdf32_set(0.0f) : simdf32_set(-FLT_MAX));
+	//m_p_min = (m_local ? simdf32_set(0.0f) : simdf32_set(-FLT_MAX));
 	m_p_min_scalar = (m_local ? 0.0f : -FLT_MAX);
 
-	m_p_forward = simdf32_set(-FLT_MAX);
-	m_t_lengths_le = simdi32_set(0);
-	m_t_lengths_ge = simdi32_set(0);
+	m_p_forward = malloc_simd_float(VEC_SIZE * sizeof(float));
+	m_t_lengths_le =  malloc_simd_int(VEC_SIZE * sizeof(int)); 
+	m_t_lengths_ge =  malloc_simd_int(VEC_SIZE * sizeof(int));
 
 	m_backward_profile = malloc_simd_float((q_length + 1) * sizeof(simd_float));
 	m_forward_profile = malloc_simd_float((q_length + 1) * sizeof(simd_float));

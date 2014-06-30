@@ -95,9 +95,9 @@ private:
 
 	int m_jmin;
 
-	simd_float m_p_forward;
-	simd_int m_t_lengths_le;	// for comparison le
-	simd_int m_t_lengths_ge;	// for comparison ge
+	simd_float * m_p_forward;
+	simd_int * m_t_lengths_le;	// for comparison le
+	simd_int * m_t_lengths_ge;	// for comparison ge
 
 	std::vector<Hit *> m_temp_hit_vec;
 

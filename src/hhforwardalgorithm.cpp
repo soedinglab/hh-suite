@@ -66,9 +66,9 @@ void PosteriorDecoder::forwardAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm,
     
 	simd_float * p_mm_row_ptr = NULL;
     
-    
-	m_t_lengths_le = simdi32_add(*t_hmm.lengths, simdi32_set(1));	// add one because of le comparison
-	m_t_lengths_ge = simdi32_sub(*t_hmm.lengths, simdi32_set(1));	// add one because of ge comparison
+        simd_int * t_length = t_hmm.lengths; 
+	simdi_store(m_t_lengths_le, simdi32_add(*t_length, simdi32_set(1)));	// add one because of le comparison
+	simdi_store(m_t_lengths_ge, simdi32_sub(*t_length, simdi32_set(1)));	// add one because of ge comparison
     
 	const simd_float score_offset_shift = simdf32_set(shift);
     
@@ -102,7 +102,7 @@ void PosteriorDecoder::forwardAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm,
 	const simd_int co_vec = tmp_vec;
 #endif
     
-	m_p_forward = float_min_vec;
+        simdf32_store((float *)m_p_forward, float_min_vec);
     
 	// Store probabilities to array-vector variables respectively
 	simdf32_store((float *)&m_mm_prev[0], float_min_vec);
@@ -206,7 +206,7 @@ void PosteriorDecoder::forwardAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm,
 		simdf32_store((float *)&p_mm_row_ptr[j], mm_prev_j);
         
 		// Add probability to p_forward
-		m_p_forward = simd_flog2_sum_fpow2(m_p_forward, mm_prev_j);
+		simdf32_store((float *)m_p_forward, simd_flog2_sum_fpow2(*m_p_forward, mm_prev_j));
         
         //		if (eq) {
         //			float * mm = (float *)&mm_prev_j;
@@ -333,7 +333,7 @@ void PosteriorDecoder::forwardAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm,
         //		}
         
 		// Add probability to p_forward
-		m_p_forward = simd_flog2_sum_fpow2(m_p_forward, mm_curr_j);
+		simdf32_store((float *)m_p_forward, simd_flog2_sum_fpow2(*m_p_forward, mm_curr_j));
         
 		///////////////////////////////////////////////////////////////////////////
 		// Loop through template positions j
@@ -469,7 +469,7 @@ void PosteriorDecoder::forwardAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm,
 			simdf32_store((float *)&p_mm_row_ptr[j], mm_curr_j);
             
 			// Add probability to p_forward
-			m_p_forward = simd_flog2_sum_fpow2(m_p_forward, mm_curr_j);
+			simdf32_store((float *)m_p_forward, simd_flog2_sum_fpow2(*m_p_forward, mm_curr_j));
             
 			if (!m_local) {
 				setGlobalColumnPForward(p_last_col, j_vec, i, mm_curr_j);
@@ -498,13 +498,13 @@ void PosteriorDecoder::forwardAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm,
     
 	if (!m_local) {		// global alignment
 		// sum over last column
-		m_p_forward = simdf32_set(-FLT_MAX);
+		simdf32_store((float *)m_p_forward, simdf32_set(-FLT_MAX));
         
 		for (i = 1; i < q_hmm.L; i++) {
-			m_p_forward =  simd_flog2_sum_fpow2(
-                                                m_p_forward,
+			simdf32_store((float *)m_p_forward,  simd_flog2_sum_fpow2(
+                                                *m_p_forward,
                                                 p_last_col[i]
-                                                );
+                                                ));
 		}
         
 		// sum over last row
@@ -512,10 +512,10 @@ void PosteriorDecoder::forwardAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm,
 		const simd_float * p_mm_row_ptr = p_mm.getRow(q_hmm.L);
 		for (j = 1; j <= t_hmm.L; j++) {
 			j_vec = simdi32_set(j);
-			const simd_float mask_lt = (simd_float)simdi32_lt(j_vec, m_t_lengths_le);
-			values = simdf32_or(simdf32_andnot(mask_lt, m_p_forward),
+			const simd_float mask_lt = (simd_float)simdi32_lt(j_vec, *m_t_lengths_le);
+			values = simdf32_or(simdf32_andnot(mask_lt, *m_p_forward),
                                 simdf32_and(mask_lt, p_mm_row_ptr[j]));
-			m_p_forward = simd_flog2_sum_fpow2(m_p_forward, values);
+			simdf32_store((float *)m_p_forward, simd_flog2_sum_fpow2(*m_p_forward, values));
 		}
         
 	}
@@ -523,12 +523,12 @@ void PosteriorDecoder::forwardAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm,
 	for (i = 1; i <= q_hmm.L; i++) {
 		m_forward_profile[i] = simdf32_set(0);
 		for (j = 1; j <= t_hmm.L; j++) {
-			m_forward_profile[i] = simdf32_add(m_forward_profile[i], simdf32_fpow2(simdf32_sub(p_mm.getValue(i, j), m_p_forward)));
+			m_forward_profile[i] = simdf32_add(m_forward_profile[i], simdf32_fpow2(simdf32_sub(p_mm.getValue(i, j), *m_p_forward)));
 		}
 	}
     
 	for (int elem = 0; elem < (int)hit_vec.size(); elem++) {
-		hit_vec.at(elem)->Pforward = ((float *)&m_p_forward)[elem];
+		hit_vec.at(elem)->Pforward = ((float *)m_p_forward)[elem];
 	}
 
 	free(p_last_col);
@@ -536,7 +536,7 @@ void PosteriorDecoder::forwardAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm,
 
 void PosteriorDecoder::setGlobalColumnPForward(simd_float * column,	const simd_int & j_vec, const int i_count, const simd_float & values) {
 
-	const simd_float mask_lt = (simd_float)simdi32_lt(j_vec, m_t_lengths_le);
+	const simd_float mask_lt = (simd_float)simdi32_lt(j_vec, *m_t_lengths_le);
 	// andnot: 	to keep values that are already in column
 	// and:			to add the new values
 	simd_float col_i_vec = simdf32_load((float *)&column[i_count]);

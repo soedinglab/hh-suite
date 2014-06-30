@@ -23,7 +23,7 @@ void PosteriorDecoder::backwardAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm, std::
                                          ViterbiMatrix & viterbi_matrix, float shift) {
     
 	int i,j;      //query and template match state indices
-	m_t_lengths_le = simdi32_add(*t_hmm.lengths, simdi32_set(1));	// add one because of lt comparison
+	simdi_store(m_t_lengths_le, simdi32_add(*t_hmm.lengths, simdi32_set(1)));	// add one because of lt comparison
     
 	const unsigned int n_elem = hit_vec.size();
     
@@ -112,7 +112,7 @@ void PosteriorDecoder::backwardAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm, std::
 		// Only set 0.0f where j <= t.l respectively (otherwise -FLT_MAX)
 		mm_prev_j = simdf32_setzero();
 		// Set values to m_mm_prev as long as j < t.L or rather replace with -FLT_MAX, respectively
-		p_mm_i_j = simdf32_sub(p_mm_i_j, m_p_forward);
+		p_mm_i_j = simdf32_sub(p_mm_i_j, *m_p_forward);
         
 		// Cell of logic
 		// if (cell_off[i][j])
@@ -175,7 +175,7 @@ void PosteriorDecoder::backwardAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm, std::
 		mm_curr_j = simdf32_setzero();
         
 		p_mm_i_j = simdf32_load((float *)&p_mm_row_ptr[j]);
-		p_mm_i_j = simdf32_sub(p_mm_i_j, m_p_forward);
+		p_mm_i_j = simdf32_sub(p_mm_i_j, *m_p_forward);
 		// Cell of logic
 		// if (cell_off[i][j])
 		//shift   10000000100000001000000010000000 -> 01000000010000000100000001000000
@@ -217,7 +217,7 @@ void PosteriorDecoder::backwardAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm, std::
 			gd_curr_j_1 = simdf32_load((float *)&m_gd_curr[j+1]);
             
 			// If j >= t.L replace value by 0.0f otherwise keep the value, respectively
-			simd_float mask_gt = (simd_float)simdi32_gt(j_vec_prev, m_t_lengths_ge);
+			simd_float mask_gt = (simd_float)simdi32_gt(j_vec_prev, *m_t_lengths_ge);
 			mm_curr_j_1 = simdf32_andnot(mask_gt, mm_curr_j_1);
             
 			p_mm_i_j_1 = simdf32_load((float *)&p_mm_row_ptr[j+1]);
@@ -330,7 +330,7 @@ void PosteriorDecoder::backwardAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm, std::
 				gd_curr_j = simdf32_add(gd_curr_j, cell_off_float_min_vec);
                 
 				p_mm_i_j = simdf32_load((float *)&p_mm_row_ptr[j]);
-				p_mm_i_j = simdf32_sub(simdf32_add(p_mm_i_j, mm_curr_j), m_p_forward);
+				p_mm_i_j = simdf32_sub(simdf32_add(p_mm_i_j, mm_curr_j), *m_p_forward);
 				p_mm_i_j = simdf32_add(p_mm_i_j, cell_off_float_min_vec);
                 
 			} else {
@@ -358,7 +358,7 @@ void PosteriorDecoder::backwardAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm, std::
             //			}
             
 			simd_float actual_backward = simdf32_mul(Viterbi::ScalarProd20Vec((simd_float *) q_hmm.p[i],(simd_float *) t_hmm.p[j]),
-					simdf32_fpow2(simdf32_sub(simdf32_add(score_offset_shift, mm_curr_j), m_p_forward)));
+					simdf32_fpow2(simdf32_sub(simdf32_add(score_offset_shift, mm_curr_j), *m_p_forward)));
 			m_backward_profile[i] = simdf32_add(m_backward_profile[i], actual_backward);
 		}	// end for j
         

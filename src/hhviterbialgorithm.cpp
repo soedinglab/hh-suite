@@ -198,60 +198,39 @@ void Viterbi::AlignWithOutCellOff(HMMSimd* q, HMMSimd* t,ViterbiMatrix * viterbi
             //                 );
             // same as sMM_i_1_j_1 + q->tr[i-1][M2M] + t->tr[j-1][M2M]
             simd_float mm_m2m_m2m_vec = simdf32_add( simdf32_add(sMM_i_1_j_1, q_m2m), t_m2m);
+            // if mm > min { 2 }
+            res_gt_vec       = (simd_int)simdf32_gt(mm_m2m_m2m_vec, smin_vec);
+            byte_result_vec  = simdi_and(res_gt_vec, mm_vec);
+            sMM_i_j = simdf32_max(smin_vec, mm_m2m_m2m_vec);
+            
+            // same as sGD_i_1_j_1 + q->tr[i-1][M2M] + t->tr[j-1][D2M]
             simd_float gd_m2m_d2m_vec = simdf32_add( simdf32_add(sGD_i_1_j_1, q_m2m), t_d2m);
+            // if gd > max { 3 }
+            res_gt_vec       = (simd_int)simdf32_gt(gd_m2m_d2m_vec, sMM_i_j);
+            index_vec        = simdi_and( res_gt_vec, gd_vec);
+            byte_result_vec  = simdi_or(  index_vec,  byte_result_vec);
+            
+            sMM_i_j = simdf32_max(sMM_i_j, gd_m2m_d2m_vec);
+            
+            
+            // same as sIM_i_1_j_1 + q->tr[i-1][I2M] + t->tr[j-1][M2M]
             simd_float im_m2m_d2m_vec = simdf32_add( simdf32_add(sIM_i_1_j_1, q_i2m), t_m2m);
+            // if im > max { 4 }
+            MAX2(im_m2m_d2m_vec, sMM_i_j, im_vec,byte_result_vec);
+            sMM_i_j = simdf32_max(sMM_i_j, im_m2m_d2m_vec);
+            
+            // same as sDG_i_1_j_1 + q->tr[i-1][D2M] + t->tr[j-1][M2M]
             simd_float dg_m2m_d2m_vec = simdf32_add( simdf32_add(sDG_i_1_j_1, q_d2m), t_m2m);
+            // if dg > max { 5 }
+            MAX2(dg_m2m_d2m_vec, sMM_i_j, dg_vec,byte_result_vec);
+            sMM_i_j = simdf32_max(sMM_i_j, dg_m2m_d2m_vec);
+            
+            // same as sMI_i_1_j_1 + q->tr[i-1][M2M] + t->tr[j-1][I2M],
             simd_float mi_m2m_d2m_vec = simdf32_add( simdf32_add(sMI_i_1_j_1, q_m2m), t_i2m);
-
-            const simd_float max1 = simdf32_max(smin_vec, mm_m2m_m2m_vec);
-            const simd_float max2 = simdf32_max(gd_m2m_d2m_vec, im_m2m_d2m_vec);
-            const simd_float max3 = simdf32_max(dg_m2m_d2m_vec, mi_m2m_d2m_vec);
-            const simd_float max4 = simdf32_max(max1, max2); // smin mm gd im
-            sMM_i_j = simdf32_max(max4, max3);  // smin mm gd im dg mi
-
-            simd_int res1 = simdf_f2icast(simdf32_eq(mm_m2m_m2m_vec, sMM_i_j)); // 0 1 0 0
-            res1 = simdi_and(mm_vec, res1);
-            simd_int res3 = simdf_f2icast(simdf32_eq(im_m2m_d2m_vec, sMM_i_j)); // 0 0 1 0
-            res3 = simdi_and(im_vec, res3);
-            simd_int res2 = simdf_f2icast(simdf32_eq(gd_m2m_d2m_vec, sMM_i_j)); // 1 0 0 0
-            res2 = simdi_and(gd_vec, res2);
-            simd_int res4 = simdf_f2icast(simdf32_eq(dg_m2m_d2m_vec, sMM_i_j)); // 0 0 0 0
-            res4 = simdi_and(dg_vec, res4);
-            simd_int res5 = simdf_f2icast(simdf32_eq(mi_m2m_d2m_vec, sMM_i_j)); // 0 0 0 0
-            res5 = simdi_and(mi_vec, res5);
+            // if mi > max { 6 }
+            MAX2(mi_m2m_d2m_vec, sMM_i_j, mi_vec, byte_result_vec);
+            sMM_i_j = simdf32_max(sMM_i_j, mi_m2m_d2m_vec);
             
-            res1 = simdui8_max(res1,res2);
-            res3 = simdui8_max(res3,res4);
-            res5 = simdui8_max(res1,res5);
-            res4 = simdui8_max(res5,res3);
-            byte_result_vec =  simdui8_max(res4, byte_result_vec);
-            
-            
-            //for(int i = 0; i < 4; i++){
-            //    std::cout << ((float *) &sMM_i_j )[i] << " ";
-            //    std::cout << ((float *) &sMM_i_j_new)[i] << " ";
-            //}
-           // std::cout << std::endl;
-            
-//            for(int i = 0; i < 4; i++){
-//                if(((int *) &byte_result_vec )[i] != ((int *) &byte_result_vec_new)[i]){
-//                    std::cout << ((float *) &smin_vec )[i] << " ";
-//                    std::cout << ((float *) &mm_m2m_m2m_vec )[i] << " ";
-//                    std::cout << ((float *) &gd_m2m_d2m_vec )[i] << " ";
-//                    std::cout << ((float *) &im_m2m_d2m_vec )[i] << " ";
-//                    std::cout << ((float *) &dg_m2m_d2m_vec )[i] << " ";
-//                    std::cout << ((float *) &mi_m2m_d2m_vec )[i] << " ";
-//
-//                    
-//                    std::cout << ((float *) &sMM_i_j )[i] << " ";
-//                    std::cout << ((float *) &sMM_i_j_new)[i] << " ";
-//                    std::cout << ((int *) &byte_result_vec )[i] << " ";
-//                    std::cout << ((int *) &byte_result_vec_new)[i] << " ";
-//                    std::cout << std::endl;
-//
-//                }
-//            }
-         //   std::cout << std::endl;
             // TODO add secondary structure score
             // calculate amino acid profile-profile scores
             Si_vec = log2f4(ScalarProd20Vec((simd_float *) q->p[i],(simd_float *) t->p[j]));

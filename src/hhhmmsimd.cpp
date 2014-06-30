@@ -37,6 +37,9 @@ HMMSimd::HMMSimd(int maxres)
     this->seqarr = new HMM*[VEC_SIZE];
     this->L = 0;
     lengths = malloc_simd_int(VEC_SIZE * sizeof(int));
+    for(int i = 0; i < VEC_SIZE; i++){
+       ((int*)lengths)[i] = 0;
+    }
     this->maxres = maxres;
 }
 
@@ -70,7 +73,7 @@ HMM* HMMSimd::GetHMM(int elem){
 // Maps four HMMs to a HMM4 
 void HMMSimd::MapHMMVector(std::vector<HMM *> hmms){
     
-    if(hmms.size()>VEC_SIZE){
+    if(hmms.size() > VEC_SIZE){
         std::cerr<<"Error: More than expected HMMs should be mapped. Please report this bug to developers\n";
         exit(3);
     }
