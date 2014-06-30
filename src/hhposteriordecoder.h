@@ -84,7 +84,7 @@ private:
 
 //	PosteriorSharedVariables m_column_vars;
 
-	simd_float m_p_min;    // used to distinguish between SW and NW algorithms in maximization
+//	simd_float m_p_min;    // used to distinguish between SW and NW algorithms in maximization
 	float m_p_min_scalar;    // used to distinguish between SW and NW algorithms in maximization
 
 //	std::vector<Hit *> m_temp_hit_vec;	// temporary used hit objects for computation

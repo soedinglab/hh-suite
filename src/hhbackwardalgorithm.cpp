@@ -66,6 +66,7 @@ void PosteriorDecoder::backwardAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm, std::
     
 	simd_float p_mm_i_j = simdf32_set(-FLT_MAX);
 	simd_float p_mm_i_j_1 = simdf32_set(-FLT_MAX);
+    simd_float m_p_min = (m_local ? simdf32_set(0.0f) : simdf32_set(-FLT_MAX));
 
 	for(int i = 1; i <= q_hmm.L; i++) {
 		m_backward_profile[i] = simdf32_set(0);

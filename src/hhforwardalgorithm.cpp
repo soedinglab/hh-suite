@@ -60,7 +60,7 @@ void PosteriorDecoder::forwardAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm,
 	simd_float mi_curr_j = simdf32_set(-FLT_MAX);
 	simd_float gd_curr_j = simdf32_set(-FLT_MAX);
 	simd_float dg_curr_j = simdf32_set(-FLT_MAX);
-    
+    simd_float m_p_min = (m_local ? simdf32_set(0.0f) : simdf32_set(-FLT_MAX));
 	simd_float p_match;						// vector for storing emission probability
 	simd_float transition_prob;			// vector for transition probabilities
     
