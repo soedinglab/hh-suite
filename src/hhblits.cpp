@@ -2179,6 +2179,11 @@ void HHblits::run(FILE* query_fh, char* query_path) {
     }
 
     int max_template_length = getMaxTemplateLength(new_entries);
+    if(max_template_length > par.maxres){
+        HH_LOG(LogLevel::WARNING) << "database contains sequnces that exceeds maximum allowed size (maxres = "
+        << par.maxres << "). Maxres can be increased with parameter -maxres." <<std::endl;
+    }
+    max_template_length = std::min(max_template_length, par.maxres);
     for (int i = 0; i < par.threads; i++) {
       viterbiMatrices[i]->AllocateBacktraceMatrix(q->L, max_template_length);
     }
@@ -2369,6 +2374,9 @@ void HHblits::run(FILE* query_fh, char* query_path) {
         << "WARNING: Using HMMER files results in a drastically reduced sensitivity (>10%%).\n"
         << " We recommend to use HHMs build by hhmake." << std::endl;
   }
+    
+    
+
 
 //  if (*par.reduced_outfile) {
 //    float qscs[] = { -20, 0, 0.1, 0.2 };
