@@ -37,7 +37,7 @@ HMMSimd::HMMSimd(int maxres)
     this->seqarr = new HMM*[VEC_SIZE];
     this->L = 0;
     lengths = malloc_simd_int(VEC_SIZE * sizeof(int));
-    for(int i = 0; i < VEC_SIZE; i++){
+    for(unsigned int i = 0; i < VEC_SIZE; i++){
        ((int*)lengths)[i] = 0;
     }
     this->maxres = maxres;

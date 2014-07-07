@@ -41,10 +41,10 @@ typedef __m512d simd_double;
 #define simdf64_setzero(x)  _mm512_setzero_pd()
 #define simdf64_gt(x,y)     _mm512_cmpnle_pd_mask(x,y)
 #define simdf64_lt(x,y)     _mm512_cmplt_pd_mask(x,y)
-#define simdf64_or(x,y)       _mm512_or_si512(x,y)
-#define simdf64_and(x,y)      _mm512_and_si512 (x,y)
-#define simdf64_andnot(x,y)   _mm512_andnot_si512(x,y)
-#define simdf64_xor(x,y)      _mm512_xor_si512(x,y)
+#define simdf64_or(x,y)     _mm512_or_si512(x,y)
+#define simdf64_and(x,y)    _mm512_and_si512 (x,y)
+#define simdf64_andnot(x,y) _mm512_andnot_si512(x,y)
+#define simdf64_xor(x,y)    _mm512_xor_si512(x,y)
 #endif //SIMD_DOUBLE
 // float support
 #ifndef SIMD_FLOAT
@@ -65,13 +65,12 @@ typedef __m512  simd_float;
 #define simdf32_gt(x,y)     _mm512_cmpnle_ps_mask(x,y)
 #define simdf32_eq(x,y)     _mm512_cmpeq_ps_mask(x,y)
 #define simdf32_lt(x,y)     _mm512_cmplt_ps_mask(x,y)
-#define simdf32_or(x,y)       _mm512_or_si512(x,y)
-#define simdf32_and(x,y)      _mm512_and_si512(x,y)
-#define simdf32_andnot(x,y)   _mm512_andnot_si512(x,y)
-#define simdf32_xor(x,y)      _mm512_xor_si512(x,y)
+#define simdf32_or(x,y)     _mm512_or_si512(x,y)
+#define simdf32_and(x,y)    _mm512_and_si512(x,y)
+#define simdf32_andnot(x,y) _mm512_andnot_si512(x,y)
+#define simdf32_xor(x,y)    _mm512_xor_si512(x,y)
 #define simdf32_f2i(x) 	    _mm512_cvtps_epi32(x)  // convert s.p. float to integer
-#define simdf_f2icast(x)  _mm512_castps_si512 (x)
-
+#define simdf_f2icast(x)    _mm512_castps_si512 (x)
 #endif //SIMD_FLOAT
 // integer support 
 #ifndef SIMD_INT
@@ -92,7 +91,8 @@ typedef __m512i simd_int;
 #define simdi8_set(x)       _mm512_set1_epi8(x)
 #define simdi_setzero(x)    _mm512_setzero_si512()
 #define simdi32_gt(x,y)     _mm512_cmpgt_epi32(x,y)
-#define simdui8_eq(x,y)     NOT_YET_IMP()
+#define simdi8_gt(x,y)      NOT_YET_IMP()
+#define simdi8_eq(x,y)      NOT_YET_IMP()
 #define simdi32_lt(x,y)     _mm512_cmplt_epi32(x,y)
 #define simdi_or(x,y)       _mm512_or_si512(x,y)
 #define simdi_and(x,y)      _mm512_and_si512(x,y)
@@ -101,8 +101,8 @@ typedef __m512i simd_int;
 #define simdi8_shiftl(x,y)  NOT_YET_IMP()
 #define simdi8_shiftr(x,y)  NOT_YET_IMP()
 #define simdi8_movemask(x)  NOT_YET_IMP()
-#define simdi32_slli(x,y)	  _mm512_slli_epi32(x,y) // shift integers in a left by y
-#define simdi32_srli(x,y)	  _mm512_srli_epi32(x,y) // shift integers in a right by y
+#define simdi32_slli(x,y)	_mm512_slli_epi32(x,y) // shift integers in a left by y
+#define simdi32_srli(x,y)	_mm512_srli_epi32(x,y) // shift integers in a right by y
 #define simdi32_i2f(x) 	    _mm512_cvtepi32_ps(x)  // convert integer to s.p. float
 #define simdi_i2fcast(x)    _mm512_castsi512_ps(x)
 
@@ -138,7 +138,8 @@ typedef __m256i simd_int;
 #define simdi8_set(x)       _mm256_set1_epi8(x)
 #define simdi_setzero(x)    _mm256_setzero_si256()
 #define simdi32_gt(x,y)     _mm256_cmpgt_epi32(x,y)
-#define simdui8_eq(x,y)     _mm256_cmpeq_epi8(x,y)
+#define simdi8_gt(x,y)      _mm256_cmpgt_epi8(x,y)
+#define simdi8_eq(x,y)      _mm256_cmpeq_epi8(x,y)
 #define simdi32_lt(x,y)     _mm256_cmpgt_epi32(y,x) // inverse
 #define simdi_or(x,y)       _mm256_or_si256(x,y)
 #define simdi_and(x,y)      _mm256_and_si256(x,y)
@@ -197,12 +198,12 @@ typedef __m256 simd_float;
 #define simdf32_gt(x,y)     _mm256_cmp_ps(x,y,_CMP_GT_OS)
 #define simdf32_eq(x,y)     _mm256_cmp_ps(x,y,_CMP_EQ_OS)
 #define simdf32_lt(x,y)     _mm256_cmp_ps(x,y,_CMP_LT_OS)
-#define simdf32_or(x,y)       _mm256_or_ps(x,y)
-#define simdf32_and(x,y)      _mm256_and_ps(x,y)
-#define simdf32_andnot(x,y)   _mm256_andnot_ps(x,y)
-#define simdf32_xor(x,y)      _mm256_xor_ps(x,y)
+#define simdf32_or(x,y)     _mm256_or_ps(x,y)
+#define simdf32_and(x,y)    _mm256_and_ps(x,y)
+#define simdf32_andnot(x,y) _mm256_andnot_ps(x,y)
+#define simdf32_xor(x,y)    _mm256_xor_ps(x,y)
 #define simdf32_f2i(x) 	    _mm256_cvtps_epi32(x)  // convert s.p. float to integer
-#define simdf_f2icast(x)  _mm256_castps_si256(x) // compile time cast
+#define simdf_f2icast(x)    _mm256_castps_si256(x) // compile time cast
 #endif //SIMD_FLOAT
 #endif //AVX_SUPPORT
 
@@ -252,12 +253,12 @@ typedef __m128  simd_float;
 #define simdf32_gt(x,y)     _mm_cmpgt_ps(x,y)
 #define simdf32_eq(x,y)     _mm_cmpeq_ps(x,y)
 #define simdf32_lt(x,y)     _mm_cmplt_ps(x,y)
-#define simdf32_or(x,y)       _mm_or_ps(x,y)
-#define simdf32_and(x,y)      _mm_and_ps(x,y)
-#define simdf32_andnot(x,y)   _mm_andnot_ps(x,y)
-#define simdf32_xor(x,y)      _mm_xor_ps(x,y)
+#define simdf32_or(x,y)     _mm_or_ps(x,y)
+#define simdf32_and(x,y)    _mm_and_ps(x,y)
+#define simdf32_andnot(x,y) _mm_andnot_ps(x,y)
+#define simdf32_xor(x,y)    _mm_xor_ps(x,y)
 #define simdf32_f2i(x) 	    _mm_cvtps_epi32(x)  // convert s.p. float to integer
-#define simdf_f2icast(x)  _mm_castps_si128(x) // compile time cast
+#define simdf_f2icast(x)    _mm_castps_si128(x) // compile time cast
 #endif //SIMD_FLOAT
 // integer support 
 #ifndef SIMD_INT
@@ -278,7 +279,8 @@ typedef __m128i simd_int;
 #define simdi8_set(x)       _mm_set1_epi8(x)
 #define simdi_setzero(x)    _mm_setzero_si128()
 #define simdi32_gt(x,y)     _mm_cmpgt_epi32(x,y)
-#define simdui8_eq(x,y)     _mm_cmpeq_epi8(x,y)
+#define simdi8_gt(x,y)      _mm_cmpgt_epi8(x,y)
+#define simdi8_eq(x,y)      _mm_cmpeq_epi8(x,y)
 #define simdi32_lt(x,y)     _mm_cmplt_epi32(x,y)
 #define simdi_or(x,y)       _mm_or_si128(x,y)
 #define simdi_and(x,y)      _mm_and_si128(x,y)
@@ -287,8 +289,8 @@ typedef __m128i simd_int;
 #define simdi8_shiftl(x,y)  _mm_slli_si128(x,y)
 #define simdi8_shiftr(x,y)  _mm_srli_si128(x,y)
 #define simdi8_movemask(x)  _mm_movemask_epi8(x)
-#define simdi32_slli(x,y)	  _mm_slli_epi32(x,y) // shift integers in a left by y
-#define simdi32_srli(x,y)	  _mm_srli_epi32(x,y) // shift integers in a right by y
+#define simdi32_slli(x,y)	_mm_slli_epi32(x,y) // shift integers in a left by y
+#define simdi32_srli(x,y)	_mm_srli_epi32(x,y) // shift integers in a right by y
 #define simdi32_i2f(x) 	    _mm_cvtepi32_ps(x)  // convert integer to s.p. float
 #define simdi_i2fcast(x)    _mm_castsi128_ps(x)
 #endif //SIMD_INT

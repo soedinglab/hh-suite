@@ -17,6 +17,8 @@
 #include "hhhit.h"
 #include "util.h"
 #include "hhutil.h"
+#include "simd.h"
+
 #include "log.h"
 
 
@@ -133,6 +135,7 @@ private:
   int* last;              // last  residue in sequence k
   int* ksort;             // index for sorting sequences: X[ksort[k]]
   int FilterWithCoreHMM(char in[], float coresc, HMM* qcore, const float* pb);
+  char * initX(int len);
   
 };
 

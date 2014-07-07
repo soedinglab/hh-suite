@@ -141,7 +141,7 @@ namespace hh {
       vF = simdi8_shiftl(vF, 1);
       vTemp = simdui8_subs(vH, vGapOpen);
       vTemp = simdui8_subs(vF, vTemp);
-      vTemp = simdui8_eq(vTemp, vZero);
+      vTemp = simdi8_eq(vTemp, vZero);
       cmp = simdi8_movemask(vTemp);
 #ifdef AVX2_SUPPORT
       while (cmp != 0xffffffff)
@@ -174,7 +174,7 @@ namespace hh {
 
         vTemp = simdui8_subs(vH, vGapOpen);
         vTemp = simdui8_subs(vF, vTemp);
-        vTemp = simdui8_eq(vTemp, vZero);
+        vTemp = simdi8_eq(vTemp, vZero);
         cmp = simdi8_movemask(vTemp);
       }
     }
@@ -420,7 +420,7 @@ namespace hh {
     //W = (LQ+15) / 16;   // band width = hochgerundetes LQ/16
     int W = (q_tmp->L + (element_count - 1)) / element_count;
     // query profile (states + 1 because of ANY char)
-    unsigned char* qc = (unsigned char*)malloc_simd_int((NUMCOLSTATES+1)*(q_tmp->L+element_count)*sizeof(unsigned char));
+    unsigned char* qc = (unsigned char*)malloc_simd_int((NUMCOLSTATES+element_count)*(q_tmp->L)*sizeof(unsigned char));
     stripe_query_profile(q_tmp, prefilter_score_offset, prefilter_bit_factor, W, qc);
 
     simd_int ** workspace = new simd_int *[threads];

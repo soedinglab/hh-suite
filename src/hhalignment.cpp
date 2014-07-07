@@ -57,7 +57,7 @@ Alignment::~Alignment() {
 	}
 	delete[] sname;
 	delete[] seq;
-	delete[] X;
+	free(X);
 	delete[] I;
 	delete[] l;
 	delete[] keep;
@@ -68,6 +68,15 @@ Alignment::~Alignment() {
 	delete[] first;
 	delete[] last;
 	delete[] ksort;
+}
+
+
+char * Alignment::initX(int len){
+    int seqSimdLength = ( len ) / (VECSIZE_INT*4) + 2;
+    seqSimdLength *= (VECSIZE_INT*4);
+    char * ptr = (char *) malloc_simd_int( seqSimdLength );
+    std::fill(ptr, ptr+seqSimdLength, GAP);
+    return ptr;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -130,7 +139,7 @@ Alignment& Alignment::operator=(Alignment& ali) {
 		strcpy(seq[k], ali.seq[k]);
 	}
 	for (int k = 0; k < N_in; ++k) {
-		X[k] = new char[strlen(ali.seq[k]) + 2];
+		X[k] = initX(strlen(ali.seq[k]) + 2);
 		if (!X[k])
 			MemoryError("array for input sequences", __FILE__, __LINE__,
 					__func__);
@@ -230,7 +239,7 @@ void Alignment::Read(FILE* inf, char infile[], const char mark, const int maxcol
 				if (!seq[k])
 					MemoryError("array for input sequences", __FILE__, __LINE__,
 							__func__);
-				X[k] = new char[strlen(cur_seq) + 2];
+				X[k] = initX(strlen(cur_seq) + 2);
 				if (!X[k])
 					MemoryError("array for input sequences", __FILE__, __LINE__,
 							__func__);
@@ -484,7 +493,7 @@ void Alignment::Read(FILE* inf, char infile[], const char mark, const int maxcol
 		if (!seq[k])
 			MemoryError("array for input sequences", __FILE__, __LINE__,
 					__func__);
-		X[k] = new char[strlen(cur_seq) + 2];
+		X[k] = initX(strlen(cur_seq) + 2);
 		if (!X[k])
 			MemoryError("array for input sequences", __FILE__, __LINE__,
 					__func__);
@@ -632,7 +641,7 @@ void Alignment::ReadCompressed(ffindex_entry_t* entry, char* data,
 	n_display++;
 	kfirst = k;
 
-	X[k] = new char[consensus_length + 2];
+	X[k] = initX(consensus_length + 2);
 	I[k] = new short unsigned int[consensus_length + 2];
 
 	seq[k] = new char[consensus_length + 2];
@@ -755,7 +764,7 @@ void Alignment::ReadCompressed(ffindex_entry_t* entry, char* data,
 			keep[k] = 1;
 		}
 
-		X[k] = new char[alignment_index + 1];
+		X[k] = initX(alignment_index + 1);
 		I[k] = new short unsigned int[alignment_index + 1];
 
 		seq[k] = new char[alignment_index + 1];
@@ -1282,7 +1291,7 @@ void Alignment::GetSeqsFromHMM(HMM* q) {
 			MemoryError("array for input sequences", __FILE__, __LINE__,
 					__func__);
 		strcpy(seq[k], q->seq[qk]);
-		X[k] = new char[strlen(q->seq[qk]) + 1];
+		X[k] = initX(strlen(q->seq[qk]) + 1);
 		if (!X[k])
 			MemoryError("array for input sequences", __FILE__, __LINE__,
 					__func__);
@@ -1698,18 +1707,65 @@ int Alignment::Filter2(char keep[], int coverage, int qid, float qsc,
 				if (!inkk[jj])
 					continue;
 				j = ksort[jj];
+//                for (int i = first[k]; i <= last[k]; ++i) {
+//                    printf("%02d", (int)X[k][i]);
+//                }
+//                std::cout << std::endl;
+//                for (int i = first[j]; i <= last[j]; ++i) {
+//                    printf("%02d", (int)X[j][i]);
+//                }
+//                std::cout << std::endl;
+                
 				first_kj = imax(first[k], first[j]);
 				last_kj = imin(last[k], last[j]);
 				cov_kj = last_kj - first_kj + 1;
 				diff_suff = int(diff_min_frac * imin(nres[k], cov_kj) + 0.999); // nres[j]>nres[k] anyway because of sorting
 				diff = 0;
-				for (int i = first_kj; i <= last_kj; ++i) {
-					// enough different residues to accept? => break
-					if (X[k][i] >= NAA || X[j][i] >= NAA)
-						cov_kj--;
-					else if (X[k][i] != X[j][i] && ++diff >= diff_suff)
-						break; // accept (k,j)
-				}
+                const simd_int * XK = (simd_int *) X[k];
+                const simd_int * XJ = (simd_int *) X[j];
+                const int first_kj_simd = first_kj / (VECSIZE_INT * 4);
+                const int last_kj_simd = last_kj / (VECSIZE_INT * 4) + 1;
+                // coverage correction for simd
+                // because we do not always hit the right start with simd.
+                // This works because all sequence vector are initialized with GAPs so the sequnces is surrounded by GAPs
+                const int first_diff_simd_scalar = std::abs(first_kj_simd * (VECSIZE_INT * 4) - first_kj);
+                const int last_diff_simd_scalar  = std::abs(last_kj_simd  * (VECSIZE_INT * 4) - (last_kj + 1));
+
+                cov_kj += (first_diff_simd_scalar + last_diff_simd_scalar);
+
+                // _mm_set1_epi8 pseudo-instruction is slow!
+                const simd_int NAAx16 = simdi8_set(NAA-1);
+                for (int i = first_kj_simd; i < last_kj_simd && diff < diff_suff; ++i)
+                {
+                    // None SIMD function
+                    // enough different residues to accept? => break
+                    // if (X[k][i] >= NAA || X[j][i] >= NAA)
+                    //    cov_kj--;
+                    // else if (X[k][i] != X[j][i] && ++diff >= diff_suff)
+                    //    break; // accept (k,j)
+                    
+                    const simd_int NO_AA_K = simdi8_gt(XK[i], NAAx16 ); // pos without amino acid in seq k
+                    const simd_int NO_AA_J = simdi8_gt(XJ[i], NAAx16 ); // pos without amino acid in seq j
+
+                    
+                    // Compute 16 bits indicating positions with GAP, ANY or ENDGAP in seq k or j
+                    // int _mm_movemask_epi8(__m128i a) creates 16-bit mask from most significant bits of
+                    // the 16 signed or unsigned 8-bit integers in a and zero-extends the upper bits.
+                    int res = simdi8_movemask( simdi_or(NO_AA_K, NO_AA_J));
+//                    for (int u = 0; u < 32; ++u) {
+//                        printf("%02d:%02d ", (int) ((char*)&XK[i])[u], (int) ((char*)&XK[i])[u]);
+//                    }
+//                    std::cout << std::endl;
+                    cov_kj -= NumberOfSetBits (res); // subtract positions that should not contribute to coverage
+                    
+                    // Compute 16 bit mask that indicates positions where k and j have identical residues
+                    int c = simdi8_movemask( simdi8_eq (XK[i], XJ[i]) );
+                    
+                    // Count positions where  k and j have different amino acids, which is equal to 16 minus the
+                    //  number of positions for which either j and k are equal or which contain ANY, GAP, or ENDGAP
+                    diff += (VECSIZE_INT * 4) - NumberOfSetBits (c | res);
+                    
+                }
 //            // DEBUG
 //            printf("%20.20s with %20.20s:  diff=%i  diff_min_frac*cov_kj=%f  diff_suff=%i  nres=%i  cov_kj=%i\n",sname[k],sname[j],diff,diff_min_frac*cov_kj,diff_suff,nres[k],cov_kj);
 //            printf("%s\n%s\n\n",seq[k],seq[j]);
@@ -3214,7 +3270,7 @@ void Alignment::MergeMasterSlave(Hit& hit, Alignment& Tali, char* ta3mfile, cons
 			MemoryError("array for input sequences", __FILE__, __LINE__,
 					__func__);
 		strcpy(seq[N_in], cur_seq);
-		X[N_in] = new char[h];
+		X[N_in] = initX(h);
 		if (!X[N_in])
 			MemoryError("array for input sequences", __FILE__, __LINE__,
 					__func__);
@@ -3257,7 +3313,7 @@ void Alignment::AddSequence(char Xk[], int Ik[]) {
 	if (L <= 0)
 		InternalError("L is not set in AddSequence()", __FILE__, __LINE__,
 				__func__);
-	X[N_in] = new char[L + 2];
+	X[N_in] = initX(L + 2);
 	for (i = 0; i <= L + 1; ++i)
 		X[N_in][i] = Xk[i];
 	if (Ik == NULL)
@@ -3305,7 +3361,7 @@ void Alignment::AddSSPrediction(char seq_pred[], char seq_conf[]) {
 		display[N_in] = 1;
 		seq[N_in] = new char[L + 2];
 		strcpy(seq[N_in], seq_pred);
-		X[N_in] = new char[L + 2];
+		X[N_in] = initX(L + 2);
 		for (i = 0; i < strlen(seq_pred); ++i)
 			X[N_in][i] = ss2i(seq_pred[i]);
 		I[N_in] = new short unsigned int[L + 2];
@@ -3330,7 +3386,7 @@ void Alignment::AddSSPrediction(char seq_pred[], char seq_conf[]) {
 		display[N_in] = 1;
 		seq[N_in] = new char[L + 2];
 		strcpy(seq[N_in], seq_conf);
-		X[N_in] = new char[L + 2];
+		X[N_in] = initX(L + 2);
 		for (i = 0; i < strlen(seq_pred); ++i)
 			X[N_in][i] = cf2i(seq_conf[i]);
 		I[N_in] = new short unsigned int[L + 2];

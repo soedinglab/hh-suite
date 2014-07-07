@@ -25,6 +25,15 @@ inline int  WordChr(char c) {
 	return (int)((c>='A' && c<='Z') || (c>='a' && c<='z'));
 }
 
+// Compute the sum of bits of one or two integers
+inline int NumberOfSetBits(int i)
+{
+    i = i - ((i >> 1) & 0x55555555);
+    i = (i & 0x33333333) + ((i >> 2) & 0x33333333);
+    return (((i + (i >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////////////
 // Transforms the one-letter amino acid code into an integer between 0 and 22
 /////////////////////////////////////////////////////////////////////////////////////
@@ -539,18 +548,27 @@ inline simd_float simd_flog2_sum_fpow2(simd_float x1, simd_float x2,
         simd_float x3, simd_float x4, simd_float x5, simd_float x6) {
 
     // Calculate the maximum out of the six variables
-    simd_float x_max = simdf32_max(x1, simdf32_max(x2, simdf32_max(x3, simdf32_max(x4, simdf32_max(x5, x6)))));
+    simd_float x_max0 = simdf32_max(x1,x2);
+    simd_float x_max1 = simdf32_max(x3,x4);
+    simd_float x_max2 = simdf32_max(x5,x6);
+    x_max0 = simdf32_max(x_max0, x_max1);
+    simd_float x_max  = simdf32_max(x_max2, x_max0);
 
     simd_float max_comp_vec = simdf32_set(-FLT_MAX);
-
-    return simdf32_max(max_comp_vec, simdf32_add(x_max, simdf32_flog2(                      //      max(-FLT_MAX, x_max + log2(
-                        simdf32_add(simdf32_fpow2(simdf32_sub(x1, x_max)),                                  //      2^(x1 - x_max)
-                                simdf32_add(simdf32_fpow2(simdf32_sub(x2, x_max)),                          // +    2^(x2 - x_max)
-                                        simdf32_add(simdf32_fpow2(simdf32_sub(x3, x_max)),                  // +    2^(x3 - x_max)
-                                                simdf32_add(simdf32_fpow2(simdf32_sub(x4, x_max)),          // +    2^(x4 - x_max)
-                                                        simdf32_add(simdf32_fpow2(simdf32_sub(x5, x_max)),  // +    2^(x5 - x_max)
-                                                                simdf32_fpow2(simdf32_sub(x6, x_max))))))))));      // +    2^(x6 - x_max)))
-
+    simd_float term0 = simdf32_fpow2(simdf32_sub(x1, x_max));
+    simd_float term1 = simdf32_fpow2(simdf32_sub(x2, x_max));
+    simd_float term2 = simdf32_fpow2(simdf32_sub(x3, x_max));
+    simd_float term3 = simdf32_fpow2(simdf32_sub(x4, x_max));
+    simd_float term4 = simdf32_fpow2(simdf32_sub(x5, x_max));
+    simd_float term5 = simdf32_fpow2(simdf32_sub(x6, x_max));
+    
+    term0 = simdf32_add(term0, term1);          //      2^(x1 - x_max)
+    term2 = simdf32_add(term2, term3);          // +    2^(x2 - x_max)
+    term4 = simdf32_add(term4, term5);          // +    2^(x3 - x_max)
+    term0 = simdf32_add(term0, term2);          // +    2^(x4 - x_max)
+    term4 = simdf32_add(term4, term0);          // +    2^(x5 - x_max)
+     //      max(-FLT_MAX, x_max + log2(sum(terms)))
+    return simdf32_max(max_comp_vec, simdf32_add(x_max, simdf32_flog2(term4)));
 }
 
 // Perform log-sum-exp calculation with three SIMD variables
