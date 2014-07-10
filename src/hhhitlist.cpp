@@ -369,7 +369,7 @@ void HitList::WriteToAlifile(HMM* q, std::stringstream& out,
         sprintf(line, "    i     j  score     SS  probab  dssp\n");
         out << line;
         for (int step = hit.nsteps; step >= 1; step--)
-          if (hit.states[step] >= MM) {
+          if (hit.states[step] == MM) {
             sprintf(line, "%5i %5i %6.2f %6.2f %7.4f %5c\n", hit.i[step],
                 hit.j[step], hit.S[step], hit.S_ss[step], hit.P_posterior[step],
                 hit.seq[hit.nss_dssp][hit.j[step]]);
@@ -382,7 +382,7 @@ void HitList::WriteToAlifile(HMM* q, std::stringstream& out,
         sprintf(line, "    i     j  score     SS  probab\n");
         out << line;
         for (int step = hit.nsteps; step >= 1; step--)
-          if (hit.states[step] >= MM) {
+          if (hit.states[step] == MM) {
             sprintf(line, "%5i %5i %6.2f %6.2f %7.4f\n", hit.i[step],
                 hit.j[step], hit.S[step], hit.S_ss[step],
                 hit.P_posterior[step]);
@@ -394,7 +394,7 @@ void HitList::WriteToAlifile(HMM* q, std::stringstream& out,
       sprintf(line, "    i     j  score     SS\n");
       out << line;
       for (int step = hit.nsteps; step >= 1; step--)
-        if (hit.states[step] >= MM) {
+        if (hit.states[step] == MM) {
           sprintf(line, "%5i %5i %6.2f %6.2f\n", hit.i[step], hit.j[step],
               hit.S[step], hit.S_ss[step]);
           out << line;
