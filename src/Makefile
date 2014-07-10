@@ -123,10 +123,10 @@ hhalign: hhalign.cpp $(HH_OBJECTS) $(SOURCES) $(HEADERS) $(CS_OBJECTS)
 	$(CPP) hhalign_app.cpp -o hhalign $(HH_OBJECTS) $(CS_OBJECTS) $(HHALIGN_LIBS) $(OBJECT_LIBS) $(FFINDEX_DIR)/libffindex.a
 
 hhalign_static: hhalign.cpp $(HH_OBJECTS) $(SOURCES) $(HEADERS) $(CS_OBJECTS)
-	$(CPP) -static hhalign.cpp -o hhalign $(HH_OBJECTS) $(CS_OBJECTS) $(HHALIGN_LIBS) $(OBJECT_LIBS) $(FFINDEX_DIR)/libffindex.a
+	$(CPP) -static hhalign_app.cpp -o hhalign $(HH_OBJECTS) $(CS_OBJECTS) $(HHALIGN_LIBS) $(OBJECT_LIBS) $(FFINDEX_DIR)/libffindex.a
 
 hhalign_valgrind: hhalign.cpp $(HH_OBJECTS) $(SOURCES) $(HEADERS) $(CS_OBJECTS)
-	$(CPP_VALGRIND) hhalign.cpp -o hhalign_valgrind $(HH_OBJECTS) $(CS_OBJECTS) $(HHALIGN_LIBS) $(OBJECT_LIBS)
+	$(CPP_VALGRIND) hhalign_app.cpp -o hhalign_valgrind $(HH_OBJECTS) $(CS_OBJECTS) $(HHALIGN_LIBS) $(OBJECT_LIBS)
 
 hhfilter: hhfilter.cpp $(HH_OBJECTS) $(SOURCES) $(HEADERS) $(CS_OBJECTS)
 	$(CPP) hhfilter.cpp -o hhfilter $(HH_OBJECTS) $(CS_OBJECTS) $(OBJECT_LIBS) $(FFINDEX_DIR)/libffindex.a
