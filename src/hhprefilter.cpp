@@ -420,7 +420,7 @@ namespace hh {
     //W = (LQ+15) / 16;   // band width = hochgerundetes LQ/16
     int W = (q_tmp->L + (element_count - 1)) / element_count;
     // query profile (states + 1 because of ANY char)
-    unsigned char* qc = (unsigned char*)malloc_simd_int((NUMCOLSTATES+element_count)*(q_tmp->L)*sizeof(unsigned char));
+    unsigned char* qc = (unsigned char*)malloc_simd_int((NUMCOLSTATES+1)*(q_tmp->L+element_count)*sizeof(unsigned char));
     stripe_query_profile(q_tmp, prefilter_score_offset, prefilter_bit_factor, W, qc);
 
     simd_int ** workspace = new simd_int *[threads];
