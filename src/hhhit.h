@@ -60,6 +60,8 @@ class Hit
   float* backward_profile;
   std::vector<Posterior_Triple*> posterior_probabilities;
 
+  float predicted_alignment_quality;
+
   float score;          // Score of alignment (i.e. of Viterbi path)
   float score_sort;     // score to sort hits in output list (negative means first/best!)
   float score_aass;     // first: just hit.score, then hit.logPval-SSSCORE2NATLOG*hit.score_ss;(negative means best!)
@@ -128,6 +130,11 @@ class Hit
 
   static int compare_sum_of_probs(const Hit& hit1, const Hit& hit2) {
     return hit1.sum_of_probs > hit2.sum_of_probs;
+  }
+
+  static bool compare_predicted_alignment_quality(const Hit& hit1, const Hit& hit2) {
+//	std::cout << hit1.predicted_alignment_quality << "\t" << hit2.predicted_alignment_quality << std::endl;
+    return hit1.predicted_alignment_quality > hit2.predicted_alignment_quality;
   }
 
   void initHitFromHMM(HMM * t);

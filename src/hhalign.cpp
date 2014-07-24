@@ -512,7 +512,7 @@ void HHalign::ProcessAllArguments(int argc, char** argv, Parameters& par) {
 
 void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
   for (int i = 1; i < argc; i++) {
-    HH_LOG(LogLevel::DEBUG1) << i << "  " << argv[i] << endl;
+    HH_LOG(LogLevel::DEBUG1) << i << "  " << argv[i] << std::endl;
     if (!strcmp(argv[i], "-i")) {
       if (++i >= argc || argv[i][0] == '-') {
         help(par);
@@ -966,7 +966,9 @@ void HHalign::run(FILE* query_fh, char* query_path, char* template_path) {
       q->NeutralizeTags(pb);
 
   if(*par.opt_outfile) {
-    optimizeQSC(hitlist, q_vec, input_format, optimized_hitlist);
+	std::vector<HHEntry*> selected_entries;
+	get_entries_of_selected_hits(hitlist, selected_entries);
+    optimizeQSC(selected_entries, hitlist.N_searched, q_vec, input_format, optimized_hitlist);
   }
 
   for(size_t i = 0; i < new_entries.size(); i++) {

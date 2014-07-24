@@ -174,7 +174,12 @@ protected:
 	void perform_realign(HMMSimd& q_vec, std::vector<HHEntry*>& hits_to_realign, const int premerge, Hash<char>* premerged_hits);
 	void mergeHitsToQuery(Hash<Hit>* previous_hits, Hash<char>* premerged_hits, int& seqs_found, int& cluster_found);
 	void add_hits_to_hitlist(std::vector<Hit>& hits, HitList& hitlist);
-	void optimizeQSC(HitList& input_list, HMMSimd& q_vec, char query_input_format, HitList& output_list);
+	void optimizeQSC(std::vector<HHEntry*>& selected_entries,
+			const int N_searched, HMMSimd& q_vec, char query_input_format,
+			HitList& output_list);
+	void get_entries_of_selected_hits(HitList& input, std::vector<HHEntry*>& selected_entries);
+	void get_entries_of_all_hits(HitList& input, std::vector<HHEntry*>& selected_entries);
+
 
 private:
 	static void help(Parameters& par, char all = 0);

@@ -45,7 +45,7 @@ class List {
     int size;              //Number of elements in list
 
     // Use QUICKSORT to sort list in asscending order between two list elements
-    void SortList(ListEl<Typ>*, ListEl<Typ>*, int, int (*comperator) (const Typ&, const Typ&)=NULL);
+    void SortList(ListEl<Typ>*, ListEl<Typ>*, int, bool (*comperator) (const Typ&, const Typ&)=NULL);
     // Use QUICKSORT to sort list of pointers by comparing elements they point to
     void SortPointerList(ListEl<Typ>*, ListEl<Typ>*);
 
@@ -199,7 +199,7 @@ class List {
 
     // Use QUICKSORT to sort list in ascending order. Use only for UNSORTED lists, otherwise time O(N^2) instead of O(N*log(N))
     /*   void SortList() {if (size>1) SortList(head->next, tail->prev);}  */
-    void SortList(int (*comperator) (const Typ&, const Typ&)=NULL) {
+    void SortList(bool (*comperator) (const Typ&, const Typ&)=NULL) {
       if (size > 1)
         SortList(head->next, tail->prev, size, comperator);
     }
@@ -649,7 +649,7 @@ void List<Typ>::Append(List<Typ>* list) {
 // Use QUICKSORT to sort list in ascending order between two list elements
 ////////////////////////////////////////////////////////////////////////////
 template<class Typ>
-void List<Typ>::SortList(ListEl<Typ>* left, ListEl<Typ>* right, int sz, int (*comperator) (const Typ&, const Typ&)) {
+void List<Typ>::SortList(ListEl<Typ>* left, ListEl<Typ>* right, int sz, bool (*comperator) (const Typ&, const Typ&)) {
   if (sz <= 1)
     return; // when SortList() is called, left=head->next, right=tail->prev
   ListEl<Typ> *l = left->prev, *r = right->next;
@@ -693,8 +693,8 @@ void List<Typ>::SortList(ListEl<Typ>* left, ListEl<Typ>* right, int sz, int (*co
     }
   }
 
-  SortList(left, r, sz0);
-  SortList(r->next, right, sz - sz0);
+  SortList(left, r, sz0, comperator);
+  SortList(r->next, right, sz - sz0, comperator);
   pivot = tail->data; // to avoid calling the destructor of Typ on some real data element
 }
 

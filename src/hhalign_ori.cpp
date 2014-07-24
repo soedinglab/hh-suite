@@ -1073,7 +1073,11 @@ void HHalign_mult::run(FILE* query_fh, char* query_path, std::vector<std::string
       q->NeutralizeTags(pb);
 
   HitList opt_hitlist;
-  optimizeQSC(hitlist, q_vec, input_format, opt_hitlist);
+	std::vector<HHEntry*> opt_entries;
+	get_entries_of_selected_hits(hitlist, opt_entries);
+	optimizeQSC(opt_entries, hitlist.N_searched, q_vec, input_format, opt_hitlist);
+
+
 
   for(size_t i = 0; i < selected_entries.size(); i++) {
     delete selected_entries[i];
