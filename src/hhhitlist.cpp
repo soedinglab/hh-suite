@@ -656,9 +656,8 @@ void HitList::PrintMatrices(HMM* q, std::stringstream& out,
     out.write(reinterpret_cast<const char*>(&ali_probability),
         sizeof(unsigned char));
 
-    unsigned short int alignment_similarity;
-    float_to_16_bit(it.calculateSimilarity(q, S), alignment_similarity);
-    writeU16(out, alignment_similarity);
+    unsigned short int alignment_similarity = it.calculateSimilarity(q, S) * 10;
+    writeS16(out, alignment_similarity);
 
     unsigned short int forwardProbability;
     float printForwardThreshold;

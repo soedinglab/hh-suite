@@ -67,5 +67,6 @@ void float_to_16_bit(float input, unsigned short int& result);
 void bit_16_to_float(unsigned short int input, float& result);
 
 void writeU16(std::ostream& file, unsigned short int val);
+void writeS16(std::ostream& file, signed short int val);
 
 #endif /* HHUTIL_H_ */
