@@ -100,6 +100,11 @@ PosteriorDecoder::~PosteriorDecoder() {
 
 	free(p_last_col);
 
+  free(m_p_forward);
+  free(m_t_lengths_le);
+  free(m_t_lengths_ge);
+
+
 	free(m_backward_profile);
 	free(m_forward_profile);
 

@@ -52,12 +52,12 @@ Alignment::~Alignment() {
 	for (int k = 0; k < N_in; ++k) {
 		delete[] sname[k];
 		delete[] seq[k];
-		delete[] X[k];
+		free(X[k]);
 		delete[] I[k];
 	}
 	delete[] sname;
 	delete[] seq;
-	free(X);
+	delete[] X;
 	delete[] I;
 	delete[] l;
 	delete[] keep;
