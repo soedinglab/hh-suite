@@ -186,11 +186,11 @@ inline float fast_log_gamma(float x) {
 //                                    0x4b400000 = 0100 1011 0100 0000 0000 0000 0000 0000
 //   In summary: x = (-1)^s * 1.mmmmmmmmmmmmmmmmmmmmmm * 2^(eeeeeee-127)
 /////////////////////////////////////////////////////////////////////////////////////
-inline float fpow2(float x) {
-  if (x > FLT_MAX_EXP)
-    return FLT_MAX;
-  if (x < FLT_MIN_EXP)
-    return 0.0f;
+inline float fpow2(float x)
+{
+  if (x>=FLT_MAX_EXP) return FLT_MAX;
+  if (x<=FLT_MIN_EXP) return 0.0f;
+
   int *px = (int*) (&x);        // store address of float as pointer to long int
   float tx = (x - 0.5f) + (3 << 22); // temporary value for truncation: x-0.5 is added to a large integer (3<<22),
                                      // 3<<22 = (1.1bin)*2^23 = (1.1bin)*2^(150-127),
