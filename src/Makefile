@@ -17,8 +17,11 @@ INC=-I$(FFINDEX_DIR)
 CFLAGS+=-std=c99 -O2 -g -fPIC -Wall -pedantic $(INC)
 
 ifdef ICC
-  CXX = env LANG=C icc
-  CXXFLAGS += -fast -Wall -fno-strict-aliasing -finline-functions -funroll-loops -fp-model fast=2 -fast-transcendentals -wd981 -wd383 -wd2259 -wd1572 -I$(CS_DIR) -I$(FFINDEX_DIR)
+  CXX = icpc
+  CXXFLAGS += -march=native -O3 -no-prec-div -fno-alias -pipe -std=c++11 -fast -Wall -fno-strict-aliasing -finline-functions -funroll-loops -fp-model fast=2 -fast-transcendentals -wd981 -wd383 -wd2259 -wd1572 -I$(CS_DIR) -I$(FFINDEX_DIR)
+  AR = xiar
+  LD = xild
+  LDFLAGS = -Wl,-O1,--sort-common,--as-needed
   HHSEARCH_LIBS = -lpthread -lrt -openmp
   HHBLITS_LIBS = -lpthread -lrt -openmp
   CS_LIBS = -openmp

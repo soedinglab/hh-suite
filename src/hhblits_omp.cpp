@@ -165,7 +165,7 @@ int main(int argc, char **argv) {
   for (size_t entry_index = range_start; entry_index < range_end; entry_index++) {
     ffindex_entry_t* entry = ffindex_get_entry_by_index(index, entry_index);
     if (entry == NULL) {
-      std::cerr << "Could not open entry " << entry_index << " from input ffindex!" << std::endl;
+      HH_LOG(LogLevel::WARNING) << "Could not open entry " << entry_index << " from input ffindex!" << std::endl;
       continue;
     }
 
@@ -175,8 +175,12 @@ int main(int argc, char **argv) {
     hhblits_instances[bin]->Reset();
 
     FILE* inf = ffindex_fopen_by_entry(data, entry);
+    if(inf == NULL) {
+      HH_LOG(LogLevel::WARNING) << "Could not open input entry (" << entry->name << ")!" << std::endl;
+      continue;
+    }
+
     hhblits_instances[bin]->run(inf, entry->name);
-    fclose(inf);
 
     #pragma omp critical
     {

@@ -1352,6 +1352,10 @@ void HHblits::optimizeQSC(std::vector<HHEntry*>& selected_entries,
 			n_realignments++;
 		}
 
+	  for (int i = 0; i < par.threads; i++) {
+	    posteriorMatrices[i]->allocateMatrix(q->L, t_maxres);
+	  }
+
 		std::qsort(&hit_vector[0], hit_vector.size(), sizeof(Hit*),
 				compareHitLengths);
 
