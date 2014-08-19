@@ -236,9 +236,9 @@ void PosteriorDecoder::initializeForAlignment(HMM & q, HMM & t, Hit* hit, Viterb
 	hit->alt_i = new std::vector<int>();
 	//    if (alt_j && alt_j->Size()>0) delete alt_j;
 
-    if(hit->alt_j) {
-      delete hit->alt_j;
-    }
+  if(hit->alt_j) {
+    delete hit->alt_j;
+  }
 	hit->alt_j = new std::vector<int>();
 
 

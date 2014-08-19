@@ -336,6 +336,7 @@ void HHDatabaseEntry::getTemplateHMM(Parameters& par, char use_global_weights,
     HHEntry::getTemplateHMM(dbf, name, par, use_global_weights, qsc, format, pb,
                             S, Sim, t);
     fclose(dbf);
+    delete[] name;
   }
 }
 

@@ -1384,8 +1384,29 @@ void HHblits::optimizeQSC(std::vector<HHEntry*>& selected_entries,
 		}
 	}
 
+	all_list.SortList(&Hit::compare_evalue);
+
+
+
 	//sort all_list by predicted alignment quality
 	all_list.SortList(&Hit::compare_predicted_alignment_quality);
+	std::map<std::string, ViterbiScores> best_evalue_scores;
+
+  all_list.Reset();
+  while (!all_list.End()) {
+    Hit hit_cur = all_list.ReadNext();
+
+    stringstream ss_tmp;
+    ss_tmp << hit_cur.file << "__" << hit_cur.irep;
+//    std::cout << ss_tmp.str() << "\t" << hit_cur.predicted_alignment_quality << "\t" << hit_cur.score_sort << std::endl;
+
+    if(best_evalue_scores.find(ss_tmp.str()) == best_evalue_scores.end()) {
+      ViterbiScores scores(hit_cur);
+      best_evalue_scores.insert(std::pair<std::string, ViterbiScores>(ss_tmp.str(), scores));
+    }
+  }
+
+
 
 	//select of each hit_irep the alignment with the best predicted alignment quality
 	std::set<std::string> output_set;
@@ -1402,6 +1423,19 @@ void HHblits::optimizeQSC(std::vector<HHEntry*>& selected_entries,
 		}
 		else {
 			output_set.insert(ss_tmp.str());
+
+      ViterbiScores best_scores = best_evalue_scores[ss_tmp.str()];
+      hit_cur.score = best_scores.score;
+      hit_cur.score_aass = best_scores.score_aass;
+      hit_cur.score_ss = best_scores.score_ss;
+      hit_cur.Pval = best_scores.Pval;
+      hit_cur.Pvalt = best_scores.Pvalt;
+      hit_cur.logPval = best_scores.logPval;
+      hit_cur.logPvalt = best_scores.logPvalt;
+      hit_cur.Eval = best_scores.Eval;
+      hit_cur.logEval = best_scores.logEval;
+      hit_cur.Probab = best_scores.Probab;
+
 			output_list.Push(hit_cur);
 			all_list.Delete();
 		}

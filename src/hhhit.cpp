@@ -43,10 +43,14 @@ void Hit::Delete() {
     delete[] j;
 
   if (irep == 1) {
-    if (alt_i)
+    if (alt_i) {
       delete alt_i;
-    if (alt_j)
+      alt_i = NULL;
+    }
+    if (alt_j) {
       delete alt_j;
+      alt_j = NULL;
+    }
   }
   
   if (states)
@@ -65,11 +69,13 @@ void Hit::Delete() {
   delete[] longname;
   delete[] name;
   delete[] file;
+
   if (sname) {
     for (int k = 0; k < n_display; ++k)
       delete[] sname[k];
     delete[] sname;
   }
+
   if (seq) {
     for (int k = 0; k < n_display; ++k)
       delete[] seq[k];
