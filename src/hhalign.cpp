@@ -953,7 +953,7 @@ void HHalign::run(FILE* query_fh, char* query_path, char* template_path) {
 
   // Realign hits with MAC algorithm
   if (par.realign && par.forward != 2) {
-      perform_realign(q_vec, new_entries, premerge, premerged_hits);
+      perform_realign(q_vec, input_format, new_entries, premerge, premerged_hits);
   }
 
   //TODO: does no longer search for a3m, but takes a3m from hmm if needs be

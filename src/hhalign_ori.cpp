@@ -1061,7 +1061,7 @@ void HHalign_mult::run(FILE* query_fh, char* query_path, std::vector<std::string
 
   // Realign hits with MAC algorithm
   if (par.realign && par.forward != 2) {
-    perform_realign(q_vec, selected_entries, premerge, premerged_hits);
+    perform_realign(q_vec, input_format, selected_entries, premerge, premerged_hits);
   }
 
   mergeHitsToQuery(previous_hits, premerged_hits, seqs_found, cluster_found);

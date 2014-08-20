@@ -740,7 +740,10 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
 				exit(4);
 			} else
 				strcpy(par.alnfile, argv[i]);
-		} else if (!strcmp(argv[i], "-ohhm")) {
+		} else if (!strcmp(argv[i], "-opt")) {
+		  par.optimize_qsc = true;
+		}
+		else if (!strcmp(argv[i], "-ohhm")) {
 			if (++i >= argc || argv[i][0] == '-') {
 				help(par);
 				cerr << endl << "Error in " << program_name
@@ -1198,7 +1201,7 @@ void HHblits::RescoreWithViterbiKeepAlignment(HMMSimd& q_vec,
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Realign hits with MAC algorithm
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void HHblits::perform_realign(HMMSimd& q_vec,
+void HHblits::perform_realign(HMMSimd& q_vec, const char input_format,
 		std::vector<HHEntry*>& hits_to_realign, const int premerge,
 		Hash<char>* premerged_hits) {
 	// 19/02/2014: F/B-algos are calculated in log-space
@@ -1272,6 +1275,18 @@ void HHblits::perform_realign(HMMSimd& q_vec,
 			<< std::endl;
 
 	runner.executeComputation(par, par.qsc_db, pb, S, Sim, R);
+
+	if(par.optimize_qsc) {
+    std::vector<HHEntry*> selected_entries;
+    get_entries_of_selected_hits(hitlist, selected_entries);
+
+    hitlist.Reset();
+    while (!hitlist.End())
+      hitlist.Delete().Delete();
+
+    optimizeQSC(selected_entries, hitlist.N_searched, q_vec, input_format, hitlist);
+	}
+
 
 //  // Delete all hitlist entries with too short alignments
 //  nhits = 0;
@@ -1384,14 +1399,10 @@ void HHblits::optimizeQSC(std::vector<HHEntry*>& selected_entries,
 		}
 	}
 
-	all_list.SortList(&Hit::compare_evalue);
-
-
-
-	//sort all_list by predicted alignment quality
-	all_list.SortList(&Hit::compare_predicted_alignment_quality);
 	std::map<std::string, ViterbiScores> best_evalue_scores;
 
+	//select for each hit_irep the best evalue
+	all_list.SortList(&Hit::compare_evalue);
   all_list.Reset();
   while (!all_list.End()) {
     Hit hit_cur = all_list.ReadNext();
@@ -1406,10 +1417,10 @@ void HHblits::optimizeQSC(std::vector<HHEntry*>& selected_entries,
     }
   }
 
-
-
 	//select of each hit_irep the alignment with the best predicted alignment quality
 	std::set<std::string> output_set;
+	//sort all_list by predicted alignment quality
+	all_list.SortList(&Hit::compare_predicted_alignment_quality);
 	all_list.Reset();
 	while (!all_list.End()) {
 		Hit hit_cur = all_list.ReadNext();
@@ -2284,7 +2295,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
 
 		// Realign hits with MAC algorithm
 		if (par.realign)
-			perform_realign(q_vec, new_entries, premerge, premerged_hits);
+			perform_realign(q_vec, input_format, new_entries, premerge, premerged_hits);
 
 		// Generate alignment for next iteration
 		if (round < par.num_rounds || *par.alnfile || *par.psifile

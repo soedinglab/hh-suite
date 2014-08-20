@@ -171,7 +171,7 @@ protected:
 	HitList optimized_hitlist;
 	std::map<int, Alignment*> alis;
 
-	void perform_realign(HMMSimd& q_vec, std::vector<HHEntry*>& hits_to_realign, const int premerge, Hash<char>* premerged_hits);
+	void perform_realign(HMMSimd& q_vec, const char input_format, std::vector<HHEntry*>& hits_to_realign, const int premerge, Hash<char>* premerged_hits);
 	void mergeHitsToQuery(Hash<Hit>* previous_hits, Hash<char>* premerged_hits, int& seqs_found, int& cluster_found);
 	void add_hits_to_hitlist(std::vector<Hit>& hits, HitList& hitlist);
 	void optimizeQSC(std::vector<HHEntry*>& selected_entries,

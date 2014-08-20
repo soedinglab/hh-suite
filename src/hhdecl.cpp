@@ -247,6 +247,8 @@ void Parameters::SetDefaults() {
 	alitab_scop = false;
 	nocontxt = false;
 
+	optimize_qsc = false;
+
 	return;
 }
 

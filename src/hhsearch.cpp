@@ -875,7 +875,7 @@ void HHsearch::run(FILE* query_fh, char* query_path) {
 
 	// Realign hits with MAC algorithm
 	if (par.realign && par.forward != 2) {
-		perform_realign(q_vec, new_entries, premerge, premerged_hits);
+		perform_realign(q_vec, input_format, new_entries, premerge, premerged_hits);
 	}
 
 	// Write HMM to output file without pseudocounts
