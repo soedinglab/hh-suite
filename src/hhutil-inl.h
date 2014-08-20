@@ -33,6 +33,11 @@ inline int NumberOfSetBits(int i)
     return (((i + (i >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
 }
 
+//TODO: check
+//inline int NumberOfSetBits(int i)
+//{
+//  return _mm_popcnt_u32(i);
+//}
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Transforms the one-letter amino acid code into an integer between 0 and 22

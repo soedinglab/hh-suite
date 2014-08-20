@@ -2075,7 +2075,6 @@ void HHblits::get_entries_of_all_hits(HitList& input, std::vector<HHEntry*>& sel
 //}
 
 void HHblits::run(FILE* query_fh, char* query_path) {
-	Log::reporting_level() = LogLevel::INFO;
 	int cluster_found = 0;
 	int seqs_found = 0;
 	int premerge = par.premerge;
