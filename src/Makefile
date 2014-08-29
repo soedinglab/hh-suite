@@ -108,7 +108,7 @@ hhblits_mpi: hhblits_mpi.cpp $(HH_OBJECTS) $(CS_OBJECTS)
 	mpic++ $(CXXFLAGS) -g hhblits_mpi.cpp -o hhblits_mpi $(HH_OBJECTS) $(CS_OBJECTS) $(HHBLITS_LIBS) $(OBJECT_LIBS) $(FFINDEX_DIR)/libffindex.a
 	
 hhblits_omp: hhblits_omp.cpp $(HH_OBJECTS) $(CS_OBJECTS)
-	mpic++ $(CXXFLAGS) -g hhblits_omp.cpp -o hhblits_omp $(HH_OBJECTS) $(CS_OBJECTS) $(HHBLITS_LIBS) $(OBJECT_LIBS) $(FFINDEX_DIR)/libffindex.a
+	$(CPP) $(CXXFLAGS) -g hhblits_omp.cpp -o hhblits_omp $(HH_OBJECTS) $(CS_OBJECTS) $(HHBLITS_LIBS) $(OBJECT_LIBS) $(FFINDEX_DIR)/libffindex.a
 	
 hhblits_static: hhblits_app.cpp $(HH_OBJECTS) $(SOURCES) $(HEADERS) $(CS_OBJECTS)
 	$(CPP) -static hhblits_app.cpp -o hhblits $(HH_OBJECTS) $(CS_OBJECTS) $(HHBLITS_LIBS)  $(OBJECT_LIBS) $(FFINDEX_DIR)/libffindex.a
