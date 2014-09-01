@@ -112,6 +112,8 @@ class Hit
 
   bool realign_around_viterbi;
 
+  float qsc;
+
   // Constructor (only set pointers to NULL)
   Hit();
   ~Hit(){};

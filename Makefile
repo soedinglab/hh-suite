@@ -43,6 +43,7 @@ install:
 	$(MAKE) -C lib/ffindex install INSTALL_DIR=$(INSTALL_DIR)
 	mkdir -p $(INSTALL_DIR)/bin
 	install src/hhblits     $(INSTALL_DIR)/bin/hhblits
+	install src/hhblits_omp $(INSTALL_DIR)/bin/hhblits_omp
 	install src/hhalign     $(INSTALL_DIR)/bin/hhalign
 	install src/hhconsensus $(INSTALL_DIR)/bin/hhconsensus
 	install src/hhfilter    $(INSTALL_DIR)/bin/hhfilter
