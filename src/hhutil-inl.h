@@ -303,7 +303,7 @@ inline float fast_addscore(float x)
     }
   if (!initialized)   //First fill in the log2-vector
     {
-      for (int i=0; i<=2000; i++) val[i]=log2(1.0+pow(2,-0.01*(i+0.5)));
+      for (int i=0; i<=2000; i++) val[i]=flog2(1.0+fpow2(-0.01*(i+0.5)));
       initialized=1;
     }
   return val[(int)(100.0*x)];
