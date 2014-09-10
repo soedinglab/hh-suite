@@ -180,7 +180,9 @@ int main(int argc, char **argv) {
       continue;
     }
 
+    HH_LOG(LogLevel::INFO) << "Thread " << bin << "\t" << entry->name << std::endl;
     hhblits_instances[bin]->run(inf, entry->name);
+
 
     #pragma omp critical
     {
