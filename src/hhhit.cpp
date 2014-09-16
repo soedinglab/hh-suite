@@ -42,7 +42,7 @@ void Hit::Delete() {
   if (j)
     delete[] j;
 
-  if (irep == 1) {
+//  if (irep == 1) {
     if (alt_i) {
       delete alt_i;
       alt_i = NULL;
@@ -51,7 +51,7 @@ void Hit::Delete() {
       delete alt_j;
       alt_j = NULL;
     }
-  }
+//  }
   
   if (states)
     delete[] states;
@@ -237,14 +237,14 @@ void Hit::initHitFromHMM(HMM * t){
     strcpy(this->cl ,t->cl);
     strcpy(this->file,t->file);
 
-    this->sname=new char*[t->n_display];
-    this->seq  =new char*[t->n_display];
+    this->sname = new char*[t->n_display];
+    this->seq   = new char*[t->n_display];
     if (!this->sname || !this->seq)
         MemoryError("space for alignments with database HMMs.\nNote that all sequences for display have to be kept in memory", __FILE__, __LINE__, __func__);
 
 
     // Make deep copy for all further alignments
-    for (int k=0; k<t->n_display; k++)
+    for (int k=0; k < t->n_display; k++)
     {
         this->sname[k] = new char[strlen(t->sname[k])+1];
         this->seq[k]   = new char[strlen(t->seq[k])+1];

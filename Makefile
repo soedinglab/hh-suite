@@ -15,11 +15,9 @@ INSTALL_LIB_BIN_DIR?=$(INSTALL_LIB_DIR)/bin
 
 dist_name=hhsuite-2.0.16
 
-.PHONY: all_static
-all_static: ffindex_static
-	$(MAKE) -C src all_static
+#all_static: ffindex_static
+#	$(MAKE) -C src all_static
 
-.PHONY: all
 all: ffindex
 	$(MAKE) -C src all
 
@@ -32,12 +30,11 @@ hhblits_static: hhblits_static
 hhblits: ffindex
 	$(MAKE) -C src all
 
-.PHONY: ffindex
 ffindex:
 	$(MAKE) -C lib/ffindex
 
-ffindex_static:
-	$(MAKE) -C lib/ffindex FFINDEX_STATIC=1
+#ffindex_static:
+#	$(MAKE) -C lib/ffindex FFINDEX_STATIC=1
 
 install:
 	$(MAKE) -C lib/ffindex install INSTALL_DIR=$(INSTALL_DIR)

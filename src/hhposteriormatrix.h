@@ -31,6 +31,7 @@ public:
 	bool isAllocated() const;
 
 	void setAllocated(bool allocated);
+	void DeleteProbabilityMatrix();
 
 private:
 	int m_q_max_length;
@@ -40,7 +41,6 @@ private:
 	bool m_allocated;
 //	float ** m_p_mm;
 
-	void DeleteProbabilityMatrix();
 };
 
 

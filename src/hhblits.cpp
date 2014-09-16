@@ -15,6 +15,9 @@ HHblits::HHblits(Parameters& parameters,
 	par = parameters;
 	dbs = databases;
 
+	Qali = NULL;
+	Qali_allseqs = NULL;
+
 	q = NULL;
 	q_tmp = NULL;
 
@@ -71,11 +74,6 @@ HHblits::HHblits(Parameters& parameters,
 
 HHblits::~HHblits() {
 	Reset();
-
-	for (size_t i = 0; i < dbs.size(); i++) {
-		delete dbs[i];
-	}
-	dbs.clear();
 
 	for (int bin = 0; bin < par.threads; bin++) {
 		delete viterbiMatrices[bin];
@@ -261,6 +259,16 @@ void HHblits::Reset() {
 		q_tmp = NULL;
 	}
 
+	if (Qali) {
+	  delete Qali;
+	  Qali = NULL;
+	}
+
+	if (Qali_allseqs) {
+	  delete Qali_allseqs;
+	  Qali_allseqs = NULL;
+	}
+
 	hitlist.Reset();
 	while (!hitlist.End())
 		hitlist.Delete().Delete();
@@ -274,6 +282,11 @@ void HHblits::Reset() {
 		delete (*it).second;
 	}
 	alis.clear();
+
+  for (int bin = 0; bin < par.threads; bin++) {
+    viterbiMatrices[bin]->DeleteBacktraceMatrix();
+    posteriorMatrices[bin]->DeleteProbabilityMatrix();
+  }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -1089,33 +1102,33 @@ void HHblits::mergeHitsToQuery(Hash<Hit>* previous_hits,
 		hit_cur.entry->getTemplateA3M(par, pb, S, Sim, Tali);
 
 		if (par.allseqs) // need to keep *all* sequences in Qali_allseqs? => merge before filtering
-			Qali_allseqs.MergeMasterSlave(hit_cur, Tali, hit_cur.name,
+			Qali_allseqs->MergeMasterSlave(hit_cur, Tali, hit_cur.name,
 					par.maxcol);
 		Tali.N_filtered = Tali.Filter(par.max_seqid_db, S, par.coverage_db,
 				par.qid_db, par.qsc_db, par.Ndiff_db);
-		Qali.MergeMasterSlave(hit_cur, Tali, hit_cur.name, par.maxcol);
+		Qali->MergeMasterSlave(hit_cur, Tali, hit_cur.name, par.maxcol);
 
-		if (Qali.N_in >= MAXSEQ)
+		if (Qali->N_in >= MAXSEQ)
 			break; // Maximum number of sequences reached
 	}
 
 	// Convert ASCII to int (0-20),throw out all insert states, record their number in I[k][i]
-	Qali.Compress("merged A3M file", par.cons, par.maxres, par.maxcol, par.M,
+	Qali->Compress("merged A3M file", par.cons, par.maxres, par.maxcol, par.M,
 			par.Mgaps);
 
 	// Sort out the nseqdis most dissimilacd r sequences for display in the result alignments
-	Qali.FilterForDisplay(par.max_seqid, par.mark, S, par.coverage, par.qid,
+	Qali->FilterForDisplay(par.max_seqid, par.mark, S, par.coverage, par.qid,
 			par.qsc, par.nseqdis);
 
 	// Remove sequences with seq. identity larger than seqid percent (remove the shorter of two)
 	const float COV_ABS = 25;     // min. number of aligned residues
-	int cov_tot = std::max(std::min((int) (COV_ABS / Qali.L * 100 + 0.5), 70),
+	int cov_tot = std::max(std::min((int) (COV_ABS / Qali->L * 100 + 0.5), 70),
 			par.coverage);
 
 	HH_LOG(LogLevel::DEBUG) << "Filter new alignment with cov " << cov_tot
 			<< std::endl;
 
-	Qali.N_filtered = Qali.Filter(par.max_seqid, S, cov_tot, par.qid, par.qsc,
+	Qali->N_filtered = Qali->Filter(par.max_seqid, S, cov_tot, par.qid, par.qsc,
 			par.Ndiff);
 }
 
@@ -1336,11 +1349,11 @@ void HHblits::optimizeQSC(std::vector<HHEntry*>& selected_entries,
 		HitList tmp_list;
 		tmp_list.N_searched = N_searched;
 
-		Qali.Compress("filtered A3M file", par.cons, par.maxres, par.maxcol,
+		Qali->Compress("filtered A3M file", par.cons, par.maxres, par.maxcol,
 				par.M, par.Mgaps);
-		Qali.N_filtered = Qali.Filter(par.max_seqid, S, cov_tot, par.qid,
+		Qali->N_filtered = Qali->Filter(par.max_seqid, S, cov_tot, par.qid,
 				actual_qsc, par.Ndiff);
-		Qali.FrequenciesAndTransitions(q, par.wg, par.mark, par.cons,
+		Qali->FrequenciesAndTransitions(q, par.wg, par.mark, par.cons,
 				par.showcons, par.maxres, pb, Sim, NULL, false);
 		PrepareQueryHMM(par, query_input_format, q, pc_hhm_context_engine,
 				pc_hhm_context_mode, pb, R);
@@ -2086,23 +2099,26 @@ void HHblits::run(FILE* query_fh, char* query_path) {
 	Hash<Hit>* previous_hits = new Hash<Hit>(1631, hit_cur);
 	Hash<char>* premerged_hits = new Hash<char>(1631);
 
+	Qali = new Alignment();
+	Qali_allseqs = new Alignment();
+
 	q = new HMM;
 	HMMSimd q_vec(par.maxres);
 	q_tmp = new HMM;
 
 	// Read query input file (HHM or alignment format) without adding pseudocounts
-	Qali.N_in = 0;
+	Qali->N_in = 0;
 	char input_format;
 	ReadQueryFile(par, query_fh, input_format, par.wg, q, Qali, query_path, pb,
 			S, Sim);
 
-	if (Qali.N_in - Qali.N_ss > 1)
+	if (Qali->N_in - Qali->N_ss > 1)
 		premerge = 0;
 
 	if (par.allseqs) {
 		Qali_allseqs = Qali; // make a *deep* copy of Qali!
-		for (int k = 0; k < Qali_allseqs.N_in; ++k)
-			Qali_allseqs.keep[k] = 1; // keep *all* sequences (reset filtering in Qali)
+		for (int k = 0; k < Qali_allseqs->N_in; ++k)
+			Qali_allseqs->keep[k] = 1; // keep *all* sequences (reset filtering in Qali)
 	}
 
 	// Set query columns in His-tags etc to Null model distribution
@@ -2306,7 +2322,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
 			}
 
 			// Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
-			Qali.FrequenciesAndTransitions(q, par.wg, par.mark, par.cons,
+			Qali->FrequenciesAndTransitions(q, par.wg, par.mark, par.cons,
 					par.showcons, par.maxres, pb, Sim, NULL, true);
 
 			if (par.notags)
@@ -2323,15 +2339,15 @@ void HHblits::run(FILE* query_fh, char* query_path) {
 				CalculateSS(q, ss_pred, ss_conf, par.psipred_data, par.psipred,
 						pb);
 
-				Qali.AddSSPrediction(ss_pred, ss_conf);
+				Qali->AddSSPrediction(ss_pred, ss_conf);
 			}
 
 			if (*par.alisbasename) {
 				Alignment* tmp = new Alignment();
 				if (par.allseqs) {
-					(*tmp) = Qali_allseqs;
+					(*tmp) = (*Qali_allseqs);
 				} else {
-					(*tmp) = Qali;
+					(*tmp) = (*Qali);
 				}
 
 				alis[round] = tmp;
@@ -2382,14 +2398,14 @@ void HHblits::run(FILE* query_fh, char* query_path) {
 					<< std::endl;
 		}
 
-		if (Qali.N_in >= MAXSEQ) {
+		if (Qali->N_in >= MAXSEQ) {
 			HH_LOG(LogLevel::INFO)
 					<< "Maximun number of sequences in query alignment reached ("
 					<< MAXSEQ << "). Stop searching!" << std::endl;
 		}
 
 		if (new_hits == 0 || round == par.num_rounds
-				|| q->Neff_HMM > par.neffmax || Qali.N_in >= MAXSEQ)
+				|| q->Neff_HMM > par.neffmax || Qali->N_in >= MAXSEQ)
 			break;
 
 		// Write good hits to previous_hits hash and clear hitlist
@@ -2497,9 +2513,9 @@ void HHblits::writePsiFile(char* psiFile) {
 	// Write output PSI-BLAST-formatted alignment?
 	if (*psiFile) {
 		if (par.allseqs)
-			Qali_allseqs.WriteToFile(psiFile, par.append, "psi");
+			Qali_allseqs->WriteToFile(psiFile, par.append, "psi");
 		else
-			Qali.WriteToFile(psiFile, par.append, "psi");
+			Qali->WriteToFile(psiFile, par.append, "psi");
 	}
 }
 
@@ -2519,9 +2535,9 @@ void HHblits::writeA3MFile(char* A3MFile) {
 	// Write output A3M alignment?
 	if (*A3MFile) {
 		if (par.allseqs)
-			Qali_allseqs.WriteToFile(A3MFile, par.append, "a3m");
+			Qali_allseqs->WriteToFile(A3MFile, par.append, "a3m");
 		else
-			Qali.WriteToFile(A3MFile, par.append, "a3m");
+			Qali->WriteToFile(A3MFile, par.append, "a3m");
 	}
 }
 
@@ -2566,9 +2582,9 @@ void HHblits::writeOptimizedHHRFile(HHblits& hhblits, std::stringstream& out) {
 
 void HHblits::writePsiFile(HHblits& hhblits, std::stringstream& out) {
 	if (hhblits.par.allseqs)
-		hhblits.Qali_allseqs.WriteToFile(out, "psi");
+		hhblits.Qali_allseqs->WriteToFile(out, "psi");
 	else
-		hhblits.Qali.WriteToFile(out, "psi");
+		hhblits.Qali->WriteToFile(out, "psi");
 }
 
 void HHblits::writeHMMFile(HHblits& hhblits, std::stringstream& out) {
@@ -2583,9 +2599,9 @@ void HHblits::writeHMMFile(HHblits& hhblits, std::stringstream& out) {
 
 void HHblits::writeA3MFile(HHblits& hhblits, std::stringstream& out) {
 	if (hhblits.par.allseqs)
-		hhblits.Qali_allseqs.WriteToFile(out, "a3m");
+		hhblits.Qali_allseqs->WriteToFile(out, "a3m");
 	else
-		hhblits.Qali.WriteToFile(out, "a3m");
+		hhblits.Qali->WriteToFile(out, "a3m");
 }
 
 void HHblits::writeMatricesFile(char* matricesOutputFileName) {

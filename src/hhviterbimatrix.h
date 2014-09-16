@@ -51,6 +51,7 @@ public:
 
     unsigned char * getRow(int row); 
     void AllocateBacktraceMatrix(int Nq, int Nt);
+    void DeleteBacktraceMatrix();
 
     bool getCellOff(int row,int col,int elem); 
     bool getMatIns(int row,int col,int elem); 
@@ -81,7 +82,6 @@ private:
     int max_query_length;
     int max_template_length;
 
-    void DeleteBacktraceMatrix();
 };
 
 #include "hhviterbimatrix-inl.h"

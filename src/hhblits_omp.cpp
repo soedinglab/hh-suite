@@ -6,6 +6,7 @@
  */
 
 #include <stdio.h>
+#include <sys/mman.h>
 #include "hhdecl.h"
 #include "hhblits.h"
 
@@ -59,6 +60,8 @@ struct OutputFFIndex {
       }
 
       ffindex_write(index, index_fh);
+
+      free(index);
     }
 };
 
@@ -183,17 +186,30 @@ int main(int argc, char **argv) {
     HH_LOG(LogLevel::INFO) << "Thread " << bin << "\t" << entry->name << std::endl;
     hhblits_instances[bin]->run(inf, entry->name);
 
-
     #pragma omp critical
     {
       for (size_t i = 0; i < outputDatabases.size(); i++) {
         outputDatabases[i].saveOutput(*hhblits_instances[bin], entry->name);
       }
     }
+
+    hhblits_instances[bin]->Reset();
   }
+
+  munmap(data, data_size);
+  free(index);
 
   fclose(data_file);
   fclose(index_file);
+
+  for(int i = 0; i < threads; i++) {
+    delete hhblits_instances[i];
+  }
+
+  for (size_t i = 0; i < databases.size(); i++) {
+    delete databases[i];
+  }
+  databases.clear();
 
   for (size_t i = 0; i < outputDatabases.size(); i++) {
     outputDatabases[i].sort();

@@ -63,6 +63,9 @@ void PosteriorMatrix::DeleteProbabilityMatrix() {
   delete[] m_probabilities;
 
   m_probabilities = NULL;
+
+  m_q_max_length = 0;
+  m_t_max_length = 0;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////

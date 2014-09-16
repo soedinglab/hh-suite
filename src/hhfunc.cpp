@@ -8,7 +8,7 @@
 // Read input file (HMM, HHM, or alignment format)
 /////////////////////////////////////////////////////////////////////////////////////
 void ReadQueryFile(Parameters& par, FILE* inf, char& input_format,
-    char use_global_weights, HMM* q, Alignment& qali, char infile[], float* pb,
+    char use_global_weights, HMM* q, Alignment* qali, char infile[], float* pb,
     const float S[20][20], const float Sim[20][20]) {
   char line[LINELEN];
 
@@ -45,7 +45,7 @@ void ReadQueryFile(Parameters& par, FILE* inf, char& input_format,
     Alignment ali_tmp;
     ali_tmp.GetSeqsFromHMM(q);
     ali_tmp.Compress(infile, par.cons, par.maxres, par.maxcol, par.M, par.Mgaps);
-    qali = ali_tmp;
+    *qali = ali_tmp;
   }
   // ... or is it an alignment file
   else if (line[0] == '#' || line[0] == '>') {
@@ -84,7 +84,7 @@ void ReadQueryFile(Parameters& par, FILE* inf, char& input_format,
     ali_tmp.FrequenciesAndTransitions(q, use_global_weights, par.mark, par.cons,
         par.showcons, par.maxres, pb, Sim);
 
-    qali = ali_tmp;
+    *qali = ali_tmp;
     input_format = 0;
   }
   else {
@@ -100,7 +100,7 @@ void ReadQueryFile(Parameters& par, FILE* inf, char& input_format,
 }
 
 void ReadQueryFile(Parameters& par, char* infile, char& input_format,
-    char use_global_weights, HMM* q, Alignment& qali, float* pb,
+    char use_global_weights, HMM* q, Alignment* qali, float* pb,
     const float S[20][20], const float Sim[20][20]) {
   // Open query file and determine file type
   char path[NAMELEN]; // path of input file (is needed to write full path and file name to HMM FILE record)
