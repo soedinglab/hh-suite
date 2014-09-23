@@ -103,7 +103,7 @@ void PosteriorDecoder::forwardAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm,
 #endif
     
         simdf32_store((float *)m_p_forward, float_min_vec);
-    
+
 	// Store probabilities to array-vector variables respectively
 	simdf32_store((float *)&m_mm_prev[0], float_min_vec);
 	simdf32_store((float *)&m_im_prev[0], float_min_vec);

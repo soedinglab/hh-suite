@@ -1,0 +1,12 @@
+set(CS_SOURCE
+	${CS_SOURCE}
+	${CMAKE_CURRENT_SOURCE_DIR}/aa.cc  
+	${CMAKE_CURRENT_SOURCE_DIR}/as.cc  
+	${CMAKE_CURRENT_SOURCE_DIR}/assert_helpers.cc
+	${CMAKE_CURRENT_SOURCE_DIR}/blosum_matrix.cc
+	${CMAKE_CURRENT_SOURCE_DIR}/getopt_pp.cc
+	${CMAKE_CURRENT_SOURCE_DIR}/log.cc
+	${CMAKE_CURRENT_SOURCE_DIR}/application.cc
+	PARENT_SCOPE
+)
+

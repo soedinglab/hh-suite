@@ -1526,8 +1526,8 @@ int Alignment::Filter2(char keep[], int coverage, int qid, float qsc,
 
   // Determine first[k], last[k]?
   if (first == NULL) {
-    first = new (int[N_in]);         // first non-gap position in sequence k
-    last = new (int[N_in]);          // last  non-gap position in sequence k
+    first = new int[N_in];         // first non-gap position in sequence k
+    last = new int[N_in];          // last  non-gap position in sequence k
     for (k = 0; k < N_in; ++k)  // do this for ALL sequences, not only those with in[k]==1 (since in[k] may be display[k])
         {
       for (i = 1; i <= L; ++i)
@@ -1545,7 +1545,7 @@ int Alignment::Filter2(char keep[], int coverage, int qid, float qsc,
   if (nres == NULL || sizeof(nres) < N_in * sizeof(int)) {
     if (nres)
       delete[] nres;
-    nres = new (int[N_in]);
+    nres = new int[N_in];
     for (k = 0; k < N_in; ++k)  // do this for ALL sequences, not only those with in[k]==1 (since in[k] may be display[k])
         {
       int nr = 0;
@@ -1904,8 +1904,8 @@ int Alignment::FilterWithCoreHMM(char in[], float coresc, HMM* qcore,
 
   // Determine first[k], last[k]?
   if (first == NULL) {
-    first = new (int[N_in]);  // first non-gap position in sequence k
-    last = new (int[N_in]);  // last  non-gap position in sequence k
+    first = new int[N_in];  // first non-gap position in sequence k
+    last = new int[N_in];  // last  non-gap position in sequence k
     for (k = 0; k < N_in; ++k)  // do this for ALL sequences, not only those with in[k]==1 (since in[k] may be display[k])
         {
       for (i = 1; i <= L; ++i)
@@ -1921,7 +1921,7 @@ int Alignment::FilterWithCoreHMM(char in[], float coresc, HMM* qcore,
 
   // Determine number of residues nres[k]?
   if (nres == NULL) {
-    nres = new (int[N_in]);
+    nres = new int[N_in];
     for (k = 0; k < N_in; ++k)  // do this for ALL sequences, not only those with in[k]==1 (since in[k] may be display[k])
         {
       int nr = 0;
@@ -2472,7 +2472,7 @@ void Alignment::Amino_acid_frequencies_and_transitions_from_M_state(
   char change;  // has the set of sequences in subalignment changed? 0:no  1:yes
   float sum;
 
-  int* naa = new (int[L + 1]);   // number of different amino acids
+  int* naa = new int[L + 1];   // number of different amino acids
 
   // Allocate memory for f[j]
   float** f = new float*[L + 1];  // f[j][a] = freq of amino acid a at pos j
@@ -2484,15 +2484,15 @@ void Alignment::Amino_acid_frequencies_and_transitions_from_M_state(
     for (k = 0; k < N_in; ++k)
       wi[k] = wg[k];
   else {
-    n = new (int*[L + 2]);
+    n = new int*[L + 2];
     for (j = 1; j <= L; ++j)
-      n[j] = new (int[NAA + 3]);
+      n[j] = new int[NAA + 3];
     for (j = 1; j <= L; ++j)
       for (a = 0; a < NAA + 3; ++a)
         n[j][a] = 0;
-    w_contrib = new (float*[L + 2]);
+    w_contrib = new float*[L + 2];
     for (j = 1; j <= L; ++j)
-      w_contrib[j] = new (float[NAA + 3]);
+      w_contrib[j] = new float[NAA + 3];
   }
   q->Neff_HMM = 0.0f;
   Neff[0] = 0.0;  // if the first column has no residues (i.e. change==0), Neff[i]=Neff[i-1]=Neff[0]

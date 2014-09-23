@@ -13,21 +13,18 @@ void PosteriorDecoder::writeProfilesToHits(HMM & q, HMM & t, PosteriorMatrix & p
 	if(hit.forward_profile) {
 		delete[] hit.forward_profile;
 	}
+	hit.forward_profile  = new float[q.L + 1];
 
 	if(hit.backward_profile) {
 		delete[] hit.backward_profile;
 	}
-
 	hit.backward_profile = new float[q.L + 1];
-	hit.forward_profile  = new float[q.L + 1];
 
 	for(int i = 1; i <= q.L; i++) {
-        float * f_forward_profile = (float *) &m_forward_profile[i];
+    float * f_forward_profile = (float *) &m_forward_profile[i];
 		hit.forward_profile[i] = f_forward_profile[elem];
-        float * f_backward_profile = (float *) &m_backward_profile[i];
+    float * f_backward_profile = (float *) &m_backward_profile[i];
 		hit.backward_profile[i] = f_backward_profile[elem];
-
-//		std::cout << t.name << "_" << hit.irep << "\t" << hit.backward_profile[i] << "\t" << hit.forward_profile[i] << std::endl;
 	}
 
 	for(size_t i = 0; i < hit.posterior_probabilities.size(); i++) {
@@ -113,9 +110,9 @@ void PosteriorDecoder::backtraceMAC(HMM & q, HMM & t, PosteriorMatrix & p_mm, Vi
 	hit.nsteps = step;
 
 	// Allocate new space for alignment scores
-	hit.S    = new( float[hit.nsteps+1]);
-	hit.S_ss = new( float[hit.nsteps+1]);
-	hit.P_posterior = new( float[hit.nsteps+1]);
+	hit.S    = new float[hit.nsteps+1];
+	hit.S_ss = new float[hit.nsteps+1];
+	hit.P_posterior = new float[hit.nsteps+1];
 
 	if (!hit.P_posterior)
 		MemoryError("space for HMM-HMM alignments", __FILE__, __LINE__, __func__);
@@ -211,17 +208,17 @@ void PosteriorDecoder::initializeBacktrace(HMM & t, Hit & hit) {
     if(hit.i) {
       delete[] hit.i;
     }
-	hit.i = new (int[hit.i2 + hit.j2 + 2]);
+	hit.i = new int[hit.i2 + hit.j2 + 2];
 
 	if(hit.j) {
 	  delete[] hit.j;
 	}
-	hit.j = new (int[hit.i2 + hit.j2 + 2]);
+	hit.j = new int[hit.i2 + hit.j2 + 2];
 
 	if(hit.states) {
 	  delete[] hit.states;
 	}
-	hit.states = new (char[hit.i2 + hit.j2 + 2]);
+	hit.states = new char[hit.i2 + hit.j2 + 2];
 
 	if(hit.S) {
 	  delete[] hit.S;

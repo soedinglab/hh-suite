@@ -41,7 +41,7 @@ void ViterbiMatrix::AllocateBacktraceMatrix(int Nq, int Nt)
       return;
     }
 
-    this->bCO_MI_DG_IM_GD_MM_vec = new(unsigned char*[Nq]);
+    this->bCO_MI_DG_IM_GD_MM_vec = new unsigned char*[Nq];
     
     for (int i=0; i<Nq; ++i) {
         this->bCO_MI_DG_IM_GD_MM_vec[i]=(unsigned char *)malloc_simd_float(VEC_SIZE*Nt*sizeof(unsigned char));
