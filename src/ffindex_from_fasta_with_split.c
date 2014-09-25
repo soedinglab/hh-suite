@@ -90,14 +90,25 @@ int main(int argn, char **argv)
   size_t header_offset = 0;
   size_t sequence_offset = 0;
 
-  /* open ffindex */
-  err = ffindex_index_open(data_header_filename, index_header_filename, "w", &data_header_file, &index_header_file, &header_offset);
-  if(err != EXIT_SUCCESS)
-    return err;
+  struct stat st;
 
-  err = ffindex_index_open(data_sequence_filename, index_sequence_filename, "w", &data_sequence_file, &index_sequence_file, &sequence_offset);
-  if(err != EXIT_SUCCESS)
-    return err;
+  // open header ffindex
+  if(stat(data_header_filename, &st) == 0) { errno = EEXIST; perror(data_header_filename); return EXIT_FAILURE; }
+  data_header_file  = fopen(data_header_filename, "w");
+  if( data_header_file == NULL) { perror(data_header_filename); return EXIT_FAILURE; }
+
+  if(stat(index_header_filename, &st) == 0) { errno = EEXIST; perror(index_header_filename); return EXIT_FAILURE; }
+  index_header_file = fopen(index_header_filename, "w+");
+  if(index_header_file == NULL) { perror(index_header_filename); return EXIT_FAILURE; }
+
+  //open sequence ffindex
+  if(stat(data_sequence_filename, &st) == 0) { errno = EEXIST; perror(data_sequence_filename); return EXIT_FAILURE; }
+  data_sequence_file  = fopen(data_sequence_filename, "w");
+  if( data_sequence_file == NULL) { perror(data_sequence_filename); return EXIT_FAILURE; }
+
+  if(stat(index_sequence_filename, &st) == 0) { errno = EEXIST; perror(index_sequence_filename); return EXIT_FAILURE; }
+  index_sequence_file = fopen(index_sequence_filename, "w+");
+  if(index_sequence_file == NULL) { perror(index_sequence_filename); return EXIT_FAILURE; }
 
   fasta_file = fopen(fasta_filename, "r");
   if(fasta_file == NULL) { perror(fasta_filename); return EXIT_FAILURE; }

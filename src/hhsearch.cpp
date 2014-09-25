@@ -753,12 +753,15 @@ void HHsearch::run(FILE* query_fh, char* query_path) {
 	Hash<Hit>* previous_hits = new Hash<Hit>(1631, hit_cur);
 	Hash<char>* premerged_hits = new Hash<char>(1631);
 
+  Qali = new Alignment();
+  Qali_allseqs = new Alignment();
+
 	q = new HMM;
 	HMMSimd q_vec(par.maxres);
 	q_tmp = new HMM;
 
 	// Read input file (HMM, HHM, or alignment format), and add pseudocounts etc.
-	Qali.N_in = 0;
+	Qali->N_in = 0;
 	char input_format = 0;
 	ReadQueryFile(par, query_fh, input_format, par.wg, q, Qali, query_path, pb,
 			S, Sim);
@@ -875,7 +878,7 @@ void HHsearch::run(FILE* query_fh, char* query_path) {
 
 	// Realign hits with MAC algorithm
 	if (par.realign && par.forward != 2) {
-		perform_realign(q_vec, new_entries, premerge, premerged_hits);
+		perform_realign(q_vec, input_format, new_entries, premerge, premerged_hits);
 	}
 
 	// Write HMM to output file without pseudocounts
@@ -887,7 +890,7 @@ void HHsearch::run(FILE* query_fh, char* query_path) {
 	mergeHitsToQuery(previous_hits, premerged_hits, seqs_found, cluster_found);
 
 	// Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
-	Qali.FrequenciesAndTransitions(q, par.wg, par.mark, par.cons, par.showcons,
+	Qali->FrequenciesAndTransitions(q, par.wg, par.mark, par.cons, par.showcons,
 			par.maxres, pb, Sim, NULL, true);
 
 	if (par.notags)

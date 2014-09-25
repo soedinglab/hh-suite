@@ -6,8 +6,6 @@ tags
 /test/
 /other/
 /tmp/
-/lib/
-/lib64/
 /src/hhformat.C
 /src/hhcov.C
 /src/hhtransitive_scoring_old.C
@@ -27,3 +25,4 @@ tags
 /src/cstranslate
 .project
 /Debug
+/build

@@ -10,7 +10,7 @@ void Parameters::SetDefaultPaths() {
 	if (getenv("HHLIB"))
 		strcpy(hhlib, getenv("HHLIB"));
 	else
-		strcpy(hhlib, "/usr/lib/hh");
+		strcpy(hhlib, "/usr/lib");
 
 	strcat(strcpy(hhdata, hhlib), "/data");
 	strcat(strcpy(clusterfile, hhdata), "/context_data.crf");
@@ -246,6 +246,8 @@ void Parameters::SetDefaults() {
 	threads = 2;
 	alitab_scop = false;
 	nocontxt = false;
+
+	optimize_qsc = false;
 
 	return;
 }

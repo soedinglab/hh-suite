@@ -15,10 +15,10 @@
 #include "hhalignment.h"
 #include "hhhitlist.h"
 
-void ReadQueryFile(Parameters& par, FILE* inf, char& input_format, char use_global_weights, HMM* q, Alignment& qali, char infile[],
+void ReadQueryFile(Parameters& par, FILE* inf, char& input_format, char use_global_weights, HMM* q, Alignment* qali, char infile[],
 		float* pb, const float S[20][20], const float Sim[20][20]);
 
-void ReadQueryFile(Parameters& par, char* infile, char& input_format, char use_global_weights, HMM* q, Alignment& qali,
+void ReadQueryFile(Parameters& par, char* infile, char& input_format, char use_global_weights, HMM* q, Alignment* qali,
 		float* pb, const float S[20][20], const float Sim[20][20]);
 
 // Add transition and amino acid pseudocounts to query HMM, calculate aa background etc.

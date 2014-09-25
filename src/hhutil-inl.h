@@ -33,6 +33,11 @@ inline int NumberOfSetBits(int i)
     return (((i + (i >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
 }
 
+//TODO: check
+//inline int NumberOfSetBits(int i)
+//{
+//  return _mm_popcnt_u32(i);
+//}
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Transforms the one-letter amino acid code into an integer between 0 and 22
@@ -298,7 +303,7 @@ inline float fast_addscore(float x)
     }
   if (!initialized)   //First fill in the log2-vector
     {
-      for (int i=0; i<=2000; i++) val[i]=log2(1.0+pow(2,-0.01*(i+0.5)));
+      for (int i=0; i<=2000; i++) val[i]=flog2(1.0+fpow2(-0.01*(i+0.5)));
       initialized=1;
     }
   return val[(int)(100.0*x)];

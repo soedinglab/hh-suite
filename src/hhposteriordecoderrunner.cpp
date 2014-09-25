@@ -147,7 +147,7 @@ void PosteriorDecoderRunner::mergeThreadResults(int irep_counter,
       mac_btr->alt_j = hit.alt_j;
 
       // Add mac and viterbi backtrace result to alignments_to_exclude
-      if(alignments_to_exclude.find(std::string(hit.file)) == alignments_to_exclude.end()) {
+      if(alignments_to_exclude.find(std::string(hit.file)) == alignments_to_exclude.end()) {  //TODO: file might be "stdout" for several different templates?
         alignments_to_exclude[std::string(hit.file)] = new std::vector<PosteriorDecoder::MACBacktraceResult *>();
       }
       alignments_to_exclude[std::string(hit.file)]->push_back(mac_btr);

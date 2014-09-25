@@ -34,7 +34,7 @@ void PosteriorMatrix::allocateMatrix(int q_length_max, int t_length_max) {
     return;
   }
 
-    m_probabilities = new (simd_float * [q_length_max]);
+    m_probabilities = new simd_float * [q_length_max];
 //	printf("p_mm: Allocate 2nd dimension of m_p_mm\n");
 
 	for (int i = 0; i < q_length_max; i++) {
@@ -63,6 +63,9 @@ void PosteriorMatrix::DeleteProbabilityMatrix() {
   delete[] m_probabilities;
 
   m_probabilities = NULL;
+
+  m_q_max_length = 0;
+  m_t_max_length = 0;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////

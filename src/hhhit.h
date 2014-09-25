@@ -39,6 +39,7 @@ struct Posterior_Triple {
 };
 
 
+
 /////////////////////////////////////////////////////////////////////////////////////
 // // Describes an alignment of two profiles. Used as list element in Hits : List<Hit> 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -59,6 +60,8 @@ class Hit
   float* forward_profile;
   float* backward_profile;
   std::vector<Posterior_Triple*> posterior_probabilities;
+
+  float predicted_alignment_quality;
 
   float score;          // Score of alignment (i.e. of Viterbi path)
   float score_sort;     // score to sort hits in output list (negative means first/best!)
@@ -109,6 +112,8 @@ class Hit
 
   bool realign_around_viterbi;
 
+  float qsc;
+
   // Constructor (only set pointers to NULL)
   Hit();
   ~Hit(){};
@@ -128,6 +133,15 @@ class Hit
 
   static int compare_sum_of_probs(const Hit& hit1, const Hit& hit2) {
     return hit1.sum_of_probs > hit2.sum_of_probs;
+  }
+
+  static bool compare_predicted_alignment_quality(const Hit& hit1, const Hit& hit2) {
+//	std::cout << hit1.predicted_alignment_quality << "\t" << hit2.predicted_alignment_quality << std::endl;
+    return hit1.predicted_alignment_quality > hit2.predicted_alignment_quality;
+  }
+
+  static bool compare_evalue(const Hit& hit1, const Hit& hit2) {
+    return hit1.Eval < hit2.Eval;
   }
 
   void initHitFromHMM(HMM * t);
@@ -201,6 +215,46 @@ private:
     return 100.0 / (1.0 + t * t); // ??? JS Jul'12
   }
 };
+
+struct ViterbiScores {
+  ViterbiScores(){
+    score = 0.0;
+    score_aass = 0.0;
+    score_ss = 0.0;
+    Pval = 0.0;
+    Pvalt = 0.0;
+    logPval = 0.0;
+    logPvalt = 0.0;
+    Eval = 0.0;
+    logEval = 0.0;
+    Probab = 0.0;
+  };
+
+  ViterbiScores(Hit& hit) {
+    score = hit.score;
+    score_aass = hit.score_aass;
+    score_ss = hit.score_ss;
+    Pval = hit.Pval;
+    Pvalt = hit.Pvalt;
+    logPval = hit.logPval;
+    logPvalt = hit.logPvalt;
+    Eval = hit.Eval;
+    logEval = hit.logEval;
+    Probab = hit.Probab;
+  }
+
+  float score;
+  float score_aass;
+  float score_ss;
+  double Pval;
+  double Pvalt;
+  double logPval;
+  double logPvalt;
+  double Eval;
+  double logEval;
+  float Probab;
+};
+
 
 double Pvalue(double x, double a[]);
 double Pvalue(float x, float lamda, float mu);

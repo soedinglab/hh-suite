@@ -316,7 +316,7 @@ Typ* Hash<Typ>::Add(char* key, Typ data) {
   if (!pslot) {
     num_keys++;
     KeyLen();
-    slot[i] = new (Slot<Typ> );
+    slot[i] = new Slot<Typ>;
     return slot[i]->Push(key_len, key, data);
   }
   pslot->Reset();
@@ -346,7 +346,7 @@ Typ* Hash<Typ>::Add(char* key) {
   if (!pslot) {
     num_keys++;
     KeyLen();
-    slot[i] = new (Slot<Typ> );
+    slot[i] = new Slot<Typ>;
     return slot[i]->Push(key_len, key, fail);
   }
   pslot->Reset();

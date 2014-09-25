@@ -306,3 +306,15 @@ void writeU16(std::ostream& file, unsigned short int val) {
   // write those bytes to the file
   file.write( (char*)bytes, 2 );
 }
+
+void writeS16(std::ostream& file, signed short int val) {
+  signed char bytes[2];
+
+  // extract the individual bytes from our value
+  bytes[1] = (val) & 0xFF;  // low byte
+  bytes[0] = (val >> 8) & 0xFF;  // high byte
+
+  // write those bytes to the file
+  file.write( (char*)bytes, 2 );
+}
+

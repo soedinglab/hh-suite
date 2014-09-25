@@ -100,6 +100,11 @@ PosteriorDecoder::~PosteriorDecoder() {
 
 	free(p_last_col);
 
+  free(m_p_forward);
+  free(m_t_lengths_le);
+  free(m_t_lengths_ge);
+
+
 	free(m_backward_profile);
 	free(m_forward_profile);
 
@@ -231,9 +236,9 @@ void PosteriorDecoder::initializeForAlignment(HMM & q, HMM & t, Hit* hit, Viterb
 	hit->alt_i = new std::vector<int>();
 	//    if (alt_j && alt_j->Size()>0) delete alt_j;
 
-    if(hit->alt_j) {
-      delete hit->alt_j;
-    }
+  if(hit->alt_j) {
+    delete hit->alt_j;
+  }
 	hit->alt_j = new std::vector<int>();
 
 
@@ -243,7 +248,7 @@ void PosteriorDecoder::initializeForAlignment(HMM & q, HMM & t, Hit* hit, Viterb
 	Viterbi::InitializeForAlignment(&q, &t, &celloff_matrix, elem, hit->self, par_min_overlap);
 
 	for (int idx = 0; idx < (int) alignment_to_exclude.size(); idx++) {
-		// Mask out previous found MAC alignments
+		// Mask out previous found MAC alignments // TODO: not done
 		excludeMACAlignment(q.L, t.L, celloff_matrix, elem, *alignment_to_exclude.at(idx));
 	}
 
@@ -300,7 +305,7 @@ void PosteriorDecoder::excludeMACAlignment(const int q_length, const int t_lengt
 	if (alignment.alt_i && alignment.alt_j) {
 		alignment.alt_i->clear();
 		alignment.alt_j->clear();
-		for(size_t q = 0; q < alignment.alt_i->size(); q++) {
+		for(size_t q = 0; q < alignment.alt_i->size(); q++) { //TODO: does not make sense
 			i = alignment.alt_i->at(q);
 			j = alignment.alt_j->at(q);
 

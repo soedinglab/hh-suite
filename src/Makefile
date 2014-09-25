@@ -17,18 +17,19 @@ INC=-I$(FFINDEX_DIR)
 CFLAGS+=-std=c99 -O2 -g -fPIC -Wall -pedantic $(INC)
 
 ifdef ICC
-  CXX = env LANG=C icc
-  CXXFLAGS += -fast -Wall -fno-strict-aliasing -finline-functions -funroll-loops -fp-model fast=2 -fast-transcendentals -wd981 -wd383 -wd2259 -wd1572 -I$(CS_DIR) -I$(FFINDEX_DIR)
+  CXX = icpc
+  CXXFLAGS += -march=native -O3 -no-prec-div -fno-alias -pipe -std=c++11 -fast -Wall -fno-strict-aliasing -finline-functions -funroll-loops -fp-model fast=2 -fast-transcendentals -wd981 -wd383 -wd2259 -wd1572 -I$(CS_DIR) -I$(FFINDEX_DIR)
+  AR = xiar
+  LD = xild
+  LDFLAGS = -Wl,-O1,--sort-common,--as-needed
   HHSEARCH_LIBS = -lpthread -lrt -openmp
   HHBLITS_LIBS = -lpthread -lrt -openmp
-  CS_LIBS = -openmp
   OBJECT_LIBS = -openmp
 else # ifndef ICC
   CXX = g++
   CXXFLAGS += -g -std=c++11 -ffast-math -O3 -Wall -Wno-vla -Wno-deprecated -Wno-char-subscripts -fno-strict-aliasing -I$(CS_DIR) $(BITS_FLAG) -I$(FFINDEX_DIR) -fopenmp
   HHSEARCH_LIBS = -lpthread
   HHBLITS_LIBS = -lpthread -fopenmp
-  CS_LIBS = -fopenmp
   HHALIGN_LIBS = 
   OBJECT_LIBS = -fopenmp
 	ifdef AVX2
@@ -53,7 +54,7 @@ CPP_VALGRIND = $(CXX) -g $(CXXFLAGS)
 
 
 SOURCES = hhsearch.cpp hhhitlist.cpp hhhit.cpp hhalignment.cpp hhhmm.cpp hhmatrices.cpp hhdecl.cpp hhfunc.cpp hhfullalignment.cpp hhhalfalignment.cpp hhutil.cpp util.cpp hash.cpp list.cpp hhviterbi.cpp hhviterbialgorithm.cpp hhviterbimatrix.cpp hhhmmsimd.cpp hhviterbirunner.cpp
-HH_OBJECTS = hhalignment.o hhfullalignment.o hhhalfalignment.o hhhitlist.o hhhmm.o hhdecl.o hhhit.o hhutil.o util.o hhblits.o hhfunc.o hhmatrices.o hhdatabase.o hhprefilter.o hhviterbi.o hhviterbimatrix.o hhhmmsimd.o hhviterbirunner.o hhviterbialgorithm_with_celloff.o hhviterbialgorithm_without_celloff.o hhposteriormatrix.o hhposteriordecoderrunner.o hhposteriordecoder.o hhmacalgorithm.o hhforwardalgorithm.o hhbackwardalgorithm.o hhbacktracemac.o hhsearch.o hhalign_ori.o hhalign.o
+HH_OBJECTS = hhalignment.o hhfullalignment.o hhhalfalignment.o hhhitlist.o hhhmm.o hhdecl.o hhhit.o hhutil.o util.o hhblits.o hhfunc.o hhmatrices.o hhdatabase.o hhprefilter.o hhviterbi.o hhviterbimatrix.o hhhmmsimd.o hhviterbirunner.o hhviterbialgorithm_with_celloff.o hhviterbialgorithm_without_celloff.o hhposteriormatrix.o hhposteriordecoderrunner.o hhposteriordecoder.o hhmacalgorithm.o hhforwardalgorithm.o hhbackwardalgorithm.o hhbacktracemac.o hhsearch.o hhalign.o
 
 CS_SOURCES_WITH_APPS = $(filter-out $(wildcard $(CS_DIR)/*test*.cc), $(wildcard $(CS_DIR)/*.cc))
 CS_SOURCES = $(filter-out $(wildcard $(CS_DIR)/*app.cc), $(CS_SOURCES_WITH_APPS))
@@ -75,7 +76,7 @@ $(CS_OBJECTS): $(CS_DIR)/%.o: $(CS_DIR)/%.cc
 	$(CPP) $(OBJECT_LIBS) -c $< -o $@
 
 cstranslate: $(CS_DIR)/cstranslate_app.cc $(CS_DIR)/*.cc $(CS_DIR)/*.h $(CS_OBJECTS)
-	$(CPP) $(CS_LIBS) -lm -o cstranslate $(CS_DIR)/cstranslate_app.cc $(CS_OBJECTS)
+	$(CPP) -lm -o cstranslate $(CS_DIR)/cstranslate_app.cc $(CS_OBJECTS)
 
 cstranslate_static: $(CS_DIR)/cstranslate_app.cc $(CS_DIR)/*.cc $(CS_DIR)/*.h $(CS_OBJECTS)
 	$(CPP) $(CS_LIBS) -static -lm -o cstranslate $(CS_DIR)/cstranslate_app.cc $(CS_OBJECTS)
@@ -85,9 +86,6 @@ hhviterbialgorithm_with_celloff.o: hhviterbialgorithm.cpp
 
 hhviterbialgorithm_without_celloff.o: hhviterbialgorithm.cpp 
 	$(CPP) -c -o hhviterbialgorithm_without_celloff.o hhviterbialgorithm.cpp
-
-hhalign_ori: hhalign_app.cpp $(HH_OBJECTS) $(SOURCES) $(HEADERS) $(CS_OBJECTS)
-	$(CPP) hhalign_app.cpp -o hhalign_ori $(HH_OBJECTS) $(CS_OBJECTS) $(HHSEARCH_LIBS) $(OBJECT_LIBS) $(FFINDEX_DIR)/libffindex.a
 
 hhsearch: hhsearch_app.cpp $(HH_OBJECTS) $(SOURCES) $(HEADERS) $(CS_OBJECTS)
 	$(CPP) hhsearch_app.cpp -o hhsearch $(HH_OBJECTS) $(CS_OBJECTS) $(HHSEARCH_LIBS) $(OBJECT_LIBS) $(FFINDEX_DIR)/libffindex.a
@@ -101,11 +99,11 @@ hhsearch_valgrind: hhsearch.cpp $(HH_OBJECTS) $(SOURCES) $(HEADERS) $(CS_OBJECTS
 hhblits: hhblits_app.cpp $(HH_OBJECTS) $(CS_OBJECTS)
 	$(CPP) -g hhblits_app.cpp -o hhblits $(HH_OBJECTS) $(CS_OBJECTS) $(HHBLITS_LIBS) $(OBJECT_LIBS) $(FFINDEX_DIR)/libffindex.a
 
-hhblits_mpi: hhblits_mpi.cpp $(HH_OBJECTS) $(CS_OBJECTS)
-	mpic++ $(CXXFLAGS) -g hhblits_mpi.cpp -o hhblits_mpi $(HH_OBJECTS) $(CS_OBJECTS) $(HHBLITS_LIBS) $(OBJECT_LIBS) $(FFINDEX_DIR)/libffindex.a
+#hhblits_mpi: hhblits_mpi.cpp $(HH_OBJECTS) $(CS_OBJECTS)
+#	mpic++ $(CXXFLAGS) -g hhblits_mpi.cpp -o hhblits_mpi $(HH_OBJECTS) $(CS_OBJECTS) $(HHBLITS_LIBS) $(OBJECT_LIBS) $(FFINDEX_DIR)/libffindex.a
 	
 hhblits_omp: hhblits_omp.cpp $(HH_OBJECTS) $(CS_OBJECTS)
-	mpic++ $(CXXFLAGS) -g hhblits_omp.cpp -o hhblits_omp $(HH_OBJECTS) $(CS_OBJECTS) $(HHBLITS_LIBS) $(OBJECT_LIBS) $(FFINDEX_DIR)/libffindex.a
+	$(CPP) $(CXXFLAGS) -g hhblits_omp.cpp -o hhblits_omp $(HH_OBJECTS) $(CS_OBJECTS) $(HHBLITS_LIBS) $(OBJECT_LIBS) $(FFINDEX_DIR)/libffindex.a
 	
 hhblits_static: hhblits_app.cpp $(HH_OBJECTS) $(SOURCES) $(HEADERS) $(CS_OBJECTS)
 	$(CPP) -static hhblits_app.cpp -o hhblits $(HH_OBJECTS) $(CS_OBJECTS) $(HHBLITS_LIBS)  $(OBJECT_LIBS) $(FFINDEX_DIR)/libffindex.a

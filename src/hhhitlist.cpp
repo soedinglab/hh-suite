@@ -45,7 +45,7 @@ void HitList::PrintHitList(HMM* q, std::stringstream& out,
   out << "Searched_HMMs " << N_searched << std::endl;
 
   // Print date stamp
-  time_t* tp = new (time_t);
+  time_t* tp = new time_t;
   *tp = time(NULL);
 
   out << "Date          " << ctime(tp);
@@ -643,6 +643,19 @@ void HitList::PrintMatrices(HMM* q, std::stringstream& out,
     }
 
     Hit it = hits[index];
+//    if(strcmp("artifact17635", it.name) == 0) {
+//      for(int i = 1; i < q->L; i++) {
+//        std::cout << "backward: " << i << "\t" << it.backward_profile[i] << std::endl;
+//      }
+//
+//      for(int i = 1; i < q->L; i++) {
+//        std::cout << "forward: " << i << "\t" << it.forward_profile[i] << std::endl;
+//      }
+//
+//      for(size_t i = 0; i < it.posterior_probabilities.size(); i++) {
+//        std::cout << it.posterior_probabilities[i]->query_pos << "\t" << it.posterior_probabilities[i]->template_pos << "\t" << it.posterior_probabilities[i]->posterior_probability << std::endl;
+//      }
+//    }
 
     const char* name = it.name;
 
@@ -656,9 +669,8 @@ void HitList::PrintMatrices(HMM* q, std::stringstream& out,
     out.write(reinterpret_cast<const char*>(&ali_probability),
         sizeof(unsigned char));
 
-    unsigned short int alignment_similarity;
-    float_to_16_bit(it.calculateSimilarity(q, S), alignment_similarity);
-    writeU16(out, alignment_similarity);
+    unsigned short int alignment_similarity = it.calculateSimilarity(q, S) * 10;
+    writeS16(out, alignment_similarity);
 
     unsigned short int forwardProbability;
     float printForwardThreshold;

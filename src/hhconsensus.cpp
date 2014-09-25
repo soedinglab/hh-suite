@@ -314,7 +314,7 @@ void ProcessArguments(int argc, char** argv) {
 int main(int argc, char **argv) {
   char* argv_conf[MAXOPT]; // Input arguments from .hhdefaults file (first=1: argv_conf[0] is not used)
   int argc_conf;               // Number of arguments in argv_conf 
-  Alignment* qali = new (Alignment);
+  Alignment* qali = new Alignment;
 
   strcpy(par.infile, "");
   strcpy(par.outfile, "");
@@ -388,7 +388,7 @@ int main(int argc, char **argv) {
 
   // Read input file (HMM, HHM, or alignment format), and add pseudocounts etc.
   char input_format = 0;
-  ReadQueryFile(par, par.infile, input_format, par.wg, q, *qali, pb, S, Sim);
+  ReadQueryFile(par, par.infile, input_format, par.wg, q, qali, pb, S, Sim);
 
   // Same code as in PrepareQueryHMM(par.infile,input_format,q,qali), except that we add SS prediction
   // Add Pseudocounts, if no HMMER input

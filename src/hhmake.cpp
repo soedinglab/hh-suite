@@ -434,8 +434,8 @@ int main(int argc, char **argv) {
 
   // Read input file (HMM, HHM, or alignment format), and add pseudocounts etc.
   char input_format = 0;
-  Alignment qali;
-  ReadQueryFile(par, par.infile, input_format, par.wg, q, qali, pb, S, Sim);
+  Alignment* Qali = new Alignment();
+  ReadQueryFile(par, par.infile, input_format, par.wg, q, Qali, pb, S, Sim);
   PrepareQueryHMM(par, input_format, q, pc_hhm_context_engine, pc_hhm_context_mode, pb, R);
 
   // Write HMM to output file in HHsearch format
@@ -459,6 +459,7 @@ int main(int argc, char **argv) {
   }
 
   delete q;
+  delete Qali;
   DeletePseudocountsEngine(context_lib, crf, pc_hhm_context_engine, pc_hhm_context_mode, pc_prefilter_context_engine, pc_prefilter_context_mode);
 }
 
