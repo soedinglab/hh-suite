@@ -643,19 +643,19 @@ void HitList::PrintMatrices(HMM* q, std::stringstream& out,
     }
 
     Hit it = hits[index];
-//    if(strcmp("artifact17635", it.name) == 0) {
-//      for(int i = 1; i < q->L; i++) {
-//        std::cout << "backward: " << i << "\t" << it.backward_profile[i] << std::endl;
-//      }
-//
-//      for(int i = 1; i < q->L; i++) {
-//        std::cout << "forward: " << i << "\t" << it.forward_profile[i] << std::endl;
-//      }
-//
+    if(strcmp("artifact17635", it.name) == 0) {
+      for(int i = 1; i < q->L; i++) {
+        std::cout << "backward: " << i << "\t" << it.backward_profile[i] << std::endl;
+      }
+
+      for(int i = 1; i < q->L; i++) {
+        std::cout << "forward: " << i << "\t" << it.forward_profile[i] << std::endl;
+      }
+
 //      for(size_t i = 0; i < it.posterior_probabilities.size(); i++) {
 //        std::cout << it.posterior_probabilities[i]->query_pos << "\t" << it.posterior_probabilities[i]->template_pos << "\t" << it.posterior_probabilities[i]->posterior_probability << std::endl;
 //      }
-//    }
+    }
 
     const char* name = it.name;
 

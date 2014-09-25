@@ -9,10 +9,10 @@
 /////////////////////////////////////////////////////////////////////////////////////
 // Object constructor
 /////////////////////////////////////////////////////////////////////////////////////
-HMM::HMM(int maxseqdis, int par_maxres) {
+HMM::HMM(int par_maxseqdis, int par_maxres) {
 	maxres = par_maxres;
-	sname = new char*[maxseqdis];   // names of stored sequences
-	seq = new char*[maxseqdis]; // residues of stored sequences (first at pos 1!)
+	sname = new char*[par_maxseqdis];   // names of stored sequences
+	seq = new char*[par_maxseqdis]; // residues of stored sequences (first at pos 1!)
 	Neff_M = new float[maxres]; // Neff_M[i] = diversity of subalignment of seqs that have residue in col i
 	Neff_I = new float[maxres]; // Neff_I[i] = diversity of subalignment of seqs that have insert in col i
 	Neff_D = new float[maxres]; // Neff_D[i] = diversity of subalignment of seqs that have delete in col i

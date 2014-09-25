@@ -2102,9 +2102,9 @@ void HHblits::run(FILE* query_fh, char* query_path) {
 	Qali = new Alignment();
 	Qali_allseqs = new Alignment();
 
-	q = new HMM;
+	q = new HMM(MAXSEQDIS, par.maxres);
 	HMMSimd q_vec(par.maxres);
-	q_tmp = new HMM;
+	q_tmp = new HMM(MAXSEQDIS, par.maxres);
 
 	// Read query input file (HHM or alignment format) without adding pseudocounts
 	Qali->N_in = 0;

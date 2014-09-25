@@ -756,9 +756,9 @@ void HHsearch::run(FILE* query_fh, char* query_path) {
   Qali = new Alignment();
   Qali_allseqs = new Alignment();
 
-	q = new HMM;
+	q = new HMM(MAXSEQDIS, par.maxres);
 	HMMSimd q_vec(par.maxres);
-	q_tmp = new HMM;
+	q_tmp = new HMM(MAXSEQDIS, par.maxres);
 
 	// Read input file (HMM, HHM, or alignment format), and add pseudocounts etc.
 	Qali->N_in = 0;

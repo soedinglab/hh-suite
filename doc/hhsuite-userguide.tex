@@ -33,8 +33,8 @@
     pdfsubject={HH-suite for sensitive sequence searching based on HMM-HMM alignment},   % subject of the document
     pdfnewwindow=true,      % links in new window
     colorlinks=true,        % false: boxed links; true: colored links
-     linkcolor=black,        % color of internal links
-     citecolor=black,        % color of links to bibliography
+    linkcolor=black,        % color of internal links
+    citecolor=black,        % color of links to bibliography
 %     filecolor=black,        % color of file links
 %     urlcolor=black,         % color of external links
 }
@@ -45,7 +45,7 @@
 %\title{HH-suite for sensitive sequence searching\\[2mm] based on HMM-HMM alignment} 
 
 \begin{document}
-\bibliographystyle{elsarticle-num}
+\bibliographystyle{unsrt}
 %\maketitle
 
 \begin{center}
@@ -195,16 +195,16 @@ Or set \verb`INSTALL_DIR` to the absolute path of the base directory where you w
 $ make install INSTALL_DIR=/usr/local
 \end{verbatim}
 The HH-suite binaries will then be put into \verb`<install_dir>/bin` and the library files into\\
-\verb`<install_dir>/lib/hh`.
+\verb`<install_dir>`.
 \vspace{2mm}
 
 
-\item Set HHLIB and paths: In your shell, set the environment variable HHLIB to \verb`$INSTALL_DIR/lib/hh`, 
+\item Set HHLIB and paths: In your shell, set the environment variable HHLIB to \verb`$INSTALL_DIR`, 
 e.g, for bash, zsh, or ksh,
 \begin{verbatim}
-$ export HHLIB=<install_dir>/lib/hh
+$ export HHLIB=<install_dir>
 \end{verbatim}
-and, for csh or tcsh: \verb`$ setenv HHLIB=<install_dir>/lib/hh`. 
+and, for csh or tcsh: \verb`$ setenv HHLIB=<install_dir>`. 
 HHsearch and HHblits look for the column state library file \verb`cs219.lib`
 and the context library file \verb`context_data.crf` in \verb`$HHLIB/data/`. The hh-suite
 perl scripts also read HHLIB (via file \verb`scripts/HHPaths.pm`) to locate hh-suite binaries and data files.
@@ -2421,7 +2421,7 @@ We are grateful to Lazlo Kajan, Stefan M\"oller and the Debian team for making t
 
 %\bibliographystyle{model3-num-names}
 \addcontentsline{toc}{section}{References}
-\bibliography{../../papers/johannes}
+\bibliography{hhsuite-userguide.bib}
 
  
 

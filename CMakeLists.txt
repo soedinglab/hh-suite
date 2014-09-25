@@ -17,4 +17,5 @@ configure_file (
 add_subdirectory(src)
 add_subdirectory(data)
 add_subdirectory(scripts)
+add_subdirectory(doc)
 add_subdirectory(lib/ffindex)

@@ -41,7 +41,7 @@ class ViterbiConsumerThread
     std::vector<std::pair<char *,Viterbi::BacktraceResult> > excludeAlignments;
  	
  	void clear();
-    void align(int maxres);
+    void align(int maxres, int nseqdis);
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////

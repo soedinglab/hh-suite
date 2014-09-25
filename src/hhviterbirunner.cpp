@@ -20,7 +20,7 @@ void ViterbiConsumerThread::clear() {
     excludeAlignments.clear();
 }
 
-void ViterbiConsumerThread::align(int maxres) {
+void ViterbiConsumerThread::align(int maxres, int nseqdis) {
     Viterbi::ViterbiResult* viterbiResult = viterbiAlgo->Align(q_simd, t_hmm_simd, viterbiMatrix, maxres);
     for (int elem = 0; elem < maxres; elem++) {
         HMM * curr_t_hmm = t_hmm_simd->GetHMM(elem);
@@ -34,7 +34,7 @@ void ViterbiConsumerThread::align(int maxres) {
         Hit hit_cur;
         hit_cur.lastrep = (backtraceScore.score <= SMIN) ? 1 : 0;
         
-        hit_cur.initHitFromHMM(curr_t_hmm);
+        hit_cur.initHitFromHMM(curr_t_hmm, nseqdis);
         
         hit_cur.realign_around_viterbi = false;
         hit_cur.score = backtraceScore.score;
@@ -79,7 +79,13 @@ std::vector<Hit> ViterbiRunner::alignment(Parameters& par, HMMSimd * q_simd,
     HMM * q = q_simd->GetHMM(0);
     
     // Initialize memory
-    HMM t_hmm[(HMMSimd::VEC_SIZE * thread_count)];
+    std::vector<HMM*> t_hmm;
+    for(size_t i = 0; i < HMMSimd::VEC_SIZE * thread_count; i++) {
+      HMM* t = new HMM(MAXSEQDIS, par.maxres);
+      t_hmm.push_back(t);
+    }
+
+
     HMMSimd** t_hmm_simd = new HMMSimd*[thread_count];
     std::vector<ViterbiConsumerThread *> threads;
     for (int thread_id = 0; thread_id < thread_count; thread_id++) {
@@ -132,18 +138,18 @@ std::vector<Hit> ViterbiRunner::alignment(Parameters& par, HMMSimd * q_simd,
                     int format_tmp = 0;
                     //char wg = 1;
 
-                    entry->getTemplateHMM(par, par.wg, qsc, format_tmp, pb, S, Sim, &t_hmm[current_t_index + i]);
-                    t_hmm[current_t_index + i].entry = entry;
+                    entry->getTemplateHMM(par, par.wg, qsc, format_tmp, pb, S, Sim, t_hmm[current_t_index + i]);
+                    t_hmm[current_t_index + i]->entry = entry;
                     
-                    PrepareTemplateHMM(par, q, &t_hmm[current_t_index + i], format_tmp, pb, R);
-                    templates_to_align.push_back(&t_hmm[current_t_index + i]);
+                    PrepareTemplateHMM(par, q, t_hmm[current_t_index + i], format_tmp, pb, R);
+                    templates_to_align.push_back(t_hmm[current_t_index + i]);
 
                 }
                 t_hmm_simd[current_thread_id]->MapHMMVector(templates_to_align);
                 exclude_alignments(maxResElem, q_simd, t_hmm_simd[current_thread_id],
                                    excludeAlignments, viterbiMatrix[current_thread_id]);
                 // start next job
-                threads[current_thread_id]->align(maxResElem);
+                threads[current_thread_id]->align(maxResElem, par.nseqdis);
             } // idb loop
             // merge thread results
             // search hits for next alignment
@@ -176,11 +182,15 @@ std::vector<Hit> ViterbiRunner::alignment(Parameters& par, HMMSimd * q_simd,
     for (int thread_id = 0; thread_id < thread_count; thread_id++) {
         delete t_hmm_simd[thread_id];
         delete threads[thread_id];
-
     }
     threads.clear();
     delete[] t_hmm_simd;
     
+    for(size_t i = 0; i < HMMSimd::VEC_SIZE * thread_count; i++) {
+      delete t_hmm[i];
+    }
+    t_hmm.clear();
+
     return ret_hits;
 }
 

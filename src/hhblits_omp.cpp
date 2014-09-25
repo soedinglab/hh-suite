@@ -164,7 +164,7 @@ int main(int argc, char **argv) {
 
   size_t range_start = 0;
   size_t range_end = index->n_entries;
-  #pragma omp parallel for
+  #pragma omp parallel for schedule(dynamic, 10)
   for (size_t entry_index = range_start; entry_index < range_end; entry_index++) {
     ffindex_entry_t* entry = ffindex_get_entry_by_index(index, entry_index);
     if (entry == NULL) {

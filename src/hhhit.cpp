@@ -217,7 +217,7 @@ float Hit::calculateSimilarity(HMM* q, const float S[20][20]) {
 //  Probab = 1.0;
 //}
 
-void Hit::initHitFromHMM(HMM * t){
+void Hit::initHitFromHMM(HMM * t, const int par_nseqdis){
     this->alt_i = NULL;
     this->alt_j = NULL;
     this->P_posterior = NULL;
@@ -242,9 +242,8 @@ void Hit::initHitFromHMM(HMM * t){
     if (!this->sname || !this->seq)
         MemoryError("space for alignments with database HMMs.\nNote that all sequences for display have to be kept in memory", __FILE__, __LINE__, __func__);
 
-
     // Make deep copy for all further alignments
-    for (int k=0; k < t->n_display; k++)
+    for (int k=0; k < std::min(t->n_display, par_nseqdis); k++)
     {
         this->sname[k] = new char[strlen(t->sname[k])+1];
         this->seq[k]   = new char[strlen(t->seq[k])+1];
@@ -252,7 +251,7 @@ void Hit::initHitFromHMM(HMM * t){
         strcpy(this->seq[k],t->seq[k]);
     }
 
-    this->n_display=t->n_display;
+    this->n_display = std::min(t->n_display, par_nseqdis);
     this->ncons  = t->ncons;
     this->nfirst = t->nfirst;
     this->nss_dssp = t->nss_dssp;

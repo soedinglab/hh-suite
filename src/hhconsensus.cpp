@@ -59,7 +59,7 @@ float __attribute__((aligned(16))) pb[21];
 
 char program_name[NAMELEN];
 
-HMM* q = new HMM;        //Create a HMM with maximum of par.maxres match states
+HMM* q = new HMM(MAXSEQDIS, par.maxres);        //Create a HMM with maximum of par.maxres match states
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Help functions

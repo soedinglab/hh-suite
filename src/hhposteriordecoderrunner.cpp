@@ -54,8 +54,11 @@ void PosteriorDecoderRunner::executeComputation(Parameters& par, const float qsc
     t_hmm_simd[i] = new HMMSimd(par.maxres);
   }
 
-  HMM t_hmm[(HMMSimd::VEC_SIZE * m_n_threads)];
-
+  std::vector<HMM*> t_hmm;
+  for(size_t i = 0; i < HMMSimd::VEC_SIZE * m_n_threads; i++) {
+    HMM* t = new HMM(MAXSEQDIS, par.maxres);
+    t_hmm.push_back(t);
+  }
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
   // Read all alignments
@@ -86,7 +89,7 @@ void PosteriorDecoderRunner::executeComputation(Parameters& par, const float qsc
 
         int format_tmp = 0;
         //char wg = 0;
-        hit_cur->entry->getTemplateHMM(par, par.wg, qsc, format_tmp, pb, S, Sim, &t_hmm[current_t_index + i]);
+        hit_cur->entry->getTemplateHMM(par, par.wg, qsc, format_tmp, pb, S, Sim, t_hmm[current_t_index + i]);
 #pragma omp critical // because alignments_to_exclude get changed
 {
         if (alignments_to_exclude.find(std::string(hit_cur->file)) != alignments_to_exclude.end()) {
@@ -99,8 +102,8 @@ void PosteriorDecoderRunner::executeComputation(Parameters& par, const float qsc
         }
 }
 
-        PrepareTemplateHMM(par, q_hmm, &t_hmm[current_t_index + i], format_tmp, pb, R);
-        templates_to_align.push_back(&t_hmm[current_t_index + i]);
+        PrepareTemplateHMM(par, q_hmm, t_hmm[current_t_index + i], format_tmp, pb, R);
+        templates_to_align.push_back(t_hmm[current_t_index + i]);
       }
       t_hmm_simd[current_thread_id]->MapHMMVector(templates_to_align);
       // start next job
@@ -121,6 +124,11 @@ void PosteriorDecoderRunner::executeComputation(Parameters& par, const float qsc
     delete (*it).second;
   }
   alignments_to_exclude.clear();
+
+  for(size_t i = 0; i < HMMSimd::VEC_SIZE * m_n_threads; i++) {
+    delete t_hmm[i];
+  }
+  t_hmm.clear();
 
   for (int i = 0; i < m_n_threads; i++) {
     delete t_hmm_simd[i];

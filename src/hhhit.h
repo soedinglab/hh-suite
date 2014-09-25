@@ -144,7 +144,7 @@ class Hit
     return hit1.Eval < hit2.Eval;
   }
 
-  void initHitFromHMM(HMM * t);
+  void initHitFromHMM(HMM * t, const int nseqdis);
 
   float estimateAlignmentQuality(HMM* q);
   float calculateSimilarity(HMM* q, const float S[20][20]);

@@ -493,7 +493,7 @@ void HHFileEntry::getTemplateA3M(Parameters& par, float* pb,
                                  Alignment& tali) {
 
   char line[LINELEN];
-  HMM* t = new HMM();
+  HMM* t = new HMM(MAXSEQDIS, par.maxres);
 
   FILE* inf = fopen(file, "r");
 
