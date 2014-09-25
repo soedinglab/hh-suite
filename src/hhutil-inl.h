@@ -623,6 +623,97 @@ inline simd_float simd_flog2_sum_fpow2(simd_float x1, simd_float x2) {
 }
 
 
+// Perform log-sum-exp calculation with six variables
+//                              result = x1 + x2 + x3 + x4 + x5 + x6
+//      -->             result = log2( 2^(x1) + 2^(x2) + 2^(x3) + 2^(x4) + 2^(x5) + 2^(x6))
+//              // to prevent overflows apply log sum of exp trick
+//              --> xMax = max(x1, x2, x3, x4, x5, x6)
+//      -->     result = log2(2^(xMax) * (2^(x1 - xMax) + 2^(x2 - xMax) + 2^(x3 - xMax) + 2^(x4 - xMax) + 2^(x5 - xMax) + 2^(x6 - xMax)))
+//      -->             result = log2(2^(xMax)) + log2(2^(x1 - xMax) + 2^(x2 - xMax) + 2^(x3 - xMax) + 2^(x4 - xMax) + 2^(x5 - xMax) + 2^(x6 - xMax))
+//      -->             result = xMax + log2(2^(x1 - xMax) + 2^(x2 - xMax) + 2^(x3 - xMax) + 2^(x4 - xMax) + 2^(x5 - xMax) + 2^(x6 - xMax))
+// WHERE x1, x2, x3, x4, x5 and x6 contain the log-values respectively!
+inline float flog2_sum_fpow2(float x1, float x2, float x3, float x4, float x5, float x6) {
+    
+    //      float arr[] = {x1, x2, x3, x4, x5, x6};
+    //      std::sort(arr, arr + 6);
+    //
+    //      return fmax(-FLT_MAX, arr[5] + logo(arr[4] - arr[5] + logo(arr[3] - arr[4] + logo(arr[2] - arr[3] +
+    //                                                                                      logo(arr[1] - arr[2] + logo(arr[0] - arr[1]))))));
+    
+    float xmax = fmax(x1, fmax(x2, fmax(x3, fmax(x4, fmax(x5, x6)))));
+    
+    return fmax(-FLT_MAX, xmax + flog2(
+                                       fpow2(x1 - xmax) +
+                                       fpow2(x2 - xmax) +
+                                       fpow2(x3 - xmax) +
+                                       fpow2(x4 - xmax) +
+                                       fpow2(x5 - xmax) +
+                                       fpow2(x6 - xmax)));
+    //      return fmax(-FLT_MAX, xmax + log2f(
+    //                                              powf(2, x1 - xmax) +
+    //                                              powf(2, x2 - xmax) +
+    //                                              powf(2, x3 - xmax) +
+    //                                              powf(2, x4 - xmax) +
+    //                                              powf(2, x5 - xmax) +
+    //                                              powf(2, x6 - xmax)));
+    
+}
+// Perform log-sum-exp calculation with three variables
+//                              result = x1 + x2 + x3
+//      -->             result = log2( 2^(x1) + 2^(x2) + 2^(x3) )
+//              // to prevent overflows apply log sum of exp trick
+//              --> xMax = max(x1, x2, x3)
+//      -->     result = log2(2^(xMax) * (2^(x1 - xMax) + 2^(x2 - xMax) + 2^(x3 - xMax)))
+//      -->             result = log2(2^(xMax)) + log2(2^(x1 - xMax) + 2^(x2 - xMax) + 2^(x3 - xMax))
+//      -->             result = xMax + log2(2^(x1 - xMax) + 2^(x2 - xMax) + 2^(x3 - xMax))
+// WHERE x1, x2 and x3 contain the log-values respectively!
+inline float flog2_sum_fpow2(float x1, float x2, float x3) {
+    
+    //      float arr[] = {x1, x2, x3};
+    //      std::sort(arr, arr + 3);
+    //
+    //      return fmax(-FLT_MAX, arr[2] + logo(arr[1] - arr[2] + logo(arr[0] - arr[1])));
+    
+    float xmax = fmax(x1, fmax(x2, x3));
+    
+    return fmax(-FLT_MAX, xmax + flog2(
+                                       fpow2(x1 - xmax) +
+                                       fpow2(x2 - xmax) +
+                                       fpow2(x3 - xmax)));
+    //      return fmax(-FLT_MAX, xmax + log2f(
+    //                                              powf(2, x1 - xmax) +
+    //                                              powf(2, x2 - xmax) +
+    //                                              powf(2, x3 - xmax)));
+    
+}
+
+// Perform log-sum-exp calculation with two variables
+//                              result = x1 + x2
+//      -->             result = log2(2^(x1) + 2^(x2))
+//              // to prevent overflows apply log sum of exp trick
+//              --> xMax = max(x1, x2)
+//      -->     result = log2(2^(xMax) * (2^(x1 - xMax) + 2^(x2 - xMax)))
+//      -->             result = log2(2^(xMax)) + log2(2^(x1 - xMax) + 2^(x2 - xMax))
+//      -->             result = xMax + log2(2^(x1 - xMax) + 2^(x2 - xMax))
+// WHERE x1 and x2 contain the log-values respectively!
+inline float flog2_sum_fpow2(float x1, float x2) {
+    
+    //      float arr[] = {x1, x2};
+    //      std::sort(arr, arr + 2);
+    //
+    //      return fmax(-FLT_MAX, arr[1] + logo(arr[0] - arr[1]));
+    
+    float xmax = fmax(x1, x2);
+    
+    return fmax(-FLT_MAX, xmax + flog2(
+                                       fpow2(x1 - xmax) +
+                                       fpow2(x2 - xmax)));
+    //      return fmax(-FLT_MAX, xmax + log2f(
+    //                                              powf(2, x1 - xmax) +
+    //                                              powf(2, x2 - xmax)));
+    
+}
+
 
 
 
