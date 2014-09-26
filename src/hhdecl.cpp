@@ -86,7 +86,7 @@ void Parameters::SetDefaults() {
 	showpred = 1;              // show predicted secondary structure ss_pred
 	showconf = 0;           // don't show secondary structure confidence ss_conf
 	cons = 0; // chose first non-SS sequence as main representative sequence (not consensus)
-	nseqdis = 10;       // maximum number of query sequences for output alignment
+	nseqdis = 1;       // maximum number of query sequences for output alignment
 	mark = 0; // 1: only marked sequences (or first) get displayed; 0: most divergent ones get displayed
 	aliwidth = 80; // number of characters per line in output alignments for HMM search
 
