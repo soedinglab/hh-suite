@@ -472,6 +472,16 @@ void HHblits::help(Parameters& par, char all) {
         par.columnscore);
 		printf(
 				" -ssm {0,..,4}  0:   no ss scoring                                             \n");
+    printf(
+        "        0       = log2 Sum(tja*qia/pa)   (pa: aa background frequencies)    \n");
+    printf(
+        "        1       = log2 Sum(tja*qia/pqa)  (pqa = 1/2*(pa+ta) )               \n");
+    printf(
+        "        2       = log2 Sum(tja*qia/ta)   (ta: av. aa freqs in template)     \n");
+    printf(
+        "        3       = log2 Sum(tja*qia/qa)   (qa: av. aa freqs in query)        \n");
+    printf(
+        "        5       local amino acid composition correction                     \n");
 		printf(
 				"                1,2: ss scoring after or during alignment  [default=%1i]         \n",
 				par.ssm);
