@@ -159,6 +159,16 @@ else {
 
 my $tmp_outfile = "$tmpfile.out";
 
+if ( $infile eq "stdin" ) {
+	my @stdin = <STDIN>;
+	$infile = "$tmpfile.stdin";
+	open(OUT, ">$infile");
+	foreach my $line (@stdin) {
+  	print OUT $line;
+	}
+	close(OUT);
+}
+
 ############################################################################################
 
 if ( $informat ne "hmm" ) {
@@ -281,7 +291,16 @@ if ( $informat ne "hmm" ) {
 		$outfile = "$inbase.a3m";
 	}
 
-	move( $tmp_outfile, $outfile );
+	if($outfile ne "stdout") {
+		move( $tmp_outfile, $outfile );
+	}
+	else {
+		open(IN, "<$tmp_outfile");
+		foreach $line(<IN>) {
+			print $line;
+		}
+		close(IN)
+	}
 
 	if ( $v >= 2 ) { print("done \n"); }
 }
@@ -677,7 +696,7 @@ sub AppendDsspSequences() {
 		if ( $pdbfile eq "" ) { return 1; }
 		$dsspfile = $tmpfile . ".dssp";
 		# Thanks to Stefan Bienert for this patch
-		&HHPaths::System("$pdbfile | $dssp -- $dsspfile 2> /dev/null");
+		&HHPaths::System("$dssp -i $pdbfile -o $dsspfile 2> /dev/null");
 
 		if ( !-e $dsspfile ) {
 			if ( $v >= 3 ) {
@@ -898,10 +917,13 @@ sub OpenPDBfile() {
 	}
 
 	if ( $pdbfile =~ /\.(Z|gz)$/i ) {
-		return "gunzip -c $pdbfile";
+		my $tmp_pdb_filename;
+		(undef, $tmp_pdb_filename) = tempfile(UNLINK => 1, OPEN => 0);
+		&HHPaths::System("gunzip -c $pdbfile > $tmp_pdb_filename");
+		return "$tmp_pdb_filename";
 	}
 	else {
-		return "cat $pdbfile";
+		return "$pdbfile";
 	}
 }
 
