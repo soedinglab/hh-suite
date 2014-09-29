@@ -467,6 +467,9 @@ void HHblits::help(Parameters& par, char all) {
 		printf(
 				" -corr [0,1]    weight of term for pair correlations (def=%.2f)                \n",
 				par.corr);
+    printf(
+        " -sc   <int>    amino acid score         (tja: template HMM at column j) (def=%i)\n",
+        par.columnscore);
 		printf(
 				" -ssm {0,..,4}  0:   no ss scoring                                             \n");
 		printf(
@@ -1039,6 +1042,8 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
 			par.mact = atof(argv[++i]);
 		else if (!strcmp(argv[i], "-macins") && (i < argc - 1))
 			par.macins = atof(argv[++i]);
+    else if (!strcmp(argv[i], "-sc") && (i < argc - 1))
+      par.columnscore = atoi(argv[++i]);
 		else if (!strcmp(argv[i], "-scwin") && (i < argc - 1)) {
 			par.columnscore = 5;
 			par.half_window_size_local_aa_bg_freqs = std::max(1,
