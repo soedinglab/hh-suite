@@ -30,6 +30,7 @@
 use lib $ENV{"HHLIB"}."/scripts";
 use HHPaths;   # config file with path variables for nr, blast, psipred, pdb, dssp etc.
 use Align;     # Needleman-Wunsch and Smith-Waterman alignment functions
+use File::Temp qw/ tempfile /;
 use strict;
 
 $|=1; # autoflush on
@@ -96,24 +97,63 @@ if (!$outfile) {
     $outfile=~s/^(.*)\..*?$/$1.pdb/;
 }
 
-# Read query sequence in infile
+# Read infile
 if ($v>=3) {print("Reading $infile...\n");}
-open(INFILE,"<$infile") or die("Error: can't open $infile: $!\n");
-while ($line=<INFILE>) {  # find query sequence
-    if ( $line=~/^>/ && $line!~/^>(aa|ss)_/){last;}
+
+my @infile_lines;
+if($infile ne "stdin") {
+  open(INFILE,"<$infile") or die("Error: can't open $infile: $!\n");
+  @infile_lines = <INFILE>;
+  close(INFILE);
 }
+else {
+  @infile_lines = <STDIN>;
+}
+
+# Read query sequence in infile
+my $line_index = 0;
+for ($line_index = 0; $line_index < scalar(@infile_lines); $line_index++) {
+  $line = $infile_lines[$line_index];
+  if ($line =~ /^>/ && $line !~ /^>(aa|ss)_/) {
+    last;
+  }
+}
+  
 $line=~/^>(.*)/;
 $nameline=$1;
+
 # Read query sequence
-while ($line=<INFILE>) {
-    if($line=~/^>/) {last;}
-    chomp($line);
-    $aaq.=$line;
+for ($line_index += 1; $line_index < scalar(@infile_lines); $line_index++) {
+  $line = $infile_lines[$line_index];
+  if($line =~ /^>/) {
+    last;
+  }
+  chomp($line);
+  $aaq .= $line;
 }
-# $aaq=~tr/X.-//d;  # Remove symbol for inserted domain or missing residues
+
+# Prepare output file if stdout
+my $is_stdout_output = 0;
+if ($outfile eq "stdout") {
+	$is_stdout_output = 1;
+	(undef, $outfile) = tempfile(UNLINK => 1, OPEN => 0);
+}
+
 if (&MakePdbFile($nameline,$aaq,$outfile) !=0) {exit(1);}
-close(INFILE);
+
+# Print outfile to stdout if specified by the user
+if ($is_stdout_output == 1) {
+  open(FH, "<$outfile") or die("Error: can't open temporary $outfile: $!\n");
+
+	while( my $line = <FH>) { 
+  	print($line);
+	}
+
+  close(FH);
+}
+
 if ($v>=2) {print("Done\n");}
+
 exit(0);
 
 
