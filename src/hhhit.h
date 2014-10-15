@@ -145,6 +145,7 @@ class Hit
   }
 
   void initHitFromHMM(HMM * t, const int nseqdis);
+  void initHitFromHit(Hit& hit, int query_length);
 
   float estimateAlignmentQuality(HMM* q);
   float calculateSimilarity(HMM* q, const float S[20][20]);

@@ -721,12 +721,12 @@ sub AppendDsspSequences() {
 	}
 
 	if ( length($aa_dssp) == 0 ) {
-		print("WARNING: no residues found in $dsspfile\n");
+		print(STDERR "WARNING: no residues found in $dsspfile\n");
 		return 1;
 	}
 
 	if ( length($aa_dssp) <= 20 ) {
-		printf( "WARNING: only %i residues found in $dsspfile\n", length($aa_dssp) );
+		printf(STDERR "WARNING: only %i residues found in $dsspfile\n", length($aa_dssp) );
 		return 1;
 	}
 
@@ -821,12 +821,12 @@ sub AppendDsspSequences() {
 	}
 
 	if ( $score / $len < 0.5 ) {
-		printf( STDOUT "\nWARNING: in $name: alignment score with dssp residues too low: Score/len=%f.\n\n",
+		printf( STDERR "\nWARNING: in $name: alignment score with dssp residues too low: Score/len=%f.\n\n",
 			$score / $len
 		);
-		printf( "IN:    %s\n", $xseq );
-		printf( "MATCH: %s\n", $Sstr );
-		printf( "DSSP:  %s\n", $yseq );
+		printf( STDERR "IN:    %s\n", $xseq );
+		printf( STDERR "MATCH: %s\n", $Sstr );
+		printf( STDERR "DSSP:  %s\n", $yseq );
 		return 1;
 	}
 

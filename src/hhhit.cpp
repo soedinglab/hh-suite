@@ -75,12 +75,14 @@ void Hit::Delete() {
       delete[] sname[k];
     delete[] sname;
   }
+  sname = NULL;
 
   if (seq) {
     for (int k = 0; k < n_display; ++k)
       delete[] seq[k];
     delete[] seq;
   }
+  seq = NULL;
 
   if(backward_profile) {
 	  delete[] backward_profile;
@@ -96,8 +98,135 @@ void Hit::Delete() {
   posterior_probabilities.clear();
 
   longname = name = file = NULL;
-  sname = NULL;
-  seq = NULL;
+}
+
+void Hit::initHitFromHit(Hit& hit, int query_length) {
+  Delete();
+
+  this->longname = new char[strlen(hit.longname)+1];
+  strcpy(this->longname, hit.longname);
+
+  this->name = new char[strlen(hit.name)+1];
+  strcpy(this->name, hit.name);
+
+  this->file = new char[strlen(hit.file)+1];
+  strcpy(this->file, hit.file);
+
+  strcpy(fam, hit.fam);
+  strcpy(sfam, hit.sfam);
+  strcpy(fold, hit.fold);
+  strcpy(cl, hit.cl);
+
+  entry = hit.entry;
+
+  if(hit.forward_profile) {
+    forward_profile = new float[query_length + 1];
+    for(int i = 1; i <= query_length; i++) {
+      forward_profile[i] = hit.forward_profile[i];
+    }
+  }
+
+  if(hit.backward_profile) {
+    backward_profile = new float[query_length + 1];
+    for(int i = 1; i <= query_length; i++) {
+      backward_profile[i] = hit.backward_profile[i];
+    }
+  }
+
+  for(size_t i = 0; i < hit.posterior_probabilities.size(); i++) {
+    Posterior_Triple* triple = new Posterior_Triple(hit.posterior_probabilities[i]->query_pos,
+                                                    hit.posterior_probabilities[i]->template_pos,
+                                                    hit.posterior_probabilities[i]->posterior_probability);
+
+    posterior_probabilities.push_back(triple);
+  }
+
+  predicted_alignment_quality = hit.predicted_alignment_quality;
+
+  score = hit.score;
+  score_sort = hit.score;
+  score_aass = hit.score_aass;
+  score_ss = hit.score_ss;
+  Pval = hit.Pval;
+  Pvalt = hit.Pvalt;
+  logPval = hit.Pvalt;
+  logPvalt = hit.Pvalt;
+  Eval = hit.Eval;
+  logEval = hit.Eval;
+  Probab = hit.Probab;
+  Pforward = hit.Pforward;
+
+  L = hit.L;
+  irep = hit.irep;
+  lastrep = hit.lastrep;
+
+  n_display = hit.n_display;
+
+  sname = new char*[hit.n_display];
+  seq   = new char*[hit.n_display];
+
+  for (int k=0; k < hit.n_display; k++) {
+    sname[k] = new char[strlen(hit.sname[k])+1];
+    seq[k]   = new char[strlen(hit.seq[k])+1];
+    strcpy(sname[k], hit.sname[k]);
+    strcpy(seq[k], hit.seq[k]);
+  }
+
+  nss_dssp = hit.nss_dssp;
+  nsa_dssp = hit.nsa_dssp;
+  nss_pred = hit.nss_pred;
+  nss_conf = hit.nss_conf;
+  nfirst = hit.nfirst;
+  ncons = hit.ncons;
+
+  nsteps = hit.nsteps;
+  i = new int[hit.nsteps];
+  j = new int[hit.nsteps];
+  states = new char[hit.nsteps];
+  S = new float[hit.nsteps];
+  S_ss = new float[hit.nsteps];
+  P_posterior = new float[hit.nsteps];
+
+  for(int index = 0; index < hit.nsteps; index++) {
+    i[index] = hit.i[index];
+    j[index] = hit.j[index];
+    states[index] = hit.states[index];
+    S[index] = hit.S[index];
+    S_ss[index] = hit.S_ss[index];
+    if(hit.P_posterior)
+      P_posterior[index] = hit.P_posterior[index];
+  }
+
+  if(hit.alt_i) {
+    alt_i = new std::vector<int>();
+    for(size_t i = 0; i < hit.alt_i->size(); i++) {
+      alt_i->push_back(hit.alt_i->at(i));
+    }
+  }
+  if(hit.alt_j) {
+    alt_j = new std::vector<int>();
+    for(size_t i = 0; i < hit.alt_j->size(); i++) {
+      alt_j->push_back(hit.alt_j->at(i));
+    }
+  }
+
+  i1 = hit.i1;
+  i2 = hit.i2;
+  j1 = hit.j1;
+  j2 = hit.j2;
+  matched_cols = hit.matched_cols;
+  ssm1 = hit.ssm1;
+  ssm2 = hit.ssm2;
+  self = hit.self;
+  sum_of_probs = hit.sum_of_probs;
+  Neff_HMM = hit.Neff_HMM;
+
+  realign_around_viterbi = hit.realign_around_viterbi;
+
+  qsc = hit.qsc;
+
+  state = hit.state;
+  min_overlap = hit.min_overlap;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////

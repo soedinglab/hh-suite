@@ -78,7 +78,7 @@ sub System()
     if ($? == -1) {
 	die("\nError: failed to execute '$_[0]': $!\n\n");	
     } elsif ($? != 0) {
-	printf("\nError: command '$_[0]' returned error code %d\n\n", $? >> 8);
+	printf(STDERR "\nError: command '$_[0]' returned error code %d\n\n", $? >> 8);
 	return 1;
    }
     return $?;
