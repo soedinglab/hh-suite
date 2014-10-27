@@ -3674,7 +3674,7 @@ void Alignment::MergeMasterSlave(Hit& hit, Alignment& Tali, char* ta3mfile,
       iprev = i;
       lprev = l;
       if (h >= maxcol - 1000)  // too few columns? Reserve double space
-          {
+      {
         char* new_seq = new char[2 * maxcol];
         strncpy(new_seq, cur_seq, maxcol);  //////// check: maxcol-1 ????
         delete[] (cur_seq);
@@ -3684,8 +3684,18 @@ void Alignment::MergeMasterSlave(Hit& hit, Alignment& Tali, char* ta3mfile,
     }
 
     // Add the remaining gaps '-' to the end of the template sequence
-    for (i = hit.i2 + 1; i <= L; ++i)
+    for (i = hit.i2 + 1; i <= L; ++i) {
       cur_seq[h++] = '-';
+
+      // too few columns? Reserve double space
+      if (h >= maxcol - 1000) {
+        char* new_seq = new char[2 * maxcol];
+        strncpy(new_seq, cur_seq, maxcol);
+        delete[] (cur_seq);
+        cur_seq = new_seq;
+        maxcol *= 2;
+      }
+    }
     cur_seq[h++] = '\0';
 
     keep[N_in] = display[N_in] = 1;
