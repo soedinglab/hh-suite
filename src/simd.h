@@ -10,19 +10,19 @@
 #define SIMD_H
 #include <stdlib.h>
 
-#ifdef AVX512_SUPPORT
-#define AVX2_SUPPORT
+#ifdef AVX512
+#define AVX2
 #endif
 
-#ifdef AVX2_SUPPORT
-#define AVX_SUPPORT
+#ifdef AVX2
+#define AVX
 #endif
 
-#ifdef AVX_SUPPORT
+#ifdef AVX
 #define SSE
 #endif
 
-#ifdef AVX512_SUPPORT
+#ifdef AVX512
 #include <zmmintrin.h.h> // AVX512
 // double support
 #ifndef SIMD_DOUBLE
@@ -109,7 +109,7 @@ typedef __m512i simd_int;
 #endif //SIMD_INT
 #endif //AVX512_SUPPORT
 
-#ifdef AVX2_SUPPORT
+#ifdef AVX2
 // integer support  (usable with AVX2)
 #ifndef SIMD_INT
 #define SIMD_INT
@@ -153,9 +153,9 @@ typedef __m256i simd_int;
 #define simdi32_i2f(x) 	    _mm256_cvtepi32_ps(x)  // convert integer to s.p. float
 #define simdi_i2fcast(x)    _mm256_castsi256_ps(x)
 #endif //SIMD_INT
-#endif //AVX2_SUPPORT
+#endif //AVX2
 
-#ifdef AVX_SUPPORT
+#ifdef AVX
 #include <immintrin.h> // AVX
 // double support (usable with AVX1)
 #ifndef SIMD_DOUBLE

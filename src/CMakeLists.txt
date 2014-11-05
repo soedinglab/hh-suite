@@ -1,16 +1,30 @@
-FIND_PACKAGE( OpenMP REQUIRED)
-if(OPENMP_FOUND)
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+include(CheckCXXCompilerFlag)
+check_cxx_compiler_flag(-fopenmp HAS_NO_INVALID_OFFSETOF)
+if (HAS_NO_INVALID_OFFSETOF)
+    message("-- Found OpenMP")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fopenmp")
+    set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -fopenmp")
+else()
+    message( FATAL_ERROR "Can not find OpenMP." )
 endif()
+
 
 add_subdirectory(cs)
 include_directories(cs)
-include_directories(../lib/ffindex/src)
 include_directories("${PROJECT_BINARY_DIR}")
 
-add_definitions(-DSSE)
+#SSE
+set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/../cmake")
+include(CheckSSEFeatures)
+ADD_DEFINITIONS(${CXX_DFLAGS})
+if(${HAVE_AVX2_EXTENSIONS})
+    ADD_DEFINITIONS("-DAVX2")
+else()
+if(${HAVE_SSE2_EXTENSIONS})
+    ADD_DEFINITIONS("-DSSE")
+endif(${HAVE_SSE2_EXTENSIONS})
+endif(${HAVE_AVX2_EXTENSIONS})
+
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
@@ -45,6 +59,7 @@ set(HH_SOURCE
 	${CMAKE_CURRENT_SOURCE_DIR}/hhhalfalignment.cpp 
 	${CMAKE_CURRENT_SOURCE_DIR}/hhviterbirunner.cpp 
 	${CMAKE_CURRENT_SOURCE_DIR}/hhfunc.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/simd.h
 )
 
 add_library(HH_OBJECTS OBJECT ${HH_SOURCE})

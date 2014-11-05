@@ -143,7 +143,7 @@ namespace hh {
       vTemp = simdui8_subs(vF, vTemp);
       vTemp = simdi8_eq(vTemp, vZero);
       cmp = simdi8_movemask(vTemp);
-#ifdef AVX2_SUPPORT
+#ifdef AVX2
       while (cmp != 0xffffffff)
 #else
       while (cmp != 0xffff)

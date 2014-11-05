@@ -73,13 +73,13 @@ void Viterbi::AlignWithOutCellOff(HMMSimd* q, HMMSimd* t,ViterbiMatrix * viterbi
     const simd_int mi_mm_vec     = simdi32_set(64);//   01000000
     
     
-#ifdef AVX2_SUPPORT
+#ifdef AVX2
     const simd_int shuffle_mask_extract = _mm256_setr_epi8(0,  4,  8,  12, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
                                                            -1, -1, -1,  -1,  0,  4,  8, 12, -1, -1, -1, -1, -1, -1, -1, -1);
 #endif
 #ifdef VITERBI_CELLOFF
     const __m128i tmp_vec        = _mm_set_epi32(0x40000000,0x00400000,0x00004000,0x00000040);//01000000010000000100000001000000
-#ifdef AVX2_SUPPORT
+#ifdef AVX2
     const simd_int co_vec               = _mm256_inserti128_si256(_mm256_castsi128_si256(tmp_vec), tmp_vec, 1);
     const simd_int float_min_vec     = (simd_int) _mm256_set1_ps(-FLT_MAX);
     const simd_int shuffle_mask_celloff = _mm256_set_epi8(
@@ -148,7 +148,7 @@ void Viterbi::AlignWithOutCellOff(HMMSimd* q, HMMSimd* t,ViterbiMatrix * viterbi
         sMM_DG_MI_GD_IM_vec[index_pos_i + 2] = simdf32_set(-FLT_MAX);
         sMM_DG_MI_GD_IM_vec[index_pos_i + 3] = simdf32_set(-FLT_MAX);
         sMM_DG_MI_GD_IM_vec[index_pos_i + 4] = simdf32_set(-FLT_MAX);
-#ifdef AVX2_SUPPORT
+#ifdef AVX2
         unsigned long long * sCO_MI_DG_IM_GD_MM_vec = (unsigned long long *) viterbiMatrix->getRow(i);
 #else
         unsigned int   * sCO_MI_DG_IM_GD_MM_vec   = (unsigned int *) viterbiMatrix->getRow(i);
@@ -327,7 +327,7 @@ void Viterbi::AlignWithOutCellOff(HMMSimd* q, HMMSimd* t,ViterbiMatrix * viterbi
             //shift   10000000100000001000000010000000 -> 01000000010000000100000001000000
             //because 10000000000000000000000000000000 = -2147483648 kills cmplt
 #ifdef VITERBI_CELLOFF
-#ifdef AVX2_SUPPORT
+#ifdef AVX2
 //            if(((sCO_MI_DG_IM_GD_MM_vec[j]  >>1) & 0x4040404040404040) > 0){
 //                std::cout << ((sCO_MI_DG_IM_GD_MM_vec[j]  >>1) & 0x4040404040404040   ) << std::endl;
 //            }
@@ -366,7 +366,7 @@ void Viterbi::AlignWithOutCellOff(HMMSimd* q, HMMSimd* t,ViterbiMatrix * viterbi
             simdf32_store((float *)(sMM_DG_MI_GD_IM_vec+index_pos_j + 4), sIM_i_j);
 
             // write values back to ViterbiMatrix
-#ifdef AVX2_SUPPORT
+#ifdef AVX2
             /* byte_result_vec        000H  000G  000F  000E   000D  000C  000B  000A */
             /* abcdefgh               0000  0000  HGFE  0000   0000  0000  0000  DCBA */
             const __m256i abcdefgh = _mm256_shuffle_epi8(byte_result_vec, shuffle_mask_extract);

@@ -50,7 +50,7 @@ void PosteriorDecoder::macAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm,
 
       const __m128i tmp_vec   = _mm_set_epi32(0x40000000,0x00400000,0x00004000,0x00000040);//01000000010000000100000001000000
 
-  #ifdef AVX2_SUPPORT
+  #ifdef AVX2
       const simd_int co_vec               = _mm256_inserti128_si256(_mm256_castsi128_si256(tmp_vec), tmp_vec, 1);
       const simd_int shuffle_mask_extract = _mm256_setr_epi8(0,  4,  8,  12, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
                                                                                                                   -1, -1, -1,  -1,  0,  4,  8, 12, -1, -1, -1, -1, -1, -1, -1, -1);
@@ -89,7 +89,7 @@ void PosteriorDecoder::macAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm,
 
       score_mac = simdf32_set(-FLT_MAX);
 
-  #ifdef AVX2_SUPPORT
+  #ifdef AVX2
       unsigned long long * sCO_MI_DG_IM_GD_MM_vec = (unsigned long long *) viterbi_matrix.getRow(0);
   #else
       unsigned int   * sCO_MI_DG_IM_GD_MM_vec   = (unsigned int *) viterbi_matrix.getRow(0);
@@ -98,7 +98,7 @@ void PosteriorDecoder::macAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm,
       state_result = stop_vec;
       // Set "state_result" to Viterbi matrix
       // write values back to ViterbiMatrix
-  #ifdef AVX2_SUPPORT
+  #ifdef AVX2
       /* byte_result_vec        000H  000G  000F  000E   000D  000C  000B  000A */
       /* abcdefgh               0000  0000  HGFE  0000   0000  0000  0000  DCBA */
       const __m256i abcdefgh = _mm256_shuffle_epi8(state_result, shuffle_mask_extract);
@@ -118,7 +118,7 @@ void PosteriorDecoder::macAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm,
       // Loop through query positions i
       for (i = 1; i <= q_hmm.L; i++) {
           const simd_float * p_mm_row_ptr = p_mm.getRow(i);   // pointer to current row of the posterior probability matrix
-  #ifdef AVX2_SUPPORT
+  #ifdef AVX2
           unsigned long long * sCO_MI_DG_IM_GD_MM_vec = (unsigned long long *) viterbi_matrix.getRow(i);
   #else
           unsigned int   * sCO_MI_DG_IM_GD_MM_vec   = (unsigned int *) viterbi_matrix.getRow(i);
@@ -198,7 +198,7 @@ void PosteriorDecoder::macAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm,
               // if (cell_off[i][j])
               //shift   10000000100000001000000010000000 -> 01000000010000000100000001000000
               //because 10000000000000000000000000000000 = -2147483648 kills cmplt
-  #ifdef AVX2_SUPPORT
+  #ifdef AVX2
               simd_int matrix_vec    = _mm256_set1_epi64x(sCO_MI_DG_IM_GD_MM_vec[j]>>1);
               matrix_vec             = _mm256_shuffle_epi8(matrix_vec,shuffle_mask_celloff);
   #else
@@ -224,7 +224,7 @@ void PosteriorDecoder::macAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm,
 
               // Set "state_result" to Viterbi matrix
               // write values back to ViterbiMatrix
-  #ifdef AVX2_SUPPORT
+  #ifdef AVX2
               /* byte_result_vec        000H  000G  000F  000E   000D  000C  000B  000A */
               /* abcdefgh               0000  0000  HGFE  0000   0000  0000  0000  DCBA */
               const __m256i abcdefgh = _mm256_shuffle_epi8(state_result, shuffle_mask_extract);

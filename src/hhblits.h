@@ -75,6 +75,7 @@ extern "C" {
 class HHblits;
 
 #include "log.h"
+#include "simd.h"
 #include "hhhmmsimd.h"
 #include "hhviterbimatrix.h"
 #include "hhviterbirunner.h"

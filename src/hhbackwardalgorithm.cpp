@@ -79,7 +79,7 @@ void PosteriorDecoder::backwardAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm, std::
     
 	simd_int matrix_vec;
     
-#ifdef AVX2_SUPPORT
+#ifdef AVX2
 	const simd_int co_vec               = _mm256_inserti128_si256(_mm256_castsi128_si256(tmp_vec), tmp_vec, 1);
 	const simd_int shuffle_mask_extract = _mm256_setr_epi8(0,  4,  8,  12, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
                                                            -1, -1, -1,  -1,  0,  4,  8, 12, -1, -1, -1, -1, -1, -1, -1, -1);
@@ -101,7 +101,7 @@ void PosteriorDecoder::backwardAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm, std::
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 	// Initialize m_xx_prev (representing i = q.length) and posterior matrix at p_mm[q.L][j] = bottom row
 	i = q_hmm.L;
-#ifdef AVX2_SUPPORT
+#ifdef AVX2
 	unsigned long long * sCO_MI_DG_IM_GD_MM_vec = (unsigned long long *) viterbi_matrix.getRow(i);
 #else
 	unsigned int   * sCO_MI_DG_IM_GD_MM_vec   = (unsigned int *) viterbi_matrix.getRow(i);
@@ -119,7 +119,7 @@ void PosteriorDecoder::backwardAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm, std::
 		// if (cell_off[i][j])
 		//shift   10000000100000001000000010000000 -> 01000000010000000100000001000000
 		//because 10000000000000000000000000000000 = -2147483648 kills cmplt
-#ifdef AVX2_SUPPORT
+#ifdef AVX2
 		matrix_vec = _mm256_set1_epi64x(sCO_MI_DG_IM_GD_MM_vec[j]>>1);
 		matrix_vec = _mm256_shuffle_epi8(matrix_vec,shuffle_mask_celloff);
 #else
@@ -156,7 +156,7 @@ void PosteriorDecoder::backwardAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm, std::
 		p_mm_row_ptr = p_mm.getRow(i);	// pointer to a row of the posterior probability matrix
 		const unsigned int start_pos_tr_i = i * 7;	// start position for indexing query transitions
         
-#ifdef AVX2_SUPPORT
+#ifdef AVX2
         unsigned long long * sCO_MI_DG_IM_GD_MM_vec = (unsigned long long *) viterbi_matrix.getRow(i);
 #else
         unsigned int   * sCO_MI_DG_IM_GD_MM_vec   = (unsigned int *) viterbi_matrix.getRow(i);
@@ -181,7 +181,7 @@ void PosteriorDecoder::backwardAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm, std::
 		// if (cell_off[i][j])
 		//shift   10000000100000001000000010000000 -> 01000000010000000100000001000000
 		//because 10000000000000000000000000000000 = -2147483648 kills cmplt
-#ifdef AVX2_SUPPORT
+#ifdef AVX2
 		matrix_vec = _mm256_set1_epi64x(sCO_MI_DG_IM_GD_MM_vec[j]>>1);
 		matrix_vec = _mm256_shuffle_epi8(matrix_vec,shuffle_mask_celloff);
 #else
@@ -226,7 +226,7 @@ void PosteriorDecoder::backwardAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm, std::
 			// if (cell_off[i][j])
 			//shift   10000000100000001000000010000000 -> 01000000010000000100000001000000
 			//because 10000000000000000000000000000000 = -2147483648 kills cmplt
-#ifdef AVX2_SUPPORT
+#ifdef AVX2
 			matrix_vec = _mm256_set1_epi64x(sCO_MI_DG_IM_GD_MM_vec[j+1]>>1);
 			matrix_vec = _mm256_shuffle_epi8(matrix_vec,shuffle_mask_celloff);
 #else
@@ -268,7 +268,7 @@ void PosteriorDecoder::backwardAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm, std::
 			// if (cell_off[i][j])
 			//shift   10000000100000001000000010000000 -> 01000000010000000100000001000000
 			//because 10000000000000000000000000000000 = -2147483648 kills cmplt
-#ifdef AVX2_SUPPORT
+#ifdef AVX2
 			matrix_vec = _mm256_set1_epi64x(sCO_MI_DG_IM_GD_MM_vec[j]>>1);
 			matrix_vec = _mm256_shuffle_epi8(matrix_vec,shuffle_mask_celloff);
 #else
