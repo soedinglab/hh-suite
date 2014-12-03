@@ -48,7 +48,7 @@ void PosteriorDecoder::backtraceMAC(HMM & q, HMM & t, PosteriorMatrix & p_mm, Vi
 
 	// Trace back trough the matrix b[i][j] until STOP state is found
 
-    LogLevel actual_level = Log::reporting_level();
+  LogLevel actual_level = Log::reporting_level();
 	int step;      // counts steps in path through 5-layered dynamic programming matrix
 	int i,j;       // query and template match state indices
 
@@ -123,6 +123,7 @@ void PosteriorDecoder::backtraceMAC(HMM & q, HMM & t, PosteriorMatrix & p_mm, Vi
 	hit.sum_of_probs = 0.0;       // number of identical residues in query and template sequence
 	int ssm = hit.ssm1 + hit.ssm2;
 	//   printf("Hit=%s\n",name); /////////////////////////////////////////////////////////////
+
 	for (step = 1; step <= hit.nsteps; step++) {
 		switch(hit.states[step]) {
 		case ViterbiMatrix::MM:

@@ -125,20 +125,10 @@ void PosteriorDecoder::realign(HMMSimd & q_hmm, HMMSimd & t_hmm,
 		ViterbiMatrix & viterbi_matrix,
 		std::vector<std::vector<PosteriorDecoder::MACBacktraceResult *> * > & alignment_exclusion_vec, int par_min_overlap, float shift, float mact, float corr) {
 
-	// For DEBUGGING
-//	char * nam = "PF07714";
-//	int elem_idx = 0;
-//	bool eq = false;
-
 	HMM & curr_q_hmm = *(q_hmm.GetHMM(0));
 	int num_t = (int)hit_vec.size();
 	// Iterate over vector elements
 	for (int elem = 0; elem < num_t; elem++) {
-		// DEBUGGING OPTION
-//		if (!strcmp(hit_vec.at(elem)->name, nam)) {
-//			eq = true;
-//			elem_idx = elem;
-//		}
 
 		HMM * curr_t_hmm = t_hmm.GetHMM(elem);
 
@@ -155,7 +145,7 @@ void PosteriorDecoder::realign(HMMSimd & q_hmm, HMMSimd & t_hmm,
 
 //	simd_float sum = simdf32_set(0);
 //	for(int i = 1; i <= q_hmm.L; i++) {
-//		sum = simdf32_add(sum, forward_profile[i]);
+//		sum = simdf32_add(sum, m_forward_profile[i]);
 //	}
 //
 //	float result[4];
@@ -173,12 +163,11 @@ void PosteriorDecoder::realign(HMMSimd & q_hmm, HMMSimd & t_hmm,
 	// Compute SIMD Backward algorithm
 	backwardAlgorithm(q_hmm, t_hmm, hit_vec, p_mm, viterbi_matrix, shift);
 
-//	simd_float sum = simdf32_set(0);
+//	sum = simdf32_set(0);
 //	for(int i = 1; i <= q_hmm.L; i++) {
-//		sum = simdf32_add(sum, backward_profile[i]);
+//		sum = simdf32_add(sum, m_backward_profile[i]);
 //	}
 //
-//	float result[4];
 //	simdf32_store(result, sum);
 //
 //	for(int elem = 0; elem < num_t; elem++) {

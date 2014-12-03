@@ -484,10 +484,12 @@ void Alignment::Read(FILE* inf, char infile[], const char mark,
           h++;
         }
       }
+
       if (l >= maxcol - 1) {
         HH_LOG(LogLevel::WARNING) << "maximum number of residues " << maxcol - 2
                                   << " exceeded in sequence " << sname[k]
                                   << "\n";
+        l = maxcol - 1; // Bug removed 29.10.14 by MM & JS by inserting this line
         skip_sequence = 1;
       }
       cur_seq[l] = '\0';  //Ensure that cur_seq ends with a '\0' character
@@ -3676,7 +3678,7 @@ void Alignment::MergeMasterSlave(Hit& hit, Alignment& Tali, char* ta3mfile,
       if (h >= maxcol - 1000)  // too few columns? Reserve double space
       {
         char* new_seq = new char[2 * maxcol];
-        strncpy(new_seq, cur_seq, maxcol);  //////// check: maxcol-1 ????
+        strncpy(new_seq, cur_seq, h);  //////// check: maxcol-1 ????
         delete[] (cur_seq);
         cur_seq = new_seq;
         maxcol *= 2;
@@ -3689,8 +3691,9 @@ void Alignment::MergeMasterSlave(Hit& hit, Alignment& Tali, char* ta3mfile,
 
       // too few columns? Reserve double space
       if (h >= maxcol - 1000) {
+        std::cerr << "maxcol: " << maxcol << "\th: " <<h << std::endl;
         char* new_seq = new char[2 * maxcol];
-        strncpy(new_seq, cur_seq, maxcol);
+        strncpy(new_seq, cur_seq, h);
         delete[] (cur_seq);
         cur_seq = new_seq;
         maxcol *= 2;

@@ -964,7 +964,6 @@ void HHalign::run(FILE* query_fh, char* query_path, char* template_path) {
       perform_realign(q_vec, input_format, new_entries, premerge, premerged_hits);
   }
 
-  //TODO: does no longer search for a3m, but takes a3m from hmm if needs be
   mergeHitsToQuery(previous_hits, premerged_hits, seqs_found, cluster_found);
 
   // Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
@@ -974,9 +973,9 @@ void HHalign::run(FILE* query_fh, char* query_path, char* template_path) {
       q->NeutralizeTags(pb);
 
   if(*par.opt_outfile) {
-	std::vector<HHEntry*> selected_entries;
-	get_entries_of_selected_hits(hitlist, selected_entries);
-    optimizeQSC(selected_entries, hitlist.N_searched, q_vec, input_format, optimized_hitlist);
+    std::vector<HHEntry*> selected_entries;
+    get_entries_of_selected_hits(hitlist, selected_entries);
+      optimizeQSC(selected_entries, hitlist.N_searched, q_vec, input_format, optimized_hitlist);
   }
 
   for(size_t i = 0; i < new_entries.size(); i++) {

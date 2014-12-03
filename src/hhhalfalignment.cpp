@@ -93,8 +93,8 @@ void HalfAlignment::Set(char* name, char** seq_in, char** sname_in, int n_in,
     mm = 1;
     ll = 1;
     while ((c = seq[k][mm])) {
-      if (MatchChr(c) == c)    //count match/delete states
-          {
+      if (MatchChr(c) == c && i <= L)    //count match/delete states
+      {
         l[k][i] = ll;
         m[k][i] = mm;
         i++;

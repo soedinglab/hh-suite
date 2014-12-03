@@ -90,6 +90,7 @@ void PosteriorDecoderRunner::executeComputation(Parameters& par, const float qsc
         int format_tmp = 0;
         //char wg = 0;
         hit_cur->entry->getTemplateHMM(par, par.wg, qsc, format_tmp, pb, S, Sim, t_hmm[current_t_index + i]);
+
 #pragma omp critical // because alignments_to_exclude get changed
 {
         if (alignments_to_exclude.find(std::string(hit_cur->file)) != alignments_to_exclude.end()) {
