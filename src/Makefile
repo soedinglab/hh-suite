@@ -33,7 +33,7 @@ else # ifndef ICC
   HHALIGN_LIBS = 
   OBJECT_LIBS = -fopenmp
 	ifdef AVX2
-	CXXFLAGS += -DAVX2_SUPPORT -mavx2
+	CXXFLAGS += -DAVX2 -mavx2
 	else
 	CXXFLAGS += -DSSE -msse3
 	endif

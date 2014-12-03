@@ -84,7 +84,24 @@ const int s2a[]={ 0, 4, 3, 6,13, 7, 8, 9,11,10,12, 2,14, 5, 1,15,16,19,17,18,20}
 const int a2s[]={ 0,14,11, 2, 1,13, 3, 5, 6, 7, 9, 8,10, 4,12,15,16,18,19,17,20};
 
 enum transitions {M2M,M2I,M2D,I2M,I2I,D2M,D2D}; // index for transitions within a HMM
-enum pair_states {STOP=0,MM=2,GD=3,IM=4,DG=5,MI=6};
+
+#ifdef __GNUC__
+#define __DEPRECATED__ __attribute__((deprecated))
+#elif defined(_MSC_VER)
+#define __DEPRECATED__ __declspec(deprecated)
+#else
+#pragma message("WARNING: No DEPRECATED for this compiler")
+#define __DEPRECATED__
+#endif
+
+
+enum pair_states {DEPRECATED_STOP=0,DEPRECATED_MM=2,DEPRECATED_GD=3,DEPRECATED_IM=4,DEPRECATED_DG=5,DEPRECATED_MI=6};
+__DEPRECATED__ const pair_states STOP = pair_states(DEPRECATED_STOP);
+__DEPRECATED__ const pair_states MM = pair_states(DEPRECATED_MM);
+__DEPRECATED__ const pair_states GD = pair_states(DEPRECATED_GD);
+__DEPRECATED__ const pair_states IM = pair_states(DEPRECATED_IM);
+__DEPRECATED__ const pair_states DG = pair_states(DEPRECATED_DG);
+__DEPRECATED__ const pair_states MI = pair_states(DEPRECATED_MI);
 
 #include "util.h"
 #include "hhdatabase.h"

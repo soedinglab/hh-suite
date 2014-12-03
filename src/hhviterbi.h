@@ -135,6 +135,70 @@ class Viterbi {
       return simdf32_add(res0, res2);
 
     }
+    
+    
+    inline void read_scoreline_sscore(char * templateSeq,
+                                      float * output){
+//        const simd_i zero =  _mm_setzero_si128();
+//        for(unsigned int i = 0; i < L; i +=16)
+//        {
+//            simd_int seq = simdi_load(templateSeq+i);
+//            simd_int res = scoreLookup30(seq);
+//            simd_int lo_16 = _mm_unpacklo_epi8(res, zero);
+//            simd_int hi_16 = _mm_unpackhi_epi8(res, zero);
+//            simd_int in1 = _mm_unpacklo_epi16(lo_16, zero);
+//            simd_int in2 = _mm_unpackhi_epi16(lo_16, zero);
+//            simd_int in3 = _mm_unpacklo_epi16(hi_16, zero);
+//            simd_int in4 = _mm_unpackhi_epi16(hi_16, zero);
+//            __m128 ou1 = _mm_cvtepi32_ps(in1);
+//            __m128 ou2 = _mm_cvtepi32_ps(in2);
+//            __m128 ou3 = _mm_cvtepi32_ps(in3);
+//            __m128 ou4 = _mm_cvtepi32_ps(in4);
+//            simdf32_store(output + i, out1);
+//            simdf32_store(output + i + 4, out2);
+//            simdf32_store(output + i + 8, out3);
+//            simdf32_store(output + i + 12, out4);
+//        }
+//
+    }
+    
+    
+    inline simd_int scoreLookup30(simd_int score_matrix_vec01,
+                                  simd_int score_matrix_vec16,
+                                  simd_int template_sequence){
+//        const simd_int sixteen_vec  = simdi_set(16);
+//        const simd_int fiveteen_vec = simdi_set(15);
+//
+//        // create slice mask
+//        // Example:
+//        //	15	12	11	16	20	19	18	11	15	12	11	16	20	19	18	11
+//        //                      if lt 16
+//        //  255	255	255	0	0	0	0	255	255	255	255	0	0	0	0	255
+//        simd_int lookup_mask01 = simdi8_gt(sixteen_vec, template_sequence); // six > tmp 0-15
+//        simd_int lookup_mask16 = _mm_andnot_si128(lookup_mask01,fiveteen_vec); // tmp > five 16 - 32
+//        //print_sse((char *)&lookup_mask01);
+//        //print_sse((char *)&lookup_mask16);
+//        // slice index
+//        // Example:
+//        //  255	255	255	0	0	0	0	255	255	255	255	0	0	0	0	255
+//        //  15	12	11	16	20	19	18	11	15	12	11	16	20	19	18	11
+//        //                          min
+//        //  15	12	11	0	0	0	0	11	15	12	11	0	0	0	0	155
+//        simd_int lookup_index01 = simdui8_max(lookup_mask01,template_sequence);
+//        simd_int lookup_index16 = simdui8_max(lookup_mask16,template_sequence);
+//        //print_sse((char *)&lookup_index01);
+//        //print_sse((char *)&lookup_index16);
+//
+//
+//        // 2xmal array lookup
+//        simd_int score01 = _mm_shuffle_epi8(score_matrix_vec01, lookup_index01);
+//        simd_int score16 = _mm_shuffle_epi8(score_matrix_vec16, lookup_index16);
+//        //print_sse((char *)&score01);
+//        //print_sse((char *)&score16);
+//
+//        return simdui8_adds(score01,score16);
+        return simdi8_set(0);
+    }
 
   private:
 

@@ -85,7 +85,7 @@ void PosteriorDecoder::forwardAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm,
 	const __m128i tmp_vec = _mm_set_epi32(0x40000000,0x00400000,0x00004000,0x00000040);//01000000010000000100000001000000
 	simd_int matrix_vec;
     
-#ifdef AVX2_SUPPORT
+#ifdef AVX2
 	const simd_int co_vec               = _mm256_inserti128_si256(_mm256_castsi128_si256(tmp_vec), tmp_vec, 1);
 	const simd_int shuffle_mask_extract = _mm256_setr_epi8(0,  4,  8,  12, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
                                                            -1, -1, -1,  -1,  0,  4,  8, 12, -1, -1, -1, -1, -1, -1, -1, -1);
@@ -121,7 +121,7 @@ void PosteriorDecoder::forwardAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm,
 	const simd_float q_tr_1_m2i = simdf32_load((float *) (q_hmm.tr+start_pos_tr_i+1));
 	const simd_float q_tr_1_i2i = simdf32_load((float *) (q_hmm.tr+start_pos_tr_i));
     
-#ifdef AVX2_SUPPORT
+#ifdef AVX2
 	unsigned long long * sCO_MI_DG_IM_GD_MM_vec = (unsigned long long *) viterbi_matrix.getRow(i);
 #else
 	unsigned int   * sCO_MI_DG_IM_GD_MM_vec   = (unsigned int *) viterbi_matrix.getRow(i);
@@ -131,7 +131,7 @@ void PosteriorDecoder::forwardAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm,
 		j_vec = simdi32_set(j);
 		const unsigned int start_pos_tr_j_1 = (j-1) * 7;
         
-#ifdef AVX2_SUPPORT
+#ifdef AVX2
 		matrix_vec = _mm256_set1_epi64x(sCO_MI_DG_IM_GD_MM_vec[j]>>1);
 		matrix_vec = _mm256_shuffle_epi8(matrix_vec,shuffle_mask_celloff);
 #else
@@ -233,7 +233,7 @@ void PosteriorDecoder::forwardAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm,
 		simdf32_store((float *)&p_mm_row_ptr[0], float_min_vec);
 		j = m_jmin;
 		// Read vector for cell off logic
-#ifdef AVX2_SUPPORT
+#ifdef AVX2
 		unsigned long long * sCO_MI_DG_IM_GD_MM_vec = (unsigned long long *) viterbi_matrix.getRow(i);
 #else
 		unsigned int   * sCO_MI_DG_IM_GD_MM_vec   = (unsigned int *) viterbi_matrix.getRow(i);
@@ -245,7 +245,7 @@ void PosteriorDecoder::forwardAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm,
 		//
 		//shift   10000000100000001000000010000000 -> 01000000010000000100000001000000
 		//because 10000000000000000000000000000000 = -2147483648 kills cmplt
-#ifdef AVX2_SUPPORT
+#ifdef AVX2
 		matrix_vec = _mm256_set1_epi64x(sCO_MI_DG_IM_GD_MM_vec[j]>>1);
 		matrix_vec = _mm256_shuffle_epi8(matrix_vec,shuffle_mask_celloff);
 #else
@@ -344,7 +344,7 @@ void PosteriorDecoder::forwardAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm,
 			const unsigned int start_pos_tr_j = j * 7;
 			const unsigned int start_pos_tr_j_1 = (j-1) * 7;
             
-#ifdef AVX2_SUPPORT
+#ifdef AVX2
 			matrix_vec = _mm256_set1_epi64x(sCO_MI_DG_IM_GD_MM_vec[j]>>1);
 			matrix_vec = _mm256_shuffle_epi8(matrix_vec,shuffle_mask_celloff);
 #else
