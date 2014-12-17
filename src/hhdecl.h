@@ -96,12 +96,18 @@ enum transitions {M2M,M2I,M2D,I2M,I2I,D2M,D2D}; // index for transitions within 
 
 
 enum pair_states {DEPRECATED_STOP=0,DEPRECATED_MM=2,DEPRECATED_GD=3,DEPRECATED_IM=4,DEPRECATED_DG=5,DEPRECATED_MI=6};
-__DEPRECATED__ const pair_states STOP = pair_states(DEPRECATED_STOP);
-__DEPRECATED__ const pair_states MM = pair_states(DEPRECATED_MM);
-__DEPRECATED__ const pair_states GD = pair_states(DEPRECATED_GD);
-__DEPRECATED__ const pair_states IM = pair_states(DEPRECATED_IM);
-__DEPRECATED__ const pair_states DG = pair_states(DEPRECATED_DG);
-__DEPRECATED__ const pair_states MI = pair_states(DEPRECATED_MI);
+//__DEPRECATED__
+const pair_states STOP = pair_states(DEPRECATED_STOP);
+//__DEPRECATED__
+const pair_states MM = pair_states(DEPRECATED_MM);
+//__DEPRECATED__
+const pair_states GD = pair_states(DEPRECATED_GD);
+//__DEPRECATED__
+const pair_states IM = pair_states(DEPRECATED_IM);
+//__DEPRECATED__
+const pair_states DG = pair_states(DEPRECATED_DG);
+//__DEPRECATED__
+const pair_states MI = pair_states(DEPRECATED_MI);
 
 #include "util.h"
 #include "hhdatabase.h"
