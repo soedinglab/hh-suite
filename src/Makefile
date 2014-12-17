@@ -168,4 +168,4 @@ hhsuite-userguide.pdf: hhsuite-userguide.tex
 
 clean: 	
 	-rm -f *.o cs/*.o
-	-rm -f hhconsensus hhconsensus_valgrind hhfilter_valgrind hhfilter hhalign_valgrind hhalign hhmake hhblits_valgrind hhblits hhsearch_valgrind hhsearch cstranslate
+	-rm -f hhconsensus hhconsensus_valgrind hhfilter_valgrind hhfilter hhalign_valgrind hhalign hhmake hhblits_valgrind hhblits hhsearch_valgrind hhblits_omp hhblits_mpi hhsearch cstranslate a3m_extractor a3m_reducer a3m_database_filter ffindex_from_fasta ffindex_from_fasta_with_split
