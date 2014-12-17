@@ -62,7 +62,7 @@ CS_OBJECTS = $(patsubst %.cc, %.o, $(CS_SOURCES))
 
 HEADERS = hhhitlist.h hhhit.h hhalignment.h hhhmm.h hhfullalignment.h hhfullalignment.h hash.h list.h hhfunc.h hhmatrices.h
 
-TARGETS = hhblits hhblits_omp hhblits_mpi hhsearch hhmake hhalign hhfilter hhconsensus cstranslate a3m_extractor a3m_reducer a3m_database_filter ffindex_from_fasta ffindex_from_fasta_with_split 
+TARGETS = hhblits hhblits_omp hhsearch hhmake hhalign hhfilter hhconsensus cstranslate a3m_extractor a3m_reducer a3m_database_filter ffindex_from_fasta ffindex_from_fasta_with_split 
 TARGETS_STATIC = hhblits_static hhsearch_static hhmake_static hhalign_static hhfilter_static hhconsensus_static cstranslate_static
 TARGETS_VALGRIND = hhblits_valgrind hhsearch_valgrind hhalign_valgrind
 
