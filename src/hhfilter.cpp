@@ -143,7 +143,7 @@ void help() {
 void ProcessArguments(int argc, char** argv) {
   // Read command line options
   for (int i = 1; i <= argc - 1; i++) {
-	  HH_LOG(LogLevel::DEBUG1) << i << "  " << argv[i] << endl;
+	  HH_LOG(DEBUG1) << i << "  " << argv[i] << endl;
 	if (!strcmp(argv[i], "-i")) {
       if (++i > argc - 1 || argv[i][0] == '-') {
         cerr << "Error in " << program_name << ": no input file following -f\n";
@@ -211,10 +211,10 @@ void ProcessArguments(int argc, char** argv) {
       exit(0);
     }
     else {
-    	HH_LOG(LogLevel::WARNING) << endl << "WARNING: Ignoring unknown option " << argv[i] << " ...\n";
+    	HH_LOG(WARNING) << endl << "WARNING: Ignoring unknown option " << argv[i] << " ...\n";
     }
 
-	HH_LOG(LogLevel::DEBUG1) << i << "  " << argv[i] << endl;
+	HH_LOG(DEBUG1) << i << "  " << argv[i] << endl;
   } // end of for-loop for command line input
 }
 

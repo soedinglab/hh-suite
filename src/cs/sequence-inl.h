@@ -20,7 +20,7 @@
 #ifndef CS_SEQUENCE_INL_H_
 #define CS_SEQUENCE_INL_H_
 
-#include <assert_helpers.h>
+#include "assert_helpers.h"
 #include "sequence.h"
 #include "exception.h"
 #include "io.h"

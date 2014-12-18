@@ -451,7 +451,7 @@ void HitList::CalculatePvalues(HMM* q, const char loc, const char ssm,
   if (N_searched == 0)
     N_searched = 1;
 
-  HH_LOG(LogLevel::DEBUG)
+  HH_LOG(DEBUG)
       << "Calculate Pvalues as a function of query and template lengths and diversities..."
       << std::endl;
 
@@ -537,7 +537,7 @@ void HitList::PrintMatrices(HMM* q, std::stringstream& out,
   float matix_probability_threshold = 20;
 
   if (hits.size() == 0) {
-    HH_LOG(LogLevel::WARNING) << "There are no alignment matrices to print!"
+    HH_LOG(WARNING) << "There are no alignment matrices to print!"
         << std::endl;
   }
 
@@ -614,14 +614,14 @@ void HitList::PrintMatrices(HMM* q, std::stringstream& out,
   }
   delete[] similarity_scores;
 
-  HH_LOG(LogLevel::INFO) << "Printing alignment matrices..." << std::endl;
-  HH_LOG(LogLevel::INFO) << "Total number of alignments    : " << hits.size()
+  HH_LOG(INFO) << "Printing alignment matrices..." << std::endl;
+  HH_LOG(INFO) << "Total number of alignments    : " << hits.size()
       << std::endl;
-  HH_LOG(LogLevel::INFO) << "Number of accepted alignments : " << chosen
+  HH_LOG(INFO) << "Number of accepted alignments : " << chosen
       << std::endl;
 
   if (chosen == 0) {
-    HH_LOG(LogLevel::WARNING)
+    HH_LOG(WARNING)
         << "Warning: No homologs found for printing matrix!" << std::endl;
     return;
   }

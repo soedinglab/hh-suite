@@ -218,7 +218,7 @@ void Alignment::Read(FILE* inf, char infile[], const char mark,
         {
       if (k >= MAXSEQ - 1) {
         if (k >= MAXSEQ) {
-          HH_LOG(LogLevel::WARNING) << "WARNING: maximum number " << MAXSEQ
+          HH_LOG(WARNING) << "WARNING: maximum number " << MAXSEQ
                                     << " of sequences exceeded in file "
                                     << infile << std::endl;
         }
@@ -361,7 +361,7 @@ void Alignment::Read(FILE* inf, char infile[], const char mark,
       }
 
       // store sequence name
-      HH_LOG(LogLevel::DEBUG1) << "Reading seq " << cur_name << " k=" << k
+      HH_LOG(DEBUG1) << "Reading seq " << cur_name << " k=" << k
                                << "  n_displ=" << n_display << "  display[k]="
                                << display[k] << " keep[k]=" << keep[k]
                                << std::endl;
@@ -394,7 +394,7 @@ void Alignment::Read(FILE* inf, char infile[], const char mark,
     //line contains sequence residues or SS information and does not belong to a >aa_ sequence
     else if (!skip_sequence) {
       if (k == -1) {
-        HH_LOG(LogLevel::WARNING)
+        HH_LOG(WARNING)
             << "WARNING: No sequence name preceding following line in "
             << infile << ":\n\'" << line << "\'\n";
         continue;
@@ -411,7 +411,7 @@ void Alignment::Read(FILE* inf, char infile[], const char mark,
             cur_seq[l] = line[h];
             l++;
           } else if (aa2i(line[h]) == -2) {
-            HH_LOG(LogLevel::WARNING) << "WARNING: ignoring invalid symbol \'"
+            HH_LOG(WARNING) << "WARNING: ignoring invalid symbol \'"
                                       << line[h] << "\' at pos. " << h
                                       << " in line " << linenr << " of "
                                       << infile << "\n";
@@ -425,7 +425,7 @@ void Alignment::Read(FILE* inf, char infile[], const char mark,
             cur_seq[l] = ss2ss(line[h]);
             l++;
           } else
-          HH_LOG(LogLevel::WARNING) << "WARNING: ignoring invalid symbol \'"
+          HH_LOG(WARNING) << "WARNING: ignoring invalid symbol \'"
                                     << line[h] << "\' at pos. " << h
                                     << " in line " << linenr << " of " << infile
                                     << "\n";
@@ -437,7 +437,7 @@ void Alignment::Read(FILE* inf, char infile[], const char mark,
           if (sa2i(line[h]) >= 0)
             cur_seq[l++] = line[h];
           else {
-            HH_LOG(LogLevel::WARNING) << "WARNING: ignoring invalid symbol \'"
+            HH_LOG(WARNING) << "WARNING: ignoring invalid symbol \'"
                                       << line[h] << "\' at pos. " << h
                                       << " in line " << linenr << " of "
                                       << infile << "\n";
@@ -451,7 +451,7 @@ void Alignment::Read(FILE* inf, char infile[], const char mark,
             cur_seq[l] = ss2ss(line[h]);
             l++;
           } else
-          HH_LOG(LogLevel::WARNING) << "ignoring invalid symbol \'" << line[h]
+          HH_LOG(WARNING) << "ignoring invalid symbol \'" << line[h]
                                     << "\' at pos. " << h << " in line "
                                     << linenr << " of " << infile << "\n";
           h++;
@@ -464,7 +464,7 @@ void Alignment::Read(FILE* inf, char infile[], const char mark,
             cur_seq[l] = line[h];
             l++;
           } else
-          HH_LOG(LogLevel::WARNING) << "ignoring invalid symbol \'" << line[h]
+          HH_LOG(WARNING) << "ignoring invalid symbol \'" << line[h]
                                     << "\' at pos. " << l << " in line "
                                     << linenr << " of " << infile << "\n";
           h++;
@@ -478,7 +478,7 @@ void Alignment::Read(FILE* inf, char infile[], const char mark,
             cur_seq[l] = line[h];
             l++;
           } else
-          HH_LOG(LogLevel::WARNING) << "ignoring invalid symbol \'" << line[h]
+          HH_LOG(WARNING) << "ignoring invalid symbol \'" << line[h]
                                     << "\' at pos. " << l << " in line "
                                     << linenr << " of " << infile << "\n";
           h++;
@@ -486,7 +486,7 @@ void Alignment::Read(FILE* inf, char infile[], const char mark,
       }
 
       if (l >= maxcol - 1) {
-        HH_LOG(LogLevel::WARNING) << "maximum number of residues " << maxcol - 2
+        HH_LOG(WARNING) << "maximum number of residues " << maxcol - 2
                                   << " exceeded in sequence " << sname[k]
                                   << "\n";
         l = maxcol - 1; // Bug removed 29.10.14 by MM & JS by inserting this line
@@ -549,9 +549,9 @@ void Alignment::Read(FILE* inf, char infile[], const char mark,
     }
   }
 
-  HH_LOG(LogLevel::DEBUG) << "Read " << infile << " with " << N_in
+  HH_LOG(DEBUG) << "Read " << infile << " with " << N_in
                           << " sequences\n";
-  HH_LOG(LogLevel::DEBUG1) << "Query sequence for alignment has number "
+  HH_LOG(DEBUG1) << "Query sequence for alignment has number "
                            << kfirst << " (0 is first)\n";
 }
 
@@ -671,7 +671,7 @@ void Alignment::ReadCompressed(ffindex_entry_t* entry, char* data,
   strcpy(sname[k], cur_name);
 
   if (copy_pos >= maxcol - 1) {
-    HH_LOG(LogLevel::WARNING) << "WARNING: maximum number of residues "
+    HH_LOG(WARNING) << "WARNING: maximum number of residues "
                               << maxcol - 2 << " exceeded in sequence "
                               << sname[k] << std::endl;
   }
@@ -827,9 +827,9 @@ void Alignment::ReadCompressed(ffindex_entry_t* entry, char* data,
     }
   }
 
-  HH_LOG(LogLevel::DEBUG) << "Read " << entry->name << " with " << N_in
+  HH_LOG(DEBUG) << "Read " << entry->name << " with " << N_in
                           << " sequences\n";
-  HH_LOG(LogLevel::DEBUG1) << "Query sequence for alignment has number "
+  HH_LOG(DEBUG1) << "Query sequence for alignment has number "
                            << kfirst << " (0 is first)\n";
 }
 
@@ -858,19 +858,19 @@ void Alignment::Compress(const char infile[], const char cons, const int maxres,
   }
 
   if (M == 1) {
-    HH_LOG(LogLevel::DEBUG1)
+    HH_LOG(DEBUG1)
         << "Using match state assignment by capital letters (a2m/a3m format)\n";
   } else if (M == 2) {
-    HH_LOG(LogLevel::DEBUG1)
+    HH_LOG(DEBUG1)
         << "Using percentage-rule match state assignment\n";
   } else if (M == 3) {
-    HH_LOG(LogLevel::DEBUG1)
+    HH_LOG(DEBUG1)
         << "Using residues of first sequence as match states\n";
   }
 
   // Warn, if there are gaps in a single sequence
   if (N_in - N_ss == 1 && M != 2 && strchr(seq[kfirst] + 1, '-') != NULL) {
-    HH_LOG(LogLevel::DEBUG)
+    HH_LOG(DEBUG)
         << "WARNING: File "
         << infile
         << " has a single sequence containing gaps, which will be ignored.\nIf you want to treat the gaps as match states, use the '-M 100' option."
@@ -884,14 +884,14 @@ void Alignment::Compress(const char infile[], const char cons, const int maxres,
     if (match_states < 6) {
       if (N_in - N_ss <= 1) {
         M = 3;  // if only single sequence in input file, use M=3 (match states by first seq)
-        HH_LOG(LogLevel::DEBUG)
+        HH_LOG(DEBUG)
             << "WARNING: single sequence in file " << infile
             << " contains only " << match_states
             << " match_states! Switching to option -M first\n seq="
             << seq[kfirst] << std::endl;
       }
     } else {
-      HH_LOG(LogLevel::DEBUG)
+      HH_LOG(DEBUG)
           << "WARNING: single sequence in file " << infile << " contains only "
           << match_states
           << " match_states! Switching to option -M first\n seq=" << seq[kfirst]
@@ -920,7 +920,7 @@ void Alignment::Compress(const char infile[], const char cons, const int maxres,
         }
         // ... but alignment contains no lower case residue
         if (k >= N_in) {
-          HH_LOG(LogLevel::WARNING)
+          HH_LOG(WARNING)
               << "WARNING: input alignment "
               << infile
               << " looks like aligned FASTA instead of A2M/A3M format. Consider using '-M first' or '-M 50'"
@@ -1018,13 +1018,13 @@ void Alignment::Compress(const char infile[], const char cons, const int maxres,
       }
 
       if (L == maxres - 2) {
-        HH_LOG(LogLevel::WARNING)
+        HH_LOG(WARNING)
             << "WARNING: Number of match columns too large. Only first " << L
             << " match columns will be kept!\n";
         break;
       }
 
-      HH_LOG(LogLevel::DEBUG) << "Alignment in " << infile << " contains " << L
+      HH_LOG(DEBUG) << "Alignment in " << infile << " contains " << L
                               << " match states\n";
       break;
 
@@ -1101,7 +1101,7 @@ void Alignment::Compress(const char infile[], const char cons, const int maxres,
               gap += wg[k];  // else: GAP. ENDGAPs are ignored for counting percentage (multi-domain proteins)
           }
         percent_gaps[l] = 100. * gap / (res + gap);
-        HH_LOG(LogLevel::DEBUG1) << "percent gaps[" << l << "]="
+        HH_LOG(DEBUG1) << "percent gaps[" << l << "]="
                                  << percent_gaps[l] << " first seq:"
                                  << seq[0][l] << "\n";
       }
@@ -1114,7 +1114,7 @@ void Alignment::Compress(const char infile[], const char cons, const int maxres,
       for (l = 1; l <= L; l++) {
         if (percent_gaps[l] <= float(Mgaps)) {
           if (i >= maxres - 2) {
-            HH_LOG(LogLevel::WARNING)
+            HH_LOG(WARNING)
                 << "WARNING: Number of match columns too large. Only first "
                 << i << " match columns will be kept!\n";
             break;
@@ -1148,7 +1148,7 @@ void Alignment::Compress(const char infile[], const char cons, const int maxres,
       for (k = 0; k < N_in; ++k)
         seq[k][h[k]] = '\0';
 
-      HH_LOG(LogLevel::DEBUG) << "Alignment in " << infile << " contains " << L
+      HH_LOG(DEBUG) << "Alignment in " << infile << " contains " << L
                               << " columns and " << i << " match states\n";
       L = i;        //Number of match states
       delete[] percent_gaps;
@@ -1162,7 +1162,7 @@ void Alignment::Compress(const char infile[], const char cons, const int maxres,
 
       // Determine number of columns L in alignment
       L = strlen(seq[0] + 1);
-      HH_LOG(LogLevel::DEBUG) << "Length of first seq = " << L << std::endl;
+      HH_LOG(DEBUG) << "Length of first seq = " << L << std::endl;
       // Check for sequences with unequal lengths
       for (k = 1; k < N_in; ++k)
         if (int(strlen(seq[k] + 1)) != L) {
@@ -1188,7 +1188,7 @@ void Alignment::Compress(const char infile[], const char cons, const int maxres,
         if (match_state[l])  // does sequence 0 have residue at position l?
         {
           if (i >= maxres - 2) {
-            HH_LOG(LogLevel::WARNING)
+            HH_LOG(WARNING)
                 << "WARNING: Number of match columns too large. Only first "
                 << i << " match columns will be kept!\n";
             break;
@@ -1222,7 +1222,7 @@ void Alignment::Compress(const char infile[], const char cons, const int maxres,
       for (k = 0; k < N_in; ++k)
         seq[k][h[k]] = '\0';
 
-      HH_LOG(LogLevel::DEBUG) << "Alignment in " << infile << " contains " << L
+      HH_LOG(DEBUG) << "Alignment in " << infile << " contains " << L
                               << " columns and " << i << " match states\n";
       L = i;        //Number of match states
 
@@ -1246,34 +1246,34 @@ void Alignment::Compress(const char infile[], const char cons, const int maxres,
 
   // Error
   if (unequal_lengths) {
-    HH_LOG(LogLevel::ERROR) << strcut(sname[unequal_lengths]);
-    HH_LOG(LogLevel::ERROR) << "Error in " << __FILE__ << ":" << __LINE__
+    HH_LOG(ERROR) << strcut(sname[unequal_lengths]);
+    HH_LOG(ERROR) << "Error in " << __FILE__ << ":" << __LINE__
                             << ": " << __func__ << ":" << std::endl;
-    HH_LOG(LogLevel::ERROR) << "\tsequences in " << infile
+    HH_LOG(ERROR) << "\tsequences in " << infile
                             << " do not all have the same number of columns, "
                             << std::endl;
-    HH_LOG(LogLevel::ERROR) << "\t\ne.g. first sequence and sequence "
+    HH_LOG(ERROR) << "\t\ne.g. first sequence and sequence "
                             << sname[unequal_lengths] << ".\n";
 
     if (M == 1) {
-      HH_LOG(LogLevel::ERROR)
+      HH_LOG(ERROR)
           << "Check input format for '-M a2m' option and consider using '-M first' or '-M 50'\n";
     }
 
     if (!strncmp(infile, "merged A3M", 10)) {
-      HH_LOG(LogLevel::ERROR) << "Merged MSA:\n";
+      HH_LOG(ERROR) << "Merged MSA:\n";
       for (k = 0; k <= unequal_lengths; ++k)
-        HH_LOG(LogLevel::ERROR) << k << "\n" << sname[k] << "\n" << seq[k]
+        HH_LOG(ERROR) << k << "\n" << sname[k] << "\n" << seq[k]
                                 << std::endl;
     }
     exit(1);
   }
 
   if (L == 0) {
-    HH_LOG(LogLevel::ERROR) << "Error in " << __FILE__ << ":" << __LINE__
+    HH_LOG(ERROR) << "Error in " << __FILE__ << ":" << __LINE__
                             << ": " << __func__ << ":" << std::endl;
-    HH_LOG(LogLevel::ERROR) << "\tno match states found in " << infile << "!\n";
-    HH_LOG(LogLevel::ERROR)
+    HH_LOG(ERROR) << "\tno match states found in " << infile << "!\n";
+    HH_LOG(ERROR)
         << "Better use '-M first' option or reduce gap percentage threshold for match states\n";
     exit(1);
   }
@@ -1282,7 +1282,7 @@ void Alignment::Compress(const char infile[], const char cons, const int maxres,
   if (!cons) {
     for (i = 1; i <= L; ++i)
       if (X[kfirst][i] == GAP) {
-        HH_LOG(LogLevel::INFO)
+        HH_LOG(INFO)
             << "NOTE: Use the '-cons' option to calculate a consensus sequence as first sequence of the alignment.\n";
         break;
       }
@@ -1292,29 +1292,29 @@ void Alignment::Compress(const char infile[], const char cons, const int maxres,
   for (k = 0; k < N_in; ++k) {
     if (!display[k])
       continue;
-    HH_LOG(LogLevel::DEBUG1) << "k=" << k << " >" << sname[k] << "\n";
+    HH_LOG(DEBUG1) << "k=" << k << " >" << sname[k] << "\n";
     if (k == kss_dssp || k == kss_pred) {
       for (i = 1; i <= L; ++i)
-        HH_LOG(LogLevel::DEBUG1) << char(i2ss(X[k][i]));
+        HH_LOG(DEBUG1) << char(i2ss(X[k][i]));
     } else if (k == kss_conf) {
       for (i = 1; i <= L; ++i)
-        HH_LOG(LogLevel::DEBUG1) << char(i2cf(X[k][i]));
+        HH_LOG(DEBUG1) << char(i2cf(X[k][i]));
     } else if (k == ksa_dssp) {
       for (i = 1; i <= L; ++i)
-        HH_LOG(LogLevel::DEBUG1) << char(i2sa(X[k][i]));
+        HH_LOG(DEBUG1) << char(i2sa(X[k][i]));
     } else {
       for (i = 1; i <= L; ++i)
-        HH_LOG(LogLevel::DEBUG1) << char(i2aa(X[k][i]));
-      HH_LOG(LogLevel::DEBUG1) << "\n";
+        HH_LOG(DEBUG1) << char(i2aa(X[k][i]));
+      HH_LOG(DEBUG1) << "\n";
       for (i = 1; i <= L; ++i)
         if (I[k][i] == 0)
-          HH_LOG(LogLevel::DEBUG1) << "-";
+          HH_LOG(DEBUG1) << "-";
         else if (I[k][i] > 9)
-          HH_LOG(LogLevel::DEBUG1) << "X";
+          HH_LOG(DEBUG1) << "X";
         else
-        HH_LOG(LogLevel::DEBUG1) << I[k][i];
+        HH_LOG(DEBUG1) << I[k][i];
     }
-    HH_LOG(LogLevel::DEBUG1) << "\n";
+    HH_LOG(DEBUG1) << "\n";
   }
 }
 
@@ -1385,7 +1385,7 @@ void Alignment::GetSeqsFromHMM(HMM* q) {
     }
 
     // store sequence name
-    HH_LOG(LogLevel::DEBUG) << "Reading seq " << q->sname[qk] << " k=" << k
+    HH_LOG(DEBUG) << "Reading seq " << q->sname[qk] << " k=" << k
                             << "  n_displ=" << n_display << "  display[k]="
                             << display[k] << " keep[k]=" << keep[k] << "\n";
     sname[k] = new char[strlen(q->sname[qk]) + 1];
@@ -1668,15 +1668,15 @@ int Alignment::Filter2(char keep[], int coverage, int qid, float qsc,
       }
     }
     if (keep[k] == 1) {
-      HH_LOG(LogLevel::WARNING) << "Warning in " << __FILE__ << ":" << __LINE__
+      HH_LOG(WARNING) << "Warning in " << __FILE__ << ":" << __LINE__
                                 << ": " << __func__ << ":" << std::endl;
-      HH_LOG(LogLevel::WARNING)
+      HH_LOG(WARNING)
           << "\tFiltering removed all sequences in alignment " << name
           << ". Inserting back first sequence.\n";
     } else if (display[kfirst] == 2) {  // the only sequence in the alignment is the consensus sequence :-(
-      HH_LOG(LogLevel::WARNING) << "Warning in " << __FILE__ << ":" << __LINE__
+      HH_LOG(WARNING) << "Warning in " << __FILE__ << ":" << __LINE__
                                 << ": " << __func__ << ":" << std::endl;
-      HH_LOG(LogLevel::WARNING)
+      HH_LOG(WARNING)
           << "\tAlignment "
           << name
           << " contains no sequence except consensus sequence. Using consensus sequence for searching.\n";
@@ -1857,23 +1857,23 @@ int Alignment::Filter2(char keep[], int coverage, int qid, float qsc,
 
   }  // End Loop over seqid
 
-  HH_LOG(LogLevel::DEBUG) << n << " out of " << N_in - N_ss
+  HH_LOG(DEBUG) << n << " out of " << N_in - N_ss
                           << " sequences passed filter (";
   if (coverage) {
-    HH_LOG(LogLevel::DEBUG) << coverage << " min coverage, ";
+    HH_LOG(DEBUG) << coverage << " min coverage, ";
   }
   if (qid) {
-    HH_LOG(LogLevel::DEBUG) << qid << " min sequence identity to query, ";
+    HH_LOG(DEBUG) << qid << " min sequence identity to query, ";
   }
   if (qsc > -10) {
-    HH_LOG(LogLevel::DEBUG) << qsc << " bits min score per column to query, ";
+    HH_LOG(DEBUG) << qsc << " bits min score per column to query, ";
   }
   if (Ndiff < N_in && Ndiff > 0) {
-    HH_LOG(LogLevel::DEBUG)
+    HH_LOG(DEBUG)
         << "up to " << seqid
         << " position-dependent max pairwise sequence identity)\n";
   } else {
-    HH_LOG(LogLevel::DEBUG) << seqid1 << " max pairwise sequence identity)\n";
+    HH_LOG(DEBUG) << seqid1 << " max pairwise sequence identity)\n";
   }
 
   for (k = 0; k < N_in; ++k)
@@ -2037,7 +2037,7 @@ void Alignment::FilterNeff(char use_global_weights, const char mark,
     return;
   }
   if (y0 < Neff) {
-    HH_LOG(LogLevel::DEBUG) << "Diversity of alignment before Neff filter "
+    HH_LOG(DEBUG) << "Diversity of alignment before Neff filter "
                             << y0 << " is below target diversity Neff = "
                             << Neff << std::endl;
     return;
@@ -2066,7 +2066,7 @@ void Alignment::FilterNeff(char use_global_weights, const char mark,
   } while (fabs(Neff - y) > TOLY && x1 - x0 > TOLX);
 
   // Write filtered alignment WITH insert states (lower case) to alignment file
-  HH_LOG(LogLevel::DEBUG) << "Found Neff=" << y << " at filter threshold qsc="
+  HH_LOG(DEBUG) << "Found Neff=" << y << " at filter threshold qsc="
                           << x << std::endl;
 }
 
@@ -2119,7 +2119,7 @@ void Alignment::FrequenciesAndTransitions(HMM* q, char use_global_weights,
     }
   }
 
-  HH_LOG(LogLevel::DEBUG)
+  HH_LOG(DEBUG)
       << "Calculating position-dependent weights on subalignments\n";
 
   if (in == NULL)
@@ -2201,23 +2201,23 @@ void Alignment::FrequenciesAndTransitions(HMM* q, char use_global_weights,
     q->Neff_M[0] = q->Neff_I[0] = q->Neff_D[0] = 99.999;  // Neff_av[0] is used for calculation of transition pseudocounts for the start state
   }
 
-  if (Log::reporting_level() >= LogLevel::DEBUG) {
-    HH_LOG(LogLevel::DEBUG) << "Matches:\n";
-    HH_LOG(LogLevel::DEBUG) << "col\tNeff\tnseqs\n";
+  if (Log::reporting_level() >= DEBUG) {
+    HH_LOG(DEBUG) << "Matches:\n";
+    HH_LOG(DEBUG) << "col\tNeff\tnseqs\n";
     for (i = 1; i <= imin(L, 100); ++i)
-      HH_LOG(LogLevel::DEBUG) << i << "\t" << q->Neff_M[i] << "\t" << nseqs[i]
+      HH_LOG(DEBUG) << i << "\t" << q->Neff_M[i] << "\t" << nseqs[i]
                               << std::endl;
 
-    HH_LOG(LogLevel::DEBUG) << "Inserts:";
-    HH_LOG(LogLevel::DEBUG) << "col\tNeff\tnseqs" << std::endl;
+    HH_LOG(DEBUG) << "Inserts:";
+    HH_LOG(DEBUG) << "col\tNeff\tnseqs" << std::endl;
     for (i = 1; i <= imin(L, 100); ++i)
-      HH_LOG(LogLevel::DEBUG) << i << "\t" << q->Neff_I[i] << "\t" << nseqs[i]
+      HH_LOG(DEBUG) << i << "\t" << q->Neff_I[i] << "\t" << nseqs[i]
                               << std::endl;
 
-    HH_LOG(LogLevel::DEBUG) << "Deletes:\n";
-    HH_LOG(LogLevel::DEBUG) << "col\tNeff\tnseqs\n";
+    HH_LOG(DEBUG) << "Deletes:\n";
+    HH_LOG(DEBUG) << "col\tNeff\tnseqs\n";
     for (i = 1; i <= imin(L, 100); ++i)
-      HH_LOG(LogLevel::DEBUG) << i << "\t" << q->Neff_D[i] << "\t" << nseqs[i]
+      HH_LOG(DEBUG) << i << "\t" << q->Neff_D[i] << "\t" << nseqs[i]
                               << std::endl;
   }
 
@@ -2400,40 +2400,40 @@ void Alignment::FrequenciesAndTransitions(HMM* q, char use_global_weights,
   //if (time) { ElapsedTimeSinceLastCall("Copy sequences and SS"); }
 
   // Debug: print occurrence of amino acids for each position i
-  if (Log::reporting_level() >= LogLevel::DEBUG) {
-    HH_LOG(LogLevel::DEBUG) << "Effective number of sequences exp(entropy) = "
+  if (Log::reporting_level() >= DEBUG) {
+    HH_LOG(DEBUG) << "Effective number of sequences exp(entropy) = "
                             << q->Neff_HMM << std::endl;
 
-    HH_LOG(LogLevel::DEBUG) << "Matr: ";
+    HH_LOG(DEBUG) << "Matr: ";
     for (a = 0; a < 20; ++a)
-      HH_LOG(LogLevel::DEBUG) << 100 * pb[a] << " ";
-    HH_LOG(LogLevel::DEBUG)
+      HH_LOG(DEBUG) << 100 * pb[a] << " ";
+    HH_LOG(DEBUG)
         << "\nAmino acid frequencies without pseudocounts:\n";
-    HH_LOG(LogLevel::DEBUG)
+    HH_LOG(DEBUG)
         << "         A    R    N    D    C    Q    E    G    H    I    L    K    M    F    P    S    T    W    Y    V\n";
     for (i = 1; i <= L; ++i) {
-      HH_LOG(LogLevel::DEBUG) << i << " ";
+      HH_LOG(DEBUG) << i << " ";
       for (a = 0; a < 20; ++a)
-        HH_LOG(LogLevel::DEBUG) << 100 * q->f[i][a] << " ";
-      HH_LOG(LogLevel::DEBUG) << std::endl;
+        HH_LOG(DEBUG) << 100 * q->f[i][a] << " ";
+      HH_LOG(DEBUG) << std::endl;
     }
-    HH_LOG(LogLevel::DEBUG) << std::endl;
+    HH_LOG(DEBUG) << std::endl;
 
-    HH_LOG(LogLevel::DEBUG)
+    HH_LOG(DEBUG)
         << "Listing transition probabilities without pseudocounts:"
         << std::endl;
-    HH_LOG(LogLevel::DEBUG)
+    HH_LOG(DEBUG)
         << "   i    M->M   M->I   M->D   I->M   I->I   D->M   D->D  Neff_M Neff_I Neff_D"
         << std::endl;
     for (i = 0; i <= L; ++i) {
-      HH_LOG(LogLevel::DEBUG) << i << "  " << fpow2(q->tr[i][M2M]) << " "
+      HH_LOG(DEBUG) << i << "  " << fpow2(q->tr[i][M2M]) << " "
                               << fpow2(q->tr[i][M2I]) << " "
                               << fpow2(q->tr[i][M2D]) << " ";
-      HH_LOG(LogLevel::DEBUG) << fpow2(q->tr[i][I2M]) << " "
+      HH_LOG(DEBUG) << fpow2(q->tr[i][I2M]) << " "
                               << fpow2(q->tr[i][I2I]) << " ";
-      HH_LOG(LogLevel::DEBUG) << fpow2(q->tr[i][D2M]) << " "
+      HH_LOG(DEBUG) << fpow2(q->tr[i][D2M]) << " "
                               << fpow2(q->tr[i][D2D]) << "  ";
-      HH_LOG(LogLevel::DEBUG) << q->Neff_M[i] << " " << q->Neff_I[i] << " "
+      HH_LOG(DEBUG) << q->Neff_M[i] << " " << q->Neff_I[i] << " "
                               << q->Neff_D[i] << std::endl;
     }
   }
@@ -3413,7 +3413,7 @@ void Alignment::Transitions_from_D_state(HMM* q, char* in, const int maxres) {
 /////////////////////////////////////////////////////////////////////////////////////
 void Alignment::WriteWithoutInsertsToFile(const char* alnfile,
                                           const char append) {
-  HH_LOG(LogLevel::INFO) << "Writing alignment to " << alnfile << "\n";
+  HH_LOG(INFO) << "Writing alignment to " << alnfile << "\n";
   FILE* alnf;
   if (!append)
     alnf = fopen(alnfile, "w");
@@ -3425,7 +3425,7 @@ void Alignment::WriteWithoutInsertsToFile(const char* alnfile,
   if (strncmp(longname, sname[kfirst], DESCLEN - 1))
     fprintf(alnf, "#%s\n", longname);
 
-  HH_LOG(LogLevel::INFO) << cout << "Writing alignment to " << alnfile << "\n";
+  HH_LOG(INFO) << cout << "Writing alignment to " << alnfile << "\n";
 
   // Write ss_ lines
   for (int k = 0; k < N_in; ++k)
@@ -3524,7 +3524,7 @@ void Alignment::MergeMasterSlave(Hit& hit, Alignment& Tali, char* ta3mfile,
   int k;              // sequence index
   char c;             //
 
-  HH_LOG(LogLevel::DEBUG) << "Merging " << ta3mfile << " to query alignment\n";
+  HH_LOG(DEBUG) << "Merging " << ta3mfile << " to query alignment\n";
 
   // Record imatch[j]
   int* imatch = new int[hit.j2 + 1];
@@ -3534,7 +3534,7 @@ void Alignment::MergeMasterSlave(Hit& hit, Alignment& Tali, char* ta3mfile,
     while (hit.j[step] < j)
       step--;
     imatch[j] = hit.i[step];
-    HH_LOG(LogLevel::DEBUG1) << "step=" << step << "  i=" << imatch[j] << " j="
+    HH_LOG(DEBUG1) << "step=" << step << "  i=" << imatch[j] << " j="
                              << j << "    i1: " << hit.i1 << "  i2: " << hit.i2
                              << "  j1: " << hit.j1 << "  j2: " << hit.j2
                              << std::endl;
@@ -3551,9 +3551,9 @@ void Alignment::MergeMasterSlave(Hit& hit, Alignment& Tali, char* ta3mfile,
     if (!Tali.keep[k])
       continue;
     if (N_in >= MAXSEQ) {
-      HH_LOG(LogLevel::WARNING) << "Warning in " << __FILE__ << ":" << __LINE__
+      HH_LOG(WARNING) << "Warning in " << __FILE__ << ":" << __LINE__
                                 << ": " << __func__ << ":" << std::endl;
-      HH_LOG(LogLevel::WARNING)
+      HH_LOG(WARNING)
           << "\tmaximum number of " << MAXSEQ
           << " sequences exceeded while reading " << ta3mfile
           << ". Skipping all following sequences of this MSA" << std::endl;
@@ -3572,9 +3572,9 @@ void Alignment::MergeMasterSlave(Hit& hit, Alignment& Tali, char* ta3mfile,
           break;       // yes: increment j. Reached hit,j1? yes: break
 
     if (j < hit.j1) {
-      HH_LOG(LogLevel::ERROR) << "Error in " << __FILE__ << ":" << __LINE__
+      HH_LOG(ERROR) << "Error in " << __FILE__ << ":" << __LINE__
                               << ": " << __func__ << ":" << std::endl;
-      HH_LOG(LogLevel::ERROR) << "\tdid not find " << hit.j1
+      HH_LOG(ERROR) << "\tdid not find " << hit.j1
                               << " match states in sequence " << k << " of "
                               << Tali.name << ". Sequence:\n" << Tali.seq[k]
                               << std::endl;
@@ -3718,9 +3718,9 @@ void Alignment::MergeMasterSlave(Hit& hit, Alignment& Tali, char* ta3mfile,
     strcpy(sname[N_in], Tali.sname[k]);
     N_in++;
 
-    HH_LOG(LogLevel::DEBUG1) << "k=" << k << " " << Tali.seq[k] << std::endl;
-    HH_LOG(LogLevel::DEBUG1) << "Query " << seq[kfirst] << std::endl;
-    HH_LOG(LogLevel::DEBUG1) << "k=" << k << " " << cur_seq << std::endl
+    HH_LOG(DEBUG1) << "k=" << k << " " << Tali.seq[k] << std::endl;
+    HH_LOG(DEBUG1) << "Query " << seq[kfirst] << std::endl;
+    HH_LOG(DEBUG1) << "k=" << k << " " << cur_seq << std::endl
                              << std::endl;
 
   }  // end for (k)

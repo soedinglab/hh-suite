@@ -113,11 +113,11 @@ void HalfAlignment::Set(char* name, char** seq_in, char** sname_in, int n_in,
     }
   }
 
-  HH_LOG(LogLevel::DEBUG2) << "  i chr   m   l\n";
+  HH_LOG(DEBUG2) << "  i chr   m   l\n";
   for (i = 0; i <= L + 1; i++)
-    HH_LOG(LogLevel::DEBUG2) << i << "   " << seq[0][m[0][i]] << " " << m[0][i]
+    HH_LOG(DEBUG2) << i << "   " << seq[0][m[0][i]] << " " << m[0][i]
                              << " " << l[0][i] << std::endl;
-  HH_LOG(LogLevel::DEBUG2) << std::endl;
+  HH_LOG(DEBUG2) << std::endl;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -325,7 +325,7 @@ void HalfAlignment::Print(char* alnfile, const char append, char* commentname,
   } else
     outf = stdout;
 
-  HH_LOG(LogLevel::DEBUG) << "Writing alignment to " << alnfile << "\n";
+  HH_LOG(DEBUG) << "Writing alignment to " << alnfile << "\n";
 
   if (!format || strcmp(format, "psi")) {
     if (commentname != NULL)
@@ -345,14 +345,14 @@ void HalfAlignment::Print(char* alnfile, const char append, char* commentname,
           fprintf(outf, "%s\n", s[k]);
         } else {
           omitted++;
-          HH_LOG(LogLevel::DEBUG)
+          HH_LOG(DEBUG)
               << sname[k]
               << " contains no residue in match state. Omitting sequence\n";
         }
       }
     }
     if (omitted) {
-      HH_LOG(LogLevel::INFO) << "Omitted " << omitted << " sequences in "
+      HH_LOG(INFO) << "Omitted " << omitted << " sequences in "
                              << alnfile
                              << " which contained no residue in match state\n";
     }

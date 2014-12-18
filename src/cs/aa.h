@@ -18,6 +18,7 @@
 */
 
 #include "globals.h"
+#include <stdint.h>
 
 #ifndef CS_AA_H_
 #define CS_AA_H_

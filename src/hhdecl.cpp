@@ -20,7 +20,7 @@ void Parameters::SetDefaultPaths() {
 	if (testf)
 		fclose(testf);
 	else {
-		HH_LOG(LogLevel::DEBUG) << "WARNING in HHsuite: Could not open " << cs_library << "\n";
+		HH_LOG(DEBUG) << "WARNING in HHsuite: Could not open " << cs_library << "\n";
 
 		char program_path[NAMELEN];
 		Pathname(program_path, argv[0]);
@@ -35,7 +35,7 @@ void Parameters::SetDefaultPaths() {
 			if (testf)
 				fclose(testf);
 			else {
-				HH_LOG(LogLevel::DEBUG) << "WARNING in HHsuite: Could not open " << cs_library << "\n";
+				HH_LOG(DEBUG) << "WARNING in HHsuite: Could not open " << cs_library << "\n";
 
 				strcat(strcpy(hhlib, program_path), "..");
 				strcat(strcpy(hhdata, hhlib), "/data");
@@ -45,7 +45,7 @@ void Parameters::SetDefaultPaths() {
 				if (testf)
 					fclose(testf);
 				else
-					HH_LOG(LogLevel::DEBUG) << "WARNING in HHsuite: Could not open " << cs_library << "\n";
+					HH_LOG(DEBUG) << "WARNING in HHsuite: Could not open " << cs_library << "\n";
 			}
 		}
 	}
@@ -63,7 +63,7 @@ void Parameters::SetDefaultPaths() {
 }
 
 void Parameters::SetDefaults() {
-	v = LogLevel::INFO;
+	v = INFO;
 
 	maxcol = 32765; // max number of columns in sequence/MSA input files; must be <= LINELEN and >= maxres
 	maxres = 20000;           // max number of states in HMM; must be <= LINELEN

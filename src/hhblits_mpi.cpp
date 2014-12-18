@@ -50,13 +50,13 @@ struct OutputFFIndex {
 
       data_file  = fopen(data_filename, "w");
       if( data_file == NULL) {
-        HH_LOG(LogLevel::ERROR) << "Could not open " << data_filename << std::endl;
+        HH_LOG(ERROR) << "Could not open " << data_filename << std::endl;
         exit(1);
       }
 
       index_file = fopen(index_filename, "w");
       if(index_file == NULL) {
-        HH_LOG(LogLevel::ERROR) << "Could not open " << index_filename << std::endl;
+        HH_LOG(ERROR) << "Could not open " << index_filename << std::endl;
         exit(1);
       }
 

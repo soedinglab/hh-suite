@@ -13,6 +13,9 @@ namespace hh {
 
   Prefilter::Prefilter(const char* cs_library,
       FFindexDatabase* cs219_database) {
+
+    num_dbs = 0;
+
     // Prepare column state lib (context size =1 )
     FILE* fin = fopen(cs_library, "r");
     if (!fin)
@@ -253,7 +256,7 @@ namespace hh {
 // Pull out all names from prefilter db file and copy into dbfiles_new for full HMM-HMM comparison
 ///////////////////////////////////////////////////////////////////////////////////////////////////
   void Prefilter::init_no_prefiltering(FFindexDatabase* cs219_database,
-      std::vector<std::pair<int, std::string>>& prefiltered_entries) {
+      std::vector<std::pair<int, std::string> >& prefiltered_entries) {
     ffindex_index_t* db_index = cs219_database->db_index;
 
     for (size_t n = 0; n < db_index->n_entries; n++) {
@@ -264,13 +267,13 @@ namespace hh {
               std::string(entry->name)));
     }
 
-    HH_LOG(LogLevel::INFO) << "Searching " << prefiltered_entries.size()
+    HH_LOG(INFO) << "Searching " << prefiltered_entries.size()
         << " database HHMs without prefiltering" << std::endl;
   }
 
   void Prefilter::init_selected(FFindexDatabase* cs219_database,
       std::vector<std::string> templates,
-      std::vector<std::pair<int, std::string>>& prefiltered_entries) {
+      std::vector<std::pair<int, std::string> >& prefiltered_entries) {
 
     ffindex_index_t* db_index = cs219_database->db_index;
 
@@ -305,7 +308,7 @@ namespace hh {
     //check if cs219 format is new binary format
     checkCSFormat(5);
 
-    HH_LOG(LogLevel::INFO) << "Searching " << num_dbs
+    HH_LOG(INFO) << "Searching " << num_dbs
         << " column state sequences." << std::endl;
   }
 
@@ -339,13 +342,13 @@ namespace hh {
     // Build query profile with 219 column states
     query_profile = new float*[LQ + 1];
     for (i = 0; i < LQ + 1; ++i)
-      query_profile[i] = (float*) malloc_simd_int(NUMCOLSTATES * sizeof(float));
+      query_profile[i] = (float*) malloc_simd_int(hh::NUMCOLSTATES * sizeof(float));
 
     const cs::ContextLibrary<cs::AA>& lib = *cs_lib;
 
     // log (S(i,k)) = log ( SUM_a p(i,a) * p(k,a) / f(a) )   k: column state, i: pos in ali, a: amino acid
     for (i = 0; i < LQ; ++i)
-      for (k = 0; k < NUMCOLSTATES; ++k) {
+      for (k = 0; k < hh::NUMCOLSTATES; ++k) {
         float sum = 0;
         for (a = 0; a < 20; ++a)
           sum += ((q_tmp->p[i][a] * lib[k].probs[0][a]) / q_tmp->pav[a]);
@@ -357,7 +360,7 @@ namespace hh {
     // Stripe query profile with chars
     int element_count = (VECSIZE_INT * 4);
 
-    for (a = 0; a < NUMCOLSTATES; ++a) {
+    for (a = 0; a < hh::NUMCOLSTATES; ++a) {
       h = a * W * element_count;
       for (i = 0; i < W; ++i) {
         j = i;
@@ -381,7 +384,7 @@ namespace hh {
     }
 
     // Add extra ANY-state (220'th state)
-    h = NUMCOLSTATES * W * element_count;
+    h = hh::NUMCOLSTATES * W * element_count;
     for (i = 0; i < W; ++i) {
       j = i;
       for (k = 0; k < element_count; ++k) {
@@ -410,8 +413,8 @@ namespace hh {
       const double prefilter_evalue_coarse_thresh,
       const int preprefilter_smax_thresh, const int min_prefilter_hits, const int maxnumdb,
       const float R[20][20],
-      std::vector<std::pair<int, std::string>>& new_prefilter_hits,
-      std::vector<std::pair<int, std::string>>& old_prefilter_hits) {
+      std::vector<std::pair<int, std::string> >& new_prefilter_hits,
+      std::vector<std::pair<int, std::string> >& old_prefilter_hits) {
 
     Hash<char>* doubled = new Hash<char>;
     doubled->New(16381, 0);
@@ -420,7 +423,7 @@ namespace hh {
     //W = (LQ+15) / 16;   // band width = hochgerundetes LQ/16
     int W = (q_tmp->L + (element_count - 1)) / element_count;
     // query profile (states + 1 because of ANY char)
-    unsigned char* qc = (unsigned char*)malloc_simd_int((NUMCOLSTATES+1)*(q_tmp->L+element_count)*sizeof(unsigned char));
+    unsigned char* qc = (unsigned char*)malloc_simd_int((hh::NUMCOLSTATES+1)*(q_tmp->L+element_count)*sizeof(unsigned char));
     stripe_query_profile(q_tmp, prefilter_score_offset, prefilter_bit_factor, W, qc);
 
     simd_int ** workspace = new simd_int *[threads];
@@ -479,7 +482,7 @@ namespace hh {
     first_prefilter.erase(first_prefilter_begin_erase,
         first_prefilter_end_erase);
 
-    HH_LOG(LogLevel::INFO)
+    HH_LOG(INFO)
         << "HMMs passed 1st prefilter (gapless profile-profile alignment)  : "
         << count_dbs << std::endl;
 
@@ -557,7 +560,7 @@ namespace hh {
       }
       if (count_dbs >= maxnumdb)
       {
-        HH_LOG(LogLevel::WARNING)
+        HH_LOG(WARNING)
         << "Number of hits passing 2nd prefilter (reduced from " << hits.size() << " to allowed maximum of " << maxnumdb << ").\n"
         <<"You can increase the allowed maximum using the -maxfilt <max> option.\n";
         break;

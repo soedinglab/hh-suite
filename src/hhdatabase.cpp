@@ -80,6 +80,7 @@ void HHDatabase::buildDatabaseName(const char* base, const char* extension,
 }
 
 HHblitsDatabase::HHblitsDatabase(const char* base) {
+  use_compressed = false;
   basename = new char[strlen(base) + 1];
   strcpy(basename, base);
 
@@ -137,7 +138,7 @@ void HHblitsDatabase::initPrefilter(const char* cs_library) {
 }
 
 void HHblitsDatabase::initNoPrefilter(std::vector<HHEntry*>& new_entries) {
-  std::vector<std::pair<int, std::string>> new_entry_names;
+  std::vector<std::pair<int, std::string> > new_entry_names;
   hh::Prefilter::init_no_prefiltering(cs219_database, new_entry_names);
 
   getEntriesFromNames(new_entry_names, new_entries);
@@ -146,7 +147,7 @@ void HHblitsDatabase::initNoPrefilter(std::vector<HHEntry*>& new_entries) {
 void HHblitsDatabase::initSelected(std::vector<std::string>& selected_templates,
                                    std::vector<HHEntry*>& new_entries) {
 
-  std::vector<std::pair<int, std::string>> new_entry_names;
+  std::vector<std::pair<int, std::string> > new_entry_names;
   hh::Prefilter::init_selected(cs219_database, selected_templates,
                                new_entry_names);
 
@@ -167,8 +168,8 @@ void HHblitsDatabase::prefilter_db(HMM* q_tmp, Hash<Hit>* previous_hits,
                                    std::vector<HHEntry*>& new_entries,
                                    std::vector<HHEntry*>& old_entries) {
 
-  std::vector<std::pair<int, std::string>> prefiltered_new_entry_names;
-  std::vector<std::pair<int, std::string>> prefiltered_old_entry_names;
+  std::vector<std::pair<int, std::string> > prefiltered_new_entry_names;
+  std::vector<std::pair<int, std::string> > prefiltered_old_entry_names;
 
   prefilter->prefilter_db(q_tmp, previous_hits, threads, prefilter_gap_open,
                           prefilter_gap_extend, prefilter_score_offset,
@@ -183,7 +184,7 @@ void HHblitsDatabase::prefilter_db(HMM* q_tmp, Hash<Hit>* previous_hits,
 }
 
 void HHblitsDatabase::getEntriesFromNames(
-    std::vector<std::pair<int, std::string>>& hits,
+    std::vector<std::pair<int, std::string> >& hits,
     std::vector<HHEntry*>& entries) {
   for (size_t i = 0; i < hits.size(); i++) {
     ffindex_entry_t* entry;
@@ -193,11 +194,11 @@ void HHblitsDatabase::getEntriesFromNames(
           ca3m_database->db_index, const_cast<char*>(hits[i].second.c_str()));
       if (entry == NULL) {
         //TODO: error
-        HH_LOG(LogLevel::WARNING)
+        HH_LOG(WARNING)
             << "warning: could not fetch entry from compressed a3m!"
             << std::endl;
-        HH_LOG(LogLevel::WARNING) << "\tentry: " << hits[i].second << std::endl;
-        HH_LOG(LogLevel::WARNING) << "\tdb: " << ca3m_database->data_filename
+        HH_LOG(WARNING) << "\tentry: " << hits[i].second << std::endl;
+        HH_LOG(WARNING) << "\tdb: " << ca3m_database->data_filename
                                   << std::endl;
         continue;
       }
@@ -225,12 +226,12 @@ void HHblitsDatabase::getEntriesFromNames(
         entries.push_back(hhentry);
       } else {
         //TODO: error
-        HH_LOG(LogLevel::WARNING)
+        HH_LOG(WARNING)
             << "warning: could not fetch entry from a3m or hhm!" << std::endl;
-        HH_LOG(LogLevel::WARNING) << "\tentry: " << hits[i].second << std::endl;
-        HH_LOG(LogLevel::WARNING) << "\ta3m_db: " << a3m_database->data_filename
+        HH_LOG(WARNING) << "\tentry: " << hits[i].second << std::endl;
+        HH_LOG(WARNING) << "\ta3m_db: " << a3m_database->data_filename
                                   << std::endl;
-        HH_LOG(LogLevel::WARNING) << "\thhm_db: " << hhm_database->data_filename
+        HH_LOG(WARNING) << "\thhm_db: " << hhm_database->data_filename
                                   << std::endl;
         continue;
       }
@@ -348,7 +349,7 @@ void HHDatabaseEntry::getTemplateA3M(Parameters& par, float* pb,
         hhdatabase->ca3m_database->db_index, this->entry->name);
 
     if (entry == NULL) {
-      HH_LOG(LogLevel::ERROR) << "Could not fetch entry " << this->entry->name
+      HH_LOG(ERROR) << "Could not fetch entry " << this->entry->name
                               << " from compressed hhblits database!"
                               << std::endl;
       exit(1);
@@ -479,7 +480,7 @@ void HHFileEntry::getTemplateHMM(Parameters& par, char use_global_weights,
   FILE * dbf = fopen(file, "r");
   if(dbf == NULL) {
     //TODO: throw error
-    HH_LOG(LogLevel::ERROR) << "Template File does not exist: " << file << std::endl;
+    HH_LOG(ERROR) << "Template File does not exist: " << file << std::endl;
     exit(1);
   }
 
@@ -498,9 +499,9 @@ void HHFileEntry::getTemplateA3M(Parameters& par, float* pb,
   FILE* inf = fopen(file, "r");
 
   if (!fgetline(line, LINELEN, inf)) {
-    HH_LOG(LogLevel::ERROR) << "Error in " << __FILE__ << ":" << __LINE__
+    HH_LOG(ERROR) << "Error in " << __FILE__ << ":" << __LINE__
                             << ": " << __func__ << ":" << std::endl;
-    HH_LOG(LogLevel::ERROR) << "\t" << file << " is empty!\n";
+    HH_LOG(ERROR) << "\t" << file << " is empty!\n";
     exit(4);
   }
 
@@ -510,7 +511,7 @@ void HHFileEntry::getTemplateA3M(Parameters& par, float* pb,
   // Is infile a HMMER file?
   if (!strncmp(line, "HMMER", 5)) {
     // Uncomment this line to allow HMMER2/HMMER3 models as queries:
-    HH_LOG(LogLevel::ERROR)
+    HH_LOG(ERROR)
         << "Error: Use of HMMER format as input will result in severe loss of sensitivity!\n";
   }
   // ... or is it an hhm file?
@@ -518,7 +519,7 @@ void HHFileEntry::getTemplateA3M(Parameters& par, float* pb,
     char path[NAMELEN];
     Pathname(path, file);
 
-    HH_LOG(LogLevel::INFO) << "Query file is in HHM format\n";
+    HH_LOG(INFO) << "Query file is in HHM format\n";
 
     // Rewind to beginning of line and read query hhm file
     rewind(inf);
@@ -532,10 +533,10 @@ void HHFileEntry::getTemplateA3M(Parameters& par, float* pb,
   // ... or is it an alignment file
   else if (line[0] == '#' || line[0] == '>') {
     if (par.calibrate) {
-      HH_LOG(LogLevel::ERROR) << "Error in " << __FILE__ << ":" << __LINE__
+      HH_LOG(ERROR) << "Error in " << __FILE__ << ":" << __LINE__
                               << ": " << __func__ << ":" << std::endl;
-      HH_LOG(LogLevel::ERROR) << "\tonly HHM files can be calibrated.\n";
-      HH_LOG(LogLevel::ERROR)
+      HH_LOG(ERROR) << "\tonly HHM files can be calibrated.\n";
+      HH_LOG(ERROR)
           << "\tBuild an HHM file from your alignment with hhmake and rerun with the hhm file"
           << std::endl;
       exit(1);
@@ -552,11 +553,11 @@ void HHFileEntry::getTemplateA3M(Parameters& par, float* pb,
 
     tali = ali_tmp;
   } else {
-    HH_LOG(LogLevel::ERROR) << "Error in " << __FILE__ << ":" << __LINE__
+    HH_LOG(ERROR) << "Error in " << __FILE__ << ":" << __LINE__
                             << ": " << __func__ << ":" << std::endl;
-    HH_LOG(LogLevel::ERROR) << "\tunrecognized input file format in \'" << file
+    HH_LOG(ERROR) << "\tunrecognized input file format in \'" << file
                             << "\'\n";
-    HH_LOG(LogLevel::ERROR) << "\tline = " << line << "\n";
+    HH_LOG(ERROR) << "\tline = " << line << "\n";
     exit(1);
   }
 

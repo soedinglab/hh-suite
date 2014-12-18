@@ -160,9 +160,9 @@ class HMM {
 
   // Utility for Read()
   int Warning(FILE* dbf, char line[], char name[]) {
-    HH_LOG(LogLevel::WARNING) << "Warning in " << __FILE__ << ":" << __LINE__
+    HH_LOG(WARNING) << "Warning in " << __FILE__ << ":" << __LINE__
                               << ": " << __func__ << ":" << std::endl;
-    HH_LOG(LogLevel::WARNING) << "\tcould not read line\n\'" << line
+    HH_LOG(WARNING) << "\tcould not read line\n\'" << line
                               << "\'\nin HMM " << name << " in " << file
                               << "\n";
     while (fgetline(line, LINELEN, dbf) && !(line[0] == '/' && line[1] == '/'))

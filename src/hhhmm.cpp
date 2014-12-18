@@ -257,7 +257,7 @@ int HMM::Read(FILE* dbf, const int maxcol, const int nseqdis, float* pb,
 				strcpy(name, "undefined");
 			}
 
-			HH_LOG(LogLevel::DEBUG1) << "Reading in HMM " << name << ":" << std::endl;
+			HH_LOG(DEBUG1) << "Reading in HMM " << name << ":" << std::endl;
 		}
 
 		else if (!strcmp("FAM", str3)) {
@@ -323,15 +323,15 @@ int HMM::Read(FILE* dbf, const int maxcol, const int nseqdis, float* pb,
 			cur_seq[0] = '-'; // overwrite '\0' character at beginning to be able to do strcpy(*,cur_seq)
 			k = -1;
 			while (fgetline(line, LINELEN - 1, dbf) && line[0] != '#') {
-				HH_LOG(LogLevel::DEBUG1) << "Read from file:" << line << std::endl;
+				HH_LOG(DEBUG1) << "Read from file:" << line << std::endl;
 				if (line[0] == '>') //line contains sequence name
 						{
 					if (k >= MAXSEQDIS - 1) //maximum number of allowable sequences exceeded
 					{
-						HH_LOG(LogLevel::WARNING) << "Warning in " << __FILE__ << ":"
+						HH_LOG(WARNING) << "Warning in " << __FILE__ << ":"
 									<< __LINE__ << ": " << __func__ << ":"
 									<< std::endl;
-						HH_LOG(LogLevel::WARNING) << "\tnumber of sequences in " << file
+						HH_LOG(WARNING) << "\tnumber of sequences in " << file
 									<< " exceeds maximum allowed number of "
 									<< MAXSEQDIS << ". Skipping sequences.\n";
 						while (fgetline(line, LINELEN - 1, dbf)
@@ -399,7 +399,7 @@ int HMM::Read(FILE* dbf, const int maxcol, const int nseqdis, float* pb,
 									ss_dssp[i++] = ss2i(c);
 								l++;
 							} else if (ss2i(line[h]) == -2) {
-								HH_LOG(LogLevel::WARNING) << std::endl
+								HH_LOG(WARNING) << std::endl
 										<< "WARNING: ignoring invalid symbol \'"
 										<< line[h] << "\' at pos. " << h
 										<< " in line '" << line << "' of HMM "
@@ -418,7 +418,7 @@ int HMM::Read(FILE* dbf, const int maxcol, const int nseqdis, float* pb,
 									sa_dssp[i++] = sa2i(c);
 								l++;
 							} else if (sa2i(line[h]) == -2) {
-								HH_LOG(LogLevel::WARNING) << std::endl
+								HH_LOG(WARNING) << std::endl
 										<< "WARNING: ignoring invalid symbol \'"
 										<< line[h] << "\' at pos. " << h
 										<< " in line '" << line << "' of HMM "
@@ -437,7 +437,7 @@ int HMM::Read(FILE* dbf, const int maxcol, const int nseqdis, float* pb,
 									ss_pred[i++] = ss2i(c);
 								l++;
 							} else if (ss2i(line[h]) == -2) {
-								HH_LOG(LogLevel::WARNING) << std::endl
+								HH_LOG(WARNING) << std::endl
 										<< "WARNING: ignoring invalid symbol \'"
 										<< line[h] << "\' at pos. " << h
 										<< " in line '" << line << "' of HMM "
@@ -454,7 +454,7 @@ int HMM::Read(FILE* dbf, const int maxcol, const int nseqdis, float* pb,
 								ss_conf[l] = cf2i(line[h]);
 								l++;
 							} else if (cf2i(line[h]) == -2) {
-								HH_LOG(LogLevel::WARNING) << std::endl
+								HH_LOG(WARNING) << std::endl
 										<< "WARNING: ignoring invalid symbol \'"
 										<< line[h] << "\' at pos. " << h
 										<< " in line '" << line << "' of HMM "
@@ -470,7 +470,7 @@ int HMM::Read(FILE* dbf, const int maxcol, const int nseqdis, float* pb,
 								cur_seq[l] = line[h];
 								l++;
 							} else if (aa2i(line[h]) == -2) {
-								HH_LOG(LogLevel::WARNING) << std::endl
+								HH_LOG(WARNING) << std::endl
 										<< "WARNING: ignoring invalid symbol \'"
 										<< line[h] << "\' at pos. " << h
 										<< " in line '" << line << "' of HMM "
@@ -498,28 +498,28 @@ int HMM::Read(FILE* dbf, const int maxcol, const int nseqdis, float* pb,
 			n_seqs = k + 1;
 
 			// DEBUG
-			if (Log::reporting_level() >= LogLevel::DEBUG1) {
-				HH_LOG(LogLevel::DEBUG1) << "nss_dssp=" << nss_dssp << "  nsa_dssp=" << nsa_dssp << "  nss_pred=" << nss_pred << "  nss_conf=" << nss_conf << "  nfirst=" << nfirst << std::endl;
+			if (Log::reporting_level() >= DEBUG1) {
+				HH_LOG(DEBUG1) << "nss_dssp=" << nss_dssp << "  nsa_dssp=" << nsa_dssp << "  nss_pred=" << nss_pred << "  nss_conf=" << nss_conf << "  nfirst=" << nfirst << std::endl;
 				for (k = 0; k < n_display; k++) {
 					int j;
-					HH_LOG(LogLevel::DEBUG1) << ">" << sname[k] << "(k=" << k << ")\n";
+					HH_LOG(DEBUG1) << ">" << sname[k] << "(k=" << k << ")\n";
 					if (k == nss_dssp) {
 						for (j = 1; j <= L; j++)
-							HH_LOG(LogLevel::DEBUG1) << char(i2ss(ss_dssp[j]));
+							HH_LOG(DEBUG1) << char(i2ss(ss_dssp[j]));
 					} else if (k == nsa_dssp) {
 						for (j = 1; j <= L; j++)
-							HH_LOG(LogLevel::DEBUG1) << char(i2sa(sa_dssp[j]));
+							HH_LOG(DEBUG1) << char(i2sa(sa_dssp[j]));
 					} else if (k == nss_pred) {
 						for (j = 1; j <= L; j++)
-							HH_LOG(LogLevel::DEBUG1) << char(i2ss(ss_pred[j]));
+							HH_LOG(DEBUG1) << char(i2ss(ss_pred[j]));
 					} else if (k == nss_conf) {
 						for (j = 1; j <= L; j++)
-							HH_LOG(LogLevel::DEBUG1) << int(ss_conf[j] - 1);
+							HH_LOG(DEBUG1) << int(ss_conf[j] - 1);
 					} else {
 						for (j = 1; j <= L; j++)
-							HH_LOG(LogLevel::DEBUG1) << seq[k][j];
+							HH_LOG(DEBUG1) << seq[k][j];
 					}
-					HH_LOG(LogLevel::DEBUG1) << "\n";
+					HH_LOG(DEBUG1) << "\n";
 				}
 			}
 
@@ -542,11 +542,11 @@ int HMM::Read(FILE* dbf, const int maxcol, const int nseqdis, float* pb,
 				pb[s2a[a]] = (float) fpow2(float(-strinta(ptr)) / HMMSCALE);
 			if (!ptr)
 				return Warning(dbf, line, name);
-			if (Log::reporting_level() >= LogLevel::DEBUG1) {
-				HH_LOG(LogLevel::DEBUG1) << "\nNULL  ";
+			if (Log::reporting_level() >= DEBUG1) {
+				HH_LOG(DEBUG1) << "\nNULL  ";
 				for (a = 0; a < 20; ++a)
-					HH_LOG(LogLevel::DEBUG1) << 100. * pb[s2a[a]] << " ";
-				HH_LOG(LogLevel::DEBUG1) << std::endl;
+					HH_LOG(DEBUG1) << 100. * pb[s2a[a]] << " ";
+				HH_LOG(DEBUG1) << std::endl;
 			}
 		}
 
@@ -583,16 +583,16 @@ int HMM::Read(FILE* dbf, const int maxcol, const int nseqdis, float* pb,
 				++i;
 				if (next_i != prev_i + 1)
 					if (++warn <= 5) {
-						HH_LOG(LogLevel::WARNING) << std::endl << "WARNING: in HMM " << name
+						HH_LOG(WARNING) << std::endl << "WARNING: in HMM " << name
 								<< " state " << prev_i
 								<< " is followed by state " << next_i << "\n";
 						if (warn == 5) {
-							HH_LOG(LogLevel::WARNING) << std::endl
+							HH_LOG(WARNING) << std::endl
 									<< "WARNING: further warnings while reading HMMs will be suppressed.\n";
 						}
 					}
 				if (i > L) {
-					HH_LOG(LogLevel::WARNING) << std::endl << "WARNING: in HMM " << name
+					HH_LOG(WARNING) << std::endl << "WARNING: in HMM " << name
 							<< " there are more columns than the stated length "
 							<< L << ". Skipping HMM\n";
 					return 2;
@@ -610,13 +610,13 @@ int HMM::Read(FILE* dbf, const int maxcol, const int nseqdis, float* pb,
 				l[i] = strint(ptr);
 				if (!ptr)
 					return Warning(dbf, line, name);
-				if (Log::reporting_level() >= LogLevel::DEBUG1) {
-					HH_LOG(LogLevel::DEBUG1) << line;
-					HH_LOG(LogLevel::DEBUG1) << i << " ";
+				if (Log::reporting_level() >= DEBUG1) {
+					HH_LOG(DEBUG1) << line;
+					HH_LOG(DEBUG1) << i << " ";
 					for (a = 0; a < 20; ++a)
-						HH_LOG(LogLevel::DEBUG1) << 100 * f[i][s2a[a]] << " ";
-					HH_LOG(LogLevel::DEBUG1) << l[i];
-					HH_LOG(LogLevel::DEBUG1) << std::endl;
+						HH_LOG(DEBUG1) << 100 * f[i][s2a[a]] << " ";
+					HH_LOG(DEBUG1) << l[i];
+					HH_LOG(DEBUG1) << std::endl;
 				}
 
 				// Read transition probabilities
@@ -634,17 +634,17 @@ int HMM::Read(FILE* dbf, const int maxcol, const int nseqdis, float* pb,
 				Neff_D[i] = float(strinta(ptr)) / HMMSCALE; // Read eff. number of sequences with D->? transition
 				if (!ptr)
 					return Warning(dbf, line, name);
-				if (Log::reporting_level() >= LogLevel::DEBUG1) {
-					HH_LOG(LogLevel::DEBUG1) << "       ";
+				if (Log::reporting_level() >= DEBUG1) {
+					HH_LOG(DEBUG1) << "       ";
 					for (a = 0; a <= D2D; ++a)
-						HH_LOG(LogLevel::DEBUG1) << 100 * fpow2(tr[i][a]) << " ";
-					HH_LOG(LogLevel::DEBUG1) << Neff_M[i] << " " << Neff_I[i] << " " << Neff_D[i] << std::endl;
+						HH_LOG(DEBUG1) << 100 * fpow2(tr[i][a]) << " ";
+					HH_LOG(DEBUG1) << Neff_M[i] << " " << Neff_I[i] << " " << Neff_D[i] << std::endl;
 				}
 			}
 			if (line[0] == '/' && line[1] == '/')
 				break;
 		} else
-			HH_LOG(LogLevel::WARNING) << std::endl << "WARNING: Ignoring line\n\'" << line
+			HH_LOG(WARNING) << std::endl << "WARNING: Ignoring line\n\'" << line
 					<< "\'\nin HMM " << name << "\n";
 
 	} //while(getline)
@@ -656,26 +656,26 @@ int HMM::Read(FILE* dbf, const int maxcol, const int nseqdis, float* pb,
 	//   lamda = lamda_hash.Show(par.Key());
 	//   mu    = mu_hash.Show(par.Key());
 	if (lamda) {
-		HH_LOG(LogLevel::DEBUG) << "HMM " << name << " is already calibrated: lamda=" << lamda << ", mu=" << mu << std::endl;
+		HH_LOG(DEBUG) << "HMM " << name << " is already calibrated: lamda=" << lamda << ", mu=" << mu << std::endl;
 	}
 
 	if (i != L) {
-		HH_LOG(LogLevel::WARNING) << std::endl << "WARNING: in HMM " << name
+		HH_LOG(WARNING) << std::endl << "WARNING: in HMM " << name
 				<< " there are only " << i
 				<< " columns while the stated length is " << L << "\n";
 	}
 
 	if (i > maxres - 2) {
 		i = maxres - 2;
-		HH_LOG(LogLevel::WARNING) << std::cerr << std::endl << "WARNING: maximum number " << maxres - 2
+		HH_LOG(WARNING) << std::cerr << std::endl << "WARNING: maximum number " << maxres - 2
 				<< " of residues exceeded while reading HMM " << name << "\n";
 	}
 	if (!i) {
-		HH_LOG(LogLevel::WARNING) << std::endl << "WARNING: HMM " << name
+		HH_LOG(WARNING) << std::endl << "WARNING: HMM " << name
 				<< " contains no match states. Check the alignment that gave rise to this HMM.\n";
 	}
 
-	HH_LOG(LogLevel::DEBUG) << "Read in HMM " << name << " with " << L
+	HH_LOG(DEBUG) << "Read in HMM " << name << " with " << L
 				<< " match states and effective number of sequences = "
 				<< Neff_HMM << "\n";
 	L = i;
@@ -735,7 +735,7 @@ int HMM::ReadHMMer(FILE* dbf, const char showcons, float* pb, char* filestr) {
 			ptr = strscn(line + 4); // advance to first non-white-space character
 			strmcpy(name, ptr, NAMELEN - 1);    // copy full name to name
 			strcut(name);                   // ...cut after first word...
-			HH_LOG(LogLevel::DEBUG1) << "Reading in HMM " << name << ":" << std::endl;
+			HH_LOG(DEBUG1) << "Reading in HMM " << name << ":" << std::endl;
 		}
 
 		else if (!strcmp("ACC ", str4)) {
@@ -863,11 +863,11 @@ int HMM::ReadHMMer(FILE* dbf, const char showcons, float* pb, char* filestr) {
 						* fpow2(float(strinta(ptr, -99999)) / HMMSCALE);
 			if (!ptr)
 				return Warning(dbf, line, name);
-			if (Log::reporting_level() >= LogLevel::DEBUG1) {
-				HH_LOG(LogLevel::DEBUG1) << "\nNULL  ";
+			if (Log::reporting_level() >= DEBUG1) {
+				HH_LOG(DEBUG1) << "\nNULL  ";
 				for (a = 0; a < 20; ++a)
-					HH_LOG(LogLevel::DEBUG1) << 100. * pb[s2a[a]] << " ";
-				HH_LOG(LogLevel::DEBUG1) << std::endl;
+					HH_LOG(DEBUG1) << 100. * pb[s2a[a]] << " ";
+				HH_LOG(DEBUG1) << std::endl;
 			}
 		}
 
@@ -879,7 +879,7 @@ int HMM::ReadHMMer(FILE* dbf, const char showcons, float* pb, char* filestr) {
 			sscanf(ptr, "%f", &mu);
 			if (lamda < 0) {
 				if (ignore_hmmer_cal == 0) {
-					HH_LOG(LogLevel::WARNING) << std::endl
+					HH_LOG(WARNING) << std::endl
 							<< "WARNING: some HMMs have been calibrated with HMMER's 'hmmcalibrate'. These calibrations will be ignored\n";
 				}
 				ignore_hmmer_cal = 1;
@@ -902,11 +902,11 @@ int HMM::ReadHMMer(FILE* dbf, const char showcons, float* pb, char* filestr) {
 			tr[0][I2I] = tr[0][D2D] = -99999.0;
 			if (!ptr)
 				return Warning(dbf, line, name);
-			if (Log::reporting_level() >= LogLevel::DEBUG1) {
-				HH_LOG(LogLevel::DEBUG1) << "       ";
+			if (Log::reporting_level() >= DEBUG1) {
+				HH_LOG(DEBUG1) << "       ";
 				for (a = 0; a <= D2D && ptr; ++a)
-					HH_LOG(LogLevel::DEBUG1) << 100 * fpow2(tr[i][a]) << " ";
-				HH_LOG(LogLevel::DEBUG1) << std::endl;
+					HH_LOG(DEBUG1) << 100 * fpow2(tr[i][a]) << " ";
+				HH_LOG(DEBUG1) << std::endl;
 			}
 
 			// Prepare to store DSSP states (if there are none, delete afterwards)
@@ -930,22 +930,22 @@ int HMM::ReadHMMer(FILE* dbf, const char showcons, float* pb, char* filestr) {
 				++i;
 				if (next_i != prev_i + 1)
 					if (++warn < 5) {
-						HH_LOG(LogLevel::WARNING) << std::endl << "WARNING: in HMM " << name
+						HH_LOG(WARNING) << std::endl << "WARNING: in HMM " << name
 								<< " state " << prev_i
 								<< " is followed by state " << next_i << "\n";
 						if (warn == 5) {
-							HH_LOG(LogLevel::WARNING) << std::endl
+							HH_LOG(WARNING) << std::endl
 									<< "WARNING: further warnings while reading HMMs will be suppressed.\n";
 						}
 					}
 				if (i > L) {
-					HH_LOG(LogLevel::WARNING) << std::endl << "WARNING: in HMM " << name
+					HH_LOG(WARNING) << std::endl << "WARNING: in HMM " << name
 							<< " there are more columns than the stated length "
 							<< L << ". Skipping columns.\n";
 					break;
 				}
 				if (i > L) {
-					HH_LOG(LogLevel::WARNING) << std::endl << "WARNING: in HMM " << name
+					HH_LOG(WARNING) << std::endl << "WARNING: in HMM " << name
 							<< " there are more columns than the stated length "
 							<< L << "\n";
 				}
@@ -961,11 +961,11 @@ int HMM::ReadHMMer(FILE* dbf, const char showcons, float* pb, char* filestr) {
 				//s2a[a]: transform amino acids Sorted by alphabet -> internal numbers for amino acids
 				if (!ptr)
 					return Warning(dbf, line, name);
-				if (Log::reporting_level() >= LogLevel::DEBUG1) {
-					HH_LOG(LogLevel::WARNING) << i;
+				if (Log::reporting_level() >= DEBUG1) {
+					HH_LOG(WARNING) << i;
 					for (a = 0; a < 20; ++a)
-						HH_LOG(LogLevel::WARNING) << 100 * f[i][s2a[a]] << " ";
-					HH_LOG(LogLevel::WARNING) << std::endl;
+						HH_LOG(WARNING) << 100 * f[i][s2a[a]] << " ";
+					HH_LOG(WARNING) << std::endl;
 				}
 
 				// Read insert emission line
@@ -1039,11 +1039,11 @@ int HMM::ReadHMMer(FILE* dbf, const char showcons, float* pb, char* filestr) {
 					tr[i][a] = float(strinta(ptr, -99999)) / HMMSCALE; //store transition prob's as log2-values
 				if (!ptr)
 					return Warning(dbf, line, name);
-				if (Log::reporting_level() >= LogLevel::DEBUG1) {
-					HH_LOG(LogLevel::DEBUG1) << "       ";
+				if (Log::reporting_level() >= DEBUG1) {
+					HH_LOG(DEBUG1) << "       ";
 					for (a = 0; a <= D2D; ++a)
-						HH_LOG(LogLevel::DEBUG1) << 100 * fpow2(tr[i][a]) << " ";
-					HH_LOG(LogLevel::DEBUG1) << std::endl;
+						HH_LOG(DEBUG1) << 100 * fpow2(tr[i][a]) << " ";
+					HH_LOG(DEBUG1) << std::endl;
 				}
 			}
 
@@ -1061,21 +1061,21 @@ int HMM::ReadHMMer(FILE* dbf, const char showcons, float* pb, char* filestr) {
 	//   lamda = lamda_hash.Show(par.Key());
 	//   mu    = mu_hash.Show(par.Key());
 	if (lamda) {
-		HH_LOG(LogLevel::DEBUG) << "HMM "<< name <<" is already calibrated: lamda="<< lamda<<", mu="<<mu<< std::endl;
+		HH_LOG(DEBUG) << "HMM "<< name <<" is already calibrated: lamda="<< lamda<<", mu="<<mu<< std::endl;
 	}
 
 	if (i != L) {
-		HH_LOG(LogLevel::WARNING) << std::endl << "WARNING: in HMM " << name
+		HH_LOG(WARNING) << std::endl << "WARNING: in HMM " << name
 				<< " there are only " << i
 				<< " columns while the stated length is " << L << std::endl;
 	}
 	if (i >= maxres - 2) {
 		i = maxres - 2;
-		HH_LOG(LogLevel::WARNING) << std::endl << "WARNING: maximum number " << maxres - 2
+		HH_LOG(WARNING) << std::endl << "WARNING: maximum number " << maxres - 2
 				<< " of residues exceeded while reading HMM " << name << std::endl;
 	}
 	if (!i) {
-		HH_LOG(LogLevel::WARNING) << std::endl << "WARNING: HMM " << name
+		HH_LOG(WARNING) << std::endl << "WARNING: HMM " << name
 				<< " contains no match states. Check the alignment that gave rise to this HMM." << std::endl;
 	}
 	L = i;
@@ -1189,7 +1189,7 @@ int HMM::ReadHMMer(FILE* dbf, const char showcons, float* pb, char* filestr) {
 	Neff_M[L + 1] = 1.0f;
 	Neff_I[L + 1] = Neff_D[L + 1] = 0.0f;
 
-	HH_LOG(LogLevel::DEBUG) << "Read in HMM " << name << " with " << L
+	HH_LOG(DEBUG) << "Read in HMM " << name << " with " << L
 				<< " match states and effective number of sequences = "
 				<< Neff_HMM << "\n";
 
@@ -1245,7 +1245,7 @@ int HMM::ReadHMMer3(FILE* dbf, const char showcons, float* pb, char* filestr) {
 			ptr = strscn(line + 4); // advance to first non-white-space character
 			strmcpy(name, ptr, NAMELEN - 1);      // copy full name to name
 			strcut(name);                   // ...cut after first word...
-			HH_LOG(LogLevel::DEBUG1) << "Reading in HMM " << name << ":\n";
+			HH_LOG(DEBUG1) << "Reading in HMM " << name << ":\n";
 		}
 
 		else if (!strcmp("ACC ", str4)) {
@@ -1393,11 +1393,11 @@ int HMM::ReadHMMer3(FILE* dbf, const char showcons, float* pb, char* filestr) {
 					pb[s2a[a]] = (float) exp(-1.0 * strflta(ptr, 99999));
 				if (!ptr)
 					return Warning(dbf, line, name);
-				if (Log::reporting_level() >= LogLevel::DEBUG1) {
-					HH_LOG(LogLevel::DEBUG1) << "\nNULL ";
+				if (Log::reporting_level() >= DEBUG1) {
+					HH_LOG(DEBUG1) << "\nNULL ";
 					for (a = 0; a < 20; ++a)
-						HH_LOG(LogLevel::DEBUG1) << 100. * pb[s2a[a]] << " ";
-					HH_LOG(LogLevel::DEBUG1) << std::endl;
+						HH_LOG(DEBUG1) << 100. * pb[s2a[a]] << " ";
+					HH_LOG(DEBUG1) << std::endl;
 				}
 				fgetline(line, LINELEN - 1, dbf); // Read next line
 			}
@@ -1412,11 +1412,11 @@ int HMM::ReadHMMer3(FILE* dbf, const char showcons, float* pb, char* filestr) {
 				// ptr is set to 0 if no integer is found after ptr.
 			if (!ptr)
 				return Warning(dbf, line, name);
-			if (Log::reporting_level() >= LogLevel::DEBUG1) {
-				HH_LOG(LogLevel::DEBUG1) << "       ";
+			if (Log::reporting_level() >= DEBUG1) {
+				HH_LOG(DEBUG1) << "       ";
 				for (a = 0; a <= D2D && ptr; ++a)
-					HH_LOG(LogLevel::DEBUG1) << 100 * fpow2(tr[i][a]) << " ";
-				HH_LOG(LogLevel::DEBUG1) << std::endl;
+					HH_LOG(DEBUG1) << 100 * fpow2(tr[i][a]) << " ";
+				HH_LOG(DEBUG1) << std::endl;
 			}
 
 			// Prepare to store DSSP states (if there are none, delete afterwards)
@@ -1440,22 +1440,22 @@ int HMM::ReadHMMer3(FILE* dbf, const char showcons, float* pb, char* filestr) {
 				++i;
 				if (next_i != prev_i + 1)
 					if (++warn < 5) {
-						HH_LOG(LogLevel::WARNING) << std::endl << "WARNING: in HMM " << name
+						HH_LOG(WARNING) << std::endl << "WARNING: in HMM " << name
 								<< " state " << prev_i
 								<< " is followed by state " << next_i << "\n";
 						if (warn == 5) {
-							HH_LOG(LogLevel::WARNING) << std::endl
+							HH_LOG(WARNING) << std::endl
 									<< "WARNING: further warnings while reading HMMs will be suppressed.\n";
 						}
 					}
 				if (i > L) {
-					HH_LOG(LogLevel::WARNING) << std::endl << "WARNING: in HMM " << name
+					HH_LOG(WARNING) << std::endl << "WARNING: in HMM " << name
 							<< " there are more columns than the stated length "
 							<< L << ". Skipping columns.\n";
 					break;
 				}
 				if (i > L) {
-					HH_LOG(LogLevel::WARNING) << std::endl << "WARNING: in HMM " << name
+					HH_LOG(WARNING) << std::endl << "WARNING: in HMM " << name
 							<< " there are more columns than the stated length "
 							<< L << "\n";
 				}
@@ -1470,11 +1470,11 @@ int HMM::ReadHMMer3(FILE* dbf, const char showcons, float* pb, char* filestr) {
 				//s2a[a]: transform amino acids Sorted by alphabet -> internal numbers for amino acids
 				if (!ptr)
 					return Warning(dbf, line, name);
-				if (Log::reporting_level() >= LogLevel::DEBUG1) {
-					HH_LOG(LogLevel::WARNING) << i << " ";
+				if (Log::reporting_level() >= DEBUG1) {
+					HH_LOG(WARNING) << i << " ";
 					for (a = 0; a < 20; ++a)
-						HH_LOG(LogLevel::WARNING) << 100 * f[i][s2a[a]] << " ";
-					HH_LOG(LogLevel::WARNING) << std::endl;
+						HH_LOG(WARNING) << 100 * f[i][s2a[a]] << " ";
+					HH_LOG(WARNING) << std::endl;
 				}
 
 				// Ignore MAP annotation
@@ -1555,11 +1555,11 @@ int HMM::ReadHMMer3(FILE* dbf, const char showcons, float* pb, char* filestr) {
 					tr[i][a] = log2((float) exp(-1.0 * strflta(ptr, 99999))); //store transition prob's as log2-values
 				if (!ptr)
 					return Warning(dbf, line, name);
-				if (Log::reporting_level() >= LogLevel::DEBUG1) {
-					HH_LOG(LogLevel::DEBUG1) << "       ";
+				if (Log::reporting_level() >= DEBUG1) {
+					HH_LOG(DEBUG1) << "       ";
 					for (a = 0; a <= D2D; ++a)
-						HH_LOG(LogLevel::DEBUG1) << 100 * fpow2(tr[i][a]) << " ";
-					HH_LOG(LogLevel::DEBUG1) << std::endl;
+						HH_LOG(DEBUG1) << 100 * fpow2(tr[i][a]) << " ";
+					HH_LOG(DEBUG1) << std::endl;
 				}
 			}
 
@@ -1574,17 +1574,17 @@ int HMM::ReadHMMer3(FILE* dbf, const char showcons, float* pb, char* filestr) {
 		return 0; //End of db file -> stop reading in
 
 	if (i != L) {
-		HH_LOG(LogLevel::WARNING) << std::endl << "WARNING: in HMM " << name
+		HH_LOG(WARNING) << std::endl << "WARNING: in HMM " << name
 				<< " there are only " << i
 				<< " columns while the stated length is " << L << "\n";
 	}
 	if (i >= maxres - 2) {
 		i = maxres - 2;
-		HH_LOG(LogLevel::WARNING) << std::endl << "WARNING: maximum number " << maxres - 2
+		HH_LOG(WARNING) << std::endl << "WARNING: maximum number " << maxres - 2
 				<< " of residues exceeded while reading HMM " << name << "\n";
 	}
 	if (!i) {
-		HH_LOG(LogLevel::WARNING) << std::endl << "WARNING: HMM " << name
+		HH_LOG(WARNING) << std::endl << "WARNING: HMM " << name
 				<< " contains no match states. Check the alignment that gave rise to this HMM.\n";
 	}
 	L = i;
@@ -1700,7 +1700,7 @@ int HMM::ReadHMMer3(FILE* dbf, const char showcons, float* pb, char* filestr) {
 	Neff_M[L + 1] = 1.0f;
 	Neff_I[L + 1] = Neff_D[L + 1] = 0.0f;
 
-	HH_LOG(LogLevel::DEBUG) << "Read in HMM " << name << " with " << L
+	HH_LOG(DEBUG) << "Read in HMM " << name << " with " << L
 			<< " match states and effective number of sequences = "
 			<< Neff_HMM << "\n";
 
@@ -1785,24 +1785,24 @@ void HMM::AddTransitionPseudocounts(float gapd, float gape, float gapf,
 
 	}
 
-	if (Log::reporting_level() >= LogLevel::DEBUG1) {
-		HH_LOG(LogLevel::DEBUG1) << "\nPseudocount transition probabilities:\n";
-		HH_LOG(LogLevel::DEBUG1) << "pM2M=" << 100*pM2M <<"%, pM2I="<< 100 * pM2I <<"%, pM2D="<<100*pM2D<<"%, ";
-		HH_LOG(LogLevel::DEBUG1) << "pI2M=" << 100*pI2M << "%, pI2I=" << 100*pI2I << "%, ";
-		HH_LOG(LogLevel::DEBUG1) << "pD2M=" << 100*pD2M << "%, pD2D=" << 100*pD2D << "% ";
-		HH_LOG(LogLevel::DEBUG1) << "tau = " << 100. * gapb / (Neff_HMM - 1 + gapb) << "%\n\n";
-		HH_LOG(LogLevel::DEBUG1) << "Listing transition probabilities WITH pseudocounts:\n";
-		HH_LOG(LogLevel::DEBUG1) << "   i dssp pred sacc     M->M   M->I   M->D   I->M   I->I   D->M   D->D\n";
+	if (Log::reporting_level() >= DEBUG1) {
+		HH_LOG(DEBUG1) << "\nPseudocount transition probabilities:\n";
+		HH_LOG(DEBUG1) << "pM2M=" << 100*pM2M <<"%, pM2I="<< 100 * pM2I <<"%, pM2D="<<100*pM2D<<"%, ";
+		HH_LOG(DEBUG1) << "pI2M=" << 100*pI2M << "%, pI2I=" << 100*pI2I << "%, ";
+		HH_LOG(DEBUG1) << "pD2M=" << 100*pD2M << "%, pD2D=" << 100*pD2D << "% ";
+		HH_LOG(DEBUG1) << "tau = " << 100. * gapb / (Neff_HMM - 1 + gapb) << "%\n\n";
+		HH_LOG(DEBUG1) << "Listing transition probabilities WITH pseudocounts:\n";
+		HH_LOG(DEBUG1) << "   i dssp pred sacc     M->M   M->I   M->D   I->M   I->I   D->M   D->D\n";
 
 		//for all columns in HMM
 		for (i = 1; i <= L; ++i) {
-			HH_LOG(LogLevel::DEBUG1) << i << "\t" << i2ss(ss_dssp[i]) << "\t" << i2ss(ss_pred[i]) << "\t" << i2sa(sa_dssp[i]) << "\t" << fpow2(tr[i][M2M]) << "\t" << fpow2(tr[i][M2I]) << "\t" << fpow2(tr[i][M2D]) << "\t";
-			HH_LOG(LogLevel::DEBUG1) << fpow2(tr[i][I2M]) << "\t" << fpow2(tr[i][I2I]) << "\t";
-			HH_LOG(LogLevel::DEBUG1) << fpow2(tr[i][D2M]) << "\t" << fpow2(tr[i][D2D]) << "\t";
-			HH_LOG(LogLevel::DEBUG1) << ss_pred[i] << "\t" << ss_conf[i] << "\t" << ss_dssp[i] << std::endl;
+			HH_LOG(DEBUG1) << i << "\t" << i2ss(ss_dssp[i]) << "\t" << i2ss(ss_pred[i]) << "\t" << i2sa(sa_dssp[i]) << "\t" << fpow2(tr[i][M2M]) << "\t" << fpow2(tr[i][M2I]) << "\t" << fpow2(tr[i][M2D]) << "\t";
+			HH_LOG(DEBUG1) << fpow2(tr[i][I2M]) << "\t" << fpow2(tr[i][I2I]) << "\t";
+			HH_LOG(DEBUG1) << fpow2(tr[i][D2M]) << "\t" << fpow2(tr[i][D2D]) << "\t";
+			HH_LOG(DEBUG1) << ss_pred[i] << "\t" << ss_conf[i] << "\t" << ss_dssp[i] << std::endl;
 		}
-		HH_LOG(LogLevel::DEBUG1) << std::endl;
-		HH_LOG(LogLevel::DEBUG1) << "nss_dssp=" << nss_dssp << "  nss_pred=" << nss_pred << std::endl;
+		HH_LOG(DEBUG1) << std::endl;
+		HH_LOG(DEBUG1) << "nss_dssp=" << nss_dssp << "  nss_pred=" << nss_pred << std::endl;
 	}
 }
 
@@ -1917,7 +1917,7 @@ void HMM::AddAminoAcidPseudocounts(char pcm, float pca, float pcb, float pcc) {
 			for (a = 0; a < 20; ++a)
 				p[i][a] = (1. - tau) * f[i][a] + tau * g[i][a];
 		}
-		HH_LOG(LogLevel::DEBUG) << "Divergence before / after addition of amino acid pseudocounts: " << Neff_HMM << " / " << CalcNeff() << std::endl;
+		HH_LOG(DEBUG) << "Divergence before / after addition of amino acid pseudocounts: " << Neff_HMM << " / " << CalcNeff() << std::endl;
 		break;
 	} //end switch (pcm)
 
@@ -1926,43 +1926,43 @@ void HMM::AddAminoAcidPseudocounts(char pcm, float pca, float pcb, float pcc) {
 		has_pseudocounts = true;
 
 	// DEBUGGING output
-	if (Log::reporting_level() >= LogLevel::DEBUG) {
+	if (Log::reporting_level() >= DEBUG) {
 		switch (pcm) {
 		case 0:
-			HH_LOG(LogLevel::DEBUG) << "No pseudocounts added (-pcm 0)\n";
+			HH_LOG(DEBUG) << "No pseudocounts added (-pcm 0)\n";
 			return;
 		case 1:
-			HH_LOG(LogLevel::DEBUG) << "Adding constant AA pseudocount admixture of " << pca
+			HH_LOG(DEBUG) << "Adding constant AA pseudocount admixture of " << pca
 					<< " to HMM " << name << "\n";
 			break;
 		case 2:
-			HH_LOG(LogLevel::DEBUG)
+			HH_LOG(DEBUG)
 					<< "Adding divergence-dependent AA pseudocounts (-pcm 2) with admixture of "
 					<< fmin(1.0, pca / (1. + Neff_HMM / pcb)) << " to HMM "
 					<< name << "\n";
 			break;
 		} //end switch (pcm)
-		if (Log::reporting_level() >= LogLevel::DEBUG1) {
-			HH_LOG(LogLevel::DEBUG1)
+		if (Log::reporting_level() >= DEBUG1) {
+			HH_LOG(DEBUG1)
 					<< "\nAmino acid frequencies WITHOUT pseudocounts:\n       A    R    N    D    C    Q    E    G    H    I    L    K    M    F    P    S    T    W    Y    V\n";
 			for (i = 1; i <= L; ++i) {
-				HH_LOG(LogLevel::DEBUG1) << i << ":  ";
+				HH_LOG(DEBUG1) << i << ":  ";
 				sum = 0;
 				for (a = 0; a < 20; ++a) {
 					sum += f[i][a];
-					HH_LOG(LogLevel::DEBUG1) << 100 * f[i][a] << " ";
+					HH_LOG(DEBUG1) << 100 * f[i][a] << " ";
 				}
-				HH_LOG(LogLevel::DEBUG1) << "  sum=" << sum << std::endl;
+				HH_LOG(DEBUG1) << "  sum=" << sum << std::endl;
 			}
-			HH_LOG(LogLevel::DEBUG1) << "\nAmino acid frequencies WITH pseudocounts:\n       A    R    N    D    C    Q    E    G    H    I    L    K    M    F    P    S    T    W    Y    V\n";
+			HH_LOG(DEBUG1) << "\nAmino acid frequencies WITH pseudocounts:\n       A    R    N    D    C    Q    E    G    H    I    L    K    M    F    P    S    T    W    Y    V\n";
 			for (i = 1; i <= L; ++i) {
-				HH_LOG(LogLevel::DEBUG1) << i << ":  ";
+				HH_LOG(DEBUG1) << i << ":  ";
 				sum = 0;
 				for (a = 0; a < 20; ++a) {
 					sum += p[i][a];
-					HH_LOG(LogLevel::DEBUG1) << 100 * p[i][a] << " ";
+					HH_LOG(DEBUG1) << 100 * p[i][a] << " ";
 				}
-				HH_LOG(LogLevel::DEBUG1) << "  sum=" << sum << std::endl;
+				HH_LOG(DEBUG1) << "  sum=" << sum << std::endl;
 			}
 		}
 	}
@@ -2030,17 +2030,17 @@ void HMM::DivideBySqrtOfLocalBackgroundFreqs(const int D, const float* pb) // 2*
 		for (a = 0; a < NAA; ++a)
 			p[i][a] /= sqrt(fac * pnul[i][a]);
 
-	if (Log::reporting_level() >= LogLevel::DEBUG1) {
-		HH_LOG(LogLevel::DEBUG1) << "\nLocal amino acid background frequencies\n";
-		HH_LOG(LogLevel::DEBUG1) << "         A    R    N    D    C    Q    E    G    H    I    L    K    M    F    P    S    T    W    Y    V  sum\n";
+	if (Log::reporting_level() >= DEBUG1) {
+		HH_LOG(DEBUG1) << "\nLocal amino acid background frequencies\n";
+		HH_LOG(DEBUG1) << "         A    R    N    D    C    Q    E    G    H    I    L    K    M    F    P    S    T    W    Y    V  sum\n";
 		for (i = 1; i <= L; ++i) {
-			HH_LOG(LogLevel::DEBUG1) <<  i << " ";
+			HH_LOG(DEBUG1) <<  i << " ";
 			float sum = 0.0;
 			for (a = 0; a < 20; ++a) {
-				HH_LOG(LogLevel::DEBUG1) << 100 * fac * pnul[i][a] << " ";
+				HH_LOG(DEBUG1) << 100 * fac * pnul[i][a] << " ";
 				sum += fac * pnul[i][a];
 			}
-			HH_LOG(LogLevel::DEBUG1) << 100 * sum << std::endl;
+			HH_LOG(DEBUG1) << 100 * sum << std::endl;
 		}
 	}
 
@@ -2125,18 +2125,18 @@ void HMM::IncludeNullModelInHMM(HMM* q, HMM* t, int columnscore,
 
 	}
 
-	if (Log::reporting_level() >= LogLevel::DEBUG1) {
-		HH_LOG(LogLevel::DEBUG1) << "\nAverage amino acid frequencies\n";
-		HH_LOG(LogLevel::DEBUG1) << "         A    R    N    D    C    Q    E    G    H    I    L    K    M    F    P    S    T    W    Y    V\n";
-		HH_LOG(LogLevel::DEBUG1) << "Q:    ";
+	if (Log::reporting_level() >= DEBUG1) {
+		HH_LOG(DEBUG1) << "\nAverage amino acid frequencies\n";
+		HH_LOG(DEBUG1) << "         A    R    N    D    C    Q    E    G    H    I    L    K    M    F    P    S    T    W    Y    V\n";
+		HH_LOG(DEBUG1) << "Q:    ";
 		for (a = 0; a < 20; ++a)
-			HH_LOG(LogLevel::DEBUG1) << 100 * q->pav[a] << " ";
-		HH_LOG(LogLevel::DEBUG1) << "\nT:    ";
+			HH_LOG(DEBUG1) << 100 * q->pav[a] << " ";
+		HH_LOG(DEBUG1) << "\nT:    ";
 		for (a = 0; a < 20; ++a)
-			HH_LOG(LogLevel::DEBUG1) << 100 * t->pav[a] << " ";
-		HH_LOG(LogLevel::DEBUG1) << "\npb:   ";
+			HH_LOG(DEBUG1) << 100 * t->pav[a] << " ";
+		HH_LOG(DEBUG1) << "\npb:   ";
 		for (a = 0; a < 20; ++a)
-			HH_LOG(LogLevel::DEBUG1) << 100 * pb[a] << " ";
+			HH_LOG(DEBUG1) << 100 * pb[a] << " ";
 	}
 }
 
@@ -2309,7 +2309,7 @@ void HMM::InsertCalibration(char* infile) {
 	inf.open(infile, std::ios::in);
 	if (!inf)
 		OpenFileError(infile, __FILE__, __LINE__, __func__);
-	HH_LOG(LogLevel::INFO) << "Recording calibration coefficients in " << infile << "\n";
+	HH_LOG(INFO) << "Recording calibration coefficients in " << infile << "\n";
 
 	while (inf.getline(line, LINELEN) && !(line[0] == '/' && line[1] == '/')
 			&& nline < 2 * maxres) {
@@ -2397,19 +2397,19 @@ void HMM::NeutralizeTags(const float* pb) {
 		for (; i < imin(i1 + 8, L + 1); ++i)    // neutralize trailing 5 columns
 			for (a = 0; a < NAA; ++a)
 				p[i][a] = f[i][a] = pb[a];
-		HH_LOG(LogLevel::INFO) << "Neutralized His-tag between positions " << imax(i0 - 8, 1) << " and " << i-1 << std::endl;
+		HH_LOG(INFO) << "Neutralized His-tag between positions " << imax(i0 - 8, 1) << " and " << i-1 << std::endl;
 	}
 
 	// Neutralize C-myc tag
 	if ((pt = strstr(qseq, "EQKLISEEDL"))) {
-		HH_LOG(LogLevel::INFO) << "Neutralized C-myc-tag at position " << int(pt - qseq) + 1 << std::endl;
+		HH_LOG(INFO) << "Neutralized C-myc-tag at position " << int(pt - qseq) + 1 << std::endl;
 		for (i = pt - qseq + 1; i <= pt - qseq + 10; ++i)
 			for (a = 0; a < NAA; ++a)
 				p[i][a] = f[i][a] = pb[a];
 	}
 	// Neutralize FLAG tag
 	if ((pt = strstr(qseq, "DYKDDDDK"))) {
-		HH_LOG(LogLevel::INFO) << "Neutralized FLAG-tag at position " << int(pt - qseq) + 1;
+		HH_LOG(INFO) << "Neutralized FLAG-tag at position " << int(pt - qseq) + 1;
 		for (i = pt - qseq + 1; i <= pt - qseq + 8; ++i)
 			for (a = 0; a < NAA; ++a)
 				p[i][a] = f[i][a] = pb[a];

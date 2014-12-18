@@ -8,6 +8,7 @@
 #ifndef UTIL_INL_H_
 #define UTIL_INL_H_
 
+#include <cstdlib>
 
 //// max and min
 inline double dmax(double x, double y) {

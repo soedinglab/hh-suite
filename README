@@ -62,7 +62,7 @@ Download the appropriate binaries from ftp://toolkit.genzentrum.lmu.de/HH-suite/
 2.1. In your shell set environment variable HHLIB to $INSTALL_DIR/lib/hh, 
 e.g (for bash, zsh, ksh):
 
-$ export HHLIB=/usr/local/lib/hh
+$ export HHLIB=/usr/local/lib
 
 HHsearch and HHblits look for the column state library file cs219.lib
 and the context library file context_data.lib in $HHLIB/data/. The hh-suite
@@ -73,7 +73,7 @@ $ export PATH=$PATH:<install_dir>/bin:$HHLIB/scripts
 
 
 2.2. Specify paths to BLAST, PSIPRED, PDB, DSSP etc. in 
-$INSTALL_DIR/lib/hh/scripts/HHPaths.pm
+$INSTALL_DIR/lib/scripts/HHPaths.pm
 where they are read by the perl scripst in hh-suite.
 
 
@@ -151,7 +151,7 @@ $ make install INSTALL_DIR=/usr/local
 4.1. In your shell set environment variable HHLIB to $INSTALL_DIR/lib/hh, 
 e.g (for bash, zsh, ksh):
 
-$ export HHLIB=/usr/local/lib/hh
+$ export HHLIB=/usr/local/lib
 
 HHsearch and HHblits look for the column state library file cs219.lib
 and the context library file context_data.lib in $HHLIB/data/. The hh-suite
@@ -162,7 +162,7 @@ $ export PATH=$PATH:<install_dir>/bin:$HHLIB/scripts
 
 
 4.2. Specify paths to BLAST, PSIPRED, PDB, DSSP etc. in 
-$INSTALL_DIR/lib/hh/scripts/HHPaths.pm
+$INSTALL_DIR/lib/scripts/HHPaths.pm
 where they are read by the perl scripst in hh-suite.
 
 4.3 For dynamic builds only

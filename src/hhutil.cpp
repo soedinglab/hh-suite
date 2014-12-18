@@ -41,12 +41,12 @@ int InternalError(const char errstr[], const char* file, const int line, const c
 /////////////////////////////////////////////////////////////////////////////////////
 void runSystem(std::string cmd)
 {
-  HH_LOG(LogLevel::INFO) << "Command: " << cmd << "!\n";
+  HH_LOG(INFO) << "Command: " << cmd << "!\n";
   int res = system(cmd.c_str());
   if (res!=0) 
   {
-	  HH_LOG(LogLevel::ERROR) << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
-	  HH_LOG(LogLevel::ERROR) << "\tCould not execute '" << cmd << "; "<<strerror(errno)<<std::endl;
+	  HH_LOG(ERROR) << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+	  HH_LOG(ERROR) << "\tCould not execute '" << cmd << "; "<<strerror(errno)<<std::endl;
       exit(1);
   }
 }
@@ -135,19 +135,19 @@ void ReadDefaultsFile(int& argc_conf, char** argv_conf, char* program_path) {
               *c='\0';
               argv_conf[argc_conf]=new char[strlen(c_first)+1];
               strcpy(argv_conf[argc_conf++],c_first);
-              HH_LOG(LogLevel::DEBUG) << "Default argument: "<< c_first << std::endl;
+              HH_LOG(DEBUG) << "Default argument: "<< c_first << std::endl;
               c++;
             } while (1);
 	  if (*c=='h' && *(c+1)=='h') break; // Next program found
         } //end read line
 
-   	  HH_LOG(LogLevel::DEBUG) << "Arguments read in from .hhdefaults ("<<filename<<"):";
-      for (int argc=1; argc<argc_conf; argc++) HH_LOG(LogLevel::DEBUG) << (argv_conf[argc][0]=='-'? " ":"")<<argv_conf[argc]<<" ";
-      HH_LOG(LogLevel::DEBUG) << "\n";
+   	  HH_LOG(DEBUG) << "Arguments read in from .hhdefaults ("<<filename<<"):";
+      for (int argc=1; argc<argc_conf; argc++) HH_LOG(DEBUG) << (argv_conf[argc][0]=='-'? " ":"")<<argv_conf[argc]<<" ";
+      HH_LOG(DEBUG) << "\n";
   }
   else //found no line 'program_name   anything"
   {
-	HH_LOG(LogLevel::WARNING) << "WARNING: no default options for \'"<<program_name<<"\' found in "<<filename<<"\n";
+	HH_LOG(WARNING) << "WARNING: no default options for \'"<<program_name<<"\' found in "<<filename<<"\n";
     return; //no line 'program_name   anything' found
   }
   //   configf.close();

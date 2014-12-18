@@ -229,7 +229,7 @@ Viterbi::BacktraceScore Viterbi::ScoreForBacktrace(HMMSimd* q_four, HMMSimd* t_f
     backtraceScore.S=S;
     backtraceScore.S_ss=S_ss;
     
-    if (Log::reporting_level() >= LogLevel::DEBUG1) {
+    if (Log::reporting_level() >= DEBUG1) {
         Viterbi::PrintDebug(q,t,&backtraceScore,backtraceResult,ssm);
     }
     

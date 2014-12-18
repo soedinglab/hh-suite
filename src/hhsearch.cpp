@@ -433,7 +433,7 @@ void HHsearch::ProcessArguments(int argc, char** argv, Parameters& par) {
 
 	//Processing command line input
 	for (int i = 1; i < argc; i++) {
-		HH_LOG(LogLevel::DEBUG1) << i << "  " << argv[i] << endl;
+		HH_LOG(DEBUG1) << i << "  " << argv[i] << endl;
 		if (!strcmp(argv[i], "-i")) {
 			if (++i >= argc || argv[i][0] == '-') {
 				help(par);
@@ -737,10 +737,10 @@ void HHsearch::ProcessArguments(int argc, char** argv, Parameters& par) {
 			} else
 				strcpy(par.clusterfile, argv[i]);
 		} else {
-			HH_LOG(LogLevel::WARNING) << endl
+			HH_LOG(WARNING) << endl
 				<< "WARNING: Ignoring unknown option " << argv[i] << " ...\n";
 		}
-		HH_LOG(LogLevel::DEBUG1) << i << "  " << argv[i] << endl;
+		HH_LOG(DEBUG1) << i << "  " << argv[i] << endl;
 	} // end of for-loop for command line input
 }
 
@@ -792,7 +792,7 @@ void HHsearch::run(FILE* query_fh, char* query_path) {
 
 	int max_template_length = getMaxTemplateLength(new_entries);
     if(max_template_length > par.maxres){
-		HH_LOG(LogLevel::WARNING) << "database contains sequnces that exceeds maximum allowed size (maxres = "
+		HH_LOG(WARNING) << "database contains sequnces that exceeds maximum allowed size (maxres = "
         << par.maxres << "). Maxres can be increased with parameter -maxres." <<std::endl;
     }
     max_template_length = std::min(max_template_length, par.maxres);

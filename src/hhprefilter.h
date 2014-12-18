@@ -23,29 +23,30 @@ class Prefilter;
 
 namespace hh {
 
+const int SHORT_BIAS = 32768;
+const int NUMCOLSTATES = cs::AS219::kSize;
+
 class Prefilter {
 
 public:
 	Prefilter(const char* cs_library, FFindexDatabase* cs219_database);
 	virtual ~Prefilter();
 
-	static void init_no_prefiltering(FFindexDatabase* cs219_database, std::vector<std::pair<int, std::string>>& prefiltered_entries);
-	static void init_selected(FFindexDatabase* cs219_database, std::vector<std::string> templates, std::vector<std::pair<int, std::string>>& prefiltered_entries);
+	static void init_no_prefiltering(FFindexDatabase* cs219_database, std::vector<std::pair<int, std::string> >& prefiltered_entries);
+	static void init_selected(FFindexDatabase* cs219_database, std::vector<std::string> templates, std::vector<std::pair<int, std::string> >& prefiltered_entries);
 
 	void prefilter_db(HMM* q_tmp, Hash<Hit>* previous_hits,
 			const int threads, const int prefilter_gap_open, const int prefilter_gap_extend,
 			const int prefilter_score_offset, const int prefilter_bit_factor, const double prefilter_evalue_thresh,
 			const double prefilter_evalue_coarse_thresh, const int preprefilter_smax_thresh,
             const int min_prefilter_hits, const int maxnumdb, const float R[20][20],
-			std::vector<std::pair<int, std::string>>& new_prefilter_hits, std::vector<std::pair<int, std::string>>& old_prefilter_hits);
+			std::vector<std::pair<int, std::string> >& new_prefilter_hits, std::vector<std::pair<int, std::string> >& old_prefilter_hits);
 
 private:
-	const int SHORT_BIAS = 32768;
-	const int NUMCOLSTATES = cs::AS219::kSize;
 	cs::ContextLibrary<cs::AA> *cs_lib;
 
 	// number of sequences in prefilter database file
-	size_t num_dbs = 0;
+	size_t num_dbs;
 
 	// array containing all sequence names in prefilter db file
 	char** dbnames;

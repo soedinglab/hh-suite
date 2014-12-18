@@ -13,8 +13,8 @@ void ReadQueryFile(Parameters& par, FILE* inf, char& input_format,
   char line[LINELEN];
 
   if (!fgetline(line, LINELEN, inf)) {
-	HH_LOG(LogLevel::ERROR) << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
-	HH_LOG(LogLevel::ERROR) << "\t" << infile << " is empty!\n";
+	HH_LOG(ERROR) << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+	HH_LOG(ERROR) << "\t" << infile << " is empty!\n";
     exit(4);
   }
   while (strscn(line) == NULL)
@@ -23,14 +23,14 @@ void ReadQueryFile(Parameters& par, FILE* inf, char& input_format,
   // Is infile a HMMER file?
   if (!strncmp(line, "HMMER", 5)) {
     // Uncomment this line to allow HMMER2/HMMER3 models as queries:
-    HH_LOG(LogLevel::ERROR) << "Error: Use of HMMER format as input will result in severe loss of sensitivity!\n";
+    HH_LOG(ERROR) << "Error: Use of HMMER format as input will result in severe loss of sensitivity!\n";
   }
   // ... or is it an hhm file?
   else if (!strncmp(line, "NAME", 4) || !strncmp(line, "HH", 2)) {
     char path[NAMELEN];
     Pathname(path, infile);
 
-    HH_LOG(LogLevel::INFO) << "Query file is in HHM format\n";
+    HH_LOG(INFO) << "Query file is in HHM format\n";
 
     // Rewind to beginning of line and read query hhm file
     rewind(inf);
@@ -39,7 +39,7 @@ void ReadQueryFile(Parameters& par, FILE* inf, char& input_format,
 
     // HHM format
     if (input_format == 0) {
-      HH_LOG(LogLevel::INFO) << "Extracting representative sequences from " << infile << " to merge later with matched database sequences\n";
+      HH_LOG(INFO) << "Extracting representative sequences from " << infile << " to merge later with matched database sequences\n";
     }
 
     Alignment ali_tmp;
@@ -50,15 +50,15 @@ void ReadQueryFile(Parameters& par, FILE* inf, char& input_format,
   // ... or is it an alignment file
   else if (line[0] == '#' || line[0] == '>') {
     if (par.calibrate) {
-      HH_LOG(LogLevel::ERROR) << "Error in " << __FILE__ << ":" << __LINE__ << ": "
+      HH_LOG(ERROR) << "Error in " << __FILE__ << ":" << __LINE__ << ": "
           << __func__ << ":" << std::endl;
-      HH_LOG(LogLevel::ERROR) << "\tonly HHM files can be calibrated.\n";
-      HH_LOG(LogLevel::ERROR) << "\tBuild an HHM file from your alignment with hhmake and rerun with the hhm file" << std::endl;
+      HH_LOG(ERROR) << "\tonly HHM files can be calibrated.\n";
+      HH_LOG(ERROR) << "\tBuild an HHM file from your alignment with hhmake and rerun with the hhm file" << std::endl;
       exit(1);
     }
 
     if (strcmp(infile, "stdin")) {
-    	HH_LOG(LogLevel::INFO) << infile << " is in A2M, A3M or FASTA format\n";
+    	HH_LOG(INFO) << infile << " is in A2M, A3M or FASTA format\n";
     }
 
     Alignment ali_tmp;
@@ -88,14 +88,14 @@ void ReadQueryFile(Parameters& par, FILE* inf, char& input_format,
     input_format = 0;
   }
   else {
-	HH_LOG(LogLevel::ERROR) << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
-	HH_LOG(LogLevel::ERROR) << "\tunrecognized input file format in \'" << infile << "\'\n";
-	HH_LOG(LogLevel::ERROR) << "\tline = " << line << "\n";
+	HH_LOG(ERROR) << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+	HH_LOG(ERROR) << "\tunrecognized input file format in \'" << infile << "\'\n";
+	HH_LOG(ERROR) << "\tline = " << line << "\n";
     exit(1);
   }
 
   if (input_format == 0 && q->Neff_HMM > 11.0) {
-	  HH_LOG(LogLevel::WARNING) << "WARNING: MSA " << q->name << " looks too diverse (Neff=" << q->Neff_HMM << ">11). Better check it with an alignment viewer for non-homologous segments. Also consider building the MSA with hhblits using the - option to limit MSA diversity.\n";
+	  HH_LOG(WARNING) << "WARNING: MSA " << q->name << " looks too diverse (Neff=" << q->Neff_HMM << ">11). Better check it with an alignment viewer for non-homologous segments. Also consider building the MSA with hhblits using the - option to limit MSA diversity.\n";
   }
 }
 
@@ -107,7 +107,7 @@ void ReadQueryFile(Parameters& par, char* infile, char& input_format,
   FILE* inf = NULL;
   if (strcmp(infile, "stdin") == 0) {
     inf = stdin;
-    HH_LOG(LogLevel::INFO) << "Reading HMM / multiple alignment from standard input ...\n";
+    HH_LOG(INFO) << "Reading HMM / multiple alignment from standard input ...\n";
     path[0] = '\0';
   }
   else {
@@ -277,8 +277,8 @@ void CalculateSS(char *ss_pred, char *ss_conf, char *tmpfile,
   }
   fclose(horizf);
 
-  HH_LOG(LogLevel::DEBUG1) << "SS-pred: " << ss_pred << std::endl;
-  HH_LOG(LogLevel::DEBUG1) << "SS-conf: " << ss_conf << std::endl;
+  HH_LOG(DEBUG1) << "SS-pred: " << ss_pred << std::endl;
+  HH_LOG(DEBUG1) << "SS-conf: " << ss_conf << std::endl;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////

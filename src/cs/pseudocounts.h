@@ -115,6 +115,11 @@ struct HHsearchAdmix : public Admix {
 };
 
 
+//const double kNormalize           = 1e-5; // Normalization threshold.
+const double kTargetNeffParamMin  = 0.0;  // Minimal paramater value for adjusting to the target Neff.
+const double kTargetNeffParamMax  = 1.0;  // Maximal parameter value for adjusting to the target Neff.
+const double kTargetNeffParamInit = 0.5;  // Initial parameter value for adjusting to the target Neff.
+const double kTargetNeffEps       = 0.01; // Convergence threshold for adjusting to the target Neff.
 
 // An abstract base class for pseudocount factories.
 template<class Abc>
@@ -172,11 +177,6 @@ class Pseudocounts {
     double target_neff_delta_; // Maximal deviation from the target Neff.
 
   private:
-    const double kNormalize           = 1e-5; // Normalization threshold.
-    const double kTargetNeffParamMin  = 0.0;  // Minimal paramater value for adjusting to the target Neff.
-    const double kTargetNeffParamMax  = 1.0;  // Maximal parameter value for adjusting to the target Neff.
-    const double kTargetNeffParamInit = 0.5;  // Initial parameter value for adjusting to the target Neff.
-    const double kTargetNeffEps       = 0.01; // Convergence threshold for adjusting to the target Neff.
 
     DISALLOW_COPY_AND_ASSIGN(Pseudocounts);
 };  // Pseudocounts

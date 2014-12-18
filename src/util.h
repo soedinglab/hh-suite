@@ -19,6 +19,7 @@
 #include <float.h>
 #include <vector>
 #include <string>
+#include <stdint.h>
 
 #include "util-inl.h"
 

@@ -65,7 +65,7 @@ void PosteriorDecoder::backtraceMAC(HMM & q, HMM & t, PosteriorMatrix & p_mm, Vi
 	step = 0;         // steps through the matrix correspond to alignment columns (from 1 to nsteps)
 	i = hit.i2; j = hit.j2;     // last aligned pair is (i2,j2)
 	if (backtrace_matrix.getMatMat(i, j, elem) != ViterbiMatrix::MM) {		// b[i][j] != MM
-		if (Log::reporting_level() > LogLevel::DEBUG)
+		if (Log::reporting_level() > DEBUG)
 		  fprintf(stderr,"Error: backtrace does not start in match-match state, but in state %i, (i,j)=(%i,%i)\n",backtrace_matrix.getMatMat(i, j, elem),i,j);
 
 		step = 0;
@@ -99,7 +99,7 @@ void PosteriorDecoder::backtraceMAC(HMM & q, HMM & t, PosteriorMatrix & p_mm, Vi
 				default:
 					fprintf(stderr,"Error: unallowed state value %i occurred during backtracing at step %i, (i,j)=(%i,%i)\n", hit.state, step, i, j);
 					hit.state = 0;
-					actual_level = LogLevel::DEBUG1;
+					actual_level = DEBUG1;
 					break;
 			} //end switch (state)
 		} //end while (state)
@@ -174,7 +174,7 @@ void PosteriorDecoder::backtraceMAC(HMM & q, HMM & t, PosteriorMatrix & p_mm, Vi
 	//   printf("%-10.10s lamda=%-9f  score=%-9f  logPval=%-9g\n",name,t.lamda,score,logPvalt);
 
 	//DEBUG: Print out MAC alignment path
-	if (actual_level >= LogLevel::DEBUG1) {
+	if (actual_level >= DEBUG1) {
 				float sum_post = 0.0;
 				printf("NAME=%7.7s score=%7.3f  score_ss=%7.3f\n", hit.name, hit.score, hit.score_ss);
 				printf("step  Q T    i    j  state   score    T Q cf ss-score   P_post Sum_post\n");

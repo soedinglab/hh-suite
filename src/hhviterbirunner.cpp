@@ -103,7 +103,7 @@ std::vector<Hit> ViterbiRunner::alignment(Parameters& par, HMMSimd * q_simd,
 
     // loop to detect second/thrid/... best alignemtns
     for (int alignment = 0; alignment < par.altali; alignment++) {
-        HH_LOG(LogLevel::INFO) << "Alternative alignment: " << alignment << std::endl;
+        HH_LOG(INFO) << "Alternative alignment: " << alignment << std::endl;
         unsigned int allElementToAlignCount = dbfiles_to_align.size();
         unsigned int seqBlockSize = allElementToAlignCount;
         
@@ -153,7 +153,7 @@ std::vector<Hit> ViterbiRunner::alignment(Parameters& par, HMMSimd * q_simd,
             } // idb loop
             // merge thread results
             // search hits for next alignment
-            HH_LOG(LogLevel::INFO) << (seqJunkStart + seqJunkSize) <<  " alignments done" << std::endl;
+            HH_LOG(INFO) << (seqJunkStart + seqJunkSize) <<  " alignments done" << std::endl;
 
             merge_thread_results(ret_hits, dbfiles_to_align, excludeAlignments, threads, alignment);
             for (unsigned int thread = 0; thread < threads.size(); thread++) {
@@ -166,7 +166,7 @@ std::vector<Hit> ViterbiRunner::alignment(Parameters& par, HMMSimd * q_simd,
                 float filter_cutoff = seqJunkSize * par.filter_thresh;
                 
                 if( early_stopping_sum < filter_cutoff){
-                    HH_LOG(LogLevel::INFO) << "Stop after DB-HHM: " << (seqJunkStart + seqJunkSize) << " because early stop  "
+                    HH_LOG(INFO) << "Stop after DB-HHM: " << (seqJunkStart + seqJunkSize) << " because early stop  "
                     << early_stopping_sum << " < filter cutoff " << filter_cutoff << "\n";
                     break; // stop junk loop and just find alternative alignments
                 }

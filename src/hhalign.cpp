@@ -512,7 +512,7 @@ void HHalign::ProcessAllArguments(int argc, char** argv, Parameters& par) {
 
 void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
   for (int i = 1; i < argc; i++) {
-    HH_LOG(LogLevel::DEBUG1) << i << "  " << argv[i] << std::endl;
+    HH_LOG(DEBUG1) << i << "  " << argv[i] << std::endl;
     if (!strcmp(argv[i], "-i")) {
       if (++i >= argc || argv[i][0] == '-') {
         help(par);
@@ -896,10 +896,10 @@ void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
       par.threads = atoi(argv[++i]);
     }
     else {
-      HH_LOG(LogLevel::WARNING) << endl << "WARNING: Ignoring unknown option "
+      HH_LOG(WARNING) << endl << "WARNING: Ignoring unknown option "
           << argv[i] << " ...\n";
     }
-    HH_LOG(LogLevel::DEBUG1) << i << "  " << argv[i] << endl;
+    HH_LOG(DEBUG1) << i << "  " << argv[i] << endl;
   } // end of for-loop for command line input
 }
 
@@ -909,8 +909,8 @@ void HHalign::run(FILE* query_fh, char* query_path, char* template_path) {
 //  int Nali;              // number of normally backtraced alignments in dot plot
 //#endif
 
-  HH_LOG(LogLevel::DEBUG) << "Query file : " << query_path << "\n";
-  HH_LOG(LogLevel::DEBUG) << "Template file: " << template_path << "\n";
+  HH_LOG(DEBUG) << "Query file : " << query_path << "\n";
+  HH_LOG(DEBUG) << "Template file: " << template_path << "\n";
 
   int cluster_found = 0;
   int seqs_found = 0;

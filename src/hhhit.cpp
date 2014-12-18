@@ -133,10 +133,10 @@ void Hit::initHitFromHit(Hit& hit, int query_length) {
     }
   }
 
-  for(size_t i = 0; i < hit.posterior_probabilities.size(); i++) {
-    Posterior_Triple* triple = new Posterior_Triple(hit.posterior_probabilities[i]->query_pos,
-                                                    hit.posterior_probabilities[i]->template_pos,
-                                                    hit.posterior_probabilities[i]->posterior_probability);
+  for(size_t z = 0; z < hit.posterior_probabilities.size(); z++) {
+    Posterior_Triple* triple = new Posterior_Triple(hit.posterior_probabilities[z]->query_pos,
+                                                    hit.posterior_probabilities[z]->template_pos,
+                                                    hit.posterior_probabilities[z]->posterior_probability);
 
     posterior_probabilities.push_back(triple);
   }

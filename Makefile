@@ -45,27 +45,31 @@ install:
 	install src/cstranslate                       $(INSTALL_BIN_DIR)/cstranslate
 	mkdir -p $(INSTALL_LIB_DIR)
 	mkdir -p $(INSTALL_DATA_DIR)
-	install -m 0644 data/context_data.lib         $(INSTALL_DATA_DIR)/context_data.lib
-	install -m 0644 data/context_data.crf         $(INSTALL_DATA_DIR)/context_data.crf
-	install -m 0644 data/cs219.lib                $(INSTALL_DATA_DIR)/cs219.lib
-	install -m 0644 data/do_not_delete            $(INSTALL_DATA_DIR)/do_not_delete
-	install -m 0644 data/do_not_delete.phr        $(INSTALL_DATA_DIR)/do_not_delete.phr
-	install -m 0644 data/do_not_delete.pin        $(INSTALL_DATA_DIR)/do_not_delete.pin
-	install -m 0644 data/do_not_delete.psq        $(INSTALL_DATA_DIR)/do_not_delete.psq
+	ifneq ($(INSTALL_DATA_DIR),data)
+		install -m 0644 data/context_data.lib         $(INSTALL_DATA_DIR)/context_data.lib
+		install -m 0644 data/context_data.crf         $(INSTALL_DATA_DIR)/context_data.crf
+		install -m 0644 data/cs219.lib                $(INSTALL_DATA_DIR)/cs219.lib
+		install -m 0644 data/do_not_delete            $(INSTALL_DATA_DIR)/do_not_delete
+		install -m 0644 data/do_not_delete.phr        $(INSTALL_DATA_DIR)/do_not_delete.phr
+		install -m 0644 data/do_not_delete.pin        $(INSTALL_DATA_DIR)/do_not_delete.pin
+		install -m 0644 data/do_not_delete.psq        $(INSTALL_DATA_DIR)/do_not_delete.psq
+	endif
 	mkdir -p $(INSTALL_SCRIPTS_DIR)
-	install -m 0644 scripts/Align.pm              $(INSTALL_SCRIPTS_DIR)/Align.pm
-	install -m 0644 scripts/HHPaths.pm            $(INSTALL_SCRIPTS_DIR)/HHPaths.pm
-	install scripts/splitfasta.pl                 $(INSTALL_SCRIPTS_DIR)/splitfasta.pl
-	install scripts/addss.pl                      $(INSTALL_SCRIPTS_DIR)/addss.pl
-	install scripts/create_profile_from_hhm.pl    $(INSTALL_SCRIPTS_DIR)/create_profile_from_hhm.pl
-	install scripts/create_profile_from_hmmer.pl  $(INSTALL_SCRIPTS_DIR)/create_profile_from_hmmer.pl
-	install scripts/hhmakemodel.pl                $(INSTALL_SCRIPTS_DIR)/hhmakemodel.pl
-	install scripts/reformat.pl                   $(INSTALL_SCRIPTS_DIR)/reformat.pl
-	install scripts/multithread.pl                $(INSTALL_SCRIPTS_DIR)/multithread.pl
-	install scripts/hhsuitedb.pl                  $(INSTALL_SCRIPTS_DIR)/hhsuitedb.pl
-	install scripts/checkA3M.pl                   $(INSTALL_SCRIPTS_DIR)/checkA3M.pl
-	install scripts/pdb2fasta.pl                  $(INSTALL_SCRIPTS_DIR)/pdb2fasta.pl
-	install scripts/pdbfilter.pl                  $(INSTALL_SCRIPTS_DIR)/pdbfilter.pl
+	ifneq ($(INSTALL_SCRIPTS_DIR),scripts)
+		install -m 0644 scripts/Align.pm              $(INSTALL_SCRIPTS_DIR)/Align.pm
+		install -m 0644 scripts/HHPaths.pm            $(INSTALL_SCRIPTS_DIR)/HHPaths.pm
+		install scripts/splitfasta.pl                 $(INSTALL_SCRIPTS_DIR)/splitfasta.pl
+		install scripts/addss.pl                      $(INSTALL_SCRIPTS_DIR)/addss.pl
+		install scripts/create_profile_from_hhm.pl    $(INSTALL_SCRIPTS_DIR)/create_profile_from_hhm.pl
+		install scripts/create_profile_from_hmmer.pl  $(INSTALL_SCRIPTS_DIR)/create_profile_from_hmmer.pl
+		install scripts/hhmakemodel.pl                $(INSTALL_SCRIPTS_DIR)/hhmakemodel.pl
+		install scripts/reformat.pl                   $(INSTALL_SCRIPTS_DIR)/reformat.pl
+		install scripts/multithread.pl                $(INSTALL_SCRIPTS_DIR)/multithread.pl
+		install scripts/hhsuitedb.pl                  $(INSTALL_SCRIPTS_DIR)/hhsuitedb.pl
+		install scripts/checkA3M.pl                   $(INSTALL_SCRIPTS_DIR)/checkA3M.pl
+		install scripts/pdb2fasta.pl                  $(INSTALL_SCRIPTS_DIR)/pdb2fasta.pl
+		install scripts/pdbfilter.pl                  $(INSTALL_SCRIPTS_DIR)/pdbfilter.pl
+	endif
 
 deinstall:
 	$(MAKE) -C lib/ffindex deinstall INSTALL_DIR=$(INSTALL_DIR)

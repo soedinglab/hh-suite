@@ -185,7 +185,7 @@ void HHblits::ProcessAllArguments(int argc, char** argv, Parameters& par) {
     }
   }
   if (par.loc == 0 && par.num_rounds >= 2) {
-    HH_LOG(LogLevel::WARNING)
+    HH_LOG(WARNING)
         << "Warning in " << __FILE__ << ":" << __LINE__ << ": " << __func__
         << ":" << "\n"
         << "\tusing -global alignment for iterative searches is deprecated "
@@ -680,7 +680,7 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
 
   //Processing command line input
   for (int i = 1; i < argc; i++) {
-    HH_LOG(LogLevel::DEBUG1) << i << "  " << argv[i] << endl;
+    HH_LOG(DEBUG1) << i << "  " << argv[i] << endl;
     if (!strcmp(argv[i], "-i")) {
       if (++i >= argc || argv[i][0] == '-') {
         help(par);
@@ -1065,11 +1065,11 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
     else if (!strcmp(argv[i], "-corr") && (i < argc - 1))
       par.corr = atof(argv[++i]);
     else {
-      HH_LOG(LogLevel::WARNING) << endl << "WARNING: Ignoring unknown option "
+      HH_LOG(WARNING) << endl << "WARNING: Ignoring unknown option "
                                 << argv[i] << " ...\n";
     }
 
-    HH_LOG(LogLevel::DEBUG1) << i << "  " << argv[i] << endl;
+    HH_LOG(DEBUG1) << i << "  " << argv[i] << endl;
   }  // end of for-loop for command line input
 }
 
@@ -1131,7 +1131,7 @@ void HHblits::mergeHitsToQuery(Hash<Hit>* previous_hits,
   int cov_tot = std::max(std::min((int) (COV_ABS / Qali->L * 100 + 0.5), 70),
                          par.coverage);
 
-  HH_LOG(LogLevel::DEBUG) << "Filter new alignment with cov " << cov_tot
+  HH_LOG(DEBUG) << "Filter new alignment with cov " << cov_tot
                           << std::endl;
 
   Qali->N_filtered = Qali->Filter(par.max_seqid, S, cov_tot, par.qid, par.qsc,
@@ -1144,7 +1144,7 @@ void HHblits::add_hits_to_hitlist(std::vector<Hit>& hits, HitList& hitlist) {
   }
 
   // Sort list according to sortscore
-  HH_LOG(LogLevel::DEBUG) << "Sorting hit list ...\n";
+  HH_LOG(DEBUG) << "Sorting hit list ...\n";
   hitlist.SortList();
 
   // Use NN prediction of lamda and mu
@@ -1208,7 +1208,7 @@ void HHblits::RescoreWithViterbiKeepAlignment(HMMSimd& q_vec,
   }
 
   // Sort list according to sortscore
-  HH_LOG(LogLevel::DEBUG) << "Sorting hit list ..." << std::endl;
+  HH_LOG(DEBUG) << "Sorting hit list ..." << std::endl;
 
   hitlist.SortList();
 
@@ -1295,7 +1295,7 @@ void HHblits::perform_realign(HMMSimd& q_vec, const char input_format,
     PosteriorDecoderRunner runner(input_data, q_vec, posteriorMatrices,
                                   viterbiMatrices, par.threads);
 
-    HH_LOG(LogLevel::INFO)
+    HH_LOG(INFO)
         << "Realigning " << nhits
         << " HMM-HMM alignments using Maximum Accuracy algorithm" << std::endl;
 
@@ -2279,7 +2279,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
     premerge = 0;
 
   if (par.allseqs) {
-    Qali_allseqs = Qali;  // make a *deep* copy of Qali!
+    *Qali_allseqs = *Qali;  // make a *deep* copy of Qali!
     for (int k = 0; k < Qali_allseqs->N_in; ++k)
       Qali_allseqs->keep[k] = 1;  // keep *all* sequences (reset filtering in Qali)
   }
@@ -2310,11 +2310,11 @@ void HHblits::run(FILE* query_fh, char* query_path) {
   //////////////////////////////////////////////////////////////////////////////////
 
   for (int round = 1; round <= par.num_rounds; round++) {
-    HH_LOG(LogLevel::INFO) << "Iteration " << round << std::endl;
+    HH_LOG(INFO) << "Iteration " << round << std::endl;
 
     // Settings for different rounds
     if (premerge > 0 && round > 1 && previous_hits->Size() >= premerge) {
-      HH_LOG(LogLevel::DEBUG1) << "Set premerge to 0! (premerge: " << premerge
+      HH_LOG(DEBUG1) << "Set premerge to 0! (premerge: " << premerge
                                << "   iteration: " << round << "   hits.Size: "
                                << previous_hits->Size() << ")" << std::endl;
       premerge = 0;
@@ -2351,7 +2351,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
     ////////////////////////////////////////////
 
     if (par.prefilter) {
-      HH_LOG(LogLevel::INFO) << "Prefiltering database" << std::endl;
+      HH_LOG(INFO) << "Prefiltering database" << std::endl;
 
       new_entries.clear();
       old_entries.clear();
@@ -2397,7 +2397,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
 
     int max_template_length = getMaxTemplateLength(new_entries);
     if (max_template_length > par.maxres) {
-      HH_LOG(LogLevel::WARNING)
+      HH_LOG(WARNING)
           << "database contains sequnces that exceeds maximum allowed size (maxres = "
           << par.maxres << "). Maxres can be increased with parameter -maxres."
           << std::endl;
@@ -2410,19 +2410,19 @@ void HHblits::run(FILE* query_fh, char* query_path) {
     hitlist.N_searched = search_counter.getCounter();
 
     if (new_entries.size() == 0) {
-      HH_LOG(LogLevel::INFO) << "No HMMs pass prefilter => Stop searching!"
+      HH_LOG(INFO) << "No HMMs pass prefilter => Stop searching!"
                              << std::endl;
       break;
     }
 
     // Search datbases
-    HH_LOG(LogLevel::INFO)
+    HH_LOG(INFO)
         << "HMMs passed 2nd prefilter (gapped profile-profile alignment)   : "
         << new_entries.size() + old_entries.size() << std::endl;
-    HH_LOG(LogLevel::INFO)
+    HH_LOG(INFO)
         << "HMMs passed 2nd prefilter and not found in previous iterations : "
         << new_entries.size() << std::endl;
-    HH_LOG(LogLevel::INFO) << "Scoring " << new_entries.size()
+    HH_LOG(INFO) << "Scoring " << new_entries.size()
                            << " HMMs using HMM-HMM Viterbi alignment"
                            << std::endl;
 
@@ -2449,12 +2449,12 @@ void HHblits::run(FILE* query_fh, char* query_path) {
 
     if (new_hits == 0 || round == par.num_rounds) {
       if (round < par.num_rounds) {
-        HH_LOG(LogLevel::INFO) << "No new hits found in iteration " << round
+        HH_LOG(INFO) << "No new hits found in iteration " << round
                                << " => Stop searching" << std::endl;
       }
 
       if (old_entries.size() > 0 && par.realign_old_hits) {
-        HH_LOG(LogLevel::INFO)
+        HH_LOG(INFO)
             << "Rescoring previously found HMMs with Viterbi algorithm"
             << std::endl;
 
@@ -2470,7 +2470,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
         new_entries.insert(new_entries.end(), old_entries.begin(),
                            old_entries.end());
       } else if (!par.realign_old_hits && previous_hits->Size() > 0) {
-        HH_LOG(LogLevel::INFO)
+        HH_LOG(INFO)
             << "Rescoring previously found HMMs with Viterbi algorithm"
             << std::endl;
         RescoreWithViterbiKeepAlignment(q_vec, previous_hits);
@@ -2548,27 +2548,27 @@ void HHblits::run(FILE* query_fh, char* query_path) {
       }
     }
 
-    HH_LOG(LogLevel::INFO) << seqs_found << " sequences belonging to "
+    HH_LOG(INFO) << seqs_found << " sequences belonging to "
                            << cluster_found
                            << " database HMMs found with an E-value < " << par.e
                            << std::endl;
 
     if (round < par.num_rounds || *par.alnfile || *par.psifile || *par.hhmfile
         || *par.alisbasename) {
-      HH_LOG(LogLevel::INFO)
+      HH_LOG(INFO)
           << "Number of effective sequences of resulting query HMM: Neff = "
           << q->Neff_HMM << std::endl;
     }
 
     if (q->Neff_HMM > par.neffmax && round < par.num_rounds) {
-      HH_LOG(LogLevel::INFO)
+      HH_LOG(INFO)
           << "Diversity is above threshold (" << par.neffmax
           << "). Stop searching! (Change threshold using -neffmax <float>.)"
           << std::endl;
     }
 
     if (Qali->N_in >= MAXSEQ) {
-      HH_LOG(LogLevel::INFO)
+      HH_LOG(INFO)
           << "Maximun number of sequences in query alignment reached ("
           << MAXSEQ << "). Stop searching!" << std::endl;
     }
@@ -2603,7 +2603,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
 
   // Warn, if HMMER files were used
   if (par.hmmer_used) {
-    HH_LOG(LogLevel::WARNING)
+    HH_LOG(WARNING)
         << "WARNING: Using HMMER files results in a drastically reduced sensitivity (>10%%).\n"
         << " We recommend to use HHMs build by hhmake." << std::endl;
   }

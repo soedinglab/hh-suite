@@ -78,13 +78,13 @@ class HHblitsDatabase: HHDatabase {
     FFindexDatabase* a3m_database = NULL;
     FFindexDatabase* hhm_database = NULL;
 
-    bool use_compressed = false;
+    bool use_compressed;
     FFindexDatabase* ca3m_database = NULL;
     FFindexDatabase* sequence_database = NULL;
     FFindexDatabase* header_database = NULL;
 
   private:
-    void getEntriesFromNames(std::vector<std::pair<int, std::string>>& names,
+    void getEntriesFromNames(std::vector<std::pair<int, std::string> >& names,
         std::vector<HHEntry*>& entries);
     bool checkAndBuildCompressedDatabase(const char* base);
 
