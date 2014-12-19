@@ -133,9 +133,9 @@ void FullAlignment::Build(HMM* q, Hit& hit, const int nseqdis, const float S[20]
           + (q->nss_conf >= 0) + (q->ncons >= 0));
   qa->Set(q->name, q->seq, q->sname, n, q->L, q->nss_dssp, q->nss_pred,
       q->nss_conf, q->nsa_dssp, q->ncons);
-  n = imin(hit.n_display,
+  n = imax(hit.nfirst + 1, imin(hit.n_display,
       nseqdis + (hit.nss_dssp >= 0) + (hit.nsa_dssp >= 0)
-          + (hit.nss_pred >= 0) + (hit.nss_conf >= 0) + (hit.ncons >= 0));
+          + (hit.nss_pred >= 0) + (hit.nss_conf >= 0) + (hit.ncons >= 0)));
   ta->Set(hit.name, hit.seq, hit.sname, n, hit.L, hit.nss_dssp, hit.nss_pred,
       hit.nss_conf, hit.nsa_dssp, hit.ncons);
 

@@ -366,13 +366,16 @@ void Hit::initHitFromHMM(HMM * t, const int par_nseqdis){
     strcpy(this->cl ,t->cl);
     strcpy(this->file,t->file);
 
-    this->sname = new char*[t->n_display];
-    this->seq   = new char*[t->n_display];
+    this->n_display = std::min(t->n_display, par_nseqdis + (t->nss_dssp >= 0) + (t->nsa_dssp >= 0)
+                               + (t->nss_pred >= 0) + (t->nss_conf >= 0) + (t->ncons >= 0));
+
+    this->sname = new char*[n_display];
+    this->seq   = new char*[n_display];
     if (!this->sname || !this->seq)
         MemoryError("space for alignments with database HMMs.\nNote that all sequences for display have to be kept in memory", __FILE__, __LINE__, __func__);
 
     // Make deep copy for all further alignments
-    for (int k=0; k < std::min(t->n_display, par_nseqdis); k++)
+    for (int k=0; k < n_display; k++)
     {
         this->sname[k] = new char[strlen(t->sname[k])+1];
         this->seq[k]   = new char[strlen(t->seq[k])+1];
@@ -380,7 +383,6 @@ void Hit::initHitFromHMM(HMM * t, const int par_nseqdis){
         strcpy(this->seq[k],t->seq[k]);
     }
 
-    this->n_display = std::min(t->n_display, par_nseqdis);
     this->ncons  = t->ncons;
     this->nfirst = t->nfirst;
     this->nss_dssp = t->nss_dssp;
