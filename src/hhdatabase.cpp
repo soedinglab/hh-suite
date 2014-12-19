@@ -41,6 +41,7 @@ FFindexDatabase::FFindexDatabase(char* data_filename, char* index_filename,
   }
 
   size_t ca3m_data_size = CountLinesInFile(index_filename);
+  db_index = NULL;
   db_index = ffindex_index_parse(db_index_fh, ca3m_data_size);
 
   fclose(db_index_fh);
@@ -80,6 +81,16 @@ void HHDatabase::buildDatabaseName(const char* base, const char* extension,
 }
 
 HHblitsDatabase::HHblitsDatabase(const char* base) {
+  cs219_database = NULL;
+
+  a3m_database = NULL;
+  hhm_database = NULL;
+
+  ca3m_database = NULL;
+  sequence_database = NULL;
+  header_database = NULL;
+
+
   use_compressed = false;
   basename = new char[strlen(base) + 1];
   strcpy(basename, base);

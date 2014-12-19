@@ -30,7 +30,7 @@ class FFindexDatabase {
     FFindexDatabase(char* data_filename, char* index_filename, bool isCompressed);
     virtual ~FFindexDatabase();
 
-    ffindex_index_t* db_index = NULL;
+    ffindex_index_t* db_index;
     char* db_data;
     char* data_filename;
 
@@ -73,15 +73,15 @@ class HHblitsDatabase: HHDatabase {
 
     char* basename;
 
-    FFindexDatabase* cs219_database = NULL;
+    FFindexDatabase* cs219_database;
 
-    FFindexDatabase* a3m_database = NULL;
-    FFindexDatabase* hhm_database = NULL;
+    FFindexDatabase* a3m_database;
+    FFindexDatabase* hhm_database;
 
     bool use_compressed;
-    FFindexDatabase* ca3m_database = NULL;
-    FFindexDatabase* sequence_database = NULL;
-    FFindexDatabase* header_database = NULL;
+    FFindexDatabase* ca3m_database;
+    FFindexDatabase* sequence_database;
+    FFindexDatabase* header_database;
 
   private:
     void getEntriesFromNames(std::vector<std::pair<int, std::string> >& names,

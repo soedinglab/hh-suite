@@ -15,6 +15,13 @@ HHblits::HHblits(Parameters& parameters,
   par = parameters;
   dbs = databases;
 
+  context_lib = NULL;
+  crf = NULL;
+  pc_hhm_context_engine = NULL;
+  pc_hhm_context_mode = NULL;
+  pc_prefilter_context_engine = NULL;
+  pc_prefilter_context_mode = NULL;
+
   Qali = NULL;
   Qali_allseqs = NULL;
 
