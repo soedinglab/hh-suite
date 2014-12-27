@@ -25,8 +25,9 @@
 #include <cassert>
 #include <stdexcept>
 #include <map>
+#ifdef OPENMP
 #include <omp.h>
-
+#endif
 #include <emmintrin.h>
 
 using std::cout;

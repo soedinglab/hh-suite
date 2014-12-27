@@ -445,8 +445,10 @@ namespace hh {
 #pragma omp parallel for schedule(static)
     // Loop over all database sequences
     for (size_t n = 0; n < num_dbs; n++) {
-      int thread_id = omp_get_thread_num();
-
+      int thread_id = 0;
+#ifdef OPENMP
+      thread_id = omp_get_thread_num();
+#endif
       // Perform search step
       int score = ungapped_sse_score(qc, LQ, first[n], length[n],
           prefilter_score_offset, workspace[thread_id]);
@@ -490,7 +492,10 @@ namespace hh {
     // Loop over all database sequences
 //  for (int n = 0; n < count_dbs; n++) {
     for (size_t i = 0; i < first_prefilter.size(); i++) {
-      int thread_id = omp_get_thread_num();
+      int thread_id = 0;
+#ifdef OPENMP
+      thread_id = omp_get_thread_num();
+#endif
 
       int n = first_prefilter[i].second;
 

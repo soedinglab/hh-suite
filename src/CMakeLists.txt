@@ -1,11 +1,9 @@
 include(CheckCXXCompilerFlag)
-check_cxx_compiler_flag(-fopenmp HAS_NO_INVALID_OFFSETOF)
-if (HAS_NO_INVALID_OFFSETOF)
+check_cxx_compiler_flag(-fopenmp SUPPORT_OMP)
+if (SUPPORT_OMP)
     message("-- Found OpenMP")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fopenmp")
-    set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -fopenmp")
-else()
-    message( FATAL_ERROR "Can not find OpenMP." )
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DOPENMP -fopenmp")
+    set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -DOPENMP -fopenmp")
 endif()
 
 
@@ -71,12 +69,12 @@ add_executable(hhblits
 	hhblits_app.cpp	$<TARGET_OBJECTS:CS_OBJECTS> $<TARGET_OBJECTS:HH_OBJECTS> $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff> 
 )
 target_link_libraries (hhblits ffindex)
-
+if (SUPPORT_OMP)
 add_executable(hhblits_omp
   hhblits_omp.cpp $<TARGET_OBJECTS:CS_OBJECTS> $<TARGET_OBJECTS:HH_OBJECTS> $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff>
 )
 target_link_libraries (hhblits_omp ffindex)
-
+endif()
 find_package(MPI QUIET)
 IF(MPI_FOUND)
 	add_executable(hhblits_mpi

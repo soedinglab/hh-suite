@@ -9,8 +9,9 @@
 #define HHPREFILTER_H_
 
 #include <vector>
+#ifdef OPENMP
 #include <omp.h>
-
+#endif
 namespace hh {
 class Prefilter;
 }
