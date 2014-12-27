@@ -3,7 +3,7 @@ set(CMAKE_LEGACY_CYGWIN_WIN32 0)
 
 project("hhsuite")
 
-set(CMAKE_BUILD_TYPE Release)
+#set(CMAKE_BUILD_TYPE Release)
 
 # find compiler
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
