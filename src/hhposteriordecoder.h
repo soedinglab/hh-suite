@@ -101,10 +101,12 @@ private:
 
 	std::vector<Hit *> m_temp_hit_vec;
 
-	void forwardAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm, std::vector<Hit *> & hit_vec, PosteriorMatrix & p_mm, ViterbiMatrix & viterbi_matrix, float shift);
-	void backwardAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm, std::vector<Hit *> & hit_vec, PosteriorMatrix & p_mm, ViterbiMatrix & viterbi_matrix, float shift);
-	void macAlgorithm(HMMSimd & q_hmm, HMMSimd & t_hmm, std::vector<Hit *> & hit_vec, PosteriorMatrix & p_mm,
-			ViterbiMatrix & viterbi_matrix, float par_mact);
+	void forwardAlgorithm(HMM & q_hmm, HMM & t_hmm, Hit & hit_vec, PosteriorMatrix & p_mm,
+			ViterbiMatrix & viterbi_matrix, float shift, const int elem);
+	void backwardAlgorithm(HMM & q_hmm,HMM & t_hmm, Hit & hit_vec, PosteriorMatrix & p_mm,
+			ViterbiMatrix & viterbi_matrix, float shift, const int elem);
+	void macAlgorithm(HMM & q_hmm, HMM & t_hmm, Hit & hit_vec, PosteriorMatrix & p_mm,
+			ViterbiMatrix & viterbi_matrix, float par_mact, const int elem);
 	void backtraceMAC(HMM & q, HMM & t, PosteriorMatrix & p_mm, ViterbiMatrix & backtrace_matrix, const int elem, Hit & hit, float corr);
 	void writeProfilesToHits(HMM & q, HMM & t, PosteriorMatrix & p_mm, const int elem, Hit & hit);
 	void initializeBacktrace(HMM & t, Hit & hit);

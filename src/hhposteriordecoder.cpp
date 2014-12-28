@@ -141,41 +141,11 @@ void PosteriorDecoder::realign(HMMSimd & q_hmm, HMMSimd & t_hmm,
 	}
 
 	// Compute SIMD Forward algorithm
-	forwardAlgorithm(q_hmm, t_hmm, hit_vec, p_mm, viterbi_matrix, shift);
-
-//	simd_float sum = simdf32_set(0);
-//	for(int i = 1; i <= q_hmm.L; i++) {
-//		sum = simdf32_add(sum, m_forward_profile[i]);
-//	}
-//
-//	float result[4];
-//	simdf32_store(result, sum);
-//
-//	for(int elem = 0; elem < num_t; elem++) {
-//		std::cout << "forward: " << result[elem] << std::endl;
-//	}
-
-
-//	for (int elem = 0; elem < num_t; elem++) {
-//		printf("%s: %20.20f\n", hit_vec.at(elem)->file, hit_vec.at(elem)->Pforward);
-//	}
-
-	// Compute SIMD Backward algorithm
-	backwardAlgorithm(q_hmm, t_hmm, hit_vec, p_mm, viterbi_matrix, shift);
-
-//	sum = simdf32_set(0);
-//	for(int i = 1; i <= q_hmm.L; i++) {
-//		sum = simdf32_add(sum, m_backward_profile[i]);
-//	}
-//
-//	simdf32_store(result, sum);
-//
-//	for(int elem = 0; elem < num_t; elem++) {
-//		std::cout << "backward: " << result[elem] << std::endl;
-//	}
-
-	// Compute SIMD MAC algorithm
-	macAlgorithm(q_hmm, t_hmm, hit_vec, p_mm, viterbi_matrix, mact);
+	for (int elem = 0; elem < num_t; elem++) {
+		forwardAlgorithm(*q_hmm.GetHMM(elem), *t_hmm.GetHMM(elem), *hit_vec[elem], p_mm, viterbi_matrix, shift,elem);
+		backwardAlgorithm(*q_hmm.GetHMM(elem), *t_hmm.GetHMM(elem), *hit_vec[elem], p_mm, viterbi_matrix, shift,elem);
+		macAlgorithm(*q_hmm.GetHMM(elem), *t_hmm.GetHMM(elem), *hit_vec[elem], p_mm, viterbi_matrix, mact,elem);
+	}
 
 	for (int elem = 0; elem < num_t; elem++) {
 //		HMM * curr_t_hmm = t_hmm.GetHMM(elem);
