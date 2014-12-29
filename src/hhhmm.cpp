@@ -1942,30 +1942,34 @@ void HMM::AddAminoAcidPseudocounts(char pcm, float pca, float pcb, float pcc) {
 					<< name << "\n";
 			break;
 		} //end switch (pcm)
-		if (Log::reporting_level() >= DEBUG1) {
-			HH_LOG(DEBUG1)
-					<< "\nAmino acid frequencies WITHOUT pseudocounts:\n       A    R    N    D    C    Q    E    G    H    I    L    K    M    F    P    S    T    W    Y    V\n";
-			for (i = 1; i <= L; ++i) {
-				HH_LOG(DEBUG1) << i << ":  ";
-				sum = 0;
-				for (a = 0; a < 20; ++a) {
-					sum += f[i][a];
-					HH_LOG(DEBUG1) << 100 * f[i][a] << " ";
+		if ( Log::reporting_level() >= DEBUG1) {
+			std::cout<<"\nAmino acid frequencies WITHOUT pseudocounts:\n       A    R    N    D    C    Q    E    G    H    I    L    K    M    F    P    S    T    W    Y    V\n";
+			for (i=1; i<=L; ++i)
+			{
+				printf("%3i:  ",i);
+				sum=0;
+				for (a=0; a<20; ++a)
+				{
+					sum+=f[i][a];
+					printf("%4.1f ",100*f[i][a]);
 				}
-				HH_LOG(DEBUG1) << "  sum=" << sum << std::endl;
+				printf("  sum=%5.3f\n",sum);
 			}
-			HH_LOG(DEBUG1) << "\nAmino acid frequencies WITH pseudocounts:\n       A    R    N    D    C    Q    E    G    H    I    L    K    M    F    P    S    T    W    Y    V\n";
-			for (i = 1; i <= L; ++i) {
-				HH_LOG(DEBUG1) << i << ":  ";
-				sum = 0;
-				for (a = 0; a < 20; ++a) {
-					sum += p[i][a];
-					HH_LOG(DEBUG1) << 100 * p[i][a] << " ";
+			std::cout<<"\nAmino acid frequencies WITH pseudocounts:\n       A    R    N    D    C    Q    E    G    H    I    L    K    M    F    P    S    T    W    Y    V\n";
+			for (i=1; i<=L; ++i)
+			{
+				printf("%3i:  ",i);
+				sum=0;
+				for (a=0; a<20; ++a)
+				{
+					sum+=p[i][a];
+					printf("%4.1f ",100*p[i][a]);
 				}
-				HH_LOG(DEBUG1) << "  sum=" << sum << std::endl;
+				printf("  sum=%5.3f\n",sum);
 			}
 		}
 	}
+
 }
 
 /////////////////////////////////////////////////////////////////////////////////////

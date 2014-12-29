@@ -1525,7 +1525,6 @@ int Alignment::Filter2(char keep[], int coverage, int qid, float qsc,
     } else
       in[k] = 0;
   }
-
   // Determine first[k], last[k]?
   if (first == NULL) {
     first = new int[N_in];         // first non-gap position in sequence k
@@ -1657,10 +1656,12 @@ int Alignment::Filter2(char keep[], int coverage, int qid, float qsc,
   }
 
   // If no sequence left, issue warning and put back first real sequence into alignment
-  for (n = k = 0; k < N_in; ++k)
+  int nn=0;
+  for (k = 0; k < N_in; ++k)
     if (keep[k] > 0)
-      n++;
-  if (n == 0) {
+      nn++;
+
+  if (nn == 0) {
     for (k = 0; k < N_in; k++) {
       if (display[k] != 2) {
         keep[k] = 1;
@@ -1691,7 +1692,7 @@ int Alignment::Filter2(char keep[], int coverage, int qid, float qsc,
 
   // If min required seqid larger than max required seqid, return here without doing pairwise seqid filtering
   if (seqid1 > seqid2)
-    return n;
+    return nn;
 
   // Successively increment idmax[i] at positons where N[i]<Ndiff
   seqid = seqid1;
@@ -1749,6 +1750,7 @@ int Alignment::Filter2(char keep[], int coverage, int qid, float qsc,
         n++;
         continue;
       }
+
       float seqidk = seqid1;
       for (i = first[k]; i <= last[k]; ++i)
         if (idmaxwin[i] > seqidk)
@@ -1860,10 +1862,10 @@ int Alignment::Filter2(char keep[], int coverage, int qid, float qsc,
   HH_LOG(DEBUG) << n << " out of " << N_in - N_ss
                           << " sequences passed filter (";
   if (coverage) {
-    HH_LOG(DEBUG) << coverage << " min coverage, ";
+    HH_LOG(DEBUG) << coverage << "% min coverage, ";
   }
   if (qid) {
-    HH_LOG(DEBUG) << qid << " min sequence identity to query, ";
+    HH_LOG(DEBUG) << qid << "% min sequence identity to query, ";
   }
   if (qsc > -10) {
     HH_LOG(DEBUG) << qsc << " bits min score per column to query, ";
@@ -1871,9 +1873,9 @@ int Alignment::Filter2(char keep[], int coverage, int qid, float qsc,
   if (Ndiff < N_in && Ndiff > 0) {
     HH_LOG(DEBUG)
         << "up to " << seqid
-        << " position-dependent max pairwise sequence identity)\n";
+        << "% position-dependent max pairwise sequence identity)\n";
   } else {
-    HH_LOG(DEBUG) << seqid1 << " max pairwise sequence identity)\n";
+    HH_LOG(DEBUG) << seqid1 << "% max pairwise sequence identity)\n";
   }
 
   for (k = 0; k < N_in; ++k)
@@ -2465,7 +2467,7 @@ void Alignment::Amino_acid_frequencies_and_transitions_from_M_state(
   int k;                      // index of sequence
   int i, j;                    // position in alignment
   int a;                      // amino acid (0..19)
-  int** n = NULL;  // n[j][a] = number of seq's with some residue at column i AND a at position j
+  int** n = NULL;  // n[j][a] = number of seq's with some non-gap amino acid at column i AND residue a at position j
   float** w_contrib = NULL;  // weight contribution of amino acid a at pos. j to weight of a sequence
   float wi[MAXSEQ];  // weight of sequence k in column i, calculated from subalignment i
   float Neff[maxres];         // diversity of subalignment i
@@ -2486,15 +2488,18 @@ void Alignment::Amino_acid_frequencies_and_transitions_from_M_state(
     for (k = 0; k < N_in; ++k)
       wi[k] = wg[k];
   else {
+    unsigned int NAA_VECSIZE = ((NAA+ 3 + VECSIZE_INT - 1) / VECSIZE_INT) * VECSIZE_INT; // round NAA+3 up to next multiple of VECSIZE_INT
     n = new int*[L + 2];
     for (j = 1; j <= L; ++j)
-      n[j] = new int[NAA + 3];
+      n[j] = (int *) malloc_simd_int(NAA_VECSIZE * sizeof(int));
     for (j = 1; j <= L; ++j)
       for (a = 0; a < NAA + 3; ++a)
         n[j][a] = 0;
     w_contrib = new float*[L + 2];
-    for (j = 1; j <= L; ++j)
-      w_contrib[j] = new float[NAA + 3];
+    for (j = 1; j <= L; ++j){
+      w_contrib[j] = (float *) malloc_simd_int(NAA_VECSIZE * sizeof(float));
+      memset(w_contrib[j], 0,NAA_VECSIZE * sizeof(int));
+    }
   }
   q->Neff_HMM = 0.0f;
   Neff[0] = 0.0;  // if the first column has no residues (i.e. change==0), Neff[i]=Neff[i-1]=Neff[0]
@@ -2554,28 +2559,37 @@ void Alignment::Amino_acid_frequencies_and_transitions_from_M_state(
         if (ncol < NCOLMIN) {
           // Take global weights
           for (k = 0; k < N_in; ++k)
-            if (in[k] && X[k][i] < ANY)
-              wi[k] = wg[k];
-            else
-              wi[k] = 0.0;
+            wi[k] = (in[k] && X[k][i] < ANY)? wg[k] : 0.0f;
         } else {
           // Count number of different amino acids in column j
           for (j = jmin; j <= jmax; ++j)
             for (naa[j] = a = 0; a < ANY; ++a)
               naa[j] += (n[j][a] ? 1 : 0);
 
-          // Compute the contribution of amino acid a to the weight
-          for (j = jmin; j <= jmax; ++j)
-            for (a = 0; a < ANY; ++a)
-              w_contrib[j][a] = 1.0 / float(n[j][a] * naa[j]);
+            // Compute the contribution of amino acid a to the weight
+            //for (a = 0; a < ANY; ++a)
+            //      w_contrib[j][a] = (n[j][a] > 0) ? 1.0/ float(naa[j]*n[j][a]): 0.0f;
+            for (j = jmin; j <= jmax; ++j) {
+              simd_int naa_j = simdi32_set(naa[j]);
+              const simd_int *nj = (const simd_int *) n[j];
+              const int aa_size = (ANY + VECSIZE_INT - 1) / VECSIZE_INT;
+              for (a = 0; a < aa_size; ++a) {
+                simd_int nja = simdi_load(nj + a);
+                simd_int res = simdi32_mul(nja, naa_j);
+                simd_float tmp = simdi32_i2f(res); // (1 / res)
+                simdf32_store(w_contrib[j] + (a * VECSIZE_INT), simdf32_rcp(tmp));
+              }
+              for (a = ANY; a < NAA + 3; ++a)
+                w_contrib[j][a] = 0.0f;  // set non-amino acid values to 0 to avoid checking in next loop for X[k][j]<ANY
+            }
 
-          // Compute pos-specific weights wi[k]
-          for (k = 0; k < N_in; ++k) {
-            if (!in[k] || X[k][i] >= ANY)
-              continue;
-            for (j = jmin; j <= jmax; ++j)  // innermost, time-critical loop; O(L*N_in*L)
-              wi[k] += (X[k][j] >= ANY ? 0 : w_contrib[j][(int) X[k][j]]);
-          }
+            // Compute pos-specific weights wi[k]
+            for (k = 0; k < N_in; ++k) {
+              if (!in[k] || X[k][i] >= ANY)
+                continue;
+              for (j = jmin; j <= jmax; ++j)  // innermost, time-critical loop; O(L*N_in*L)
+                wi[k] += w_contrib[j][(int) X[k][j]];
+            }
         }
 
         // Calculate Neff[i]
@@ -2583,8 +2597,7 @@ void Alignment::Amino_acid_frequencies_and_transitions_from_M_state(
 
         // Allocate and reset amino acid frequencies
         for (j = jmin; j <= jmax; ++j)
-          for (a = 0; a < ANY; ++a)
-            f[j][a] = 0.0;
+            memset(f[j], 0, ANY * sizeof(float));
 
         // Update f[j][a]
         for (k = 0; k < N_in; ++k) {
@@ -2654,11 +2667,11 @@ void Alignment::Amino_acid_frequencies_and_transitions_from_M_state(
   if (use_global_weights == 0) {
     // Delete n[][]
     for (j = 1; j <= L; ++j)
-      delete[] (n[j]);
+      free(n[j]);
     delete[] (n);
     // Delete w_contib[][]
     for (j = 1; j <= L; ++j)
-      delete[] (w_contrib[j]);
+      free(w_contrib[j]);
     delete[] (w_contrib);
   }
 
