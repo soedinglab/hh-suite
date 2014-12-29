@@ -5,6 +5,7 @@
  *      Author: stefan
  */
 
+#include <Python/Python.h>
 #include "hhposteriordecoder.h"
 
 #define CALCULATE_MAX4(max, var1, var2, var3, var4, varb)       \
@@ -77,9 +78,9 @@ void PosteriorDecoder::macAlgorithm(HMM & q, HMM & t, Hit & hit,
                 //				unsigned char c = viterbi_matrix.getMatMat(i, j, elem);
                 // NOT the state before the first MM state)
                 //				term1 = fpow2(p_mm.getSingleValue(i, j, elem)) - par.mact;
-                term1 = powf(2, p_mm.getSingleValue(i, j, elem)) - par_mact;
+                term1 = p_mm.getSingleValue(i, j) - par_mact;
                 //				term2 = S_prev[j-1] + fpow2(p_mm.getSingleValue(i, j, elem)) - par.mact;
-                term2 = S_prev[j-1] + powf(2, p_mm.getSingleValue(i, j, elem)) - par_mact;
+                term2 = S_prev[j-1] + p_mm.getSingleValue(i, j) - par_mact;
                 term3 = S_prev[j] - 0.5 * par_mact;
                 term4 = S_curr[j-1] - 0.5 * par_mact;
 
