@@ -157,7 +157,7 @@ class Alignment {
     std::string name() const { return name_; }
 
     // Sets the name of the alignment
-    void set_name(const std::string& header) { name_ = name; }
+//    void set_name(const std::string& header) { name_ = name; }
 
     // Makes all columns with a residue in sequence k match columns.
     void AssignMatchColumnsBySequence(size_t k = 0);
