@@ -38,6 +38,9 @@ typedef __m512d simd_double;
 #define simdf64_load(x)     _mm512_load_pd(x)
 #define simdf64_store(x,y)  _mm512_store_pd(x,y)
 #define simdf64_set(x)      _mm512_set1_pd(x)
+#define simdf64_set2(x,y)   _mm512_set_pd(x,y,x,y,x,y,x,y)
+#define simdf64_set4(x,y,z,t) _mm512_set_pd(x,y,z,t,x,y,z,t)
+#define simdf64_set8(x0,x1,x2,x3,x4,x5,x6,x7) _mm512_set_pd(x0,x1,x2,x3,x4,x5,x6,x7)
 #define simdf64_setzero(x)  _mm512_setzero_pd()
 #define simdf64_gt(x,y)     _mm512_cmpnle_pd_mask(x,y)
 #define simdf64_lt(x,y)     _mm512_cmplt_pd_mask(x,y)
@@ -61,6 +64,9 @@ typedef __m512  simd_float;
 #define simdf32_load(x)     _mm512_load_ps(x)
 #define simdf32_store(x,y)  _mm512_store_ps(x,y)
 #define simdf32_set(x)      _mm512_set1_ps(x)
+#define simdf32_set2(x,y)   _mm512_set_ps(x,y,x,y,x,y,x,y,x,y,x,y,x,y,x,y)
+#define simdf32_set4(x,y,z,t) _mm512_set_ps(x,y,z,t,x,y,z,t,x,y,z,t,x,y,z,t)
+#define simdf32_set8(x0,x1,x2,x3,x4,x5,x6,x7) _mm512_set_ps(x0,x1,x2,x3,x4,x5,x6,x7,x0,x1,x2,x3,x4,x5,x6,x7)
 #define simdf32_setzero(x)  _mm512_setzero_ps()
 #define simdf32_gt(x,y)     _mm512_cmpnle_ps_mask(x,y)
 #define simdf32_eq(x,y)     _mm512_cmpeq_ps_mask(x,y)
@@ -88,6 +94,9 @@ typedef __m512i simd_int;
 #define simdi_load(x)       _mm512_load_si512(x)
 #define simdi_store(x,y)    _mm512_store_si512(x,y)
 #define simdi32_set(x)      _mm512_set1_epi32(x)
+#define simdi32_set2(x,y)   _mm512_set_epi32(x,y,x,y,x,y,x,y,x,y,x,y,x,y,x,y)
+#define simdi32_set4(x,y,z,t) _mm512_set_epi32(x,y,z,t,x,y,z,t,x,y,z,t,x,y,z,t)
+#define simdi32_set8(x0,x1,x2,x3,x4,x5,x6,x7) _mm512_set_epi32(x0,x1,x2,x3,x4,x5,x6,x7,x0,x1,x2,x3,x4,x5,x6,x7)
 #define simdi8_set(x)       _mm512_set1_epi8(x)
 #define simdi_setzero(x)    _mm512_setzero_si512()
 #define simdi32_gt(x,y)     _mm512_cmpgt_epi32(x,y)
@@ -135,6 +144,9 @@ typedef __m256i simd_int;
 #define simdi_load(x)       _mm256_load_si256(x)
 #define simdi_store(x,y)    _mm256_store_si256(x,y)
 #define simdi32_set(x)      _mm256_set1_epi32(x)
+#define simdi32_set2(x,y)   _mm256_set_epi32(x,y,x,y,x,y,x,y)
+#define simdi32_set4(x,y,z,t) _mm256_set_epi32(x,y,z,t,x,y,z,t)
+#define simdi32_set8(x0,x1,x2,x3,x4,x5,x6,x7) _mm256_set_epi32(x0,x1,x2,x3,x4,x5,x6,x7)
 #define simdi8_set(x)       _mm256_set1_epi8(x)
 #define simdi_setzero(x)    _mm256_setzero_si256()
 #define simdi32_gt(x,y)     _mm256_cmpgt_epi32(x,y)
@@ -171,6 +183,8 @@ typedef __m256d simd_double;
 #define simdf64_load(x)     _mm256_load_pd(x)
 #define simdf64_store(x,y)  _mm256_store_pd(x,y)
 #define simdf64_set(x)      _mm256_set1_pd(x)
+#define simdf64_set2(x,y)   _mm256_set_pd(x,y,x,y)
+#define simdf64_set4(x,y,z,t) _mm256_set_pd(x,y,z,t)
 #define simdf64_setzero(x)  _mm256_setzero_pd()
 #define simdf64_gt(x,y)     _mm256_cmp_pd(x,y,_CMP_GT_OS)
 #define simdf64_lt(x,y)     _mm256_cmp_pd(x,y,_CMP_LT_OS)
@@ -194,6 +208,9 @@ typedef __m256 simd_float;
 #define simdf32_load(x)     _mm256_load_ps(x)
 #define simdf32_store(x,y)  _mm256_store_ps(x,y)
 #define simdf32_set(x)      _mm256_set1_ps(x)
+#define simdf32_set2(x,y)   _mm256_set_ps(x,y,x,y,x,y,x,y)
+#define simdf32_set4(x,y,z,t) _mm256_set_ps(x,y,z,t,x,y,z,t)
+#define simdf32_set8(x0,x1,x2,x3,x4,x5,x6,x7) _mm256_set_ps(x0,x1,x2,x3,x4,x5,x6,x7)
 #define simdf32_setzero(x)  _mm256_setzero_ps()
 #define simdf32_gt(x,y)     _mm256_cmp_ps(x,y,_CMP_GT_OS)
 #define simdf32_eq(x,y)     _mm256_cmp_ps(x,y,_CMP_EQ_OS)
@@ -203,6 +220,7 @@ typedef __m256 simd_float;
 #define simdf32_andnot(x,y) _mm256_andnot_ps(x,y)
 #define simdf32_xor(x,y)    _mm256_xor_ps(x,y)
 #define simdf32_f2i(x) 	    _mm256_cvtps_epi32(x)  // convert s.p. float to integer
+#define simdf32_extract(x,imm) _mm_extract_ps(_mm256_castps256_ps128(x),imm)
 #define simdf_f2icast(x)    _mm256_castps_si256(x) // compile time cast
 #endif //SIMD_FLOAT
 #endif //AVX_SUPPORT
@@ -225,6 +243,7 @@ typedef __m128d simd_double;
 #define simdf64_load(x)     _mm_load_pd(x)
 #define simdf64_store(x,y)  _mm_store_pd(x,y)
 #define simdf64_set(x)      _mm_set1_pd(x)
+#define simdf64_set2(x,y)   _mm_set_ps(x,y)
 #define simdf64_setzero(x)  _mm_setzero_pd()
 #define simdf64_gt(x,y)     _mm_cmpgt_pd(x,y)
 #define simdf64_lt(x,y)     _mm_cmplt_pd(x,y)
@@ -249,6 +268,8 @@ typedef __m128  simd_float;
 #define simdf32_load(x)     _mm_load_ps(x)
 #define simdf32_store(x,y)  _mm_store_ps(x,y)
 #define simdf32_set(x)      _mm_set1_ps(x)
+#define simdf32_set2(x,y)   _mm_set_ps(x,y,x,y)
+#define simdf32_set4(x,y,z,t) _mm_set_ps(x,y,z,t)
 #define simdf32_setzero(x)  _mm_setzero_ps()
 #define simdf32_gt(x,y)     _mm_cmpgt_ps(x,y)
 #define simdf32_eq(x,y)     _mm_cmpeq_ps(x,y)
@@ -258,6 +279,7 @@ typedef __m128  simd_float;
 #define simdf32_andnot(x,y) _mm_andnot_ps(x,y)
 #define simdf32_xor(x,y)    _mm_xor_ps(x,y)
 #define simdf32_f2i(x) 	    _mm_cvtps_epi32(x)  // convert s.p. float to integer
+#define simdf32_extract(x,imm) _mm_extract_ps(x,imm)
 #define simdf_f2icast(x)    _mm_castps_si128(x) // compile time cast
 #endif //SIMD_FLOAT
 // integer support 
