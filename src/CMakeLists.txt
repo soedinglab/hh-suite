@@ -1,3 +1,16 @@
+#SSE
+set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/../cmake")
+include(CheckSSEFeatures)
+ADD_DEFINITIONS(${CXX_DFLAGS})
+if(${HAVE_AVX2_EXTENSIONS})
+    ADD_DEFINITIONS("-DAVX2")
+else()
+if(${HAVE_SSE2_EXTENSIONS})
+    ADD_DEFINITIONS("-DSSE")
+endif(${HAVE_SSE2_EXTENSIONS})
+endif(${HAVE_AVX2_EXTENSIONS})
+
+
 include(CheckCXXCompilerFlag)
 check_cxx_compiler_flag(-fopenmp SUPPORT_OMP)
 if (SUPPORT_OMP)
@@ -11,17 +24,7 @@ add_subdirectory(cs)
 include_directories(cs)
 include_directories("${PROJECT_BINARY_DIR}")
 
-#SSE
-set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/../cmake")
-include(CheckSSEFeatures)
-ADD_DEFINITIONS(${CXX_DFLAGS})
-if(${HAVE_AVX2_EXTENSIONS})
-    ADD_DEFINITIONS("-DAVX2")
-else()
-if(${HAVE_SSE2_EXTENSIONS})
-    ADD_DEFINITIONS("-DSSE")
-endif(${HAVE_SSE2_EXTENSIONS})
-endif(${HAVE_AVX2_EXTENSIONS})
+
 
 set(HH_SOURCE
 	${HH_SOURCE}
