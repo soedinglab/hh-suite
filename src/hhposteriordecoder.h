@@ -81,6 +81,7 @@ private:
 	simd_float * m_backward_profile;
 	simd_float * m_forward_profile;
 
+	double * scale;
 
 //	PosteriorSharedVariables m_column_vars;
 

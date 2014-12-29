@@ -21,12 +21,12 @@ public:
 
 	void allocateMatrix(const int q_length_max, const int t_length_max);
 
-	simd_float * getRow(const int row) const;
+	float * getRow(const int row) const;
 
-	void setSingleValue(const int row, const int col, const int elem, const float value);
-	float getSingleValue(const int row, const int col, const int elem) const;
+	void setSingleValue(const int row, const int col, const float value);
+	float getSingleValue(const int row, const int col) const;
 
-	simd_float getValue(const int row, const int col) const;
+	float getValue(const int row, const int col) const;
 
 	bool isAllocated() const;
 
@@ -37,7 +37,7 @@ private:
 	int m_q_max_length;
 	int m_t_max_length;
 
-	simd_float ** m_probabilities;
+	float ** m_probabilities;
 	bool m_allocated;
 //	float ** m_p_mm;
 

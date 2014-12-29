@@ -9,6 +9,7 @@
 #include "hhviterbi.h"
 #include <stddef.h>
 
+
 void PosteriorDecoder::writeProfilesToHits(HMM & q, HMM & t, PosteriorMatrix & p_mm, const int elem, Hit & hit) {
 	if(hit.forward_profile) {
 		delete[] hit.forward_profile;
@@ -34,7 +35,7 @@ void PosteriorDecoder::writeProfilesToHits(HMM & q, HMM & t, PosteriorMatrix & p
 
 	for(int i = 1; i <= q.L; i++) {
 		for(int j = 1; j <= t.L; j++) {
-			float posterior = fpow2(p_mm.getSingleValue(i, j, elem));
+			float posterior = p_mm.getSingleValue(i, j);
 			if(posterior >= POSTERIOR_PROBABILITY_THRESHOLD) {
 				Posterior_Triple* triple = new Posterior_Triple(i, j, posterior);
 				hit.posterior_probabilities.push_back(triple);
@@ -134,11 +135,12 @@ void PosteriorDecoder::backtraceMAC(HMM & q, HMM & t, PosteriorMatrix & p_mm, Vi
 			hit.S_ss[step] = ScoreSS(&q, &t, i, j, ssm);
 			hit.score_ss += hit.S_ss[step];
 //			hit.P_posterior[step] = powf(2, p_mm.getSingleValue(hit.i[step], hit.j[step], elem));
-			hit.P_posterior[step] = fpow2(p_mm.getSingleValue(hit.i[step], hit.j[step], elem));
+			hit.P_posterior[step] = p_mm.getSingleValue(hit.i[step], hit.j[step]);
+
 			// Add probability to sum of probs if no dssp states given or dssp states exist and state is resolved in 3D structure
 			if (t.nss_dssp<0 || t.ss_dssp[j]>0)
 				hit.sum_of_probs += hit.P_posterior[step];
-			// 	  printf("j=%-3i  dssp=%1i  P=%4.2f  sum=%6.2f\n",j,t.ss_dssp[j],P_posterior[step],sum_of_probs); //////////////////////////
+//			printf("j=%-3i P=%4.2f  sum=%6.2f\n",j, hit.P_posterior[step],hit.sum_of_probs); //////////////////////////
 			break;
 		case ViterbiMatrix::MI: //if gap in template
 		case ViterbiMatrix::DG:

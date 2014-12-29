@@ -37,6 +37,7 @@ void PosteriorDecoderRunner::executeComputation(Parameters& par, const float qsc
     const float Sim[20][20], const float R[20][20]) {
 
   HMM * q_hmm = m_q_simd.GetHMM(0);	// Initialize single query HMM for PrepareTemplateHMM
+  q_hmm->Log2LinTransitionProbs(1.0);
 
   int irep_counter = 0;
 
@@ -92,9 +93,8 @@ void PosteriorDecoderRunner::executeComputation(Parameters& par, const float qsc
 
         int format_tmp = 0;
         //char wg = 0;
-          char wg = 1;
 
-          hit_cur->entry->getTemplateHMM(par, wg, qsc, format_tmp, pb, S, Sim, t_hmm[current_t_index + i]);
+          hit_cur->entry->getTemplateHMM(par, par.wg, qsc, format_tmp, pb, S, Sim, t_hmm[current_t_index + i]);
 
 #pragma omp critical // because alignments_to_exclude get changed
 {
@@ -107,15 +107,15 @@ void PosteriorDecoderRunner::executeComputation(Parameters& par, const float qsc
           alignments_to_exclude[std::string(hit_cur->file)] = vec;
         }
 }
-
+          par.forward = 1;
         PrepareTemplateHMM(par, q_hmm, t_hmm[current_t_index + i], format_tmp, pb, R);
         templates_to_align.push_back(t_hmm[current_t_index + i]);
       }
       t_hmm_simd[current_thread_id]->MapHMMVector(templates_to_align);
       // start next job
       threads->at(current_thread_id)->realign(m_q_simd, *t_hmm_simd[current_thread_id], hit_items,
-          *m_posterior_matrices[current_thread_id], *m_backtrace_matrix[current_thread_id], alignment_exclusions,
-                                              par.min_overlap, par.shift, par.mact, par.corr);
+          *m_posterior_matrices[current_thread_id], *m_backtrace_matrix[current_thread_id],
+          alignment_exclusions, par.min_overlap, par.shift, par.mact, par.corr);
     } // idb loop
 
     mergeThreadResults(irep_counter, alignments_to_exclude);
@@ -200,13 +200,13 @@ void PosteriorDecoderRunner::cleanupThread(
 
 
 void PosteriorDecoderRunner::initializeQueryHMMTransitions(HMM & q) {
-  q.tr[0][M2D] = q.tr[0][M2I] = -FLT_MAX;
-  q.tr[0][I2M] = q.tr[0][I2I] = -FLT_MAX;
-  q.tr[0][D2M] = q.tr[0][D2D] = -FLT_MAX;
-  q.tr[q.L][M2M] = 0.0;
-  q.tr[q.L][M2D] = q.tr[q.L][M2I] = -FLT_MAX;
-  q.tr[q.L][I2M] = q.tr[q.L][I2I] = -FLT_MAX;
-  q.tr[q.L][D2M] = 0.0;
-  q.tr[q.L][D2D] = -FLT_MAX;
+  q.tr[0][M2D] = q.tr[0][M2I] = 0.0f;
+  q.tr[0][I2M] = q.tr[0][I2I] = 0.0f;
+  q.tr[0][D2M] = q.tr[0][D2D] = 0.0f;
+  q.tr[q.L][M2M] = 1.0f;
+  q.tr[q.L][M2D] = q.tr[q.L][M2I] = 0.0f;
+  q.tr[q.L][I2M] = q.tr[q.L][I2I] = 0.0f;
+  q.tr[q.L][D2M] = 1.0f;
+  q.tr[q.L][D2D] = 0.0f;
 }
 

@@ -9,9 +9,9 @@
  *  Info:
  *		This class contains the needed algorithms to perform the
  *		MAC algorithm:
- *			+ Forward (SIMD),
- *			+ Backward (SIMD),
- *			+ MAC (SIMD) and
+ *			+ Forward (scalar linear),
+ *			+ Backward (scalar linear),
+ *			+ MAC (scalar linear) and
  *			+ MAC backtrace (scalar).
  *
  *		The realign method is called by the posterior consumer thread.
@@ -66,7 +66,7 @@ PosteriorDecoder::PosteriorDecoder(int maxres, bool local, int q_length) :
 	p_last_col = malloc_simd_float(q_length * sizeof(simd_float));
 
 	//m_p_min = (m_local ? simdf32_set(0.0f) : simdf32_set(-FLT_MAX));
-	m_p_min_scalar = (m_local ? 0.0f : -FLT_MAX);
+	m_p_min_scalar = (m_local ? 1.0f : 0.0);
 
 	m_p_forward = malloc_simd_float(VEC_SIZE * sizeof(float));
 	m_t_lengths_le =  malloc_simd_int(VEC_SIZE * sizeof(int)); 
@@ -74,7 +74,7 @@ PosteriorDecoder::PosteriorDecoder(int maxres, bool local, int q_length) :
 
 	m_backward_profile = malloc_simd_float((q_length + 1) * sizeof(simd_float));
 	m_forward_profile = malloc_simd_float((q_length + 1) * sizeof(simd_float));
-
+	scale = new double[m_max_res + 2];
 	for (int elem = 0; elem < VEC_SIZE; elem++) {
 		m_temp_hit_vec.push_back(new Hit);
 	}
@@ -107,7 +107,7 @@ PosteriorDecoder::~PosteriorDecoder() {
 
 	free(m_backward_profile);
 	free(m_forward_profile);
-
+	delete [] scale;
 	for (int elem = 0; elem < VEC_SIZE; elem++) {
 //	  m_temp_hit_vec.at(elem)->Delete();
 	  delete(m_temp_hit_vec.at(elem));
@@ -123,48 +123,28 @@ PosteriorDecoder::~PosteriorDecoder() {
 void PosteriorDecoder::realign(HMMSimd & q_hmm, HMMSimd & t_hmm,
 		std::vector<Hit*> & hit_vec, PosteriorMatrix & p_mm,
 		ViterbiMatrix & viterbi_matrix,
-		std::vector<std::vector<PosteriorDecoder::MACBacktraceResult *> * > & alignment_exclusion_vec, int par_min_overlap, float shift, float mact, float corr) {
+		std::vector<std::vector<PosteriorDecoder::MACBacktraceResult *> * > & alignment_exclusion_vec,
+		int par_min_overlap, float shift, float mact, float corr) {
 
 	HMM & curr_q_hmm = *(q_hmm.GetHMM(0));
+	//TODO check if this is a problem
 	int num_t = (int)hit_vec.size();
-	// Iterate over vector elements
-	for (int elem = 0; elem < num_t; elem++) {
-
-		HMM * curr_t_hmm = t_hmm.GetHMM(elem);
-
-		// Store some hit values temporary
-		memorizeHitValues(hit_vec.at(elem), elem);
-
-		// Clear current Viterbi path and also exclude previous found MAC alignments (from earlier alignments)
-		initializeForAlignment(curr_q_hmm, *curr_t_hmm, hit_vec.at(elem), viterbi_matrix, elem,
-				*alignment_exclusion_vec.at(elem), t_hmm.L, par_min_overlap);
-	}
 
 	// Compute SIMD Forward algorithm
 	for (int elem = 0; elem < num_t; elem++) {
-		forwardAlgorithm(*q_hmm.GetHMM(elem), *t_hmm.GetHMM(elem), *hit_vec[elem], p_mm, viterbi_matrix, shift,elem);
-		backwardAlgorithm(*q_hmm.GetHMM(elem), *t_hmm.GetHMM(elem), *hit_vec[elem], p_mm, viterbi_matrix, shift,elem);
-		macAlgorithm(*q_hmm.GetHMM(elem), *t_hmm.GetHMM(elem), *hit_vec[elem], p_mm, viterbi_matrix, mact,elem);
-	}
+		HMM * curr_t_hmm = t_hmm.GetHMM(elem);
+		memorizeHitValues(hit_vec.at(elem), elem);
+		initializeForAlignment(curr_q_hmm, *curr_t_hmm, hit_vec.at(elem), viterbi_matrix, elem,
+				*alignment_exclusion_vec.at(elem), t_hmm.L, par_min_overlap);
+		forwardAlgorithm(*q_hmm.GetHMM(elem), *t_hmm.GetHMM(elem), *hit_vec[elem], p_mm, viterbi_matrix, shift, elem);
+		std::cout << hit_vec[elem]->score << hit_vec[elem]->Pforward << std::endl;
 
-	for (int elem = 0; elem < num_t; elem++) {
-//		HMM * curr_t_hmm = t_hmm.GetHMM(elem);
-		// Perform scalar MAC backtrace
+		backwardAlgorithm(*q_hmm.GetHMM(elem), *t_hmm.GetHMM(elem), *hit_vec[elem], p_mm, viterbi_matrix, shift, elem);
+		macAlgorithm(*q_hmm.GetHMM(elem), *t_hmm.GetHMM(elem), *hit_vec[elem], p_mm, viterbi_matrix, mact, elem);
 		backtraceMAC(curr_q_hmm, *t_hmm.GetHMM(elem), p_mm, viterbi_matrix, elem, *hit_vec.at(elem), corr);
-		// Restore selected values
 		restoreHitValues(*hit_vec.at(elem), elem);
 		writeProfilesToHits(curr_q_hmm, *t_hmm.GetHMM(elem), p_mm, elem, *hit_vec.at(elem));
 	}
-
-	// Print posterior matrix values of selected alignment
-//	if (eq) {
-//		for (int i = 0; i < q_hmm.L; i++) {
-//			for (int j = 0; j < t_hmm.GetHMM(elem_idx)->L; j++) {
-//				printf("%i,%i,%20.20f\n", i, j, p_mm.getSingleValue(i, j, elem_idx));
-//			}
-//		}
-//	}
-
 }
 
 
@@ -178,17 +158,16 @@ void PosteriorDecoder::initializeForAlignment(HMM & q, HMM & t, Hit* hit, Viterb
 		std::vector<PosteriorDecoder::MACBacktraceResult *> & alignment_to_exclude, const int t_max_L, int par_min_overlap) {
 
 	// First alignment of this pair of HMMs?
-	t.tr[0][M2M] = 0.0;
-	t.tr[0][M2D] = t.tr[0][M2I] = -FLT_MAX;
-	t.tr[0][I2M] = t.tr[0][I2I] = -FLT_MAX;
-	t.tr[0][D2M] = t.tr[0][D2D] = -FLT_MAX;
-	t.tr[t.L][M2M] = 0.0;
-	t.tr[t.L][M2D] = t.tr[t.L][M2I] = -FLT_MAX;
-	t.tr[t.L][I2M] = t.tr[t.L][I2I] = -FLT_MAX;
-	t.tr[t.L][D2M] = 0.0;
-	t.tr[t.L][D2D] = -FLT_MAX;
+	t.tr[0][M2M] = 1.0f;
+	t.tr[0][M2D] = t.tr[0][M2I] = 0.0f;
+	t.tr[0][I2M] = t.tr[0][I2I] = 0.0f;
+	t.tr[0][D2M] = t.tr[0][D2D] = 0.0f;
+	t.tr[t.L][M2M] = 1.0f;
+	t.tr[t.L][M2D] = t.tr[t.L][M2I] = 0.0f;
+	t.tr[t.L][I2M] = t.tr[t.L][I2I] = 0.0f;
+	t.tr[t.L][D2M] = 1.0f;
+	t.tr[t.L][D2D] = 0.0f;
 	//    if (alt_i && alt_i->Size()>0) delete alt_i;
-
 	if(hit->alt_i) {
 	  delete hit->alt_i;
 	}
@@ -234,20 +213,30 @@ void PosteriorDecoder::maskViterbiAlignment(const int q_length, const int t_leng
 
 	int i, j;
 
-	// Cross out regions
+	// Switch off all cells (CellOff=true) except the upper left rectangle above (i1,j1)
+	// and the cells in the lower right rectangle below (i2,j2), which are set to CellOff=false:
+	//         j1              j2
+	// 0 0 0 0 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+	// 0 0 0 0 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+	// 0 0 0 0 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+	// 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 <-i1
+	// 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+	// 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 <-i2
+	// 1 1 1 1 1 1 1 1 1 1 1 1 1 0 0 0 0 0
+	// 1 1 1 1 1 1 1 1 1 1 1 1 1 0 0 0 0 0
+	// 1 1 1 1 1 1 1 1 1 1 1 1 1 0 0 0 0 0
+	// 1 1 1 1 1 1 1 1 1 1 1 1 1 0 0 0 0 0
+	// 1 1 1 1 1 1 1 1 1 1 1 1 1 0 0 0 0 0
 	for (i = 1; i <= q_length; ++i)
 		for (j = 1; j <= t_length; ++j)
-			if (!((i < hit->i1 && j < hit->j1) || (i > hit->i2 && j > hit->j2)))
-				celloff_matrix.setCellOff(i, j, elem, true);
-
-//	maskViterbiAlignment(q_length, t_length, celloff_matrix, elem, alignment);
-	// Clear Viterbi path
+			celloff_matrix.setCellOff(i, j, elem,   !((i < hit->i1 && j < hit->j1) || (i > hit->i2 && j > hit->j2))    );
+	// Now switch on all cells (CellOff=false) in vicinity of the Viterbi path
 	for (int step = hit->nsteps; step >= 1; step--) {
-		int path_width = 40;
-		for (i = imax(1, hit->i[step] - path_width); i <= imin(q_length, hit->i[step] + path_width); ++i)
+		for (i = imax(1, hit->i[step] - FWD_BKW_PATHWITDH); i <= imin(q_length, hit->i[step] + FWD_BKW_PATHWITDH); ++i)
 			celloff_matrix.setCellOff(i, hit->j[step], elem, false);
-
-		for (j = imax(1, hit->j[step] - path_width); j <= imin(t_length, hit->j[step] + path_width); ++j)
+	}
+	for (int step = hit->nsteps; step >= 1; step--) {
+		for (j = imax(1, hit->j[step] - FWD_BKW_PATHWITDH); j <= imin(t_length, hit->j[step] + FWD_BKW_PATHWITDH); ++j)
 			celloff_matrix.setCellOff(hit->i[step], j, elem, false);
 	}
 
