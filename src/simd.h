@@ -232,6 +232,8 @@ typedef __m256 simd_float;
 #ifdef SSE
 #include <xmmintrin.h> // SSE
 #include <emmintrin.h> // SSE2
+//TODO are we just acception 4.2?
+#include <nmmintrin.h> // SSE4.2
 // double support
 #ifndef SIMD_DOUBLE
 #define SIMD_DOUBLE
