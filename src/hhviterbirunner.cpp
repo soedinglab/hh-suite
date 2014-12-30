@@ -139,9 +139,8 @@ std::vector<Hit> ViterbiRunner::alignment(Parameters& par, HMMSimd * q_simd,
                     HHEntry* entry = dbfiles_to_align.at(idb + i);
                     
                     int format_tmp = 0;
-                    //char wg = 1;
-
-                    entry->getTemplateHMM(par, par.wg, qsc, format_tmp, pb, S, Sim, t_hmm[current_t_index + i]);
+                    char wg = 1; // performance reason
+                    entry->getTemplateHMM(par, wg, qsc, format_tmp, pb, S, Sim, t_hmm[current_t_index + i]);
                     t_hmm[current_t_index + i]->entry = entry;
                     
                     PrepareTemplateHMM(par, q, t_hmm[current_t_index + i], format_tmp, pb, R);

@@ -28,34 +28,60 @@ include_directories("${PROJECT_BINARY_DIR}")
 
 set(HH_SOURCE
 	${HH_SOURCE}
+	${CMAKE_CURRENT_SOURCE_DIR}/hhblits.h
 	${CMAKE_CURRENT_SOURCE_DIR}/hhblits.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/hhdecl.cpp 
-	${CMAKE_CURRENT_SOURCE_DIR}/hhhit.cpp 
-	${CMAKE_CURRENT_SOURCE_DIR}/hhmatrices.cpp 
-	${CMAKE_CURRENT_SOURCE_DIR}/hhblits.cpp 
+	${CMAKE_CURRENT_SOURCE_DIR}/hhdecl.h
+	${CMAKE_CURRENT_SOURCE_DIR}/hhdecl.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/hhhit.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/hhhit-inl.h
+	${CMAKE_CURRENT_SOURCE_DIR}/hhhit.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/hhmatrices.h
+	${CMAKE_CURRENT_SOURCE_DIR}/hhmatrices.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/hhsearch.h
 	${CMAKE_CURRENT_SOURCE_DIR}/hhsearch.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/hhalign.h
 	${CMAKE_CURRENT_SOURCE_DIR}/hhalign.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/hhhitlist.cpp 
+	${CMAKE_CURRENT_SOURCE_DIR}/hhhitlist.h
+	${CMAKE_CURRENT_SOURCE_DIR}/hhhitlist-inl.h
+	${CMAKE_CURRENT_SOURCE_DIR}/hhhitlist.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/hhposteriordecoder.h
 	${CMAKE_CURRENT_SOURCE_DIR}/hhposteriordecoder.cpp 
-	${CMAKE_CURRENT_SOURCE_DIR}/hhutil.cpp 
+	${CMAKE_CURRENT_SOURCE_DIR}/hhutil.h
+	${CMAKE_CURRENT_SOURCE_DIR}/hhutil-inl.h
+	${CMAKE_CURRENT_SOURCE_DIR}/hhutil.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/util.h
 	${CMAKE_CURRENT_SOURCE_DIR}/util.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/hhalignment.cpp 
-	${CMAKE_CURRENT_SOURCE_DIR}/hhforwardalgorithm.cpp 
-	${CMAKE_CURRENT_SOURCE_DIR}/hhhmm.cpp 
+	${CMAKE_CURRENT_SOURCE_DIR}/hhalignment.h
+	${CMAKE_CURRENT_SOURCE_DIR}/hhalignment.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/hhforwardalgorithm.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/hhhmm.h
+	${CMAKE_CURRENT_SOURCE_DIR}/hhhmm.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/hhposteriordecoderrunner.h
 	${CMAKE_CURRENT_SOURCE_DIR}/hhposteriordecoderrunner.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/hhviterbialgorithm.cpp 
-	${CMAKE_CURRENT_SOURCE_DIR}/hhfullalignment.cpp 
-	${CMAKE_CURRENT_SOURCE_DIR}/hhhmmsimd.cpp 
-	${CMAKE_CURRENT_SOURCE_DIR}/hhposteriormatrix.cpp 
-	${CMAKE_CURRENT_SOURCE_DIR}/hhviterbi.cpp 
+	${CMAKE_CURRENT_SOURCE_DIR}/hhviterbialgorithm.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/hhfullalignment.h
+	${CMAKE_CURRENT_SOURCE_DIR}/hhfullalignment.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/hhhmmsimd.h
+	${CMAKE_CURRENT_SOURCE_DIR}/hhhmmsimd.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/hhposteriormatrix.h
+	${CMAKE_CURRENT_SOURCE_DIR}/hhposteriormatrix.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/hhviterbi.h
+	${CMAKE_CURRENT_SOURCE_DIR}/hhviterbi.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/hhbacktracemac.cpp 
-	${CMAKE_CURRENT_SOURCE_DIR}/hhmacalgorithm.cpp  
+	${CMAKE_CURRENT_SOURCE_DIR}/hhmacalgorithm.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/hhprefilter.h
 	${CMAKE_CURRENT_SOURCE_DIR}/hhprefilter.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/hhviterbimatrix.h
+	${CMAKE_CURRENT_SOURCE_DIR}/hhviterbimatrix-inl.h
 	${CMAKE_CURRENT_SOURCE_DIR}/hhviterbimatrix.cpp 
-	${CMAKE_CURRENT_SOURCE_DIR}/hhbackwardalgorithm.cpp 
-	${CMAKE_CURRENT_SOURCE_DIR}/hhdatabase.cpp 
-	${CMAKE_CURRENT_SOURCE_DIR}/hhhalfalignment.cpp 
-	${CMAKE_CURRENT_SOURCE_DIR}/hhviterbirunner.cpp 
+	${CMAKE_CURRENT_SOURCE_DIR}/hhbackwardalgorithm.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/hhdatabase.h
+	${CMAKE_CURRENT_SOURCE_DIR}/hhdatabase.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/hhhalfalignment.h
+	${CMAKE_CURRENT_SOURCE_DIR}/hhhalfalignment.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/hhviterbirunner.h
+	${CMAKE_CURRENT_SOURCE_DIR}/hhviterbirunner.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/hhfunc.h
 	${CMAKE_CURRENT_SOURCE_DIR}/hhfunc.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/simd.h
 )
@@ -126,10 +152,10 @@ add_executable(a3m_extractor
 )
 target_link_libraries (a3m_extractor ffindex)
 
-add_executable(a3m_reducer
-  a3m_reducer.cpp $<TARGET_OBJECTS:A3M_COMPRESS_OBJECT>
+add_executable(a3m_database_reducer
+  a3m_database_reducer.cpp $<TARGET_OBJECTS:A3M_COMPRESS_OBJECT>
 )
-target_link_libraries (a3m_reducer ffindex)
+target_link_libraries (a3m_database_reducer ffindex)
 
 add_executable(a3m_database_filter
   a3m_database_filter.cpp $<TARGET_OBJECTS:A3M_COMPRESS_OBJECT>
@@ -149,7 +175,7 @@ INSTALL(PROGRAMS
 	${CMAKE_CURRENT_BINARY_DIR}/hhalign 
 	${CMAKE_CURRENT_BINARY_DIR}/hhconsensus 
 	${CMAKE_CURRENT_BINARY_DIR}/a3m_extractor 
-	${CMAKE_CURRENT_BINARY_DIR}/a3m_reducer 
+	${CMAKE_CURRENT_BINARY_DIR}/a3m_database_reducer
 	${CMAKE_CURRENT_BINARY_DIR}/a3m_database_filter 
 	${CMAKE_CURRENT_BINARY_DIR}/cstranslate 
 	DESTINATION bin

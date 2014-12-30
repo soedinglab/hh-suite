@@ -82,11 +82,4 @@ float * PosteriorMatrix::getRow(const int row) const {
 }
 
 
-///////////////////////////////////////////////////////////////////////////////////////////////
-// Multiply a single float value to an element of matrix
-///////////////////////////////////////////////////////////////////////////////////////////////
-void PosteriorMatrix::multiplyPosteriorValue(const int row, const int col, const float value) {
-    m_probabilities[row][col] *= value;
-}
-
 

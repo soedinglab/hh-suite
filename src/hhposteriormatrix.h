@@ -37,21 +37,19 @@ public:
 		m_probabilities[row][col] = value;
 	}
 
-    void multiplyPosteriorValue(const int row, const int col, const float value);
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	// Multiply a single float value to an element of matrix
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	inline void multiplyPosteriorValue(const int row, const int col, const float value) {
+		m_probabilities[row][col] *= value;
+	}
 
-
-	bool isAllocated() const;
-
-	void setAllocated(bool allocated);
 	void DeleteProbabilityMatrix();
 
 private:
 	int m_q_max_length;
 	int m_t_max_length;
-    
 	float ** m_probabilities;
-//	bool m_allocated;
-//	float ** m_p_mm;
 
 };
 

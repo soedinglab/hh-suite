@@ -5,7 +5,6 @@
  *      Author: Stefan Haunsberger
  */
 
-#include "hhposteriordecoderinputdata.h"
 #include "hhposteriordecoder.h"
 #include "hhposteriormatrix.h"
 #include "hhviterbimatrix.h"

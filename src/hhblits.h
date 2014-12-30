@@ -82,7 +82,6 @@ class HHblits;
 #include "hhviterbirunner.h"
 
 #include "hhposteriormatrix.h"
-#include "hhposteriordecoderinputdata.h"
 #include "hhposteriordecoderrunner.h"
 
 const char HHBLITS_REFERENCE[] =
@@ -127,12 +126,11 @@ public:
 
 protected:
 	// substitution matrix flavours
-	float __attribute__((aligned(16))) P[20][20];
-	float __attribute__((aligned(16))) R[20][20];
-	float __attribute__((aligned(16))) Sim[20][20];
-	float __attribute__((aligned(16))) S[20][20];
-	float __attribute__((aligned(16))) pb[21];
-	float __attribute__((aligned(16))) qav[21];
+	float __attribute__((aligned(32))) P[20][20];
+	float __attribute__((aligned(32))) R[20][20];
+	float __attribute__((aligned(32))) Sim[20][20];
+	float __attribute__((aligned(32))) S[20][20];
+	float __attribute__((aligned(32))) pb[21];
 
 	// secondary structure matrices
 	float S73[NDSSP][NSSPRED][MAXCF];
