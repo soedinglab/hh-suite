@@ -6,6 +6,7 @@
 
 // hhalignment.C
 #include "hhalignment.h"
+#include "util.h"
 
 using std::cout;
 using std::cerr;
@@ -2479,9 +2480,8 @@ void Alignment::Amino_acid_frequencies_and_transitions_from_M_state(
   int* naa = new int[L + 1];   // number of different amino acids
 
   // Allocate memory for f[j]
-  float** f = new float*[L + 1];  // f[j][a] = freq of amino acid a at pos j
-  for (j = 0; j <= L; ++j)
-    f[j] = new float[NAA + 3];
+  float** f = malloc_matrix<float>(L+1, NAA+3);
+
 
   // Initialization
   if (use_global_weights == 1)  // If global weights
@@ -2676,9 +2676,7 @@ void Alignment::Amino_acid_frequencies_and_transitions_from_M_state(
   }
 
   // Delete f[j]
-  for (j = 0; j <= L; ++j)
-    delete[] f[j];
-  delete[] f;
+  free(f);
   delete[] naa;
 
   q->tr[0][M2M] = 0;
