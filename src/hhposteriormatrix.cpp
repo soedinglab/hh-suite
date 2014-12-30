@@ -35,24 +35,9 @@ void PosteriorMatrix::allocateMatrix(int q_length_max, int t_length_max) {
 
     m_q_max_length = ICEIL(q_length_max,VECSIZE_FLOAT);
     m_t_max_length = ICEIL(t_length_max,VECSIZE_FLOAT);
-   
-    
-////TODO make just one allocation
-//    m_probabilities = new float * [q_length_max];
-////	printf("p_mm: Allocate 2nd dimension of m_p_mm\n");
-//
-//	for (int i = 0; i < q_length_max; i++) {
-//		m_probabilities[i] = new float[t_length_max];
-//		if (!m_probabilities[i]) {
-//			fprintf(stderr,"Error: out of memory while allocating row %i (out of %i) for dynamic programming matrices \n", i+1, q_length_max);
-//			fprintf(stderr,"Please decrease your memory requirements to the available memory using option -maxmem <GBs>\n");
-//			fprintf(stderr,"You may want to check and increase your stack size limit (Linux: ulimit -a)\n");
-//			exit(3);
-//		}
-//	}
 
     // Allocate posterior prob matrix (matrix rows are padded to make them aligned to multiples of ALIGN_FLOAT)
-    m_probabilities = malloc_matrix<float>(m_q_max_length, m_t_max_length);
+    m_probabilities = malloc_matrix<float>(m_q_max_length+2, m_t_max_length+2);
     if (!m_probabilities)
         MemoryError("m_probabilities", "hhposteriormatrix.cpp", 55, "PosteriorMatrix::allocateMatrix");
 
