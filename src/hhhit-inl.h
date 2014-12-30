@@ -204,30 +204,34 @@ inline float ScalarProd20(const float* qi, const float* tj) {
 //  _mm256_store_ps(&res, R);
 //  return res;
 //#else
+
+
 #ifdef SSE
     float __attribute__((aligned(16))) res;
     __m128 P; // query 128bit SSE2 register holding 4 floats
     __m128 R;// result
     __m128* Qi = (__m128*) qi;
     __m128* Tj = (__m128*) tj;
-    
-    R = _mm_mul_ps(*(Qi++),*(Tj++));
-    P = _mm_mul_ps(*(Qi++),*(Tj++));
-    R = _mm_add_ps(R,P);
-    P = _mm_mul_ps(*(Qi++),*(Tj++));
-    R = _mm_add_ps(R,P);
-    P = _mm_mul_ps(*(Qi++),*(Tj++));
-    R = _mm_add_ps(R,P);
-    P = _mm_mul_ps(*Qi,*Tj);
-    R = _mm_add_ps(R,P);
+
+    __m128 P1 = _mm_mul_ps(*(Qi),*(Tj));
+    __m128 P2 = _mm_mul_ps(*(Qi+1),*(Tj+1));
+    __m128 R1 = _mm_add_ps(P1, P2);
+
+    __m128 P3 = _mm_mul_ps(*(Qi + 2), *(Tj + 2));
+    __m128 P4 = _mm_mul_ps(*(Qi + 3), *(Tj + 3));
+    __m128 R2 = _mm_add_ps(P3, P4);
+    __m128 P5 = _mm_mul_ps(*(Qi+4), *(Tj+4));
+
+    R = _mm_add_ps(R1, R2);
+    R = _mm_add_ps(R,P5);
 
 //    R = _mm_hadd_ps(R,R);
 //    R = _mm_hadd_ps(R,R);
-    P = _mm_shuffle_ps(R,R, _MM_SHUFFLE(2,0,2,0));
-    R = _mm_shuffle_ps(R,R, _MM_SHUFFLE(3,1,3,1));
+    P = _mm_shuffle_ps(R, R, _MM_SHUFFLE(2,0,2,0));
+    R = _mm_shuffle_ps(R, R, _MM_SHUFFLE(3,1,3,1));
     R = _mm_add_ps(R,P);
-    P = _mm_shuffle_ps(R,R, _MM_SHUFFLE(2,0,2,0));
-    R = _mm_shuffle_ps(R,R, _MM_SHUFFLE(3,1,3,1));
+    P = _mm_shuffle_ps(R, R, _MM_SHUFFLE(2,0,2,0));
+    R = _mm_shuffle_ps(R, R, _MM_SHUFFLE(3,1,3,1));
     R = _mm_add_ps(R,P);
     _mm_store_ss(&res, R);
     return res;

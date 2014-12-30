@@ -92,15 +92,13 @@ void PosteriorDecoder::forwardAlgorithm(HMM & q, HMM & t, Hit & hit,
 		p_mm.setPosteriorValue(i, jmin, m_curr[jmin].mm);
 
 		Pmax_i = 0;
-
+		memset(m_curr+(jmin + 1), 0, (t.L + 1) * sizeof(PosteriorMatrixCol));
 		// Loop through template positions j
 		for (j = jmin + 1; j <= t.L; ++j) {
 
 			// Recursion relations
-			if (celloff_matrix.getCellOff(i, j, elem))
-				m_curr[j].mm = m_curr[j].mi = m_curr[j].dg = m_curr[j].im =
-						m_curr[j].gd = 0.0;
-			else {
+			if (!(celloff_matrix.getCellOff(i, j, elem)))
+			{
 				m_curr[j].mm = ProbFwd(q.p[i], t.p[j]) * Cshift
 						* scale[i]
 						* (pmin

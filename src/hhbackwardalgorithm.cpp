@@ -67,16 +67,14 @@ void PosteriorDecoder::backwardAlgorithm(HMM & q, HMM & t, Hit & hit,
 
 
 		m_curr[t.L].im = m_curr[t.L].mi = m_curr[t.L].dg = m_curr[t.L].gd = 0.0;
-
+		memset(m_curr+jmin, 0, (t.L - 1) * sizeof(PosteriorMatrixCol));
 		// Loop through template positions j
 		for (j = t.L - 1; j >= jmin; j--) {
 			// Recursion relations
 			//          printf("S[%i][%i]=%4.1f  ",i,j,Score(q->p[i],t->p[j]));
 
-			if (celloff_matrix.getCellOff(i,j,elem))
-				m_curr[j].mm = m_curr[j].gd = m_curr[j].im = m_curr[j].dg =
-						m_curr[j].mi = 0.0;
-			else {
+			if (!(celloff_matrix.getCellOff(i,j,elem)))
+			{
 				double pmatch = m_prev[j + 1].mm * ProbFwd(q.p[i + 1], t.p[j + 1])
 						* Cshift * scale[i + 1];
 				m_curr[j].mm = (+pmin         // MM -> EE (End/End, for local alignment)
@@ -106,8 +104,6 @@ void PosteriorDecoder::backwardAlgorithm(HMM & q, HMM & t, Hit & hit,
 				);
 			} // end else
 
-			// Calculate posterior probability from Forward and Backward matrix elements
-			p_mm.setPosteriorValue(i, j, p_mm.getPosteriorValue(i, j) * m_curr[j].mm / hit.Pforward);
 
 			//save backward profile
 			//TODO we should check if we need to compute ProbFwd again
@@ -116,6 +112,11 @@ void PosteriorDecoder::backwardAlgorithm(HMM & q, HMM & t, Hit & hit,
 		} //end for j
 
 		actual_backward *= final_scale_prod / scale_prod;
+
+		// Calculate posterior probability from Forward and Backward matrix elements
+		for (int jj = jmin; jj <= (t.L - 1); jj++) {
+			p_mm.multiplyPosteriorValue(i, jj, m_curr[jj].mm / hit.Pforward);
+		}
 
 		std::swap(m_prev, m_curr);
 
