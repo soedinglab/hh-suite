@@ -48,17 +48,9 @@ PosteriorDecoder::PosteriorDecoder(int maxres, bool local, int q_length) :
 	m_q_length(q_length) {
 
 	m_jmin = 1;
-	m_mm_prev = (double*) malloc_simd_float((m_max_res + 2 ) * sizeof(double));
-	m_gd_prev = (double*) malloc_simd_float((m_max_res + 2 ) * sizeof(double));
-	m_dg_prev = (double*) malloc_simd_float((m_max_res + 2 ) * sizeof(double));
-	m_im_prev = (double*) malloc_simd_float((m_max_res + 2 ) * sizeof(double));
-	m_mi_prev = (double*)  malloc_simd_float((m_max_res + 2 ) * sizeof(double));
+	m_fwd = (ForwardPosteriorMatrix*) malloc_simd_float((m_max_res + 2 ) * sizeof(ForwardPosteriorMatrix));
+	m_bwd = (BackwardPosteriorMatrix*) malloc_simd_float((m_max_res + 2 ) * sizeof(BackwardPosteriorMatrix));
 
-	m_mm_curr = (double*) malloc_simd_float((m_max_res + 2 ) * sizeof(double));
-	m_gd_curr = (double*) malloc_simd_float((m_max_res + 2 ) * sizeof(double));
-	m_dg_curr = (double*) malloc_simd_float((m_max_res + 2 ) * sizeof(double));
-	m_im_curr = (double*) malloc_simd_float((m_max_res + 2 ) * sizeof(double));
-	m_mi_curr = (double*) malloc_simd_float((m_max_res + 2 ) * sizeof(double));
 
 	m_s_curr = (double*) malloc_simd_float((m_max_res + 2 ) * sizeof(double));
 	m_s_prev = (double*) malloc_simd_float((m_max_res + 2 ) * sizeof(double));
@@ -77,17 +69,8 @@ PosteriorDecoder::PosteriorDecoder(int maxres, bool local, int q_length) :
 }
 
 PosteriorDecoder::~PosteriorDecoder() {
-	free(m_mm_prev);
-	free(m_gd_prev);
-	free(m_dg_prev);
-	free(m_im_prev);
-	free(m_mi_prev);
-
-	free(m_mm_curr);
-	free(m_gd_curr);
-	free(m_dg_curr);
-	free(m_im_curr);
-	free(m_mi_curr);
+	free(m_fwd);
+	free(m_bwd);
 	free(m_s_curr);
 	free(m_s_prev);
 	free(p_last_col);

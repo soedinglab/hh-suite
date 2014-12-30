@@ -21,12 +21,12 @@ void PosteriorDecoder::backwardAlgorithm(HMM & q, HMM & t, Hit & hit,
 	for (int j = t.L; j >= 1; j--) {
 		if (celloff_matrix.getCellOff(q.L,j,elem)){
 			p_mm.setPosteriorValue(q.L, j, 0.0);
-			m_mm_prev[j] = 0.0;
+			m_bwd[j].mm_prev = 0.0;
 		}else {
-			m_mm_prev[j] = scale[q.L + 1];
+			m_bwd[j].mm_prev = scale[q.L + 1];
 			p_mm.setPosteriorValue(q.L, j, p_mm.getPosteriorValue(q.L, j) * scale[q.L + 1] / hit.Pforward);
 		}
-		m_mi_prev[j] = m_gd_prev[j] = 0.0;
+		m_bwd[j].mi_prev = m_bwd[j].dg_prev = 0.0;
 	}
 
 	if (m_local)
@@ -54,9 +54,9 @@ void PosteriorDecoder::backwardAlgorithm(HMM & q, HMM & t, Hit & hit,
 
 		if (celloff_matrix.getCellOff(i, t.L, elem)) {
 			p_mm.setPosteriorValue(i, t.L, 0.0);
-			m_mm_curr[t.L] = 0.0;
+			m_bwd[t.L].mm_curr = 0.0;
 		} else {
-			m_mm_curr[t.L] = scale_prod;
+			m_bwd[t.L].mm_curr = scale_prod;
 			p_mm.setPosteriorValue(i, t.L, p_mm.getPosteriorValue(i, t.L) * scale_prod / hit.Pforward);
 		}
 		pmin *= scale[i + 1]; // transform pmin (for local alignment) to scale of present (i'th) row
@@ -66,7 +66,7 @@ void PosteriorDecoder::backwardAlgorithm(HMM & q, HMM & t, Hit & hit,
 		float actual_backward = 0.0;
 
 
-		m_im_curr[t.L] = m_mi_curr[t.L] = m_dg_curr[t.L] = m_gd_curr[t.L] = 0.0;
+		m_bwd[t.L].im_curr = m_bwd[t.L].mi_curr = m_bwd[t.L].dg_curr = m_bwd[t.L].gd_curr = 0.0;
 
 		// Loop through template positions j
 		for (j = t.L - 1; j >= jmin; j--) {
@@ -74,51 +74,53 @@ void PosteriorDecoder::backwardAlgorithm(HMM & q, HMM & t, Hit & hit,
 			//          printf("S[%i][%i]=%4.1f  ",i,j,Score(q->p[i],t->p[j]));
 
 			if (celloff_matrix.getCellOff(i,j,elem))
-				m_mm_curr[j] = m_gd_curr[j] = m_im_curr[j] = m_dg_curr[j] =
-						m_mi_curr[j] = 0.0;
+				m_bwd[j].mm_curr = m_bwd[j].gd_curr = m_bwd[j].im_curr = m_bwd[j].dg_curr =
+						m_bwd[j].mi_curr = 0.0;
 			else {
-				double pmatch = m_mm_prev[j + 1] * ProbFwd(q.p[i + 1], t.p[j + 1])
+				double pmatch = m_bwd[j + 1].mm_prev * ProbFwd(q.p[i + 1], t.p[j + 1])
 						* Cshift * scale[i + 1];
-				m_mm_curr[j] = (+pmin         // MM -> EE (End/End, for local alignment)
+				m_bwd[j].mm_curr = (+pmin         // MM -> EE (End/End, for local alignment)
 						+ pmatch * q.tr[i][M2M] * t.tr[j][M2M]              // MM -> MM
-						+ m_gd_curr[j + 1] * t.tr[j][M2D] // MM -> GD (q.tr[i][M2M] is already contained in GD->MM)
-						+ m_im_curr[j + 1] * q.tr[i][M2I] * t.tr[j][M2M]           // MM -> IM
-						+ m_gd_prev[j] * q.tr[i][M2D] * scale[i + 1] // MM -> DG (t.tr[j][M2M] is already contained in DG->MM)
-						+ m_mi_prev[j] * q.tr[i][M2M] * t.tr[j][M2I] * scale[i + 1] // MM -> MI
+						+ m_bwd[j + 1].gd_curr * t.tr[j][M2D] // MM -> GD (q.tr[i][M2M] is already contained in GD->MM)
+						+ m_bwd[j + 1].im_curr * q.tr[i][M2I] * t.tr[j][M2M]           // MM -> IM
+						+ m_bwd[j].dg_prev * q.tr[i][M2D] * scale[i + 1] // MM -> DG (t.tr[j][M2M] is already contained in DG->MM)
+						+ m_bwd[j].mi_prev * q.tr[i][M2M] * t.tr[j][M2I] * scale[i + 1] // MM -> MI
 				);
 
-				m_gd_curr[j] = (+pmatch * q.tr[i][M2M] * t.tr[j][D2M]      // GD -> MM
-						+ m_gd_curr[j + 1] * t.tr[j][D2D]              // DG -> DG
+				m_bwd[j].gd_curr = (+pmatch * q.tr[i][M2M] * t.tr[j][D2M]      // GD -> MM
+						+ m_bwd[j + 1].gd_curr * t.tr[j][D2D]              // DG -> DG
 				);
 
-				m_im_curr[j] = (+pmatch * q.tr[i][I2M] * t.tr[j][M2M]      // IM -> MM
-						+ m_im_curr[j + 1] * q.tr[i][I2I] * t.tr[j][M2M]           // IM -> IM
+				m_bwd[j].im_curr = (+pmatch * q.tr[i][I2M] * t.tr[j][M2M]      // IM -> MM
+						+ m_bwd[j + 1].im_curr * q.tr[i][I2I] * t.tr[j][M2M]           // IM -> IM
 				);
 
-				m_dg_curr[j] = (+pmatch * q.tr[i][D2M] * t.tr[j][M2M]      // DG -> MM
-						+ m_gd_prev[j] * q.tr[i][D2D] * scale[i + 1]  // DG -> DG
+				m_bwd[j].dg_curr = (+pmatch * q.tr[i][D2M] * t.tr[j][M2M]      // DG -> MM
+						+ m_bwd[j].dg_prev * q.tr[i][D2D] * scale[i + 1]  // DG -> DG
 						//             + B_GD[i][j+1] * q.tr[i][D2M] * t.tr[j][M2D]              // DG -> GD
 				);
 
-				m_mi_curr[j] = (+pmatch * q.tr[i][M2M] * t.tr[j][I2M]      // MI -> MM
-						+ m_mi_prev[j] * q.tr[i][M2M] * t.tr[j][I2I] * scale[i + 1] // MI -> MI
+				m_bwd[j].mi_curr = (+pmatch * q.tr[i][M2M] * t.tr[j][I2M]      // MI -> MM
+						+ m_bwd[j].mi_prev * q.tr[i][M2M] * t.tr[j][I2I] * scale[i + 1] // MI -> MI
 						//           + B_IM[i][j+1] * q.tr[i][M2I] * t.tr[j][I2M]              // MI -> IM
 				);
 			} // end else
 
 			// Calculate posterior probability from Forward and Backward matrix elements
-			p_mm.setPosteriorValue(i, j, p_mm.getPosteriorValue(i, j) * m_mm_curr[j] / hit.Pforward);
+			p_mm.setPosteriorValue(i, j, p_mm.getPosteriorValue(i, j) * m_bwd[j].mm_curr / hit.Pforward);
 
 			//save backward profile
 			//TODO we should check if we need to compute ProbFwd again
 			actual_backward += ProbFwd(q.p[i], t.p[j]) * Cshift
-					* m_mm_curr[j] / hit.Pforward;
+					* m_bwd[j].mm_curr / hit.Pforward;
 		} //end for j
 
 		actual_backward *= final_scale_prod / scale_prod;
-		std::swap(m_mm_prev, m_mm_curr);
-		std::swap(m_gd_prev, m_dg_curr);
-		std::swap(m_mi_prev, m_mi_curr);
+		for (int jj = 0; jj <= t.L; jj++) {
+			m_bwd[jj].mm_prev = m_bwd[jj].mm_curr;
+			m_bwd[jj].dg_prev = m_bwd[jj].dg_curr;
+			m_bwd[jj].mi_prev = m_bwd[jj].mi_curr;
+		}
 	} // end for i
 
 	/*

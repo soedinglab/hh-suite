@@ -8,7 +8,7 @@
 #include "hhposteriormatrix.h"
 
 PosteriorMatrix::PosteriorMatrix() {
-		m_probabilities = m_column_scores = NULL;
+		m_probabilities = NULL;
 		m_q_max_length = 0;
 		m_t_max_length = 0;
 }
@@ -55,11 +55,6 @@ void PosteriorMatrix::allocateMatrix(int q_length_max, int t_length_max) {
     m_probabilities = malloc_matrix<float>(m_q_max_length, m_t_max_length);
     if (!m_probabilities)
         MemoryError("m_probabilities", "hhposteriormatrix.cpp", 55, "PosteriorMatrix::allocateMatrix");
-    
-    // Allocate colmun score matrix (matrix rows are padded to make them aligned to multiples of ALIGN_FLOAT)
-    m_column_scores = malloc_matrix<float>(m_q_max_length, m_t_max_length);
-    if (!m_column_scores)
-        MemoryError("m_column_scores", "hhposteriormatrix.cpp", 60, "PosteriorMatrix::allocateMatrix");
 
 };
 
@@ -74,8 +69,7 @@ void PosteriorMatrix::DeleteProbabilityMatrix() {
 //  delete[] m_probabilities;
  
     free(m_probabilities);
-    free(m_column_scores);
-    m_column_scores = m_probabilities = NULL;
+    m_probabilities = NULL;
     m_q_max_length = 0;
     m_t_max_length = 0;
 }
@@ -87,19 +81,6 @@ float * PosteriorMatrix::getRow(const int row) const {
     return m_probabilities[row];
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////
-// Return a float value of a selected element of matrix
-///////////////////////////////////////////////////////////////////////////////////////////////
-float PosteriorMatrix::getPosteriorValue(const int row, const int col) const {
-    return m_probabilities[row][col];
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////////
-// Set a single float value to an element of matrix
-///////////////////////////////////////////////////////////////////////////////////////////////
-void PosteriorMatrix::setPosteriorValue(const int row, const int col, const float value) {
-    m_probabilities[row][col] = value;
-}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // Multiply a single float value to an element of matrix
@@ -108,21 +89,4 @@ void PosteriorMatrix::multiplyPosteriorValue(const int row, const int col, const
     m_probabilities[row][col] *= value;
 }
 
-
-
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////
-// Return a float value of a selected element of a vector
-///////////////////////////////////////////////////////////////////////////////////////////////
-float PosteriorMatrix::getColScoreValue(const int row, const int col) const {
-    return m_column_scores[row][col];
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////////
-// Set a single float value to an element of a vector
-///////////////////////////////////////////////////////////////////////////////////////////////
-void PosteriorMatrix::setColScoreValue(const int row, const int col, const float value) {
-    m_column_scores[row][col] = value;
-}
 

@@ -63,17 +63,34 @@ public:
 
 private:
 
-	double * m_mm_prev;
-	double * m_gd_prev;
-	double * m_dg_prev;
-	double * m_im_prev;
-	double * m_mi_prev;
+	struct ForwardPosteriorMatrix{
+		double mm_curr;
+		double gd_curr;
+		double im_curr;
+		double dg_curr;
+		double mi_curr;
+		double mm_prev;
+		double gd_prev;
+		double im_prev;
+		double dg_prev;
+		double mi_prev;
+	};
 
-	double * m_mm_curr;
-	double * m_gd_curr;
-	double * m_dg_curr;
-	double * m_im_curr;
-	double * m_mi_curr;
+	ForwardPosteriorMatrix * m_fwd;
+
+	struct BackwardPosteriorMatrix{
+		double mm_curr;
+		double gd_curr;
+		double im_curr;
+		double dg_curr;
+		double mi_curr;
+		double dg_prev;
+		double mm_prev;
+		double mi_prev;
+	};
+
+	BackwardPosteriorMatrix * m_bwd;
+
 
 	double * m_s_curr;		// MAC scores - current
 	double * m_s_prev;		// MAC scores - previous

@@ -23,13 +23,22 @@ public:
 
 	float * getRow(const int row) const;
     float * getColScoreRow(const int row) const;
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	// Return a float value of a selected element of matrix
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	inline float getPosteriorValue(const int row, const int col) const {
+		return m_probabilities[row][col];
+	}
 
-	void setPosteriorValue(const int row, const int col, const float value);
-	float getPosteriorValue(const int row, const int col) const;
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	// Set a single float value to an element of matrix
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	inline void setPosteriorValue(const int row, const int col, const float value) {
+		m_probabilities[row][col] = value;
+	}
+
     void multiplyPosteriorValue(const int row, const int col, const float value);
-    void setColScoreValue(const int row, const int col, const float value);
-	float getColScoreValue(const int row, const int col) const;
-    
+
 
 	bool isAllocated() const;
 
@@ -41,7 +50,6 @@ private:
 	int m_t_max_length;
     
 	float ** m_probabilities;
-    float ** m_column_scores;
 //	bool m_allocated;
 //	float ** m_p_mm;
 
