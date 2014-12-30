@@ -184,27 +184,27 @@ inline double logPvalue(float x, double a[]) {
 
 inline float ScalarProd20(const float* qi, const float* tj) {
     
-#ifdef AVX
-  float __attribute__((aligned(ALIGN_FLOAT))) res;
-  __m256 P; // query 128bit SSE2 register holding 4 floats
-  __m256 S; // aux register
-  __m256 R; // result
-  __m256* Qi = (__m256*) qi;
-  __m256* Tj = (__m256*) tj;
-
-  R = _mm256_mul_ps(*(Qi++),*(Tj++));
-  P = _mm256_mul_ps(*(Qi++),*(Tj++));
-  S = _mm256_mul_ps(*Qi,*Tj); // floats A, B, C, D, ?, ?, ? ,?
-  R = _mm256_add_ps(R,P);     // floats 0, 1, 2, 3, 4, 5, 6, 7
-  P = _mm256_permute2f128_ps(R, R, 0x01); // swap hi and lo 128 bits: 4, 5, 6, 7, 0, 1, 2, 3
-  R = _mm256_add_ps(R,P);     // 0+4, 1+5, 2+6, 3+7, 0+4, 1+5, 2+6, 3+7
-  R = _mm256_add_ps(R,S);     // 0+4+A, 1+5+B, 2+6+C, 3+7+D, ?, ?, ? ,?
-  R = _mm256_hadd_ps(R,R);    // 04A15B, 26C37D, ?, ?, 04A15B, 26C37D, ?, ?
-  R = _mm256_hadd_ps(R,R);    // 01234567ABCD, ?, 01234567ABCD, ?, 01234567ABCD, ?, 01234567ABCD, ?
-  _mm256_store_ps(&res, R);
-  return res;
-#elif SSE
-//#ifdef SSE
+//#ifdef AVX
+//  float __attribute__((aligned(ALIGN_FLOAT))) res;
+//  __m256 P; // query 128bit SSE2 register holding 4 floats
+//  __m256 S; // aux register
+//  __m256 R; // result
+//  __m256* Qi = (__m256*) qi;
+//  __m256* Tj = (__m256*) tj;
+//
+//  R = _mm256_mul_ps(*(Qi++),*(Tj++));
+//  P = _mm256_mul_ps(*(Qi++),*(Tj++));
+//  S = _mm256_mul_ps(*Qi,*Tj); // floats A, B, C, D, ?, ?, ? ,?
+//  R = _mm256_add_ps(R,P);     // floats 0, 1, 2, 3, 4, 5, 6, 7
+//  P = _mm256_permute2f128_ps(R, R, 0x01); // swap hi and lo 128 bits: 4, 5, 6, 7, 0, 1, 2, 3
+//  R = _mm256_add_ps(R,P);     // 0+4, 1+5, 2+6, 3+7, 0+4, 1+5, 2+6, 3+7
+//  R = _mm256_add_ps(R,S);     // 0+4+A, 1+5+B, 2+6+C, 3+7+D, ?, ?, ? ,?
+//  R = _mm256_hadd_ps(R,R);    // 04A15B, 26C37D, ?, ?, 04A15B, 26C37D, ?, ?
+//  R = _mm256_hadd_ps(R,R);    // 01234567ABCD, ?, 01234567ABCD, ?, 01234567ABCD, ?, 01234567ABCD, ?
+//  _mm256_store_ps(&res, R);
+//  return res;
+//#else
+#ifdef SSE
     float __attribute__((aligned(16))) res;
     __m128 P; // query 128bit SSE2 register holding 4 floats
     __m128 R;// result
@@ -221,17 +221,18 @@ inline float ScalarProd20(const float* qi, const float* tj) {
     P = _mm_mul_ps(*Qi,*Tj);
     R = _mm_add_ps(R,P);
 
-    R = _mm_hadd_ps(R,R);
-    R = _mm_hadd_ps(R,R);
-//    P = _mm_shuffle_ps(R,R, _MM_SHUFFLE(2,0,2,0));
-//    R = _mm_shuffle_ps(R,R, _MM_SHUFFLE(3,1,3,1));
-//    R = _mm_add_ps(R,P);
-//    P = _mm_shuffle_ps(R,R, _MM_SHUFFLE(2,0,2,0));
-//    R = _mm_shuffle_ps(R,R, _MM_SHUFFLE(3,1,3,1));
-//    R = _mm_add_ps(R,P);
+//    R = _mm_hadd_ps(R,R);
+//    R = _mm_hadd_ps(R,R);
+    P = _mm_shuffle_ps(R,R, _MM_SHUFFLE(2,0,2,0));
+    R = _mm_shuffle_ps(R,R, _MM_SHUFFLE(3,1,3,1));
+    R = _mm_add_ps(R,P);
+    P = _mm_shuffle_ps(R,R, _MM_SHUFFLE(2,0,2,0));
+    R = _mm_shuffle_ps(R,R, _MM_SHUFFLE(3,1,3,1));
+    R = _mm_add_ps(R,P);
     _mm_store_ss(&res, R);
     return res;
 #endif
+//#endif
     return tj[0] * qi[0] + tj[1] * qi[1] + tj[2] * qi[2] + tj[3] * qi[3]
          + tj[4] * qi[4] + tj[5] * qi[5] + tj[6] * qi[6] + tj[7] * qi[7]
          + tj[8] * qi[8] + tj[9] * qi[9] + tj[10] * qi[10] + tj[11] * qi[11]

@@ -48,30 +48,30 @@ PosteriorDecoder::PosteriorDecoder(int maxres, bool local, int q_length) :
 	m_q_length(q_length) {
 
 	m_jmin = 1;
-	m_mm_prev = (float*) malloc_simd_float((m_max_res + 2 ) * sizeof(simd_float));
-	m_gd_prev = (float*) malloc_simd_float((m_max_res + 2 ) * sizeof(simd_float));
-	m_dg_prev = (float*) malloc_simd_float((m_max_res + 2 ) * sizeof(simd_float));
-	m_im_prev = (float*) malloc_simd_float((m_max_res + 2 ) * sizeof(simd_float));
-	m_mi_prev = (float*)  malloc_simd_float((m_max_res + 2 ) * sizeof(simd_float));
+	m_mm_prev = (double*) malloc_simd_float((m_max_res + 2 ) * sizeof(double));
+	m_gd_prev = (double*) malloc_simd_float((m_max_res + 2 ) * sizeof(double));
+	m_dg_prev = (double*) malloc_simd_float((m_max_res + 2 ) * sizeof(double));
+	m_im_prev = (double*) malloc_simd_float((m_max_res + 2 ) * sizeof(double));
+	m_mi_prev = (double*)  malloc_simd_float((m_max_res + 2 ) * sizeof(double));
 
-	m_mm_curr = (float*) malloc_simd_float((m_max_res + 2 ) * sizeof(simd_float));
-	m_gd_curr = (float*) malloc_simd_float((m_max_res + 2 ) * sizeof(simd_float));
-	m_dg_curr = (float*) malloc_simd_float((m_max_res + 2 ) * sizeof(simd_float));
-	m_im_curr = (float*) malloc_simd_float((m_max_res + 2 ) * sizeof(simd_float));
-	m_mi_curr = (float*) malloc_simd_float((m_max_res + 2 ) * sizeof(simd_float));
+	m_mm_curr = (double*) malloc_simd_float((m_max_res + 2 ) * sizeof(double));
+	m_gd_curr = (double*) malloc_simd_float((m_max_res + 2 ) * sizeof(double));
+	m_dg_curr = (double*) malloc_simd_float((m_max_res + 2 ) * sizeof(double));
+	m_im_curr = (double*) malloc_simd_float((m_max_res + 2 ) * sizeof(double));
+	m_mi_curr = (double*) malloc_simd_float((m_max_res + 2 ) * sizeof(double));
 
-	m_s_curr = (float*) malloc_simd_float((m_max_res + 2 ) * sizeof(simd_float));
-	m_s_prev = (float*) malloc_simd_float((m_max_res + 2 ) * sizeof(simd_float));
+	m_s_curr = (double*) malloc_simd_float((m_max_res + 2 ) * sizeof(double));
+	m_s_prev = (double*) malloc_simd_float((m_max_res + 2 ) * sizeof(double));
 
-	p_last_col = (float*) malloc_simd_float(q_length * sizeof(simd_float));
+	p_last_col = (double*) malloc_simd_float(q_length * sizeof(double));
 
 	//m_p_min = (m_local ? simdf32_set(0.0f) : simdf32_set(-FLT_MAX));
 	m_p_min_scalar = (m_local ? 1.0f : 0.0);
 
 	m_p_forward = malloc_simd_float( sizeof(float));
 
-	m_backward_profile = (float*) malloc_simd_float((q_length + 1) * sizeof(simd_float));
-	m_forward_profile =  (float*) malloc_simd_float((q_length + 1) * sizeof(simd_float));
+	m_backward_profile = (double*) malloc_simd_float((q_length + 1) * sizeof(double));
+	m_forward_profile =  (double*) malloc_simd_float((q_length + 1) * sizeof(double));
 	scale = new double[m_max_res + 2];
 	m_temp_hit = new Hit;
 }
@@ -111,12 +111,11 @@ void PosteriorDecoder::realign(HMM &q, HMM &t, Hit &hit,
 	HMM & curr_t_hmm = t;
 	memorizeHitValues(hit);
 	initializeForAlignment(curr_q_hmm, curr_t_hmm, hit, viterbi_matrix, 0, t.L, par_min_overlap);
-    PrecomputeColScores(curr_q_hmm, curr_t_hmm, hit, p_mm, viterbi_matrix, shift);
-    
-	forwardAlgorithm(curr_q_hmm, curr_t_hmm, hit, p_mm, viterbi_matrix, 0);
+
+	forwardAlgorithm(curr_q_hmm, curr_t_hmm, hit, p_mm, viterbi_matrix, shift, 0);
 	//std::cout << hit->score << hit[elem]->Pforward << std::endl;
 
-	backwardAlgorithm(curr_q_hmm, curr_t_hmm, hit, p_mm, viterbi_matrix, 0);
+	backwardAlgorithm(curr_q_hmm, curr_t_hmm, hit, p_mm, viterbi_matrix, shift, 0);
 	macAlgorithm(curr_q_hmm, curr_t_hmm, hit, p_mm, viterbi_matrix, mact, 0);
 	backtraceMAC(curr_q_hmm, curr_t_hmm, p_mm, viterbi_matrix, 0, hit, corr);
 	restoreHitValues(hit);
@@ -232,30 +231,6 @@ void PosteriorDecoder::excludeMACAlignment(const int q_length, const int t_lengt
 		}
 	}
 }
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
-// Precompute lin column scores
-///////////////////////////////////////////////////////////////////////////////////////////////////
-void PosteriorDecoder::PrecomputeColScores(HMM &q, HMM &t, Hit &hit, PosteriorMatrix &p_mm, ViterbiMatrix &celloff_matrix, float shift) const {
-    double Cshift = pow(2.0, shift); // score offset transformed into factor in lin-space
-    int jmin;
-
-    for (int i = 1; i <= q.L; ++i) {
-        if (hit.self)
-            jmin = imin(i + SELFEXCL + 1, t.L);
-        else
-            jmin = 1;
-            
-        for (int j = jmin; j <= t.L; ++j) {
-            if (! celloff_matrix.getCellOff(i, j, 0) ) {
-                p_mm.setColScoreValue(i, j, ProbFwd(q.p[i], t.p[j]) * Cshift);
-            }
-        }
-    }
-}
-
-
 
 
 

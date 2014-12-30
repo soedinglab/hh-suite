@@ -63,24 +63,24 @@ public:
 
 private:
 
-	float * m_mm_prev;
-	float * m_gd_prev;
-	float * m_dg_prev;
-	float * m_im_prev;
-	float * m_mi_prev;
+	double * m_mm_prev;
+	double * m_gd_prev;
+	double * m_dg_prev;
+	double * m_im_prev;
+	double * m_mi_prev;
 
-	float * m_mm_curr;
-	float * m_gd_curr;
-	float * m_dg_curr;
-	float * m_im_curr;
-	float * m_mi_curr;
+	double * m_mm_curr;
+	double * m_gd_curr;
+	double * m_dg_curr;
+	double * m_im_curr;
+	double * m_mi_curr;
 
-	float * m_s_curr;		// MAC scores - current
-	float * m_s_prev;		// MAC scores - previous
-	float * p_last_col;
+	double * m_s_curr;		// MAC scores - current
+	double * m_s_prev;		// MAC scores - previous
+	double * p_last_col;
 
-	float * m_backward_profile;
-	float * m_forward_profile;
+	double * m_backward_profile;
+	double * m_forward_profile;
 
 	double * scale;
 
@@ -102,9 +102,9 @@ private:
 	Hit * m_temp_hit;
 
 	void forwardAlgorithm(HMM & q_hmm, HMM & t_hmm, Hit & hit_vec, PosteriorMatrix & p_mm,
-			ViterbiMatrix & viterbi_matrix, const int elem);
+			ViterbiMatrix & viterbi_matrix, float shift, const int elem);
 	void backwardAlgorithm(HMM & q_hmm,HMM & t_hmm, Hit & hit_vec, PosteriorMatrix & p_mm,
-			ViterbiMatrix & viterbi_matrix, const int elem);
+			ViterbiMatrix & viterbi_matrix, float shift, const int elem);
 	void macAlgorithm(HMM & q_hmm, HMM & t_hmm, Hit & hit_vec, PosteriorMatrix & p_mm,
 			ViterbiMatrix & viterbi_matrix, float par_mact, const int elem);
 	void backtraceMAC(HMM & q, HMM & t, PosteriorMatrix & p_mm, ViterbiMatrix & backtrace_matrix, const int elem, Hit & hit, float corr);
@@ -112,7 +112,6 @@ private:
 	void initializeBacktrace(HMM & t, Hit & hit);
 
 	void initializeForAlignment(HMM &q, HMM &t, Hit &hit, ViterbiMatrix &viterbi_matrix, const int elem, const int t_max_L, int par_min_overlap);
-    void PrecomputeColScores(HMM &q, HMM &t, Hit &hit, PosteriorMatrix &p_mm, ViterbiMatrix &celloff_matrix, float shift) const;
     void maskViterbiAlignment(const int q_length, const int t_length, ViterbiMatrix &celloff_matrix,
 			const int elem, Hit const &hit) const;
 	void memorizeHitValues(Hit & curr_hit);

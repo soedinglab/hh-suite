@@ -7,15 +7,20 @@
 
 #include "hhposteriordecoder.h"
 
+
+
+
 void PosteriorDecoder::forwardAlgorithm(HMM & q, HMM & t, Hit & hit,
-		PosteriorMatrix & p_mm, ViterbiMatrix & celloff_matrix, const int elem) {
+		PosteriorMatrix & p_mm, ViterbiMatrix & celloff_matrix,
+		float shift, const int elem) {
 	int i, j;      // query and template match state indices
 	double pmin = (m_local ? 1.0 : 0.0); // used to distinguish between SW and NW algorithms in maximization
+	double Cshift = pow(2.0, shift); // score offset transformed into factor in lin-space
 	double Pmax_i;                        // maximum of F_MM in row i
 	double scale_prod = 1.0;                // Prod_i=1^i (scale[i])
 	int jmin;
 
-	// Initialize F_XX_prev (representing i=1) andhit.P_MM[1][j]
+	// Initialize F_XX_prev (representing i=1) andhit.P_MM[1]
 	// Initialize F_XX_prev (representing i=1) and P_MM[1][j]
 	for (j=1; j<=t.L; ++j)
 		m_mm_curr[j] = 0.0;
@@ -29,7 +34,7 @@ void PosteriorDecoder::forwardAlgorithm(HMM & q, HMM & t, Hit & hit,
 			m_mm_curr[j] = m_mi_curr[j] = m_dg_curr[j] = m_im_curr[j] = m_gd_curr[j] = 0.0;
 		else
 		{
-			m_mm_curr[j] = p_mm.getColScoreValue(1, j) ;
+			m_mm_curr[j] = ProbFwd(q.p[1], t.p[j]) * Cshift ;
 			m_mi_curr[j] = m_dg_curr[j] = 0.0;
 			m_im_curr[j] = m_mm_curr[j-1] * q.tr[1][M2I] * t.tr[j-1][M2M] + m_im_curr[j-1] * q.tr[1][I2I] * t.tr[j-1][M2M];
 			m_gd_curr[j] = m_mm_curr[j-1] * t.tr[j-1][M2D]                + m_gd_curr[j-1] * t.tr[j-1][D2D];
@@ -53,9 +58,8 @@ void PosteriorDecoder::forwardAlgorithm(HMM & q, HMM & t, Hit & hit,
 
 
 	scale[0] = scale[1] = scale[2] = 1.0;
-        
-    //////////////////////////
-    // Forward algorithm
+
+	// Forward algorithm
 
 	// Loop through query positions i
 	for (i = 2; i <= q.L; ++i) {
@@ -74,7 +78,7 @@ void PosteriorDecoder::forwardAlgorithm(HMM & q, HMM & t, Hit & hit,
 			m_mm_curr[jmin] = m_mi_curr[jmin] = m_dg_curr[jmin] = m_im_curr[jmin] =
 					m_gd_curr[jmin] = 0.0;
 		else {
-			m_mm_curr[jmin] = scale_prod * p_mm.getColScoreValue(i, jmin);
+			m_mm_curr[jmin] = scale_prod * ProbFwd(q.p[i], t.p[jmin]) * Cshift;
 			m_im_curr[jmin] = m_gd_curr[jmin] = 0.0;
 			m_mi_curr[jmin] = scale[i]
 					* (m_mm_prev[jmin] * q.tr[i - 1][M2M] * t.tr[jmin][M2I]
@@ -97,8 +101,7 @@ void PosteriorDecoder::forwardAlgorithm(HMM & q, HMM & t, Hit & hit,
 				m_mm_curr[j] = m_mi_curr[j] = m_dg_curr[j] = m_im_curr[j] =
 						m_gd_curr[j] = 0.0;
 			else {
-
-				m_mm_curr[j] = p_mm.getColScoreValue(i, j)
+				m_mm_curr[j] = ProbFwd(q.p[i], t.p[j]) * Cshift
 						* scale[i]
 						* (pmin
 						+ m_mm_prev[j - 1] * q.tr[i - 1][M2M] * t.tr[j - 1][M2M] // BB -> MM (BB = Begin/Begin, for local alignment)
@@ -108,18 +111,18 @@ void PosteriorDecoder::forwardAlgorithm(HMM & q, HMM & t, Hit & hit,
 						+ m_mi_prev[j - 1] * q.tr[i - 1][M2M] * t.tr[j - 1][I2M] // MI -> MM
 				);
 				m_gd_curr[j] = (
-						m_mm_curr[j - 1] * t.tr[j - 1][M2D]                      // GD -> MM
-						+ m_gd_curr[j - 1] * t.tr[j - 1][D2D]                    // GD -> GD
+						m_mm_curr[j - 1] * t.tr[j - 1][M2D]         // GD -> MM
+								+ m_gd_curr[j - 1] * t.tr[j - 1][D2D]                    // GD -> GD
 				);
 				m_im_curr[j] = (m_mm_curr[j - 1] * q.tr[i][M2I] * t.tr[j - 1][M2M] // MM -> IM
 						+ m_im_curr[j - 1] * q.tr[i][I2I] * t.tr[j - 1][M2M]     // IM -> IM
 				);
-				m_dg_curr[j] = scale[i] * (m_mm_prev[j] * q.tr[i - 1][M2D]       // DG -> MM
-						+ m_dg_prev[j] * q.tr[i - 1][D2D]                        // DG -> DG
+				m_dg_curr[j] = scale[i] * (m_mm_prev[j] * q.tr[i - 1][M2D]  // DG -> MM
+						+ m_dg_prev[j] * q.tr[i - 1][D2D]                    // DG -> DG
 				);
 				m_mi_curr[j] = scale[i]
-						* (m_mm_prev[j] * q.tr[i - 1][M2M] * t.tr[j][M2I]        // MI -> MM
-						+ m_mi_prev[j] * q.tr[i - 1][M2M] * t.tr[j][I2I]         // MI -> MI
+						* (m_mm_prev[j] * q.tr[i - 1][M2M] * t.tr[j][M2I]     // MI -> MM
+						+ m_mi_prev[j] * q.tr[i - 1][M2M] * t.tr[j][I2I]     // MI -> MI
 				);
 
 				Pmax_i = fmax(Pmax_i, m_mm_curr[j]);
@@ -130,23 +133,23 @@ void PosteriorDecoder::forwardAlgorithm(HMM & q, HMM & t, Hit & hit,
 			} // end else
 
 		} //end for j
-
-		/* F_MM_prev = m_mm_curr */
 		for (int jj = 0; jj <= t.L; jj++) {
-			m_mm_prev[jj] = m_mm_curr[jj];
-			m_mi_prev[jj] = m_mi_curr[jj];
-			m_im_prev[jj] = m_im_curr[jj];
-			m_dg_prev[jj] = m_dg_curr[jj];
-			m_gd_prev[jj] = m_gd_curr[jj];
-
 			// Fill posterior probability matrix with forward score
 			p_mm.setPosteriorValue(i, jj, m_mm_curr[jj]);
 		}
+		/* F_MM_prev = m_mm_curr */
+		std::swap(m_mm_prev, m_mm_curr);
+		std::swap(m_mi_prev, m_mi_curr);
+		std::swap(m_im_prev, m_im_curr);
+		std::swap(m_dg_prev, m_dg_curr);
+		std::swap(m_gd_prev, m_gd_curr);
+
+
 		pmin *= scale[i];
 		if (pmin < DBL_MIN * 100)
 			pmin = 0.0;
 
-	  scale[i + 1] = 1.0 / (Pmax_i + 1.0);
+		scale[i + 1] = 1.0 / (Pmax_i + 1.0);
 //    scale[i+1] = 1.0;   // to debug scaling
 
 	} // end for i
