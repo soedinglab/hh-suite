@@ -10,7 +10,7 @@
 #include <stddef.h>
 
 
-void PosteriorDecoder::writeProfilesToHits(HMM & q, HMM & t, PosteriorMatrix & p_mm, const int elem, Hit & hit) {
+void PosteriorDecoder::writeProfilesToHits(HMM &q, HMM &t, PosteriorMatrix &p_mm, Hit &hit) {
 	if(hit.forward_profile) {
 		delete[] hit.forward_profile;
 	}
@@ -22,10 +22,8 @@ void PosteriorDecoder::writeProfilesToHits(HMM & q, HMM & t, PosteriorMatrix & p
 	hit.backward_profile = new float[q.L + 1];
 
 	for(int i = 1; i <= q.L; i++) {
-    float * f_forward_profile = (float *) &m_forward_profile[i];
-		hit.forward_profile[i] = f_forward_profile[elem];
-    float * f_backward_profile = (float *) &m_backward_profile[i];
-		hit.backward_profile[i] = f_backward_profile[elem];
+		hit.forward_profile[i]  = m_forward_profile[i];
+		hit.backward_profile[i] = m_backward_profile[i];
 	}
 
 	for(size_t i = 0; i < hit.posterior_probabilities.size(); i++) {

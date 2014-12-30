@@ -2376,9 +2376,10 @@ void HMM::Log2LinTransitionProbs(float beta) {
 	trans_lin = 1;
 	for (int i = 0; i <= L; ++i) {
 		for (int a = 0; a < NTRANS; ++a)
-			tr[i][a] = fpow2(beta * tr[i][a]);
+			tr[i][a] = pow(2.0f,beta * tr[i][a]);
 	}
 }
+
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Set query columns in His-tags etc to Null model distribution
