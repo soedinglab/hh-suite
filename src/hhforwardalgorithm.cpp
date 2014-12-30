@@ -23,21 +23,21 @@ void PosteriorDecoder::forwardAlgorithm(HMM & q, HMM & t, Hit & hit,
 	// Initialize F_XX_prev (representing i=1) andhit.P_MM[1]
 	// Initialize F_XX_prev (representing i=1) and P_MM[1][j]
 	for (j=1; j<=t.L; ++j)
-		m_fwd[j].mm_curr = 0.0;
+		m_curr[j].mm = 0.0;
 
-	m_fwd[0].mm_curr = 0.0;
-	m_fwd[0].im_curr = 0.0;
-	m_fwd[0].gd_curr = 0.0;
+	m_curr[0].mm = 0.0;
+	m_curr[0].im = 0.0;
+	m_curr[0].gd = 0.0;
 	for (j=1; j<=t.L; ++j)
 	{
 		if (celloff_matrix.getCellOff(1,j,elem))
-			m_fwd[j].mm_curr = m_fwd[j].mi_curr = m_fwd[j].dg_curr = m_fwd[j].im_curr = m_fwd[j].gd_curr = 0.0;
+			m_curr[j].mm = m_curr[j].mi = m_curr[j].dg = m_curr[j].im = m_curr[j].gd = 0.0;
 		else
 		{
-			m_fwd[j].mm_curr = ProbFwd(q.p[1], t.p[j]) * Cshift ;
-			m_fwd[j].mi_curr = m_fwd[j].dg_curr = 0.0;
-			m_fwd[j].im_curr = m_fwd[j-1].mm_curr * q.tr[1][M2I] * t.tr[j-1][M2M] + m_fwd[j-1].im_curr * q.tr[1][I2I] * t.tr[j-1][M2M];
-			m_fwd[j].gd_curr = m_fwd[j-1].mm_curr * t.tr[j-1][M2D]                + m_fwd[j-1].gd_curr * t.tr[j-1][D2D];
+			m_curr[j].mm = ProbFwd(q.p[1], t.p[j]) * Cshift ;
+			m_curr[j].mi = m_curr[j].dg = 0.0;
+			m_curr[j].im = m_curr[j-1].mm * q.tr[1][M2I] * t.tr[j-1][M2M] + m_curr[j-1].im * q.tr[1][I2I] * t.tr[j-1][M2M];
+			m_curr[j].gd = m_curr[j-1].mm * t.tr[j-1][M2D]                + m_curr[j-1].gd * t.tr[j-1][D2D];
 			//printf("%f %f %f %f %f\n",m_mm_curr[j], m_gd_curr[j], m_im_curr[j], m_dg_curr[j], m_mi_curr[j]);
 			//printf("%f %f %f %f %f\n",q.tr[1][M2I], t.tr[j-1][M2M], q.tr[1][I2I], t.tr[j-1][M2D] , t.tr[j-1][D2D]);
 			//printf("%f %f %f\n",ProbFwd(q.p[1], t.p[j]), m_im_curr[j-1], m_gd_curr[j-1]);
@@ -46,13 +46,13 @@ void PosteriorDecoder::forwardAlgorithm(HMM & q, HMM & t, Hit & hit,
 
 	for (int j = 0; j <= t.L; j++)
 	{
-		p_mm.setPosteriorValue(0,j, m_fwd[j].mm_prev);
-		p_mm.setPosteriorValue(1,j, m_fwd[j].mm_curr);
-		m_fwd[j].mm_prev = m_fwd[j].mm_curr;
-		m_fwd[j].mi_prev = m_fwd[j].mi_curr;
-		m_fwd[j].im_prev = m_fwd[j].im_curr;
-		m_fwd[j].dg_prev = m_fwd[j].dg_curr;
-		m_fwd[j].gd_prev = m_fwd[j].gd_curr;
+		p_mm.setPosteriorValue(0,j, m_prev[j].mm);
+		p_mm.setPosteriorValue(1,j, m_curr[j].mm);
+		m_prev[j].mm = m_curr[j].mm;
+		m_prev[j].mi = m_curr[j].mi;
+		m_prev[j].im = m_curr[j].im;
+		m_prev[j].dg = m_curr[j].dg;
+		m_prev[j].gd = m_curr[j].gd;
 	}
 
 
@@ -75,21 +75,21 @@ void PosteriorDecoder::forwardAlgorithm(HMM & q, HMM & t, Hit & hit,
 
 		// Initialize cells at (i,0)
 		if (celloff_matrix.getCellOff(i, jmin, elem))
-			m_fwd[jmin].mm_curr = m_fwd[jmin].mi_curr = m_fwd[jmin].dg_curr = m_fwd[jmin].im_curr =
-					m_fwd[jmin].gd_curr = 0.0;
+			m_curr[jmin].mm = m_curr[jmin].mi = m_curr[jmin].dg = m_curr[jmin].im =
+					m_curr[jmin].gd = 0.0;
 		else {
-			m_fwd[jmin].mm_curr = scale_prod * ProbFwd(q.p[i], t.p[jmin]) * Cshift;
-			m_fwd[jmin].im_curr = m_fwd[jmin].gd_curr = 0.0;
-			m_fwd[jmin].mi_curr = scale[i]
-					* (m_fwd[jmin].mm_prev * q.tr[i - 1][M2M] * t.tr[jmin][M2I]
-					+ m_fwd[jmin].mi_prev * q.tr[i - 1][M2M] * t.tr[jmin][I2I]);
-			m_fwd[jmin].dg_curr = scale[i]
-					* (m_fwd[jmin].mm_prev * q.tr[i - 1][M2D]
-					+ m_fwd[jmin].dg_prev * q.tr[i - 1][D2D]);
+			m_curr[jmin].mm = scale_prod * ProbFwd(q.p[i], t.p[jmin]) * Cshift;
+			m_curr[jmin].im = m_curr[jmin].gd = 0.0;
+			m_curr[jmin].mi = scale[i]
+					* (m_prev[jmin].mm * q.tr[i - 1][M2M] * t.tr[jmin][M2I]
+					+ m_prev[jmin].mi * q.tr[i - 1][M2M] * t.tr[jmin][I2I]);
+			m_curr[jmin].dg = scale[i]
+					* (m_prev[jmin].mm * q.tr[i - 1][M2D]
+					+ m_prev[jmin].dg * q.tr[i - 1][D2D]);
 		}
 
 		/* copy back */
-		p_mm.setPosteriorValue(i, jmin, m_fwd[jmin].mm_curr);
+		p_mm.setPosteriorValue(i, jmin, m_curr[jmin].mm);
 
 		Pmax_i = 0;
 
@@ -98,34 +98,34 @@ void PosteriorDecoder::forwardAlgorithm(HMM & q, HMM & t, Hit & hit,
 
 			// Recursion relations
 			if (celloff_matrix.getCellOff(i, j, elem))
-				m_fwd[j].mm_curr = m_fwd[j].mi_curr = m_fwd[j].dg_curr = m_fwd[j].im_curr =
-						m_fwd[j].gd_curr = 0.0;
+				m_curr[j].mm = m_curr[j].mi = m_curr[j].dg = m_curr[j].im =
+						m_curr[j].gd = 0.0;
 			else {
-				m_fwd[j].mm_curr = ProbFwd(q.p[i], t.p[j]) * Cshift
+				m_curr[j].mm = ProbFwd(q.p[i], t.p[j]) * Cshift
 						* scale[i]
 						* (pmin
-						+ m_fwd[j - 1].mm_prev * q.tr[i - 1][M2M] * t.tr[j - 1][M2M] // BB -> MM (BB = Begin/Begin, for local alignment)
-						+ m_fwd[j - 1].gd_prev * q.tr[i - 1][M2M] * t.tr[j - 1][D2M] // GD -> MM
-						+ m_fwd[j - 1].im_prev * q.tr[i - 1][I2M] * t.tr[j - 1][M2M] // IM -> MM
-						+ m_fwd[j - 1].dg_prev * q.tr[i - 1][D2M] * t.tr[j - 1][M2M] // DG -> MM
-						+ m_fwd[j - 1].mi_prev * q.tr[i - 1][M2M] * t.tr[j - 1][I2M] // MI -> MM
+						+ m_prev[j - 1].mm * q.tr[i - 1][M2M] * t.tr[j - 1][M2M] // BB -> MM (BB = Begin/Begin, for local alignment)
+						+ m_prev[j - 1].gd * q.tr[i - 1][M2M] * t.tr[j - 1][D2M] // GD -> MM
+						+ m_prev[j - 1].im * q.tr[i - 1][I2M] * t.tr[j - 1][M2M] // IM -> MM
+						+ m_prev[j - 1].dg * q.tr[i - 1][D2M] * t.tr[j - 1][M2M] // DG -> MM
+						+ m_prev[j - 1].mi * q.tr[i - 1][M2M] * t.tr[j - 1][I2M] // MI -> MM
 				);
-				m_fwd[j].gd_curr = (
-						m_fwd[j - 1].mm_curr * t.tr[j - 1][M2D] +         // GD -> MM
-						m_fwd[j - 1].gd_curr * t.tr[j - 1][D2D]                    // GD -> GD
+				m_curr[j].gd = (
+						m_curr[j - 1].mm * t.tr[j - 1][M2D] +         // GD -> MM
+								m_curr[j - 1].gd * t.tr[j - 1][D2D]                    // GD -> GD
 				);
-				m_fwd[j].im_curr = (m_fwd[j - 1].mm_curr * q.tr[i][M2I] * t.tr[j - 1][M2M] // MM -> IM
-						+ m_fwd[j - 1].im_curr * q.tr[i][I2I] * t.tr[j - 1][M2M]     // IM -> IM
+				m_curr[j].im = (m_curr[j - 1].mm * q.tr[i][M2I] * t.tr[j - 1][M2M] // MM -> IM
+						+ m_curr[j - 1].im * q.tr[i][I2I] * t.tr[j - 1][M2M]     // IM -> IM
 				);
-				m_fwd[j].dg_curr = scale[i] * (m_fwd[j].mm_prev * q.tr[i - 1][M2D]  // DG -> MM
-						+ m_fwd[j].dg_prev * q.tr[i - 1][D2D]                    // DG -> DG
+				m_curr[j].dg = scale[i] * (m_prev[j].mm * q.tr[i - 1][M2D]  // DG -> MM
+						+ m_prev[j].dg * q.tr[i - 1][D2D]                    // DG -> DG
 				);
-				m_fwd[j].mi_curr = scale[i]
-						* (m_fwd[j].mm_prev * q.tr[i - 1][M2M] * t.tr[j][M2I]   // MI -> MM
-						+ m_fwd[j].mi_prev * q.tr[i - 1][M2M] * t.tr[j][I2I]     // MI -> MI
+				m_curr[j].mi = scale[i]
+						* (m_prev[j].mm * q.tr[i - 1][M2M] * t.tr[j][M2I]   // MI -> MM
+						+ m_prev[j].mi * q.tr[i - 1][M2M] * t.tr[j][I2I]     // MI -> MI
 				);
 
-				Pmax_i = fmax(Pmax_i, m_fwd[j].mm_curr);
+				Pmax_i = fmax(Pmax_i, m_curr[j].mm);
 				//printf("%f %f %f %f %f\n",F_MM_prev[j], F_GD_prev[j], m_im_prev[j], m_dg_prev[j], m_mi_prev[j]);
 				//printf("%f %f %f %f %f\n",m_mm_curr[j], m_gd_curr[j], m_im_curr[j], m_dg_curr[j], m_mi_curr[j]);
 				//printf("%f %f %f %f %f\n",q.tr[i - 1][M2M],  q.tr[i - 1][I2M], q.tr[i - 1][D2M], t.tr[j - 1][M2M], t.tr[j - 1][D2M]);
@@ -135,14 +135,9 @@ void PosteriorDecoder::forwardAlgorithm(HMM & q, HMM & t, Hit & hit,
 		} //end for j
 		for (int jj = 0; jj <= t.L; jj++) {
 			// Fill posterior probability matrix with forward score
-			p_mm.setPosteriorValue(i, jj, m_fwd[jj].mm_curr);
-			m_fwd[jj].mm_prev = m_fwd[jj].mm_curr;
-			m_fwd[jj].mi_prev = m_fwd[jj].mi_curr;
-			m_fwd[jj].im_prev = m_fwd[jj].im_curr;
-			m_fwd[jj].dg_prev = m_fwd[jj].dg_curr;
-			m_fwd[jj].gd_prev = m_fwd[jj].gd_curr;
-
+			p_mm.setPosteriorValue(i, jj, m_curr[jj].mm);
 		}
+		std::swap(m_prev, m_curr);
 		/* F_MM_prev = m_mm_curr */
 
 

@@ -48,9 +48,8 @@ PosteriorDecoder::PosteriorDecoder(int maxres, bool local, int q_length) :
 	m_q_length(q_length) {
 
 	m_jmin = 1;
-	m_fwd = (ForwardPosteriorMatrix*) malloc_simd_float((m_max_res + 2 ) * sizeof(ForwardPosteriorMatrix));
-	m_bwd = (BackwardPosteriorMatrix*) malloc_simd_float((m_max_res + 2 ) * sizeof(BackwardPosteriorMatrix));
-
+	m_curr = (PosteriorMatrixCol *) malloc_simd_float((m_max_res + 2 ) * sizeof(PosteriorMatrixCol));
+	m_prev = (PosteriorMatrixCol *) malloc_simd_float((m_max_res + 2 ) * sizeof(PosteriorMatrixCol));
 
 	m_s_curr = (double*) malloc_simd_float((m_max_res + 2 ) * sizeof(double));
 	m_s_prev = (double*) malloc_simd_float((m_max_res + 2 ) * sizeof(double));
@@ -69,8 +68,8 @@ PosteriorDecoder::PosteriorDecoder(int maxres, bool local, int q_length) :
 }
 
 PosteriorDecoder::~PosteriorDecoder() {
-	free(m_fwd);
-	free(m_bwd);
+	free(m_curr);
+	free(m_prev);
 	free(m_s_curr);
 	free(m_s_prev);
 	free(p_last_col);
