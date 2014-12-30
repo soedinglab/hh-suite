@@ -39,12 +39,14 @@ void ViterbiMatrix::AllocateBacktraceMatrix(int Nq, int Nt)
     else {
         return;
     }
+
+    max_query_length = ICEIL(Nq+2,VECSIZE_FLOAT);
+    max_template_length = ICEIL(((Nt+2) *VEC_SIZE),VECSIZE_FLOAT);
     // Allocate posterior prob matrix (matrix rows are padded to make them aligned to multiples of ALIGN_FLOAT)
-    bCO_MI_DG_IM_GD_MM_vec = malloc_matrix<unsigned char>(Nq+2, VEC_SIZE * (Nt+2));
+    bCO_MI_DG_IM_GD_MM_vec = malloc_matrix<unsigned char>(max_query_length, max_template_length);
     if (!bCO_MI_DG_IM_GD_MM_vec)
         MemoryError("m_probabilities", "hhviterbimatrix.cpp", 55, "ViterbiMatrix::allocateMatrix");
-    max_query_length = Nq;
-    max_template_length = Nt;
+
 }
 
 

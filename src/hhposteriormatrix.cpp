@@ -36,7 +36,7 @@ void PosteriorMatrix::allocateMatrix(int q_length_max, int t_length_max) {
     m_q_max_length = ICEIL(q_length_max,VECSIZE_FLOAT);
     m_t_max_length = ICEIL(t_length_max,VECSIZE_FLOAT);
 
-    // Allocate posterior prob matrix (matrix rows are padded to make them aligned to multiples of ALIGN_FLOAT)
+    // Allocate posterior prob matrix (matrix rows are padded to make them aligned to multiliples of ALIGN_FLOAT)
     m_probabilities = malloc_matrix<float>(m_q_max_length+2, m_t_max_length+2);
     if (!m_probabilities)
         MemoryError("m_probabilities", "hhposteriormatrix.cpp", 55, "PosteriorMatrix::allocateMatrix");

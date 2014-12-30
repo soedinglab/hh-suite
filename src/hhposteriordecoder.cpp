@@ -61,9 +61,9 @@ PosteriorDecoder::PosteriorDecoder(int maxres, bool local, int q_length) :
 
 	m_p_forward = malloc_simd_float( sizeof(float));
 
-	m_backward_profile = (double*) malloc_simd_float((q_length + 1) * sizeof(double));
-	m_forward_profile =  (double*) malloc_simd_float((q_length + 1) * sizeof(double));
-	scale = new double[m_max_res + 2];
+	m_backward_profile = (double*) malloc_simd_float((q_length + 2) * sizeof(double));
+	m_forward_profile =  (double*) malloc_simd_float((q_length + 2) * sizeof(double));
+	scale = new double[q_length + 2];
 	m_temp_hit = new Hit;
 }
 
