@@ -111,11 +111,12 @@ void PosteriorDecoder::realign(HMM &q, HMM &t, Hit &hit,
 	HMM & curr_t_hmm = t;
 	memorizeHitValues(hit);
 	initializeForAlignment(curr_q_hmm, curr_t_hmm, hit, viterbi_matrix, 0, t.L, par_min_overlap);
-	
-	forwardAlgorithm(curr_q_hmm, curr_t_hmm, hit, p_mm, viterbi_matrix, shift, 0);
+    PrecomputeColScores(curr_q_hmm, curr_t_hmm, hit, p_mm, viterbi_matrix, shift);
+    
+	forwardAlgorithm(curr_q_hmm, curr_t_hmm, hit, p_mm, viterbi_matrix, 0);
 	//std::cout << hit->score << hit[elem]->Pforward << std::endl;
 
-	backwardAlgorithm(curr_q_hmm, curr_t_hmm, hit, p_mm, viterbi_matrix, shift, 0);
+	backwardAlgorithm(curr_q_hmm, curr_t_hmm, hit, p_mm, viterbi_matrix, 0);
 	macAlgorithm(curr_q_hmm, curr_t_hmm, hit, p_mm, viterbi_matrix, mact, 0);
 	backtraceMAC(curr_q_hmm, curr_t_hmm, p_mm, viterbi_matrix, 0, hit, corr);
 	restoreHitValues(hit);
@@ -231,6 +232,32 @@ void PosteriorDecoder::excludeMACAlignment(const int q_length, const int t_lengt
 		}
 	}
 }
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// Precompute lin column scores
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void PosteriorDecoder::PrecomputeColScores(HMM &q, HMM &t, Hit &hit, PosteriorMatrix &p_mm, ViterbiMatrix &celloff_matrix, float shift) const {
+    double Cshift = pow(2.0, shift); // score offset transformed into factor in lin-space
+    int jmin;
+
+    for (int i = 1; i <= q.L; ++i) {
+        if (hit.self)
+            jmin = imin(i + SELFEXCL + 1, t.L);
+        else
+            jmin = 1;
+            
+        for (int j = jmin; j <= t.L; ++j) {
+            if (! celloff_matrix.getCellOff(i, j, 0) ) {
+                p_mm.setColScoreValue(i, j, ProbFwd(q.p[i], t.p[j]) * Cshift);
+            }
+        }
+    }
+}
+
+
+
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Memorize values that are going to be restored after computation

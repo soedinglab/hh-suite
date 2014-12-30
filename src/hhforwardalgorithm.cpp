@@ -8,11 +8,9 @@
 #include "hhposteriordecoder.h"
 
 void PosteriorDecoder::forwardAlgorithm(HMM & q, HMM & t, Hit & hit,
-		PosteriorMatrix & p_mm, ViterbiMatrix & celloff_matrix,
-		float shift, const int elem) {
+		PosteriorMatrix & p_mm, ViterbiMatrix & celloff_matrix, const int elem) {
 	int i, j;      // query and template match state indices
 	double pmin = (m_local ? 1.0 : 0.0); // used to distinguish between SW and NW algorithms in maximization
-	double Cshift = pow(2.0, shift); // score offset transformed into factor in lin-space
 	double Pmax_i;                        // maximum of F_MM in row i
 	double scale_prod = 1.0;                // Prod_i=1^i (scale[i])
 	int jmin;
@@ -43,8 +41,8 @@ void PosteriorDecoder::forwardAlgorithm(HMM & q, HMM & t, Hit & hit,
 
 	for (int j = 0; j <= t.L; j++)
 	{
-		p_mm.setSingleValue(0,j, m_mm_prev[j]);
-		p_mm.setSingleValue(1,j, m_mm_curr[j]);
+		p_mm.setPosteriorValue(0,j, m_mm_prev[j]);
+		p_mm.setPosteriorValue(1,j, m_mm_curr[j]);
 		m_mm_prev[j] = m_mm_curr[j];
 		m_mi_prev[j] = m_mi_curr[j];
 		m_im_prev[j] = m_im_curr[j];
@@ -55,24 +53,7 @@ void PosteriorDecoder::forwardAlgorithm(HMM & q, HMM & t, Hit & hit,
 
 
 	scale[0] = scale[1] = scale[2] = 1.0;
-    
-    //////////////////////////
-    // Precompute the column scores
-    for (i = 1; i <= q.L; ++i) {
-        if (hit.self)
-            jmin = imin(i + SELFEXCL + 1, t.L);
-        else
-            jmin = 1;
-
-        for (j = jmin; j <= t.L; ++j) {
-            if (! celloff_matrix.getCellOff(i, j, elem) ) {
-                p_mm.setColScoreValue(i, j, ProbFwd(q.p[i], t.p[j]) * Cshift);
-            }
-            
-        }
         
-    }
-    
     //////////////////////////
     // Forward algorithm
 
@@ -104,7 +85,7 @@ void PosteriorDecoder::forwardAlgorithm(HMM & q, HMM & t, Hit & hit,
 		}
 
 		/* copy back */
-		p_mm.setSingleValue(i, jmin, m_mm_curr[jmin]);
+		p_mm.setPosteriorValue(i, jmin, m_mm_curr[jmin]);
 
 		Pmax_i = 0;
 
@@ -127,18 +108,18 @@ void PosteriorDecoder::forwardAlgorithm(HMM & q, HMM & t, Hit & hit,
 						+ m_mi_prev[j - 1] * q.tr[i - 1][M2M] * t.tr[j - 1][I2M] // MI -> MM
 				);
 				m_gd_curr[j] = (
-						m_mm_curr[j - 1] * t.tr[j - 1][M2D]         // GD -> MM
+						m_mm_curr[j - 1] * t.tr[j - 1][M2D]                      // GD -> MM
 						+ m_gd_curr[j - 1] * t.tr[j - 1][D2D]                    // GD -> GD
 				);
 				m_im_curr[j] = (m_mm_curr[j - 1] * q.tr[i][M2I] * t.tr[j - 1][M2M] // MM -> IM
 						+ m_im_curr[j - 1] * q.tr[i][I2I] * t.tr[j - 1][M2M]     // IM -> IM
 				);
-				m_dg_curr[j] = scale[i] * (m_mm_prev[j] * q.tr[i - 1][M2D]  // DG -> MM
-						+ m_dg_prev[j] * q.tr[i - 1][D2D]                    // DG -> DG
+				m_dg_curr[j] = scale[i] * (m_mm_prev[j] * q.tr[i - 1][M2D]       // DG -> MM
+						+ m_dg_prev[j] * q.tr[i - 1][D2D]                        // DG -> DG
 				);
 				m_mi_curr[j] = scale[i]
-						* (m_mm_prev[j] * q.tr[i - 1][M2M] * t.tr[j][M2I]     // MI -> MM
-						+ m_mi_prev[j] * q.tr[i - 1][M2M] * t.tr[j][I2I]     // MI -> MI
+						* (m_mm_prev[j] * q.tr[i - 1][M2M] * t.tr[j][M2I]        // MI -> MM
+						+ m_mi_prev[j] * q.tr[i - 1][M2M] * t.tr[j][I2I]         // MI -> MI
 				);
 
 				Pmax_i = fmax(Pmax_i, m_mm_curr[j]);
@@ -159,7 +140,7 @@ void PosteriorDecoder::forwardAlgorithm(HMM & q, HMM & t, Hit & hit,
 			m_gd_prev[jj] = m_gd_curr[jj];
 
 			// Fill posterior probability matrix with forward score
-			p_mm.setSingleValue(i, jj, m_mm_curr[jj]);
+			p_mm.setPosteriorValue(i, jj, m_mm_curr[jj]);
 		}
 		pmin *= scale[i];
 		if (pmin < DBL_MIN * 100)
@@ -181,16 +162,16 @@ void PosteriorDecoder::forwardAlgorithm(HMM & q, HMM & t, Hit & hit,
 				jmin = 1;
 
 			for (j = jmin; j <= t.L; ++j) // Loop through template positions j
-				hit.Pforward  += p_mm.getSingleValue(i, j);
+				hit.Pforward  += p_mm.getPosteriorValue(i, j);
 
 			hit.Pforward *= scale[i + 1];
 		}
 	} else { // global alignment
 		hit.Pforward  = 0.0;
 		for (i = 1; i < q.L; ++i)
-			hit.Pforward  = (hit.Pforward  + p_mm.getSingleValue(i, t.L) * scale[i + 1]);
+			hit.Pforward  = (hit.Pforward  + p_mm.getPosteriorValue(i, t.L) * scale[i + 1]);
 		for (j = 1; j <= t.L; ++j)
-			hit.Pforward  += p_mm.getSingleValue(q.L, j);
+			hit.Pforward  += p_mm.getPosteriorValue(q.L, j);
 		hit.Pforward  *= scale[q.L + 1];
 	}
 

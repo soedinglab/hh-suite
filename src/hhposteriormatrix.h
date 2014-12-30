@@ -24,8 +24,9 @@ public:
 	float * getRow(const int row) const;
     float * getColScoreRow(const int row) const;
 
-	void setSingleValue(const int row, const int col, const float value);
-	float getSingleValue(const int row, const int col) const;
+	void setPosteriorValue(const int row, const int col, const float value);
+	float getPosteriorValue(const int row, const int col) const;
+    void multiplyPosteriorValue(const int row, const int col, const float value);
     void setColScoreValue(const int row, const int col, const float value);
 	float getColScoreValue(const int row, const int col) const;
     

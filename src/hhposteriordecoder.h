@@ -102,9 +102,9 @@ private:
 	Hit * m_temp_hit;
 
 	void forwardAlgorithm(HMM & q_hmm, HMM & t_hmm, Hit & hit_vec, PosteriorMatrix & p_mm,
-			ViterbiMatrix & viterbi_matrix, float shift, const int elem);
+			ViterbiMatrix & viterbi_matrix, const int elem);
 	void backwardAlgorithm(HMM & q_hmm,HMM & t_hmm, Hit & hit_vec, PosteriorMatrix & p_mm,
-			ViterbiMatrix & viterbi_matrix, float shift, const int elem);
+			ViterbiMatrix & viterbi_matrix, const int elem);
 	void macAlgorithm(HMM & q_hmm, HMM & t_hmm, Hit & hit_vec, PosteriorMatrix & p_mm,
 			ViterbiMatrix & viterbi_matrix, float par_mact, const int elem);
 	void backtraceMAC(HMM & q, HMM & t, PosteriorMatrix & p_mm, ViterbiMatrix & backtrace_matrix, const int elem, Hit & hit, float corr);
@@ -112,7 +112,8 @@ private:
 	void initializeBacktrace(HMM & t, Hit & hit);
 
 	void initializeForAlignment(HMM &q, HMM &t, Hit &hit, ViterbiMatrix &viterbi_matrix, const int elem, const int t_max_L, int par_min_overlap);
-	void maskViterbiAlignment(const int q_length, const int t_length, ViterbiMatrix &celloff_matrix,
+    void PrecomputeColScores(HMM &q, HMM &t, Hit &hit, PosteriorMatrix &p_mm, ViterbiMatrix &celloff_matrix, float shift) const;
+    void maskViterbiAlignment(const int q_length, const int t_length, ViterbiMatrix &celloff_matrix,
 			const int elem, Hit const &hit) const;
 	void memorizeHitValues(Hit & curr_hit);
 	void restoreHitValues(Hit &curr_hit);

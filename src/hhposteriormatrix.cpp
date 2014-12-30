@@ -88,25 +88,29 @@ float * PosteriorMatrix::getRow(const int row) const {
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
-// Return a float value of a selected element of a vector
+// Return a float value of a selected element of matrix
 ///////////////////////////////////////////////////////////////////////////////////////////////
-float PosteriorMatrix::getSingleValue(const int row, const int col) const {
+float PosteriorMatrix::getPosteriorValue(const int row, const int col) const {
     return m_probabilities[row][col];
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
-// Set a single float value to an element of a vector
+// Set a single float value to an element of matrix
 ///////////////////////////////////////////////////////////////////////////////////////////////
-void PosteriorMatrix::setSingleValue(const int row, const int col, const float value) {
+void PosteriorMatrix::setPosteriorValue(const int row, const int col, const float value) {
     m_probabilities[row][col] = value;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
-// Return a simd_float pointer to a single row
+// Multiply a single float value to an element of matrix
 ///////////////////////////////////////////////////////////////////////////////////////////////
-float * PosteriorMatrix::getColScoreRow(const int row) const {
-    return m_column_scores[row];
+void PosteriorMatrix::multiplyPosteriorValue(const int row, const int col, const float value) {
+    m_probabilities[row][col] *= value;
 }
+
+
+
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // Return a float value of a selected element of a vector

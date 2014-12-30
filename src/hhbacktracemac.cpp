@@ -33,7 +33,7 @@ void PosteriorDecoder::writeProfilesToHits(HMM &q, HMM &t, PosteriorMatrix &p_mm
 
 	for(int i = 1; i <= q.L; i++) {
 		for(int j = 1; j <= t.L; j++) {
-			float posterior = p_mm.getSingleValue(i, j);
+			float posterior = p_mm.getPosteriorValue(i, j);
 			if(posterior >= POSTERIOR_PROBABILITY_THRESHOLD) {
 				Posterior_Triple* triple = new Posterior_Triple(i, j, posterior);
 				hit.posterior_probabilities.push_back(triple);
@@ -132,8 +132,8 @@ void PosteriorDecoder::backtraceMAC(HMM & q, HMM & t, PosteriorMatrix & p_mm, Vi
 			hit.S[step] = Score(q.p[i], t.p[j]);
 			hit.S_ss[step] = ScoreSS(&q, &t, i, j, ssm);
 			hit.score_ss += hit.S_ss[step];
-//			hit.P_posterior[step] = powf(2, p_mm.getSingleValue(hit.i[step], hit.j[step], elem));
-			hit.P_posterior[step] = p_mm.getSingleValue(hit.i[step], hit.j[step]);
+//			hit.P_posterior[step] = powf(2, p_mm.getPosteriorValue(hit.i[step], hit.j[step], elem));
+			hit.P_posterior[step] = p_mm.getPosteriorValue(hit.i[step], hit.j[step]);
 
 			// Add probability to sum of probs if no dssp states given or dssp states exist and state is resolved in 3D structure
 			if (t.nss_dssp<0 || t.ss_dssp[j]>0)

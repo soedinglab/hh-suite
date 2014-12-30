@@ -76,16 +76,16 @@ void PosteriorDecoder::macAlgorithm(HMM & q, HMM & t, Hit & hit,
                 // Recursion
                 //				unsigned char c = viterbi_matrix.getMatMat(i, j, elem);
                 // NOT the state before the first MM state)
-                //				term1 = fpow2(p_mm.getSingleValue(i, j, elem)) - par.mact;
-                term1 = p_mm.getSingleValue(i, j) - par_mact;
-                //				term2 = S_prev[j-1] + fpow2(p_mm.getSingleValue(i, j, elem)) - par.mact;
-                term2 = S_prev[j-1] + p_mm.getSingleValue(i, j) - par_mact;
+                //				term1 = fpow2(p_mm.getPosteriorValue(i, j, elem)) - par.mact;
+                term1 = p_mm.getPosteriorValue(i, j) - par_mact;
+                //				term2 = S_prev[j-1] + fpow2(p_mm.getPosteriorValue(i, j, elem)) - par.mact;
+                term2 = S_prev[j-1] + p_mm.getPosteriorValue(i, j) - par_mact;
                 term3 = S_prev[j] - 0.5 * par_mact;
                 term4 = S_curr[j-1] - 0.5 * par_mact;
 
                 // check p_mm values -> OK
                 //				if (eq) {
-                //					fprintf(stdout, "co: %i,%2.20f\n", viterbi_matrix.getCellOff(i, j, elem), p_mm.getSingleValue(i, j, elem));
+                //					fprintf(stdout, "co: %i,%2.20f\n", viterbi_matrix.getCellOff(i, j, elem), p_mm.getPosteriorValue(i, j, elem));
                 //				}
 
                 CALCULATE_MAX4(
@@ -99,11 +99,11 @@ void PosteriorDecoder::macAlgorithm(HMM & q, HMM & t, Hit & hit,
                 //				CALCULATE_MAX4(
                 //								S_curr[j],
                 ////											fpow2(hit.P_MM[i][j]) - par.mact,  // STOP signifies the first MM state, NOT the state before the first MM state (as in Viterbi)
-                ////								powf(2, p_mm.getSingleValue(i, j, elem)) - par.mact,  // STOP signifies the first MM state, NOT the state before the first MM state (as in Viterbi)
-                //								fpow2(p_mm.getSingleValue(i, j, elem)) - par.mact,  // STOP signifies the first MM state, NOT the state before the first MM state (as in Viterbi)
+                ////								powf(2, p_mm.getPosteriorValue(i, j, elem)) - par.mact,  // STOP signifies the first MM state, NOT the state before the first MM state (as in Viterbi)
+                //								fpow2(p_mm.getPosteriorValue(i, j, elem)) - par.mact,  // STOP signifies the first MM state, NOT the state before the first MM state (as in Viterbi)
                 ////											S_prev[j-1] + fpow2(hit.P_MM[i][j]) - par.mact, // hit.P_MM[i][j] contains log2-posterior probability
-                ////								S_prev[j-1] + powf(2, p_mm.getSingleValue(i, j, elem)) - par.mact, // hit.P_MM[i][j] contains log2-posterior probability
-                //								S_prev[j-1] + fpow2(p_mm.getSingleValue(i, j, elem)) - par.mact, // hit.P_MM[i][j] contains log2-posterior probability
+                ////								S_prev[j-1] + powf(2, p_mm.getPosteriorValue(i, j, elem)) - par.mact, // hit.P_MM[i][j] contains log2-posterior probability
+                //								S_prev[j-1] + fpow2(p_mm.getPosteriorValue(i, j, elem)) - par.mact, // hit.P_MM[i][j] contains log2-posterior probability
                 //								S_prev[j] - 0.5 * par.mact,  // gap penalty prevents alignments such as this: XX--xxXX
                 //								S_curr[j-1] - 0.5 * par.mact,  //                                               YYyy--YY
                 //								val	//  hit.bMM[i][j]   backtracing matrix
