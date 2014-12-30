@@ -21,7 +21,7 @@ ViterbiMatrix::ViterbiMatrix(){
 
 
 ViterbiMatrix::~ViterbiMatrix(){
-  DeleteBacktraceMatrix();
+    DeleteBacktraceMatrix();
 }
 
 
@@ -31,29 +31,18 @@ ViterbiMatrix::~ViterbiMatrix(){
 /////////////////////////////////////////////////////////////////////////////////////
 void ViterbiMatrix::AllocateBacktraceMatrix(int Nq, int Nt)
 {
-  Nq += 1;
-  Nt += 1;
-
+    Nq += 1;
+    Nt += 1;
     if(Nq > max_query_length || Nt > max_template_length) {
-      DeleteBacktraceMatrix();
+        DeleteBacktraceMatrix();
     }
     else {
-      return;
+        return;
     }
-
-    this->bCO_MI_DG_IM_GD_MM_vec = new unsigned char*[Nq];
-    
-    for (int i=0; i<Nq; ++i) {
-        this->bCO_MI_DG_IM_GD_MM_vec[i]=(unsigned char *)malloc_simd_float(VEC_SIZE*Nt*sizeof(unsigned char));
-        memset(this->bCO_MI_DG_IM_GD_MM_vec[i], 0, VEC_SIZE*Nt*sizeof(unsigned char));
-        if (!this->bCO_MI_DG_IM_GD_MM_vec[i]) {
-            fprintf(stderr,"Error: out of memory while allocating row %i (out of %i) for dynamic programming matrices \n",i+1,Nq);
-            fprintf(stderr,"Please decrease your memory requirements to the available memory using option -maxmem <GBs>\n");
-            fprintf(stderr,"You may want to check and increase your stack size limit (Linux: ulimit -a)\n");
-            exit(3);
-        }
-    }
-
+    // Allocate posterior prob matrix (matrix rows are padded to make them aligned to multiples of ALIGN_FLOAT)
+    bCO_MI_DG_IM_GD_MM_vec = malloc_matrix<unsigned char>(Nq, VEC_SIZE * (Nt+2));
+    if (!bCO_MI_DG_IM_GD_MM_vec)
+        MemoryError("m_probabilities", "hhviterbimatrix.cpp", 55, "ViterbiMatrix::allocateMatrix");
     max_query_length = Nq;
     max_template_length = Nt;
 }
@@ -64,18 +53,15 @@ void ViterbiMatrix::AllocateBacktraceMatrix(int Nq, int Nt)
 //// Delete memory for dynamic programming matrix
 /////////////////////////////////////////////////////////////////////////////////////
 void ViterbiMatrix::DeleteBacktraceMatrix() {
-  if(max_query_length == 0) {
-    return;
-  }
+    if(max_query_length == 0) {
+        return;
+    }
 
-  for (int i=0; i < max_query_length; ++i) {
-      free(this->bCO_MI_DG_IM_GD_MM_vec[i]);
-  }
-  delete[] this->bCO_MI_DG_IM_GD_MM_vec;
-  this->bCO_MI_DG_IM_GD_MM_vec = NULL;
+    free(this->bCO_MI_DG_IM_GD_MM_vec);
+    this->bCO_MI_DG_IM_GD_MM_vec = NULL;
 
-  max_query_length = 0;
-  max_template_length = 0;
+    max_query_length = 0;
+    max_template_length = 0;
 }
 
 #endif
