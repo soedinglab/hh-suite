@@ -671,37 +671,37 @@ inline float flog2_sum_fpow2(float x1, float x2, float x3, float x4, float x5, f
     
 }
 
-
-inline float fast_flog2_sum_fpow2(float x1, float x2, float x3, float x4, float x5, float x6) {
-
-    simd_float X = _mm256_set_ps(x1,x2,x3,x4,x5,x6,-FLT_MAX_EXP,-FLT_MAX_EXP);
-
-    // Compute the maximum of the eight floats in X
-    // xmax = fmax( fmax( fmax(x1,x2), fmax(x3, x4) ) , fmax(x5, x6) );
-    simd_float Xshuf = _mm256_permute_ps(X,0xB1); // permute mask of 2bits: (2,3,0,1) = (10,11,00,01) = 0xB1
-    simd_float Xmax  = simdf32_max(X,Xshuf);
-    Xshuf = _mm256_permute_ps(Xmax,0x8E); // permute mask of 2bits: (1,0,3,2) = (01,00,11,10) = 0x8E
-    Xmax  = simdf32_max(Xmax,Xshuf);
-    Xshuf = _mm256_permute2f128_ps(Xmax,Xmax,0x08); // permute mask of 2bits: (0,0,1,0) = (00,00,01,00) = 0x08
-    Xmax  = simdf32_max(Xmax,Xshuf);
-    
-    // Compute pow2(X-Xmax) for all f32 floats
-    X = simdf32_sub(X,Xmax);
-    X = simdf32_fpow2(X);
-
-    // Horizontally add f32 floats
-    Xshuf = _mm256_permute_ps(X,0xB1); // permute mask of 2bits: (2,3,0,1) = (10,11,00,01) = 0xB1
-    X = simdf32_add(X,Xshuf);
-    Xshuf = _mm256_permute_ps(X,0x8E); // permute mask of 2bits: (2,3,0,1) = (10,11,00,01) = 0xB1
-    X = simdf32_add(X,Xshuf);
-    Xshuf = _mm256_permute2f128_ps(X,X,0x08); // permute mask of 2bits: (0,0,1,0) = (00,00,01,00) = 0x08
-    X  = simdf32_add(X,Xshuf);
-
-    float xmax = simdf32_extract(Xmax,0x00);
-    float x    = simdf32_extract(X, 0x00);
-    return fmax(-FLT_MAX, xmax + flog2(x) );
-}
-
+//
+//inline float fast_flog2_sum_fpow2(float x1, float x2, float x3, float x4, float x5, float x6) {
+//
+//    simd_float X = _mm256_set_ps(x1,x2,x3,x4,x5,x6,-FLT_MAX_EXP,-FLT_MAX_EXP);
+//
+//    // Compute the maximum of the eight floats in X
+//    // xmax = fmax( fmax( fmax(x1,x2), fmax(x3, x4) ) , fmax(x5, x6) );
+//    simd_float Xshuf = _mm256_permute_ps(X,0xB1); // permute mask of 2bits: (2,3,0,1) = (10,11,00,01) = 0xB1
+//    simd_float Xmax  = simdf32_max(X,Xshuf);
+//    Xshuf = _mm256_permute_ps(Xmax,0x8E); // permute mask of 2bits: (1,0,3,2) = (01,00,11,10) = 0x8E
+//    Xmax  = simdf32_max(Xmax,Xshuf);
+//    Xshuf = _mm256_permute2f128_ps(Xmax,Xmax,0x08); // permute mask of 2bits: (0,0,1,0) = (00,00,01,00) = 0x08
+//    Xmax  = simdf32_max(Xmax,Xshuf);
+//
+//    // Compute pow2(X-Xmax) for all f32 floats
+//    X = simdf32_sub(X,Xmax);
+//    X = simdf32_fpow2(X);
+//
+//    // Horizontally add f32 floats
+//    Xshuf = _mm256_permute_ps(X,0xB1); // permute mask of 2bits: (2,3,0,1) = (10,11,00,01) = 0xB1
+//    X = simdf32_add(X,Xshuf);
+//    Xshuf = _mm256_permute_ps(X,0x8E); // permute mask of 2bits: (2,3,0,1) = (10,11,00,01) = 0xB1
+//    X = simdf32_add(X,Xshuf);
+//    Xshuf = _mm256_permute2f128_ps(X,X,0x08); // permute mask of 2bits: (0,0,1,0) = (00,00,01,00) = 0x08
+//    X  = simdf32_add(X,Xshuf);
+//
+//    float xmax = simdf32_extract(Xmax,0x00);
+//    float x    = simdf32_extract(X, 0x00);
+//    return fmax(-FLT_MAX, xmax + flog2(x) );
+//}
+//
 
 
 
