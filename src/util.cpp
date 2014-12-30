@@ -2,8 +2,11 @@
 
 #include "util.h"
 
+
+
+
 /////////////////////////////////////////////////////////////////////////////////////
-// Arithmetics
+// String functions
 /////////////////////////////////////////////////////////////////////////////////////
 
 void split(const std::string& s, char c, std::vector<std::string>& v) {
@@ -21,7 +24,7 @@ void split(const std::string& s, char c, std::vector<std::string>& v) {
   }
 }
 
-// copies substring str[a,b] into substr and returns substr
+// Copy substring str[a,b] into substr and returns substr
 char *substr(char* substr, char* str, int a, int b) {
   if (b < a) {
     int i = b;

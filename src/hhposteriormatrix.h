@@ -22,11 +22,13 @@ public:
 	void allocateMatrix(const int q_length_max, const int t_length_max);
 
 	float * getRow(const int row) const;
+    float * getColScoreRow(const int row) const;
 
 	void setSingleValue(const int row, const int col, const float value);
 	float getSingleValue(const int row, const int col) const;
-
-	float getValue(const int row, const int col) const;
+    void setColScoreValue(const int row, const int col, const float value);
+	float getColScoreValue(const int row, const int col) const;
+    
 
 	bool isAllocated() const;
 
@@ -36,9 +38,10 @@ public:
 private:
 	int m_q_max_length;
 	int m_t_max_length;
-
+    
 	float ** m_probabilities;
-	bool m_allocated;
+    float ** m_column_scores;
+//	bool m_allocated;
 //	float ** m_p_mm;
 
 };

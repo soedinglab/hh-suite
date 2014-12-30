@@ -8,8 +8,7 @@
 #include "hhposteriormatrix.h"
 
 PosteriorMatrix::PosteriorMatrix() {
-		m_allocated = false;
-		m_probabilities = NULL;
+		m_probabilities = m_column_scores = NULL;
 		m_q_max_length = 0;
 		m_t_max_length = 0;
 }
@@ -18,91 +17,108 @@ PosteriorMatrix::~PosteriorMatrix() {
   DeleteProbabilityMatrix();
 }
 
+
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // Allocate memory in 2nd dimension
 ///////////////////////////////////////////////////////////////////////////////////////////////
 void PosteriorMatrix::allocateMatrix(int q_length_max, int t_length_max) {
-  q_length_max += 1;
-  t_length_max += 1;
 
-  if(q_length_max > m_q_max_length || t_length_max > m_t_max_length) {
-    DeleteProbabilityMatrix();
-  }
-  else {
-    return;
-  }
-//TODO make just one allocation
-    m_probabilities = new float * [q_length_max];
-//	printf("p_mm: Allocate 2nd dimension of m_p_mm\n");
+    // Allocate posterior probability matrix
+    q_length_max += 1;
+    t_length_max += 1;
+    
+    // If the already allocated matrix is sufficiently large, we are done
+    if(q_length_max < m_q_max_length && t_length_max < m_t_max_length)
+        return;
+    if (m_q_max_length>0)
+        DeleteProbabilityMatrix();
 
-	for (int i = 0; i < q_length_max; i++) {
-		m_probabilities[i] = new float[t_length_max];
-		if (!m_probabilities[i]) {
-			fprintf(stderr,"Error: out of memory while allocating row %i (out of %i) for dynamic programming matrices \n", i+1, q_length_max);
-			fprintf(stderr,"Please decrease your memory requirements to the available memory using option -maxmem <GBs>\n");
-			fprintf(stderr,"You may want to check and increase your stack size limit (Linux: ulimit -a)\n");
-			exit(3);
-		}
-	}
-	m_allocated = true;
+    m_q_max_length = ICEIL(q_length_max,VECSIZE_FLOAT);
+    m_t_max_length = ICEIL(t_length_max,VECSIZE_FLOAT);
+   
+    
+////TODO make just one allocation
+//    m_probabilities = new float * [q_length_max];
+////	printf("p_mm: Allocate 2nd dimension of m_p_mm\n");
+//
+//	for (int i = 0; i < q_length_max; i++) {
+//		m_probabilities[i] = new float[t_length_max];
+//		if (!m_probabilities[i]) {
+//			fprintf(stderr,"Error: out of memory while allocating row %i (out of %i) for dynamic programming matrices \n", i+1, q_length_max);
+//			fprintf(stderr,"Please decrease your memory requirements to the available memory using option -maxmem <GBs>\n");
+//			fprintf(stderr,"You may want to check and increase your stack size limit (Linux: ulimit -a)\n");
+//			exit(3);
+//		}
+//	}
 
-	m_q_max_length = q_length_max;
-	m_t_max_length = t_length_max;
+    // Allocate posterior prob matrix (matrix rows are padded to make them aligned to multiples of ALIGN_FLOAT)
+    m_probabilities = malloc_matrix<float>(m_q_max_length, m_t_max_length);
+    if (!m_probabilities)
+        MemoryError("m_probabilities", "hhposteriormatrix.cpp", 55, "PosteriorMatrix::allocateMatrix");
+    
+    // Allocate colmun score matrix (matrix rows are padded to make them aligned to multiples of ALIGN_FLOAT)
+    m_column_scores = malloc_matrix<float>(m_q_max_length, m_t_max_length);
+    if (!m_column_scores)
+        MemoryError("m_column_scores", "hhposteriormatrix.cpp", 60, "PosteriorMatrix::allocateMatrix");
+
 };
 
+
 void PosteriorMatrix::DeleteProbabilityMatrix() {
-  if(m_q_max_length == 0) {
-    return;
-  }
+    if(m_q_max_length == 0)
+        return;
 
-  for (int i = 0; i < m_q_max_length; i++) {
-          delete [] m_probabilities[i];
-  }
-  delete[] m_probabilities;
-
-  m_probabilities = NULL;
-
-  m_q_max_length = 0;
-  m_t_max_length = 0;
+//  for (int i = 0; i < m_q_max_length; i++) {
+//          delete [] m_probabilities[i];
+//  }
+//  delete[] m_probabilities;
+ 
+    free(m_probabilities);
+    free(m_column_scores);
+    m_column_scores = m_probabilities = NULL;
+    m_q_max_length = 0;
+    m_t_max_length = 0;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // Return a simd_float pointer to a single row
 ///////////////////////////////////////////////////////////////////////////////////////////////
 float * PosteriorMatrix::getRow(const int row) const {
-	return m_probabilities[row];
+    return m_probabilities[row];
 }
+
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // Return a float value of a selected element of a vector
 ///////////////////////////////////////////////////////////////////////////////////////////////
 float PosteriorMatrix::getSingleValue(const int row, const int col) const {
-	return m_probabilities[row][col];
-//	return ptr[IDX_CORR - elem];
+    return m_probabilities[row][col];
 }
+
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // Set a single float value to an element of a vector
 ///////////////////////////////////////////////////////////////////////////////////////////////
 void PosteriorMatrix::setSingleValue(const int row, const int col, const float value) {
-	m_probabilities[row][col] = value;
+    m_probabilities[row][col] = value;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
-// Return a simd_float pointer to a vector
+// Return a simd_float pointer to a single row
 ///////////////////////////////////////////////////////////////////////////////////////////////
-float PosteriorMatrix::getValue(const int row, const int col) const {
-	return m_probabilities[row][col];
+float * PosteriorMatrix::getColScoreRow(const int row) const {
+    return m_column_scores[row];
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////
+// Return a float value of a selected element of a vector
+///////////////////////////////////////////////////////////////////////////////////////////////
+float PosteriorMatrix::getColScoreValue(const int row, const int col) const {
+    return m_column_scores[row][col];
+}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
-// Returns true when the posterior matrix has been allocated
+// Set a single float value to an element of a vector
 ///////////////////////////////////////////////////////////////////////////////////////////////
-bool PosteriorMatrix::isAllocated() const {
-	return m_allocated;
+void PosteriorMatrix::setColScoreValue(const int row, const int col, const float value) {
+    m_column_scores[row][col] = value;
 }
-///////////////////////////////////////////////////////////////////////////////////////////////
-// Set to true when the posterior matrix has been allocated
-///////////////////////////////////////////////////////////////////////////////////////////////
-void PosteriorMatrix::setAllocated(bool allocated) {
-	m_allocated = allocated;
-}
+

@@ -77,9 +77,9 @@ void PosteriorDecoder::backwardAlgorithm(HMM & q, HMM & t, Hit & hit,
 				m_mm_curr[j] = m_gd_curr[j] = m_im_curr[j] = m_dg_curr[j] =
 						m_mi_curr[j] = 0.0;
 			else {
-				double pmatch = m_mm_prev[j + 1] * ProbFwd(q.p[i + 1], t.p[j + 1])
-						        * Cshift * scale[i + 1];
+				double pmatch = m_mm_prev[j + 1] * p_mm.getColScoreValue(i+1, j+1) * scale[i + 1];
 				m_mm_curr[j] = (+pmin         // MM -> EE (End/End, for local alignment)
+
 						+ pmatch * q.tr[i][M2M] * t.tr[j][M2M]              // MM -> MM
 						+ m_gd_curr[j + 1] * t.tr[j][M2D] // MM -> GD (q.tr[i][M2M] is already contained in GD->MM)
 						+ m_im_curr[j + 1] * q.tr[i][M2I] * t.tr[j][M2M]           // MM -> IM
@@ -109,14 +109,16 @@ void PosteriorDecoder::backwardAlgorithm(HMM & q, HMM & t, Hit & hit,
 			// Calculate posterior probability from Forward and Backward matrix elements
 			p_mm.setSingleValue(i, j, p_mm.getSingleValue(i, j) * m_mm_curr[j] / hit.Pforward);
 
-			//save backward profile
-			//TODO we should check if we need to compute ProbFwd again
-			actual_backward += ProbFwd(q.p[i], t.p[j]) * Cshift
-					           * m_mm_curr[j] / hit.Pforward;
-		} //end for j
 
-		actual_backward *= final_scale_prod / scale_prod;
+//			//save backward profile
+            actual_backward = p_mm.getColScoreValue(i, j) * m_mm_curr[j] / hit.Pforward;
+            m_backward_profile[i] += actual_backward;
+        } //end for j
 
+//        // JS: TODO!!! Markus, what does this line do? The variable does not seem to be used
+//        actual_backward *= final_scale_prod / scale_prod;
+        
+        
 		for(int jj = 0; jj <= t.L; jj++) {
 			m_mm_prev[jj] = m_mm_curr[jj];
 			m_gd_prev[jj] = m_dg_curr[jj];
@@ -141,12 +143,12 @@ void PosteriorDecoder::backwardAlgorithm(HMM & q, HMM & t, Hit & hit,
        {
        printf("%3i: %9.3G ",i,1/scale_prod[i]);
        for (j=j0; j<=j1; ++j)
-       printf("%7.4f ",(B_MM[i][j]+B_MI[i][j]+B_IM[i][j]+B_DG[i][j]+B_GD[i][j]) * (ProbFwd(q->p[i],t->p[j])*fpow2(ScoreSS(q,t,i,j)) * Cshift));
+       printf("%7.4f ",(B_MM[i][j]+B_MI[i][j]+B_IM[i][j]+B_DG[i][j]+B_GD[i][j]) * p_mm.getColScoreValue(i, j) * fpow2(ScoreSS(q,t,i,j)) ));
        printf("\n");
 
        //      printf("MM   %9.5f ",1/scale[i]);
        //      for (j=j0; j<=j1; ++j)
-       //        printf("%7.4f ",B_MM[i][j] * (ProbFwd(q->p[i],t->p[j])*fpow2(ScoreSS(q,t,i,j)) * Cshift));
+       //        printf("%7.4f ",B_MM[i][j] * p_mm.getColScoreValue(i, j) *fpow2(ScoreSS(q,t,i,j)) ));
        //      printf("\n");
        }
        printf("\nPost     scale     ");

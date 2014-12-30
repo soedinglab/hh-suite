@@ -14,8 +14,9 @@ int main(int argc, char **argv) {
 
   //is empty and will stay empty in this application
   std::vector<HHblitsDatabase*> databases;
-
+#ifdef OPENMP
   omp_set_num_threads(par.threads);
+#endif
   HHalign hhalign(par, databases);
 
   FILE* inf;

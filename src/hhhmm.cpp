@@ -31,9 +31,9 @@ HMM::HMM(int par_maxseqdis, int par_maxres) {
 	for (int i = 0; i < maxres; i++)
 		g[i] = new float[NAA];
 	for (int i = 0; i < maxres; i++)
-		p[i] = (float*) mem_align(16, NAA * sizeof(float)); // align memory on 16b boundaries for SSE2
+		p[i] = (float*) mem_align(ALIGN_FLOAT, NAA * sizeof(float)); // align memory on 16B/32B boundaries for SSE2 / AVX
 	for (int i = 0; i < maxres; i++)
-		tr[i] = (float*) mem_align(16, NTRANS * sizeof(float));
+		tr[i] = (float*) mem_align(ALIGN_FLOAT, NTRANS * sizeof(float));
 
 	L = 0;
 	Neff_HMM = 0;
@@ -1812,7 +1812,13 @@ void HMM::AddTransitionPseudocounts(float gapd, float gape, float gapf,
 void HMM::PreparePseudocounts(const float R[20][20]) {
 	for (int i = 0; i <= L + 1; ++i)
 		for (int a = 0; a < 20; ++a)
-			g[i][a] = ScalarProd20(R[a], f[i]);
+            g[i][a] = R[a][0] * f[i][0] + R[a][1] * f[i][1] + R[a][2]  * f[i][2]  + R[a][3] * f[i][3]
+                    + R[a][4] * f[i][4] + R[a][5] * f[i][5] + R[a][6]  * f[i][6]  + R[a][7] * f[i][7]
+                    + R[a][8] * f[i][8] + R[a][9] * f[i][9] + R[a][10] * f[i][10] + R[a][11] * f[i][11]
+                    + R[a][12] * f[i][12] + R[a][13] * f[i][13] + R[a][14] * f[i][14]
+                    + R[a][15] * f[i][15] + R[a][16] * f[i][16] + R[a][17] * f[i][17]
+                    + R[a][18] * f[i][18] + R[a][19] * f[i][19];
+
 }
 
 /////////////////////////////////////////////////////////////////////////////////////

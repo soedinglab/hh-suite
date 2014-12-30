@@ -540,41 +540,41 @@ inline simd_float log2f4(simd_float x)
     return simdf32_add(p, e);
 }
 
-// Perform log-sum-exp calculation with six SIMD variables
-//              result = x1 + x2 + x3 + x4 + x5 + x6
-//  -->     result = log2( 2^(x1) + 2^(x2) + 2^(x3) + 2^(x4) + 2^(x5) + 2^(x6))
-//      // to prevent overflows apply log sum of exp trick
-//      --> xMax = max(x1, x2, x3, x4, x5, x6)
-//  -->     result = log2(2^(xMax) * (2^(x1 - xMax) + 2^(x2 - xMax) + 2^(x3 - xMax) + 2^(x4 - xMax) + 2^(x5 - xMax) + 2^(x6 - xMax)))
-//  -->     result = log2(2^(xMax)) + log2(2^(x1 - xMax) + 2^(x2 - xMax) + 2^(x3 - xMax) + 2^(x4 - xMax) + 2^(x5 - xMax) + 2^(x6 - xMax))
-//  -->     result = xMax + log2(2^(x1 - xMax) + 2^(x2 - xMax) + 2^(x3 - xMax) + 2^(x4 - xMax) + 2^(x5 - xMax) + 2^(x6 - xMax))
-// WHERE x1, x2, x3, x4, x5 and x6 contain the log-values respectively!
-inline simd_float simd_flog2_sum_fpow2(simd_float x1, simd_float x2,
-        simd_float x3, simd_float x4, simd_float x5, simd_float x6) {
-
-    // Calculate the maximum out of the six variables
-    simd_float x_max0 = simdf32_max(x1,x2);
-    simd_float x_max1 = simdf32_max(x3,x4);
-    simd_float x_max2 = simdf32_max(x5,x6);
-    x_max0 = simdf32_max(x_max0, x_max1);
-    simd_float x_max  = simdf32_max(x_max2, x_max0);
-
-    simd_float max_comp_vec = simdf32_set(-FLT_MAX);
-    simd_float term0 = simdf32_fpow2(simdf32_sub(x1, x_max));
-    simd_float term1 = simdf32_fpow2(simdf32_sub(x2, x_max));
-    simd_float term2 = simdf32_fpow2(simdf32_sub(x3, x_max));
-    simd_float term3 = simdf32_fpow2(simdf32_sub(x4, x_max));
-    simd_float term4 = simdf32_fpow2(simdf32_sub(x5, x_max));
-    simd_float term5 = simdf32_fpow2(simdf32_sub(x6, x_max));
-    
-    term0 = simdf32_add(term0, term1);          //      2^(x1 - x_max)
-    term2 = simdf32_add(term2, term3);          // +    2^(x2 - x_max)
-    term4 = simdf32_add(term4, term5);          // +    2^(x3 - x_max)
-    term0 = simdf32_add(term0, term2);          // +    2^(x4 - x_max)
-    term4 = simdf32_add(term4, term0);          // +    2^(x5 - x_max)
-     //      max(-FLT_MAX, x_max + log2(sum(terms)))
-    return simdf32_max(max_comp_vec, simdf32_add(x_max, simdf32_flog2(term4)));
-}
+//// Perform log-sum-exp calculation with six SIMD variables
+////              result = x1 + x2 + x3 + x4 + x5 + x6
+////  -->     result = log2( 2^(x1) + 2^(x2) + 2^(x3) + 2^(x4) + 2^(x5) + 2^(x6))
+////      // to prevent overflows apply log sum of exp trick
+////      --> xMax = max(x1, x2, x3, x4, x5, x6)
+////  -->     result = log2(2^(xMax) * (2^(x1 - xMax) + 2^(x2 - xMax) + 2^(x3 - xMax) + 2^(x4 - xMax) + 2^(x5 - xMax) + 2^(x6 - xMax)))
+////  -->     result = log2(2^(xMax)) + log2(2^(x1 - xMax) + 2^(x2 - xMax) + 2^(x3 - xMax) + 2^(x4 - xMax) + 2^(x5 - xMax) + 2^(x6 - xMax))
+////  -->     result = xMax + log2(2^(x1 - xMax) + 2^(x2 - xMax) + 2^(x3 - xMax) + 2^(x4 - xMax) + 2^(x5 - xMax) + 2^(x6 - xMax))
+//// WHERE x1, x2, x3, x4, x5 and x6 contain the log-values respectively!
+//inline simd_float simd_flog2_sum_fpow2(simd_float x1, simd_float x2,
+//        simd_float x3, simd_float x4, simd_float x5, simd_float x6) {
+//
+//    // Calculate the maximum out of the six variables
+//    simd_float x_max0 = simdf32_max(x1,x2);
+//    simd_float x_max1 = simdf32_max(x3,x4);
+//    simd_float x_max2 = simdf32_max(x5,x6);
+//    x_max0 = simdf32_max(x_max0, x_max1);
+//    simd_float x_max  = simdf32_max(x_max2, x_max0);
+//
+//    simd_float max_comp_vec = simdf32_set(-FLT_MAX);
+//    simd_float term0 = simdf32_fpow2(simdf32_sub(x1, x_max));
+//    simd_float term1 = simdf32_fpow2(simdf32_sub(x2, x_max));
+//    simd_float term2 = simdf32_fpow2(simdf32_sub(x3, x_max));
+//    simd_float term3 = simdf32_fpow2(simdf32_sub(x4, x_max));
+//    simd_float term4 = simdf32_fpow2(simdf32_sub(x5, x_max));
+//    simd_float term5 = simdf32_fpow2(simdf32_sub(x6, x_max));
+//    
+//    term0 = simdf32_add(term0, term1);          //      2^(x1 - x_max)
+//    term2 = simdf32_add(term2, term3);          // +    2^(x2 - x_max)
+//    term4 = simdf32_add(term4, term5);          // +    2^(x3 - x_max)
+//    term0 = simdf32_add(term0, term2);          // +    2^(x4 - x_max)
+//    term4 = simdf32_add(term4, term0);          // +    2^(x5 - x_max)
+//     //      max(-FLT_MAX, x_max + log2(sum(terms)))
+//    return simdf32_max(max_comp_vec, simdf32_add(x_max, simdf32_flog2(term4)));
+//}
 
 // Perform log-sum-exp calculation with three SIMD variables
 //              result = x1 + x2 + x3
@@ -600,27 +600,45 @@ inline simd_float simd_flog2_sum_fpow2(simd_float x1, simd_float x2, simd_float 
 
 }
 
-// Perform log-sum-exp calculation with two SIMD variables
-//              result = x1 + x2
-//  -->     result = log2(2^(x1) + 2^(x2))
-//      // to prevent overflows apply log sum of exp trick
-//      --> xMax = max(x1, x2)
-//  -->     result = log2(2^(xMax) * (2^(x1 - xMax) + 2^(x2 - xMax)))
-//  -->     result = log2(2^(xMax)) + log2(2^(x1 - xMax) + 2^(x2 - xMax))
-//  -->     result = xMax + log2(2^(x1 - xMax) + 2^(x2 - xMax))
-// WHERE x1, x2 and x3 contain the log-values respectively!
+//// Perform log-sum-exp calculation with two SIMD variables
+////              result = x1 + x2
+////  -->     result = log2(2^(x1) + 2^(x2))
+////      // to prevent overflows apply log sum of exp trick
+////      --> xMax = max(x1, x2)
+////  -->     result = log2(2^(xMax) * (2^(x1 - xMax) + 2^(x2 - xMax)))
+////  -->     result = log2(2^(xMax)) + log2(2^(x1 - xMax) + 2^(x2 - xMax))
+////  -->     result = xMax + log2(2^(x1 - xMax) + 2^(x2 - xMax))
+//// WHERE x1, x2 and x3 contain the log-values respectively!
+//inline simd_float simd_flog2_sum_fpow2(simd_float x1, simd_float x2) {
+//
+//    // Calculate the maximum out of the six variables
+//    simd_float x_max = simdf32_max(x1, x2);
+//
+//    simd_float max_comp_vec = simdf32_set(-FLT_MAX);
+//
+//    return simdf32_max(max_comp_vec, simdf32_add(x_max, simdf32_flog2(  //      fmax(-FLT_MAX, x_max + log2(
+//                    simdf32_add(simdf32_fpow2(simdf32_sub(x1, x_max)),                  //      2^(x1 - x_max)
+//                                        simdf32_fpow2(simdf32_sub(x2, x_max))))));              // +    2^(x2 - x_max))
+//
+//}
+
+// Perform log-sum-exp calculation with two SIMD f32 variables
+// Calculate log2( 2^x1 + 2^x2) in stable fashion using
+//  max(-FLT_MAX, max(x1,x2) + flog2(1.0 + fpow2(min(x1,x2) - max(x1,x2)));
 inline simd_float simd_flog2_sum_fpow2(simd_float x1, simd_float x2) {
-
-    // Calculate the maximum out of the six variables
-    simd_float x_max = simdf32_max(x1, x2);
-
-    simd_float max_comp_vec = simdf32_set(-FLT_MAX);
-
-    return simdf32_max(max_comp_vec, simdf32_add(x_max, simdf32_flog2(  //      fmax(-FLT_MAX, x_max + log2(
-                    simdf32_add(simdf32_fpow2(simdf32_sub(x1, x_max)),                  //      2^(x1 - x_max)
-                                        simdf32_fpow2(simdf32_sub(x2, x_max))))));              // +    2^(x2 - x_max))
-
+    
+    const simd_float CONST_1f = simdf32_set(1.0f);
+    const simd_float CONST_max_comp_vec = simdf32_set(-FLT_MAX);
+    simd_float xmax = simdf32_max(x1, x2);
+    simd_float x    = simdf32_min(x1, x2);
+    x = simdf32_sub(x,xmax);
+    x = simdf32_fpow2(x);
+    x = simdf32_add( CONST_1f, x );
+    x = simdf32_flog2(x);
+    x = simdf32_add(xmax,x);
+    return simdf32_max(CONST_max_comp_vec, x);
 }
+
 
 
 // Perform log-sum-exp calculation with six variables
@@ -634,14 +652,8 @@ inline simd_float simd_flog2_sum_fpow2(simd_float x1, simd_float x2) {
 // WHERE x1, x2, x3, x4, x5 and x6 contain the log-values respectively!
 inline float flog2_sum_fpow2(float x1, float x2, float x3, float x4, float x5, float x6) {
     
-    //      float arr[] = {x1, x2, x3, x4, x5, x6};
-    //      std::sort(arr, arr + 6);
-    //
-    //      return fmax(-FLT_MAX, arr[5] + logo(arr[4] - arr[5] + logo(arr[3] - arr[4] + logo(arr[2] - arr[3] +
-    //                                                                                      logo(arr[1] - arr[2] + logo(arr[0] - arr[1]))))));
-    
     float xmax = fmax(x1, fmax(x2, fmax(x3, fmax(x4, fmax(x5, x6)))));
-    
+
     return fmax(-FLT_MAX, xmax + flog2(
                                        fpow2(x1 - xmax) +
                                        fpow2(x2 - xmax) +
@@ -658,6 +670,46 @@ inline float flog2_sum_fpow2(float x1, float x2, float x3, float x4, float x5, f
     //                                              powf(2, x6 - xmax)));
     
 }
+
+
+inline float fast_flog2_sum_fpow2(float x1, float x2, float x3, float x4, float x5, float x6) {
+
+    simd_float X = _mm256_set_ps(x1,x2,x3,x4,x5,x6,-FLT_MAX_EXP,-FLT_MAX_EXP);
+
+    // Compute the maximum of the eight floats in X
+    // xmax = fmax( fmax( fmax(x1,x2), fmax(x3, x4) ) , fmax(x5, x6) );
+    simd_float Xshuf = _mm256_permute_ps(X,0xB1); // permute mask of 2bits: (2,3,0,1) = (10,11,00,01) = 0xB1
+    simd_float Xmax  = simdf32_max(X,Xshuf);
+    Xshuf = _mm256_permute_ps(Xmax,0x8E); // permute mask of 2bits: (1,0,3,2) = (01,00,11,10) = 0x8E
+    Xmax  = simdf32_max(Xmax,Xshuf);
+    Xshuf = _mm256_permute2f128_ps(Xmax,Xmax,0x08); // permute mask of 2bits: (0,0,1,0) = (00,00,01,00) = 0x08
+    Xmax  = simdf32_max(Xmax,Xshuf);
+    
+    // Compute pow2(X-Xmax) for all f32 floats
+    X = simdf32_sub(X,Xmax);
+    X = simdf32_fpow2(X);
+
+    // Horizontally add f32 floats
+    Xshuf = _mm256_permute_ps(X,0xB1); // permute mask of 2bits: (2,3,0,1) = (10,11,00,01) = 0xB1
+    X = simdf32_add(X,Xshuf);
+    Xshuf = _mm256_permute_ps(X,0x8E); // permute mask of 2bits: (2,3,0,1) = (10,11,00,01) = 0xB1
+    X = simdf32_add(X,Xshuf);
+    Xshuf = _mm256_permute2f128_ps(X,X,0x08); // permute mask of 2bits: (0,0,1,0) = (00,00,01,00) = 0x08
+    X  = simdf32_add(X,Xshuf);
+
+    float xmax = simdf32_extract(Xmax,0x00);
+    float x    = simdf32_extract(X, 0x00);
+    return fmax(-FLT_MAX, xmax + flog2(x) );
+}
+
+
+
+
+
+
+
+
+
 // Perform log-sum-exp calculation with three variables
 //                              result = x1 + x2 + x3
 //      -->             result = log2( 2^(x1) + 2^(x2) + 2^(x3) )
@@ -713,8 +765,6 @@ inline float flog2_sum_fpow2(float x1, float x2) {
     //                                              powf(2, x2 - xmax)));
     
 }
-
-
 
 
 

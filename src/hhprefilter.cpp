@@ -292,9 +292,9 @@ namespace hh {
   void Prefilter::init_prefilter(FFindexDatabase* cs219_database) {
     // Set up variables for prefiltering
     num_dbs = cs219_database->db_index->n_entries;
-    first = (unsigned char**) mem_align(16, num_dbs * sizeof(unsigned char*));
-    length = (int*) mem_align(16, num_dbs * sizeof(int));
-    dbnames = (char**) mem_align(16, num_dbs * sizeof(char*));
+    first = (unsigned char**) mem_align(ALIGN_FLOAT, num_dbs * sizeof(unsigned char*));
+    length = (int*) mem_align(ALIGN_FLOAT, num_dbs * sizeof(int));
+    dbnames = (char**) mem_align(ALIGN_FLOAT, num_dbs * sizeof(char*));
     for (size_t n = 0; n < num_dbs; n++) {
       ffindex_entry_t* entry = ffindex_get_entry_by_index(
           cs219_database->db_index, n);

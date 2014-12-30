@@ -31,7 +31,7 @@ void PosteriorDecoder::forwardAlgorithm(HMM & q, HMM & t, Hit & hit,
 			m_mm_curr[j] = m_mi_curr[j] = m_dg_curr[j] = m_im_curr[j] = m_gd_curr[j] = 0.0;
 		else
 		{
-			m_mm_curr[j] = ProbFwd(q.p[1], t.p[j]) * Cshift ;
+			m_mm_curr[j] = p_mm.getColScoreValue(1, j) ;
 			m_mi_curr[j] = m_dg_curr[j] = 0.0;
 			m_im_curr[j] = m_mm_curr[j-1] * q.tr[1][M2I] * t.tr[j-1][M2M] + m_im_curr[j-1] * q.tr[1][I2I] * t.tr[j-1][M2M];
 			m_gd_curr[j] = m_mm_curr[j-1] * t.tr[j-1][M2D]                + m_gd_curr[j-1] * t.tr[j-1][D2D];
@@ -55,8 +55,26 @@ void PosteriorDecoder::forwardAlgorithm(HMM & q, HMM & t, Hit & hit,
 
 
 	scale[0] = scale[1] = scale[2] = 1.0;
+    
+    //////////////////////////
+    // Precompute the column scores
+    for (i = 1; i <= q.L; ++i) {
+        if (hit.self)
+            jmin = imin(i + SELFEXCL + 1, t.L);
+        else
+            jmin = 1;
 
-	// Forward algorithm
+        for (j = jmin; j <= t.L; ++j) {
+            if (! celloff_matrix.getCellOff(i, j, elem) ) {
+                p_mm.setColScoreValue(i, j, ProbFwd(q.p[i], t.p[j]) * Cshift);
+            }
+            
+        }
+        
+    }
+    
+    //////////////////////////
+    // Forward algorithm
 
 	// Loop through query positions i
 	for (i = 2; i <= q.L; ++i) {
@@ -75,7 +93,7 @@ void PosteriorDecoder::forwardAlgorithm(HMM & q, HMM & t, Hit & hit,
 			m_mm_curr[jmin] = m_mi_curr[jmin] = m_dg_curr[jmin] = m_im_curr[jmin] =
 					m_gd_curr[jmin] = 0.0;
 		else {
-			m_mm_curr[jmin] = scale_prod * ProbFwd(q.p[i], t.p[jmin]) * Cshift;
+			m_mm_curr[jmin] = scale_prod * p_mm.getColScoreValue(i, jmin);
 			m_im_curr[jmin] = m_gd_curr[jmin] = 0.0;
 			m_mi_curr[jmin] = scale[i]
 					* (m_mm_prev[jmin] * q.tr[i - 1][M2M] * t.tr[jmin][M2I]
@@ -98,7 +116,8 @@ void PosteriorDecoder::forwardAlgorithm(HMM & q, HMM & t, Hit & hit,
 				m_mm_curr[j] = m_mi_curr[j] = m_dg_curr[j] = m_im_curr[j] =
 						m_gd_curr[j] = 0.0;
 			else {
-				m_mm_curr[j] = ProbFwd(q.p[i], t.p[j]) * Cshift
+
+				m_mm_curr[j] = p_mm.getColScoreValue(i, j)
 						* scale[i]
 						* (pmin
 						+ m_mm_prev[j - 1] * q.tr[i - 1][M2M] * t.tr[j - 1][M2M] // BB -> MM (BB = Begin/Begin, for local alignment)
