@@ -15,198 +15,133 @@
  */
 
 #include "hhposteriordecoderrunner.h"
-#include <float.h>
 
-PosteriorDecoderRunner::PosteriorDecoderRunner(
-    PosteriorDecoderRunnerInputData & data_container, HMMSimd & q_simd,
-    PosteriorMatrix** posterior_matrices,
-    ViterbiMatrix** backtrace_matrix, const int n_threads) :
-        m_dbfiles(data_container.dbentries), m_alignments(
-        data_container.alignments), m_q_simd(q_simd), m_n_t_hmms(
-        data_container.n_t_hmms_to_align), m_t_maxres(data_container.t_maxres), m_posterior_matrices(
-        posterior_matrices), m_backtrace_matrix(backtrace_matrix), m_n_threads(
-        n_threads) {
+int compareIrep(const void * a, const void * b) {
+    Hit* pa = *(Hit**)a;
+    Hit* pb = *(Hit**)b;
+    return (pb->irep < pa->irep);
 }
+
+PosteriorDecoderRunner::PosteriorDecoderRunner( PosteriorMatrix **posterior_matrices,
+        ViterbiMatrix **backtrace_matrix, const int n_threads)
+        : m_posterior_matrices(posterior_matrices),
+          m_backtrace_matrix(backtrace_matrix),
+          m_n_threads(n_threads) {}
 
 PosteriorDecoderRunner::~PosteriorDecoderRunner() {
-//	std::cout << "Destruct PosteriorDecoderConsumerThread" << std::endl;
-
 }
 
-void PosteriorDecoderRunner::executeComputation(Parameters& par, const float qsc, float* pb, const float S[20][20],
-    const float Sim[20][20], const float R[20][20]) {
+void PosteriorDecoderRunner::executeComputation(HMM &q, std::vector<Hit *>  hits, Parameters &par,
+        const float qsc, float *pb, const float S[20][20], const float Sim[20][20], const float R[20][20]) {
 
-  HMM * q_hmm = m_q_simd.GetHMM(0);	// Initialize single query HMM for PrepareTemplateHMM
-  q_hmm->Log2LinTransitionProbs(1.0);
-
-  int irep_counter = 0;
-
-  // Alignments that are excluded for the next irep-run
-  std::map<std::string, std::vector<PosteriorDecoder::MACBacktraceResult *>* > alignments_to_exclude;
-
-  // Initialize selected query transitions
-  initializeQueryHMMTransitions(*m_q_simd.GetHMM(0));
-
-  // Routine to start consumer threads
-  std::vector<PosteriorDecoder*> * threads = initializeConsumerThreads(par.loc);
-
-  HMMSimd* t_hmm_simd[m_n_threads];
-  for (int i = 0; i < m_n_threads; i++) {
-    t_hmm_simd[i] = new HMMSimd(par.maxres);
-  }
-
-  std::vector<HMM*> t_hmm;
-  for(size_t i = 0; i < HMMSimd::VEC_SIZE * m_n_threads; i++) {
-    HMM* t = new HMM(MAXSEQDIS, par.maxres);
-    t_hmm.push_back(t);
-  }
-
-  /////////////////////////////////////////////////////////////////////////////////////////////////
-  // Read all alignments
-  //	Vector contains a map with the file-name as key and a hit object
-  //		The index counter of the vector therefore is the irep number
-  for (std::map<short int, std::vector<Hit *> >::iterator outer_map =
-      m_alignments.begin(); outer_map != m_alignments.end(); outer_map++) {
-    irep_counter = outer_map->first;
-    // Vector contains hits
-    std::vector<Hit *> & hits = outer_map->second;
-    #pragma omp parallel for schedule(dynamic, 1)
-    for (unsigned int idb = 0; idb < hits.size(); idb +=
-        HMMSimd::VEC_SIZE) {
-
-      // find next free worker thread
-      int current_thread_id = 0;
-      #ifdef OPENMP
-         current_thread_id = omp_get_thread_num();
-      #endif
-      const int current_t_index = (current_thread_id * HMMSimd::VEC_SIZE);
-
-      std::vector<HMM *> templates_to_align;
-      std::vector<Hit *> hit_items;
-      std::vector<std::vector<PosteriorDecoder::MACBacktraceResult *> *> alignment_exclusions;
-
-      // read in alignment
-      int maxResElem = imin((hits.size()) - (idb), HMMSimd::VEC_SIZE);
-      for (int i = 0; i < maxResElem; i++) {
-        Hit* hit_cur = hits.at(idb+i);
-        hit_items.push_back(hit_cur);
-
-        int format_tmp = 0;
-        //char wg = 0;
-
-          hit_cur->entry->getTemplateHMM(par, par.wg, qsc, format_tmp, pb, S, Sim, t_hmm[current_t_index + i]);
-
-#pragma omp critical // because alignments_to_exclude get changed
-{
-        if (alignments_to_exclude.find(std::string(hit_cur->file)) != alignments_to_exclude.end()) {
-          alignment_exclusions.push_back(alignments_to_exclude.at(std::string(hit_cur->file)));
-        }
-        else {
-          std::vector< PosteriorDecoder::MACBacktraceResult *>* vec = new std::vector<PosteriorDecoder::MACBacktraceResult *>();
-          alignment_exclusions.push_back(vec);
-          alignments_to_exclude[std::string(hit_cur->file)] = vec;
-        }
-}
-          par.forward = 1;
-        PrepareTemplateHMM(par, q_hmm, t_hmm[current_t_index + i], format_tmp, pb, R);
-        templates_to_align.push_back(t_hmm[current_t_index + i]);
-      }
-      t_hmm_simd[current_thread_id]->MapHMMVector(templates_to_align);
-      // start next job
-      threads->at(current_thread_id)->realign(m_q_simd, *t_hmm_simd[current_thread_id], hit_items,
-          *m_posterior_matrices[current_thread_id], *m_backtrace_matrix[current_thread_id],
-          alignment_exclusions, par.min_overlap, par.shift, par.mact, par.corr);
-    } // idb loop
-
-    mergeThreadResults(irep_counter, alignments_to_exclude);
-  }	// end - outer map
-
-  std::map<std::string, std::vector<PosteriorDecoder::MACBacktraceResult *>* >::iterator it;
-  for(it = alignments_to_exclude.begin(); it != alignments_to_exclude.end(); it++) {
-    for(size_t i = 0; i < (*it).second->size(); i++) {
-      delete (*it).second->at(i);
+    HMM * q_hmm = &q;    // Initialize single query HMM for PrepareTemplateHMM
+    // algorithm performs in linear space
+    q_hmm->Log2LinTransitionProbs(1.0);
+    // Initialize selected query transitions
+    initializeQueryHMMTransitions(*q_hmm);
+    // prepeare data structure
+    size_t target_max_length = 0;
+    std::map<std::string, std::vector<Hit *> > alignments_map;
+    for(size_t i = 0; i < hits.size(); i++){
+        alignments_map[hits[i]->entry->getName()].push_back(hits[i]);
+        target_max_length = std::max(target_max_length, (size_t) hits[i]->L);
     }
-    (*it).second->clear();
-    delete (*it).second;
-  }
-  alignments_to_exclude.clear();
-
-  for(size_t i = 0; i < HMMSimd::VEC_SIZE * m_n_threads; i++) {
-    delete t_hmm[i];
-  }
-  t_hmm.clear();
-
-  for (int i = 0; i < m_n_threads; i++) {
-    delete t_hmm_simd[i];
-  }
-
-  cleanupThread(threads);
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
-//	Add all alignments from the current 'irep' to the map where all alignments are stored that
-//		have to be excluded in the next run (previous found MAC alignments).
-///////////////////////////////////////////////////////////////////////////////////////////////////
-void PosteriorDecoderRunner::mergeThreadResults(int irep_counter,
-    std::map<std::string, std::vector<PosteriorDecoder::MACBacktraceResult *> *> & alignments_to_exclude) {
-
-  if(m_alignments.find(irep_counter) != m_alignments.end()) {
-    std::vector<Hit *> hits = m_alignments.at(irep_counter);
-    for (int hit_elem = 0; hit_elem < (int) hits.size(); hit_elem++) {
-      Hit & hit = *hits.at(hit_elem);
-      // Initialize MACBacktraceResult object
-      PosteriorDecoder::MACBacktraceResult * mac_btr =
-          new PosteriorDecoder::MACBacktraceResult;
-      mac_btr->alt_i = hit.alt_i;
-      mac_btr->alt_j = hit.alt_j;
-
-      // Add mac and viterbi backtrace result to alignments_to_exclude
-      if(alignments_to_exclude.find(std::string(hit.file)) == alignments_to_exclude.end()) {  //TODO: file might be "stdout" for several different templates?
-        alignments_to_exclude[std::string(hit.file)] = new std::vector<PosteriorDecoder::MACBacktraceResult *>();
-      }
-      alignments_to_exclude[std::string(hit.file)]->push_back(mac_btr);
+    // sort each std::vector<Hit *> by irep
+    std::vector<std::vector<Hit *> > alignment;
+    for (std::map<std::string, std::vector<Hit *> >::iterator alignment_vec =
+            alignments_map.begin(); alignment_vec != alignments_map.end(); alignment_vec++){
+        std::sort(alignment_vec->second.begin(), alignment_vec->second.end(), compareIrep);
+        alignment.push_back(alignment_vec->second);
     }
-  }
+
+    // Routine to start consumer threads
+    std::vector<PosteriorDecoder *> *threads = initializeConsumerThreads(par.loc, target_max_length, q.L);
+    // create one hmm for each threads
+    HMM **t_hmm = new HMM *[m_n_threads];
+    for (int i = 0; i < m_n_threads; i++) {
+        t_hmm[i] = new HMM(MAXSEQDIS, par.maxres);
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////
+    // Iterate over all alignment vectors.
+    // Each vector contains all alternative alignments for one Target
+#pragma omp parallel for schedule(static)
+    for (size_t idx = 0; idx < alignment.size(); idx++) {
+        std::vector<Hit *> hits = alignment[idx];
+        // find next free worker thread
+        int current_thread_id = 0;
+#ifdef OPENMP
+     current_thread_id = omp_get_thread_num();
+#endif
+        PosteriorDecoder * decoder = threads->at(current_thread_id);
+        std::vector<PosteriorDecoder::MACBacktraceResult> alignment_to_exclude;
+        for(size_t idb = 0; idb < hits.size(); idb++){
+            Hit *hit_cur = hits.at(idb);
+            int format_tmp = 0;
+            //char wg = 0;
+            if(idb == 0){ // just read in the first time (less IO/CPU usage)
+                hit_cur->entry->getTemplateHMM(par, par.wg, qsc, format_tmp, pb, S, Sim, t_hmm[current_thread_id]);
+                char tmpForward = par.forward;
+                par.forward = 1; // needed for Log -> Lin
+                PrepareTemplateHMM(par, q_hmm, t_hmm[current_thread_id], format_tmp, pb, R);
+                par.forward = tmpForward;
+            }
+            for (size_t ibt = 0; ibt < (int) alignment_to_exclude.size(); ibt++) {
+                // Mask out previous found MAC alignments
+                decoder->excludeMACAlignment(q.L, hit_cur->L, *m_backtrace_matrix[current_thread_id], 0, alignment_to_exclude.at(ibt));
+            }
+            // start realignment process
+            decoder->realign(*q_hmm, *t_hmm[current_thread_id],
+                    *hit_cur, *m_posterior_matrices[current_thread_id],
+                    *m_backtrace_matrix[current_thread_id], par.shift, par.mact, par.corr, 0);
+            // add result to exclution paths (needed to align 2nd, 3rd, ... best alignment)
+            alignment_to_exclude.push_back(PosteriorDecoder::MACBacktraceResult(hit_cur->alt_i, hit_cur->alt_j));
+        } // end idb
+        // remove all backtrace paths
+        alignment_to_exclude.clear();
+    }    // end - alignment vector
+
+    for (int i = 0; i < m_n_threads; i++) {
+        delete t_hmm[i];
+    }
+    delete[] t_hmm;
+
+    cleanupThread(threads);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Initialize consumer threads that process submitted items from shared worker queue
 //	- Memory of the PosteriorMatrix is freed by the consumer threads respectively
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-std::vector<PosteriorDecoder*> * PosteriorDecoderRunner::initializeConsumerThreads(char loc) {
-
-  std::vector<PosteriorDecoder *> * threads = new std::vector<PosteriorDecoder *>;
-  for (int thread_id = 0; thread_id < m_n_threads; thread_id++) {
-    PosteriorDecoder* thread = new PosteriorDecoder(m_t_maxres, loc, m_q_simd.L);
-    threads->push_back(thread);
-  }
-
-  return threads;
+std::vector<PosteriorDecoder *> *PosteriorDecoderRunner::initializeConsumerThreads(char loc,
+                                                size_t max_target_size, size_t query_size) {
+    std::vector<PosteriorDecoder *> *threads = new std::vector<PosteriorDecoder *>;
+    for (int thread_id = 0; thread_id < m_n_threads; thread_id++) {
+        PosteriorDecoder *thread = new PosteriorDecoder(max_target_size, loc, query_size);
+        threads->push_back(thread);
+    }
+    return threads;
 }
-
 
 
 void PosteriorDecoderRunner::cleanupThread(
-    std::vector<PosteriorDecoder*> * threads) {
-
-  for(size_t i = 0; i < threads->size(); i++) {
-    delete threads->at(i);
-  }
-  threads->clear();
-
-  delete threads;
-
+        std::vector<PosteriorDecoder *> *threads) {
+    for (size_t i = 0; i < threads->size(); i++) {
+        delete threads->at(i);
+    }
+    threads->clear();
+    delete threads;
 }
 
 
-void PosteriorDecoderRunner::initializeQueryHMMTransitions(HMM & q) {
-  q.tr[0][M2D] = q.tr[0][M2I] = 0.0f;
-  q.tr[0][I2M] = q.tr[0][I2I] = 0.0f;
-  q.tr[0][D2M] = q.tr[0][D2D] = 0.0f;
-  q.tr[q.L][M2M] = 1.0f;
-  q.tr[q.L][M2D] = q.tr[q.L][M2I] = 0.0f;
-  q.tr[q.L][I2M] = q.tr[q.L][I2I] = 0.0f;
-  q.tr[q.L][D2M] = 1.0f;
-  q.tr[q.L][D2D] = 0.0f;
+void PosteriorDecoderRunner::initializeQueryHMMTransitions(HMM &q) {
+    q.tr[0][M2D] = q.tr[0][M2I] = 0.0f;
+    q.tr[0][I2M] = q.tr[0][I2I] = 0.0f;
+    q.tr[0][D2M] = q.tr[0][D2D] = 0.0f;
+    q.tr[q.L][M2M] = 1.0f;
+    q.tr[q.L][M2D] = q.tr[q.L][M2I] = 0.0f;
+    q.tr[q.L][I2M] = q.tr[q.L][I2I] = 0.0f;
+    q.tr[q.L][D2M] = 1.0f;
+    q.tr[q.L][D2D] = 0.0f;
 }
 

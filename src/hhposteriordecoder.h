@@ -46,8 +46,9 @@ public:
 	struct MACBacktraceResult {
 		std::vector<int> * alt_i;
 		std::vector<int> * alt_j;
+		MACBacktraceResult(std::vector<int> * alt_i, std::vector<int> * alt_j):
+				alt_i(alt_i), alt_j(alt_j) {};
 	};
-
 
 	PosteriorDecoder(int maxres, bool local, int q_length);
 
@@ -56,30 +57,30 @@ public:
 	/////////////////////////////////////////////////////////////////////////////////////
 	// Realign hits: compute F/B/MAC and MAC-backtrace algorithms SIMD
 	/////////////////////////////////////////////////////////////////////////////////////
-	void realign(HMMSimd& q_hmm, HMMSimd& t_hmm, std::vector<Hit*>& hit_vec,
-			PosteriorMatrix& p_mm, ViterbiMatrix& viterbi_matrix,
-			std::vector<std::vector<MACBacktraceResult *> * > & alignment_exclusion_vec, int par_min_overlap, float shift, float mact, float corr);
+	void realign(HMM &q, HMM &t, Hit &hit, PosteriorMatrix &p_mm, ViterbiMatrix &viterbi_matrix, int par_min_overlap, float shift, float mact, float corr);
+	void excludeMACAlignment(const int q_length, const int t_length, ViterbiMatrix &celloff_matrix, const int elem,
+			MACBacktraceResult & alignment);
 
 private:
 
-	simd_float * m_mm_prev;
-	simd_float * m_gd_prev;
-	simd_float * m_dg_prev;
-	simd_float * m_im_prev;
-	simd_float * m_mi_prev;
+	float * m_mm_prev;
+	float * m_gd_prev;
+	float * m_dg_prev;
+	float * m_im_prev;
+	float * m_mi_prev;
 
-	simd_float * m_mm_curr;
-	simd_float * m_gd_curr;
-	simd_float * m_dg_curr;
-	simd_float * m_im_curr;
-	simd_float * m_mi_curr;
+	float * m_mm_curr;
+	float * m_gd_curr;
+	float * m_dg_curr;
+	float * m_im_curr;
+	float * m_mi_curr;
 
-	simd_float * m_s_curr;		// MAC scores - current
-	simd_float * m_s_prev;		// MAC scores - previous
-	simd_float * p_last_col;
+	float * m_s_curr;		// MAC scores - current
+	float * m_s_prev;		// MAC scores - previous
+	float * p_last_col;
 
-	simd_float * m_backward_profile;
-	simd_float * m_forward_profile;
+	float * m_backward_profile;
+	float * m_forward_profile;
 
 	double * scale;
 
@@ -88,7 +89,7 @@ private:
 //	simd_float m_p_min;    // used to distinguish between SW and NW algorithms in maximization
 	float m_p_min_scalar;    // used to distinguish between SW and NW algorithms in maximization
 
-//	std::vector<Hit *> m_temp_hit_vec;	// temporary used hit objects for computation
+//	std::vector<Hit *> m_temp_hit;	// temporary used hit objects for computation
 
 	const int m_max_res;
 	const bool m_local;				// local alignment
@@ -97,10 +98,8 @@ private:
 	int m_jmin;
 
 	simd_float * m_p_forward;
-	simd_int * m_t_lengths_le;	// for comparison le
-	simd_int * m_t_lengths_ge;	// for comparison ge
 
-	std::vector<Hit *> m_temp_hit_vec;
+	Hit * m_temp_hit;
 
 	void forwardAlgorithm(HMM & q_hmm, HMM & t_hmm, Hit & hit_vec, PosteriorMatrix & p_mm,
 			ViterbiMatrix & viterbi_matrix, float shift, const int elem);
@@ -109,21 +108,16 @@ private:
 	void macAlgorithm(HMM & q_hmm, HMM & t_hmm, Hit & hit_vec, PosteriorMatrix & p_mm,
 			ViterbiMatrix & viterbi_matrix, float par_mact, const int elem);
 	void backtraceMAC(HMM & q, HMM & t, PosteriorMatrix & p_mm, ViterbiMatrix & backtrace_matrix, const int elem, Hit & hit, float corr);
-	void writeProfilesToHits(HMM & q, HMM & t, PosteriorMatrix & p_mm, const int elem, Hit & hit);
+	void writeProfilesToHits(HMM &q, HMM &t, PosteriorMatrix &p_mm, Hit &hit);
 	void initializeBacktrace(HMM & t, Hit & hit);
 
-	void initializeForAlignment(HMM & q, HMM & t, Hit * hit, ViterbiMatrix & viterbi_matrix, const int elem,
-			std::vector<MACBacktraceResult *> & alignment_to_exclude,
-			const int t_max_L, int par_min_overlap);
-	void maskViterbiAlignment(const int q_length, const int t_length, ViterbiMatrix & celloff_matrix,
-																									const int elem, const Hit * hit) const;
-	void memorizeHitValues(Hit * curr_hit, const int i);
-	void restoreHitValues(Hit & curr_hit, const int i);
+	void initializeForAlignment(HMM &q, HMM &t, Hit &hit, ViterbiMatrix &viterbi_matrix, const int elem, const int t_max_L, int par_min_overlap);
+	void maskViterbiAlignment(const int q_length, const int t_length, ViterbiMatrix &celloff_matrix,
+			const int elem, Hit const &hit) const;
+	void memorizeHitValues(Hit & curr_hit);
+	void restoreHitValues(Hit &curr_hit);
 
 	void setGlobalColumnPForward(simd_float * column, const simd_int & j_vec, const int i_count, const simd_float & values);
-
-	void excludeMACAlignment(const int q_length, const int t_length, ViterbiMatrix &celloff_matrix, const int elem,
-			MACBacktraceResult & alignment);
 
 	void printVector(simd_float * vec);
 	void printVector(simd_int * vec);

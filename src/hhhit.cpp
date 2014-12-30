@@ -425,14 +425,3 @@ float Hit::estimateAlignmentQuality(HMM* q) {
 	  return sum;
 }
 
-
-
-int compareHitLengths(const void * a, const void * b) {
-
-    Hit* pa = *(Hit**)a;
-    Hit* pb = *(Hit**)b;
-
-//  return (pb->L_template - pa->L_template);
-    return (pb->L - pa->L);
-}
-

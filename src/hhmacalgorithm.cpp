@@ -5,7 +5,6 @@
  *      Author: stefan
  */
 
-#include <Python/Python.h>
 #include "hhposteriordecoder.h"
 
 #define CALCULATE_MAX4(max, var1, var2, var3, var4, varb)       \

@@ -1287,26 +1287,14 @@ void HHblits::perform_realign(HMMSimd& q_vec, const char input_format,
       posteriorMatrices[i]->allocateMatrix(q->L, t_maxres);
     }
 
-    // Sort hits in descending order
-    std::qsort(&hit_vector[0], hit_vector.size(), sizeof(Hit*),
-               compareHitLengths);
-
-    for (int elem = 0; elem < (int) hit_vector.size(); elem++) {
-      alignments[hit_vector.at(elem)->irep].push_back(hit_vector.at(elem));
-    }
-
-    PosteriorDecoderRunnerInputData input_data(dbs, hits_to_realign, alignments,
-                                               n_realignments, t_maxres);
-
     // Initialize a Null-value as a return value if not items are available anymore
-    PosteriorDecoderRunner runner(input_data, q_vec, posteriorMatrices,
-                                  viterbiMatrices, par.threads);
+    PosteriorDecoderRunner runner(posteriorMatrices, viterbiMatrices, par.threads);
 
     HH_LOG(INFO)
         << "Realigning " << nhits
         << " HMM-HMM alignments using Maximum Accuracy algorithm" << std::endl;
 
-    runner.executeComputation(par, par.qsc_db, pb, S, Sim, R);
+      runner.executeComputation(*q, hit_vector, par, par.qsc_db, pb, S, Sim, R);
 
   }
 
@@ -1419,7 +1407,6 @@ void HHblits::realignWithOptimalQSC(HitList& hitlist, HMMSimd& q_vec,
     q_vec.MapOneHMM(q);
 
     std::vector<Hit *> hit_vector;
-    std::vector<HHEntry*> hits_to_realign;
 
     //copy interesting hits to curr_list
     while (!interesting_list.End()) {
@@ -1437,25 +1424,12 @@ void HHblits::realignWithOptimalQSC(HitList& hitlist, HMMSimd& q_vec,
     while (!curr_list.End()) {
       Hit hit_cur = curr_list.ReadNext();
       hit_vector.push_back(curr_list.ReadCurrentAddress());
-      hits_to_realign.push_back(hit_cur.entry);
     }
-
-    std::qsort(&hit_vector[0], hit_vector.size(), sizeof(Hit*),
-               compareHitLengths);
-
-    std::map<short int, std::vector<Hit *> > alignments;
-    for (int elem = 0; elem < (int) hit_vector.size(); elem++) {
-      alignments[hit_vector.at(elem)->irep].push_back(hit_vector.at(elem));
-    }
-
-    PosteriorDecoderRunnerInputData input_data(dbs, hits_to_realign, alignments,
-                                               n_realignments, t_maxres);
 
     // Initialize a Null-value as a return value if not items are available anymore
-    PosteriorDecoderRunner runner(input_data, q_vec, posteriorMatrices,
+    PosteriorDecoderRunner runner(posteriorMatrices,
                                   viterbiMatrices, par.threads);
-
-    runner.executeComputation(par, actual_qsc, pb, S, Sim, R);
+      runner.executeComputation(*q, hit_vector, par, actual_qsc, pb, S, Sim, R);
 
     //copy hits from curr_list to all_list
     curr_list.Reset();
@@ -1554,22 +1528,9 @@ void HHblits::optimizeQSC(std::vector<HHEntry*>& selected_entries,
       posteriorMatrices[i]->allocateMatrix(q->L, t_maxres);
     }
 
-    std::qsort(&hit_vector[0], hit_vector.size(), sizeof(Hit*),
-               compareHitLengths);
-
-    std::map<short int, std::vector<Hit *> > alignments;
-    for (int elem = 0; elem < (int) hit_vector.size(); elem++) {
-      alignments[hit_vector.at(elem)->irep].push_back(hit_vector.at(elem));
-    }
-
-    PosteriorDecoderRunnerInputData input_data(dbs, hits_to_realign, alignments,
-                                               n_realignments, t_maxres);
-
     // Initialize a Null-value as a return value if not items are available anymore
-    PosteriorDecoderRunner runner(input_data, q_vec, posteriorMatrices,
-                                  viterbiMatrices, par.threads);
-
-    runner.executeComputation(par, actual_qsc, pb, S, Sim, R);
+    PosteriorDecoderRunner runner(posteriorMatrices, viterbiMatrices, par.threads);
+      runner.executeComputation(*q, hit_vector, par, actual_qsc, pb, S, Sim, R);
 
     tmp_list.Reset();
     while (!tmp_list.End()) {
