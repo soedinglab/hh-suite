@@ -16,10 +16,8 @@
 
 #include "hhposteriordecoderrunner.h"
 
-int compareIrep(const void * a, const void * b) {
-    Hit* pa = *(Hit**)a;
-    Hit* pb = *(Hit**)b;
-    return (pb->irep < pa->irep);
+int compareIrep( Hit * a,  Hit * b) {
+	return (a->irep < b->irep);
 }
 
 PosteriorDecoderRunner::PosteriorDecoderRunner( PosteriorMatrix **posterior_matrices,
