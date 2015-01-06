@@ -77,7 +77,10 @@ void PosteriorDecoder::backwardAlgorithm(HMM & q, HMM & t, Hit & hit,
 			{
 				double pmatch = m_prev[j + 1].mm * ProbFwd(q.p[i + 1], t.p[j + 1])
 						* Cshift * scale[i + 1];
-				m_curr[j].mm = (+pmin         // MM -> EE (End/End, for local alignment)
+				// save backward profile; More efficient alternative by JS
+				actual_backward += pmatch;
+
+ 				m_curr[j].mm = (+pmin         // MM -> EE (End/End, for local alignment)
 						+ pmatch * q.tr[i][M2M] * t.tr[j][M2M]              // MM -> MM
 						+ m_curr[j + 1].gd * t.tr[j][M2D] // MM -> GD (q.tr[i][M2M] is already contained in GD->MM)
 						+ m_curr[j + 1].im * q.tr[i][M2I] * t.tr[j][M2M]           // MM -> IM
@@ -106,12 +109,9 @@ void PosteriorDecoder::backwardAlgorithm(HMM & q, HMM & t, Hit & hit,
 
 
 			//save backward profile
-			//TODO we should check if we need to compute ProbFwd again
-			actual_backward += ProbFwd(q.p[i], t.p[j]) * Cshift
-					* m_curr[j].mm / hit.Pforward;
+			m_backward_profile[i+1] = actual_backward / hit.Pforward;
 		} //end for j
 
-		actual_backward *= final_scale_prod / scale_prod;
 
 		// Calculate posterior probability from Forward and Backward matrix elements
 		for (int jj = jmin; jj <= (t.L - 1); jj++) {
