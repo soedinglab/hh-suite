@@ -29,13 +29,18 @@ void PosteriorDecoder::backwardAlgorithm(HMM & q, HMM & t, Hit & hit,
 		m_prev[j].mi = m_prev[j].dg = 0.0;
 	}
 
+  double final_scale_prod = scale[q.L + 1];
+  for (int i = q.L - 1; i >= 1; i--) {
+    final_scale_prod *= scale[i + 1];
+    if (final_scale_prod < DBL_MIN * 100)
+      final_scale_prod = 0.0;
+  }
+
 	if (m_local)
 		pmin = scale[q.L + 1];
 	else
 		pmin = 0.0; // transform pmin (for local alignment) to scale of present (i'th) row
 
-	//backward probability calculation
-	double final_scale_prod = scale[q.L + 1];
 
 	// Backward algorithm
 	// Loop through query positions i
@@ -65,7 +70,6 @@ void PosteriorDecoder::backwardAlgorithm(HMM & q, HMM & t, Hit & hit,
 
 		float actual_backward = 0.0;
 
-
 		m_curr[t.L].im = m_curr[t.L].mi = m_curr[t.L].dg = m_curr[t.L].gd = 0.0;
 		memset(m_curr+jmin, 0, (t.L - 1) * sizeof(PosteriorMatrixCol));
 		// Loop through template positions j
@@ -78,7 +82,6 @@ void PosteriorDecoder::backwardAlgorithm(HMM & q, HMM & t, Hit & hit,
 				double pmatch = m_prev[j + 1].mm * ProbFwd(q.p[i + 1], t.p[j + 1])
 						* Cshift * scale[i + 1];
 				// save backward profile; More efficient alternative by JS
-				actual_backward += pmatch;
 
  				m_curr[j].mm = (+pmin         // MM -> EE (End/End, for local alignment)
 						+ pmatch * q.tr[i][M2M] * t.tr[j][M2M]              // MM -> MM
@@ -105,13 +108,15 @@ void PosteriorDecoder::backwardAlgorithm(HMM & q, HMM & t, Hit & hit,
 						+ m_prev[j].mi * q.tr[i][M2M] * t.tr[j][I2I] * scale[i + 1] // MI -> MI
 						//           + B_IM[i][j+1] * q.tr[i][M2I] * t.tr[j][I2M]              // MI -> IM
 				);
+
+		    float substitutionScore = ProbFwd(q.p[i], t.p[j]);
+		    actual_backward += substitutionScore * Cshift * m_curr[j].mm / hit.Pforward;
 			} // end else
 
-
-			//save backward profile
-			m_backward_profile[i+1] = actual_backward / hit.Pforward;
 		} //end for j
 
+    actual_backward *= final_scale_prod / scale_prod;
+    m_backward_profile[i] = actual_backward;
 
 		// Calculate posterior probability from Forward and Backward matrix elements
 		for (int jj = jmin; jj <= (t.L - 1); jj++) {
@@ -119,7 +124,6 @@ void PosteriorDecoder::backwardAlgorithm(HMM & q, HMM & t, Hit & hit,
 		}
 
 		std::swap(m_prev, m_curr);
-
 	} // end for i
 
 	/*
