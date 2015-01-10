@@ -16,7 +16,7 @@ check_cxx_compiler_flag(-fopenmp SUPPORT_OMP)
 if (SUPPORT_OMP)
     message("-- Found OpenMP")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DOPENMP -fopenmp")
-    set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -DOPENMP -fopenmp")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DOPENMP -fopenmp")
 endif()
 
 

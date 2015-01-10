@@ -2570,14 +2570,13 @@ void Alignment::Amino_acid_frequencies_and_transitions_from_M_state(
             //for (a = 0; a < ANY; ++a)
             //      w_contrib[j][a] = (n[j][a] > 0) ? 1.0/ float(naa[j]*n[j][a]): 0.0f;
             for (j = jmin; j <= jmax; ++j) {
-              simd_int naa_j = simdi32_set(naa[j]);
+              simd_float naa_j = simdi32_i2f(simdi32_set(naa[j]));
               const simd_int *nj = (const simd_int *) n[j];
               const int aa_size = (ANY + VECSIZE_INT - 1) / VECSIZE_INT;
               for (a = 0; a < aa_size; ++a) {
-                simd_int nja = simdi_load(nj + a);
-                simd_int res = simdi32_mul(nja, naa_j);
-                simd_float tmp = simdi32_i2f(res); // (1 / res)
-                simdf32_store(w_contrib[j] + (a * VECSIZE_INT), simdf32_rcp(tmp));
+                simd_float nja = simdi32_i2f(simdi_load(nj + a));
+                simd_float res = simdf32_mul(nja, naa_j);
+                simdf32_store(w_contrib[j] + (a * VECSIZE_INT), simdf32_rcp(res));
               }
               for (a = ANY; a < NAA + 3; ++a)
                 w_contrib[j][a] = 0.0f;  // set non-amino acid values to 0 to avoid checking in next loop for X[k][j]<ANY

@@ -7,9 +7,6 @@
 
 #include "hhposteriordecoder.h"
 
-
-
-
 void PosteriorDecoder::forwardAlgorithm(HMM & q, HMM & t, Hit & hit,
 		PosteriorMatrix & p_mm, ViterbiMatrix & celloff_matrix,
 		float shift, const int elem) {
@@ -54,8 +51,6 @@ void PosteriorDecoder::forwardAlgorithm(HMM & q, HMM & t, Hit & hit,
 		m_prev[j].dg = m_curr[j].dg;
 		m_prev[j].gd = m_curr[j].gd;
 	}
-
-
 
 	scale[0] = scale[1] = scale[2] = 1.0;
 
@@ -183,8 +178,37 @@ void PosteriorDecoder::forwardAlgorithm(HMM & q, HMM & t, Hit & hit,
 		else
 			hit.score -= log(t.L * q.L) / LAMDA + 14.; // +14.0 to get approx same mean as for -global
 	}
-	return;
 
+	//save forward profile
+  double scale_rate;
+  double scale_prod_curr = 1.0;
+  double ffprob = 0.0;
+  double ffsum_row = 0.0;
+
+  for (int i = 1; i <= q.L; i++) {
+    int jmin;
+    if (hit.self)
+      jmin = imin(i + SELFEXCL + 1, t.L);
+    else
+      jmin = 1;
+
+    if (scale_prod_curr < DBL_MIN * 100)
+      scale_prod_curr = 0.0;
+    else
+      scale_prod_curr *= scale[i];
+
+    ffsum_row = 0.0;
+    for (int j = jmin; j <= t.L; j++) {
+      if (scale_prod_curr == 0.0)
+        scale_rate = 0.0;
+      else
+        scale_rate = (scale_prod * scale[q.L + 1]) / scale_prod_curr;
+
+      ffprob = (p_mm.getPosteriorValue(i, j) / hit.Pforward) * scale_rate;
+
+      ffsum_row += ffprob;
+    }
+
+    m_forward_profile[i] = ffsum_row;
+  }
 }
-
-
