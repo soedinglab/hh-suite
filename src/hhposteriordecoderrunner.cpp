@@ -86,7 +86,7 @@ void PosteriorDecoderRunner::executeComputation(HMM &q, std::vector<Hit *>  hits
                 PrepareTemplateHMM(par, q_hmm, t_hmm[current_thread_id], format_tmp, pb, R);
                 par.forward = tmpForward;
             }
-            for (size_t ibt = 0; ibt < (int) alignment_to_exclude.size(); ibt++) {
+            for (size_t ibt = 0; ibt < alignment_to_exclude.size(); ibt++) {
                 // Mask out previous found MAC alignments
                 decoder->excludeMACAlignment(q.L, hit_cur->L, *m_backtrace_matrix[current_thread_id], 0, alignment_to_exclude.at(ibt));
             }
