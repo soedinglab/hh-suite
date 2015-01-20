@@ -7,6 +7,7 @@
 
 #include <stdio.h>
 #include <sys/mman.h>
+#include <omp.h>
 #include "hhdecl.h"
 #include "hhblits.h"
 
