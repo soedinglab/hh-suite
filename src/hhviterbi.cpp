@@ -87,7 +87,7 @@ Viterbi::BacktraceResult Viterbi::Backtrace(ViterbiMatrix * matrix,int elem,int 
         {
             case ViterbiMatrix::MM: // current state is MM, previous state is bMM[i][j]
                 matched_cols++;
-                state = (i <= 1||j<=1) ? ViterbiMatrix::STOP : matrix->getMatMat(i--,j--,elem);
+                state = (i <= 1 || j <= 1) ? ViterbiMatrix::STOP : matrix->getMatMat(i--,j--,elem);
                 break;
             case ViterbiMatrix::GD: // current state is GD
                 if(j<=1)
