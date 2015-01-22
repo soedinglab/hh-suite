@@ -7,6 +7,10 @@
 
 #include "hhsearch.h"
 
+#ifdef OPENMP
+	#include <omp.h>
+#endif
+
 int main(int argc, char **argv) {
   Parameters par;
   HHsearch::ProcessAllArguments(argc, argv, par);

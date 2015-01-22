@@ -32,8 +32,8 @@ set(HH_SOURCE
 	${CMAKE_CURRENT_SOURCE_DIR}/hhblits.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/hhdecl.h
 	${CMAKE_CURRENT_SOURCE_DIR}/hhdecl.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/hhhit.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/hhhit-inl.h
+	${CMAKE_CURRENT_SOURCE_DIR}/hhhit.h
+	${CMAKE_CURRENT_SOURCE_DIR}/hhhit-inl.h
 	${CMAKE_CURRENT_SOURCE_DIR}/hhhit.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/hhmatrices.h
 	${CMAKE_CURRENT_SOURCE_DIR}/hhmatrices.cpp
@@ -151,6 +151,11 @@ add_executable(a3m_extractor
 	a3m_extractor.cpp $<TARGET_OBJECTS:A3M_COMPRESS_OBJECT>
 )
 target_link_libraries (a3m_extractor ffindex)
+
+add_executable(a3m_reducer
+  a3m_reducer.cpp $<TARGET_OBJECTS:A3M_COMPRESS_OBJECT>
+)
+target_link_libraries (a3m_reducer ffindex)
 
 add_executable(a3m_database_reducer
   a3m_database_reducer.cpp $<TARGET_OBJECTS:A3M_COMPRESS_OBJECT>

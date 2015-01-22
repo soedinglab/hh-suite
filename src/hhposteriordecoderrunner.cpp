@@ -17,9 +17,9 @@
 #include "hhposteriordecoderrunner.h"
 
 int compareIrep(const void * a, const void * b) {
-    Hit* pa = *(Hit**)a;
-    Hit* pb = *(Hit**)b;
-    return (pb->irep < pa->irep);
+    Hit pa = *(Hit*)a;
+    Hit pb = *(Hit*)b;
+    return (pb.irep < pa.irep);
 }
 
 PosteriorDecoderRunner::PosteriorDecoderRunner( PosteriorMatrix **posterior_matrices,
@@ -49,7 +49,7 @@ void PosteriorDecoderRunner::executeComputation(HMM &q, std::vector<Hit *>  hits
     // sort each std::vector<Hit *> by irep
     std::vector<std::vector<Hit *> > alignment;
     for (std::map<std::string, std::vector<Hit *> >::iterator alignment_vec =
-            alignments_map.begin(); alignment_vec != alignments_map.end(); alignment_vec++){
+            alignments_map.begin(); alignment_vec != alignments_map.end(); alignment_vec++) {
         std::sort(alignment_vec->second.begin(), alignment_vec->second.end(), compareIrep);
         alignment.push_back(alignment_vec->second);
     }
@@ -86,7 +86,7 @@ void PosteriorDecoderRunner::executeComputation(HMM &q, std::vector<Hit *>  hits
                 PrepareTemplateHMM(par, q_hmm, t_hmm[current_thread_id], format_tmp, pb, R);
                 par.forward = tmpForward;
             }
-            for (size_t ibt = 0; ibt < (int) alignment_to_exclude.size(); ibt++) {
+            for (size_t ibt = 0; ibt < alignment_to_exclude.size(); ibt++) {
                 // Mask out previous found MAC alignments
                 decoder->excludeMACAlignment(q.L, hit_cur->L, *m_backtrace_matrix[current_thread_id], 0, alignment_to_exclude.at(ibt));
             }
