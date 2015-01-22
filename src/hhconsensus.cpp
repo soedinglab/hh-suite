@@ -5,7 +5,7 @@
 #include <cstdio>     // printf
 #include <algorithm>  // min,max
 #include <stdlib.h>   // exit
-#include <string.h>     // strcmp, strstr
+#include <string.h>   // strcmp, strstr
 #include <math.h>     // sqrt, pow
 #include <limits.h>   // INT_MIN
 #include <float.h>    // FLT_MIN
@@ -337,16 +337,16 @@ int main(int argc, char **argv) {
   RemovePathAndExtension(program_name, argv[0]);
   
   // Enable changing verbose mode before defaults file and command line are processed
-	int v = 2;
-	for (int i = 1; i < argc; i++) {
-		if (!strcmp(argv[i], "-def"))
-		  par.readdefaultsfile = 1;
-		else if (strcmp(argv[i], "-v") == 0) {
-			v = atoi(argv[i + 1]);
-		}
-	}
-	par.v = Log::from_int(v);
-	Log::reporting_level() = par.v;
+  int v = 2;
+  for (int i = 1; i < argc; i++) {
+    if (!strcmp(argv[i], "-def"))
+      par.readdefaultsfile = 1;
+    else if (strcmp(argv[i], "-v") == 0) {
+      v = atoi(argv[i + 1]);
+    }
+  }
+  par.v = Log::from_int(v);
+  Log::reporting_level() = par.v;
 
   par.SetDefaultPaths();
 
