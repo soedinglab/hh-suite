@@ -59,8 +59,6 @@ float __attribute__((aligned(16))) pb[21];
 
 char program_name[NAMELEN];
 
-HMM* q = new HMM(MAXSEQDIS, par.maxres);        //Create a HMM with maximum of par.maxres match states
-
 /////////////////////////////////////////////////////////////////////////////////////
 // Help functions
 /////////////////////////////////////////////////////////////////////////////////////
@@ -122,6 +120,9 @@ void help() {
       "Other options:                                                               \n");
   printf(
       " -addss        add predicted secondary structure information from PSIPRED    \n");
+  printf(
+      " -maxres <int> max number of HMM columns (def=%5i)                           \n",
+            par.maxres);
   printf("\n");
   printf("Example: %s -i stdin -s stdout\n", program_name);
   printf("\n");
@@ -209,10 +210,6 @@ void ProcessArguments(int argc, char** argv) {
     }
     else if (!strcmp(argv[i], "-seq") && (i < argc - 1))
       par.nseqdis = atoi(argv[++i]);
-    else if (!strcmp(argv[i], "-name") && (i < argc - 1)) {
-      strmcpy(q->name, argv[++i], NAMELEN - 1); //copy longname to name...
-      strmcpy(q->longname, argv[i], DESCLEN - 1);   //copy full name to longname
-    }
     else if (!strcmp(argv[i], "-id") && (i < argc - 1))
       par.max_seqid = atoi(argv[++i]);
     else if (!strcmp(argv[i], "-qid") && (i < argc - 1))
@@ -282,6 +279,8 @@ void ProcessArguments(int argc, char** argv) {
       par.readdefaultsfile = 1;
     else if (!strcmp(argv[i], "-addss"))
       par.addss = 1;
+    else if (!strcmp(argv[i], "-maxres") && (i < argc - 1))
+        par.maxres = par.maxcol = atoi(argv[++i]);
     else if (!strcmp(argv[i], "-nocontxt"))
       par.nocontxt = 1;
     else if (!strcmp(argv[i], "-csb") && (i < argc - 1))
@@ -298,7 +297,10 @@ void ProcessArguments(int argc, char** argv) {
       else
         strcpy(par.clusterfile, argv[i]);
     }
-
+    else if (!strcmp(argv[i], "-name")) {
+        // skip this, its handled somewhere else
+        ;
+    }
     else {
 		HH_LOG(WARNING) << endl
 			<< "WARNING: Ignoring unknown option " << argv[i] << " ...\n";
@@ -313,8 +315,7 @@ void ProcessArguments(int argc, char** argv) {
 /////////////////////////////////////////////////////////////////////////////////////
 int main(int argc, char **argv) {
   char* argv_conf[MAXOPT]; // Input arguments from .hhdefaults file (first=1: argv_conf[0] is not used)
-  int argc_conf;               // Number of arguments in argv_conf 
-  Alignment* qali = new Alignment;
+  int argc_conf;               // Number of arguments in argv_conf
 
   strcpy(par.infile, "");
   strcpy(par.outfile, "");
@@ -359,6 +360,17 @@ int main(int argc, char **argv) {
 
   // Process command line options (they override defaults from .hhdefaults file)
   ProcessArguments(argc, argv);
+
+  Alignment* qali = new Alignment(MAXSEQDIS, par.maxres);
+  HMM* q = new HMM(MAXSEQDIS, par.maxres);        //Create a HMM with maximum of par.maxres match states
+
+  // q is only available after maxres is known, so we had to move this here
+  for (int i = 1; i <= argc - 1; i++) {
+      if (!strcmp(argv[i], "-name") && (i < argc - 1)) {
+          strmcpy(q->name, argv[++i], NAMELEN - 1); //copy longname to name...
+          strmcpy(q->longname, argv[i], DESCLEN - 1);   //copy full name to longname
+      }
+  }
 
   // Check command line input and default values
   if (!*par.infile) {
