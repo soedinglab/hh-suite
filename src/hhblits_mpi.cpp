@@ -10,6 +10,10 @@
 #include "hhdecl.h"
 #include "hhblits.h"
 
+#ifdef OPENMP
+#include <omp.h>
+#endif
+
 extern "C" {
 #include <ffindex.h>
 }
@@ -245,7 +249,9 @@ int main(int argc, char **argv) {
   std::vector<HHblitsDatabase*> databases;
   HHblits::prepareDatabases(par, databases);
 
+#ifdef OPENMP
   omp_set_num_threads(par.threads);
+#endif
   HHblits hhblits(par, databases);
 
   // Foreach entry

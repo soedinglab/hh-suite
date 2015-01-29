@@ -7,7 +7,11 @@
 
 #include <stdio.h>
 #include <sys/mman.h>
+
+#ifdef OPENMP
 #include <omp.h>
+#endif
+
 #include "hhdecl.h"
 #include "hhblits.h"
 
@@ -155,7 +159,9 @@ int main(int argc, char **argv) {
   HHblits::prepareDatabases(par, databases);
 
   int threads = par.threads;
+#ifdef OPENMP
   omp_set_num_threads(threads);
+#endif
   par.threads = 1;
 
   HHblits* hhblits_instances[255];
@@ -173,8 +179,12 @@ int main(int argc, char **argv) {
       continue;
     }
 
+#ifdef OPENMP
     int bin = omp_get_thread_num();
     omp_set_num_threads(1);
+#else
+    int bin = 0;
+#endif
 
     hhblits_instances[bin]->Reset();
 
