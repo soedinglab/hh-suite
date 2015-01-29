@@ -644,9 +644,6 @@ void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
     else if (!strcmp(argv[i], "-wg")) {
       par.wg = 1;
     }
-    else if (!strcmp(argv[i], "-opt")) {
-          par.optimize_qsc = true;
-    }
     else if (!strcmp(argv[i], "-Opsi")) {
       par.append = 0;
       if (++i >= argc || argv[i][0] == '-') {

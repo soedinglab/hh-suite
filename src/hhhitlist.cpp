@@ -506,7 +506,7 @@ void HitList::PrintMatrices(HMM* q, std::stringstream& out,
   //limit matrices to par.max_number_matrices
   std::vector<Hit> hits;
 
-  const float tolerance = 0.01;
+  const float tolerance = 0.10;
 
   Reset();
   while (!End()) {
@@ -659,95 +659,94 @@ void HitList::PrintMatrices(HMM* q, std::stringstream& out,
     unsigned short int alignment_similarity = it.calculateSimilarity(q, S) * 10;
     writeS16(out, alignment_similarity);
 
-    unsigned short int forwardProbability;
-    float printForwardThreshold;
-    float_to_16_bit(0.0, forwardProbability);
-    bit_16_to_float(forwardProbability, printForwardThreshold);
+    int last_i;
+    int last_j;
+    unsigned char probability;
 
-    unsigned short int startPrintForward = q->L;
-    unsigned short int endPrintForward = 0;
 
-    for (unsigned short int i = 1; i <= q->L; i++) {
-      float_to_16_bit(it.forward_profile[i], forwardProbability);
-      if (it.forward_profile[i] > printForwardThreshold) {
-        startPrintForward = std::min(i, startPrintForward);
-        endPrintForward = std::max(i, endPrintForward);
-      }
-    }
+    //write backward matrix
+    last_i = -1;
+    last_j = -1;
+    for (size_t backward_index = 0;
+        backward_index < it.backward_entries;
+        backward_index++) {
 
-    writeU16(out, startPrintForward);
+      float_to_8_bit(it.backward_matrix[backward_index][2], probability);
 
-    for (unsigned short int i = startPrintForward; i <= endPrintForward; i++) {
-      if (it.forward_profile[i] > 2 * printForwardThreshold) {
-        float_to_16_bit(it.forward_profile[i], forwardProbability);
-        writeU16(out, forwardProbability);
-      }
-      else {
-        float_to_16_bit(2 * printForwardThreshold, forwardProbability);
-
-        writeU16(out, forwardProbability);
-      }
-    }
-
-    writeU16(out, delimiter_16_bit);
-
-    unsigned short int backwardProbability;
-    float printBackwardThreshold;
-    float_to_16_bit(0.0, backwardProbability);
-    bit_16_to_float(backwardProbability, printBackwardThreshold);
-
-    unsigned short int startPrintBackward = q->L;
-    unsigned short int endPrintBackward = 0;
-
-    for (unsigned short int i = 1; i <= q->L; i++) {
-      float_to_16_bit(it.backward_profile[i], backwardProbability);
-      if (it.backward_profile[i] > printBackwardThreshold) {
-        startPrintBackward = std::min(i, startPrintBackward);
-        endPrintBackward = std::max(i, endPrintBackward);
-      }
-    }
-
-    writeU16(out, startPrintBackward);
-
-    for (unsigned short int i = startPrintBackward; i <= endPrintBackward;
-        i++) {
-      if (it.backward_profile[i] > 2 * printBackwardThreshold) {
-        float_to_16_bit(it.backward_profile[i], backwardProbability);
-        writeU16(out, backwardProbability);
-      }
-      else {
-        float_to_16_bit(2 * printBackwardThreshold, backwardProbability);
-        writeU16(out, backwardProbability);
-      }
-    }
-
-    writeU16(out, delimiter_16_bit);
-
-    unsigned char posteriorProbability;
-
-    int last_i = -1;
-    int last_j = -1;
-    for (size_t posterior_index = 0;
-        posterior_index < it.posterior_probabilities.size();
-        posterior_index++) {
-      Posterior_Triple* triple = it.posterior_probabilities[posterior_index];
-
-      float_to_8_bit(triple->posterior_probability, posteriorProbability);
-
-      if (last_i != triple->query_pos || last_j + 1 != triple->template_pos) {
+      if (last_i != it.backward_matrix[backward_index][0] || last_j + 1 != it.backward_matrix[backward_index][1]) {
         if (last_i != -1 && last_j != -1) {
           out.write(reinterpret_cast<const char*>(&delimiter_8_bit),
               sizeof(delimiter_8_bit));
         }
-        writeU16(out, triple->query_pos);
-        writeU16(out, triple->template_pos);
+        writeU16(out, it.backward_matrix[backward_index][0]);
+        writeU16(out, it.backward_matrix[backward_index][1]);
       }
 
-      out.write(reinterpret_cast<const char*>(&posteriorProbability),
+      out.write(reinterpret_cast<const char*>(&probability),
           sizeof(unsigned char));
 
-      last_i = triple->query_pos;
-      last_j = triple->template_pos;
+      last_i = it.backward_matrix[backward_index][0];
+      last_j = it.backward_matrix[backward_index][1];
+    }
+    out.write(reinterpret_cast<const char*>(&delimiter_8_bit),
+        sizeof(delimiter_8_bit));
+    writeU16(out, delimiter_16_bit);
+
+
+
+    //write forward matrix
+    last_i = -1;
+    last_j = -1;
+    for (size_t forward_index = 0;
+        forward_index < it.forward_entries;
+        forward_index++) {
+
+      float_to_8_bit(it.forward_matrix[forward_index][2], probability);
+
+      if (last_i != it.forward_matrix[forward_index][0] || last_j + 1 != it.forward_matrix[forward_index][1]) {
+        if (last_i != -1 && last_j != -1) {
+          out.write(reinterpret_cast<const char*>(&delimiter_8_bit),
+              sizeof(delimiter_8_bit));
+        }
+        writeU16(out, it.forward_matrix[forward_index][0]);
+        writeU16(out, it.forward_matrix[forward_index][1]);
+      }
+
+      out.write(reinterpret_cast<const char*>(&probability),
+          sizeof(unsigned char));
+
+      last_i = it.forward_matrix[forward_index][0];
+      last_j = it.forward_matrix[forward_index][1];
+    }
+    out.write(reinterpret_cast<const char*>(&delimiter_8_bit),
+        sizeof(delimiter_8_bit));
+    writeU16(out, delimiter_16_bit);
+
+
+
+    //write posterior matrix
+    last_i = -1;
+    last_j = -1;
+    for (size_t posterior_index = 0;
+        posterior_index < it.posterior_entries;
+        posterior_index++) {
+
+      float_to_8_bit(it.posterior_matrix[posterior_index][2], probability);
+
+      if (last_i != it.posterior_matrix[posterior_index][0] || last_j + 1 != it.posterior_matrix[posterior_index][1]) {
+        if (last_i != -1 && last_j != -1) {
+          out.write(reinterpret_cast<const char*>(&delimiter_8_bit),
+              sizeof(delimiter_8_bit));
+        }
+        writeU16(out, it.posterior_matrix[posterior_index][0]);
+        writeU16(out, it.posterior_matrix[posterior_index][1]);
+      }
+
+      out.write(reinterpret_cast<const char*>(&probability),
+          sizeof(unsigned char));
+
+      last_i = it.posterior_matrix[posterior_index][0];
+      last_j = it.posterior_matrix[posterior_index][1];
     }
     out.write(reinterpret_cast<const char*>(&delimiter_8_bit),
         sizeof(delimiter_8_bit));

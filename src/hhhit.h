@@ -59,7 +59,13 @@ class Hit
   
   float* forward_profile;
   float* backward_profile;
-  std::vector<Posterior_Triple*> posterior_probabilities;
+
+  size_t backward_entries;
+  float** backward_matrix;
+  size_t forward_entries;
+  float** forward_matrix;
+  size_t posterior_entries;
+  float** posterior_matrix;
 
   float predicted_alignment_quality;
 
@@ -145,7 +151,6 @@ class Hit
   }
 
   void initHitFromHMM(HMM * t, const int nseqdis);
-  void initHitFromHit(Hit& hit, int query_length);
 
   float estimateAlignmentQuality(HMM* q);
   float calculateSimilarity(HMM* q, const float S[20][20]);

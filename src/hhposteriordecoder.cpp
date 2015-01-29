@@ -42,6 +42,15 @@
 									simdf_andnot(mask_lt, min_float_vec));	// set to -FLT_MAX
 
 
+bool compareIndices(const MACTriple &a, const MACTriple &b) {
+  if(a.i == b.i) {
+    return a.j < b.j;
+  }
+  else {
+    return a.i < b.i;
+  }
+}
+
 PosteriorDecoder::PosteriorDecoder(int maxres, bool local, int q_length) :
 	m_max_res(maxres),
 	m_local(local),
@@ -61,8 +70,10 @@ PosteriorDecoder::PosteriorDecoder(int maxres, bool local, int q_length) :
 
 	m_p_forward = malloc_simd_float( sizeof(float));
 
-	m_backward_profile = (double*) malloc_simd_float((q_length + 2) * sizeof(double));
-	m_forward_profile =  (double*) malloc_simd_float((q_length + 2) * sizeof(double));
+	m_back_forward_matrix_threshold = 0.0001;
+	m_backward_entries.clear();
+	m_forward_entries.clear();
+
 	scale = new double[q_length + 2];
 	m_temp_hit = new Hit;
 }
@@ -75,8 +86,6 @@ PosteriorDecoder::~PosteriorDecoder() {
 	free(p_last_col);
 	free(m_p_forward);
 
-	free(m_backward_profile);
-	free(m_forward_profile);
 	delete [] scale;
 	delete m_temp_hit;
 }
@@ -114,6 +123,9 @@ void PosteriorDecoder::realign(HMM &q, HMM &t, Hit &hit,
 /////////////////////////////////////////////////////////////////////////////////////////////////
 void PosteriorDecoder::initializeForAlignment(HMM &q, HMM &t, Hit &hit, ViterbiMatrix &celloff_matrix,
 											const int elem, const int t_max_L, int par_min_overlap) {
+
+  m_backward_entries.clear();
+  m_forward_entries.clear();
 
 	// First alignment of this pair of HMMs?
 	t.tr[0][M2M] = 1.0f;

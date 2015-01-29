@@ -356,8 +356,6 @@ public:
   char query_hhmfile[NAMELEN];
   bool alitab_scop;
 
-  bool optimize_qsc;
-
   void SetDefaultPaths();
   void SetDefaults();
   Parameters();

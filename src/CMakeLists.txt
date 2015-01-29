@@ -86,6 +86,8 @@ set(HH_SOURCE
 	${CMAKE_CURRENT_SOURCE_DIR}/simd.h
 )
 
+set (CMAKE_CXX_FLAGS "-fno-strict-aliasing")
+
 add_library(HH_OBJECTS OBJECT ${HH_SOURCE})
 
 add_library(hhviterbialgorithm_with_celloff OBJECT hhviterbialgorithm.cpp)

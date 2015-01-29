@@ -771,8 +771,6 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
         exit(4);
       } else
         strcpy(par.alnfile, argv[i]);
-    } else if (!strcmp(argv[i], "-opt")) {
-      par.optimize_qsc = true;
     } else if (!strcmp(argv[i], "-ohhm")) {
       if (++i >= argc || argv[i][0] == '-') {
         help(par);
@@ -1233,70 +1231,66 @@ void HHblits::perform_realign(HMMSimd& q_vec, const char input_format,
                               std::vector<HHEntry*>& hits_to_realign,
                               const int premerge, Hash<char>* premerged_hits) {
 
-  if (par.optimize_qsc) {
-    realignWithOptimalQSC(hitlist, q_vec, input_format);
-  } else {
-    // 19/02/2014: F/B-algos are calculated in log-space
-    //  q->Log2LinTransitionProbs(1.0); // transform transition freqs to lin space if not already done
-    int nhits = 0;
+  // 19/02/2014: F/B-algos are calculated in log-space
+  //  q->Log2LinTransitionProbs(1.0); // transform transition freqs to lin space if not already done
+  int nhits = 0;
 
-    // Longest allowable length of database HMM (backtrace: 5 chars, fwd: 1 double, bwd: 1 double
-    long int Lmaxmem = ((par.maxmem - 0.5) * 1024 * 1024 * 1024)
-        / (2 * sizeof(double) + 8) / q->L / par.threads;
-    int Lmax = 0;      // length of longest HMM to be realigned
+  // Longest allowable length of database HMM (backtrace: 5 chars, fwd: 1 double, bwd: 1 double
+  long int Lmaxmem = ((par.maxmem - 0.5) * 1024 * 1024 * 1024)
+      / (2 * sizeof(double) + 8) / q->L / par.threads;
+  int Lmax = 0;      // length of longest HMM to be realigned
 
-    /////////////////////////////////////////////////////////////////////////////////////////////////
-    // Categorize the hits: first irep, then dbfile
-    int n_realignments = 0;
-    std::map<short int, std::vector<Hit *> > alignments;
-    hitlist.Reset();
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  // Categorize the hits: first irep, then dbfile
+  int n_realignments = 0;
+  std::map<short int, std::vector<Hit *> > alignments;
+  hitlist.Reset();
 
-    std::vector<Hit *> hit_vector;
+  std::vector<Hit *> hit_vector;
 
-    while (!hitlist.End()) {
-      Hit hit_cur = hitlist.ReadNext();
-      if (n_realignments >= par.realign_max
-          && n_realignments >= imax(par.B, par.Z))
-        break;
-      if (hit_cur.Eval > par.e) {
-        if (n_realignments >= imax(par.B, par.Z))
-          continue;
-        if (n_realignments >= imax(par.b, par.z) && hit_cur.Probab < par.p)
-          continue;
-        if (n_realignments >= imax(par.b, par.z) && hit_cur.Eval > par.E)
-          continue;
-      }
-
-      if (hit_cur.L > Lmax) {
-        Lmax = hit_cur.L;
-      }
-      if (hit_cur.L > Lmaxmem) {
-        nhits++;
+  while (!hitlist.End()) {
+    Hit hit_cur = hitlist.ReadNext();
+    if (n_realignments >= par.realign_max
+        && n_realignments >= imax(par.B, par.Z))
+      break;
+    if (hit_cur.Eval > par.e) {
+      if (n_realignments >= imax(par.B, par.Z))
         continue;
-      }
-      //TODO:
-      if (true) {  //nhits >= par.premerge) {
-        hit_vector.push_back(hitlist.ReadCurrentAddress());
-        n_realignments++;
-      }
+      if (n_realignments >= imax(par.b, par.z) && hit_cur.Probab < par.p)
+        continue;
+      if (n_realignments >= imax(par.b, par.z) && hit_cur.Eval > par.E)
+        continue;
+    }
+
+    if (hit_cur.L > Lmax) {
+      Lmax = hit_cur.L;
+    }
+    if (hit_cur.L > Lmaxmem) {
       nhits++;
+      continue;
     }
-
-    int t_maxres = Lmax + 2;
-    for (int i = 0; i < par.threads; i++) {
-      posteriorMatrices[i]->allocateMatrix(q->L, t_maxres);
+    //TODO:
+    if (true) {  //nhits >= par.premerge) {
+      hit_vector.push_back(hitlist.ReadCurrentAddress());
+      n_realignments++;
     }
-
-    // Initialize a Null-value as a return value if not items are available anymore
-    PosteriorDecoderRunner runner(posteriorMatrices, viterbiMatrices, par.threads);
-
-    HH_LOG(INFO)
-        << "Realigning " << nhits
-        << " HMM-HMM alignments using Maximum Accuracy algorithm" << std::endl;
-
-      runner.executeComputation(*q, hit_vector, par, par.qsc_db, pb, S, Sim, R);
-
+    nhits++;
   }
+
+  int t_maxres = Lmax + 2;
+  for (int i = 0; i < par.threads; i++) {
+    posteriorMatrices[i]->allocateMatrix(q->L, t_maxres);
+  }
+
+  // Initialize a Null-value as a return value if not items are available anymore
+  PosteriorDecoderRunner runner(posteriorMatrices, viterbiMatrices, par.threads);
+
+  HH_LOG(INFO)
+      << "Realigning " << nhits
+      << " HMM-HMM alignments using Maximum Accuracy algorithm" << std::endl;
+
+    runner.executeComputation(*q, hit_vector, par, par.qsc_db, pb, S, Sim, R);
+
 
 //  // Delete all hitlist entries with too short alignments
 //  nhits = 0;
@@ -1328,150 +1322,6 @@ void HHblits::perform_realign(HMMSimd& q_vec, const char input_format,
 //  }
 }
 
-void HHblits::realignWithOptimalQSC(HitList& hitlist, HMMSimd& q_vec,
-                                    char query_input_format) {
-
-  const int COV_ABS = 25;
-  const int cov_tot = std::max(std::min((int) (COV_ABS / q->L * 100 + 0.5), 70),
-                               par.coverage);
-
-  // Longest allowable length of database HMM (backtrace: 5 chars, fwd: 1 double, bwd: 1 double
-  long int Lmaxmem = ((par.maxmem - 0.5) * 1024 * 1024 * 1024)
-      / (2 * sizeof(double) + 8) / q->L / par.threads;
-
-  const int nqsc = 6;
-  float qscs[nqsc] = { -20, 0, 0.1, 0.2, 0.3, 0.4 };
-
-  int n_realignments = 0;
-  int Lmax = 0;
-  int nhits = 0;
-
-  //find interesting hits
-  HitList interesting_list;
-  while (!hitlist.End()) {
-    Hit hit_cur = hitlist.ReadNext();
-
-    if (n_realignments >= par.realign_max
-        && n_realignments >= imax(par.B, par.Z))
-      break;
-
-    if (hit_cur.Eval > par.e) {
-      if (n_realignments >= imax(par.B, par.Z))
-        continue;
-      if (n_realignments >= imax(par.b, par.z) && hit_cur.Probab < par.p)
-        continue;
-      if (n_realignments >= imax(par.b, par.z) && hit_cur.Eval > par.E)
-        continue;
-    }
-
-    if (hit_cur.L > Lmax) {
-      Lmax = hit_cur.L;
-    }
-
-    if (hit_cur.L > Lmaxmem) {
-      nhits++;
-      continue;
-    }
-
-    //move relevant hits
-    Hit hit_new;
-    hit_new.initHitFromHit(hit_cur, q->L);
-    interesting_list.Insert(hit_new);
-    hitlist.Delete().Delete();
-
-    n_realignments++;
-    nhits++;
-  }
-
-  //init alignment matrices
-  int t_maxres = Lmax + 2;
-  for (int i = 0; i < par.threads; i++) {
-    posteriorMatrices[i]->allocateMatrix(q->L, t_maxres);
-  }
-
-  HitList all_list;
-
-  HitList curr_list;
-  for (int i = 0; i < nqsc; i++) {
-    float actual_qsc = qscs[i];
-
-    Qali->Compress("filtered A3M file", par.cons, par.maxres, par.maxcol, par.M,
-                   par.Mgaps);
-    Qali->N_filtered = Qali->Filter(par.max_seqid, S, cov_tot, par.qid,
-                                    actual_qsc, par.Ndiff);
-    Qali->FrequenciesAndTransitions(q, par.wg, par.mark, par.cons, par.showcons,
-                                    par.maxres, pb, Sim, NULL, false);
-    PrepareQueryHMM(par, query_input_format, q, pc_hhm_context_engine,
-                    pc_hhm_context_mode, pb, R);
-
-    q_vec.MapOneHMM(q);
-
-    std::vector<Hit *> hit_vector;
-
-    //copy interesting hits to curr_list
-    while (!interesting_list.End()) {
-      Hit hit_cur = interesting_list.ReadNext();
-
-      //copy relevant hits
-      Hit hit_new;
-      hit_new.initHitFromHit(hit_cur, q->L);
-
-      curr_list.Insert(hit_new);
-    }
-
-    //prepare data-structures for realignment
-    curr_list.Reset();
-    while (!curr_list.End()) {
-      Hit hit_cur = curr_list.ReadNext();
-      hit_vector.push_back(curr_list.ReadCurrentAddress());
-    }
-
-    // Initialize a Null-value as a return value if not items are available anymore
-    PosteriorDecoderRunner runner(posteriorMatrices,
-                                  viterbiMatrices, par.threads);
-      runner.executeComputation(*q, hit_vector, par, actual_qsc, pb, S, Sim, R);
-
-    //copy hits from curr_list to all_list
-    curr_list.Reset();
-    while (!curr_list.End()) {
-      Hit hit_cur = curr_list.ReadNext();
-      hit_cur.predicted_alignment_quality = hit_cur.estimateAlignmentQuality(q);
-      hit_cur.qsc = actual_qsc;
-      all_list.Push(hit_cur);
-
-      curr_list.Delete();
-    }
-  }
-
-  interesting_list.Reset();
-  while (!interesting_list.End()) {
-    interesting_list.Delete().Delete();
-  }
-
-  //select of each hit_irep the alignment with the best predicted alignment quality
-  std::set<std::string> output_set;
-  //sort all_list by predicted alignment quality
-  all_list.SortList(&Hit::compare_predicted_alignment_quality);
-  all_list.Reset();
-
-  while (!all_list.End()) {
-    Hit hit_cur = all_list.ReadNext();
-
-    stringstream ss_tmp;
-    ss_tmp << hit_cur.name << "__" << hit_cur.irep;
-
-    if (output_set.find(ss_tmp.str()) != output_set.end()) {
-      all_list.Delete().Delete();
-    } else {
-      output_set.insert(ss_tmp.str());
-
-      hitlist.Push(hit_cur);
-      all_list.Delete();
-    }
-  }
-
-  hitlist.SortList();
-}
 
 void HHblits::optimizeQSC(std::vector<HHEntry*>& selected_entries,
                           const int N_searched, HMMSimd& q_vec,

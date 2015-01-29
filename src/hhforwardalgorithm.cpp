@@ -183,7 +183,6 @@ void PosteriorDecoder::forwardAlgorithm(HMM & q, HMM & t, Hit & hit,
   double scale_rate;
   double scale_prod_curr = 1.0;
   double ffprob = 0.0;
-  double ffsum_row = 0.0;
 
   for (int i = 1; i <= q.L; i++) {
     int jmin;
@@ -197,7 +196,6 @@ void PosteriorDecoder::forwardAlgorithm(HMM & q, HMM & t, Hit & hit,
     else
       scale_prod_curr *= scale[i];
 
-    ffsum_row = 0.0;
     for (int j = jmin; j <= t.L; j++) {
       if (scale_prod_curr == 0.0)
         scale_rate = 0.0;
@@ -206,9 +204,14 @@ void PosteriorDecoder::forwardAlgorithm(HMM & q, HMM & t, Hit & hit,
 
       ffprob = (p_mm.getPosteriorValue(i, j) / hit.Pforward) * scale_rate;
 
-      ffsum_row += ffprob;
-    }
+      if(ffprob > m_back_forward_matrix_threshold) {
+        MACTriple trip;
+        trip.i = i;
+        trip.j = j;
+        trip.value = ffprob;
 
-    m_forward_profile[i] = ffsum_row;
+        m_forward_entries.push_back(trip);
+      }
+    }
   }
 }
