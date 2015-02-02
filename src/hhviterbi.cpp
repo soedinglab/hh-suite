@@ -63,6 +63,7 @@ Viterbi::BacktraceResult Viterbi::Backtrace(ViterbiMatrix * matrix,int elem,int 
     int step;      // counts steps in path through 5-layered dynamic programming matrix
     int i,j;       // query and template match state indices
     //    InitializeBacktrace(q,t);
+
     const int maxAlignmentLength = start_i[elem]+start_j[elem]+2;
     int * i_steps  = new int[maxAlignmentLength];
     int * j_steps  = new int[maxAlignmentLength];

@@ -179,11 +179,10 @@ int main(int argc, char **argv) {
       continue;
     }
 
-#ifdef OPENMP
-    int bin = omp_get_thread_num();
-    omp_set_num_threads(1);
-#else
     int bin = 0;
+#ifdef OPENMP
+    bin = omp_get_thread_num();
+    omp_set_num_threads(1);
 #endif
 
     hhblits_instances[bin]->Reset();

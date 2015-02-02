@@ -262,7 +262,6 @@ public:
   float corr;             // Weight of correlations between scores with |i-j|<=4
   float shift;            // Score offset for match-match states
   double mact;            // Probability threshold (negative offset) in MAC alignment determining greediness at ends of alignment
-  double macins;          // Probability threshold (negative offset) in MAC alignment determining greediness inside the alignment
   int realign_max;        // Realign max ... hits
   float maxmem;           // maximum available memory in GB for realignment (approximately)
 

@@ -11,20 +11,21 @@ endif(${HAVE_SSE2_EXTENSIONS})
 endif(${HAVE_AVX2_EXTENSIONS})
 
 
-include(CheckCXXCompilerFlag)
-check_cxx_compiler_flag(-fopenmp SUPPORT_OMP)
-if (SUPPORT_OMP)
-    message("-- Found OpenMP")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DOPENMP -fopenmp")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DOPENMP -fopenmp")
+find_package(OpenMP)
+if (OPENMP_FOUND)
+	message("-- Found OpenMP")
+	add_definitions(-DOPENMP)
+	set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+	set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif()
+
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-strict-aliasing")
 
 
 add_subdirectory(cs)
 include_directories(cs)
 include_directories("${PROJECT_BINARY_DIR}")
-
-
 
 set(HH_SOURCE
 	${HH_SOURCE}
@@ -86,8 +87,6 @@ set(HH_SOURCE
 	${CMAKE_CURRENT_SOURCE_DIR}/simd.h
 )
 
-set (CMAKE_CXX_FLAGS "-fno-strict-aliasing")
-
 add_library(HH_OBJECTS OBJECT ${HH_SOURCE})
 
 add_library(hhviterbialgorithm_with_celloff OBJECT hhviterbialgorithm.cpp)
@@ -100,7 +99,7 @@ add_executable(hhblits
 	hhblits_app.cpp	$<TARGET_OBJECTS:CS_OBJECTS> $<TARGET_OBJECTS:HH_OBJECTS> $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff> 
 )
 target_link_libraries (hhblits ffindex)
-if (SUPPORT_OMP)
+if (OPENMP_FOUND)
 add_executable(hhblits_omp
   hhblits_omp.cpp $<TARGET_OBJECTS:CS_OBJECTS> $<TARGET_OBJECTS:HH_OBJECTS> $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff>
 )
