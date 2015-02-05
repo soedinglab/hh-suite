@@ -68,8 +68,6 @@ void PosteriorDecoder::backwardAlgorithm(HMM & q, HMM & t, Hit & hit,
 		if (pmin < DBL_MIN * 100)
 			pmin = 0.0;
 
-		float actual_backward = 0.0;
-
 		m_curr[t.L].im = m_curr[t.L].mi = m_curr[t.L].dg = m_curr[t.L].gd = 0.0;
 		memset(m_curr+jmin, 0, (t.L - 1) * sizeof(PosteriorMatrixCol));
 		// Loop through template positions j
@@ -110,13 +108,19 @@ void PosteriorDecoder::backwardAlgorithm(HMM & q, HMM & t, Hit & hit,
 				);
 
 		    float substitutionScore = ProbFwd(q.p[i], t.p[j]);
-		    actual_backward += substitutionScore * Cshift * m_curr[j].mm / hit.Pforward;
+		    float actual_backward_single = substitutionScore * Cshift * m_curr[j].mm / hit.Pforward * final_scale_prod / scale_prod;
+
+		    if(actual_backward_single > m_back_forward_matrix_threshold) {
+          MACTriple trip;
+          trip.i = i;
+          trip.j = j;
+          trip.value = actual_backward_single;
+
+          m_backward_entries.push_back(trip);
+		    }
 			} // end else
 
 		} //end for j
-
-    actual_backward *= final_scale_prod / scale_prod;
-    m_backward_profile[i] = actual_backward;
 
 		// Calculate posterior probability from Forward and Backward matrix elements
 		for (int jj = jmin; jj <= (t.L - 1); jj++) {

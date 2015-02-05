@@ -16,8 +16,10 @@
 
 #include "hhposteriordecoderrunner.h"
 
-int compareIrep( Hit * a,  Hit * b) {
-	return (a->irep < b->irep);
+int compareIrep(const void * a, const void * b) {
+    Hit pa = *(Hit*)a;
+    Hit pb = *(Hit*)b;
+    return (pb.irep < pa.irep);
 }
 
 PosteriorDecoderRunner::PosteriorDecoderRunner( PosteriorMatrix **posterior_matrices,
@@ -47,7 +49,7 @@ void PosteriorDecoderRunner::executeComputation(HMM &q, std::vector<Hit *>  hits
     // sort each std::vector<Hit *> by irep
     std::vector<std::vector<Hit *> > alignment;
     for (std::map<std::string, std::vector<Hit *> >::iterator alignment_vec =
-            alignments_map.begin(); alignment_vec != alignments_map.end(); alignment_vec++){
+            alignments_map.begin(); alignment_vec != alignments_map.end(); alignment_vec++) {
         std::sort(alignment_vec->second.begin(), alignment_vec->second.end(), compareIrep);
         alignment.push_back(alignment_vec->second);
     }

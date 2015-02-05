@@ -165,11 +165,6 @@ void HHalign::help(Parameters& par, char all) {
       "                ness at alignment ends: 0:global >0.1:local (default=%.2f)       \n",
       par.mact);
   printf(
-      " -macins [0,1[  controls the cost of internal gap positions in the MAC algorithm.\n");
-  printf(
-      "                0:dense alignments  1:gappy alignments (default=%.2f)\n",
-      par.macins);
-  printf(
       " -shift [-1,1]  score offset (def=%-.3f)                                      \n",
       par.shift);
   printf(
@@ -379,11 +374,6 @@ void HHalign::help(Parameters& par, char all) {
       "                ness at alignment ends: 0:global >0.1:local (default=%.2f)       \n",
       par.mact);
   printf(
-      " -macins [0,1[  posterior prob threshold for MAC realignment controlling greedi- \n");
-  printf(
-      "                ness for aligning nonhomologous inserts to each other (def=%.2f)\n",
-      par.macins);
-  printf(
       " -sto <int>     use global stochastic sampling algorithm to sample this many alignments\n");
   printf(
       " -sc   <int>    amino acid score         (tja: template HMM at column j) (def=%i)\n",
@@ -504,10 +494,6 @@ void HHalign::ProcessAllArguments(int argc, char** argv, Parameters& par) {
     par.mact = 0.999;
   else if (par.mact < 0)
     par.mact = 0.0;
-  if (par.macins >= 1.0)
-    par.macins = 0.999;
-  else if (par.macins < 0)
-    par.macins = 0.0;
 }
 
 void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
@@ -643,9 +629,6 @@ void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
     }
     else if (!strcmp(argv[i], "-wg")) {
       par.wg = 1;
-    }
-    else if (!strcmp(argv[i], "-opt")) {
-          par.optimize_qsc = true;
     }
     else if (!strcmp(argv[i], "-Opsi")) {
       par.append = 0;
@@ -848,8 +831,6 @@ void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
     else if (!strcmp(argv[i], "-mact") && (i < argc - 1)) {
       par.mact = atof(argv[++i]);
     }
-    else if (!strcmp(argv[i], "-macins") && (i < argc - 1))
-      par.macins = atof(argv[++i]);
     else if (!strcmp(argv[i], "-opt") && (i < argc - 1))
       par.opt = atoi(argv[++i]);
     else if (!strcmp(argv[i], "-scwin") && (i < argc - 1)) {

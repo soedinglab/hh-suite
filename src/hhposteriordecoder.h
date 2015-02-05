@@ -31,6 +31,7 @@
 #include <map>
 #include <vector>
 #include <stddef.h>
+#include <algorithm>
 
 #include "hhhmmsimd.h"
 #include "hhviterbimatrix.h"
@@ -38,9 +39,16 @@
 #include "hhviterbi.h"
 using std::map;
 
+struct MACTriple {
+  int i;
+  int j;
+  float value;
+};
+
+bool compareIndices(const MACTriple &a, const MACTriple &b);
+
 class PosteriorDecoder {
 public:
-
 	static const int VEC_SIZE = HMMSimd::VEC_SIZE;
 
 	struct MACBacktraceResult {
@@ -80,8 +88,9 @@ private:
 	double * m_s_prev;		// MAC scores - previous
 	double * p_last_col;
 
-	double * m_backward_profile;
-	double * m_forward_profile;
+	float m_back_forward_matrix_threshold;
+	std::vector<MACTriple> m_backward_entries;
+	std::vector<MACTriple> m_forward_entries;
 
 	double * scale;
 

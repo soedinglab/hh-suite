@@ -21,6 +21,13 @@ class Viterbi {
         int i[VEC_SIZE];
         int j[VEC_SIZE];
         float score[VEC_SIZE];
+        ViterbiResult(){
+            for(int idx = 0; idx< VEC_SIZE;idx++){
+                i[idx] = -1;
+                j[idx] = -1;
+                score[idx] = 0.0f;
+            }
+        }
     };
 
     struct BacktraceResult {

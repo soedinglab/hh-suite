@@ -42,7 +42,7 @@ void ReadQueryFile(Parameters& par, FILE* inf, char& input_format,
       HH_LOG(INFO) << "Extracting representative sequences from " << infile << " to merge later with matched database sequences\n";
     }
 
-    Alignment ali_tmp;
+    Alignment ali_tmp(MAXSEQ, par.maxres);
     ali_tmp.GetSeqsFromHMM(q);
     ali_tmp.Compress(infile, par.cons, par.maxres, par.maxcol, par.M, par.Mgaps);
     *qali = ali_tmp;
@@ -61,7 +61,7 @@ void ReadQueryFile(Parameters& par, FILE* inf, char& input_format,
     	HH_LOG(INFO) << infile << " is in A2M, A3M or FASTA format\n";
     }
 
-    Alignment ali_tmp;
+    Alignment ali_tmp(MAXSEQ, par.maxres);
 
     // Read alignment from infile into matrix X[k][l] as ASCII (and supply first line as extra argument)
     ali_tmp.Read(inf, infile, par.mark, par.maxcol, par.nseqdis, line);

@@ -53,7 +53,6 @@
  */
 
 #include <stdio.h>
-#include <iostream>
 #include "hhblits.h"
 #include "hhdecl.h"
 
@@ -95,4 +94,9 @@ int main(int argc, char **argv) {
   hhblits.writeHMMFile(par.hhmfile);
   hhblits.writeA3MFile(par.alnfile);
   hhblits.writeMatricesFile(par.matrices_output_file);
+
+  for(size_t i = 0; i < databases.size(); i++) {
+    delete databases[i];
+  }
+  databases.clear();
 }

@@ -21,23 +21,86 @@ void PosteriorDecoder::writeProfilesToHits(HMM &q, HMM &t, PosteriorMatrix &p_mm
 	}
 	hit.backward_profile = new float[q.L + 1];
 
-	for(int i = 1; i <= q.L; i++) {
-		hit.forward_profile[i]  = m_forward_profile[i];
-		hit.backward_profile[i] = m_backward_profile[i];
+	for(int i = 0; i <= q.L; i++) {
+	  hit.backward_profile[i] = 0;
+	  hit.forward_profile[i] = 0;
 	}
 
-	for(size_t i = 0; i < hit.posterior_probabilities.size(); i++) {
-		delete hit.posterior_probabilities[i];
+	if(hit.forward_matrix) {
+	  for(size_t i = 0; i < hit.forward_entries; i++) {
+	    delete[] hit.forward_matrix[i];
+	  }
+	  delete[] hit.forward_matrix;
 	}
-	hit.posterior_probabilities.clear();
 
+  if(hit.backward_matrix) {
+    for(size_t i = 0; i < hit.backward_entries; i++) {
+      delete[] hit.backward_matrix[i];
+    }
+    delete[] hit.backward_matrix;
+  }
+
+  if(hit.posterior_matrix) {
+    for(size_t i = 0; i < hit.posterior_entries; i++) {
+      delete[] hit.posterior_matrix[i];
+    }
+    delete[] hit.posterior_matrix;
+  }
+
+
+  std::sort(m_backward_entries.begin(), m_backward_entries.end(), compareIndices);
+  hit.backward_entries = m_backward_entries.size();
+  hit.backward_matrix = new float*[hit.backward_entries];
+
+  for(size_t i = 0; i < m_backward_entries.size(); i++) {
+    hit.backward_matrix[i] = new float[3];
+
+    MACTriple triple = m_backward_entries[i];
+    hit.backward_matrix[i][0] = triple.i;
+    hit.backward_matrix[i][1] = triple.j;
+    hit.backward_matrix[i][2] = triple.value;
+
+    hit.backward_profile[triple.i] += triple.value;
+  }
+
+
+  std::sort(m_forward_entries.begin(), m_forward_entries.end(), compareIndices);
+  hit.forward_entries = m_forward_entries.size();
+  hit.forward_matrix = new float*[hit.forward_entries];
+  for(size_t i = 0; i < m_forward_entries.size(); i++) {
+    hit.forward_matrix[i] = new float[3];
+
+    MACTriple triple = m_forward_entries[i];
+    hit.forward_matrix[i][0] = triple.i;
+    hit.forward_matrix[i][1] = triple.j;
+    hit.forward_matrix[i][2] = triple.value;
+
+    hit.forward_profile[triple.i] += triple.value;
+  }
+
+  size_t posterior_entries = 0;
+  for(int i = 1; i <= q.L; i++) {
+    for(int j = 1; j <= t.L; j++) {
+      float posterior = p_mm.getPosteriorValue(i, j);
+      if(posterior >= POSTERIOR_PROBABILITY_THRESHOLD) {
+        posterior_entries++;
+      }
+    }
+  }
+
+  hit.posterior_entries = posterior_entries;
+  hit.posterior_matrix = new float*[hit.posterior_entries];
+
+  size_t posterior_index = 0;
 	for(int i = 1; i <= q.L; i++) {
 		for(int j = 1; j <= t.L; j++) {
 			float posterior = p_mm.getPosteriorValue(i, j);
 			if(posterior >= POSTERIOR_PROBABILITY_THRESHOLD) {
-				Posterior_Triple* triple = new Posterior_Triple(i, j, posterior);
-				hit.posterior_probabilities.push_back(triple);
-//				std::cout << t.name << "_" << hit.irep << "\t" << i << "\t" << j << "\t" << posterior << std::endl;
+			  hit.posterior_matrix[posterior_index] = new float[3];
+			  hit.posterior_matrix[posterior_index][0] = i;
+			  hit.posterior_matrix[posterior_index][1] = j;
+			  hit.posterior_matrix[posterior_index][2] = posterior;
+			  posterior_index++;
 			}
 		}
 	}

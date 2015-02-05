@@ -122,7 +122,6 @@ std::vector<Hit> ViterbiRunner::alignment(Parameters& par, HMMSimd * q_simd,
             // read in data for thread
 #pragma omp parallel for schedule(dynamic, 1)
             for (unsigned int idb = seqJunkStart; idb < (seqJunkStart + seqJunkSize); idb += HMMSimd::VEC_SIZE) {
-                // find next free worker thread
                 int current_thread_id = 0;
                 #ifdef OPENMP
                     current_thread_id = omp_get_thread_num();
@@ -145,7 +144,6 @@ std::vector<Hit> ViterbiRunner::alignment(Parameters& par, HMMSimd * q_simd,
                     
                     PrepareTemplateHMM(par, q, t_hmm[current_t_index + i], format_tmp, pb, R);
                     templates_to_align.push_back(t_hmm[current_t_index + i]);
-
                 }
                 t_hmm_simd[current_thread_id]->MapHMMVector(templates_to_align);
                 exclude_alignments(maxResElem, q_simd, t_hmm_simd[current_thread_id],

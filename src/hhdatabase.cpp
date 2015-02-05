@@ -441,6 +441,7 @@ void HHEntry::getTemplateHMM(FILE* dbf, char* name, Parameters& par,
 
       format = 0;
       t->Read(dbf, par.maxcol, par.nseqdis, pb, path);
+      RemoveExtension(t->file, name);
     }
     //TODO: old hhm format discarded
     // read a3m alignment

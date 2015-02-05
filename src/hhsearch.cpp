@@ -96,10 +96,6 @@ void HHsearch::ProcessAllArguments(int argc, char** argv, Parameters& par) {
 		par.mact = 0.999;
 	else if (par.mact < 0)
 		par.mact = 0.0;
-	if (par.macins >= 1.0)
-		par.macins = 0.999;
-	else if (par.macins < 0)
-		par.macins = 0.0;
 }
 
 void HHsearch::help(Parameters& par, char all) {
@@ -227,11 +223,6 @@ void HHsearch::help(Parameters& par, char all) {
 	printf(
 			"                ness at alignment ends: 0:global  >0.1:local (default=%.2f)       \n",
 			par.mact);
-	printf(
-			" -macins [0,1[  controls the cost of internal gap positions in the MAC algorithm.\n");
-	printf(
-			"                0:dense alignments  1:gappy alignments (default=%.2f)\n",
-			par.macins);
 
 	printf(
 			" -glob/-loc     use global/local alignment mode for searching/ranking (def=local)\n");
@@ -689,8 +680,6 @@ void HHsearch::ProcessArguments(int argc, char** argv, Parameters& par) {
 		else if ((!strcmp(argv[i], "-mact") || !strcmp(argv[i], "-mapt"))
 				&& (i < argc - 1))
 			par.mact = atof(argv[++i]);
-		else if (!strcmp(argv[i], "-macins") && (i < argc - 1))
-			par.macins = atof(argv[++i]);
 		else if (!strcmp(argv[i], "-sc") && (i < argc - 1))
 			par.columnscore = atoi(argv[++i]);
 		else if (!strcmp(argv[i], "-scwin") && (i < argc - 1)) {
