@@ -1158,7 +1158,7 @@ sub ExtractPdbcodeAndChain()
 #	return 1; # no SCOP/DALI/pdb sequence 
     }
 
-    &FindPDBfile($pdbcode);
+    &FindPDBfile($pdbcode, $chain);
 
     if ($pdbfile eq "") {
 	if ($v>=2) {print("Warning: no pdb file found for sequence name '$name'\n");} 
@@ -1270,6 +1270,7 @@ sub FindPDBfile() {
 	elsif (-e $pdbfile."pdb$pdbcode.ent.gz") {$pdbfile="gunzip -c $pdbfile"."pdb$pdbcode.ent.gz |";}
 	elsif (-e $pdbfile."pdb$pdbcode.ent.Z")  {$pdbfile="gunzip -c $pdbfile"."pdb$pdbcode.ent.Z |";}
 	elsif (-e $pdbfile."$pdbcode.pdb")       {$pdbfile.="$pdbcode.pdb";}
+	elsif (scalar(@_) == 2 && -e $pdbfile.$_[0]."\_".$_[1].".pdb")    {$pdbfile.=$_[0]."\_".$_[1].".pdb"}
 	else {next;}
 	return $pdbfile;
     }

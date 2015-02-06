@@ -303,15 +303,17 @@ void Hit::initHitFromHMM(HMM * t, const int par_nseqdis){
 }
 
 float Hit::estimateAlignmentQuality(HMM* q) {
-	  const float biases[5] = {1.004681, 3.927253, -36.391424, -0.3767489, 0.0197167};
-	  const float out_bias = -12.7733130;
 
-	  const float out_weights[5] = {-0.2237661, 13.7567823, -1.0593247, 5.7120146, -5.8497739};
-	  const float in_weights[10] = {21.419840, -43.118904, 20.178319, -2.598612, -1.512682, 9.677802, 6.2671908, -2.5100477, 5.7690630, -2.4830519};
+
+	  const float biases[5] = {-0.4555722023, 16.2132655260, 1.2479485770, -1.1722668060, 0.8202277512};
+	  const float out_bias = 0.2004669917;
+
+	  const float out_weights[5] = {0.2349988335, 1.1855138010, -0.6154313167, -1.4806497627, -0.9647355460};
+	  const float in_weights[10] = {-0.06349446500, 1.09041219230, -6.24394725500, 3.07125503700, 1.06896961200, -6.70069064800, -1.89927048900, -23.71528465200, 0.04396863668, -0.34101371461};
 
 	  float sum = out_bias;
 	  for(int n = 0; n < 5; n++) {
-	     float tmp = biases[n] + in_weights[n*2] * (sum_of_probs / q->L) + in_weights[n*2+1] * (score / q->L);
+	     float tmp = biases[n] + in_weights[n*2] * (score / q->L) + in_weights[n*2+1] * (sum_of_probs / q->L);
 	     if(tmp < -15) {
 	        tmp = 0.0;
 	     }
