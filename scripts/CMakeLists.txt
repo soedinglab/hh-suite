@@ -1,7 +1,7 @@
 
 INSTALL(PROGRAMS
-  Align.pm  
-  HHPaths.pm  
+	Align.pm  
+	HHPaths.pm  
 	PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
 	DESTINATION scripts
 )

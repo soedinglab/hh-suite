@@ -31,22 +31,23 @@ ViterbiMatrix::~ViterbiMatrix(){
 /////////////////////////////////////////////////////////////////////////////////////
 void ViterbiMatrix::AllocateBacktraceMatrix(int Nq, int Nt)
 {
-    Nq += 1;
-    Nt += 1;
-    if(Nq > max_query_length || Nt > max_template_length) {
+    int tmp_query_length = ICEIL(Nq + 1, VECSIZE_FLOAT);
+    int tmp_template_length = ICEIL((Nt + 1) * VEC_SIZE, VECSIZE_FLOAT);
+
+    if(tmp_query_length > max_query_length || tmp_template_length > max_template_length) {
         DeleteBacktraceMatrix();
     }
     else {
         return;
     }
 
-    max_query_length = ICEIL(Nq+2,VECSIZE_FLOAT);
-    max_template_length = ICEIL(((Nt+2) *VEC_SIZE),VECSIZE_FLOAT);
-    // Allocate posterior prob matrix (matrix rows are padded to make them aligned to multiples of ALIGN_FLOAT)
-    bCO_MI_DG_IM_GD_MM_vec = malloc_matrix<unsigned char>(max_query_length, max_template_length);
-    if (!bCO_MI_DG_IM_GD_MM_vec)
-        MemoryError("m_probabilities", "hhviterbimatrix.cpp", 55, "ViterbiMatrix::allocateMatrix");
+    max_query_length = tmp_query_length;
+    max_template_length = tmp_template_length;
 
+    // Allocate posterior prob matrix (matrix rows are padded to make them aligned to multiples of ALIGN_FLOAT)
+    bCO_MI_DG_IM_GD_MM_vec = malloc_matrix<unsigned char>(max_query_length + 2, max_template_length + (2 * VEC_SIZE));
+    if (!bCO_MI_DG_IM_GD_MM_vec)
+        MemoryError("m_probabilities", __FILE__, __LINE__, __func__);
 }
 
 
