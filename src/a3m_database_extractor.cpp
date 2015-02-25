@@ -105,7 +105,7 @@ int main(int argc, char **argv) {
   }
 
   size_t ca3m_offset;
-  char* ca3m_data = ffindex_mmap_data(ca3m_data_fh, &a3m_offset);
+  char* ca3m_data = ffindex_mmap_data(ca3m_data_fh, &ca3m_offset);
   ffindex_index_t* ca3m_index = ffindex_index_parse(ca3m_index_fh, 0);
 
   if(ca3m_index == NULL) {
