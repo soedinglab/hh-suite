@@ -146,7 +146,6 @@ int main(int argc, char **argv) {
     in = &std::cin;
   }
 
-
   in->seekg(0, in->end);
   size_t stream_size = in->tellg();
   in->seekg(0, in->beg);

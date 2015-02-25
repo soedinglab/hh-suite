@@ -280,7 +280,7 @@ void compressed_a3m::extract_a3m(char* data, size_t data_size,
   data++;
   index++;
 
-  while(index < data_size) {
+  while(index < data_size - 1) {
     unsigned int entry_index;
     unsigned short int nr_blocks;
     unsigned short int start_pos;
@@ -290,7 +290,6 @@ void compressed_a3m::extract_a3m(char* data, size_t data_size,
 
     ffindex_entry_t* sequence_entry = ffindex_get_entry_by_index(ffindex_sequence_database_index, entry_index);
     char* sequence = ffindex_get_data_by_entry(ffindex_sequence_database_data, sequence_entry);
-    //TODO: catch errors
 
     ffindex_entry_t* header_entry = ffindex_get_entry_by_index(ffindex_header_database_index, entry_index);
     char* header = ffindex_get_data_by_entry(ffindex_header_database_data, header_entry);

@@ -163,6 +163,11 @@ add_executable(a3m_database_reducer
 )
 target_link_libraries (a3m_database_reducer ffindex)
 
+add_executable(a3m_database_extractor
+  a3m_database_extractor.cpp $<TARGET_OBJECTS:A3M_COMPRESS_OBJECT>
+)
+target_link_libraries (a3m_database_extractor ffindex)
+
 add_executable(a3m_database_filter
   a3m_database_filter.cpp $<TARGET_OBJECTS:A3M_COMPRESS_OBJECT>
 )
@@ -182,6 +187,7 @@ INSTALL(PROGRAMS
 	${CMAKE_CURRENT_BINARY_DIR}/hhconsensus 
 	${CMAKE_CURRENT_BINARY_DIR}/a3m_extractor 
 	${CMAKE_CURRENT_BINARY_DIR}/a3m_database_reducer
+	${CMAKE_CURRENT_BINARY_DIR}/a3m_database_extractor
 	${CMAKE_CURRENT_BINARY_DIR}/a3m_database_filter 
 	${CMAKE_CURRENT_BINARY_DIR}/cstranslate 
 	DESTINATION bin
