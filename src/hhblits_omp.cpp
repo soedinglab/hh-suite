@@ -19,6 +19,9 @@ extern "C" {
 #include <ffindex.h>
 }
 
+const int MAX_THREADS = 255;
+
+
 struct OutputFFIndex {
     char base[NAMELEN];
     FILE* data_fh;
@@ -47,28 +50,32 @@ struct OutputFFIndex {
 
     void sort() {
       /* Sort the index entries and write back */
+      char index_filename[NAMELEN];
+      snprintf(index_filename, FILENAME_MAX, "%s.ffindex", base);
+
       rewind(index_fh);
       ffindex_index_t* index = ffindex_index_parse(index_fh, number_entries);
-      if (index == NULL) {
-        //TODO: throw error
-      }
       fclose(index_fh);
+
+      if (index == NULL) {
+        HH_LOG(LogLevel::ERROR) << "Could not read index from " << index_filename << " for sorting!" << std::endl;
+        return;
+      }
 
       ffindex_sort_index_file(index);
 
-      char index_filename[NAMELEN];
-      snprintf(index_filename, FILENAME_MAX, "%s.ffindex", base);
       index_fh = fopen(index_filename, "w");
 
       if (index_fh == NULL) {
-        //TODO: throw error
+        HH_LOG(LogLevel::ERROR) << "Could not open " << index_filename << " for sorting!" << std::endl;
+        return;
       }
 
       ffindex_write(index, index_fh);
-
       free(index);
     }
 };
+
 
 void makeOutputFFIndex(char* par, void (*print)(HHblits&, std::stringstream&),
     std::vector<OutputFFIndex>& outDatabases) {
@@ -90,18 +97,25 @@ void makeOutputFFIndex(char* par, void (*print)(HHblits&, std::stringstream&),
     db.index_fh = fopen(index_filename_out_rank, "w+");
 
     if (db.data_fh == NULL) {
-      std::cerr << "could not open datafile " << data_filename_out_rank
-          << std::endl;
+      HH_LOG(LogLevel::ERROR) << "Could not open datafile " << data_filename_out_rank << "!" << std::endl;
       return;
     }
 
     if (db.index_fh == NULL) {
-      std::cerr << "could not open indexfile " << index_filename_out_rank
-          << std::endl;
+      HH_LOG(LogLevel::ERROR) << "Could not open indexfile " << index_filename_out_rank << "!" << std::endl;
       return;
     }
 
     outDatabases.push_back(db);
+  }
+}
+
+
+void checkOutput(Parameters& par) {
+  if (!*par.outfile) {
+    RemoveExtension(par.outfile, par.infile);
+    strcat(par.outfile, "_hhr");
+    HH_LOG(LogLevel::INFO) << "Search results will be written to " << par.outfile << "!\n";
   }
 }
 
@@ -123,13 +137,12 @@ int main(int argc, char **argv) {
   FILE *index_file = fopen(index_filename, "r");
 
   if (data_file == NULL) {
-    std::cerr << "input data file " << data_filename << " does not exist!"
-        << std::endl;
+    HH_LOG(LogLevel::ERROR) << "Input data file " << data_filename << " does not exist!" << std::endl;
     exit(EXIT_FAILURE);
   }
+
   if (index_file == NULL) {
-    std::cerr << "input index file " << index_filename << " does not exist!"
-        << std::endl;
+    HH_LOG(LogLevel::ERROR) << "Input index file " << index_filename << " does not exist!" << std::endl;
     exit(EXIT_FAILURE);
   }
 
@@ -158,22 +171,31 @@ int main(int argc, char **argv) {
   std::vector<HHblitsDatabase*> databases;
   HHblits::prepareDatabases(par, databases);
 
-  int threads = par.threads;
+  int threads = threads;
+
+  if(threads > MAX_THREADS) {
+    threads = MAX_THREADS;
+    HH_LOG(LogLevel::WARNING) << "Reduced threads to max. allowed threads " << MAX_THREADS << "!" << std::endl;
+  }
+
 #ifdef OPENMP
   omp_set_num_threads(threads);
 #endif
+
+  //no openmp parallelization in hhblits methods
   par.threads = 1;
 
-  HHblits* hhblits_instances[255];
+  HHblits* hhblits_instances[MAX_THREADS];
   for(int i = 0; i < threads; i++) {
     hhblits_instances[i] = new HHblits(par, databases);
   }
 
   size_t range_start = 0;
   size_t range_end = index->n_entries;
-  #pragma omp parallel for schedule(dynamic, 10)
+  #pragma omp parallel for schedule(dynamic, 1)
   for (size_t entry_index = range_start; entry_index < range_end; entry_index++) {
     ffindex_entry_t* entry = ffindex_get_entry_by_index(index, entry_index);
+
     if (entry == NULL) {
       HH_LOG(WARNING) << "Could not open entry " << entry_index << " from input ffindex!" << std::endl;
       continue;

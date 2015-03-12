@@ -56,9 +56,18 @@
 #include "hhblits.h"
 #include "hhdecl.h"
 
+void checkOutput(Parameters& par) {
+  if (!*par.outfile) {
+    RemoveExtension(par.outfile, par.infile);
+    strcat(par.outfile, ".hhr");
+    HH_LOG(LogLevel::INFO) << "Search results will be written to " << par.outfile << "\n";
+  }
+}
+
 int main(int argc, char **argv) {
   Parameters par;
   HHblits::ProcessAllArguments(argc, argv, par);
+  checkOutput(par);
 
   std::vector<HHblitsDatabase*> databases;
   HHblits::prepareDatabases(par, databases);
@@ -76,12 +85,11 @@ int main(int argc, char **argv) {
   }
 
   if(!inf) {
-	  std::cerr << "Input file (" << par.infile << ") could not be opened!" << std::endl;
+	  HH_LOG(LogLevel::ERROR) << "Input file (" << par.infile << ") could not be opened!" << std::endl;
 	  exit(1);
   }
 
   hhblits.run(inf, par.infile);
-
   fclose(inf);
 
   hhblits.writeHHRFile(par.outfile);

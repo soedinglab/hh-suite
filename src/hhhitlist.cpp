@@ -663,7 +663,6 @@ void HitList::PrintMatrices(HMM* q, std::stringstream& out,
     int last_j;
     unsigned char probability;
 
-
     //write backward matrix
     last_i = -1;
     last_j = -1;

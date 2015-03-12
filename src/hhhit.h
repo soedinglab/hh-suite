@@ -38,8 +38,6 @@ struct Posterior_Triple {
 	}
 };
 
-
-
 /////////////////////////////////////////////////////////////////////////////////////
 // // Describes an alignment of two profiles. Used as list element in Hits : List<Hit> 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -66,8 +64,6 @@ class Hit
   float** forward_matrix;
   size_t posterior_entries;
   float** posterior_matrix;
-
-  float predicted_alignment_quality;
 
   float score;          // Score of alignment (i.e. of Viterbi path)
   float score_sort;     // score to sort hits in output list (negative means first/best!)
@@ -141,18 +137,12 @@ class Hit
     return hit1.sum_of_probs > hit2.sum_of_probs;
   }
 
-  static bool compare_predicted_alignment_quality(const Hit& hit1, const Hit& hit2) {
-//	std::cout << hit1.predicted_alignment_quality << "\t" << hit2.predicted_alignment_quality << std::endl;
-    return hit1.predicted_alignment_quality > hit2.predicted_alignment_quality;
-  }
-
   static bool compare_evalue(const Hit& hit1, const Hit& hit2) {
     return hit1.Eval < hit2.Eval;
   }
 
   void initHitFromHMM(HMM * t, const int nseqdis);
 
-  float estimateAlignmentQuality(HMM* q);
   float calculateSimilarity(HMM* q, const float S[20][20]);
 
   // Calculate Evalue, score_aass, Proba from logPval and score_ss

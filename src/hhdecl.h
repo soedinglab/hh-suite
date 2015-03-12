@@ -169,7 +169,6 @@ public:
 
   char infile[NAMELEN];   // input filename
   char outfile[NAMELEN];  // output filename
-  char opt_outfile[NAMELEN];
   char matrices_output_file[NAMELEN];
   char pairwisealisfile[NAMELEN]; // output filename with pairwise alignments
   char alisbasename[NAMELEN];

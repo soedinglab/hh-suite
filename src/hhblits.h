@@ -175,9 +175,6 @@ protected:
 
 	void mergeHitsToQuery(Hash<Hit>* previous_hits, Hash<char>* premerged_hits, int& seqs_found, int& cluster_found);
 	void add_hits_to_hitlist(std::vector<Hit>& hits, HitList& hitlist);
-	void optimizeQSC(std::vector<HHEntry*>& selected_entries,
-			const int N_searched, HMMSimd& q_vec, char query_input_format,
-			HitList& output_list);
 	void get_entries_of_selected_hits(HitList& input, std::vector<HHEntry*>& selected_entries);
 	void get_entries_of_all_hits(HitList& input, std::vector<HHEntry*>& selected_entries);
 

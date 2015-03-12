@@ -118,7 +118,6 @@ void HHblits::ProcessAllArguments(int argc, char** argv, Parameters& par) {
   par.Ndiff = 1000;
   par.prefilter = true;
 
-  //TODO
   par.early_stopping_filter = true;
   par.filter_thresh = 0.01;
 
@@ -218,15 +217,6 @@ void HHblits::ProcessAllArguments(int argc, char** argv, Parameters& par) {
   if (!(par.num_rounds > 1 || *par.alnfile || *par.psifile || *par.hhmfile
       || *par.alisbasename))
     par.premerge = 0;
-
-  // No outfile given? Name it basename.hhm
-  //TODO check if no output at all is specified
-//  if (!*par.outfile) {
-//    RemoveExtension(par.outfile, par.infile);
-//    strcat(par.outfile, ".hhr");
-//    if (v >= 2)
-//      cout << "Search results will be written to " << par.outfile << "\n";
-//  }
 
   // Check option compatibilities
   if (par.nseqdis > MAXSEQDIS - 3 - par.showcons)
@@ -746,14 +736,6 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
         exit(4);
       } else
         strcpy(par.matrices_output_file, argv[i]);
-    } else if (!strcmp(argv[i], "-oopt")) {
-      if (++i >= argc || argv[i][0] == '-') {
-        help(par);
-        cerr << endl << "Error in " << program_name
-             << ": no output file following -o\n";
-        exit(4);
-      } else
-        strcpy(par.opt_outfile, argv[i]);
     } else if (!strcmp(argv[i], "-oa3m")) {
       if (++i >= argc || argv[i][0] == '-') {
         help(par);
@@ -1258,6 +1240,7 @@ void HHblits::perform_realign(HMMSimd& q_vec, const char input_format,
       nhits++;
       continue;
     }
+
     //TODO:
     if (true) {  //nhits >= par.premerge) {
       hit_vector.push_back(hitlist.ReadCurrentAddress());
@@ -1311,132 +1294,6 @@ void HHblits::perform_realign(HMMSimd& q_vec, const char input_format,
 //  }
 }
 
-
-void HHblits::optimizeQSC(std::vector<HHEntry*>& selected_entries,
-                          const int N_searched, HMMSimd& q_vec,
-                          char query_input_format, HitList& output_list) {
-  const int COV_ABS = 25;
-  const int cov_tot = std::max(std::min((int) (COV_ABS / q->L * 100 + 0.5), 70),
-                               par.coverage);
-
-  const int nqsc = 6;
-  float qscs[nqsc] = { -20, 0, 0.1, 0.2, 0.3, 0.4 };
-
-  HitList all_list;
-
-  for (int i = 0; i < nqsc; i++) {
-    float actual_qsc = qscs[i];
-
-    HitList tmp_list;
-    tmp_list.N_searched = N_searched;
-
-    Qali->Compress("filtered A3M file", par.cons, par.maxres, par.maxcol, par.M,
-                   par.Mgaps);
-    Qali->N_filtered = Qali->Filter(par.max_seqid, S, cov_tot, par.qid,
-                                    actual_qsc, par.Ndiff);
-    Qali->FrequenciesAndTransitions(q, par.wg, par.mark, par.cons, par.showcons,
-                                    par.maxres, pb, Sim, NULL, false);
-    PrepareQueryHMM(par, query_input_format, q, pc_hhm_context_engine,
-                    pc_hhm_context_mode, pb, R);
-
-    q_vec.MapOneHMM(q);
-
-    ViterbiRunner viterbirunner(viterbiMatrices, dbs, par.threads);
-    std::vector<Hit> hits_to_add = viterbirunner.alignment(par, &q_vec,
-                                                           selected_entries,
-                                                           actual_qsc, pb, S,
-                                                           Sim, R);
-
-    add_hits_to_hitlist(hits_to_add, tmp_list);
-
-    std::vector<Hit *> hit_vector;
-    std::vector<HHEntry*> hits_to_realign;
-
-    int t_maxres = 0;
-    int n_realignments = 0;
-    tmp_list.Reset();
-    while (!tmp_list.End()) {
-      Hit hit_cur = tmp_list.ReadNext();
-      t_maxres = std::max(t_maxres, hit_cur.L + 2);
-      hits_to_realign.push_back(hit_cur.entry);
-      hit_vector.push_back(tmp_list.ReadCurrentAddress());
-      n_realignments++;
-    }
-
-    for (int i = 0; i < par.threads; i++) {
-      posteriorMatrices[i]->allocateMatrix(q->L, t_maxres);
-    }
-
-    // Initialize a Null-value as a return value if not items are available anymore
-    PosteriorDecoderRunner runner(posteriorMatrices, viterbiMatrices, par.threads);
-      runner.executeComputation(*q, hit_vector, par, actual_qsc, pb, S, Sim, R);
-
-    tmp_list.Reset();
-    while (!tmp_list.End()) {
-      Hit hit_cur = tmp_list.ReadNext();
-      hit_cur.predicted_alignment_quality = hit_cur.estimateAlignmentQuality(q);
-      hit_cur.qsc = actual_qsc;
-      all_list.Push(hit_cur);
-
-      tmp_list.Delete();
-    }
-  }
-
-//TODO: more sophisticated stuff
-//	std::map<std::string, ViterbiScores> best_evalue_scores;
-//
-//	//select for each hit_irep the best evalue
-//	all_list.SortList(&Hit::compare_evalue);
-//  all_list.Reset();
-//  while (!all_list.End()) {
-//    Hit hit_cur = all_list.ReadNext();
-//
-//    stringstream ss_tmp;
-//    ss_tmp << hit_cur.name << "__" << hit_cur.irep;
-//
-//    if(best_evalue_scores.find(ss_tmp.str()) == best_evalue_scores.end()) {
-//      ViterbiScores scores(hit_cur);
-//      best_evalue_scores.insert(std::pair<std::string, ViterbiScores>(ss_tmp.str(), scores));
-//    }
-//  }
-
-  //select of each hit_irep the alignment with the best predicted alignment quality
-  std::set<std::string> output_set;
-  //sort all_list by predicted alignment quality
-  all_list.SortList(&Hit::compare_predicted_alignment_quality);
-  all_list.Reset();
-  while (!all_list.End()) {
-    Hit hit_cur = all_list.ReadNext();
-
-    stringstream ss_tmp;
-    ss_tmp << hit_cur.name << "__" << hit_cur.irep;
-//		std::cout << ss_tmp.str() << "\t" << hit_cur.predicted_alignment_quality << "\t" << hit_cur.score_sort << std::endl;
-
-    if (output_set.find(ss_tmp.str()) != output_set.end()) {
-      all_list.Delete().Delete();
-    } else {
-      output_set.insert(ss_tmp.str());
-
-//      ViterbiScores best_scores = best_evalue_scores[ss_tmp.str()];
-//      hit_cur.score = best_scores.score;
-//      hit_cur.score_aass = best_scores.score_aass;
-//      hit_cur.score_ss = best_scores.score_ss;
-//      hit_cur.Pval = best_scores.Pval;
-//      hit_cur.Pvalt = best_scores.Pvalt;
-//      hit_cur.logPval = best_scores.logPval;
-//      hit_cur.logPvalt = best_scores.logPvalt;
-//      hit_cur.Eval = best_scores.Eval;
-//      hit_cur.logEval = best_scores.logEval;
-//      hit_cur.Probab = best_scores.Probab;
-
-      output_list.Push(hit_cur);
-      all_list.Delete();
-    }
-  }
-
-  output_list.N_searched = N_searched;
-  output_list.SortList();
-}
 
 void HHblits::get_entries_of_selected_hits(
     HitList& input, std::vector<HHEntry*>& selected_entries) {
@@ -1828,13 +1685,6 @@ void HHblits::run(FILE* query_fh, char* query_path) {
 
       hitlist.Delete();  // Delete list record (flat delete)
     }
-  }
-
-  if (*par.opt_outfile) {
-    std::vector<HHEntry*> selected_entries;
-    get_entries_of_selected_hits(hitlist, selected_entries);
-    optimizeQSC(selected_entries, hitlist.N_searched, q_vec, input_format,
-                optimized_hitlist);
   }
 
   // Warn, if HMMER files were used
