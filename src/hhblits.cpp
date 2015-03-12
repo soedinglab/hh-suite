@@ -1755,16 +1755,6 @@ void HHblits::writeAlitabFile(char* alitabFile) {
   }
 }
 
-void HHblits::writeOptimizedHHRFile(char* reducedHHRFile) {
-  if (*reducedHHRFile) {
-    optimized_hitlist.PrintHHR(q_tmp, reducedHHRFile, par.maxdbstrlen,
-                               par.showconf, par.showcons, par.showdssp,
-                               par.showpred, par.b, par.B, par.z, par.Z,
-                               par.aliwidth, par.nseqdis, par.p, par.E,
-                               par.argc, par.argv, S);
-  }
-}
-
 void HHblits::writePsiFile(char* psiFile) {
   // Write output PSI-BLAST-formatted alignment?
   if (*psiFile) {
@@ -1828,19 +1818,6 @@ void HHblits::writeAlitabFile(HHblits& hhblits, std::stringstream& out) {
   hhblits.hitlist.WriteToAlifile(hhblits.q, out, hhblits.par.b, hhblits.par.B,
                                  hhblits.par.z, hhblits.par.Z, hhblits.par.p,
                                  hhblits.par.E);
-}
-
-void HHblits::writeOptimizedHHRFile(HHblits& hhblits, std::stringstream& out) {
-  hhblits.optimized_hitlist.PrintHHR(hhblits.q_tmp, out,
-                                     hhblits.par.maxdbstrlen,
-                                     hhblits.par.showconf, hhblits.par.showcons,
-                                     hhblits.par.showdssp, hhblits.par.showpred,
-                                     hhblits.par.b, hhblits.par.B,
-                                     hhblits.par.z, hhblits.par.Z,
-                                     hhblits.par.aliwidth, hhblits.par.nseqdis,
-                                     hhblits.par.p, hhblits.par.E,
-                                     hhblits.par.argc, hhblits.par.argv,
-                                     hhblits.S);
 }
 
 void HHblits::writePsiFile(HHblits& hhblits, std::stringstream& out) {

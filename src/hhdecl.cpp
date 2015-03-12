@@ -214,7 +214,6 @@ void Parameters::SetDefaults() {
 
 	strcpy(infile, ""); // was reverted back from 'strcpy(infile,"stdin");' (to show help list when no options are given)
 	strcpy(outfile, "");
-	strcpy(opt_outfile, "");
 	strcpy(matrices_output_file, "");
 	strcpy(pairwisealisfile, "");
 	strcpy(scorefile, "");

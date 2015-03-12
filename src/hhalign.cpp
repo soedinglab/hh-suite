@@ -554,17 +554,6 @@ void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
       else
         strcpy(par.outfile, argv[i]);
     }
-    else if (!strcmp(argv[i], "-oopt")) {
-      if (++i >= argc) {
-        help(par);
-        std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": "
-            << __func__ << ":" << std::endl;
-        std::cerr << "\tno filename following -o\n";
-        exit(4);
-      }
-      else
-        strcpy(par.opt_outfile, argv[i]);
-    }
     else if (!strcmp(argv[i], "-ofas")) {
       par.outformat = 1;
       if (++i >= argc || argv[i][0] == '-') {
@@ -952,12 +941,6 @@ void HHalign::run(FILE* query_fh, char* query_path, char* template_path) {
 
   if (par.notags)
       q->NeutralizeTags(pb);
-
-  if(*par.opt_outfile) {
-    std::vector<HHEntry*> selected_entries;
-    get_entries_of_selected_hits(hitlist, selected_entries);
-      optimizeQSC(selected_entries, hitlist.N_searched, q_vec, input_format, optimized_hitlist);
-  }
 
   for(size_t i = 0; i < new_entries.size(); i++) {
     delete new_entries[i];

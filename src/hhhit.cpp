@@ -301,31 +301,3 @@ void Hit::initHitFromHMM(HMM * t, const int par_nseqdis){
     this->logPvalt= 0.0;
     this->Probab = 1.0;
 }
-
-float Hit::estimateAlignmentQuality(HMM* q) {
-
-
-	  const float biases[5] = {-0.4555722023, 16.2132655260, 1.2479485770, -1.1722668060, 0.8202277512};
-	  const float out_bias = 0.2004669917;
-
-	  const float out_weights[5] = {0.2349988335, 1.1855138010, -0.6154313167, -1.4806497627, -0.9647355460};
-	  const float in_weights[10] = {-0.06349446500, 1.09041219230, -6.24394725500, 3.07125503700, 1.06896961200, -6.70069064800, -1.89927048900, -23.71528465200, 0.04396863668, -0.34101371461};
-
-	  float sum = out_bias;
-	  for(int n = 0; n < 5; n++) {
-	     float tmp = biases[n] + in_weights[n*2] * (score / q->L) + in_weights[n*2+1] * (sum_of_probs / q->L);
-	     if(tmp < -15) {
-	        tmp = 0.0;
-	     }
-	     else if(tmp > 15) {
-	        tmp = 1.0;
-	     }
-	     else {
-	        tmp = (1.0/(1.0+exp(-tmp)));
-	     }
-	     sum += out_weights[n] * tmp;
-	  }
-
-	  return sum;
-}
-

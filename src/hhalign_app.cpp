@@ -42,7 +42,6 @@ int main(int argc, char **argv) {
   hhalign.writePsiFile(par.psifile);
   hhalign.writeHMMFile(par.hhmfile);
   hhalign.writeA3MFile(par.alnfile);
-  hhalign.writeOptimizedHHRFile(par.opt_outfile);
 }
 
 

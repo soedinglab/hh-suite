@@ -58,7 +58,7 @@ struct OutputFFIndex {
       fclose(index_fh);
 
       if (index == NULL) {
-        HH_LOG(LogLevel::ERROR) << "Could not read index from " << index_filename << " for sorting!" << std::endl;
+        HH_LOG(ERROR) << "Could not read index from " << index_filename << " for sorting!" << std::endl;
         return;
       }
 
@@ -67,7 +67,7 @@ struct OutputFFIndex {
       index_fh = fopen(index_filename, "w");
 
       if (index_fh == NULL) {
-        HH_LOG(LogLevel::ERROR) << "Could not open " << index_filename << " for sorting!" << std::endl;
+        HH_LOG(ERROR) << "Could not open " << index_filename << " for sorting!" << std::endl;
         return;
       }
 
@@ -97,12 +97,12 @@ void makeOutputFFIndex(char* par, void (*print)(HHblits&, std::stringstream&),
     db.index_fh = fopen(index_filename_out_rank, "w+");
 
     if (db.data_fh == NULL) {
-      HH_LOG(LogLevel::ERROR) << "Could not open datafile " << data_filename_out_rank << "!" << std::endl;
+      HH_LOG(ERROR) << "Could not open datafile " << data_filename_out_rank << "!" << std::endl;
       return;
     }
 
     if (db.index_fh == NULL) {
-      HH_LOG(LogLevel::ERROR) << "Could not open indexfile " << index_filename_out_rank << "!" << std::endl;
+      HH_LOG(ERROR) << "Could not open indexfile " << index_filename_out_rank << "!" << std::endl;
       return;
     }
 
@@ -115,7 +115,7 @@ void checkOutput(Parameters& par) {
   if (!*par.outfile) {
     RemoveExtension(par.outfile, par.infile);
     strcat(par.outfile, "_hhr");
-    HH_LOG(LogLevel::INFO) << "Search results will be written to " << par.outfile << "!\n";
+    HH_LOG(INFO) << "Search results will be written to " << par.outfile << "!\n";
   }
 }
 
@@ -137,12 +137,12 @@ int main(int argc, char **argv) {
   FILE *index_file = fopen(index_filename, "r");
 
   if (data_file == NULL) {
-    HH_LOG(LogLevel::ERROR) << "Input data file " << data_filename << " does not exist!" << std::endl;
+    HH_LOG(ERROR) << "Input data file " << data_filename << " does not exist!" << std::endl;
     exit(EXIT_FAILURE);
   }
 
   if (index_file == NULL) {
-    HH_LOG(LogLevel::ERROR) << "Input index file " << index_filename << " does not exist!" << std::endl;
+    HH_LOG(ERROR) << "Input index file " << index_filename << " does not exist!" << std::endl;
     exit(EXIT_FAILURE);
   }
 
@@ -162,7 +162,6 @@ int main(int argc, char **argv) {
   makeOutputFFIndex(par.scorefile, &HHblits::writeScoresFile, outputDatabases);
   makeOutputFFIndex(par.pairwisealisfile, &HHblits::writePairwiseAlisFile, outputDatabases);
   makeOutputFFIndex(par.alitabfile, &HHblits::writeAlitabFile, outputDatabases);
-  makeOutputFFIndex(par.opt_outfile, &HHblits::writeOptimizedHHRFile, outputDatabases);
   makeOutputFFIndex(par.psifile, &HHblits::writePsiFile, outputDatabases);
   makeOutputFFIndex(par.hhmfile, &HHblits::writeHMMFile, outputDatabases);
   makeOutputFFIndex(par.alnfile, &HHblits::writeA3MFile, outputDatabases);
@@ -175,7 +174,7 @@ int main(int argc, char **argv) {
 
   if(threads > MAX_THREADS) {
     threads = MAX_THREADS;
-    HH_LOG(LogLevel::WARNING) << "Reduced threads to max. allowed threads " << MAX_THREADS << "!" << std::endl;
+    HH_LOG(WARNING) << "Reduced threads to max. allowed threads " << MAX_THREADS << "!" << std::endl;
   }
 
 #ifdef OPENMP

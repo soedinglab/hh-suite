@@ -224,8 +224,6 @@ int main(int argc, char **argv) {
       &HHblits::writePairwiseAlisFile, outputDatabases);
   makeOutputFFIndex(par.alitabfile, mpi_rank, &HHblits::writeAlitabFile,
       outputDatabases);
-  makeOutputFFIndex(par.opt_outfile, mpi_rank,
-      &HHblits::writeOptimizedHHRFile, outputDatabases);
   makeOutputFFIndex(par.psifile, mpi_rank, &HHblits::writePsiFile,
       outputDatabases);
   makeOutputFFIndex(par.hhmfile, mpi_rank, &HHblits::writeHMMFile,

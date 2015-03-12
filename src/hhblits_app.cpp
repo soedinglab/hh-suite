@@ -60,7 +60,7 @@ void checkOutput(Parameters& par) {
   if (!*par.outfile) {
     RemoveExtension(par.outfile, par.infile);
     strcat(par.outfile, ".hhr");
-    HH_LOG(LogLevel::INFO) << "Search results will be written to " << par.outfile << "\n";
+    HH_LOG(INFO) << "Search results will be written to " << par.outfile << "\n";
   }
 }
 
@@ -85,7 +85,7 @@ int main(int argc, char **argv) {
   }
 
   if(!inf) {
-	  HH_LOG(LogLevel::ERROR) << "Input file (" << par.infile << ") could not be opened!" << std::endl;
+	  HH_LOG(ERROR) << "Input file (" << par.infile << ") could not be opened!" << std::endl;
 	  exit(1);
   }
 
@@ -97,7 +97,6 @@ int main(int argc, char **argv) {
   hhblits.writeScoresFile(par.scorefile);
   hhblits.writePairwiseAlisFile(par.pairwisealisfile, par.outformat);
   hhblits.writeAlitabFile(par.alitabfile);
-  hhblits.writeOptimizedHHRFile(par.opt_outfile);
   hhblits.writePsiFile(par.psifile);
   hhblits.writeHMMFile(par.hhmfile);
   hhblits.writeA3MFile(par.alnfile);

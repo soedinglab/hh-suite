@@ -102,7 +102,6 @@ public:
     void writeScoresFile(char* scoresFile);
     void writePairwiseAlisFile(char* pairwieseAlisFile, char outformat);
     void writeAlitabFile(char* alitabFile);
-    void writeOptimizedHHRFile(char* reduceHHRFile);
     void writePsiFile(char* psiFile);
     void writeHMMFile(char* HMMFile);
     void writeA3MFile(char* A3MFile);
@@ -114,7 +113,6 @@ public:
     static void writeScoresFile(HHblits& hhblits, std::stringstream& out);
     static void writePairwiseAlisFile(HHblits& hhblits, std::stringstream& out);
     static void writeAlitabFile(HHblits& hhblits, std::stringstream& out);
-    static void writeOptimizedHHRFile(HHblits& hhblits, std::stringstream& out);
     static void writePsiFile(HHblits& hhblits, std::stringstream& out);
     static void writeHMMFile(HHblits& hhblits, std::stringstream& out);
     static void writeA3MFile(HHblits& hhblits, std::stringstream& out);
