@@ -35,6 +35,8 @@ HHalign::~HHalign() {
 
 }
 
+
+//TODO: get Version and Data from cmake
 void HHalign::help(Parameters& par, char all) {
   printf("\n");
   printf("HHalign %s\n", VERSION_AND_DATE);
@@ -63,7 +65,7 @@ void HHalign::help(Parameters& par, char all) {
 
   printf("Input alignment format:                                                       \n");
   printf(" -M a2m         use A2M/A3M (default): upper case = Match; lower case = Insert;\n");
-  printf("               ' -' = Delete; '.' = gaps aligned to inserts (may be omitted)   \n");
+  printf("               '-' = Delete; '.' = gaps aligned to inserts (may be omitted)   \n");
   printf(" -M first       use FASTA: columns with residue in 1st sequence are match states\n");
   printf(" -M [0,100]     use FASTA: columns with fewer than X%% gaps are match states   \n");
   //TODO: tags defined and read in hhalign but not in hhbits?
@@ -75,17 +77,16 @@ void HHalign::help(Parameters& par, char all) {
   printf(" -o <file>      write results in standard format to file (default=<infile.hhr>)\n");
   //TODO: in hhblits -oa3m merged msa; -Oa3m pairwise alignments
   //TODO: in hhalign -oa3m pairwise alignments; -Oa3m merged msa
-  printf(" -ofas <file>     write pairwise alignments in FASTA, A2M (-oa2m) or A3M (-oa3m) format   \n");
+  printf(" -ofas <file>   write pairwise alignments in FASTA, A2M (-oa2m) or A3M (-oa3m) format   \n");
   printf(" -Oa3m <file>   write query alignment in a3m format to file (default=none)\n");
   //TODO: not useful??? should be enabled for pairwise alignments???
   printf(" -Aa3m <file>   append query alignment in a3m format to file (default=none)\n");
-  printf(" -index <file>    use given alignment to calculate Viterbi score (default=none)\n");
-  printf(" -nocons          don't show consensus sequence in alignments (default=show) \n");
-  printf(" -nopred          don't show predicted 2ndary structure in alignments (default=show) \n");
-  printf(" -nodssp          don't show DSSP 2ndary structure in alignments (default=show) \n");
-  printf(" -ssconf          show confidences for predicted 2ndary structure in alignments\n");
-  printf(" -rank int         specify rank of alignment to write with -Oa3m or -Aa3m option (default=1)\n");
-
+  printf(" -index <file>  use given alignment to calculate Viterbi score (default=none)\n");
+  printf(" -nocons        don't show consensus sequence in alignments (default=show) \n");
+  printf(" -nopred        don't show predicted 2ndary structure in alignments (default=show) \n");
+  printf(" -nodssp        don't show DSSP 2ndary structure in alignments (default=show) \n");
+  printf(" -ssconf        how confidences for predicted 2ndary structure in alignments\n");
+  printf(" -rank int      specify rank of alignment to write with -Oa3m or -Aa3m option (default=1)\n");
   if (all) {
     printf(" -seq <int>     max. number of query/template sequences displayed (default=%i)  \n", par.nseqdis);
     printf(" -aliw <int>    number of columns per line in alignment list (default=%i)       \n", par.aliwidth);
@@ -95,8 +96,8 @@ void HHalign::help(Parameters& par, char all) {
     printf(" -z <int>       minimum number of lines in summary hit list (default=%i)        \n", par.z);
     printf(" -B <int>       maximum number of alignments in alignment list (default=%i)     \n", par.B);
     printf(" -b <int>       minimum number of alignments in alignment list (default=%i)     \n", par.b);
-    printf("\n");
   }
+  printf("\n");
 
   printf("Filter options applied to query MSA, template MSA, and result MSA              \n");
   printf(" -id   [0,100]  maximum pairwise sequence identity (def=%i)\n", par.max_seqid);
@@ -115,7 +116,7 @@ void HHalign::help(Parameters& par, char all) {
 
   if (all) {
     //TODO: remove -realign due to default behavior?
-    printf(" -realign        realign displayed hits with max. accuracy (MAC) algorithm \n");
+    printf(" -realign       realign displayed hits with max. accuracy (MAC) algorithm \n");
     printf(" -excl <range>  exclude query positions from the alignment, e.g. '1-33,97-168' \n");
     printf(" -alt <int>     show up to this many significant alternative alignments(def=%i)  \n", par.altali);
     printf(" -shift [-1,1]  profile-profile score offset (def=%-.2f)                         \n", par.shift);
@@ -126,11 +127,12 @@ void HHalign::help(Parameters& par, char all) {
     printf("        2       = log2 Sum(tja*qia/ta)   (ta: av. aa freqs in template)     \n");
     printf("        3       = log2 Sum(tja*qia/qa)   (qa: av. aa freqs in query)        \n");
     printf("        5       local amino acid composition correction                     \n");
-    printf(" -ssm {0,..,4}  0:   no ss scoring                                             \n");
-    printf("        1,2:   = ss scoring after or during alignment  [default=%1i]         \n", par.ssm);
-    printf("        3,4:   = ss scoring after or during alignment, predicted vs. predicted\n");
-    printf(" -ssw [0,1]    weight of ss score  (def=%-.2f)                                  \n", par.ssw);
-    printf(" -ssa  [0,1]    ss confusion matrix = (1-ssa)*I + ssa*psipred-confusion-matrix [def=%-.2f)\n", par.ssa);
+    printf(" -ssm {0,..,4}  secondary structure scoring [default=%1i]             \n", par.ssm);
+    printf("          0:    = no ss scoring           \n");
+    printf("        1,2:    = ss scoring after or during alignment         \n");
+    printf("        3,4:    = ss scoring after or during alignment, predicted vs. predicted\n");
+    printf(" -ssw [0,1]     weight of ss score  (def=%-.2f)                                  \n", par.ssw);
+    printf(" -ssa [0,1]     ss confusion matrix = (1-ssa)*I + ssa*psipred-confusion-matrix [def=%-.2f)\n", par.ssa);
     printf(" -wg            use global sequence weighting for realignment!                   \n");
     printf("\n");
 
@@ -183,6 +185,7 @@ void HHalign::help(Parameters& par, char all) {
     printf("  -nocontxt      use substitution-matrix instead of context-specific pseudocounts \n");
     printf("  -contxt <file> context file for computing context-specific pseudocounts (default=%s)\n", par.clusterfile);
   }
+  printf("\n");
 
   printf("Other options:                                                                   \n");
   printf(" -v <int>       verbose mode: 0:no screen output  1:only warings  2: verbose (def=%i)\n", par.v);
@@ -191,6 +194,7 @@ void HHalign::help(Parameters& par, char all) {
     printf(" -maxres <int>  max number of HMM columns (def=%5i)             \n", par.maxres);
     printf(" -maxmem [1,inf[ limit memory for realignment (in GB) (def=%.1f)          \n", par.maxmem);
   }
+  printf("\n");
 
   if (!all) {
     printf("An extended list of options can be obtained by calling 'hhalign -h all'\n");

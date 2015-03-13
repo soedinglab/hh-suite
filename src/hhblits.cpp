@@ -119,7 +119,7 @@ void HHblits::ProcessAllArguments(int argc, char** argv, Parameters& par) {
   par.early_stopping_filter = true;
   par.filter_thresh = 0.01;
 
-  // Enable changing verbose mode before command line are processed
+  // Enable changing verbose mode before command line is processed
   int v = 2;
   for (int i = 1; i < argc; i++) {
     if (strcmp(argv[i], "-v") == 0) {
@@ -273,39 +273,28 @@ void HHblits::help(Parameters& par, char all) {
   RemovePathAndExtension(program_name, par.argv[0]);
 
   printf("\n");
-  printf(
-      "HHblits %s:\nHMM-HMM-based lightning-fast iterative sequence search\n",
-      VERSION_AND_DATE);
-  printf(
-      "HHblits is a sensitive, general-purpose, iterative sequence search tool that represents\n");
-  printf(
-      "both query and database sequences by HMMs. You can search HHblits databases starting\n");
-  printf(
-      "with a single query sequence, a multiple sequence alignment (MSA), or an HMM. HHblits\n");
-  printf(
-      "prints out a ranked list of database HMMs/MSAs and can also generate an MSA by merging\n");
+  printf("HHblits %s:\nHMM-HMM-based lightning-fast iterative sequence search\n", VERSION_AND_DATE);
+  printf("HHblits is a sensitive, general-purpose, iterative sequence search tool that represents\n");
+  printf("both query and database sequences by HMMs. You can search HHblits databases starting\n");
+  printf("with a single query sequence, a multiple sequence alignment (MSA), or an HMM. HHblits\n");
+  printf("prints out a ranked list of database HMMs/MSAs and can also generate an MSA by merging\n");
   printf("the significant database HMMs/MSAs onto the query MSA.\n");
   printf("\n");
   printf("%s", HHBLITS_REFERENCE);
   printf("%s", COPYRIGHT);
   printf("\n");
   printf("Usage: %s -i query [options] \n", program_name);
-  printf(
-      " -i <file>      input/query: single sequence or multiple sequence alignment (MSA)\n");
-  printf(
-      "                in a3m, a2m, or FASTA format, or HMM in hhm format\n");
+  printf(" -i <file>      input/query: single sequence or multiple sequence alignment (MSA)\n");
+  printf("                in a3m, a2m, or FASTA format, or HMM in hhm format\n");
   if (all) {
     printf("\n");
     printf("<file> may be 'stdin' or 'stdout' throughout.\n");
   }
   printf("\n");
-  printf(
-      "Options:                                                                       \n");
-  printf(
-      " -d <name>      database name (e.g. uniprot20_29Feb2012)                       \n");
-  printf(
-      " -n     [1,8]   number of iterations (default=%i)                              \n",
-      par.num_rounds);
+
+  printf("Options:                                                                       \n");
+  printf(" -d <name>      database name (e.g. uniprot20_29Feb2012)                       \n");
+  printf(" -n     [1,8]   number of iterations (default=%i)                              \n", par.num_rounds);
   printf(
       " -e     [0,1]   E-value cutoff for inclusion in result alignment (def=%G)      \n",
       par.e);
