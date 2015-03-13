@@ -28,7 +28,7 @@ int main(int argc, char **argv) {
   }
 
   if(!inf) {
-      std::cerr << "Input file (" << par.infile << ") could not be opened!" << std::endl;
+    HH_LOG(ERROR) << "Input file (" << par.infile << ") could not be opened!" << std::endl;
       exit(1);
   }
 

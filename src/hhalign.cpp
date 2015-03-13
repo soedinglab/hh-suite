@@ -471,9 +471,7 @@ void HHalign::ProcessAllArguments(int argc, char** argv, Parameters& par) {
   // Check command line input and default values
   if (!*par.infile) {
     help(par);
-    std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__
-        << ":" << std::endl;
-    std::cerr << "\tno query alignment file given (-i file)\n";
+    HH_LOG(ERROR) << "No query alignment file given (-i file)!" << std::endl;
     exit(4);
   }
 
@@ -502,9 +500,7 @@ void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
     if (!strcmp(argv[i], "-i")) {
       if (++i >= argc || argv[i][0] == '-') {
         help(par);
-        std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": "
-            << __func__ << ":" << std::endl;
-        std::cerr << "\tno query file following -i\n";
+        HH_LOG(ERROR) << "No query file following -i" << std::endl;
         exit(4);
       }
       else
@@ -513,9 +509,7 @@ void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
     else if (!strcmp(argv[i], "-t")) {
       if (++i >= argc || argv[i][0] == '-') {
         help(par);
-        std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": "
-            << __func__ << ":" << std::endl;
-        std::cerr << "\tno template file following -d\n";
+        HH_LOG(ERROR) << "No template file following -d" << std::endl;
         exit(4);
       }
       else
@@ -524,31 +518,16 @@ void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
     else if (!strcmp(argv[i], "-q2t")) {
       if (++i >= argc || argv[i][0] == '-') {
         help(par);
-        std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": "
-            << __func__ << ":" << std::endl;
-        std::cerr << "\tno query2template file following -d\n";
+        HH_LOG(ERROR) << "No query2template file following -d" << std::endl;
         exit(4);
       }
       else
         strcpy(par.queries_to_template_file, argv[i]);
     }
-    else if (!strcmp(argv[i], "-d")) {
-      if (++i >= argc || argv[i][0] == '-') {
-        help(par);
-        std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": "
-            << __func__ << ":" << std::endl;
-        std::cerr << "\tno database file following -d\n";
-        exit(4);
-      }
-      else
-        par.db_bases.push_back(std::string(argv[i]));
-    }
     else if (!strcmp(argv[i], "-o")) {
       if (++i >= argc) {
         help(par);
-        std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": "
-            << __func__ << ":" << std::endl;
-        std::cerr << "\tno filename following -o\n";
+        HH_LOG(ERROR) << "No filename following -o" << std::endl;
         exit(4);
       }
       else
@@ -558,9 +537,7 @@ void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
       par.outformat = 1;
       if (++i >= argc || argv[i][0] == '-') {
         help(par);
-        std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": "
-            << __func__ << ":" << std::endl;
-        std::cerr << "\tno output file following -o\n";
+        HH_LOG(ERROR) << "No output file following -o" << std::endl;
         exit(4);
       }
       else
@@ -570,9 +547,7 @@ void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
       par.outformat = 2;
       if (++i >= argc || argv[i][0] == '-') {
         help(par);
-        std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": "
-            << __func__ << ":" << std::endl;
-        std::cerr << "\tno output file following -o\n";
+        HH_LOG(ERROR) << "No output file following -o" << std::endl;
         exit(4);
       }
       else
@@ -582,9 +557,7 @@ void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
       par.outformat = 3;
       if (++i >= argc || argv[i][0] == '-') {
         help(par);
-        std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": "
-            << __func__ << ":" << std::endl;
-        std::cerr << "\tno output file following -o\n";
+        HH_LOG(ERROR) << "No output file following -o" << std::endl;
         exit(4);
       }
       else
@@ -596,9 +569,7 @@ void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
       par.append = 0;
       if (++i >= argc || argv[i][0] == '-') {
         help(par);
-        std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": "
-            << __func__ << ":" << std::endl;
-        std::cerr << "\tno output file following -Oa3m\n";
+        HH_LOG(ERROR) << "No output file following -Oa3m" << std::endl;
         exit(4);
       }
       else
@@ -608,9 +579,7 @@ void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
       par.append = 1;
       if (++i >= argc || argv[i][0] == '-') {
         help(par);
-        std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": "
-            << __func__ << ":" << std::endl;
-        std::cerr << "\tno output file following -Aa3m\n";
+        HH_LOG(ERROR) << "No output file following -Aa3m" << std::endl;
         exit(4);
       }
       else
@@ -623,9 +592,7 @@ void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
       par.append = 0;
       if (++i >= argc || argv[i][0] == '-') {
         help(par);
-        std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": "
-            << __func__ << ":" << std::endl;
-        std::cerr << "\tno output file following -Opsi\n";
+        HH_LOG(ERROR) << "No output file following -Opsi" << std::endl;
         exit(4);
       }
       else
@@ -635,9 +602,7 @@ void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
       par.append = 1;
       if (++i >= argc || argv[i][0] == '-') {
         help(par);
-        std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": "
-            << __func__ << ":" << std::endl;
-        std::cerr << "\tno output file following -Apsi\n";
+        HH_LOG(ERROR) << "No output file following -Apsi" << std::endl;
         exit(4);
       }
       else
@@ -646,9 +611,7 @@ void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
     else if (!strcmp(argv[i], "-atab") || !strcmp(argv[i], "-Aliout")) {
       if (++i >= argc || argv[i][0] == '-') {
         help(par);
-        std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": "
-            << __func__ << ":" << std::endl;
-        std::cerr << "\tno query file following -atab\n";
+        HH_LOG(ERROR) << "No query file following -atab" << std::endl;
         exit(4);
       }
       else
@@ -657,9 +620,7 @@ void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
     else if (!strcmp(argv[i], "-index")) {
       if (++i >= argc || argv[i][0] == '-') {
         help(par);
-        std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": "
-            << __func__ << ":" << std::endl;
-        std::cerr << "\tno index file following -index\n";
+        HH_LOG(ERROR) << "No index file following -index" << std::endl;
         exit(4);
       }
       else
@@ -813,8 +774,7 @@ void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
         par.M = 2;
       }
       else
-        cerr << endl << "WARNING: Ignoring unknown argument: -M " << argv[i]
-            << "\n";
+        HH_LOG(WARNING) << "Ignoring unknown argument: -M " << argv[i] << std::endl;
     else if (!strcmp(argv[i], "-shift") && (i < argc - 1))
       par.shift = atof(argv[++i]);
     else if (!strcmp(argv[i], "-mact") && (i < argc - 1)) {
@@ -854,9 +814,7 @@ void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
     else if (!strcmp(argv[i], "-cs")) {
       if (++i >= argc || argv[i][0] == '-') {
         help(par);
-        std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": "
-            << __func__ << ":" << std::endl;
-        std::cerr << "\tno query file following -cs\n";
+        HH_LOG(ERROR) << "No query file following -cs" << std::endl;
         exit(4);
       }
       else
@@ -866,8 +824,7 @@ void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
       par.threads = atoi(argv[++i]);
     }
     else {
-      HH_LOG(WARNING) << endl << "WARNING: Ignoring unknown option "
-          << argv[i] << " ...\n";
+      HH_LOG(WARNING) << "Ignoring unknown option " << argv[i] << std::endl;
     }
     HH_LOG(DEBUG1) << i << "  " << argv[i] << endl;
   } // end of for-loop for command line input

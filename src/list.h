@@ -14,6 +14,8 @@
 #include <iostream>
 #include <cstdlib>
 
+#include "log.h"
+
 template<class Typ>
 class List {
   protected:
@@ -240,12 +242,12 @@ template<class Typ>
 List<Typ>::List() {
   head = new ListEl<Typ>();
   if (!head) {
-    std::cerr << "Could not create new element\n";
+    HH_LOG(ERROR) << "Could not create new element" << std::endl;
     return;
   }
   tail = new ListEl<Typ>(head, NULL);
   if (!tail) {
-    std::cerr << "Could not create new element\n";
+    HH_LOG(ERROR) << "Could not create new element" << std::endl;
     return;
   }
   tail->next = tail;
@@ -262,17 +264,17 @@ template<class Typ>
 List<Typ>::List(Typ d) {
   head = new ListEl<Typ>();
   if (!head) {
-    std::cerr << "Could not create new element\n";
+    HH_LOG(ERROR) << "Could not create new element" << std::endl;
     return;
   }
   tail = new ListEl<Typ>();
   if (!tail) {
-    std::cerr << "Could not create new element\n";
+    HH_LOG(ERROR) << "Could not create new element" << std::endl;
     return;
   }
   ListEl<Typ>* el = new ListEl<Typ>(d, head, tail);
   if (!el) {
-    std::cerr << "Could not create new element\n";
+    HH_LOG(ERROR) << "Could not create new element" << std::endl;
     return;
   }
   head->prev = head;
@@ -346,7 +348,7 @@ template<class Typ>
 Typ* List<Typ>::Push(Typ d) {
   ListEl<Typ>* t = new ListEl<Typ>(d, tail->prev, tail);
   if (!t) {
-    std::cerr << "Could not create new element\n";
+    HH_LOG(ERROR) << "Could not create new element" << std::endl;
     return 0;
   }
   tail->prev->next = t;
@@ -383,7 +385,7 @@ template<class Typ>
 Typ* List<Typ>::Enqueue(Typ d) {
   ListEl<Typ>* h = new ListEl<Typ>(d, head, head->next);
   if (!h) {
-    std::cerr << "Could not create new element\n";
+    HH_LOG(ERROR) << "Could not create new element" << std::endl;
     return 0;
   }
   h->next->prev = h;
@@ -420,7 +422,7 @@ template<class Typ>
 inline Typ List<Typ>::ReadNext() {
   current = current->next;
 #ifdef HHDEBUG
-  if (current == tail) std::cerr<<"WARNING in list.C function ReadNext(): Attempting to read tail element. Urgh!"<<std::endl;
+  if (current == tail) HH_LOG(ERROR) << "Attempting to read tail element!" << std::endl;
 #endif
   return current->data;
 }
@@ -431,8 +433,8 @@ inline Typ List<Typ>::ReadNext() {
 template<class Typ>
 inline Typ List<Typ>::ReadCurrent() {
 #ifdef HHDEBUG
-  if (current == head) std::cerr<<"WARNING in list.C function ReadCurrent(): Attempting to read head element. Urgh!"<<std::endl;
-  if (current == tail) std::cerr<<"WARNING in list.C function ReadCurrent(): Attempting to read tail element. Urgh!"<<std::endl;
+  if (current == head) HH_LOG(ERROR) << "Attempting to read head element!" << std::endl;
+  if (current == tail) HH_LOG(ERROR) << "Attempting to read tail element!" << std::endl;
 #endif
   return current->data;
 }
@@ -444,7 +446,7 @@ template<class Typ>
 inline Typ List<Typ>::ReadPrevious() {
   current = current->prev;
 #ifdef HHDEBUG
-  if (current == head) std::cerr<<"WARNING in list.C function ReadPrevious(): Attempting to read head element. Urgh!"<<std::endl;
+  if (current == head) HH_LOG(ERROR) << "Attempting to read head element!" << std::endl;
 #endif
   return current->data;
 }
@@ -496,7 +498,7 @@ template<class Typ>
 void List<Typ>::Insert(Typ d) {
   ListEl<Typ>* el = new ListEl<Typ>(d, current, current->next);
   if (!el) {
-    std::cerr << "Could not create new element\n";
+    HH_LOG(ERROR) << "Could not create new element!" << std::endl;
     return;
   }
   (current->next)->prev = el;

@@ -21,7 +21,6 @@ extern "C" {
 
 const int MAX_THREADS = 255;
 
-
 struct OutputFFIndex {
     char base[NAMELEN];
     FILE* data_fh;
@@ -153,7 +152,7 @@ int main(int argc, char **argv) {
   size_t number_input_index_lines = CountLinesInFile(index_filename);
   ffindex_index_t* index = ffindex_index_parse(index_file, number_input_index_lines);
   if (index == NULL) {
-    std::cerr << "Could not parse index from " << index_filename << std::endl;
+    HH_LOG(ERROR) << "Could not parse index from " << index_filename << std::endl;
     exit(EXIT_FAILURE);
   }
 

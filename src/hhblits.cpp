@@ -8,7 +8,6 @@
 #include "hhblits.h"
 
 //TODO: get rid of exit(1)... throw errors
-//TODO: get more flexible database reader
 
 HHblits::HHblits(Parameters& parameters,
                  std::vector<HHblitsDatabase*>& databases) {
@@ -39,8 +38,7 @@ HHblits::HHblits(Parameters& parameters,
   if (!par.nocontxt && *par.clusterfile) {
     FILE* fin = fopen(par.clusterfile, "r");
     if (!fin) {
-      std::cerr << std::endl << "Error in " << par.argv[0]
-                << ": could not open file \'" << par.clusterfile << "\'\n";
+      HH_LOG(ERROR) << "Could not open file \'" << par.clusterfile << "\'" << std::endl;
       exit(2);
     }
 
@@ -150,43 +148,29 @@ void HHblits::ProcessAllArguments(int argc, char** argv, Parameters& par) {
   // Check needed files
   if (!*par.infile || !strcmp(par.infile, "")) {
     help(par);
-    std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__
-              << ":" << std::endl;
-    std::cerr << "\tinput file missing!" << std::endl;
+    HH_LOG(ERROR) << "Input file is missing! (see -i)" << std::endl;
     exit(4);
   }
   if (par.db_bases.size() == 0) {
     help(par);
-    std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__
-              << ":" << std::endl;
-    std::cerr << "\tdatabase missing (see -d)\n";
+    HH_LOG(ERROR) << "Database is missing! (see -d)" << std::endl;
     exit(4);
   }
   if (par.addss == 1 && (!*par.psipred || !*par.psipred_data)) {
     help(par);
-    std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__
-              << ":" << std::endl;
-    std::cerr
-        << "\tmissing PSIPRED directory (see -psipred and -psipred_data).\n"
-        << std::endl;
-    std::cerr
-        << "\tIf you don't need the predicted secondary structure, don't use the -addss option!"
-        << std::endl;
+    HH_LOG(ERROR) << "PSIPRED directory is missing (see -psipred and -psipred_data)." << std::endl;
+    HH_LOG(ERROR) << "If you don't need the predicted secondary structure, don't use the -addss option!" << std::endl;
     exit(4);
   }
   if (!par.nocontxt) {
     if (!strcmp(par.clusterfile, "")) {
       help(par);
-      std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": "
-                << __func__ << ":" << std::endl;
-      std::cerr << "\tcontext-specific library missing (see -contxt)\n";
+      HH_LOG(ERROR) << "Context-specific library is missing (see -contxt)" << std::endl;
       exit(4);
     }
     if (!strcmp(par.cs_library, "")) {
       help(par);
-      std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": "
-                << __func__ << ":" << std::endl;
-      std::cerr << "\tcolumn state library (see -cslib)\n";
+      HH_LOG(ERROR) << "Column state library is missing (see -cslib)" << std::endl;
       exit(4);
     }
   }
@@ -204,10 +188,7 @@ void HHblits::ProcessAllArguments(int argc, char** argv, Parameters& par) {
     par.num_rounds = 1;
   else if (par.num_rounds > 8) {
     if (v >= 1) {
-      std::cerr << "Warning in " << __FILE__ << ":" << __LINE__ << ": "
-                << __func__ << ":" << std::endl;
-      std::cerr << "\tNumber of iterations (" << par.num_rounds
-                << ") to large => Set to 8 iterations\n";
+      HH_LOG(WARNING) << "Number of iterations (" << par.num_rounds << ") to large => Set to 8 iterations\n";
     }
     par.num_rounds = 8;
   }
@@ -232,7 +213,7 @@ void HHblits::ProcessAllArguments(int argc, char** argv, Parameters& par) {
   if (par.z > par.Z)
     par.Z = par.z;
   if (par.maxmem < 1.0) {
-    cerr << "WARNING: setting -maxmem to its minimum allowed value of 1.0\n";
+    HH_LOG(WARNING) << "Setting -maxmem to its minimum allowed value of 1.0" << std::endl;
     par.maxmem = 1.0;
   }
   if (par.mact >= 1.0)
@@ -265,10 +246,6 @@ void HHblits::Reset() {
   hitlist.Reset();
   while (!hitlist.End())
     hitlist.Delete().Delete();
-
-  optimized_hitlist.Reset();
-  while (!optimized_hitlist.End())
-    optimized_hitlist.Delete().Delete();
 
   std::map<int, Alignment*>::iterator it;
   for (it = alis.begin(); it != alis.end(); it++) {
@@ -659,9 +636,10 @@ void HHblits::help(Parameters& par, char all) {
   }
   printf("\n");
   printf("Example: %s -i query.fas -oa3m query.a3m -n 1  \n", program_name);
-  cout << endl;
 }
 
+
+//TODO: replace cerr with HH_LOG
 void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
   char program_name[NAMELEN];
   RemovePathAndExtension(program_name, par.argv[0]);
@@ -672,16 +650,14 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
     if (!strcmp(argv[i], "-i")) {
       if (++i >= argc || argv[i][0] == '-') {
         help(par);
-        cerr << endl << "Error in " << program_name
-             << ": no query file following -i\n";
+        HH_LOG(ERROR) << "No query file following -i" << std::endl;
         exit(4);
       } else
         strcpy(par.infile, argv[i]);
     } else if (!strcmp(argv[i], "-d")) {
       if (++i >= argc || argv[i][0] == '-') {
         help(par);
-        cerr << endl << "Error in " << program_name
-             << ": no database basename following -d\n";
+        HH_LOG(ERROR) << "No database basename following -d" << std::endl;
         exit(4);
       } else {
         std::string db(argv[i]);
@@ -691,80 +667,70 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
         || !strcmp(argv[i], "-context_data")) {
       if (++i >= argc || argv[i][0] == '-') {
         help(par);
-        cerr << endl << "Error in " << program_name
-             << ": no lib following -contxt\n";
+        HH_LOG(ERROR) << "No lib following -contxt" << std::endl;
         exit(4);
       } else
         strcpy(par.clusterfile, argv[i]);
     } else if (!strcmp(argv[i], "-cslib") || !strcmp(argv[i], "-cs_lib")) {
       if (++i >= argc || argv[i][0] == '-') {
         help(par);
-        cerr << endl << "Error in " << program_name
-             << ": no lib following -cslib\n";
+        HH_LOG(ERROR) << "No lib following -cslib" << std::endl;
         exit(4);
       } else
         strcpy(par.cs_library, argv[i]);
     } else if (!strcmp(argv[i], "-psipred")) {
       if (++i >= argc || argv[i][0] == '-') {
         help(par);
-        cerr << endl << "Error in " << program_name
-             << ": no directory following -psipred\n";
+        HH_LOG(ERROR) << "no directory following -psipred" << std::endl;
         exit(4);
       } else
         strcpy(par.psipred, argv[i]);
     } else if (!strcmp(argv[i], "-psipred_data")) {
       if (++i >= argc || argv[i][0] == '-') {
         help(par);
-        cerr << endl << "Error in " << program_name
-             << ": no database directory following -psipred_data\n";
+        HH_LOG(ERROR) << "No database directory following -psipred_data" << std::endl;
         exit(4);
       } else
         strcpy(par.psipred_data, argv[i]);
     } else if (!strcmp(argv[i], "-o")) {
       if (++i >= argc || argv[i][0] == '-') {
         help(par);
-        cerr << endl << "Error in " << program_name
-             << ": no output file following -o\n";
+        HH_LOG(ERROR) << "No output file following -o" << std::endl;
         exit(4);
       } else
         strcpy(par.outfile, argv[i]);
     } else if (!strcmp(argv[i], "-omat")) {
       if (++i >= argc || argv[i][0] == '-') {
         help(par);
-        cerr << endl << "Error in " << program_name
-             << ": no output file following -omat\n";
+        HH_LOG(ERROR) << "No output file following -omat" << std::endl;
         exit(4);
       } else
         strcpy(par.matrices_output_file, argv[i]);
     } else if (!strcmp(argv[i], "-oa3m")) {
       if (++i >= argc || argv[i][0] == '-') {
         help(par);
-        cerr << endl << "Error in " << program_name
-             << ": no output file following -oa3m\n";
+        HH_LOG(ERROR) << "No output file following -oa3m" << std::endl;
         exit(4);
       } else
         strcpy(par.alnfile, argv[i]);
     } else if (!strcmp(argv[i], "-ohhm")) {
       if (++i >= argc || argv[i][0] == '-') {
         help(par);
-        cerr << endl << "Error in " << program_name
-             << ": no output file following -ohhm\n";
+        HH_LOG(ERROR) << "No output file following -ohhm" << std::endl;
         exit(4);
       } else
         strcpy(par.hhmfile, argv[i]);
     } else if (!strcmp(argv[i], "-opsi")) {
       if (++i >= argc || argv[i][0] == '-') {
         help(par);
-        cerr << endl << "Error in " << program_name
-             << ": no output file following -opsi\n";
+        HH_LOG(ERROR) << "No output file following -opsi" << std::endl;
         exit(4);
       } else
         strcpy(par.psifile, argv[i]);
     } else if (!strcmp(argv[i], "-oalis")) {
       if (++i >= argc || argv[i][0] == '-') {
         help(par);
-        cerr << endl << "Error in " << program_name
-             << ": no file basename following -oalis\n";
+        HH_LOG(ERROR) << "No file basename following -oalis" << std::endl;
         exit(4);
       } else
         strcpy(par.alisbasename, argv[i]);
@@ -773,8 +739,7 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
       par.outformat = 1;
       if (++i >= argc || argv[i][0] == '-') {
         help(par);
-        cerr << endl << "Error in " << program_name
-             << ": no output file following -o\n";
+        HH_LOG(ERROR) << "No output file following -o" << std::endl;
         exit(4);
       } else
         strcpy(par.pairwisealisfile, argv[i]);
@@ -783,8 +748,7 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
       par.outformat = 2;
       if (++i >= argc || argv[i][0] == '-') {
         help(par);
-        cerr << endl << "Error in " << program_name
-             << ": no output file following -o\n";
+        HH_LOG(ERROR) << "No output file following -o" << std::endl;
         exit(4);
       } else
         strcpy(par.pairwisealisfile, argv[i]);
@@ -793,24 +757,21 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
       par.outformat = 3;
       if (++i >= argc || argv[i][0] == '-') {
         help(par);
-        cerr << endl << "Error in " << program_name
-             << ": no output file following -o\n";
+        HH_LOG(ERROR) << "No output file following -o" << std::endl;
         exit(4);
       } else
         strcpy(par.pairwisealisfile, argv[i]);
     } else if (!strcmp(argv[i], "-qhhm")) {
       if (++i >= argc || argv[i][0] == '-') {
         help(par);
-        cerr << endl << "Error in " << program_name
-             << ": no filename following -qhhm\n";
+        HH_LOG(ERROR) << "No filename following -qhhm" << std::endl;
         exit(4);
       } else
         strcpy(par.query_hhmfile, argv[i]);
     } else if (!strcmp(argv[i], "-scores")) {
       if (++i >= argc || argv[i][0] == '-') {
         help(par);
-        cerr << endl << "Error in " << program_name
-             << ": no file following -scores\n";
+        HH_LOG(ERROR) << "No file following -scores" << std::endl;
         exit(4);
       } else {
         strcpy(par.scorefile, argv[i]);
@@ -818,8 +779,7 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
     } else if (!strcmp(argv[i], "-atab")) {
       if (++i >= argc || argv[i][0] == '-') {
         help(par);
-        cerr << endl << "Error in " << program_name
-             << ": no file following -atab\n";
+        HH_LOG(ERROR) << "No file following -atab" << std::endl;
         exit(4);
       } else {
         strcpy(par.alitabfile, argv[i]);
@@ -851,8 +811,7 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
       else if (!strcmp(argv[i] + 7, "80"))
         par.matrix = 80;
       else
-        cerr << endl << "WARNING: Ignoring unknown option " << argv[i]
-             << " ...\n";
+        HH_LOG(WARNING) << "Ignoring unknown option " << argv[i] << std::endl;
     } else if (!strcmp(argv[i], "-M") && (i < argc - 1))
       if (!strcmp(argv[++i], "a2m") || !strcmp(argv[i], "a3m"))
         par.M = 1;
@@ -862,8 +821,7 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
         par.Mgaps = atoi(argv[i]);
         par.M = 2;
       } else
-        cerr << endl << "WARNING: Ignoring unknown argument: -M " << argv[i]
-             << "\n";
+        HH_LOG(WARNING) << "Ignoring unknown argument: -M " << argv[i] << std::endl;
     else if (!strcmp(argv[i], "-p") && (i < argc - 1))
       par.p = atof(argv[++i]);
     else if (!strcmp(argv[i], "-P") && (i < argc - 1))
@@ -944,7 +902,6 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
       par.pc_hhm_nocontext_b = atof(argv[++i]);
     else if (!strcmp(argv[i], "-pre_pcc") && (i < argc - 1))
       par.pc_hhm_nocontext_c = atof(argv[++i]);
-
     else if (!strcmp(argv[i], "-gapb") && (i < argc - 1)) {
       par.gapb = atof(argv[++i]);
       if (par.gapb <= 0.01)
@@ -1041,11 +998,10 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
     else if (!strcmp(argv[i], "-corr") && (i < argc - 1))
       par.corr = atof(argv[++i]);
     else {
-      HH_LOG(WARNING) << endl << "WARNING: Ignoring unknown option "
-                                << argv[i] << " ...\n";
+      HH_LOG(WARNING) << "Ignoring unknown option " << argv[i] << std::endl;
     }
 
-    HH_LOG(DEBUG1) << i << "  " << argv[i] << endl;
+    HH_LOG(DEBUG1) << i << "  " << argv[i] << std::endl;
   }  // end of for-loop for command line input
 }
 

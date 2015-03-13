@@ -45,33 +45,25 @@ void HHsearch::ProcessAllArguments(int argc, char** argv, Parameters& par) {
 	// Check needed files
 	if (!*par.infile || !strcmp(par.infile, "")) {
 		help(par);
-		std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": "
-				<< __func__ << ":" << std::endl;
-		std::cerr << "\tinput file missing!" << std::endl;
+		HH_LOG(ERROR) << "Input file is missing!" << std::endl;
 		exit(4);
 	}
 
 	if (par.db_bases.size() == 0) {
 		help(par);
-		std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": "
-				<< __func__ << ":" << std::endl;
-		std::cerr << "\tdatabase missing (see -d)\n";
+		HH_LOG(ERROR) << "Database is missing (see -d)!" << std::endl;
 		exit(4);
 	}
 
 	if (!par.nocontxt) {
 		if (!strcmp(par.clusterfile, "")) {
 			help(par);
-			std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": "
-					<< __func__ << ":" << std::endl;
-			std::cerr << "\tcontext-specific library missing (see -contxt)\n";
+			HH_LOG(ERROR) << "Context-specific library missing (see -contxt)" << std::endl;
 			exit(4);
 		}
 		if (!strcmp(par.cs_library, "")) {
 			help(par);
-			std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": "
-					<< __func__ << ":" << std::endl;
-			std::cerr << "\tcolumn state library (see -cslib)\n";
+			HH_LOG(ERROR) << "Column state library (see -cslib)\n";
 			exit(4);
 		}
 	}
@@ -88,8 +80,7 @@ void HHsearch::ProcessAllArguments(int argc, char** argv, Parameters& par) {
 	if (par.z > par.Z)
 		par.Z = par.z;
 	if (par.maxmem < 1.0) {
-		cerr
-				<< "Warning: setting -maxmem to its minimum allowed value of 1.0\n";
+	  HH_LOG(WARNING) << "Setting -maxmem to its minimum allowed value of 1.0" << std::endl;
 		par.maxmem = 1.0;
 	}
 	if (par.mact >= 1.0)
@@ -404,7 +395,6 @@ void HHsearch::help(Parameters& par, char all) {
 	}
 	printf("\n");
 	printf("Example: hhsearch -i a.1.1.1.a3m -d scop70_1.71.hhm \n");
-	cout << endl;
 
 //   printf("More help:                                                         \n");
 //   printf(" -h out        options for formatting ouput                        \n");
@@ -428,16 +418,14 @@ void HHsearch::ProcessArguments(int argc, char** argv, Parameters& par) {
 		if (!strcmp(argv[i], "-i")) {
 			if (++i >= argc || argv[i][0] == '-') {
 				help(par);
-				cerr << endl << "Error in " << program_name
-						<< ": no query file following -i\n";
+				HH_LOG(ERROR) << "No query file following -i" << std::endl;
 				exit(4);
 			} else
 				strcpy(par.infile, argv[i]);
 		} else if (!strcmp(argv[i], "-d")) {
 			if (++i >= argc || argv[i][0] == '-') {
 				help(par);
-				cerr << endl << "Error in " << program_name
-						<< ": no database file following -d\n";
+				HH_LOG(ERROR) << "No database file following -d" << std::endl;
 				exit(4);
 			} else {
 				std::string db(argv[i]);
@@ -447,8 +435,7 @@ void HHsearch::ProcessArguments(int argc, char** argv, Parameters& par) {
 			par.append = 0;
 			if (++i >= argc || argv[i][0] == '-') {
 				help(par);
-				cerr << endl << "Error in " << program_name
-						<< ": no output file following -o\n";
+				HH_LOG(ERROR) << "No output file following -o" << std::endl;
 				exit(4);
 			} else
 				strcpy(par.outfile, argv[i]);
@@ -457,8 +444,7 @@ void HHsearch::ProcessArguments(int argc, char** argv, Parameters& par) {
 			par.outformat = 1;
 			if (++i >= argc || argv[i][0] == '-') {
 				help(par);
-				cerr << endl << "Error in " << program_name
-						<< ": no output file following -o\n";
+				HH_LOG(ERROR) << "No output file following -o" << std::endl;
 				exit(4);
 			} else
 				strcpy(par.pairwisealisfile, argv[i]);
@@ -467,8 +453,7 @@ void HHsearch::ProcessArguments(int argc, char** argv, Parameters& par) {
 			par.outformat = 2;
 			if (++i >= argc || argv[i][0] == '-') {
 				help(par);
-				cerr << endl << "Error in " << program_name
-						<< ": no output file following -o\n";
+				HH_LOG(ERROR) << "No output file following -o" << std::endl;
 				exit(4);
 			} else
 				strcpy(par.pairwisealisfile, argv[i]);
@@ -477,40 +462,35 @@ void HHsearch::ProcessArguments(int argc, char** argv, Parameters& par) {
 			par.outformat = 3;
 			if (++i >= argc || argv[i][0] == '-') {
 				help(par);
-				cerr << endl << "Error in " << program_name
-						<< ": no output file following -o\n";
+				HH_LOG(ERROR) << "No output file following -o" << std::endl;
 				exit(4);
 			} else
 				strcpy(par.pairwisealisfile, argv[i]);
 		} else if (!strcmp(argv[i], "-oa3m")) {
 			if (++i >= argc || argv[i][0] == '-') {
 				help(par);
-				cerr << endl << "Error in " << program_name
-						<< ": no output file following -Oa3m\n";
+				HH_LOG(ERROR) << "No output file following -Oa3m" << std::endl;
 				exit(4);
 			} else
 				strcpy(par.alnfile, argv[i]);
 		} else if (!strcmp(argv[i], "-ohhm")) {
 			if (++i >= argc || argv[i][0] == '-') {
 				help(par);
-				cerr << endl << "Error in " << program_name
-						<< ": no output file following -ohhm\n";
+				HH_LOG(ERROR) << "No output file following -ohhm" << std::endl;
 				exit(4);
 			} else
 				strcpy(par.hhmfile, argv[i]);
 		} else if (!strcmp(argv[i], "-opsi")) {
 			if (++i >= argc || argv[i][0] == '-') {
 				help(par);
-				cerr << endl << "Error in " << program_name
-						<< ": no output file following -Opsi\n";
+				HH_LOG(ERROR) << "No output file following -Opsi" << std::endl;
 				exit(4);
 			} else
 				strcpy(par.psifile, argv[i]);
 		} else if (!strcmp(argv[i], "-scores")) {
 			if (++i >= argc || argv[i][0] == '-') {
 				help(par);
-				cerr << endl << "Error in " << program_name
-						<< ": no file following -scores\n";
+				HH_LOG(ERROR) << "No file following -scores" << std::endl;
 				exit(4);
 			} else {
 				strcpy(par.scorefile, argv[i]);
@@ -518,8 +498,7 @@ void HHsearch::ProcessArguments(int argc, char** argv, Parameters& par) {
 		} else if (!strcmp(argv[i], "-atab") || !strcmp(argv[i], "-Aliout")) {
 			if (++i >= argc || argv[i][0] == '-') {
 				help(par);
-				cerr << endl << "Error in " << program_name
-						<< ": no query file following -atab\n";
+				HH_LOG(ERROR) << "No query file following -atab" << std::endl;
 				exit(4);
 			} else
 				strmcpy(par.alitabfile, argv[i], NAMELEN - 1);
@@ -595,8 +574,7 @@ void HHsearch::ProcessArguments(int argc, char** argv, Parameters& par) {
 			else if (!strcmp(argv[i] + 7, "80"))
 				par.matrix = 80;
 			else
-				cerr << endl << "WARNING: Ignoring unknown option " << argv[i]
-						<< " ...\n";
+			  HH_LOG(WARNING) << "Ignoring unknown option " << argv[i] << std::endl;
 		} else if (!strcmp(argv[i], "-wg")) {
 			par.wg = 1;
 		} else if (!strcmp(argv[i], "-pcm") && (i < argc - 1))
@@ -673,8 +651,7 @@ void HHsearch::ProcessArguments(int argc, char** argv, Parameters& par) {
 				par.Mgaps = atoi(argv[i]);
 				par.M = 2;
 			} else
-				cerr << endl << "WARNING: Ignoring unknown argument: -M "
-						<< argv[i] << "\n";
+			  HH_LOG(WARNING) << "Ignoring unknown argument: -M " 	<< argv[i] << std::endl;
 		else if (!strcmp(argv[i], "-shift") && (i < argc - 1))
 			par.shift = atof(argv[++i]);
 		else if ((!strcmp(argv[i], "-mact") || !strcmp(argv[i], "-mapt"))
@@ -720,14 +697,12 @@ void HHsearch::ProcessArguments(int argc, char** argv, Parameters& par) {
 		else if (!strcmp(argv[i], "-contxt") || !strcmp(argv[i], "-cs")) {
 			if (++i >= argc || argv[i][0] == '-') {
 				help(par);
-				cerr << endl << "Error in " << program_name
-						<< ": no query file following -contxt\n";
+				HH_LOG(ERROR) << "No query file following -contxt" << std::endl;
 				exit(4);
 			} else
 				strcpy(par.clusterfile, argv[i]);
 		} else {
-			HH_LOG(WARNING) << endl
-				<< "WARNING: Ignoring unknown option " << argv[i] << " ...\n";
+			HH_LOG(WARNING) << "Ignoring unknown option " << argv[i] << std::endl;
 		}
 		HH_LOG(DEBUG1) << i << "  " << argv[i] << endl;
 	} // end of for-loop for command line input

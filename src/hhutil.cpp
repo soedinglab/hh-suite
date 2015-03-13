@@ -4,33 +4,35 @@
 // Errors
 /////////////////////////////////////////////////////////////////////////////////////
 int FormatError(const char infile[], const char* file, const int line, const char* func, const char details[]) {
-  std::cerr << "Error in " << file << ":" << line << ": " << func << ":" << std::endl;
-  std::cerr<<  "\twrong format while reading file \'"<<infile<<". "<<details<<"\n";
+  HH_LOG(ERROR) << "In " << file << ":" << line << ": " << func << ":" << std::endl;
+  HH_LOG(ERROR) << "\twrong format while reading file \'"<<infile<<". "<<details<<"\n";
   exit(1);
 }
 
 int OpenFileError(const char outfile[], const char* file, const int line, const char* func) {
-  std::cerr << "Error in " << file << ":" << line << ": " << func << ":" << std::endl;
-  std::cerr << "\tcould not open file \'"<<outfile<<"\'\n";
+  HH_LOG(ERROR) << "In " << file << ":" << line << ": " << func << ":" << std::endl;
+  HH_LOG(ERROR) << "\tcould not open file \'" << outfile << "\'\n";
   exit(2);
 }
 
 int MemoryError(const char arrayname[], const char* file, const int line, const char* func) {
-  std::cerr << "Error in " << file << ":" << line << ": " << func << ":" << std::endl;
-  std::cerr << "\tCould not allocate memory for \'"<<arrayname<<"\'.\n";
-  std::cerr << "\tDo you have >=4GB of RAM per core on your machine? Are your max memory size and stack sizes sufficient? (Check using '$ ulimit -a' under Linux and best set to 'unlimited')"<<std::endl;
+  HH_LOG(ERROR) << "In " << file << ":" << line << ": " << func << ":" << std::endl;
+  HH_LOG(ERROR) << "\tCould not allocate memory for \'"<<arrayname<<"\'." << std::endl;
+  HH_LOG(ERROR) << "\tDo you have >=4GB of RAM per core on your machine? " <<
+      "Are your max memory size and stack sizes sufficient? " <<
+      "(Check using '$ ulimit -a' under Linux and best set to 'unlimited')" << std::endl;
   exit(3);
 }
 
 int SyntaxError(const char* file, const int line, const char* func, const char details[]) {
-  std::cerr << "Error in " << file << ":" << line << ": " << func << ":" << std::endl;
-  std::cerr << "\ton command line: "<<details<<"\n";
+  HH_LOG(ERROR) << "In " << file << ":" << line << ": " << func << ":" << std::endl;
+  HH_LOG(ERROR) << "\ton command line: "<<details << std::endl;
   exit(4);
 }
 
 int InternalError(const char errstr[], const char* file, const int line, const char* func) {
-  std::cerr << "Error in " << file << ":" << line << ": " << func << ":" << std::endl;
-  std::cerr << "\t" << errstr << ". Please report this bug to the developers\n";
+  HH_LOG(ERROR) << "In " << file << ":" << line << ": " << func << ":" << std::endl;
+  HH_LOG(ERROR) << "\t" << errstr << ". Please report this bug to the developers" << std::endl;
   exit(6);
 }
 

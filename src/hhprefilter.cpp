@@ -320,11 +320,10 @@ namespace hh {
     }
 
     if (nr_checks == 0) {
-      std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": "
-          << __func__ << ":" << std::endl;
-      std::cerr << "\tYour cs database is in an old format!" << std::endl;
-      std::cerr << "\tThis format is no longer supportet!" << std::endl;
-      std::cerr << "\tCorrespond to the user manual!" << std::endl;
+      HH_LOG(ERROR) << "In " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+      HH_LOG(ERROR) << "\tYour cs database is in an old format!" << std::endl;
+      HH_LOG(ERROR) << "\tThis format is no longer supportet!" << std::endl;
+      HH_LOG(ERROR) << "\tCorrespond to the user manual!" << std::endl;
       exit(1);
     }
   }

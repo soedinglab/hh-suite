@@ -47,10 +47,8 @@ FFindexDatabase::FFindexDatabase(char* data_filename, char* index_filename,
   fclose(db_index_fh);
 
   if (db_index == NULL) {
-    std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__
-              << ":" << std::endl;
-    std::cerr << "\tcould not read index file" << index_filename
-              << ". Is the file empty or corrupted?\n";
+    HH_LOG(ERROR) << "In " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+    HH_LOG(ERROR) << "\tCould not read index file" << index_filename << ". Is the file empty or corrupted?" << std::endl;
     exit(1);
   }
 
@@ -205,9 +203,7 @@ void HHblitsDatabase::getEntriesFromNames(
           ca3m_database->db_index, const_cast<char*>(hits[i].second.c_str()));
       if (entry == NULL) {
         //TODO: error
-        HH_LOG(WARNING)
-            << "warning: could not fetch entry from compressed a3m!"
-            << std::endl;
+        HH_LOG(WARNING) << "Could not fetch entry from compressed a3m!" << std::endl;
         HH_LOG(WARNING) << "\tentry: " << hits[i].second << std::endl;
         HH_LOG(WARNING) << "\tdb: " << ca3m_database->data_filename
                                   << std::endl;
@@ -320,8 +316,7 @@ void HHDatabaseEntry::getTemplateHMM(Parameters& par, char use_global_weights,
     char* data = ffindex_get_data_by_entry(ffdatabase->db_data, entry);
 
     if (data == NULL) {
-      std::cerr << "Could not fetch data for a3m " << entry->name << "!"
-                << std::endl;
+      HH_LOG(ERROR) << "Could not fetch data for a3m " << entry->name << "!" << std::endl;
       exit(4);
     }
 
@@ -370,8 +365,7 @@ void HHDatabaseEntry::getTemplateA3M(Parameters& par, float* pb,
                                            entry);
 
     if (data == NULL) {
-      std::cerr << "Could not fetch data for a3m " << entry->name << "!"
-                << std::endl;
+      HH_LOG(ERROR) << "Could not fetch data for a3m " << entry->name << "!" << std::endl;
       exit(4);
     }
 
@@ -386,15 +380,15 @@ void HHDatabaseEntry::getTemplateA3M(Parameters& par, float* pb,
                                       entry->name);
 
     if (dbf == NULL) {
-      std::cerr << std::endl << "Error: opening A3M " << entry->name
-                << std::endl;
+      HH_LOG(ERROR) << "Opening A3M " << entry->name << " failed!" << std::endl;
       exit(4);
     }
 
     char line[LINELEN];
     if (!fgetline(line, LINELEN, dbf)) {
-      std::cerr << "this should not happen!" << std::endl;
       //TODO: throw error
+      HH_LOG(ERROR) << "In " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+      HH_LOG(ERROR) << "\tThis should not happen!" << std::endl;
     }
 
     while (strscn(line) == NULL)
@@ -415,8 +409,9 @@ void HHEntry::getTemplateHMM(FILE* dbf, char* name, Parameters& par,
   if (dbf != NULL) {
     char line[LINELEN];
     if (!fgetline(line, LINELEN, dbf)) {
-      std::cerr << "this should not happen!" << std::endl;
       //TODO: throw error
+      HH_LOG(ERROR) << "In " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+      HH_LOG(ERROR) << "\tThis should not happen!" << std::endl;
     }
 
     while (strscn(line) == NULL)
@@ -443,7 +438,6 @@ void HHEntry::getTemplateHMM(FILE* dbf, char* name, Parameters& par,
       t->Read(dbf, par.maxcol, par.nseqdis, pb, path);
       RemoveExtension(t->file, name);
     }
-    //TODO: old hhm format discarded
     // read a3m alignment
     else if (line[0] == '#' || line[0] == '>') {
       Alignment tali;
@@ -457,14 +451,13 @@ void HHEntry::getTemplateHMM(FILE* dbf, char* name, Parameters& par,
                                      par.showcons, par.maxres, pb, Sim);
       format = 0;
     } else {
-      std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": "
-                << __func__ << ":" << std::endl;
-      std::cerr << "\tunrecognized HMM file format in \'" << name << "\'. \n";
-      std::cerr << "Context:\n'" << line << "\n";
+      HH_LOG(ERROR) << "In " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+      HH_LOG(ERROR) << "\tUnrecognized HMM file format in \'" << name << "\'." << std::endl;
+      HH_LOG(ERROR) << "\tContext:\n'" << line << "\n";
       fgetline(line, LINELEN, dbf);
-      std::cerr << line << "\n";
+      HH_LOG(ERROR) << line << std::endl;
       fgetline(line, LINELEN, dbf);
-      std::cerr << line << "'\n";
+      HH_LOG(ERROR) << line << "'\n";
       exit(1);
     }
   }
@@ -567,9 +560,9 @@ void HHFileEntry::getTemplateA3M(Parameters& par, float* pb,
   } else {
     HH_LOG(ERROR) << "Error in " << __FILE__ << ":" << __LINE__
                             << ": " << __func__ << ":" << std::endl;
-    HH_LOG(ERROR) << "\tunrecognized input file format in \'" << file
+    HH_LOG(ERROR) << "\t unrecognized input file format in \'" << file
                             << "\'\n";
-    HH_LOG(ERROR) << "\tline = " << line << "\n";
+    HH_LOG(ERROR) << "\t line = " << line << "\n";
     exit(1);
   }
 

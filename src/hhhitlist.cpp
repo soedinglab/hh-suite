@@ -8,13 +8,6 @@
 
 #include "hhhitlist.h"
 
-using std::ios;
-using std::ifstream;
-using std::ofstream;
-using std::cout;
-using std::cerr;
-using std::endl;
-
 SearchCounter::SearchCounter() {
 }
 
@@ -28,6 +21,7 @@ int SearchCounter::getCounter() {
 void SearchCounter::append(std::string id) {
   already_seen.insert(id);
 }
+
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Print summary listing of hits
@@ -259,9 +253,8 @@ void HitList::PrintScoreFile(HMM* q, char* outputfile) {
   else {
     std::ofstream out(outputfile);
     if (!out.good()) {
-      std::cerr << "Warning in " << __FILE__ << ":" << __LINE__ << ": "
-          << __func__ << ":" << std::endl;
-      std::cerr << "\tcould not open \'" << outputfile << std::endl;
+      HH_LOG(WARNING) << "In " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+      HH_LOG(WARNING) << "\tCould not open \'" << outputfile << std::endl;
       return;
     }
 
@@ -489,9 +482,9 @@ void HitList::PrintMatrices(HMM* q, const char* matricesOutputFileName,
   else {
     std::ofstream out(matricesOutputFileName, std::ios::out | std::ios::binary);
     if (!out.good()) {
-      std::cerr << "Warning in " << __FILE__ << ":" << __LINE__ << ": "
+      HH_LOG(WARNING) << "Iin " << __FILE__ << ":" << __LINE__ << ": "
           << __func__ << ":" << std::endl;
-      std::cerr << "\tcould not open \'" << matricesOutputFileName << std::endl;
+      HH_LOG(WARNING) << "\tcould not open \'" << matricesOutputFileName << std::endl;
       return;
     }
 

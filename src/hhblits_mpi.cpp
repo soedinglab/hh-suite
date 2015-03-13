@@ -148,14 +148,12 @@ void makeOutputFFIndex(char* par, const int mpi_rank,
     db.index_fh = fopen(index_filename_out_rank, "w+");
 
     if (db.data_fh == NULL) {
-      std::cerr << "could not open datafile " << data_filename_out_rank
-          << std::endl;
+      HH_LOG(WARNING) << "Could not open datafile " << data_filename_out_rank << std::endl;
       return;
     }
 
     if (db.index_fh == NULL) {
-      std::cerr << "could not open indexfile " << index_filename_out_rank
-          << std::endl;
+      HH_LOG(WARNING) << "Could not open indexfile " << index_filename_out_rank << std::endl;
       return;
     }
 
@@ -171,7 +169,7 @@ int main(int argc, char **argv) {
   mpi_error = MPI_Comm_size(MPI_COMM_WORLD, &mpi_num_procs);
 
   if(mpi_error) {
-    std::cerr << "MPI error: " << mpi_error << std::endl;
+    HH_LOG(ERROR) << "MPI error: " << mpi_error << std::endl;
     exit(1);
   }
 
@@ -191,14 +189,12 @@ int main(int argc, char **argv) {
   FILE *index_file = fopen(index_filename, "r");
 
   if (data_file == NULL) {
-    std::cerr << "input data file " << data_filename << " does not exist!"
-        << std::endl;
+    HH_LOG(ERROR) << "Input data file " << data_filename << " does not exist!" << std::endl;
     MPI_Finalize();
     exit(EXIT_FAILURE);
   }
   if (index_file == NULL) {
-    std::cerr << "input index file " << index_filename << " does not exist!"
-        << std::endl;
+    HH_LOG(ERROR) << "Input index file " << index_filename << " does not exist!" << std::endl;
     MPI_Finalize();
     exit(EXIT_FAILURE);
   }
@@ -210,7 +206,7 @@ int main(int argc, char **argv) {
   size_t number_input_index_lines = CountLinesInFile(index_filename);
   ffindex_index_t* index = ffindex_index_parse(index_file, number_input_index_lines);
   if (index == NULL) {
-    std::cerr << "Could not parse index from " << index_filename << std::endl;
+    HH_LOG(ERROR) << "Could not parse index from " << index_filename << std::endl;
     MPI_Finalize();
     exit(EXIT_FAILURE);
   }
@@ -270,10 +266,6 @@ int main(int argc, char **argv) {
       for (size_t i = 0; i < outputDatabases.size(); i++) {
         outputDatabases[i].saveOutput(hhblits, entry->name);
       }
-
-//			if (print_alis)
-//				saveAlisOutput(hhblits.getAlis(), alis_data_fh, alis_data_fh,
-//						entry->name, alis_index_offset);
     }
   }
 
@@ -292,10 +284,6 @@ int main(int argc, char **argv) {
     for (size_t i = 0; i < outputDatabases.size(); i++) {
       outputDatabases[i].saveOutput(hhblits, entry->name);
     }
-
-//		if (print_alis)
-//			saveAlisOutput(hhblits.getAlis(), alis_data_fh, alis_data_fh,
-//					entry->name, alis_index_offset);
   }
 
   fclose(data_file);

@@ -10,6 +10,8 @@
 #define SIMD_H
 #include <stdlib.h>
 
+#include "log.h"
+
 #ifdef AVX512
 #define AVX2
 #endif
@@ -352,7 +354,7 @@ inline void *mem_align(size_t boundary, size_t size)
   void *pointer;
   if (posix_memalign(&pointer,boundary,size) != 0)
   {
-      std::cerr<<"Error: Could not allocate memory by memalign. Please report this bug to developers\n";
+      HH_LOG(ERROR) << "Could not allocate memory by memalign! Please report this bug to developers" << std::endl;
       exit(3);
   }
   return pointer;

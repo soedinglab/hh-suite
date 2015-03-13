@@ -288,14 +288,13 @@ void CalculateSS(HMM* q, char *ss_pred, char *ss_conf, const char* psipred_data,
     const char* psipred, const float* pb) {
 
   if (q->divided_by_local_bg_freqs) {
-    std::cerr
-        << "WARNING: Can not add predicted secondary structure when using column score 5!\n";
+    HH_LOG(WARNING) << "Can not add predicted secondary structure when using column score 5!\n";
     return;
   }
 
   char tmpfile[] = "/tmp/HHsuite_CaluclateSS_XXXXXX";
   if (mkstemp(tmpfile) == -1) {
-    std::cerr << "Error: Could not create tmp file " << tmpfile << "!\n";
+    HH_LOG(ERROR) << "Could not create tmp file " << tmpfile << "!\n";
     exit(4);
   }
   
@@ -381,8 +380,7 @@ void InitializePseudocountsEngine(Parameters& par,
   // Prepare pseudocounts engine
   FILE* fin = fopen(par.clusterfile, "r");
   if (!fin) {
-    std::cerr << std::endl << "Error in " << par.argv[0]
-        << ": could not open file \'" << par.clusterfile << "\'\n";
+    HH_LOG(ERROR) << "Could not open file \'" << par.clusterfile << "\'\n";
     exit(2);
   }
   char ext[100];

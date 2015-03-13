@@ -50,13 +50,10 @@ void Parameters::SetDefaultPaths() {
 		}
 	}
 	if (!testf) {
-		std::cerr << std::endl << "Error in " << argv[0]
-				<< ": could not find context_data.crf and cs219.lib in '"
-				<< hhlib
-				<< "'.\n"
-						"Please set the HHLIB environment variable to the HH-suite directory\n"
-						"(Linux bash: export HHLIB=<hh_dir>, csh/tcsh: setenv HHLIB=<hh_dir>).\n"
-						"The missing files should be in $HHLIB/data/.\n ";
+	  HH_LOG(ERROR) << "Could not find context_data.crf and cs219.lib in '" << hhlib << std::endl;
+	  HH_LOG(ERROR) << "Please set the HHLIB environment variable to the HH-suite directory" << std::endl;
+	  HH_LOG(ERROR) << "(Linux bash: export HHLIB=<hh_dir>, csh/tcsh: setenv HHLIB=<hh_dir>)." << std::endl;
+	  HH_LOG(ERROR) << "The missing files should be in $HHLIB/data/." << std::endl;
 		exit(2);
 	}
 	return;

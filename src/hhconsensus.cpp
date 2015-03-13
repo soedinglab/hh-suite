@@ -1,6 +1,6 @@
 // hhconsensus.cpp: read A3M/FASTA file and calculate consensus sequence
 
-#include <iostream>   // cin, cout, cerr
+#include <iostream>
 #include <fstream>    // ofstream, ifstream
 #include <cstdio>     // printf
 #include <algorithm>  // min,max
@@ -14,13 +14,6 @@
 #include <errno.h>    // perror()
 #include <cassert>
 #include <stdexcept>
-
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::ios;
-using std::ifstream;
-using std::ofstream;
 
 #include "cs.h"          // context-specific pseudocounts
 #include "context_library.h"
@@ -134,12 +127,11 @@ void help() {
 void ProcessArguments(int argc, char** argv) {
   // Read command line options
   for (int i = 1; i <= argc - 1; i++) {
-    HH_LOG(DEBUG1) << i << "  " << argv[i] << endl;
+    HH_LOG(DEBUG1) << i << "  " << argv[i] << std::endl;
     if (!strcmp(argv[i], "-i")) {
       if (++i >= argc || argv[i][0] == '-') {
         help();
-        cerr << endl << "Error in " << program_name
-            << ": no input file following -i\n";
+        HH_LOG(ERROR) << "No input file following -i" << std::endl;
         exit(4);
       }
       else
@@ -148,8 +140,7 @@ void ProcessArguments(int argc, char** argv) {
     else if (!strcmp(argv[i], "-s")) {
       if (++i >= argc) {
         help();
-        cerr << endl << "Error in " << program_name
-            << ": no output file following -s\n";
+        HH_LOG(ERROR) << "No output file following -s" << std::endl;
         exit(4);
       }
       else
@@ -159,8 +150,7 @@ void ProcessArguments(int argc, char** argv) {
       par.outformat = 3;
       if (++i >= argc) {
         help();
-        cerr << endl << "Error in " << program_name
-            << ": no output file following -o\n";
+        HH_LOG(ERROR) << "No output file following -o" << std::endl;
         exit(4);
       }
       else
@@ -170,8 +160,7 @@ void ProcessArguments(int argc, char** argv) {
       par.outformat = 1;
       if (++i >= argc || argv[i][0] == '-') {
         help();
-        cerr << endl << "Error in " << program_name
-            << ": no output file following -o\n";
+        HH_LOG(ERROR) << "No output file following -o" << std::endl;
         exit(4);
       }
       else
@@ -181,8 +170,7 @@ void ProcessArguments(int argc, char** argv) {
       par.outformat = 2;
       if (++i >= argc || argv[i][0] == '-') {
         help();
-        cerr << endl << "Error in " << program_name
-            << ": no output file following -o\n";
+        HH_LOG(ERROR) << "No output file following -o" << std::endl;
         exit(4);
       }
       else
@@ -192,8 +180,7 @@ void ProcessArguments(int argc, char** argv) {
       par.outformat = 3;
       if (++i >= argc || argv[i][0] == '-') {
         help();
-        cerr << endl << "Error in " << program_name
-            << ": no output file following -o\n";
+        HH_LOG(ERROR) << "No output file following -o" << std::endl;
         exit(4);
       }
       else
@@ -230,8 +217,7 @@ void ProcessArguments(int argc, char** argv) {
         par.M = 2;
       }
       else
-        cerr << endl << "WARNING: Ignoring unknown argument: -M " << argv[i]
-            << "\n";
+        HH_LOG(WARNING) << "Ignoring unknown argument: -M " << argv[i] << std::endl;
     else if (!strcmp(argv[i], "-Gonnet"))
       par.matrix = 0;
     else if (!strncmp(argv[i], "-BLOSUM", 7)
@@ -247,8 +233,7 @@ void ProcessArguments(int argc, char** argv) {
       else if (!strcmp(argv[i] + 7, "80"))
         par.matrix = 80;
       else
-        cerr << endl << "WARNING: Ignoring unknown option " << argv[i]
-            << " ...\n";
+        HH_LOG(WARNING) << "Ignoring unknown option " << argv[i] << std::endl;
     }
     else if (!strcmp(argv[i], "-pcm") && (i < argc - 1))
       par.pc_hhm_context_engine.admix = (Pseudocounts::Admix) atoi(argv[++i]);
@@ -290,8 +275,7 @@ void ProcessArguments(int argc, char** argv) {
     else if (!strcmp(argv[i], "-cs")) {
       if (++i >= argc || argv[i][0] == '-') {
         help();
-        cerr << endl << "Error in " << program_name
-            << ": no query file following -cs\n";
+        HH_LOG(ERROR) << "No query file following -cs" << std::endl;
         exit(4);
       }
       else
@@ -302,11 +286,10 @@ void ProcessArguments(int argc, char** argv) {
         ;
     }
     else {
-		HH_LOG(WARNING) << endl
-			<< "WARNING: Ignoring unknown option " << argv[i] << " ...\n";
+		HH_LOG(WARNING) << "Ignoring unknown option " << argv[i] << " ...\n";
     }
 
-    HH_LOG(DEBUG1) << i << "  " << argv[i] << endl;
+    HH_LOG(DEBUG1) << i << "  " << argv[i] << std::endl;
   } // end of for-loop for command line input
 }
 
@@ -375,7 +358,7 @@ int main(int argc, char **argv) {
   // Check command line input and default values
   if (!*par.infile) {
     help();
-    cerr << endl << "Error in " << program_name << ": input file missing\n";
+    HH_LOG(ERROR) << "Input file is missing!" << std::endl;
     exit(4);
   }
 

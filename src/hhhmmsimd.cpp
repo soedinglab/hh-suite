@@ -13,6 +13,7 @@
 #include <float.h>    // FLT_MIN
 #include "simd.h"
 #include "hhutil.h"
+#include "log.h"
 
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -74,7 +75,7 @@ HMM* HMMSimd::GetHMM(int elem){
 void HMMSimd::MapHMMVector(std::vector<HMM *> hmms){
     
     if(hmms.size() > VEC_SIZE){
-        std::cerr<<"Error: More than expected HMMs should be mapped. Please report this bug to developers\n";
+      HH_LOG(ERROR) << "More than expected HMMs should be mapped. Please report this bug to developers\n";
         exit(3);
     }
     this->L = 0;

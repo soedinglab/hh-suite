@@ -2,6 +2,8 @@
 
 #include "hhhmm.h"
 
+#include <iomanip>
+
 /////////////////////////////////////////////////////////////////////////////////////
 //// Class HMM
 /////////////////////////////////////////////////////////////////////////////////////
@@ -380,9 +382,7 @@ int HMM::Read(FILE* dbf, const int maxcol, const int nseqdis, float* pb,
 				} else //line contains sequence residues
 				{
 					if (k == -1) {
-						std::cerr << std::endl
-								<< "WARNING: Ignoring following line while reading HMM"
-								<< name << ":\n\'" << line << "\'\n";
+					  HH_LOG(WARNING) 	<< "WARNING: Ignoring following line while reading HMM" << name << ":\n\'" << line << "\'" << std::endl;
 						continue;
 					}
 
@@ -656,23 +656,23 @@ int HMM::Read(FILE* dbf, const int maxcol, const int nseqdis, float* pb,
 	//   lamda = lamda_hash.Show(par.Key());
 	//   mu    = mu_hash.Show(par.Key());
 	if (lamda) {
-		HH_LOG(DEBUG) << "HMM " << name << " is already calibrated: lamda=" << lamda << ", mu=" << mu << std::endl;
+		HH_LOG(DEBUG) << "HMM " << name << " is already calibrated: lamda="
+		    << lamda << ", mu=" << mu << std::endl;
 	}
 
 	if (i != L) {
-		HH_LOG(WARNING) << std::endl << "WARNING: in HMM " << name
-				<< " there are only " << i
-				<< " columns while the stated length is " << L << "\n";
+		HH_LOG(WARNING) << "In HMM " << name << " there are only " << i
+		    << " columns while the stated length is " << L << "\n";
 	}
 
 	if (i > maxres - 2) {
 		i = maxres - 2;
-		HH_LOG(WARNING) << std::cerr << std::endl << "WARNING: maximum number " << maxres - 2
+		HH_LOG(WARNING) << "Maximum number " << maxres - 2
 				<< " of residues exceeded while reading HMM " << name << "\n";
 	}
 	if (!i) {
 		HH_LOG(WARNING) << std::endl << "WARNING: HMM " << name
-				<< " contains no match states. Check the alignment that gave rise to this HMM.\n";
+		    << " contains no match states. Check the alignment that gave rise to this HMM.\n";
 	}
 
 	HH_LOG(DEBUG) << "Read in HMM " << name << " with " << L
@@ -1725,18 +1725,14 @@ void HMM::AddTransitionPseudocounts(float gapd, float gape, float gapf,
 	if (gapb <= 0)
 		return;
 	if (trans_lin == 1) {
-		std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": "
-				<< __func__ << ":" << std::endl;
-		std::cerr
-				<< "\tAdding transition pseudocounts to linear representation of "
-				<< name
-				<< " not allowed. Please report this error to the HHsearch developers.\n";
+	  HH_LOG(ERROR) << "In " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+	  HH_LOG(WARNING) << "\tAdding transition pseudocounts to linear representation of " << name
+	      << " not allowed. Please report this error to the HHsearch developers.\n";
 		exit(6);
 	}
 	if (trans_lin == 2) {
-		std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": "
-				<< __func__ << ":" << std::endl;
-		std::cerr << "\tAdding transition pseudocounts twice in " << name
+	  HH_LOG(ERROR) << "In " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+	  HH_LOG(ERROR) << "\tAdding transition pseudocounts twice in " << name
 				<< " not allowed. Please report this error to the HHsearch developers.\n";
 		exit(6);
 	}
@@ -1942,34 +1938,26 @@ void HMM::AddAminoAcidPseudocounts(char pcm, float pca, float pcb, float pcc) {
 					<< name << "\n";
 			break;
 		} //end switch (pcm)
+
 		if ( Log::reporting_level() >= DEBUG1) {
-			std::cout<<"\nAmino acid frequencies WITHOUT pseudocounts:\n       A    R    N    D    C    Q    E    G    H    I    L    K    M    F    P    S    T    W    Y    V\n";
+			HH_LOG(DEBUG1) << "Amino acid frequencies WITHOUT pseudocounts:\n       A    R    N    D    C    Q    E    G    H    I    L    K    M    F    P    S    T    W    Y    V" << std::endl;
 			for (i=1; i<=L; ++i)
 			{
-				printf("%3i:  ",i);
-				sum=0;
-				for (a=0; a<20; ++a)
-				{
-					sum+=f[i][a];
-					printf("%4.1f ",100*f[i][a]);
-				}
-				printf("  sum=%5.3f\n",sum);
+			  HH_LOG(DEBUG1) << i << ": " << f[i][0] * 100 << " " << f[i][1] * 100 << " " << f[i][2] * 100 << " " << f[i][3] * 100 << " " << f[i][4] * 100 << " "
+			      << f[i][5] * 100 << " " << f[i][6] * 100 << " " << f[i][7] * 100 << " " << f[i][8] * 100 << " " << f[i][9] * 100 << " " << f[i][10] * 100 << " "
+			      << f[i][11] * 100 << " " << f[i][12] * 100 << " " << f[i][13] * 100 << " " << f[i][14] * 100 << " " << f[i][15] * 100 << " "
+			      << f[i][16] * 100 << " " << f[i][17] * 100 << " " << f[i][18] * 100 << " " << f[i][19] * 100 << " sum=" << sum << std::endl;
 			}
-			std::cout<<"\nAmino acid frequencies WITH pseudocounts:\n       A    R    N    D    C    Q    E    G    H    I    L    K    M    F    P    S    T    W    Y    V\n";
-			for (i=1; i<=L; ++i)
-			{
-				printf("%3i:  ",i);
-				sum=0;
-				for (a=0; a<20; ++a)
-				{
-					sum+=p[i][a];
-					printf("%4.1f ",100*p[i][a]);
-				}
-				printf("  sum=%5.3f\n",sum);
-			}
+      HH_LOG(DEBUG1) << "Amino acid frequencies WITH pseudocounts:\n       A    R    N    D    C    Q    E    G    H    I    L    K    M    F    P    S    T    W    Y    V" << std::endl;
+      for (i=1; i<=L; ++i)
+      {
+        HH_LOG(DEBUG1) << std::setprecision(1) << i << ": " << p[i][0] * 100 << " " << p[i][1] * 100 << " " << p[i][2] * 100 << " " << p[i][3] * 100 << " " << p[i][4] * 100 << " "
+            << p[i][5] * 100 << " " << p[i][6] * 100 << " " << p[i][7] * 100 << " " << p[i][8] * 100 << " " << p[i][9] * 100 << " " << p[i][10] * 100 << " "
+            << p[i][11] * 100 << " " << p[i][12] * 100 << " " << p[i][13] * 100 << " " << p[i][14] * 100 << " " << p[i][15] * 100 << " "
+            << p[i][16] * 100 << " " << p[i][17] * 100 << " " << p[i][18] * 100 << " " << p[i][19] * 100 << " sum=" << sum << std::endl;
+      }
 		}
 	}
-
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -1979,8 +1967,7 @@ void HMM::AddAminoAcidPseudocounts(char pcm, float pca, float pcb, float pcc) {
 void HMM::DivideBySqrtOfLocalBackgroundFreqs(const int D, const float* pb) // 2*D+1 is window size
 		{
 	if (divided_by_local_bg_freqs) {
-		std::cerr
-				<< "WARNING: already divided probs by local aa frequencies!\n";
+	  HH_LOG(WARNING) << "Already divided probs by local aa frequencies!" << std::endl;
 		return;
 	}
 	divided_by_local_bg_freqs = 1;
@@ -2349,11 +2336,9 @@ void HMM::InsertCalibration(char* infile) {
 	// Write to infile all lines
 	FILE* infout = fopen(infile, "w");
 	if (!infout) {
-		std::cerr << "Warning in " << __FILE__ << ":" << __LINE__ << ": "
-				<< __func__ << ":" << std::endl;
-		std::cerr << "\tno calibration coefficients written to " << infile
-				<< ":\n";
-		std::cerr << "\tCould not open file for writing.\n";
+	  HH_LOG(WARNING) << "In " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+	  HH_LOG(WARNING) << "\t No calibration coefficients written to " << infile << ":" << std::endl;
+	  HH_LOG(WARNING) << "\t Could not open file for writing." << std::endl;
 		return;
 	}
 	for (l = 0; l < nline; l++) {
@@ -2440,8 +2425,7 @@ void HMM::AddSSPrediction(char seq_pred[], char seq_conf[]) {
 	unsigned int i;
 
 	if ((int) strlen(seq_pred) != L + 1) {
-		std::cerr
-				<< "WARNING: Could not add secondary struture prediction - unequal length!\n";
+	  HH_LOG(WARNING) << "Could not add secondary struture prediction - unequal length!" << std::endl;
 		return;
 	}
 

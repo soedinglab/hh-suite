@@ -106,7 +106,7 @@ void HalfAlignment::Set(char* name, char** seq_in, char** sname_in, int n_in,
     l[k][i] = ll - 1;  //set l[k][L+1] eq number of residues in seq k (-1 since there is no residue at L+1st match state)
     m[k][i] = mm;   //set m[k][L+1]
     if ((i - 1) != L && !warned) {
-      std::cerr << "WARNING: sequence " << sname[k] << " in HMM " << name
+      HH_LOG(WARNING) << "Sequence " << sname[k] << " in HMM " << name
                 << " has " << i << " match states but should have " << L
                 << "\n";
       warned = 1;

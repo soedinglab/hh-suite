@@ -237,6 +237,7 @@ void PosteriorDecoder::backtraceMAC(HMM & q, HMM & t, PosteriorMatrix & p_mm, Vi
 	//   printf("%-10.10s lamda=%-9f  score=%-9f  logPval=%-9g\n",name,t.lamda,score,logPvalt);
 
 	//DEBUG: Print out MAC alignment path
+	//TODO bad debugging code
 	if (actual_level >= DEBUG1) {
 				float sum_post = 0.0;
 				printf("NAME=%7.7s score=%7.3f  score_ss=%7.3f\n", hit.name, hit.score, hit.score_ss);

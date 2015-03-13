@@ -230,10 +230,8 @@ void Alignment::Read(FILE* inf, char infile[], const char mark,
           {
         // 1, because the sequence in cur_seq starts at position 1 => no residues = length 1
         if (strlen(cur_seq) <= 1) {
-          std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": "
-                    << __func__ << ":" << std::endl;
-          std::cerr << "\tsequence " << sname[k] << " contains no residues."
-                    << std::endl;
+          HH_LOG(ERROR) << "In " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+          HH_LOG(ERROR) << "\tsequence " << sname[k] << " contains no residues." << std::endl;
           exit(1);
         }
 
@@ -512,9 +510,8 @@ void Alignment::Read(FILE* inf, char infile[], const char mark,
       MemoryError("array for input sequences", __FILE__, __LINE__, __func__);
     strcpy(seq[k], cur_seq);
   } else {
-    std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__
-              << ":" << std::endl;
-    std::cerr << "\tno sequences found in file " << infile << "\n";
+    HH_LOG(ERROR) << "In " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+    HH_LOG(ERROR) << "\tNo sequences found in file " << infile << std::endl;
     exit(1);
   }
 
@@ -522,9 +519,8 @@ void Alignment::Read(FILE* inf, char infile[], const char mark,
 
   // Warn if there are only special sequences but no master sequence (consensus seq given if keep[kfirst]==0)
   if (kfirst < 0 || (N_in - N_ss - (keep[kfirst] == 0 ? 1 : 0)) == 0) {
-    std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__
-              << ":" << std::endl;
-    fprintf(stderr, "\tMSA file %s contains no master sequence!\n", infile);
+    HH_LOG(ERROR) << "In " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+    HH_LOG(ERROR) << "\tMSA file " << infile << " contains no master sequence!" << std::endl;
     exit(1);
   }
 
@@ -690,32 +686,28 @@ void Alignment::ReadCompressed(ffindex_entry_t* entry, char* data,
     ffindex_entry_t* sequence_entry = ffindex_get_entry_by_index(
         ffindex_sequence_database_index, entry_index);
     if (sequence_entry == NULL) {
-      std::cerr << "Could not fetch sequence entry: " << entry_index
-                << " for alignment " << entry->name << std::endl;
+      HH_LOG(ERROR) << "Could not fetch sequence entry: " << entry_index << " for alignment " << entry->name << std::endl;
       exit(1);
     }
 
     char* sequence_data = ffindex_get_data_by_entry(
         ffindex_sequence_database_data, sequence_entry);
     if (sequence_data == NULL) {
-      std::cerr << "Could not fetch sequence data: " << entry_index
-                << " for alignment " << entry->name << std::endl;
+      HH_LOG(ERROR) << "Could not fetch sequence data: " << entry_index << " for alignment " << entry->name << std::endl;
       exit(1);
     }
 
     ffindex_entry_t* header_entry = ffindex_get_entry_by_index(
         ffindex_header_database_index, entry_index);
     if (header_entry == NULL) {
-      std::cerr << "Could not fetch header entry: " << entry_index
-                << " for alignment " << entry->name << std::endl;
+      HH_LOG(ERROR) << "Could not fetch header entry: " << entry_index << " for alignment " << entry->name << std::endl;
       exit(1);
     }
 
     char* header_data = ffindex_get_data_by_entry(ffindex_header_database_data,
                                                   header_entry);
     if (header_data == NULL) {
-      std::cerr << "Could not fetch header data: " << entry_index
-                << " for alignment " << entry->name << std::endl;
+      HH_LOG(ERROR) << "Could not fetch header data: " << entry_index << " for alignment " << entry->name << std::endl;
       exit(1);
     }
 
@@ -800,10 +792,8 @@ void Alignment::ReadCompressed(ffindex_entry_t* entry, char* data,
 
   // Warn if there are only special sequences but no master sequence (consensus seq given if keep[kfirst]==0)
   if (kfirst < 0 || (N_in - N_ss - (keep[kfirst] == 0 ? 1 : 0)) == 0) {
-    std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__
-              << ":" << std::endl;
-    fprintf(stderr, "\tMSA file %s contains no master sequence!\n",
-            entry->name);
+    HH_LOG(ERROR) << "In " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+    HH_LOG(ERROR) << "\tMSA file " << entry->name << " contains no master sequence!" << std::endl;
     exit(1);
   }
 
@@ -1008,13 +998,8 @@ void Alignment::Compress(const char infile[], const char cons, const int maxres,
       for (i = 1; i <= L; ++i)
         this->l[i] = i;  //assign column indices to match states
       if (L <= 0) {
-        std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": "
-                  << __func__ << ":" << std::endl;
-        std::cerr
-            << "\tAlignment in "
-            << infile
-            << " contains no match states. Consider using -M first or -M <int> option"
-            << endl;
+        HH_LOG(ERROR) << "In " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+        HH_LOG(ERROR) << "\tAlignment in " << infile << " contains no match states. Consider using -M first or -M <int> option" << std::endl;
         exit(1);
       }
 
@@ -2338,8 +2323,7 @@ void Alignment::FrequenciesAndTransitions(HMM* q, char use_global_weights,
     if (display[k]) {
       if (n >= MAXSEQDIS) {
         if (mark)
-          cerr << "WARNING: maximum number " << MAXSEQDIS
-               << " of sequences for display of alignment exceeded\n";
+          HH_LOG(WARNING) << "Maximum number " << MAXSEQDIS << " of sequences for display of alignment exceeded" << std::endl;
         break;
       }
       if (k == kss_dssp)
@@ -3097,10 +3081,9 @@ void Alignment::Transitions_from_I_state(HMM* q, char* in, const int maxres) {
           for (k = 0; k < N_in; ++k) {
             if (in[k] && I[k][i] > 0 && X[k][j] < ANY) {
               if (!n[j][(int) X[k][j]]) {
-                std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": "
-                          << __func__ << ":" << std::endl;
-                fprintf(stderr, "\tIi=%i: n[%i][X[%i]]=0! (X[%i]=%i)\n", i, j,
-                        k, k, X[k][j]);
+                HH_LOG(ERROR) << "In " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+                HH_LOG(ERROR) << "\tIi=" << i << ": n[" << j << "][X[" << k << "][" << j << "]]=0! " <<
+                    "(X[" << k << "][" << j << "]=" << X[k][j] <<")" << std::endl;
               }
               wi[k] += 1.0 / float(n[j][(int) X[k][j]] * naa);
             }
@@ -3304,10 +3287,8 @@ void Alignment::Transitions_from_D_state(HMM* q, char* in, const int maxres) {
           for (k = 0; k < N_in; ++k) {
             if (in[k] && X[k][i] == GAP && X[k][j] < ANY) {
               if (!n[j][(int) X[k][j]]) {
-                std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": "
-                          << __func__ << ":" << std::endl;
-                fprintf(stderr, "\tDi=%i: n[%i][X[%i]]=0! (X[%i]=%i)\n", i, j,
-                        k, k, X[k][j]);
+                HH_LOG(ERROR) << "In " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+                HH_LOG(ERROR) << "\tDi="<<i<<": n["<<j<<"][X["<<k<<"]["<<j<<"]]=0! (X["<<k<<"]["<<j<<"]="<<X[k][j]<<")" << std::endl;
               }
               wi[k] += 1.0 / float(n[j][(int) X[k][j]] * naa);
             }
@@ -3435,7 +3416,7 @@ void Alignment::WriteWithoutInsertsToFile(const char* alnfile,
   if (strncmp(longname, sname[kfirst], DESCLEN - 1))
     fprintf(alnf, "#%s\n", longname);
 
-  HH_LOG(INFO) << cout << "Writing alignment to " << alnfile << "\n";
+  HH_LOG(INFO) << "Writing alignment to " << alnfile << "\n";
 
   // Write ss_ lines
   for (int k = 0; k < N_in; ++k)
@@ -3701,7 +3682,6 @@ void Alignment::MergeMasterSlave(Hit& hit, Alignment& Tali, char* ta3mfile,
 
       // too few columns? Reserve double space
       if (h >= maxcol - 1000) {
-        std::cerr << "maxcol: " << maxcol << "\th: " <<h << std::endl;
         char* new_seq = new char[2 * maxcol];
         strncpy(new_seq, cur_seq, h);
         delete[] (cur_seq);
@@ -3783,8 +3763,7 @@ void Alignment::AddSSPrediction(char seq_pred[], char seq_conf[]) {
   unsigned int i;
 
   if ((int) strlen(seq_pred) != L + 1) {
-    cerr
-        << "WARNING: Could not add secondary struture prediction - unequal length!\n";
+    HH_LOG(WARNING) << "Could not add secondary struture prediction - unequal length!" << std::endl;
     return;
   }
 
