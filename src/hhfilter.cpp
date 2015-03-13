@@ -35,6 +35,7 @@
 #include <ctype.h>    // islower, isdigit etc
 #include <cassert>
 
+#include "hhsuite_config.h"
 #include "cs.h"          // context-specific pseudocounts
 #include "context_library.h"
 #include "library_pseudocounts-inl.h"
@@ -75,7 +76,7 @@ char program_name[NAMELEN];
 /////////////////////////////////////////////////////////////////////////////////////
 void help() {
   printf("\n");
-  printf("HHfilter %s\n", VERSION_AND_DATE);
+  printf("HHfilter %i.%i.%i (-)\n", HHSUITE_VERSION_MAJOR, HHSUITE_VERSION_MINOR, HHSUITE_VERSION_PATCH, HHSUITE_DATE);
   printf(
       "Filter an alignment by maximum pairwise sequence identity, minimum coverage,\n");
   printf(

@@ -35,6 +35,7 @@
 #include <ctype.h>    // islower, isdigit etc
 #include <cassert>
 
+#include "hhsuite_config.h"
 #include "cs.h"          // context-specific pseudocounts
 #include "context_library.h"
 #include "library_pseudocounts-inl.h"
@@ -86,7 +87,7 @@ HMM* q = new HMM;         //Create a HMM with maximum of par.maxres match states
 /////////////////////////////////////////////////////////////////////////////////////
 void help(char all = 0) {
   printf("\n");
-  printf("HHmake %s\n", VERSION_AND_DATE);
+  printf("HHmake %i.%i.%i (-)\n", HHSUITE_VERSION_MAJOR, HHSUITE_VERSION_MINOR, HHSUITE_VERSION_PATCH, HHSUITE_DATE);
   printf(
       "Build an HMM from an input alignment in A2M, A3M, or FASTA format,   \n");
   printf(

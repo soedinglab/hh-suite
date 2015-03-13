@@ -1,6 +1,7 @@
 // hhsearch.cpp:
 
 #include "hhsearch.h"
+#include "hhsuite_config.h"
 
 HHsearch::HHsearch(Parameters& par, std::vector<HHblitsDatabase*>& databases) :
 		HHblits(par, databases) {
@@ -91,7 +92,7 @@ void HHsearch::ProcessAllArguments(int argc, char** argv, Parameters& par) {
 
 void HHsearch::help(Parameters& par, char all) {
 	printf("\n");
-	printf("HHsearch %s\n", VERSION_AND_DATE);
+  printf("HHsearch %i.%i.%i (%s)\n", HHSUITE_VERSION_MAJOR, HHSUITE_VERSION_MINOR, HHSUITE_VERSION_PATCH, HHSUITE_DATE);
 	printf("Search a database of HMMs with a query alignment or query HMM\n");
 	printf("%s", COPYRIGHT);
 	printf("%s", HHSEARCH_REFERENCE);

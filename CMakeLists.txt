@@ -20,16 +20,10 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
   set(CMAKE_COMPILER_IS_ICC 1)
 endif()
 
-set (HHSUITE_VERSION_MAJOR 2)
+set (HHSUITE_VERSION_MAJOR 3)
 set (HHSUITE_VERSION_MINOR 0)
-set (HHSUITE_VERSION_PATCH 16)
-
-# configure a header file to pass some of the CMake settings
-# to the source code
-configure_file (
-	"src/hhsuite_config.h.in"
-	"${PROJECT_BINARY_DIR}/hhsuite_config.h"
-)
+set (HHSUITE_VERSION_PATCH 0)
+set (HHSUITE_DATE "15-03-2015")
 
 include_directories(src)
 include_directories(lib/ffindex/src)

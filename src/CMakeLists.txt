@@ -22,7 +22,6 @@ endif()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-strict-aliasing")
 
-
 add_subdirectory(cs)
 include_directories(cs)
 include_directories("${PROJECT_BINARY_DIR}")
@@ -85,6 +84,13 @@ set(HH_SOURCE
 	${CMAKE_CURRENT_SOURCE_DIR}/hhfunc.h
 	${CMAKE_CURRENT_SOURCE_DIR}/hhfunc.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/simd.h
+)
+
+# configure a header file to pass some of the CMake settings
+# to the source code
+configure_file (
+  "${CMAKE_CURRENT_SOURCE_DIR}/hhsuite_config.h.in"
+  "${PROJECT_BINARY_DIR}/hhsuite_config.h"
 )
 
 add_library(HH_OBJECTS OBJECT ${HH_SOURCE})

@@ -7,6 +7,8 @@
 
 #include "hhblits.h"
 
+#include "hhsuite_config.h"
+
 //TODO: get rid of exit(1)... throw errors ... better for parallelization over several queries
 
 HHblits::HHblits(Parameters& parameters,
@@ -262,7 +264,6 @@ void HHblits::Reset() {
 // Help functions
 /////////////////////////////////////////////////////////////////////////////////////
 void HHblits::help(Parameters& par, char all) {
-
   //TODO: realign read but not described
   //TODO: -ssa not read or described in hhblits...
   //TODO: no -excl???
@@ -273,7 +274,7 @@ void HHblits::help(Parameters& par, char all) {
   RemovePathAndExtension(program_name, par.argv[0]);
 
   printf("\n");
-  printf("HHblits %s:\nHMM-HMM-based lightning-fast iterative sequence search\n", VERSION_AND_DATE);
+  printf("HHblits %i.%i.%i (%s):\nHMM-HMM-based lightning-fast iterative sequence search\n", HHSUITE_VERSION_MAJOR, HHSUITE_VERSION_MINOR, HHSUITE_VERSION_PATCH, HHSUITE_DATE);
   printf("HHblits is a sensitive, general-purpose, iterative sequence search tool that represents\n");
   printf("both query and database sequences by HMMs. You can search HHblits databases starting\n");
   printf("with a single query sequence, a multiple sequence alignment (MSA), or an HMM. HHblits\n");

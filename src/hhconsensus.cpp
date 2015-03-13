@@ -15,6 +15,7 @@
 #include <cassert>
 #include <stdexcept>
 
+#include "hhsuite_config.h"
 #include "cs.h"          // context-specific pseudocounts
 #include "context_library.h"
 #include "library_pseudocounts-inl.h"
@@ -57,7 +58,7 @@ char program_name[NAMELEN];
 /////////////////////////////////////////////////////////////////////////////////////
 void help() {
   printf("\n");
-  printf("HHconsensus %s\n", VERSION_AND_DATE);
+  printf("HHconsensus %i.%i.%i (-)\n", HHSUITE_VERSION_MAJOR, HHSUITE_VERSION_MINOR, HHSUITE_VERSION_PATCH, HHSUITE_DATE);
   printf("Calculate the consensus sequence for an A3M/FASTA input file.   \n");
   printf("%s", COPYRIGHT);
   printf("%s", REFERENCE);

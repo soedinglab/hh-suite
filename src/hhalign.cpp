@@ -26,6 +26,7 @@
 //     Nat. Methods, epub Dec 25, doi: 10.1038/NMETH.1818 (2011).
 
 #include "hhalign.h"
+#include "hhsuite_config.h"
 
 HHalign::HHalign(Parameters& par, std::vector<HHblitsDatabase*>& databases) :
         HHblits(par, databases) {
@@ -39,7 +40,7 @@ HHalign::~HHalign() {
 //TODO: get Version and Data from cmake
 void HHalign::help(Parameters& par, char all) {
   printf("\n");
-  printf("HHalign %s\n", VERSION_AND_DATE);
+  printf("HHalign %i.%i.%i (%s)\n", HHSUITE_VERSION_MAJOR, HHSUITE_VERSION_MINOR, HHSUITE_VERSION_PATCH, HHSUITE_DATE);
   printf("Align a query alignment/HMM to a template alignment/HMM by HMM-HMM alignment\n");
   printf("If only one alignment/HMM is given it is compared to itself and the best\n");
   printf("off-diagonal alignment plus all further non-overlapping alignments above \n");
