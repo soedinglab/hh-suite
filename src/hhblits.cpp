@@ -7,7 +7,7 @@
 
 #include "hhblits.h"
 
-//TODO: get rid of exit(1)... throw errors
+//TODO: get rid of exit(1)... throw errors ... better for parallelization over several queries
 
 HHblits::HHblits(Parameters& parameters,
                  std::vector<HHblitsDatabase*>& databases) {
@@ -176,8 +176,7 @@ void HHblits::ProcessAllArguments(int argc, char** argv, Parameters& par) {
   }
   if (par.loc == 0 && par.num_rounds >= 2) {
     HH_LOG(WARNING)
-        << "Warning in " << __FILE__ << ":" << __LINE__ << ": " << __func__
-        << ":" << "\n"
+        << "In " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << "\n"
         << "\tusing -global alignment for iterative searches is deprecated "
         "since non-homologous sequence segments can easily enter the "
         "MSA and corrupt it."
@@ -263,6 +262,13 @@ void HHblits::Reset() {
 // Help functions
 /////////////////////////////////////////////////////////////////////////////////////
 void HHblits::help(Parameters& par, char all) {
+
+  //TODO: realign read but not described
+  //TODO: -ssa not read or described in hhblits...
+  //TODO: no -excl???
+  //TODO: -realign not in the help of hhblits??? not necessary due to default behavior?
+  //TODO: -def not used in hhblits???
+
   char program_name[NAMELEN];
   RemovePathAndExtension(program_name, par.argv[0]);
 
@@ -318,8 +324,6 @@ void HHblits::help(Parameters& par, char all) {
   printf("Output options: \n");
   printf(
       " -o <file>      write results in standard format to file (default=<infile.hhr>)\n");
-  printf(
-      " -ored <file>   write filtered and wiggled alignments in standard format to file\n");
   printf(
       " -oa3m <file>   write result MSA with significant matches in a3m format\n");
   if (!all) {
@@ -606,6 +610,7 @@ void HHblits::help(Parameters& par, char all) {
            par.psipred_data);
     printf("\n");
   }
+
   printf(
       "Other options:                                                                   \n");
   printf(
@@ -631,8 +636,7 @@ void HHblits::help(Parameters& par, char all) {
   }
   printf("\n");
   if (!all) {
-    printf(
-        "An extended list of options can be obtained by calling 'hhblits -help'\n");
+    printf("An extended list of options can be obtained by calling 'hhblits -h all'\n");
   }
   printf("\n");
   printf("Example: %s -i query.fas -oa3m query.a3m -n 1  \n", program_name);
