@@ -141,7 +141,7 @@ std::vector<Hit> ViterbiRunner::alignment(Parameters& par, HMMSimd * q_simd,
                     entry->getTemplateHMM(par, wg, qsc, format_tmp, pb, S, Sim, t_hmm[current_t_index + i]);
                     t_hmm[current_t_index + i]->entry = entry;
                     
-                    PrepareTemplateHMM(par, q, t_hmm[current_t_index + i], format_tmp, pb, R);
+                    PrepareTemplateHMM(par, q, t_hmm[current_t_index + i], format_tmp, false, pb, R);
                     templates_to_align.push_back(t_hmm[current_t_index + i]);
                 }
                 t_hmm_simd[current_thread_id]->MapHMMVector(templates_to_align);

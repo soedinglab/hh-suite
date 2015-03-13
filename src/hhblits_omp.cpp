@@ -19,8 +19,6 @@ extern "C" {
 #include <ffindex.h>
 }
 
-const int MAX_THREADS = 255;
-
 struct OutputFFIndex {
     char base[NAMELEN];
     FILE* data_fh;
@@ -169,24 +167,21 @@ int main(int argc, char **argv) {
   std::vector<HHblitsDatabase*> databases;
   HHblits::prepareDatabases(par, databases);
 
-  int threads = threads;
-
-  if(threads > MAX_THREADS) {
-    threads = MAX_THREADS;
-    HH_LOG(WARNING) << "Reduced threads to max. allowed threads " << MAX_THREADS << "!" << std::endl;
-  }
+  //need to save for cleanup in the end
+  int threads = par.threads;
 
 #ifdef OPENMP
   omp_set_num_threads(threads);
 #endif
 
   //no openmp parallelization in hhblits methods
-  par.threads = 1;
 
-  HHblits* hhblits_instances[MAX_THREADS];
+  HHblits* hhblits_instances[MAXBINS];
   for(int i = 0; i < threads; i++) {
     hhblits_instances[i] = new HHblits(par, databases);
   }
+
+  par.threads = 1;
 
   size_t range_start = 0;
   size_t range_end = index->n_entries;

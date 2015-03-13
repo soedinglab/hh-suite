@@ -5,6 +5,9 @@
 /////////////////////////////////////////////////////////////////////////////////////
 
 void Parameters::SetDefaultPaths() {
+    char hhlib[PATH_MAX];   // lib base path e.g. /usr/lib64/hh
+    char hhdata[PATH_MAX];  // data base path e.g. /usr/lib64/hh/data
+
 	// set hhlib
 	FILE* testf = NULL;
 	if (getenv("HHLIB"))
@@ -65,7 +68,6 @@ void Parameters::SetDefaults() {
 	maxcol = 32765; // max number of columns in sequence/MSA input files; must be <= LINELEN and >= maxres
 	maxres = 20001;           // max number of states in HMM; must be <= LINELEN
 	maxnumdb = 20000;          // max number of hits allowed past prefilter
-	maxnumdb_no_prefilter = 20000;    // max number of hits without prefiltering
 
 	append = 0;                // overwrite output file
 	outformat = 0;             // 0: hhr  1: FASTA  2:A2M   3:A3M
@@ -146,20 +148,13 @@ void Parameters::SetDefaults() {
 	egq = 0.0f;                // no charge for end gaps as default
 	egt = 0.0f;                // no charge for end gaps as default
 
-	ssgap = 0;      // 1: add secondary structure-dependent gap penalties  0:off
-	ssgapd = 1.0f; // secondary structure-dependent gap-opening penalty (per residue)
-	ssgape = 0.0f; // secondary structure-dependent gap-extension penalty (per residue)
-	ssgapi = 4; // max. number of inside-integer(ii); gap-open-penalty= -ii*ssgapd
-
 	loc = 1;                   // local vs. global alignment as default
 	altali = 4; // find up to four (possibly overlapping) subalignments // JS:02 Mar 13: changed from 2 to avoid loosing domain predictions of repeated modules
-	forward = 0; // 0: Viterbi algorithm; 1: Viterbi+stochastic sampling; 3:Maximum Accuracy (MAC) algorithm
 	realign = 1;               // realign with MAC algorithm
 
 	columnscore = 1; // Default column score is 1: null model pnul = 1/2 * (q_av(a)+p_av(a))
 	half_window_size_local_aa_bg_freqs = 40;
 	min_overlap = 0;           // automatic minimum overlap used
-	opt = 0;                   // Default = optimization mode off
 	readdefaultsfile = 0; // Default = do not read a defaults file ./.hhdefaults or HOME/.hhdefaults
 	maxdbstrlen = 200; // maximum length of database string to be printed in 'Command' line of hhr file
 	premerge = 0;
@@ -184,10 +179,6 @@ void Parameters::SetDefaults() {
 
 	early_stopping_filter = false;  //true in hhblits
   filter_thresh=0;                // 0.01 in hhblits
-  filter_length=200;
-  filter_evals=NULL;
-  filter_sum=0.0;
-  filter_counter=0;
 
 	// For HHblits prefiltering with SSE2
 	prefilter_gap_open = 20;
@@ -215,23 +206,18 @@ void Parameters::SetDefaults() {
 	strcpy(pairwisealisfile, "");
 	strcpy(scorefile, "");
 	strcpy(indexfile, "");
-	strcpy(wfile, "");
 	strcpy(alnfile, "");
 	strcpy(hhmfile, "");
 	strcpy(psifile, "");
 	strcpy(alitabfile, "");
 	strcpy(alisbasename, "");
-	strcpy(queries_to_template_file, "");
 	exclstr = NULL;
 
-	n_redundancy = 10;
 	max_number_matrices = 100;
 
 	// parameters for context-specific pseudocounts
 	csb = 0.85;
 	csw = 1.6;
-
-	idummy = 0;
 
 	//hhblits specific variables
 	num_rounds = 2;
@@ -239,10 +225,7 @@ void Parameters::SetDefaults() {
 	realign_old_hits = false; // Realign old hits in last round or use previous alignments
 	neffmax = 10.0;
 	threads = 2;
-	alitab_scop = false;
 	nocontxt = false;
-
-	return;
 }
 
 Parameters::Parameters() {

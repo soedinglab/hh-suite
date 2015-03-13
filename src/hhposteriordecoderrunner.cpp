@@ -83,10 +83,7 @@ void PosteriorDecoderRunner::executeComputation(HMM &q, std::vector<Hit *>  hits
             //char wg = 0;
             if(idb == 0){ // just read in the first time (less IO/CPU usage)
                 hit_cur->entry->getTemplateHMM(par, par.wg, qsc, format_tmp, pb, S, Sim, t_hmm[current_thread_id]);
-                char tmpForward = par.forward;
-                par.forward = 1; // needed for Log -> Lin
-                PrepareTemplateHMM(par, q_hmm, t_hmm[current_thread_id], format_tmp, pb, R);
-                par.forward = tmpForward;
+                PrepareTemplateHMM(par, q_hmm, t_hmm[current_thread_id], format_tmp, true, pb, R);
             }
             for (size_t ibt = 0; ibt < alignment_to_exclude.size(); ibt++) {
                 // Mask out previous found MAC alignments

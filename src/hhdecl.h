@@ -61,7 +61,6 @@ const int MINCOLS_REALIGN=6; // hits with MAC alignments with fewer matched colu
 const float LOG1000=log(1000.0);
 const float POSTERIOR_PROBABILITY_THRESHOLD = 0.01;
 
-//TODO: not yet used
 //maximum number of bins (positions in thread queue)
 const int MAXBINS = 384;
 
@@ -163,9 +162,6 @@ public:
 
   LogLevel v;
 
-  char hhlib[PATH_MAX];   // lib base path e.g. /usr/lib64/hh
-  char hhdata[PATH_MAX];  // data base path e.g. /usr/lib64/hh/data
-
   char infile[NAMELEN];   // input filename
   char outfile[NAMELEN];  // output filename
   char matrices_output_file[NAMELEN];
@@ -177,12 +173,9 @@ public:
   char scorefile[NAMELEN];// table of scores etc for all HMMs in searched database
   char indexfile[NAMELEN];// optional file containing indeices of aligned residues in given alignment
   char tfile[NAMELEN];    // template filename (in hhalign)
-  char wfile[NAMELEN];    // weights file generated with hhformat
   char alitabfile[NAMELEN]; // where to write pairs of aligned residues (-atab option)
-  char queries_to_template_file[NAMELEN];
   char* exclstr;          // optional string containing list of excluded residues, e.g. '1-33,97-168'
   int aliwidth;           // number of characters per line in output alignments for HMM search
-  char append;            // append to output file? (hhmake)
   float p;                // minimum probability for inclusion in hit list and alignments
   double E;               // maximum E-value for inclusion in hit list and alignment list
   double e;               // maximum E-value for inclusion in output alignment, output HMM, and PSI-BLAST checkpoint model
@@ -197,8 +190,10 @@ public:
   char cons;              // if set to 1, include consensus as first representative sequence of HMM
   int nseqdis;            // maximum number of query or template sequences in output alignments
   char mark;              // which sequences to mark for display in output alignments? 0: auto; 1:all
+  char append;            // append to output file? (hhmake)
   char outformat;         // 0: hhr  1: FASTA  2:A2M   3:A3M
                           //0:MAC alignment, master-slave  1:MAC blending, master-slave  2:MAC alignment, combining
+
 
   int max_seqid;          // Maximum sequence identity with all other sequences in alignment
   int qid;                // Minimum sequence identity with query sequence (sequence 0)
@@ -241,18 +236,12 @@ public:
 
   float Neff;
 
-  char ssgap;             // 1: add secondary structure-dependent gap penalties  0:off
-  float ssgapd;           // secondary structure-dependent gap-opening penalty (per residue)
-  float ssgape;           // secondary structure-dependent gap-extension penalty (per residue)
-  char ssgapi;            // max. number of inside-integer(ii); gap-open-penalty= -ii*ssgapd
-
   char ssm;               // SS comparison mode: 0:no ss scoring  1:ss scoring AFTER alignment  2:ss score in column score
   float ssw;              // SS weight as compared to column score
   float ssw_realign;      // SS weight as compared to column score for realign
   float ssa;              // SS state evolution matrix M1 = (1-ssa)*I + ssa*M0
 
   char loc;               // 0: local alignment (wrt. query), 1: global alignement
-  char forward;           // 0:Viterbi algorithm  1:Forward algorithm  2: MAC
   char realign;           // realign database hits to be displayed with MAC algorithm
   int altali;             // find up to this many possibly overlapping alignments
   int columnscore;        // 0: no aa comp corr  1: 1/2(qav+tav) 2: template av freqs 3: query av freqs 4:...
@@ -265,17 +254,18 @@ public:
 
   char calibrate;         // calibration of query HMM?  0:no, 1:yes (write lamda,mu into query profile)
   char calm;              // derive P-values from: 0:query calibration  1:template calibration  2:both  3:Neural Network prediction
-  int opt;                // for optimization: compare only every opt'th negative; 0: mode off
+
+  //TODO: perhaps we can get rid of it
   int readdefaultsfile ;  // read defaults file ./.hhdefaults or HOME/.hhdefaults?
   int min_overlap;        // all cells of dyn. programming matrix with L_T-j+i or L_Q-i+j < min_overlap will be ignored
-  int hitrank;            // rank of hit to be printed as a3m alignment
   char notags;            // neutralize His-tags, FLAG tags, C-myc tags?
+
+  //TODO: a const would be nicer
   unsigned int maxdbstrlen; // maximum length of database string to be printed in 'Command' line of hhr file
 
   int maxcol;             // max number of columns in sequence/MSA input files; must be <= LINELEN and >= maxres
   int maxres;             // max number of states in HMM; must be <= LINELEN
   int maxnumdb;           // max number of hits allowed past prefilter
-  int maxnumdb_no_prefilter;// max number of hits without prefiltering
 
   bool hmmer_used;        // True, if a HMMER database is used
 
@@ -284,7 +274,6 @@ public:
   char blast[NAMELEN];                 // BLAST binaries (not needed with csBLAST)
   char psipred[NAMELEN];               // PsiPred binaries
   char psipred_data[NAMELEN];          // PsiPred data
-  char dummydb [NAMELEN];
 
   // parameters for context-specific pseudocounts
   float csb;
@@ -293,6 +282,7 @@ public:
   bool nocontxt;
 
   // HHblits
+  //TODO: not used at the moment
   int premerge;
   int dbsize;           // number of clusters of input database
 
@@ -300,7 +290,6 @@ public:
   float alphaa;
   float alphab;
   float alphac;
-
 
   // For filtering database alignments in HHsearch and HHblits
   // JS: What are these used for? They are set to the values without _db anyway.
@@ -319,10 +308,6 @@ public:
   //early stopping stuff
   bool early_stopping_filter; // Break HMM search, when the sum of the last N HMM-hit-Evalues is below threshold
   double filter_thresh;    // Threshold for early stopping
-  int filter_length;       // Length of array of 1/evalues
-  double *filter_evals;    // array of last 1/evalues
-  double filter_sum;       // sum of evalues in array
-  int filter_counter;      // counter for evalue array
 
   // For HHblits prefiltering with SSE2
   short prefilter_gap_open;
@@ -333,12 +318,8 @@ public:
   double prefilter_evalue_coarse_thresh;
   int preprefilter_smax_thresh;
 
-  int idummy;
-  float fdummy;
-
   int min_prefilter_hits;
 
-  int n_redundancy;
   size_t max_number_matrices;
 
   //hhblits specific variables
@@ -350,8 +331,8 @@ public:
   bool realign_old_hits;
   float neffmax;
   int threads;
+  //TODO: not used...
   char query_hhmfile[NAMELEN];
-  bool alitab_scop;
 
   void SetDefaultPaths();
   void SetDefaults();

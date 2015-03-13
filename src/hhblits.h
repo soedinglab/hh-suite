@@ -181,18 +181,6 @@ private:
 	static void ProcessArguments(int argc, char** argv, Parameters& par);
 
 	void RescoreWithViterbiKeepAlignment(HMMSimd& q_vec, Hash<Hit>* previous_hits);
-
-//	//redundancy filter
-//    void wiggleQSC(HitList& hitlist, int n_redundancy, Alignment& Qali,
-//            char inputformat, float* qsc, size_t nqsc,
-//            HitList& reducedFinalHitList);
-//    void wiggleQSC(int n_redundancy, float* qsc, size_t nqsc, HitList& reducedFinalHitList);
-//	void reduceRedundancyOfHitList(int n_redundancy, int query_length,
-//			HitList& hitlist, HitList& reducedHitList);
-//	void recalculateAlignmentsForDifferentQSC(HitList& hitlist, Alignment& Qali,
-//			char inputformat, float* qsc, size_t nqsc,
-//			HitList& recalculated_hitlist);
-//	void uniqueHitlist(HitList& hitlist);
 };
 
 #endif /* HHBLITS_H_ */

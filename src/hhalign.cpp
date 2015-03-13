@@ -221,9 +221,7 @@ void HHalign::ProcessAllArguments(int argc, char** argv, Parameters& par) {
   par.Z = 100;                   // max number of lines in hit list
   par.append = 0;              // append alignment to output file with -a option
   par.altali = 1;           // find only ONE (possibly overlapping) subalignment
-  par.hitrank = 0;     // rank of hit to be printed as a3m alignment (default=0)
   par.outformat = 3;             // default output format for alignment is a3m
-  par.forward = 0; // 0: Viterbi algorithm; 1: Viterbi+stochastic sampling; 2:Maximum Accuracy (MAC) algorithm
   par.realign = 1;               // default: realign
 
   par.num_rounds = 1;
@@ -273,8 +271,6 @@ void HHalign::ProcessAllArguments(int argc, char** argv, Parameters& par) {
     par.B = par.b;
   if (par.z > par.Z)
     par.Z = par.z;
-  if (par.hitrank > 0)
-    par.altali = 0;
   if (par.mact >= 1.0)
     par.mact = 0.999;
   else if (par.mact < 0)
@@ -301,15 +297,6 @@ void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
       }
       else
         strcpy(par.tfile, argv[i]);
-    }
-    else if (!strcmp(argv[i], "-q2t")) {
-      if (++i >= argc || argv[i][0] == '-') {
-        help(par);
-        HH_LOG(ERROR) << "No query2template file following -d" << std::endl;
-        exit(4);
-      }
-      else
-        strcpy(par.queries_to_template_file, argv[i]);
     }
     else if (!strcmp(argv[i], "-o")) {
       if (++i >= argc) {
@@ -350,8 +337,6 @@ void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
       else
         strcpy(par.pairwisealisfile, argv[i]);
     }
-    else if (!strcmp(argv[i], "-rank") && (i < argc - 1))
-      par.hitrank = atoi(argv[++i]);
     else if (!strcmp(argv[i], "-Oa3m")) {
       par.append = 0;
       if (++i >= argc || argv[i][0] == '-') {
@@ -516,14 +501,6 @@ void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
       par.egq = atof(argv[++i]);
     else if (!strcmp(argv[i], "-egt") && (i < argc - 1))
       par.egt = atof(argv[++i]);
-    else if (!strcmp(argv[i], "-ssgap"))
-      par.ssgap = 1;
-    else if (!strcmp(argv[i], "-ssgapd") && (i < argc - 1))
-      par.ssgapd = atof(argv[++i]);
-    else if (!strcmp(argv[i], "-ssgape") && (i < argc - 1))
-      par.ssgape = atof(argv[++i]);
-    else if (!strcmp(argv[i], "-ssgapi") && (i < argc - 1))
-      par.ssgapi = atoi(argv[++i]);
     else if (!strcmp(argv[i], "-ssm") && (i < argc - 1))
       par.ssm = atoi(argv[++i]);
     else if (!strcmp(argv[i], "-ssw") && (i < argc - 1))
@@ -567,8 +544,6 @@ void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
     else if (!strcmp(argv[i], "-mact") && (i < argc - 1)) {
       par.mact = atof(argv[++i]);
     }
-    else if (!strcmp(argv[i], "-opt") && (i < argc - 1))
-      par.opt = atoi(argv[++i]);
     else if (!strcmp(argv[i], "-scwin") && (i < argc - 1)) {
       par.columnscore = 5;
       par.half_window_size_local_aa_bg_freqs = imax(1, atoi(argv[++i]));
@@ -676,7 +651,7 @@ void HHalign::run(FILE* query_fh, char* query_path, char* template_path) {
   par.ssw = par.ssw_realign;
 
   // Realign hits with MAC algorithm
-  if (par.realign && par.forward != 2) {
+  if (par.realign) {
       perform_realign(q_vec, input_format, new_entries, premerge, premerged_hits);
   }
 

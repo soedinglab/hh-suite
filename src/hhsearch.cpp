@@ -608,14 +608,6 @@ void HHsearch::ProcessArguments(int argc, char** argv, Parameters& par) {
 			par.egq = atof(argv[++i]);
 		else if (!strcmp(argv[i], "-egt") && (i < argc - 1))
 			par.egt = atof(argv[++i]);
-		else if (!strcmp(argv[i], "-ssgap"))
-			par.ssgap = 1;
-		else if (!strcmp(argv[i], "-ssgapd") && (i < argc - 1))
-			par.ssgapd = atof(argv[++i]);
-		else if (!strcmp(argv[i], "-ssgape") && (i < argc - 1))
-			par.ssgape = atof(argv[++i]);
-		else if (!strcmp(argv[i], "-ssgapi") && (i < argc - 1))
-			par.ssgapi = atoi(argv[++i]);
 		else if (!strcmp(argv[i], "-ssm") && (i < argc - 1))
 			par.ssm = atoi(argv[++i]);
 		else if (!strcmp(argv[i], "-ssw") && (i < argc - 1))
@@ -628,12 +620,6 @@ void HHsearch::ProcessArguments(int argc, char** argv, Parameters& par) {
 			par.realign = 1;
 		else if (!strcmp(argv[i], "-norealign"))
 			par.realign = 0;
-		else if (!strcmp(argv[i], "-mac") || !strcmp(argv[i], "-MAC"))
-			par.forward = 2;
-		else if (!strcmp(argv[i], "-map") || !strcmp(argv[i], "-MAP"))
-			par.forward = 2;
-		else if (!strcmp(argv[i], "-vit"))
-			par.forward = 0;
 		else if (!strncmp(argv[i], "-glo", 3)) {
 			par.loc = 0;
 			if (par.mact > 0.35 && par.mact < 0.3502) {
@@ -664,8 +650,6 @@ void HHsearch::ProcessArguments(int argc, char** argv, Parameters& par) {
 			par.columnscore = 5;
 			par.half_window_size_local_aa_bg_freqs = imax(1, atoi(argv[++i]));
 		}
-//      TODO: is this necessary?
-//      else if (!strcmp(argv[i],"-def")) ;
 		else if (!strcmp(argv[i], "-maxres") && (i < argc - 1)) {
 			par.maxres = atoi(argv[++i]);
 			par.maxcol = 2 * par.maxres;
@@ -683,12 +667,8 @@ void HHsearch::ProcessArguments(int argc, char** argv, Parameters& par) {
 			par.notags = 0;
 		else if (!strcmp(argv[i], "-notags"))
 			par.notags = 1;
-		else if (!strncmp(argv[i], "-idummy", 7) && (i < argc - 1))
-			par.idummy = atoi(argv[++i]);
 		else if (!strncmp(argv[i], "-premerge", 9) && (i < argc - 1))
 			par.premerge = atoi(argv[++i]);
-		else if (!strncmp(argv[i], "-fdummy", 7) && (i < argc - 1))
-			par.fdummy = atof(argv[++i]);
 		else if (!strcmp(argv[i], "-nocontxt"))
 			par.nocontxt = 1;
 		else if (!strcmp(argv[i], "-csb") && (i < argc - 1))
@@ -842,17 +822,12 @@ void HHsearch::run(FILE* query_fh, char* query_path) {
 //  }
 //  else
 //    hitlist.GetPvalsFromCalibration(q, par.loc, par.calm, par.ssm, par.ssw);
-//
-//TODO
-//  // Optimization mode?
-//  if (par.opt)
-//    hitlist.Optimize(q);
 
 	// Set new ss weight for realign
 	par.ssw = par.ssw_realign;
 
 	// Realign hits with MAC algorithm
-	if (par.realign && par.forward != 2) {
+	if (par.realign) {
 		perform_realign(q_vec, input_format, new_entries, premerge, premerged_hits);
 	}
 
@@ -861,7 +836,6 @@ void HHsearch::run(FILE* query_fh, char* query_path) {
 	if (par.calibrate)
 		q->InsertCalibration(par.infile);
 
-	//TODO: does no longer search for a3m, but takes a3m from hmm if needs be
 	mergeHitsToQuery(previous_hits, premerged_hits, seqs_found, cluster_found);
 
 	// Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]

@@ -165,15 +165,12 @@ void PrepareQueryHMM(Parameters& par, char& input_format, HMM* q,
   if (par.columnscore == 5 && !q->divided_by_local_bg_freqs)
     q->DivideBySqrtOfLocalBackgroundFreqs(
         par.half_window_size_local_aa_bg_freqs, pb);
-  
-  if (par.forward >= 1)
-    q->Log2LinTransitionProbs(1.0);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Do precalculations for q and t to prepare comparison
 /////////////////////////////////////////////////////////////////////////////////////
-void PrepareTemplateHMM(Parameters& par, HMM* q, HMM* t, int format,
+void PrepareTemplateHMM(Parameters& par, HMM* q, HMM* t, int format, float linear_tranistion_probs,
     const float* pb, const float R[20][20]) {
   // HHM format
   if (format == 0) {
@@ -203,7 +200,7 @@ void PrepareTemplateHMM(Parameters& par, HMM* q, HMM* t, int format,
   }
   t->CalculateAminoAcidBackground(pb);
 
-  if (par.forward >= 1)
+  if (linear_tranistion_probs)
     t->Log2LinTransitionProbs(1.0);
 
   // Factor Null model into HMM t
