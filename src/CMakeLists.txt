@@ -105,20 +105,6 @@ add_executable(hhblits_omp
 )
 target_link_libraries (hhblits_omp ffindex)
 endif()
-find_package(MPI QUIET)
-IF(MPI_FOUND)
-	add_executable(hhblits_mpi
-  	hhblits_mpi.cpp $<TARGET_OBJECTS:CS_OBJECTS> $<TARGET_OBJECTS:HH_OBJECTS> $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff>
-	)
-	set_property(TARGET hhblits_mpi PROPERTY COMPILE_FLAGS ${MPI_LINK_FLAGS})
-	target_include_directories(hhblits_mpi PUBLIC ${MPI_INCLUDE_PATH})
-	target_link_libraries (hhblits_mpi ${MPI_LIBRARIES} ffindex) 
-
-	INSTALL(PROGRAMS 
-  	${CMAKE_CURRENT_BINARY_DIR}/hhblits_mpi 
-  	DESTINATION bin
-	)
-ENDIF()
 
 add_executable(hhmake
   hhmake.cpp $<TARGET_OBJECTS:CS_OBJECTS> $<TARGET_OBJECTS:HH_OBJECTS> $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff>
