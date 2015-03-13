@@ -701,7 +701,17 @@ void HHsearch::ProcessArguments(int argc, char** argv, Parameters& par) {
 				exit(4);
 			} else
 				strcpy(par.clusterfile, argv[i]);
-		} else {
+		}
+    else if (!strcmp(argv[i],"-excl")) {
+      if (++i>=argc) {
+        help(par);
+        HH_LOG(ERROR) << "No expression following -excl" << std::endl;
+        exit(4);
+      }
+      par.exclstr = new char[strlen(argv[i])+1];
+      strcpy(par.exclstr,argv[i]);
+    }
+    else {
 			HH_LOG(WARNING) << "Ignoring unknown option " << argv[i] << std::endl;
 		}
 		HH_LOG(DEBUG1) << i << "  " << argv[i] << endl;

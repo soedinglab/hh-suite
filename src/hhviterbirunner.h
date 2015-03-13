@@ -69,8 +69,10 @@ private:
 	void exclude_alignments(int maxResElem, HMMSimd* q_simd, HMMSimd* t_hmm_simd,
                             std::map<std::string ,std::vector<Viterbi::BacktraceResult > >  &excludeAlignments,
 							ViterbiMatrix* viterbiMatrix);
+
+	void exclude_regions(char* exclstr, int maxResElem, HMMSimd* q_hmm_simd, HMMSimd* t_hmm_simd, ViterbiMatrix* viterbiMatrix);
     
-    float calculateEarlyStop(Parameters& par, HMM * q, std::vector<Hit> &all_hits, unsigned int startPos);
+  float calculateEarlyStop(Parameters& par, HMM * q, std::vector<Hit> &all_hits, unsigned int startPos);
 
 };
 

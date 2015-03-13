@@ -16,6 +16,8 @@
 
 #include "hhposteriordecoderrunner.h"
 
+#include "util.h"
+
 int compareIrep(const void * a, const void * b) {
     Hit pa = *(Hit*)a;
     Hit pb = *(Hit*)b;
@@ -90,6 +92,12 @@ void PosteriorDecoderRunner::executeComputation(HMM &q, std::vector<Hit *>  hits
                 // Mask out previous found MAC alignments
                 decoder->excludeMACAlignment(q.L, hit_cur->L, *m_backtrace_matrix[current_thread_id], 0, alignment_to_exclude.at(ibt));
             }
+
+            if(par.exclstr) {
+              // Mask excluded regions
+              exclude_regions(par.exclstr, q_hmm, t_hmm[current_thread_id], m_backtrace_matrix[current_thread_id]);
+            }
+
             // start realignment process
             decoder->realign(*q_hmm, *t_hmm[current_thread_id],
                     *hit_cur, *m_posterior_matrices[current_thread_id],
@@ -133,6 +141,21 @@ void PosteriorDecoderRunner::cleanupThread(
     delete threads;
 }
 
+void PosteriorDecoderRunner::exclude_regions(char* exclstr, HMM* q_hmm, HMM* t_hmm, ViterbiMatrix* viterbiMatrix) {
+  char* ptr = exclstr;
+  while (true) {
+    int i0 = abs(strint(ptr));
+    int i1 = abs(strint(ptr));
+
+    if (!ptr) break;
+
+    for (int i = i0; i <= std::min(i1, q_hmm->L); ++i) {
+      for (int j = 1; j <= t_hmm->L; ++j) {
+        viterbiMatrix->setCellOff(i, j, 0, true);
+      }
+    }
+  }
+}
 
 void PosteriorDecoderRunner::initializeQueryHMMTransitions(HMM &q) {
     q.tr[0][M2D] = q.tr[0][M2I] = 0.0f;

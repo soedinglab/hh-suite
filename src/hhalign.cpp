@@ -165,6 +165,8 @@ void HHalign::help(Parameters& par, char all) {
       "                ness at alignment ends: 0:global >0.1:local (default=%.2f)       \n",
       par.mact);
   printf(
+      " -excl <range>  exclude query positions from the alignment, e.g. '1-33,97-168' \n");
+  printf(
       " -shift [-1,1]  score offset (def=%-.3f)                                      \n",
       par.shift);
   printf(
@@ -819,6 +821,15 @@ void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
       }
       else
         strcpy(par.clusterfile, argv[i]);
+    }
+    else if (!strcmp(argv[i],"-excl")) {
+      if (++i>=argc) {
+        help(par);
+        HH_LOG(ERROR) << "No expression following -excl" << std::endl;
+        exit(4);
+      }
+      par.exclstr = new char[strlen(argv[i])+1];
+      strcpy(par.exclstr,argv[i]);
     }
     else if (!strncmp(argv[i], "-cpu", 4) && (i < argc - 1)) {
       par.threads = atoi(argv[++i]);

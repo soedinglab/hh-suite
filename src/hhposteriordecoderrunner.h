@@ -33,6 +33,7 @@ private:
 	void calcNElementsToSubmit();
 	void initializeQueryHMMTransitions(HMM & q);
 	void cleanupThread(std::vector<PosteriorDecoder*> * threads);
+	void exclude_regions(char* exclstr, HMM* q_hmm, HMM* t_hmm, ViterbiMatrix* viterbiMatrix);
 };
 
 #endif /* HHPOSTERIORDECODERRUNNER_H_ */
