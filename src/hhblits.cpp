@@ -589,7 +589,9 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
         exit(4);
       } else
         strcpy(par.pairwisealisfile, argv[i]);
-    } else if (!strcmp(argv[i], "-qhhm")) {
+    }
+    //TODO: not used
+    else if (!strcmp(argv[i], "-qhhm")) {
       if (++i >= argc || argv[i][0] == '-') {
         help(par);
         HH_LOG(ERROR) << "No filename following -qhhm" << std::endl;

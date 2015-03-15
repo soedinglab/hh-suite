@@ -169,6 +169,10 @@ add_executable(cstranslate
   cs/cstranslate_app.cc $<TARGET_OBJECTS:CS_OBJECTS>
 )
 
+#add_executable(cstranslate_omp
+#  cs/cstranslate_omp.cc $<TARGET_OBJECTS:CS_OBJECTS>
+#)
+
 INSTALL(PROGRAMS 
 	${CMAKE_CURRENT_BINARY_DIR}/hhblits 
 	${CMAKE_CURRENT_BINARY_DIR}/hhblits_omp 

@@ -55,6 +55,7 @@ struct CSTranslateAppOptions {
         weight_decay     = 0.85;
         weight_as        = 1000.0;
         binary           = false;
+        ffindex          = false;
         verbose          = true;
     }
 
@@ -96,6 +97,8 @@ struct CSTranslateAppOptions {
     bool binary;
     // verbose output
     bool verbose;
+    // ffindex
+    bool ffindex;
 };  // CSTranslateAppOptions
 
 
@@ -116,6 +119,10 @@ class CSTranslateApp : public Application {
     void WriteStateSequence(const Sequence<AS219>& seq, string outfile, bool append = false) const;
     // Writes abstract state profile to outfile
     void WriteStateProfile(const CountProfile<AS219>& prof, string outfile, bool append = false) const;
+
+    void ReadProfile(FILE* fin, string& header, CountProfile<Abc>& profile);
+    void Translate(CountProfile<Abc>& profile, const Emission<Abc>& emission, CountProfile<cs::AS219>& as_profile);
+    void BuildSequence(CountProfile<AS219>& as_profile, size_t profile_counts_length, Sequence<cs::AS219>& as_seq);
 
     // Parameter wrapper
     CSTranslateAppOptions opts_;
@@ -146,6 +153,7 @@ void CSTranslateApp<Abc>::ParseOptions(GetOpt_pp& ops) {
     ops >> Option('p', "pc-engine", opts_.pc_engine, opts_.pc_engine);
     ops >> Option('w', "weight", opts_.weight_as, opts_.weight_as);
     ops >> OptionPresent('b', "binary", opts_.binary);
+    ops >> OptionPresent('f', "ffindex", opts_.ffindex);
     ops >> Option('v', "verbose", opts_.verbose, opts_.verbose);
 
     opts_.Validate();
@@ -188,6 +196,7 @@ void CSTranslateApp<Abc>::PrintOptions() const {
     fprintf(out_, "  %-30s %s (def=%-.1f)\n", "-c, --pc-ali [0,inf[", "Constant in pseudocount calculation for alignments", opts_.pc_ali);
     fprintf(out_, "  %-30s %s (def=%-.2f)\n", "-w, --weight [0,inf[", "Weight of abstract state column in emission calculation", opts_.weight_as);
     fprintf(out_, "  %-30s %s (def=off)\n", "-b, --binary", "Write binary instead of character sequence");
+    fprintf(out_, "  %-30s %s (def=off)\n", "-f, --ffindex", "Read from ffindex, write to ffindex; enables openmp if possible");
 }
 
 template<class Abc>
@@ -238,7 +247,89 @@ inline int GetConfidence(double pp) {
 }
 
 template<class Abc>
+void CSTranslateApp<Abc>::ReadProfile(FILE* fin, string& header, CountProfile<Abc>& profile) {
+    if (opts_.informat == "prf") {  // read count profile from infile
+        profile = CountProfile<Abc>(fin);;
+        if (profile.name.empty()) header = GetBasename(opts_.infile, false);
+        else header = profile.name;
+
+        if (pc_) {
+            if (opts_.verbose)
+                fprintf(out_, "Adding cs-pseudocounts (admix=%.2f) ...\n", opts_.pc_admix);
+            CSBlastAdmix admix(opts_.pc_admix, opts_.pc_ali);
+            profile.counts = pc_->AddTo(profile, admix);
+            Normalize(profile.counts, profile.neff);
+        }
+
+    } else if (opts_.informat == "seq") {  // build profile from sequence
+        Sequence<Abc> seq(fin);
+        header = seq.header();
+        profile = CountProfile<Abc>(seq);
+
+        if (pc_) {
+            if (opts_.verbose)
+                fprintf(out_, "Adding cs-pseudocounts (admix=%.2f) ...\n", opts_.pc_admix);
+            ConstantAdmix admix(opts_.pc_admix);
+            profile.counts = pc_->AddTo(seq, admix);
+        }
+
+    } else {  // build profile from alignment
+        AlignmentFormat f = AlignmentFormatFromString(opts_.informat);
+        Alignment<Abc> ali(fin, f);
+        header = ali.name();
+
+        if (f == FASTA_ALIGNMENT) {
+            if (opts_.match_assign == CSTranslateAppOptions::kAssignMatchColsByQuery)
+                ali.AssignMatchColumnsBySequence(0);
+            else
+                ali.AssignMatchColumnsByGapRule(opts_.match_assign);
+        }
+        profile = CountProfile<Abc>(ali);
+
+        if (pc_) {
+            if (opts_.verbose)
+                fprintf(out_, "Adding cs-pseudocounts (admix=%.2f) ...\n", opts_.pc_admix);
+            CSBlastAdmix admix(opts_.pc_admix, opts_.pc_ali);
+            profile.counts = pc_->AddTo(profile, admix);
+            Normalize(profile.counts, profile.neff);
+        }
+    }
+    fclose(fin);  // close input file
+}
+
+template<class Abc>
+void CSTranslateApp<Abc>::Translate(CountProfile<Abc>& profile, const Emission<Abc>& emission, CountProfile<cs::AS219>& as_profile) {
+    for (size_t i = 0; i < as_profile.length(); ++i)
+        CalculatePosteriorProbs(*as_lib_, emission, profile, i, as_profile.counts[i]);
+    as_profile.name = GetBasename(opts_.infile, false);
+    as_profile.name = as_profile.name.substr(0, as_profile.name.length() - 1);
+}
+
+template<class Abc>
+void CSTranslateApp<Abc>::BuildSequence(CountProfile<AS219>& as_profile, size_t profile_counts_length, Sequence<cs::AS219>& as_seq) {
+    // We also build an abstract state sequence, either just for pretty printing or
+    // even because this is the actual output that the user wants
+    for (size_t i = 0; i < profile_counts_length; ++i) {
+        // Find state with maximal posterior prob and assign it to as_seq[i]
+        size_t k_max = 0;
+        double p_max = as_profile.counts[i][0];
+        for (size_t k = 1; k < AS219::kSize; ++k) {
+            if (as_profile.counts[i][k] > p_max) {
+                k_max = k;
+                p_max = as_profile.counts[i][k];
+            }
+        }
+        as_seq[i] = k_max;
+    }
+}
+
+
+
+template<class Abc>
 int CSTranslateApp<Abc>::Run() {
+    // Create emission functor needed for translation into abstract states
+    Emission<Abc> emission(1, opts_.weight_as, 1.0);
+
     // Setup pseudocount engine
     if (!opts_.modelfile.empty() && opts_.pc_engine == "lib") {
         if (opts_.verbose)
@@ -281,150 +372,109 @@ int CSTranslateApp<Abc>::Run() {
     TransformToLog(*as_lib_);
     fclose(fin);
 
-    string header;
-    CountProfile<Abc> profile;  // input profile we want to translate
 
-    if (strcmp(opts_.infile.c_str(), "stdin") == 0)
-        fin = stdin;
-    else
-        fin = fopen(opts_.infile.c_str(), "r");
-    if (!fin)
-        throw Exception("Unable to read input file '%s'!", opts_.infile.c_str());
+    if(!opts_.ffindex) {
+		if (strcmp(opts_.infile.c_str(), "stdin") == 0)
+			fin = stdin;
+		else
+			fin = fopen(opts_.infile.c_str(), "r");
+		if (!fin)
+			throw Exception("Unable to read input file '%s'!", opts_.infile.c_str());
 
-    if (opts_.informat == "prf") {  // read count profile from infile
-        profile = CountProfile<Abc>(fin);;
-        if (profile.name.empty()) header = GetBasename(opts_.infile, false);
-        else header = profile.name;
+		string header;
+		CountProfile<Abc> profile;  // input profile we want to translate
+		ReadProfile(fin, header, profile);
 
-        if (pc_) {
-            if (opts_.verbose)
-                fprintf(out_, "Adding cs-pseudocounts (admix=%.2f) ...\n", opts_.pc_admix);
-            CSBlastAdmix admix(opts_.pc_admix, opts_.pc_ali);
-            profile.counts = pc_->AddTo(profile, admix);
-            Normalize(profile.counts, profile.neff);
-        }
+		size_t profile_counts_lenght = profile.counts.length();
 
-    } else if (opts_.informat == "seq") {  // build profile from sequence
-        Sequence<Abc> seq(fin);
-        header = seq.header();
-        profile = CountProfile<Abc>(seq);
+		// Prepare abstract sequence in AS219 format
+		Sequence<AS219> as_seq(profile_counts_lenght);
+		as_seq.set_header(header);
 
-        if (pc_) {
-            if (opts_.verbose) 
-                fprintf(out_, "Adding cs-pseudocounts (admix=%.2f) ...\n", opts_.pc_admix);
-            ConstantAdmix admix(opts_.pc_admix);
-            profile.counts = pc_->AddTo(seq, admix);
-        }
+		// Translate count profile into abstract state count profile (Neff is one)
+		if (opts_.verbose)
+			fputs("Translating count profile to abstract state alphabet AS219 ...\n", out_);
 
-    } else {  // build profile from alignment
-        AlignmentFormat f = AlignmentFormatFromString(opts_.informat);
-        Alignment<Abc> ali(fin, f);
-        header = ali.name();
+		CountProfile<AS219> as_profile(profile_counts_lenght);  // output profile
+		Translate(profile, emission, as_profile);
 
-        if (f == FASTA_ALIGNMENT) {
-            if (opts_.match_assign == CSTranslateAppOptions::kAssignMatchColsByQuery)
-                ali.AssignMatchColumnsBySequence(0);
-            else
-                ali.AssignMatchColumnsByGapRule(opts_.match_assign);
-        }
-        profile = CountProfile<Abc>(ali);
+		BuildSequence(as_profile, profile_counts_lenght, as_seq);
 
-        if (pc_) {
-            if (opts_.verbose)
-                fprintf(out_, "Adding cs-pseudocounts (admix=%.2f) ...\n", opts_.pc_admix);
-            CSBlastAdmix admix(opts_.pc_admix, opts_.pc_ali);
-            profile.counts = pc_->AddTo(profile, admix);
-            Normalize(profile.counts, profile.neff);
-        }
+		// Build pseudo-alignment for output
+		const size_t nseqs = 5;
+		const size_t header_width = 4;
+		const size_t width = 100;
+		vector<string> ali(nseqs, "");
+		vector<string> labels(nseqs, "");
+		labels[0] = "Pos";
+		labels[1] = "Cons";
+		labels[3] = "AS219";
+		labels[4] = "Conf";
+
+		BlosumMatrix sm;
+		ali[1] = ConservationSequence(profile, sm);
+
+		for (size_t i = 0; i < profile.counts.length(); ++i) {
+			ali[0].append(strprintf("%d", (i + 1) % 10));
+			ali[2].push_back(GetMatchSymbol(as_profile.counts[i][as_seq[i]]));
+			ali[3].push_back(as_seq.chr(i));
+			ali[4].append(strprintf("%d", GetConfidence(as_profile.counts[i][as_seq[i]])));
+		}
+
+		// Print pseudo alignment in blocks if verbose
+		if (opts_.verbose){
+			fputc('\n', out_);  // blank line before alignment
+			while (!ali.front().empty()) {
+				for (size_t k = 0; k < nseqs; ++k) {
+					string label = labels[k];
+					label += string(header_width - label.length() + 1, ' ');
+					fputs(label.c_str(), out_);
+					fputc(' ', out_);  // separator between header and sequence
+
+					size_t len = MIN(width, ali[k].length());
+					fputs(ali[k].substr(0, len).c_str(), out_);
+					fputc('\n', out_);
+					ali[k].erase(0, len);
+				}
+				fputc('\n', out_);  // blank line after each block
+			}
+		}
+
+	    // Write abstract-state sequence or profile to outfile
+	    if (opts_.outformat == "seq") {
+	        if (!opts_.outfile.empty()) {
+	            WriteStateSequence(as_seq, opts_.outfile, false);
+	        }
+	        if (!opts_.appendfile.empty()) {
+	            WriteStateSequence(as_seq, opts_.appendfile, true);
+	        }
+	    } else {
+	        if (!opts_.outfile.empty()) {
+	            WriteStateProfile(as_profile, opts_.outfile, false);
+	        }
+	        if (!opts_.appendfile.empty()) {
+	            WriteStateProfile(as_profile, opts_.appendfile, true);
+	        }
+	    }
     }
-    fclose(fin);  // close input file
+    else {
+	    //TODO: parallelize over ffindex
 
-    // Create emission functor needed for translation into abstract states
-    Emission<Abc> emission(1, opts_.weight_as, 1.0);
+    	string header;
+		CountProfile<Abc> profile;  // input profile we want to translate
+		ReadProfile(fin, header, profile);
 
-    // Prepare abstract sequence in AS219 format
-    Sequence<AS219> as_seq(profile.counts.length());
-    as_seq.set_header(header);
+		size_t profile_counts_lenght = profile.counts.length();
 
-    // Translate count profile into abstract state count profile (Neff is one)
-    CountProfile<AS219> as_profile(profile.counts.length());  // output profile
-    if (opts_.verbose)
-        fputs("Translating count profile to abstract state alphabet AS219 ...\n", out_);
-    for (size_t i = 0; i < as_profile.length(); ++i)
-        CalculatePosteriorProbs(*as_lib_, emission, profile, i, as_profile.counts[i]);
-    as_profile.name = GetBasename(opts_.infile, false);
-    as_profile.name = as_profile.name.substr(0, as_profile.name.length() - 1);
+		CountProfile<AS219> as_profile(profile_counts_lenght);  // output profile
+		Translate(profile, emission, as_profile);
 
-    // We also build an abstract state sequence, either just for pretty printing or
-    // even because this is the actual output that the user wants
-    for (size_t i = 0; i < profile.counts.length(); ++i) {
-        // Find state with maximal posterior prob and assign it to as_seq[i]
-        size_t k_max = 0;
-        double p_max = as_profile.counts[i][0];
-        for (size_t k = 1; k < AS219::kSize; ++k) {
-            if (as_profile.counts[i][k] > p_max) {
-                k_max = k;
-                p_max = as_profile.counts[i][k];
-            }
-        }
-        as_seq[i] = k_max;
-    }
+		// Prepare abstract sequence in AS219 format
+		Sequence<AS219> as_seq(profile_counts_lenght);
+		as_seq.set_header(header);
+		BuildSequence(as_profile, profile_counts_lenght, as_seq);
 
-    // Build pseudo-alignment for output
-    const size_t nseqs = 5;
-    const size_t header_width = 4;
-    const size_t width = 100;
-    vector<string> ali(nseqs, "");
-    vector<string> labels(nseqs, "");
-    labels[0] = "Pos";
-    labels[1] = "Cons";
-    labels[3] = "AS219";
-    labels[4] = "Conf";
-
-    BlosumMatrix sm;
-    ali[1] = ConservationSequence(profile, sm);
-
-    for (size_t i = 0; i < profile.counts.length(); ++i) {
-        ali[0].append(strprintf("%d", (i + 1) % 10));
-        ali[2].push_back(GetMatchSymbol(as_profile.counts[i][as_seq[i]]));
-        ali[3].push_back(as_seq.chr(i));
-        ali[4].append(strprintf("%d", GetConfidence(as_profile.counts[i][as_seq[i]])));
-    }
-
-    // Print pseudo alignment in blocks if verbose
-    if (opts_.verbose){
-        fputc('\n', out_);  // blank line before alignment
-        while (!ali.front().empty()) {
-            for (size_t k = 0; k < nseqs; ++k) {
-                string label = labels[k];
-                label += string(header_width - label.length() + 1, ' ');
-                fputs(label.c_str(), out_);
-                fputc(' ', out_);  // separator between header and sequence
-
-                size_t len = MIN(width, ali[k].length());
-                fputs(ali[k].substr(0, len).c_str(), out_);
-                fputc('\n', out_);
-                ali[k].erase(0, len);
-            }
-            fputc('\n', out_);  // blank line after each block
-        }
-    }
-
-    // Write abstract-state sequence or profile to outfile
-    if (opts_.outformat == "seq") {
-        if (!opts_.outfile.empty()) {
-            WriteStateSequence(as_seq, opts_.outfile, false);
-        }
-        if (!opts_.appendfile.empty()) {
-            WriteStateSequence(as_seq, opts_.appendfile, true);
-        }
-    } else {
-        if (!opts_.outfile.empty()) {
-            WriteStateProfile(as_profile, opts_.outfile, false);
-        }
-        if (!opts_.appendfile.empty()) {
-            WriteStateProfile(as_profile, opts_.appendfile, true);
-        }
+		//TODO: write to ffindex if possible
     }
 
     return 0;
