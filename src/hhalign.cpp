@@ -37,7 +37,6 @@ HHalign::~HHalign() {
 }
 
 
-//TODO: get Version and Data from cmake
 void HHalign::help(Parameters& par, char all) {
   printf("\n");
   printf("HHalign %i.%i.%i (%s)\n", HHSUITE_VERSION_MAJOR, HHSUITE_VERSION_MINOR, HHSUITE_VERSION_PATCH, HHSUITE_DATE);
@@ -76,17 +75,21 @@ void HHalign::help(Parameters& par, char all) {
 
   printf("Output options: \n");
   printf(" -o <file>      write results in standard format to file (default=<infile.hhr>)\n");
-  //TODO: in hhblits -oa3m merged msa; -Oa3m pairwise alignments
-  //TODO: in hhalign -oa3m pairwise alignments; -Oa3m merged msa
-  printf(" -ofas <file>   write pairwise alignments in FASTA, A2M (-oa2m) or A3M (-oa3m) format   \n");
-  printf(" -Oa3m <file>   write query alignment in a3m format to file (default=none)\n");
-  //TODO: not useful??? should be enabled for pairwise alignments???
+  //TODO: analog für psi;
+  //TODO: no hhm? but in hhsearch and hhblits
+  printf(" -oa3m <file>   write query alignment in a3m format to file (default=none)\n");
+  //TODO: analog für psi;
+  //TODO: Appending parameters not in hhblits and not in hhsearch
   printf(" -Aa3m <file>   append query alignment in a3m format to file (default=none)\n");
-  printf(" -index <file>  use given alignment to calculate Viterbi score (default=none)\n");
-  printf(" -nocons        don't show consensus sequence in alignments (default=show) \n");
-  printf(" -nopred        don't show predicted 2ndary structure in alignments (default=show) \n");
-  printf(" -nodssp        don't show DSSP 2ndary structure in alignments (default=show) \n");
-  printf(" -ssconf        how confidences for predicted 2ndary structure in alignments\n");
+  //TODO: nur ein einziges -O... may be specified
+  printf(" -Ofas <file>   write pairwise alignments in FASTA, A2M (-Oa2m) or A3M (-Oa3m) format   \n");
+
+  printf(" -add_cons      generate consensus sequence as master sequence of query MSA (default=don't)\n");
+  printf(" -hide_cons     don't show consensus sequence in alignments (default=show)     \n");
+  printf(" -hide_pred     don't show predicted 2ndary structure in alignments (default=show)\n");
+  printf(" -hide_dssp     don't show DSSP 2ndary structure in alignments (default=show)  \n");
+  printf(" -show_ssconf   show confidences for predicted 2ndary structure in alignments\n");
+
   printf(" -rank int      specify rank of alignment to write with -Oa3m or -Aa3m option (default=1)\n");
   if (all) {
     printf(" -seq <int>     max. number of query/template sequences displayed (default=%i)  \n", par.nseqdis);
@@ -116,7 +119,6 @@ void HHalign::help(Parameters& par, char all) {
   printf(" -glob/-loc     use global/local alignment mode for searching/ranking (def=local)\n");
 
   if (all) {
-    //TODO: remove -realign due to default behavior?
     printf(" -realign       realign displayed hits with max. accuracy (MAC) algorithm \n");
     printf(" -excl <range>  exclude query positions from the alignment, e.g. '1-33,97-168' \n");
     printf(" -alt <int>     show up to this many significant alternative alignments(def=%i)  \n", par.altali);
@@ -152,39 +154,33 @@ void HHalign::help(Parameters& par, char all) {
 
     printf("Pseudocount (pc) options:                                                        \n");
     printf(" Context specific hhm pseudocounts:\n");
-    //TODO: not read
     printf("  -pc_hhm_contxt_mode {0,..,3}      position dependence of pc admixture 'tau' (pc mode, default=%-i) \n", par.pc_hhm_context_engine.admix);
     printf("               0: no pseudo counts:    tau = 0                                  \n");
     printf("               1: constant             tau = a                                  \n");
     printf("               2: diversity-dependent: tau = a/(1+((Neff[i]-1)/b)^c)            \n");
     printf("               3: CSBlast admixture:   tau = a(1+b)/(Neff[i]+b)                 \n");
     printf("               (Neff[i]: number of effective seqs in local MSA around column i) \n");
-    //TODO not read
     printf("  -pc_hhm_contxt_a  [0,1]        overall pseudocount admixture (def=%-.1f)                        \n", par.pc_hhm_context_engine.pca);
-    //TODO not read
     printf("  -pc_hhm_contxt_b  [1,inf[      Neff threshold value for mode 2 (def=%-.1f)                      \n", par.pc_hhm_context_engine.pcb);
-    //TODO not read
     printf("  -pc_hhm_contxt_c  [0,3]        extinction exponent c for mode 2 (def=%-.1f)                     \n", par.pc_hhm_context_engine.pcc);
     printf("\n");
 
     printf(" Context independent hhm pseudocounts (used for templates; used for query if contxt file is not available):\n");
-    //TODO not read
     printf("  -pc_hhm_nocontxt_mode {0,..,3}      position dependence of pc admixture 'tau' (pc mode, default=%-i) \n", par.pc_hhm_nocontext_mode);
     printf("               0: no pseudo counts:    tau = 0                                  \n");
     printf("               1: constant             tau = a                                  \n");
     printf("               2: diversity-dependent: tau = a/(1+((Neff[i]-1)/b)^c)            \n");
     printf("               (Neff[i]: number of effective seqs in local MSA around column i) \n");
-    //TODO not read
     printf("  -pc_hhm_nocontxt_a  [0,1]        overall pseudocount admixture (def=%-.1f)                        \n", par.pc_hhm_nocontext_a);
-    //TODO not read
     printf("  -pc_hhm_nocontxt_b  [1,inf[      Neff threshold value for mode 2 (def=%-.1f)                      \n", par.pc_hhm_nocontext_b);
-    //TODO not read
     printf("  -pc_hhm_nocontxt_c  [0,3]        extinction exponent c for mode 2 (def=%-.1f)                     \n", par.pc_hhm_nocontext_c);
     printf("\n");
 
     printf(" Context-specific pseudo-counts:                                                  \n");
     printf("  -nocontxt      use substitution-matrix instead of context-specific pseudocounts \n");
     printf("  -contxt <file> context file for computing context-specific pseudocounts (default=%s)\n", par.clusterfile);
+    printf("  -csw  [0,inf]  weight of central position in cs pseudocount mode (def=%.1f)\n", par.csw);
+    printf("  -csb  [0,1]    weight decay parameter for positions in cs pc mode (def=%.1f)\n", par.csb);
   }
   printf("\n");
 
@@ -260,6 +256,12 @@ void HHalign::ProcessAllArguments(int argc, char** argv, Parameters& par) {
     exit(4);
   }
 
+  if (!*par.outfile) {
+    RemoveExtension(par.outfile, par.infile);
+    strcat(par.outfile, ".hhr");
+    HH_LOG(INFO) << "Search results will be written to " << par.outfile << "!\n";
+  }
+
   // Check option compatibilities
   if (par.nseqdis > MAXSEQDIS - 3 - par.showcons)
     par.nseqdis = MAXSEQDIS - 3 - par.showcons; //3 reserved for secondary structure
@@ -307,45 +309,55 @@ void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
       else
         strcpy(par.outfile, argv[i]);
     }
-    else if (!strcmp(argv[i], "-ofas")) {
+    else if (!strcmp(argv[i], "-Ofas")) {
       par.outformat = 1;
       if (++i >= argc || argv[i][0] == '-') {
         help(par);
-        HH_LOG(ERROR) << "No output file following -o" << std::endl;
+        HH_LOG(ERROR) << "No output file following -Ofas" << std::endl;
         exit(4);
       }
       else
         strcpy(par.pairwisealisfile, argv[i]);
     }
-    else if (!strcmp(argv[i], "-oa2m")) {
+    else if (!strcmp(argv[i], "-Oa2m")) {
       par.outformat = 2;
       if (++i >= argc || argv[i][0] == '-') {
         help(par);
-        HH_LOG(ERROR) << "No output file following -o" << std::endl;
-        exit(4);
-      }
-      else
-        strcpy(par.pairwisealisfile, argv[i]);
-    }
-    else if (!strcmp(argv[i], "-oa3m")) {
-      par.outformat = 3;
-      if (++i >= argc || argv[i][0] == '-') {
-        help(par);
-        HH_LOG(ERROR) << "No output file following -o" << std::endl;
+        HH_LOG(ERROR) << "No output file following -Oa2m" << std::endl;
         exit(4);
       }
       else
         strcpy(par.pairwisealisfile, argv[i]);
     }
     else if (!strcmp(argv[i], "-Oa3m")) {
-      par.append = 0;
+      par.outformat = 3;
       if (++i >= argc || argv[i][0] == '-') {
         help(par);
         HH_LOG(ERROR) << "No output file following -Oa3m" << std::endl;
         exit(4);
       }
       else
+        strcpy(par.pairwisealisfile, argv[i]);
+    }
+    else if (!strcmp(argv[i], "-oa3m")) {
+      par.append = 0;
+      if (++i >= argc || argv[i][0] == '-') {
+        help(par);
+        HH_LOG(ERROR) << "No output file following -oa3m" << std::endl;
+        exit(4);
+      }
+      else
         strcpy(par.alnfile, argv[i]);
+    }
+    else if (!strcmp(argv[i], "-opsi")) {
+      par.append = 0;
+      if (++i >= argc || argv[i][0] == '-') {
+        help(par);
+        HH_LOG(ERROR) << "No output file following -opsi" << std::endl;
+        exit(4);
+      }
+      else
+        strcpy(par.psifile, argv[i]);
     }
     else if (!strcmp(argv[i], "-Aa3m")) {
       par.append = 1;
@@ -357,19 +369,6 @@ void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
       else
         strcpy(par.alnfile, argv[i]);
     }
-    else if (!strcmp(argv[i], "-wg")) {
-      par.wg = 1;
-    }
-    else if (!strcmp(argv[i], "-Opsi")) {
-      par.append = 0;
-      if (++i >= argc || argv[i][0] == '-') {
-        help(par);
-        HH_LOG(ERROR) << "No output file following -Opsi" << std::endl;
-        exit(4);
-      }
-      else
-        strcpy(par.psifile, argv[i]);
-    }
     else if (!strcmp(argv[i], "-Apsi")) {
       par.append = 1;
       if (++i >= argc || argv[i][0] == '-') {
@@ -380,7 +379,10 @@ void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
       else
         strcpy(par.psifile, argv[i]);
     }
-    else if (!strcmp(argv[i], "-atab") || !strcmp(argv[i], "-Aliout")) {
+    else if (!strcmp(argv[i], "-wg")) {
+      par.wg = 1;
+    }
+    else if (!strcmp(argv[i], "-atab")) {
       if (++i >= argc || argv[i][0] == '-') {
         help(par);
         HH_LOG(ERROR) << "No query file following -atab" << std::endl;
@@ -432,14 +434,17 @@ void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
       par.z = atoi(argv[++i]);
     else if (!strcmp(argv[i], "-Z") && (i < argc - 1))
       par.Z = atoi(argv[++i]);
-    else if (!strncmp(argv[i], "-nocons", 7))
+    else if (!strncmp(argv[i], "-add_cons", 7))
+      par.cons = 0;
+    else if (!strncmp(argv[i], "-hide_cons", 7))
       par.showcons = 0;
-    else if (!strncmp(argv[i], "-nopred", 7))
+    else if (!strncmp(argv[i], "-hide_pred", 7))
       par.showpred = 0;
-    else if (!strncmp(argv[i], "-nodssp", 7))
+    else if (!strncmp(argv[i], "-hide_dssp", 7))
       par.showdssp = 0;
-    else if (!strncmp(argv[i], "-ssconf", 7))
+    else if (!strncmp(argv[i], "-show_ssconf", 7))
       par.showconf = 1;
+    //TODO: not in the help; probably not useful?
     else if (!strncmp(argv[i], "-mark", 7))
       par.mark = 1;
     else if (!strcmp(argv[i], "-seq") && (i < argc - 1))
@@ -456,30 +461,36 @@ void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
       par.coverage = atoi(argv[++i]);
     else if (!strcmp(argv[i], "-diff") && (i < argc - 1))
       par.Ndiff = atoi(argv[++i]);
+
+    //TODO: not int the help
     else if (!strcmp(argv[i], "-Gonnet"))
       par.matrix = 0;
+    //TODO: not in the help -- not catched --> no proper matrix
     else if (!strcmp(argv[i], "-HSDM"))
       par.matrix = 1;
-    else if (!strcmp(argv[i], "-BLOSUM50"))
-      par.matrix = 2;
+    //TODO: not int the help
     else if (!strcmp(argv[i], "-Blosum50"))
-      par.matrix = 2;
-    else if (!strcmp(argv[i], "-B50"))
-      par.matrix = 2;
-    else if (!strcmp(argv[i], "-BLOSUM62"))
-      par.matrix = 3;
+      par.matrix = 50;
+    //TODO: not int the help
     else if (!strcmp(argv[i], "-Blosum62"))
-      par.matrix = 3;
-    else if (!strcmp(argv[i], "-B62"))
-      par.matrix = 3;
-    else if (!strcmp(argv[i], "-pcm") && (i < argc - 1))
+      par.matrix = 62;
+
+    else if (!strcmp(argv[i], "-pc_hhm_contxt_mode") && (i < argc - 1))
       par.pc_hhm_context_engine.admix = (Pseudocounts::Admix) atoi(argv[++i]);
-    else if (!strcmp(argv[i], "-pca") && (i < argc - 1))
+    else if (!strcmp(argv[i], "-pc_hhm_contxt_a") && (i < argc - 1))
       par.pc_hhm_context_engine.pca = atof(argv[++i]);
-    else if (!strcmp(argv[i], "-pcb") && (i < argc - 1))
+    else if (!strcmp(argv[i], "-pc_hhm_contxt_b") && (i < argc - 1))
       par.pc_hhm_context_engine.pcb = atof(argv[++i]);
-    else if (!strcmp(argv[i], "-pcc") && (i < argc - 1))
+    else if (!strcmp(argv[i], "-pc_hhm_contxt_c") && (i < argc - 1))
       par.pc_hhm_context_engine.pcc = atof(argv[++i]);
+    else if (!strcmp(argv[i], "-pc_hhm_nocontxt_mode") && (i < argc - 1))
+      par.pc_hhm_nocontext_mode = atoi(argv[++i]);
+    else if (!strcmp(argv[i], "-pc_hhm_nocontxt_a") && (i < argc - 1))
+      par.pc_hhm_nocontext_a = atof(argv[++i]);
+    else if (!strcmp(argv[i], "-pc_hhm_nocontxt_b") && (i < argc - 1))
+      par.pc_hhm_nocontext_b = atof(argv[++i]);
+    else if (!strcmp(argv[i], "-pc_hhm_nocontxt_c") && (i < argc - 1))
+      par.pc_hhm_nocontext_c = atof(argv[++i]);
     else if (!strcmp(argv[i], "-gapb") && (i < argc - 1)) {
       par.gapb = atof(argv[++i]);
       if (par.gapb <= 0.01)
@@ -507,7 +518,7 @@ void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
       par.ssw = atof(argv[++i]);
     else if (!strcmp(argv[i], "-ssa") && (i < argc - 1))
       par.ssa = atof(argv[++i]);
-    else if (!strncmp(argv[i], "-glo", 3)) {
+    else if (!strncmp(argv[i], "-glob", 5)) {
       par.loc = 0;
       if (par.mact > 0.35 && par.mact < 0.3502) {
         par.mact = 0;
@@ -517,18 +528,12 @@ void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
       par.loc = 1;
     else if (!strncmp(argv[i], "-alt", 4) && (i < argc - 1))
       par.altali = atoi(argv[++i]);
-    else if (!strcmp(argv[i], "-map") || !strcmp(argv[i], "-MAP")
-        || !strcmp(argv[i], "-mac") || !strcmp(argv[i], "-MAC"))
-      SyntaxError(__FILE__, __LINE__, __func__,
-          "Please note that this option has been replaced by the '-realign' option.");
-    else if (!strcmp(argv[i], "-vit"))
-      SyntaxError(__FILE__, __LINE__, __func__,
-          "Please note that this option has been replaced by the '-norealign' option.");
     else if (!strcmp(argv[i], "-realign"))
       par.realign = 1;
     else if (!strcmp(argv[i], "-norealign"))
       par.realign = 0;
     else if (!strcmp(argv[i], "-M") && (i < argc - 1))
+      //TODO: M a3m not defined in the help
       if (!strcmp(argv[++i], "a2m") || !strcmp(argv[i], "a3m"))
         par.M = 1;
       else if (!strcmp(argv[i], "first"))
@@ -544,6 +549,7 @@ void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
     else if (!strcmp(argv[i], "-mact") && (i < argc - 1)) {
       par.mact = atof(argv[++i]);
     }
+    //TODO: not defined in the help
     else if (!strcmp(argv[i], "-scwin") && (i < argc - 1)) {
       par.columnscore = 5;
       par.half_window_size_local_aa_bg_freqs = imax(1, atoi(argv[++i]));
@@ -559,18 +565,24 @@ void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
     }
     else if (!strcmp(argv[i], "-corr") && (i < argc - 1))
       par.corr = atof(argv[++i]);
+
+    //TODO: not defined in the help
     else if (!strcmp(argv[i], "-ovlp") && (i < argc - 1))
       par.min_overlap = atoi(argv[++i]);
     else if (!strcmp(argv[i], "-tags"))
       par.notags = 0;
+    //TODO: not defined in the help
     else if (!strcmp(argv[i], "-notags"))
       par.notags = 1;
     else if (!strcmp(argv[i], "-nocontxt"))
       par.nocontxt = 1;
+    //TODO: not defined in the help
     else if (!strcmp(argv[i], "-csb") && (i < argc - 1))
       par.csb = atof(argv[++i]);
+    //TODO: not defined in the help
     else if (!strcmp(argv[i], "-csw") && (i < argc - 1))
       par.csw = atof(argv[++i]);
+    //TODO: not defined in the help
     else if (!strcmp(argv[i], "-cs")) {
       if (++i >= argc || argv[i][0] == '-') {
         help(par);
@@ -588,9 +600,6 @@ void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
       }
       par.exclstr = new char[strlen(argv[i])+1];
       strcpy(par.exclstr,argv[i]);
-    }
-    else if (!strncmp(argv[i], "-cpu", 4) && (i < argc - 1)) {
-      par.threads = atoi(argv[++i]);
     }
     else {
       HH_LOG(WARNING) << "Ignoring unknown option " << argv[i] << std::endl;
@@ -674,104 +683,4 @@ void HHalign::run(FILE* query_fh, char* query_path, char* template_path) {
   delete previous_hits;
 
   delete premerged_hits;
-
-//TODO???
-//  // Calculate Score for given alignment?
-//  if (*par.indexfile) {
-//
-//    char line[LINELEN] = "";    // input line
-//    char* ptr;                  // pointer for string manipulation
-//    Hit hit;
-//    int step = 0;
-//    int length = 0;
-//
-//    // read in indices from indexfile
-//    FILE* indexf = NULL;
-//    indexf = fopen(par.indexfile, "r");
-//    fgetline(line, LINELEN - 1, indexf);
-//    if (!strncmp("#LEN", line, 4)) {
-//      ptr = strscn(line + 4);       //advance to first non-white-space character
-//      length = strint(ptr);
-//    }
-//    if (length == 0) {
-//      std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
-//      std::cerr << "\tfirst line of index file must contain length of alignment (#LEN ...)\n";
-//      exit(4);
-//    }
-//
-//    hit.AllocateIndices(length);
-//
-//    while (fgetline(line, LINELEN - 1, indexf)) {
-//      if (strscn(line) == NULL)
-//        continue;
-//      if (!strncmp("#QNAME", line, 6)) {
-//        ptr = strscn(line + 6);    // advance to first non-white-space character
-//        strmcpy(q->name, ptr, NAMELEN - 1);    // copy full name to name
-//        strcut(q->name);
-//        continue;
-//      }
-//      else if (!strncmp("#TNAME", line, 6)) {
-//        ptr = strscn(line + 6);    // advance to first non-white-space character
-//        strmcpy(t->name, ptr, NAMELEN - 1);    // copy full name to name
-//        strcut(t->name);
-//        continue;
-//      }
-//      else if (line[0] == '#')
-//        continue;
-//      ptr = line;
-//      hit.i[step] = strint(ptr);
-//      hit.j[step] = strint(ptr);
-//      step++;
-//    }
-//
-//    fclose(indexf);
-//
-//    // calculate score for each pair of aligned residues
-//    hit.ScoreAlignment(q, t, step);
-//
-//    printf("\nAligned %s with %s: Score = %-7.2f \n", q->name, t->name,
-//        hit.score);
-//
-//    if (par.outfile && v >= 1)
-//      fprintf(stderr,
-//          "\nWARNING: no output file is written when -index option is used.\n");
-//    hit.DeleteIndices();
-//
-//    exit(0);
-//  }
-
-
-//TODO???
-//  // Write posterior probability matrix as TCoffee library file
-//  if (tcfile) {
-//    if (v >= 2)
-//      printf("Writing TCoffee library file to %s\n", tcfile);
-//    int i, j;
-//    FILE* tcf = NULL;
-//    if (strcmp(tcfile, "stdout"))
-//      tcf = fopen(tcfile, "w");
-//    else
-//      tcf = stdout;
-//    if (!tcf)
-//      OpenFileError(tcfile, __FILE__, __LINE__, __func__);
-//    fprintf(tcf, "! TC_LIB_FORMAT_01\n");
-//    fprintf(tcf, "%i\n", 2); // two sequences in library file
-//    fprintf(tcf, "%s %i %s\n", q->name, q->L, q->seq[q->nfirst] + 1);
-//    fprintf(tcf, "%s %i %s\n", hit.name, hit.L, hit.seq[hit.nfirst] + 1);
-//    fprintf(tcf, "#1 2\n");
-//    for (i = 1; i <= q->L; i++) // print all pairs (i,j) with probability above PROBTCMIN
-//      for (j = 1; j <= t->L; j++)
-//        if (hit.P_MM[i][j] > probmin_tc)
-//          fprintf(tcf, "%5i %5i %5i\n", i, j, iround(100.0 * hit.P_MM[i][j]));
-//    for (int step = hit.nsteps; step >= 1; step--) // print all pairs on MAC alignment which were not yet printed
-//        {
-//      i = hit.i[step];
-//      j = hit.j[step];
-//      if (hit.states[step] >= MM && hit.P_MM[i][j] <= probmin_tc)
-//        fprintf(tcf, "%5i %5i %5i\n", i, j, iround(100.0 * hit.P_MM[i][j]));
-//    }
-//
-//    fprintf(tcf, "! SEQ_1_TO_N\n");
-//    fclose(tcf);
-//  }
 }

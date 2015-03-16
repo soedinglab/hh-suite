@@ -95,6 +95,7 @@ void PosteriorDecoderRunner::executeComputation(HMM &q, std::vector<Hit *>  hits
               exclude_regions(par.exclstr, q_hmm, t_hmm[current_thread_id], m_backtrace_matrix[current_thread_id]);
             }
 
+            //TODO: par.ssw_realign not used???
             // start realignment process
             decoder->realign(*q_hmm, *t_hmm[current_thread_id],
                     *hit_cur, *m_posterior_matrices[current_thread_id],

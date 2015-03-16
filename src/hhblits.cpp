@@ -264,12 +264,9 @@ void HHblits::Reset() {
 // Help functions
 /////////////////////////////////////////////////////////////////////////////////////
 void HHblits::help(Parameters& par, char all) {
-  //TODO: realign read but not described
-  //TODO: -ssa not read or described in hhblits...
-  //TODO: no -excl???
-  //TODO: -realign not in the help of hhblits??? not necessary due to default behavior?
-  //TODO: -def not used in hhblits???
-  //TODO: ssw_realign not used in hhblits
+  //TODO: check with johannes - no -excl??? - excl problematic for hhblits_omp
+  //TODO: tags defined and read in hhalign but not in hhblits?
+  //TODO: mark is not read - no help - but in hhalign and hhsearch read -- and not really used
 
   char program_name[NAMELEN];
   RemovePathAndExtension(program_name, par.argv[0]);
@@ -288,23 +285,27 @@ void HHblits::help(Parameters& par, char all) {
   printf("Usage: %s -i query [options] \n", program_name);
   printf(" -i <file>      input/query: single sequence or multiple sequence alignment (MSA)\n");
   printf("                in a3m, a2m, or FASTA format, or HMM in hhm format\n");
+
   if (all) {
     printf("\n");
     printf("<file> may be 'stdin' or 'stdout' throughout.\n");
   }
   printf("\n");
 
-  printf("Options:                                                                       \n");
-  printf(" -d <name>      database name (e.g. uniprot20_29Feb2012)                       \n");
-  printf(" -n     [1,8]   number of iterations (default=%i)                              \n", par.num_rounds);
-  printf(" -e     [0,1]   E-value cutoff for inclusion in result alignment (def=%G)      \n", par.e);
+  printf("Options:                                                                        \n");
+  printf(" -d <name>      database name (e.g. uniprot20_29Feb2012)                        \n");
+  printf("                Multiple databases may be specified with '-d <db1> -d <db2> ...'\n");
+  printf(" -n     [1,8]   number of iterations (default=%i)                               \n", par.num_rounds);
+  printf(" -e     [0,1]   E-value cutoff for inclusion in result alignment (def=%G)       \n", par.e);
   printf("\n");
+
   printf("Input alignment format:                                                       \n");
   printf(" -M a2m         use A2M/A3M (default): upper case = Match; lower case = Insert;\n");
   printf("               ' -' = Delete; '.' = gaps aligned to inserts (may be omitted)   \n");
   printf(" -M first       use FASTA: columns with residue in 1st sequence are match states\n");
   printf(" -M [0,100]     use FASTA: columns with fewer than X%% gaps are match states   \n");
   printf("\n");
+
   printf("Output options: \n");
   printf(" -o <file>      write results in standard format to file (default=<infile.hhr>)\n");
   printf(" -oa3m <file>   write result MSA with significant matches in a3m format\n");
@@ -316,10 +317,14 @@ void HHblits::help(Parameters& par, char all) {
     printf(" -ohhm <file>   write HHM file for result MSA of significant matches\n");
   }
   printf(" -oalis <name>  write MSAs in A3M format after each iteration\n");
+  printf(" -add_cons      generate consensus sequence as master sequence of query MSA (default=don't)\n");
+  printf(" -hide_cons     don't show consensus sequence in alignments (default=show)     \n");
+  printf(" -hide_pred     don't show predicted 2ndary structure in alignments (default=show)\n");
+  printf(" -hide_dssp     don't show DSSP 2ndary structure in alignments (default=show)  \n");
+  printf(" -show_ssconf   show confidences for predicted 2ndary structure in alignments\n");
   if (all) {
     printf(" -Ofas <file>   write pairwise alignments of significant matches in FASTA format\n");
     printf("                Analogous for output in a3m and a2m format (e.g. -Oa3m)\n");
-    printf(" -qhhm <file>   write query input HHM file of last iteration (default=off)      \n");
     printf(" -seq <int>     max. number of query/template sequences displayed (default=%i)  \n", par.nseqdis);
     printf(" -aliw <int>    number of columns per line in alignment list (default=%i)       \n", par.aliwidth);
     printf(" -p [0,100]     minimum probability in summary and alignment list (default=%G)  \n", par.p);
@@ -329,7 +334,10 @@ void HHblits::help(Parameters& par, char all) {
     printf(" -B <int>       maximum number of alignments in alignment list (default=%i)     \n", par.B);
     printf(" -b <int>       minimum number of alignments in alignment list (default=%i)     \n", par.b);
     printf("\n");
+  }
 
+
+  if(all) {
     printf("Prefilter options                                                               \n");
     printf(" -noprefilt                disable all filter steps                                        \n");
     printf(" -noaddfilter              disable all filter steps (except for fast prefiltering)         \n");
@@ -337,6 +345,7 @@ void HHblits::help(Parameters& par, char all) {
     printf(" -min_prefilter_hits       min number of hits to pass prefilter (default=%i)               \n", par.min_prefilter_hits);
     printf("\n");
   }
+
   printf("Filter options applied to query MSA, database MSAs, and result MSA              \n");
   printf(" -all           show all sequences in result MSA; do not filter result MSA      \n");
   printf(" -id   [0,100]  maximum pairwise sequence identity (def=%i)\n", par.max_seqid);
@@ -349,11 +358,14 @@ void HHblits::help(Parameters& par, char all) {
   printf("\n");
 
   printf("HMM-HMM alignment options:                                                       \n");
-  printf(" -norealign     do NOT realign displayed hits with MAC algorithm (def=realign)   \n");
-  printf(" -mact [0,1[    posterior prob threshold for MAC realignment controlling greedi- \n");
-  printf("                ness at alignment ends: 0:global >0.1:local (default=%.2f)       \n", par.mact);
-  printf(" -glob/-loc     use global/local alignment mode for searching/ranking (def=local)\n");
+  printf(" -norealign         do NOT realign displayed hits with MAC algorithm (def=realign)   \n");
+  //TODO: check with johannes; newly in help; read before; default don't realign old hits; no inverse option
+  printf(" -realign_old_hits    realign hits from previous iterations                          \n");
+  printf(" -mact [0,1[        posterior prob threshold for MAC realignment controlling greedi- \n");
+  printf("                    ness at alignment ends: 0:global >0.1:local (default=%.2f)       \n", par.mact);
+  printf(" -glob/-loc         use global/local alignment mode for searching/ranking (def=local)\n");
   if (all) {
+    printf(" -realign       realign displayed hits with max. accuracy (MAC) algorithm \n");
     printf(" -realign_max <int>  realign max. <int> hits (default=%i)                        \n", par.realign_max);
     printf(" -alt <int>     show up to this many significant alternative alignments(def=%i)  \n", par.altali);
     printf(" -shift [-1,1]  profile-profile score offset (def=%-.2f)                         \n", par.shift);
@@ -368,6 +380,8 @@ void HHblits::help(Parameters& par, char all) {
     printf("                1,2: ss scoring after or during alignment  [default=%1i]         \n", par.ssm);
     printf("                3,4: ss scoring after or during alignment, predicted vs. predicted\n");
     printf(" -ssw [0,1]     weight of ss score  (def=%-.2f)                                  \n", par.ssw);
+    //TODO: check with johannes; new in hhblits read and help
+    printf(" -ssa [0,1]     ss confusion matrix = (1-ssa)*I + ssa*psipred-confusion-matrix [def=%-.2f)\n", par.ssa);
     printf(" -wg            use global sequence weighting for realignment!                   \n");
     printf("\n");
 
@@ -433,8 +447,13 @@ void HHblits::help(Parameters& par, char all) {
     printf(" Context-specific pseudo-counts:                                                  \n");
     printf("  -nocontxt      use substitution-matrix instead of context-specific pseudocounts \n");
     printf("  -contxt <file> context file for computing context-specific pseudocounts (default=%s)\n", par.clusterfile);
+    //TODO: check with johannes - added to help - read before
+    printf("  -csw  [0,inf]  weight of central position in cs pseudocount mode (def=%.1f)\n", par.csw);
+    printf("  -csb  [0,1]    weight decay parameter for positions in cs pc mode (def=%.1f)\n", par.csb);
     printf("\n");
+  }
 
+  if(all) {
     //TODO: I would like to get rid of it
     printf("Predict secondary structure\n");
     printf(" -addss         add 2ndary structure predicted with PSIPRED to result MSA \n");
@@ -524,7 +543,7 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
       } else
         strcpy(par.outfile, argv[i]);
     }
-    //TODO: missing help... probably also useful in hhalign and hhsearch... perhaps additionally a human readable output
+    //TODO: shall be kept a secret? to speak with johannes about; missing help... probably also useful in hhalign and hhsearch... perhaps additionally a human readable output
     else if (!strcmp(argv[i], "-omat")) {
       if (++i >= argc || argv[i][0] == '-') {
         help(par);
@@ -590,15 +609,7 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
       } else
         strcpy(par.pairwisealisfile, argv[i]);
     }
-    //TODO: not used
-    else if (!strcmp(argv[i], "-qhhm")) {
-      if (++i >= argc || argv[i][0] == '-') {
-        help(par);
-        HH_LOG(ERROR) << "No filename following -qhhm" << std::endl;
-        exit(4);
-      } else
-        strcpy(par.query_hhmfile, argv[i]);
-    } else if (!strcmp(argv[i], "-scores")) {
+    else if (!strcmp(argv[i], "-scores")) {
       if (++i >= argc || argv[i][0] == '-') {
         help(par);
         HH_LOG(ERROR) << "No file following -scores" << std::endl;
@@ -625,6 +636,7 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
       Log::reporting_level() = par.v;
     } else if (!strcmp(argv[i], "-n") && (i < argc - 1))
       par.num_rounds = atoi(argv[++i]);
+    //TODO no help -- missing Gonnet
     else if (!strncmp(argv[i], "-BLOSUM", 7)
         || !strncmp(argv[i], "-Blosum", 7)) {
       if (!strcmp(argv[i] + 7, "30"))
@@ -663,13 +675,20 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
       par.z = atoi(argv[++i]);
     else if (!strcmp(argv[i], "-Z") && (i < argc - 1))
       par.Z = atoi(argv[++i]);
+    else if (!strncmp(argv[i], "-hide_cons", 7))
+      par.showcons = 0;
+    else if (!strncmp(argv[i], "-hide_pred", 7))
+      par.showpred = 0;
+    else if (!strncmp(argv[i], "-hide_dssp", 7))
+      par.showdssp = 0;
+    else if (!strncmp(argv[i], "-show_ssconf", 7))
+      par.showconf = 1;
+    else if (!strncmp(argv[i], "-add_cons", 5))
+      par.cons = 1;
     else if (!strcmp(argv[i], "-realign_max") && (i < argc - 1))
       par.realign_max = atoi(argv[++i]);
     else if (!strcmp(argv[i], "-e") && (i < argc - 1))
       par.e = atof(argv[++i]);
-    //TODO: no help for both
-    else if (!strncmp(argv[i], "-nopred", 7) || !strncmp(argv[i], "-noss", 5))
-      par.showpred = 0;
     else if (!strncmp(argv[i], "-addss", 6))
       par.addss = 1;
     else if (!strcmp(argv[i], "-seq") && (i < argc - 1))
@@ -784,10 +803,8 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
     //TODO: no help
     else if (!strcmp(argv[i], "-pre_score_offset") && (i < argc - 1))
       par.prefilter_score_offset = atoi(argv[++i]);
-    //TODO: no help
-    else if (!strcmp(argv[i], "-realignoldhits"))
+    else if (!strcmp(argv[i], "-realign_old_hits"))
       par.realign_old_hits = true;
-    //TODO: getting rid of it due to default setting???
     else if (!strcmp(argv[i], "-realign"))
       par.realign = 1;
     else if (!strcmp(argv[i], "-norealign"))
@@ -796,6 +813,9 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
       par.ssm = atoi(argv[++i]);
     else if (!strcmp(argv[i], "-ssw") && (i < argc - 1))
       par.ssw = atof(argv[++i]);
+    //TODO: check with johannes; new in hhblits
+    else if (!strcmp(argv[i], "-ssa") && (i < argc - 1))
+      par.ssa = atof(argv[++i]);
     else if (!strcmp(argv[i], "-wg")) {
       par.wg = 1;
     } else if (!strcmp(argv[i], "-maxres") && (i < argc - 1)) {
@@ -833,10 +853,8 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
     }
     else if (!strcmp(argv[i], "-nocontxt"))
       par.nocontxt = 1;
-    //TODO: no help
     else if (!strcmp(argv[i], "-csb") && (i < argc - 1))
       par.csb = atof(argv[++i]);
-    //TODO: no help
     else if (!strcmp(argv[i], "-csw") && (i < argc - 1))
       par.csw = atof(argv[++i]);
     else if (!strcmp(argv[i], "-corr") && (i < argc - 1))
@@ -1218,23 +1236,6 @@ void HHblits::run(FILE* query_fh, char* query_path) {
     // Save HMM without pseudocounts for prefilter query-profile
     *q_tmp = *q;
 
-    //TODO: Write query HHM file? (not the final HMM, which will be written to par.hhmfile)
-//    if (*query_hhmfile) {
-//      v1 = v;
-//      if (v > 0 && v <= 3)
-//        v = 1;
-//      else
-//        v -= 2;
-//
-//      // Add *no* amino acid pseudocounts to query. This is necessary to copy f[i][a] to p[i][a]
-//      q->AddAminoAcidPseudocounts(0, 0.0, 0.0, 1.0);
-//      q->CalculateAminoAcidBackground();
-//
-//      q->WriteToFile(query_hhmfile);
-//
-//      v = v1;
-//    }
-
     PrepareQueryHMM(par, input_format, q, pc_hhm_context_engine,
                     pc_hhm_context_mode, pb, R);
     q_vec.MapOneHMM(q);
@@ -1359,7 +1360,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
 
         add_hits_to_hitlist(hits_to_add, hitlist);
 
-//				// Add dbfiles_old to dbfiles_new for realign
+        // Add dbfiles_old to dbfiles_new for realign
         new_entries.insert(new_entries.end(), old_entries.begin(),
                            old_entries.end());
       } else if (!par.realign_old_hits && previous_hits->Size() > 0) {
