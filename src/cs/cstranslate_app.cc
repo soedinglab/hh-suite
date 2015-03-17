@@ -31,6 +31,14 @@
 #include "pssm.h"
 #include "sequence-inl.h"
 
+#include <omp.h>
+#include <sstream>
+
+extern "C" {
+  #include <ffindex.h>     // fast index-based database reading
+}
+
+
 using namespace GetOpt;
 using std::string;
 using std::vector;
@@ -120,6 +128,9 @@ class CSTranslateApp : public Application {
     // Writes abstract state profile to outfile
     void WriteStateProfile(const CountProfile<AS219>& prof, string outfile, bool append = false) const;
 
+    void WriteStateSequence(const Sequence<AS219>& seq, std::stringstream& ss);
+    void WriteStateProfile(const CountProfile<AS219>& prof, std::stringstream& ss);
+
     void ReadProfile(FILE* fin, string& header, CountProfile<Abc>& profile);
     void Translate(CountProfile<Abc>& profile, const Emission<Abc>& emission, CountProfile<cs::AS219>& as_profile);
     void BuildSequence(CountProfile<AS219>& as_profile, size_t profile_counts_length, Sequence<cs::AS219>& as_seq);
@@ -196,7 +207,7 @@ void CSTranslateApp<Abc>::PrintOptions() const {
     fprintf(out_, "  %-30s %s (def=%-.1f)\n", "-c, --pc-ali [0,inf[", "Constant in pseudocount calculation for alignments", opts_.pc_ali);
     fprintf(out_, "  %-30s %s (def=%-.2f)\n", "-w, --weight [0,inf[", "Weight of abstract state column in emission calculation", opts_.weight_as);
     fprintf(out_, "  %-30s %s (def=off)\n", "-b, --binary", "Write binary instead of character sequence");
-    fprintf(out_, "  %-30s %s (def=off)\n", "-f, --ffindex", "Read from ffindex, write to ffindex; enables openmp if possible");
+    fprintf(out_, "  %-30s %s (def=off)\n", "-f, --ffindex", "Read from -i <ffindex>, write to -o <ffindex>; enables openmp if possible");
 }
 
 template<class Abc>
@@ -220,6 +231,18 @@ void CSTranslateApp<Abc>::WriteStateSequence(const Sequence<AS219>& seq, string 
 }
 
 template<class Abc>
+void CSTranslateApp<Abc>::WriteStateSequence(const Sequence<AS219>& seq, std::stringstream& ss) {
+  if (opts_.binary) {
+      for (size_t i = 0; i < seq.length(); ++i) {
+        ss.put((char)seq[i]);
+      }
+  } else {
+      seq.Write(ss);
+  }
+}
+
+
+template<class Abc>
 void CSTranslateApp<Abc>::WriteStateProfile(const CountProfile<AS219>& prof, string outfile, bool append) const {
     FILE* fout;
     if (outfile.compare("stdout") == 0)
@@ -232,6 +255,14 @@ void CSTranslateApp<Abc>::WriteStateProfile(const CountProfile<AS219>& prof, str
     if (opts_.verbose)
         fprintf(out_, "%s abstract state count profile to %s\n", append ? "Appended" : "Wrote", outfile.c_str());
 }
+
+
+template<class Abc>
+void CSTranslateApp<Abc>::WriteStateProfile(const CountProfile<AS219>& prof, std::stringstream& ss) {
+    prof.Write(ss);
+}
+
+
 
 char GetMatchSymbol(double pp) {
     char rv = '=';
@@ -374,71 +405,71 @@ int CSTranslateApp<Abc>::Run() {
 
 
     if(!opts_.ffindex) {
-		if (strcmp(opts_.infile.c_str(), "stdin") == 0)
-			fin = stdin;
-		else
-			fin = fopen(opts_.infile.c_str(), "r");
-		if (!fin)
-			throw Exception("Unable to read input file '%s'!", opts_.infile.c_str());
+      if (strcmp(opts_.infile.c_str(), "stdin") == 0)
+        fin = stdin;
+      else
+        fin = fopen(opts_.infile.c_str(), "r");
+      if (!fin)
+        throw Exception("Unable to read input file '%s'!", opts_.infile.c_str());
 
-		string header;
-		CountProfile<Abc> profile;  // input profile we want to translate
-		ReadProfile(fin, header, profile);
+      string header;
+      CountProfile<Abc> profile;  // input profile we want to translate
+      ReadProfile(fin, header, profile);
 
-		size_t profile_counts_lenght = profile.counts.length();
+      size_t profile_counts_lenght = profile.counts.length();
 
-		// Prepare abstract sequence in AS219 format
-		Sequence<AS219> as_seq(profile_counts_lenght);
-		as_seq.set_header(header);
+      // Prepare abstract sequence in AS219 format
+      Sequence<AS219> as_seq(profile_counts_lenght);
+      as_seq.set_header(header);
 
-		// Translate count profile into abstract state count profile (Neff is one)
-		if (opts_.verbose)
-			fputs("Translating count profile to abstract state alphabet AS219 ...\n", out_);
+      // Translate count profile into abstract state count profile (Neff is one)
+      if (opts_.verbose)
+        fputs("Translating count profile to abstract state alphabet AS219 ...\n", out_);
 
-		CountProfile<AS219> as_profile(profile_counts_lenght);  // output profile
-		Translate(profile, emission, as_profile);
+      CountProfile<AS219> as_profile(profile_counts_lenght);  // output profile
+      Translate(profile, emission, as_profile);
 
-		BuildSequence(as_profile, profile_counts_lenght, as_seq);
+      BuildSequence(as_profile, profile_counts_lenght, as_seq);
 
-		// Build pseudo-alignment for output
-		const size_t nseqs = 5;
-		const size_t header_width = 4;
-		const size_t width = 100;
-		vector<string> ali(nseqs, "");
-		vector<string> labels(nseqs, "");
-		labels[0] = "Pos";
-		labels[1] = "Cons";
-		labels[3] = "AS219";
-		labels[4] = "Conf";
+      // Build pseudo-alignment for output
+      const size_t nseqs = 5;
+      const size_t header_width = 4;
+      const size_t width = 100;
+      vector<string> ali(nseqs, "");
+      vector<string> labels(nseqs, "");
+      labels[0] = "Pos";
+      labels[1] = "Cons";
+      labels[3] = "AS219";
+      labels[4] = "Conf";
 
-		BlosumMatrix sm;
-		ali[1] = ConservationSequence(profile, sm);
+      BlosumMatrix sm;
+      ali[1] = ConservationSequence(profile, sm);
 
-		for (size_t i = 0; i < profile.counts.length(); ++i) {
-			ali[0].append(strprintf("%d", (i + 1) % 10));
-			ali[2].push_back(GetMatchSymbol(as_profile.counts[i][as_seq[i]]));
-			ali[3].push_back(as_seq.chr(i));
-			ali[4].append(strprintf("%d", GetConfidence(as_profile.counts[i][as_seq[i]])));
-		}
+      for (size_t i = 0; i < profile.counts.length(); ++i) {
+        ali[0].append(strprintf("%d", (i + 1) % 10));
+        ali[2].push_back(GetMatchSymbol(as_profile.counts[i][as_seq[i]]));
+        ali[3].push_back(as_seq.chr(i));
+        ali[4].append(strprintf("%d", GetConfidence(as_profile.counts[i][as_seq[i]])));
+      }
 
-		// Print pseudo alignment in blocks if verbose
-		if (opts_.verbose){
-			fputc('\n', out_);  // blank line before alignment
-			while (!ali.front().empty()) {
-				for (size_t k = 0; k < nseqs; ++k) {
-					string label = labels[k];
-					label += string(header_width - label.length() + 1, ' ');
-					fputs(label.c_str(), out_);
-					fputc(' ', out_);  // separator between header and sequence
+      // Print pseudo alignment in blocks if verbose
+      if (opts_.verbose){
+        fputc('\n', out_);  // blank line before alignment
+        while (!ali.front().empty()) {
+          for (size_t k = 0; k < nseqs; ++k) {
+            string label = labels[k];
+            label += string(header_width - label.length() + 1, ' ');
+            fputs(label.c_str(), out_);
+            fputc(' ', out_);  // separator between header and sequence
 
-					size_t len = MIN(width, ali[k].length());
-					fputs(ali[k].substr(0, len).c_str(), out_);
-					fputc('\n', out_);
-					ali[k].erase(0, len);
-				}
-				fputc('\n', out_);  // blank line after each block
-			}
-		}
+            size_t len = MIN(width, ali[k].length());
+            fputs(ali[k].substr(0, len).c_str(), out_);
+            fputc('\n', out_);
+            ali[k].erase(0, len);
+          }
+          fputc('\n', out_);  // blank line after each block
+        }
+      }
 
 	    // Write abstract-state sequence or profile to outfile
 	    if (opts_.outformat == "seq") {
@@ -458,23 +489,98 @@ int CSTranslateApp<Abc>::Run() {
 	    }
     }
     else {
-	    //TODO: parallelize over ffindex
+      std::string input_data_file = opts_.infile+".ffdata";
+      std::string input_index_filea = opts_.infile+".ffindex";
 
-    	string header;
-		CountProfile<Abc> profile;  // input profile we want to translate
-		ReadProfile(fin, header, profile);
+      FILE *input__data_fh  = fopen(input_data_file.c_str(), "r");
+      FILE *input_index_fh = fopen(input_index_filea.c_str(), "r");
 
-		size_t profile_counts_lenght = profile.counts.length();
+      if (input__data_fh == NULL) {
+        LOG(ERROR) << "Could not open ffindex input data file! (" << input_data_file << ")!" << std::endl;
+        exit(1);
+      }
 
-		CountProfile<AS219> as_profile(profile_counts_lenght);  // output profile
-		Translate(profile, emission, as_profile);
+      if(input_index_fh == NULL) {
+        LOG(ERROR) << "Could not open ffindex input index file! (" << input_index_filea << ")!" << std::endl;
+        exit(1);
+      }
 
-		// Prepare abstract sequence in AS219 format
-		Sequence<AS219> as_seq(profile_counts_lenght);
-		as_seq.set_header(header);
-		BuildSequence(as_profile, profile_counts_lenght, as_seq);
+      size_t input_offset;
+      char* input_data = ffindex_mmap_data(input__data_fh, &input_offset);
+      ffindex_index_t* input_index = ffindex_index_parse(input_index_fh, 0);
 
-		//TODO: write to ffindex if possible
+      if(input_index == NULL) {
+        LOG(ERROR) << "Input index could not be loaded!" << std::endl;
+        exit(1);
+      }
+
+      //prepare ffindex ca3m database
+      std::string output_data_file = opts_.outfile+".ffdata";
+      std::string output_index_file = opts_.outfile+".ffindex";
+
+      FILE *output_data_fh  = fopen(output_data_file.c_str(), "w");
+      FILE *output_index_fh = fopen(output_index_file.c_str(), "w");
+
+      if (output_data_fh == NULL) {
+        LOG(ERROR) << "Could not open ffindex output data file! (" << output_data_file << ")!" << std::endl;
+        exit(1);
+      }
+
+      if(output_index_fh == NULL) {
+        LOG(ERROR) << "Could not open ffindex output index file! (" << output_index_file << ")!" << std::endl;
+        exit(1);
+      }
+
+      size_t output_offset = 0;
+
+
+      size_t input_range_start = 0;
+      size_t input_range_end = input_index->n_entries;
+
+      // Foreach entry
+      #pragma omp parallel for shared(a3m_index, a3m_data, ca3m_data_fh, ca3m_index_fh, ca3m_offset)
+      for(size_t entry_index = input_range_start; entry_index < input_range_end; entry_index++) {
+        ffindex_entry_t* entry = ffindex_get_entry_by_index(input_index, entry_index);
+
+        if (entry == NULL) {
+          LOG(WARNING) << "Could not open entry " << entry_index << " from input ffindex!" << std::endl;
+          continue;
+        }
+
+        FILE* inf = ffindex_fopen_by_entry(input_data, entry);
+        if(inf == NULL) {
+          LOG(WARNING) << "Could not open input entry (" << entry->name << ")!" << std::endl;
+          continue;
+        }
+
+        string header;
+        CountProfile<Abc> profile;  // input profile we want to translate
+        ReadProfile(inf, header, profile);
+
+        size_t profile_counts_lenght = profile.counts.length();
+
+        CountProfile<AS219> as_profile(profile_counts_lenght);  // output profile
+        Translate(profile, emission, as_profile);
+
+        // Prepare abstract sequence in AS219 format
+        Sequence<AS219> as_seq(profile_counts_lenght);
+        as_seq.set_header(header);
+        BuildSequence(as_profile, profile_counts_lenght, as_seq);
+
+        std::stringstream out_buffer;
+
+        if (opts_.outformat == "seq") {
+          WriteStateSequence(as_seq, out_buffer);
+        } else {
+          WriteStateProfile(as_profile, out_buffer);
+        }
+
+        std::string out_string = out_buffer.str();
+        #pragma omp critical
+        {
+          ffindex_insert_memory(output_data_fh, output_index_fh, &output_offset, const_cast<char*>(out_string.c_str()), out_string.size(), entry->name);
+        }
+      }
     }
 
     return 0;

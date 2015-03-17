@@ -184,6 +184,21 @@ void Sequence<Abc>::Write(FILE* fout, size_t width) const {
 }
 
 template<class Abc>
+void Sequence<Abc>::Write(std::stringstream& ss, size_t width) const {
+    ss.put('>');
+    ss.write(header_.c_str(), header_.length());
+    ss.put('\n');
+    for (size_t i = 0; i < length(); ++i) {
+        unsigned char c = chr(i);
+        assert(Abc::kValidChar[c]);
+        ss.put(c);
+        if ((i+1) % width == 0) ss.put('\n');
+    }
+    if (length() % width != 0) ss.put('\n');
+}
+
+
+template<class Abc>
 std::string Sequence<Abc>::ToString() const {
     std::string s(length_, '\0');
     for (size_t i = 0; i < length_; ++i)

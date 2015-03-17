@@ -4,7 +4,7 @@
 # Creates HH-suite database files from A3M and HHM/HMMER-formatted files 
 # Usage: Usage: perl hhbsuitedb.pl -o <db_name> [-ia3m <a3m_dir>] [-ihhm <hhm_dir>] [-ics <cs_dir>] [more_options]
 #
-#     HHsuite version 2.1.0 (March 2013)
+#     HHsuite version 3.0.0 (15-03-2015)
 #
 #     Reference: 
 #     Remmert M., Biegert A., Hauser A., and Soding J.
@@ -26,7 +26,7 @@
 #     You should have received a copy of the GNU General Public License
 #     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#     We are very grateful for bug reports! Please contact us at soeding@genzentrum.lmu.de
+#     We are very grateful for bug reports! Please contact us at soeding@mpibpc.mpg.de
 
 use lib $ENV{"HHLIB"}."/scripts";
 use HHPaths;   # config file with path variables for nr, blast, psipred, pdb, dssp etc.

@@ -3,7 +3,7 @@
 # create_profile_from_hmmer.pl 
 # Create a profile (.prf) from a given HMMER/HMMER3 file
 
-#     HHsuite version 2.0.16 (February 2013)
+#     HHsuite version 3.0.0 (15-03-2015)
 #
 #     Reference: 
 #     Remmert M., Biegert A., Hauser A., and Soding J.
@@ -25,7 +25,7 @@
 #     You should have received a copy of the GNU General Public License
 #     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#     We are very grateful for bug reports! Please contact us at soeding@genzentrum.lmu.de
+#     We are very grateful for bug reports! Please contact us at soeding@mpibpc.mpg.de
 
 use lib $ENV{"HHLIB"}."/scripts";
 use HHPaths;   # config file with path variables for nr, blast, psipred, pdb, dssp etc.

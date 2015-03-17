@@ -131,6 +131,57 @@ void CountProfile<Abc>::Write(FILE* fout) const {
 }
 
 
+template<class Abc>
+void CountProfile<Abc>::Write(std::stringstream& ss) const {
+  // Print header section
+  char buffer [4000];
+  sprintf(buffer, "CountProfile\n");
+  ss << buffer;
+  if (!name.empty()) {
+    sprintf(buffer, "NAME\t%s\n", name.c_str());
+    ss << buffer;
+  }
+
+  sprintf(buffer, "LENG\t%zu\n", counts.length());
+  ss << buffer;
+  sprintf(buffer, "ALPH\t%zu\n", Abc::kSize);
+  ss << buffer;
+
+  // Print alphabet description line
+  sprintf(buffer, "COUNTS");
+  ss << buffer;
+  for (size_t a = 0; a < Abc::kSize; ++a) {
+    sprintf(buffer, "\t%c", Abc::kIntToChar[a]);
+    ss << buffer;
+  }
+  sprintf(buffer, "\tNEFF\n");
+  ss << buffer;
+
+  // Print counts matrix and neff vector as negative logs scaled by 'kScale'
+  for (size_t i = 0; i < counts.length(); ++i) {
+    sprintf(buffer, "%zu", i+1);
+    ss << buffer;
+    // TODO: include ANY char in seialization
+    for (size_t a = 0; a < Abc::kSize; ++a) {
+      // TODO: save counts as log base e instead of log base 2
+      if (counts[i][a] == 0.0) {
+        sprintf(buffer, "\t*");
+        ss << buffer;
+      }
+      else {
+        sprintf(buffer, "\t%d", -iround(log2(counts[i][a] / neff[i]) * kScale));
+        ss << buffer;
+      }
+    }
+    sprintf(buffer, "\t%d\n", iround(neff[i] * kScale));
+    ss << buffer;
+  }
+  sprintf(buffer, "//\n");
+  ss << buffer;
+}
+
+
+
 // Returns the average Neff in given count profile.
 template<class Abc>
 inline double Neff(const CountProfile<Abc>& cp) {
