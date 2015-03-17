@@ -31,7 +31,10 @@
 #include "pssm.h"
 #include "sequence-inl.h"
 
+#ifdef OPENMP
 #include <omp.h>
+#endif
+
 #include <sstream>
 
 extern "C" {
@@ -538,7 +541,7 @@ int CSTranslateApp<Abc>::Run() {
       size_t input_range_end = input_index->n_entries;
 
       // Foreach entry
-      #pragma omp parallel for shared(a3m_index, a3m_data, ca3m_data_fh, ca3m_index_fh, ca3m_offset)
+      #pragma omp parallel for shared(input_index, input_data, output_data_fh, output_index_fh, output_offset)
       for(size_t entry_index = input_range_start; entry_index < input_range_end; entry_index++) {
         ffindex_entry_t* entry = ffindex_get_entry_by_index(input_index, entry_index);
 
