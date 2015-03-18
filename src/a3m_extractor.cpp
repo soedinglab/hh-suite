@@ -9,7 +9,7 @@
 
 void usage() {
   std::cout
-      << "a3m_extractor -i [inputfile|stdin] -o [outputfile|stdout] -d [ffindex_sequence_database_prefix] -q [ffindex_header_database_prefix]"
+      << "USAGE: a3m_extractor -i [inputfile|stdin] -o [outputfile|stdout] -d [ffindex_sequence_database_prefix] -q [ffindex_header_database_prefix]"
       << std::endl;
 }
 
@@ -72,17 +72,15 @@ int main(int argc, char **argv) {
   FILE *sequence_index_fh = fopen(sequenceIndexFile.c_str(), "r");
 
   if (sequence_data_fh == NULL) {
-    std::cerr << "Could not open ffindex sequence data file! ("
+    std::cerr << "ERROR: Could not open ffindex sequence data file! ("
         << sequenceDataFile << ")!" << std::endl;
     exit(1);
-    //TODO: throw error
   }
 
   if (sequence_index_fh == NULL) {
-    std::cerr << "Could not open ffindex sequence index file! ("
+    std::cerr << "ERROR: Could not open ffindex sequence index file! ("
         << sequenceIndexFile << ")!" << std::endl;
     exit(1);
-    //TODO: throw error
   }
 
   size_t sequence_data_size;
@@ -91,9 +89,8 @@ int main(int argc, char **argv) {
   ffindex_index_t* sequence_index = ffindex_index_parse(sequence_index_fh, 1E8);
 
   if (sequence_index == NULL) {
-    std::cerr << "Sequence index could not be loaded!" << std::endl;
+    std::cerr << "ERROR: Sequence index could not be loaded!" << std::endl;
     exit(1);
-    //TODO: throw error
   }
 
   //prepare ffindex header database
@@ -104,17 +101,15 @@ int main(int argc, char **argv) {
   FILE *header_index_fh = fopen(headerIndexFile.c_str(), "r");
 
   if (header_data_fh == NULL) {
-    std::cerr << "Could not open ffindex sequence data file! ("
+    std::cerr << "ERROR: Could not open ffindex sequence data file! ("
         << headerDataFile << ")!" << std::endl;
     exit(1);
-    //TODO: throw error
   }
 
   if (header_index_fh == NULL) {
-    std::cerr << "Could not open ffindex header index file! ("
+    std::cerr << "ERROR: Could not open ffindex header index file! ("
         << headerIndexFile << ")!" << std::endl;
     exit(1);
-    //TODO: throw error
   }
 
   size_t header_data_size;
