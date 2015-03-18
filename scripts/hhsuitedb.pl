@@ -354,40 +354,6 @@ if ($remove==1) {
 } # end if $remove==0
 
 
-$numa3mfiles = &WriteFfsizeFile($a3mindex,$a3msize);
-$numhhmfiles = &WriteFfsizeFile($hhmindex,$hhmsize);
-$numcsfiles  = &WriteFfsizeFile($csindex,$cssize);
-
-my $err=0;
-if ($numa3mfiles && $numhhmfiles && $numa3mfiles != $numhhmfiles) {
-    print("**************************************************************************
-WARNING: Number of a3m files not equal to number of $hhmext files\n"); $err=1;
-}
-if ($numcsfiles && $numhhmfiles && $numcsfiles != $numhhmfiles) {
-    print("**************************************************************************
-WARNING: Number of $csext files not equal to number of $hhmext files\n"); $err=1;
-}
-if ($numcsfiles && $numa3mfiles && $numcsfiles != $numa3mfiles) {
-    print("**************************************************************************
-WARNING: Number of $csext files not equal to number of a3m files\n"); $err=1;
-}
-
-if ($err==1) {
-print("**************************************************************************
-$tmpdir will not be removed to check for missing files
-**************************************************************************\n");}
-elsif ($v<3) {
-    $command = "rm -rf $tmpdir";
-    # &HHPaths::&System($command);
-} else {
-    print("Note: $tmpdir will not be removed under option '-v $v' for diagnostic purpuses\n");
-} 
-wait;
-exit;
-##############################################################################################
-
-
-
 ##############################################################################################
 # If $csglob is simple directory instead of glob expression, turn it into glob expression
 ##############################################################################################
@@ -401,24 +367,6 @@ sub TurnDirIntoGlob
 	}
     }
     return $glob;
-}
-
-##############################################################################################
-# Read and return the number in .ffsize file of ffindex db 
-##############################################################################################
-sub WriteFfsizeFile
-{
-    my $ffindex = shift @_;
-    my $ffsize  = shift @_;
-    my $numlines = 0;
-    open (IN, "<$ffindex") || die("Error: can't open $ffindex: $!");
-    foreach (<IN>) {$numlines++;}
-    close IN;
-    open (OUT, ">$ffsize") || die("Error: can't open $ffsize: $!");
-    printf(OUT "%s\n",$numlines);
-    close OUT;
-    printf("Current number of files in $ffindex: %i\n",$numlines);
-    return $numlines;
 }
 
 

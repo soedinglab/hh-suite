@@ -1602,6 +1602,22 @@ void HHblits::writeHHRFile(HHblits& hhblits, std::stringstream& out) {
                            hhblits.par.argc, hhblits.par.argv, hhblits.S);
 }
 
+void HHblits::printHitList() {
+  char output[] = {"stdout"};
+  hitlist.PrintHitList(q, output, par.maxdbstrlen, par.z, par.Z, par.p, par.E, par.argc, par.argv);
+}
+
+void HHblits::printHHRFile() {
+  char output[] = {"stdout"};
+  hitlist.PrintHHR(q_tmp, output, par.maxdbstrlen,
+                           par.showconf, par.showcons,
+                           par.showdssp, par.showpred,
+                           par.b, par.B, par.z,
+                           par.Z, par.aliwidth,
+                           par.nseqdis, par.p, par.E,
+                           par.argc, par.argv, S);
+}
+
 void HHblits::writeScoresFile(HHblits& hhblits, std::stringstream& out) {
   hhblits.hitlist.PrintScoreFile(hhblits.q, out);
 }
