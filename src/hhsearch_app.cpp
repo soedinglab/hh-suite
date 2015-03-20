@@ -39,6 +39,10 @@ int main(int argc, char **argv) {
   hhsearch.run(inf, par.infile);
   fclose(inf);
 
+  if(Log::reporting_level() >= INFO) {
+    hhsearch.printHitList();
+  }
+
   hhsearch.writeHHRFile(par.outfile);
   hhsearch.writeScoresFile(par.scorefile);
   hhsearch.writePairwiseAlisFile(par.pairwisealisfile, par.outformat);

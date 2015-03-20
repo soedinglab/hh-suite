@@ -17,7 +17,7 @@ extern "C" {
 }
 
 void usage() {
-  std::cout << "A3M_Database_Filter -i [ffindex_a3m_database_prefix] -o [ffindex_a3m_database_prefix] -s [filter]" << std::endl;
+  std::cout << "USAGE: a3m_database_filter -i [ffindex_a3m_database_prefix] -o [ffindex_a3m_database_prefix] -s [filter]" << std::endl;
 }
 
 int main(int argc, char **argv) {
@@ -72,15 +72,13 @@ int main(int argc, char **argv) {
   FILE *oa3m_index_fh = fopen(oa3mIndexFile.c_str(), "w");
 
   if (oa3m_data_fh == NULL) {
-    std::cerr << "Could not open ffindex ca3m data file! (" << oa3mDataFile << ")!" << std::endl;
+    std::cerr << "ERROR: Could not open ffindex ca3m data file! (" << oa3mDataFile << ")!" << std::endl;
     exit(1);
-    //TODO: throw error
   }
 
   if(oa3m_index_fh == NULL) {
-    std::cerr << "Could not open ffindex ca3m index file! (" << oa3mIndexFile << ")!" << std::endl;
+    std::cerr << "ERROR: Could not open ffindex ca3m index file! (" << oa3mIndexFile << ")!" << std::endl;
     exit(1);
-    //TODO: throw error
   }
 
   size_t oa3m_offset = 0;
@@ -93,15 +91,13 @@ int main(int argc, char **argv) {
   FILE *a3m_index_fh = fopen(a3mIndexFile.c_str(), "r");
 
   if (a3m_data_fh == NULL) {
-    std::cerr << "Could not open ffindex a3m data file! (" << a3mDataFile << ")!" << std::endl;
+    std::cerr << "ERROR: Could not open ffindex a3m data file! (" << a3mDataFile << ")!" << std::endl;
     exit(1);
-    //TODO: throw error
   }
 
   if(a3m_index_fh == NULL) {
-    std::cerr << "Could not open ffindex a3m index file! (" << a3mIndexFile << ")!" << std::endl;
+    std::cerr << "ERROR: Could not open ffindex a3m index file! (" << a3mIndexFile << ")!" << std::endl;
     exit(1);
-    //TODO: throw error
   }
 
   size_t a3m_offset;
@@ -109,9 +105,8 @@ int main(int argc, char **argv) {
   ffindex_index_t* a3m_index = ffindex_index_parse(a3m_index_fh, 0);
 
   if(a3m_index == NULL) {
-    std::cerr << "A3M index could not be loaded!" << std::endl;
+    std::cerr << "ERROR: A3M index could not be loaded!" << std::endl;
     exit(1);
-    //TODO: throw error
   }
 
   //prepare filter
@@ -199,7 +194,7 @@ int main(int argc, char **argv) {
       }
     }
     else {
-      std::cerr << "Warning: no sequences left for cluster " << entry->name << std::endl;
+      std::cerr << "WARNING: No sequences left for cluster " << entry->name << std::endl;
     }
 
     delete out_buffer;

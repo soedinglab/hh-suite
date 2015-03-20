@@ -537,16 +537,6 @@ void HHFileEntry::getTemplateA3M(Parameters& par, float* pb,
   }
   // ... or is it an alignment file
   else if (line[0] == '#' || line[0] == '>') {
-    if (par.calibrate) {
-      HH_LOG(ERROR) << "Error in " << __FILE__ << ":" << __LINE__
-                              << ": " << __func__ << ":" << std::endl;
-      HH_LOG(ERROR) << "\tonly HHM files can be calibrated.\n";
-      HH_LOG(ERROR)
-          << "\tBuild an HHM file from your alignment with hhmake and rerun with the hhm file"
-          << std::endl;
-      exit(1);
-    }
-
     Alignment ali_tmp;
 
     // Read alignment from infile into matrix X[k][l] as ASCII (and supply first line as extra argument)

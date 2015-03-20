@@ -27,10 +27,9 @@ void SetSubstitutionMatrix(const char matrix, float* pb, float P[20][20], float 
     case 0:  //Gonnet matrix
       HH_LOG(DEBUG) << "Using the Gonnet matrix" << std::endl;
       for (a=0; a<20; ++a)
-	for (pb[a]=0.0f, b=0; b<20; ++b)
-	  P[a][b] = 0.000001f*Gonnet[a*20+b];
-      break;
-
+        for (pb[a]=0.0f, b=0; b<20; ++b)
+          P[a][b] = 0.000001f*Gonnet[a*20+b];
+            break;
     case 30:  //BLOSUM30
       SetBlosumMatrix(matrix, Blosum30, pb, P);
       break;

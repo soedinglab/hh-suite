@@ -3,7 +3,7 @@
 #include <sstream>
 
 void usage() {
-  std::cout << "A3M_Reducer -i [inputfile|stdin] -o [outputfile|stdout] -d [ffindex_sequence_database_prefix]" << std::endl;
+  std::cout << "USAGE: a3m_reducer -i [inputfile|stdin] -o [outputfile|stdout] -d [ffindex_sequence_database_prefix]" << std::endl;
 }
 
 int main(int argc, char **argv) {
@@ -57,15 +57,13 @@ int main(int argc, char **argv) {
   FILE *sequence_index_fh = fopen(sequenceIndexFile.c_str(), "r");
 
   if (sequence_data_fh == NULL) {
-    std::cerr << "Could not open ffindex sequence data file! (" << sequenceDataFile << ")!" << std::endl;
+    std::cerr << "ERROR: Could not open ffindex sequence data file! (" << sequenceDataFile << ")!" << std::endl;
     exit(1);
-    //TODO: throw error
   }
 
   if(sequence_index_fh == NULL) {
-    std::cerr << "Could not open ffindex sequence index file! (" << sequenceIndexFile << ")!" << std::endl;
+    std::cerr << "ERROR: Could not open ffindex sequence index file! (" << sequenceIndexFile << ")!" << std::endl;
     exit(1);
-    //TODO: throw error
   }
 
   size_t sequence_data_size;
@@ -73,9 +71,8 @@ int main(int argc, char **argv) {
   ffindex_index_t* sequence_index = ffindex_index_parse(sequence_index_fh, 80000000);
 
   if(sequence_index == NULL) {
-    std::cerr << "Sequence index could not be loaded!" << std::endl;
+    std::cerr << "ERROR: Sequence index could not be loaded!" << std::endl;
     exit(1);
-    //TODO: throw error
   }
 
   //prepare input stream
@@ -100,11 +97,11 @@ int main(int argc, char **argv) {
     else {
       std::cout << out_buffer->str();
     }
-    return 1;
+    return 0;
   }
   else {
-    std::cerr << "Could not compress A3M! ("<< input << ")" << std::endl;
-    return 0;
+    std::cerr << "ERROR: Could not compress A3M! ("<< input << ")" << std::endl;
+    return 1;
   }
 }
 

@@ -100,8 +100,6 @@ void Parameters::SetDefaults() {
 
 	M = 1;                     // match state assignment is by A2M/A3M
 	Mgaps = 50; // Above this percentage of gaps, columns are assigned to insert states (for par.M=2)
-	calibrate = 0;             // default: no calibration
-	calm = 3; // derive P-values from: 0:query calibration  1:template calibration  2:both  3:Neural Network prediction
 
 	wg = 0;                // 0: use local sequence weights   1: use global ones
 
@@ -157,15 +155,9 @@ void Parameters::SetDefaults() {
 	min_overlap = 0;           // automatic minimum overlap used
 	readdefaultsfile = 0; // Default = do not read a defaults file ./.hhdefaults or HOME/.hhdefaults
 	maxdbstrlen = 200; // maximum length of database string to be printed in 'Command' line of hhr file
-	premerge = 0;
 
 	notags = 1;                // neutralize His-tags, FLAG-tags, C-myc-tags
 	hmmer_used = false;
-
-	// Directories for SS-prediction
-	addss = 0;
-	strcpy(psipred, "");
-	strcpy(psipred_data, "");
 
 	// HHblits parameters
 	dbsize = 0;

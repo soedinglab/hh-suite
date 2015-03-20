@@ -35,6 +35,10 @@ int main(int argc, char **argv) {
   hhalign.run(inf, par.infile, par.tfile);
   fclose(inf);
 
+  if(Log::reporting_level() >= INFO) {
+    hhalign.printHHRFile();
+  }
+
   hhalign.writeHHRFile(par.outfile);
   hhalign.writeScoresFile(par.scorefile);
   hhalign.writePairwiseAlisFile(par.pairwisealisfile, par.outformat);

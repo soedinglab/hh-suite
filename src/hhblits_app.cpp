@@ -92,6 +92,10 @@ int main(int argc, char **argv) {
   hhblits.run(inf, par.infile);
   fclose(inf);
 
+  if(Log::reporting_level() >= INFO) {
+    hhblits.printHitList();
+  }
+
   hhblits.writeHHRFile(par.outfile);
   hhblits.writeAlisFile(par.alisbasename);
   hhblits.writeScoresFile(par.scorefile);

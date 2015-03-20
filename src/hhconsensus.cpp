@@ -263,8 +263,6 @@ void ProcessArguments(int argc, char** argv) {
       par.gapi = atof(argv[++i]);
     else if (!strcmp(argv[i], "-def"))
       par.readdefaultsfile = 1;
-    else if (!strcmp(argv[i], "-addss"))
-      par.addss = 1;
     else if (!strcmp(argv[i], "-maxres") && (i < argc - 1))
         par.maxres = par.maxcol = atoi(argv[++i]);
     else if (!strcmp(argv[i], "-nocontxt"))
@@ -415,9 +413,6 @@ int main(int argc, char **argv) {
   
   q->CalculateAminoAcidBackground(pb);
   
-  if (par.addss == 1)
-    CalculateSS(q, par.maxres, par.psipred_data, par.psipred, pb);
-
   if (par.columnscore == 5 && !q->divided_by_local_bg_freqs)
     q->DivideBySqrtOfLocalBackgroundFreqs(
         par.half_window_size_local_aa_bg_freqs, pb);

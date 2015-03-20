@@ -118,9 +118,6 @@ class HMM {
                    const float qsc, const int argc, char** argv,
                    const float* pb);
 
-  // Insert calibration line 'EVD   lamda   mu      hashvalue' into HMM file
-  void InsertCalibration(char* infile);
-
   // Transform log to lin transition probs
   void Log2LinTransitionProbs(float beta = 1.0);
 
