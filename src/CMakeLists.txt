@@ -4,10 +4,13 @@ include(CheckSSEFeatures)
 ADD_DEFINITIONS(${CXX_DFLAGS})
 if(${HAVE_AVX2_EXTENSIONS})
     ADD_DEFINITIONS("-DAVX2")
+#    ADD_DEFINITIONS("-DSSE")
 else()
-if(${HAVE_SSE2_EXTENSIONS})
+if(${HAVE_SSSE3_EXTENSIONS})
     ADD_DEFINITIONS("-DSSE")
-endif(${HAVE_SSE2_EXTENSIONS})
+else()
+    message( FATAL_ERROR "SSSE3 is needed to run compile! CMake will exit." )
+endif(${HAVE_SSSE3_EXTENSIONS})
 endif(${HAVE_AVX2_EXTENSIONS})
 
 
@@ -98,42 +101,70 @@ add_library(HH_OBJECTS OBJECT ${HH_SOURCE})
 add_library(hhviterbialgorithm_with_celloff OBJECT hhviterbialgorithm.cpp)
 set_property(TARGET hhviterbialgorithm_with_celloff PROPERTY COMPILE_FLAGS "-DVITERBI_CELLOFF=1")
 
+add_library(hhviterbialgorithm_with_celloff_and_ss OBJECT hhviterbialgorithm.cpp)
+set_property(TARGET hhviterbialgorithm_with_celloff_and_ss PROPERTY COMPILE_FLAGS "-DVITERBI_CELLOFF=1 -DVITERBI_SS_SCORE=1")
+
+add_library(hhviterbialgorithm_and_ss OBJECT hhviterbialgorithm.cpp)
+set_property(TARGET hhviterbialgorithm_and_ss PROPERTY COMPILE_FLAGS "-DVITERBI_SS_SCORE=1")
+
+
 add_library(CS_OBJECTS OBJECT ${CS_SOURCE})
 
 # add the executable
 add_executable(hhblits 
-	hhblits_app.cpp	$<TARGET_OBJECTS:CS_OBJECTS> $<TARGET_OBJECTS:HH_OBJECTS> $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff> 
+	hhblits_app.cpp	$<TARGET_OBJECTS:CS_OBJECTS> $<TARGET_OBJECTS:HH_OBJECTS>
+	$<TARGET_OBJECTS:hhviterbialgorithm_with_celloff>
+	$<TARGET_OBJECTS:hhviterbialgorithm_and_ss>
+	$<TARGET_OBJECTS:hhviterbialgorithm_with_celloff_and_ss>
 )
 target_link_libraries (hhblits ffindex)
 if (OPENMP_FOUND)
 add_executable(hhblits_omp
-  hhblits_omp.cpp $<TARGET_OBJECTS:CS_OBJECTS> $<TARGET_OBJECTS:HH_OBJECTS> $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff>
+  hhblits_omp.cpp $<TARGET_OBJECTS:CS_OBJECTS> $<TARGET_OBJECTS:HH_OBJECTS>
+  $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff>
+  $<TARGET_OBJECTS:hhviterbialgorithm_and_ss>
+  $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff_and_ss>
 )
 target_link_libraries (hhblits_omp ffindex)
 endif()
 
 add_executable(hhmake
-  hhmake.cpp $<TARGET_OBJECTS:CS_OBJECTS> $<TARGET_OBJECTS:HH_OBJECTS> $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff>
+  hhmake.cpp $<TARGET_OBJECTS:CS_OBJECTS> $<TARGET_OBJECTS:HH_OBJECTS>
+  $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff>
+  $<TARGET_OBJECTS:hhviterbialgorithm_and_ss>
+  $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff_and_ss>
 )
 target_link_libraries (hhmake ffindex)
 
 add_executable(hhfilter
-  hhfilter.cpp $<TARGET_OBJECTS:CS_OBJECTS> $<TARGET_OBJECTS:HH_OBJECTS> $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff>
+  hhfilter.cpp $<TARGET_OBJECTS:CS_OBJECTS> $<TARGET_OBJECTS:HH_OBJECTS>
+  $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff>
+  $<TARGET_OBJECTS:hhviterbialgorithm_and_ss>
+  $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff_and_ss>
 )
 target_link_libraries (hhfilter ffindex)
 
 add_executable(hhsearch
-  hhsearch_app.cpp $<TARGET_OBJECTS:CS_OBJECTS> $<TARGET_OBJECTS:HH_OBJECTS> $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff>
+  hhsearch_app.cpp $<TARGET_OBJECTS:CS_OBJECTS> $<TARGET_OBJECTS:HH_OBJECTS>
+  $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff>
+  $<TARGET_OBJECTS:hhviterbialgorithm_and_ss>
+  $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff_and_ss>
 )
 target_link_libraries (hhsearch ffindex)
 
 add_executable(hhalign
-  hhalign_app.cpp $<TARGET_OBJECTS:CS_OBJECTS> $<TARGET_OBJECTS:HH_OBJECTS> $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff>
+  hhalign_app.cpp $<TARGET_OBJECTS:CS_OBJECTS> $<TARGET_OBJECTS:HH_OBJECTS>
+  $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff>
+  $<TARGET_OBJECTS:hhviterbialgorithm_and_ss>
+  $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff_and_ss>
 )
 target_link_libraries (hhalign ffindex)
 
 add_executable(hhconsensus
-  hhconsensus.cpp $<TARGET_OBJECTS:CS_OBJECTS> $<TARGET_OBJECTS:HH_OBJECTS> $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff>
+  hhconsensus.cpp $<TARGET_OBJECTS:CS_OBJECTS> $<TARGET_OBJECTS:HH_OBJECTS>
+  $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff>
+  $<TARGET_OBJECTS:hhviterbialgorithm_and_ss>
+  $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff_and_ss>
 )
 target_link_libraries (hhconsensus ffindex)
 

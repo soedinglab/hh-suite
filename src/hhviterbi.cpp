@@ -211,14 +211,12 @@ Viterbi::BacktraceScore Viterbi::ScoreForBacktrace(HMMSimd* q_four, HMMSimd* t_f
     float score_aass = 0.0f;
     float Pvalt = 1.0f;
     float logPvalt = 0.0f;
-    //std::cout << "Backtrace"<< std::endl;
     for (int step=1; step<=nsteps; step++)
     {
         switch(states[step])
         {
             case ViterbiMatrix::MM:
                 S[step]    = Score(q->p[i_steps[step]],t->p[j_steps[step]]);
-                //std::cout << S[step] << std::cout;
                 S_ss[step] = ScoreSS(q,t,i_steps[step],j_steps[step], ssw, ss_hmm_mode, S73, S37, S33);
                 score_ss += S_ss[step];
                 break;

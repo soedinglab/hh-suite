@@ -1960,6 +1960,15 @@ void HMM::AddAminoAcidPseudocounts(char pcm, float pca, float pcb, float pcc) {
 	}
 }
 
+
+int HMM::computeScoreSSMode( HMM *q,  HMM *t){
+	int returnMode = HMM::NO_SS_INFORMATION;
+	if      (q->nss_pred>=0 && t->nss_dssp>=0) returnMode=HMM::PRED_DSSP;
+	else if (q->nss_dssp>=0 && t->nss_pred>=0) returnMode=HMM::DSSP_PRED;
+	else if (q->nss_pred>=0 && t->nss_pred>=0) returnMode=HMM::PRED_PRED;
+	return returnMode;
+}
+
 /////////////////////////////////////////////////////////////////////////////////////
 // Divide aa probabilties by square root of locally averaged background frequencies
 // !!!!! ATTENTION!!!!!!!  after this p is not the same as after adding pseudocounts !!!
