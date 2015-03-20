@@ -3,27 +3,29 @@
 // Print out aligned input sequences in a3m format
 // Error codes: 0: ok  1: file format error  2: file access error  3: memory error  4: internal numeric error  5: command line error
 
-//     (C) Johannes Soeding 2012
+/*
+     (C) Johannes Soeding 2012
 
-//     This program is free software: you can redistribute it and/or modify
-//     it under the terms of the GNU General Public License as published by
-//     the Free Software Foundation, either version 3 of the License, or
-//     (at your option) any later version.
+     This program is free software: you can redistribute it and/or modify
+     it under the terms of the GNU General Public License as published by
+     the Free Software Foundation, either version 3 of the License, or
+     (at your option) any later version.
 
-//     This program is distributed in the hope that it will be useful,
-//     but WITHOUT ANY WARRANTY; without even the implied warranty of
-//     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//     GNU General Public License for more details.
+     This program is distributed in the hope that it will be useful,
+     but WITHOUT ANY WARRANTY; without even the implied warranty of
+     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+     GNU General Public License for more details.
 
-//     You should have received a copy of the GNU General Public License
-//     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+     You should have received a copy of the GNU General Public License
+     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-//     We are very grateful for bug reports! Please contact us at soeding@genzentrum.lmu.de
+     We are very grateful for bug reports! Please contact us at soeding@genzentrum.lmu.de
 
-//     Reference: 
-//     Remmert M., Biegert A., Hauser A., and Soding J.
-//     HHblits: Lightning-fast iterative protein sequence searching by HMM-HMM alignment.
-//     Nat. Methods, epub Dec 25, doi: 10.1038/NMETH.1818 (2011).
+     Reference:
+     Remmert M., Biegert A., Hauser A., and Soding J.
+     HHblits: Lightning-fast iterative protein sequence searching by HMM-HMM alignment.
+     Nat. Methods, epub Dec 25, doi: 10.1038/NMETH.1818 (2011).
+*/
 
 #include "hhalign.h"
 #include "hhsuite_config.h"
@@ -68,21 +70,15 @@ void HHalign::help(Parameters& par, char all) {
   printf("               '-' = Delete; '.' = gaps aligned to inserts (may be omitted)   \n");
   printf(" -M first       use FASTA: columns with residue in 1st sequence are match states\n");
   printf(" -M [0,100]     use FASTA: columns with fewer than X%% gaps are match states   \n");
-  //TODO: tags defined and read in hhalign but not in hhbits?
-  printf(" -tags          do NOT neutralize His-, C-myc-, FLAG-tags, and \n");
-  printf("                trypsin recognition sequence to background distribution    \n");
+  printf(" -tags/-notags  do NOT / do neutralize His-, C-myc-, FLAG-tags, and trypsin \n");
+  printf("                recognition sequence to background distribution (def=-notags)  \n");
   printf("\n");
 
   printf("Output options: \n");
   printf(" -o <file>      write results in standard format to file (default=<infile.hhr>)\n");
-  //TODO: analog für psi;
-  //TODO: no hhm? but in hhsearch and hhblits
-  printf(" -oa3m <file>   write query alignment in a3m format to file (default=none)\n");
-  //TODO: analog für psi;
-  //TODO: Appending parameters not in hhblits and not in hhsearch
-  printf(" -Aa3m <file>   append query alignment in a3m format to file (default=none)\n");
-  //TODO: nur ein einziges -O... may be specified
-  printf(" -Ofas <file>   write pairwise alignments in FASTA, A2M (-Oa2m) or A3M (-Oa3m) format   \n");
+  printf(" -oa3m <file>   write query alignment in a3m or PSI-BLAST format (-opsi) to file (default=none)\n");
+  printf(" -aa3m <file>   append query alignment in a3m (-aa3m) or PSI-BLAST format (-apsi )to file (default=none)\n");
+  printf(" -Ofas <file>   write pairwise alignments in FASTA xor A2M (-Oa2m) xor A3M (-Oa3m) format   \n");
 
   printf(" -add_cons      generate consensus sequence as master sequence of query MSA (default=don't)\n");
   printf(" -hide_cons     don't show consensus sequence in alignments (default=show)     \n");
@@ -90,7 +86,6 @@ void HHalign::help(Parameters& par, char all) {
   printf(" -hide_dssp     don't show DSSP 2ndary structure in alignments (default=show)  \n");
   printf(" -show_ssconf   show confidences for predicted 2ndary structure in alignments\n");
 
-  printf(" -rank int      specify rank of alignment to write with -Oa3m or -Aa3m option (default=1)\n");
   if (all) {
     printf(" -seq <int>     max. number of query/template sequences displayed (default=%i)  \n", par.nseqdis);
     printf(" -aliw <int>    number of columns per line in alignment list (default=%i)       \n", par.aliwidth);
@@ -110,6 +105,7 @@ void HHalign::help(Parameters& par, char all) {
   printf(" -cov  [0,100]  minimum coverage with master sequence (%%) (def=%i)             \n", par.coverage);
   printf(" -qid  [0,100]  minimum sequence identity with master sequence (%%) (def=%i)    \n", par.qid);
   printf(" -qsc  [0,100]  minimum score per column with master sequence (default=%.1f)    \n", par.qsc);
+  printf(" -mark          do not filter out sequences marked by \">@\"in their name line  \n", par.qsc);
   printf("\n");
 
   printf("HMM-HMM alignment options:                                                       \n");
@@ -121,6 +117,7 @@ void HHalign::help(Parameters& par, char all) {
   if (all) {
     printf(" -realign       realign displayed hits with max. accuracy (MAC) algorithm \n");
     printf(" -excl <range>  exclude query positions from the alignment, e.g. '1-33,97-168' \n");
+    printf(" -ovlp <int>    banded alignment: forbid <ovlp> largest diagonals |i-j| of DP matrix (def=%i)\n", par.min_overlap);
     printf(" -alt <int>     show up to this many significant alternative alignments(def=%i)  \n", par.altali);
     printf(" -shift [-1,1]  profile-profile score offset (def=%-.2f)                         \n", par.shift);
     printf(" -corr [0,1]    weight of term for pair correlations (def=%.2f)                \n", par.corr);
@@ -359,21 +356,21 @@ void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
       else
         strcpy(par.psifile, argv[i]);
     }
-    else if (!strcmp(argv[i], "-Aa3m")) {
+    else if (!strcmp(argv[i], "-aa3m")) {
       par.append = 1;
       if (++i >= argc || argv[i][0] == '-') {
         help(par);
-        HH_LOG(ERROR) << "No output file following -Aa3m" << std::endl;
+        HH_LOG(ERROR) << "No output file following -aa3m" << std::endl;
         exit(4);
       }
       else
         strcpy(par.alnfile, argv[i]);
     }
-    else if (!strcmp(argv[i], "-Apsi")) {
+    else if (!strcmp(argv[i], "-apsi")) {
       par.append = 1;
       if (++i >= argc || argv[i][0] == '-') {
         help(par);
-        HH_LOG(ERROR) << "No output file following -Apsi" << std::endl;
+        HH_LOG(ERROR) << "No output file following -apsi" << std::endl;
         exit(4);
       }
       else
@@ -444,7 +441,6 @@ void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
       par.showdssp = 0;
     else if (!strncmp(argv[i], "-show_ssconf", 7))
       par.showconf = 1;
-    //TODO: not in the help; probably not useful?
     else if (!strncmp(argv[i], "-mark", 7))
       par.mark = 1;
     else if (!strcmp(argv[i], "-seq") && (i < argc - 1))
@@ -462,16 +458,13 @@ void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
     else if (!strcmp(argv[i], "-diff") && (i < argc - 1))
       par.Ndiff = atoi(argv[++i]);
 
-    //TODO: not int the help
+    //no help required
     else if (!strcmp(argv[i], "-Gonnet"))
       par.matrix = 0;
-    //TODO: not in the help -- not catched --> no proper matrix
-    else if (!strcmp(argv[i], "-HSDM"))
-      par.matrix = 1;
-    //TODO: not int the help
+    //no help required
     else if (!strcmp(argv[i], "-Blosum50"))
       par.matrix = 50;
-    //TODO: not int the help
+    //no help required
     else if (!strcmp(argv[i], "-Blosum62"))
       par.matrix = 62;
 
@@ -549,7 +542,7 @@ void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
     else if (!strcmp(argv[i], "-mact") && (i < argc - 1)) {
       par.mact = atof(argv[++i]);
     }
-    //TODO: not defined in the help
+    //not in the help - but intended
     else if (!strcmp(argv[i], "-scwin") && (i < argc - 1)) {
       par.columnscore = 5;
       par.half_window_size_local_aa_bg_freqs = imax(1, atoi(argv[++i]));
@@ -566,27 +559,22 @@ void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
     else if (!strcmp(argv[i], "-corr") && (i < argc - 1))
       par.corr = atof(argv[++i]);
 
-    //TODO: not defined in the help
     else if (!strcmp(argv[i], "-ovlp") && (i < argc - 1))
       par.min_overlap = atoi(argv[++i]);
     else if (!strcmp(argv[i], "-tags"))
       par.notags = 0;
-    //TODO: not defined in the help
     else if (!strcmp(argv[i], "-notags"))
       par.notags = 1;
     else if (!strcmp(argv[i], "-nocontxt"))
       par.nocontxt = 1;
-    //TODO: not defined in the help
     else if (!strcmp(argv[i], "-csb") && (i < argc - 1))
       par.csb = atof(argv[++i]);
-    //TODO: not defined in the help
     else if (!strcmp(argv[i], "-csw") && (i < argc - 1))
       par.csw = atof(argv[++i]);
-    //TODO: not defined in the help
-    else if (!strcmp(argv[i], "-cs")) {
+    else if (!strcmp(argv[i], "-contxt")) {
       if (++i >= argc || argv[i][0] == '-') {
         help(par);
-        HH_LOG(ERROR) << "No query file following -cs" << std::endl;
+        HH_LOG(ERROR) << "No query file following -contxt" << std::endl;
         exit(4);
       }
       else
@@ -614,11 +602,9 @@ void HHalign::run(FILE* query_fh, char* query_path, char* template_path) {
 
   int cluster_found = 0;
   int seqs_found = 0;
-  int premerge = par.premerge;
 
   Hit hit_cur;
   Hash<Hit>* previous_hits = new Hash<Hit>(1631, hit_cur);
-  Hash<char>* premerged_hits = new Hash<char>(1631);
 
   Qali = new Alignment();
   Qali_allseqs = new Alignment();
@@ -661,10 +647,10 @@ void HHalign::run(FILE* query_fh, char* query_path, char* template_path) {
 
   // Realign hits with MAC algorithm
   if (par.realign) {
-      perform_realign(q_vec, input_format, new_entries, premerge, premerged_hits);
+      perform_realign(q_vec, input_format, new_entries);
   }
 
-  mergeHitsToQuery(previous_hits, premerged_hits, seqs_found, cluster_found);
+  mergeHitsToQuery(previous_hits, seqs_found, cluster_found);
 
   // Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
   Qali->FrequenciesAndTransitions(q, par.wg, par.mark, par.cons, par.showcons, par.maxres, pb, Sim, NULL, true);
@@ -681,6 +667,4 @@ void HHalign::run(FILE* query_fh, char* query_path, char* template_path) {
   while (!previous_hits->End())
     previous_hits->ReadNext().Delete(); // Delete hit object
   delete previous_hits;
-
-  delete premerged_hits;
 }

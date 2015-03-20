@@ -122,8 +122,8 @@ void HHsearch::help(Parameters& par, char all) {
   printf("               '-' = Delete; '.' = gaps aligned to inserts (may be omitted)   \n");
   printf(" -M first       use FASTA: columns with residue in 1st sequence are match states\n");
   printf(" -M [0,100]     use FASTA: columns with fewer than X%% gaps are match states   \n");
-  printf(" -tags          do NOT neutralize His-, C-myc-, FLAG-tags, and \n");
-  printf("                trypsin recognition sequence to background distribution    \n");
+  printf(" -tags/-notags  do NOT / do neutralize His-, C-myc-, FLAG-tags, and trypsin \n");
+  printf("                recognition sequence to background distribution (def=-notags)  \n");
   printf("\n");
 
   printf("Output options: \n");
@@ -140,8 +140,7 @@ void HHsearch::help(Parameters& par, char all) {
 	printf(" -hide_dssp     don't show DSSP 2ndary structure in alignments (default=show)  \n");
 	printf(" -show_ssconf   show confidences for predicted 2ndary structure in alignments\n");
   if (all) {
-    printf(" -Ofas <file>   write pairwise alignments of significant matches in FASTA format\n");
-    printf("                Analogous for output in a3m and a2m format (e.g. -Oa3m)\n");
+    printf(" -Ofas <file>   write pairwise alignments in FASTA xor A2M (-Oa2m) xor A3M (-Oa3m) format   \n");
     printf(" -seq <int>     max. number of query/template sequences displayed (default=%i)  \n", par.nseqdis);
     printf(" -aliw <int>    number of columns per line in alignment list (default=%i)       \n", par.aliwidth);
     printf(" -p [0,100]     minimum probability in summary and alignment list (default=%G)  \n", par.p);
@@ -154,26 +153,27 @@ void HHsearch::help(Parameters& par, char all) {
   }
 
   printf("Filter options applied to query MSA, database MSAs, and result MSA              \n");
-  //TODO: not read
   printf(" -all           show all sequences in result MSA; do not filter result MSA      \n");
   printf(" -id   [0,100]  maximum pairwise sequence identity (def=%i)\n", par.max_seqid);
   printf(" -diff [0,inf[  filter MSAs by selecting most diverse set of sequences, keeping \n");
   printf("                at least this many seqs in each MSA block of length 50 (def=%i) \n", par.Ndiff);
+
   printf(" -cov  [0,100]  minimum coverage with master sequence (%%) (def=%i)             \n", par.coverage);
   printf(" -qid  [0,100]  minimum sequence identity with master sequence (%%) (def=%i)    \n", par.qid);
   printf(" -qsc  [0,100]  minimum score per column with master sequence (default=%.1f)    \n", par.qsc);
   printf(" -neff [1,inf]  target diversity of multiple sequence alignment (default=off)   \n");
+  printf(" -mark          do not filter out sequences marked by \">@\"in their name line  \n", par.qsc);
   printf("\n");
 
   printf("HMM-HMM alignment options:                                                       \n");
   printf(" -norealign     do NOT realign displayed hits with MAC algorithm (def=realign)   \n");
+  printf(" -ovlp <int>    banded alignment: forbid <ovlp> largest diagonals |i-j| of DP matrix (def=%i)\n", par.min_overlap);
   printf(" -mact [0,1[    posterior prob threshold for MAC realignment controlling greedi- \n");
   printf("                ness at alignment ends: 0:global >0.1:local (default=%.2f)       \n", par.mact);
   printf(" -glob/-loc     use global/local alignment mode for searching/ranking (def=local)\n");
   if (all) {
     printf(" -realign       realign displayed hits with max. accuracy (MAC) algorithm \n");
     printf(" -excl <range>  exclude query positions from the alignment, e.g. '1-33,97-168' \n");
-    //TODO: not read
     printf(" -realign_max <int>  realign max. <int> hits (default=%i)                        \n", par.realign_max);
     printf(" -alt <int>     show up to this many significant alternative alignments(def=%i)  \n", par.altali);
     printf(" -shift [-1,1]  profile-profile score offset (def=%-.2f)                         \n", par.shift);
@@ -217,7 +217,6 @@ void HHsearch::help(Parameters& par, char all) {
     printf("  -pc_hhm_contxt_c  [0,3]        extinction exponent c for mode 2 (def=%-.1f)                     \n", par.pc_hhm_context_engine.pcc);
     printf("\n");
 
-    //TODO: not read
     printf(" Context independent hhm pseudocounts (used for templates; used for query if contxt file is not available):\n");
     printf("  -pc_hhm_nocontxt_mode {0,..,3}      position dependence of pc admixture 'tau' (pc mode, default=%-i) \n", par.pc_hhm_nocontext_mode);
     printf("               0: no pseudo counts:    tau = 0                                  \n");
@@ -390,7 +389,8 @@ void HHsearch::ProcessArguments(int argc, char** argv, Parameters& par) {
 			par.cons = 1;
     else if (!strcmp(argv[i], "-realign_max") && (i < argc - 1))
       par.realign_max = atoi(argv[++i]);
-		//TODO: no help -- not really used...
+    else if (!strcmp(argv[i], "-realign_max") && (i < argc - 1))
+      par.realign_max = atoi(argv[++i]);
 		else if (!strncmp(argv[i], "-mark", 5))
 			par.mark = 1;
 		else if (!strcmp(argv[i], "-seq") && (i < argc - 1))
@@ -407,12 +407,15 @@ void HHsearch::ProcessArguments(int argc, char** argv, Parameters& par) {
 			par.coverage = atoi(argv[++i]);
 		else if (!strcmp(argv[i], "-diff") && (i < argc - 1))
 			par.Ndiff = atoi(argv[++i]);
+    else if (!strcmp(argv[i], "-all") || !strcmp(argv[i], "-nodiff")) {
+      par.allseqs = true;
+    }
 		else if (!strcmp(argv[i], "-neff") && (i < argc - 1))
 			par.Neff = atof(argv[++i]);
-		//TODO: no help
+		//no help required
 		else if (!strcmp(argv[i], "-Gonnet"))
 			par.matrix = 0;
-		//TODO: no help
+		//no help required
 		else if (!strncmp(argv[i], "-Blosum", 7)) {
 			if (!strcmp(argv[i] + 7, "30"))
 				par.matrix = 30;
@@ -438,7 +441,17 @@ void HHsearch::ProcessArguments(int argc, char** argv, Parameters& par) {
 			par.pc_hhm_context_engine.pcb = atof(argv[++i]);
 		else if (!strcmp(argv[i], "-pc_hhm_contxt_c") && (i < argc - 1))
 			par.pc_hhm_context_engine.pcc = atof(argv[++i]);
-		else if (!strcmp(argv[i], "-gapb") && (i < argc - 1)) {
+
+		else if (!strcmp(argv[i], "-pc_hhm_nocontxt_mode") && (i < argc - 1))
+      par.pc_hhm_nocontext_mode = atoi(argv[++i]);
+    else if (!strcmp(argv[i], "-pc_hhm_nocontxt_a") && (i < argc - 1))
+      par.pc_hhm_nocontext_a = atof(argv[++i]);
+    else if (!strcmp(argv[i], "-pc_hhm_nocontxt_b") && (i < argc - 1))
+      par.pc_hhm_nocontext_b = atof(argv[++i]);
+    else if (!strcmp(argv[i], "-pc_hhm_nocontxt_c") && (i < argc - 1))
+      par.pc_hhm_nocontext_c = atof(argv[++i]);
+
+    else if (!strcmp(argv[i], "-gapb") && (i < argc - 1)) {
 			par.gapb = atof(argv[++i]);
 			if (par.gapb <= 0.01)
 				par.gapb = 0.01;
@@ -494,7 +507,7 @@ void HHsearch::ProcessArguments(int argc, char** argv, Parameters& par) {
 			par.mact = atof(argv[++i]);
 		else if (!strcmp(argv[i], "-sc") && (i < argc - 1))
 			par.columnscore = atoi(argv[++i]);
-		//TODO: no help
+		//no help required
 		else if (!strcmp(argv[i], "-scwin") && (i < argc - 1)) {
 			par.columnscore = 5;
 			par.half_window_size_local_aa_bg_freqs = imax(1, atoi(argv[++i]));
@@ -508,15 +521,13 @@ void HHsearch::ProcessArguments(int argc, char** argv, Parameters& par) {
 			par.maxmem = atof(argv[++i]);
 		} else if (!strcmp(argv[i], "-corr") && (i < argc - 1))
 			par.corr = atof(argv[++i]);
-		//TODO: no help
 		else if (!strcmp(argv[i], "-ovlp") && (i < argc - 1))
 			par.min_overlap = atoi(argv[++i]);
-		//TODO: no help
+		//no help required
 		else if (!strcmp(argv[i], "-dbstrlen") && (i < argc - 1))
 			par.maxdbstrlen = atoi(argv[++i]);
 		else if (!strcmp(argv[i], "-tags"))
 			par.notags = 0;
-		//TODO: no help
 		else if (!strcmp(argv[i], "-notags"))
 			par.notags = 1;
 		else if (!strcmp(argv[i], "-nocontxt"))
@@ -552,11 +563,9 @@ void HHsearch::ProcessArguments(int argc, char** argv, Parameters& par) {
 void HHsearch::run(FILE* query_fh, char* query_path) {
 	int cluster_found = 0;
 	int seqs_found = 0;
-	int premerge = par.premerge;
 
 	Hit hit_cur;
 	Hash<Hit>* previous_hits = new Hash<Hit>(1631, hit_cur);
-	Hash<char>* premerged_hits = new Hash<char>(1631);
 
   Qali = new Alignment();
   Qali_allseqs = new Alignment();
@@ -574,13 +583,6 @@ void HHsearch::run(FILE* query_fh, char* query_path) {
 			pc_hhm_context_mode, pb, R);
     q_vec.MapOneHMM(q);
     *q_tmp = *q;
-
-	// Reset lamda?
-	//TODO
-	if (par.calibrate > 0) {
-		q->lamda = LAMDA;
-		q->mu = 0.0;
-	}
 
 	// Set query columns in His-tags etc to Null model distribution
 	if (par.notags)
@@ -616,15 +618,10 @@ void HHsearch::run(FILE* query_fh, char* query_path) {
 
 	// Realign hits with MAC algorithm
 	if (par.realign) {
-		perform_realign(q_vec, input_format, new_entries, premerge, premerged_hits);
+		perform_realign(q_vec, input_format, new_entries);
 	}
 
-	// Write HMM to output file without pseudocounts
-	//TODO
-	if (par.calibrate)
-		q->InsertCalibration(par.infile);
-
-	mergeHitsToQuery(previous_hits, premerged_hits, seqs_found, cluster_found);
+	mergeHitsToQuery(previous_hits, seqs_found, cluster_found);
 
 	// Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
 	Qali->FrequenciesAndTransitions(q, par.wg, par.mark, par.cons, par.showcons,

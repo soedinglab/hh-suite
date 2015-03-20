@@ -114,7 +114,6 @@ void HHblits::ProcessAllArguments(int argc, char** argv, Parameters& par) {
   par.argv = argv;
   par.argc = argc;
 
-  par.premerge = 3;
   par.Ndiff = 1000;
   par.prefilter = true;
 
@@ -158,12 +157,6 @@ void HHblits::ProcessAllArguments(int argc, char** argv, Parameters& par) {
     HH_LOG(ERROR) << "Database is missing! (see -d)" << std::endl;
     exit(4);
   }
-  if (par.addss == 1 && (!*par.psipred || !*par.psipred_data)) {
-    help(par);
-    HH_LOG(ERROR) << "PSIPRED directory is missing (see -psipred and -psipred_data)." << std::endl;
-    HH_LOG(ERROR) << "If you don't need the predicted secondary structure, don't use the -addss option!" << std::endl;
-    exit(4);
-  }
   if (!par.nocontxt) {
     if (!strcmp(par.clusterfile, "")) {
       help(par);
@@ -193,12 +186,6 @@ void HHblits::ProcessAllArguments(int argc, char** argv, Parameters& par) {
     }
     par.num_rounds = 8;
   }
-
-  // Premerging can be very time-consuming on large database a3ms, such as from pdb70.
-  // Hence it is only done when iteratively searching against uniprot20 or nr20 with their much smaller MSAs:
-  if (!(par.num_rounds > 1 || *par.alnfile || *par.psifile || *par.hhmfile
-      || *par.alisbasename))
-    par.premerge = 0;
 
   // Check option compatibilities
   if (par.nseqdis > MAXSEQDIS - 3 - par.showcons)
@@ -264,10 +251,6 @@ void HHblits::Reset() {
 // Help functions
 /////////////////////////////////////////////////////////////////////////////////////
 void HHblits::help(Parameters& par, char all) {
-  //TODO: check with johannes - no -excl??? - excl problematic for hhblits_omp
-  //TODO: tags defined and read in hhalign but not in hhblits?
-  //TODO: mark is not read - no help - but in hhalign and hhsearch read -- and not really used
-
   char program_name[NAMELEN];
   RemovePathAndExtension(program_name, par.argv[0]);
 
@@ -304,6 +287,8 @@ void HHblits::help(Parameters& par, char all) {
   printf("               ' -' = Delete; '.' = gaps aligned to inserts (may be omitted)   \n");
   printf(" -M first       use FASTA: columns with residue in 1st sequence are match states\n");
   printf(" -M [0,100]     use FASTA: columns with fewer than X%% gaps are match states   \n");
+  printf(" -tags/-notags  do NOT / do neutralize His-, C-myc-, FLAG-tags, and trypsin \n");
+  printf("                recognition sequence to background distribution (def=-notags)  \n");
   printf("\n");
 
   printf("Output options: \n");
@@ -323,8 +308,7 @@ void HHblits::help(Parameters& par, char all) {
   printf(" -hide_dssp     don't show DSSP 2ndary structure in alignments (default=show)  \n");
   printf(" -show_ssconf   show confidences for predicted 2ndary structure in alignments\n");
   if (all) {
-    printf(" -Ofas <file>   write pairwise alignments of significant matches in FASTA format\n");
-    printf("                Analogous for output in a3m and a2m format (e.g. -Oa3m)\n");
+    printf(" -Ofas <file>   write pairwise alignments in FASTA xor A2M (-Oa2m) xor A3M (-Oa3m) format   \n");
     printf(" -seq <int>     max. number of query/template sequences displayed (default=%i)  \n", par.nseqdis);
     printf(" -aliw <int>    number of columns per line in alignment list (default=%i)       \n", par.aliwidth);
     printf(" -p [0,100]     minimum probability in summary and alignment list (default=%G)  \n", par.p);
@@ -343,6 +327,13 @@ void HHblits::help(Parameters& par, char all) {
     printf(" -noaddfilter              disable all filter steps (except for fast prefiltering)         \n");
     printf(" -maxfilt                  max number of hits allowed to pass 2nd prefilter (default=%i)   \n", par.maxnumdb);
     printf(" -min_prefilter_hits       min number of hits to pass prefilter (default=%i)               \n", par.min_prefilter_hits);
+    printf(" -prepre_smax_thresh       min score threshold of ungapped prefilter (default=%i)               \n", par.preprefilter_smax_thresh);
+    printf(" -pre_evalue_thresh        max E-value threshold of Smith-Waterman prefilter score (default=%i)\n", par.prefilter_evalue_thresh);
+    printf(" -pre_bitfactor            prefilter scores are in units of 1 bit / pre_bitfactor (default=%i)\n", par.prefilter_bit_factor);
+    printf(" -pre_gap_open             gap open penalty in prefilter Smith-Waterman alignment (default=%i)\n", par.prefilter_gap_open);
+    printf(" -pre_gap_extend           gap extend penalty in prefilter Smith-Waterman alignment (default=%i)\n", par.prefilter_gap_extend);
+    printf(" -pre_score_offset         offset on sequence profile scores in prefilter S-W alignment (default=%i)\n", par.prefilter_score_offset);
+
     printf("\n");
   }
 
@@ -355,11 +346,11 @@ void HHblits::help(Parameters& par, char all) {
   printf(" -qid  [0,100]  minimum sequence identity with master sequence (%%) (def=%i)    \n", par.qid);
   printf(" -qsc  [0,100]  minimum score per column with master sequence (default=%.1f)    \n", par.qsc);
   printf(" -neff [1,inf]  target diversity of multiple sequence alignment (default=off)   \n");
+  printf(" -mark          do not filter out sequences marked by \">@\"in their name line  \n", par.qsc);
   printf("\n");
 
   printf("HMM-HMM alignment options:                                                       \n");
   printf(" -norealign         do NOT realign displayed hits with MAC algorithm (def=realign)   \n");
-  //TODO: check with johannes; newly in help; read before; default don't realign old hits; no inverse option
   printf(" -realign_old_hits    realign hits from previous iterations                          \n");
   printf(" -mact [0,1[        posterior prob threshold for MAC realignment controlling greedi- \n");
   printf("                    ness at alignment ends: 0:global >0.1:local (default=%.2f)       \n", par.mact);
@@ -367,6 +358,7 @@ void HHblits::help(Parameters& par, char all) {
   if (all) {
     printf(" -realign       realign displayed hits with max. accuracy (MAC) algorithm \n");
     printf(" -realign_max <int>  realign max. <int> hits (default=%i)                        \n", par.realign_max);
+    printf(" -ovlp <int>    banded alignment: forbid <ovlp> largest diagonals |i-j| of DP matrix (def=%i)\n", par.min_overlap);
     printf(" -alt <int>     show up to this many significant alternative alignments(def=%i)  \n", par.altali);
     printf(" -shift [-1,1]  profile-profile score offset (def=%-.2f)                         \n", par.shift);
     printf(" -corr [0,1]    weight of term for pair correlations (def=%.2f)                \n", par.corr);
@@ -380,7 +372,6 @@ void HHblits::help(Parameters& par, char all) {
     printf("                1,2: ss scoring after or during alignment  [default=%1i]         \n", par.ssm);
     printf("                3,4: ss scoring after or during alignment, predicted vs. predicted\n");
     printf(" -ssw [0,1]     weight of ss score  (def=%-.2f)                                  \n", par.ssw);
-    //TODO: check with johannes; new in hhblits read and help
     printf(" -ssa [0,1]     ss confusion matrix = (1-ssa)*I + ssa*psipred-confusion-matrix [def=%-.2f)\n", par.ssa);
     printf(" -wg            use global sequence weighting for realignment!                   \n");
     printf("\n");
@@ -447,18 +438,8 @@ void HHblits::help(Parameters& par, char all) {
     printf(" Context-specific pseudo-counts:                                                  \n");
     printf("  -nocontxt      use substitution-matrix instead of context-specific pseudocounts \n");
     printf("  -contxt <file> context file for computing context-specific pseudocounts (default=%s)\n", par.clusterfile);
-    //TODO: check with johannes - added to help - read before
     printf("  -csw  [0,inf]  weight of central position in cs pseudocount mode (def=%.1f)\n", par.csw);
     printf("  -csb  [0,1]    weight decay parameter for positions in cs pc mode (def=%.1f)\n", par.csb);
-    printf("\n");
-  }
-
-  if(all) {
-    //TODO: I would like to get rid of it
-    printf("Predict secondary structure\n");
-    printf(" -addss         add 2ndary structure predicted with PSIPRED to result MSA \n");
-    printf(" -psipred <dir> directory with PSIPRED executables (default=%s)  \n", par.psipred);
-    printf(" -psipred_data <dir>  directory with PSIPRED data (default=%s) \n", par.psipred_data);
     printf("\n");
   }
 
@@ -521,20 +502,6 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
         exit(4);
       } else
         strcpy(par.cs_library, argv[i]);
-    } else if (!strcmp(argv[i], "-psipred")) {
-      if (++i >= argc || argv[i][0] == '-') {
-        help(par);
-        HH_LOG(ERROR) << "no directory following -psipred" << std::endl;
-        exit(4);
-      } else
-        strcpy(par.psipred, argv[i]);
-    } else if (!strcmp(argv[i], "-psipred_data")) {
-      if (++i >= argc || argv[i][0] == '-') {
-        help(par);
-        HH_LOG(ERROR) << "No database directory following -psipred_data" << std::endl;
-        exit(4);
-      } else
-        strcpy(par.psipred_data, argv[i]);
     } else if (!strcmp(argv[i], "-o")) {
       if (++i >= argc || argv[i][0] == '-') {
         help(par);
@@ -543,7 +510,7 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
       } else
         strcpy(par.outfile, argv[i]);
     }
-    //TODO: shall be kept a secret? to speak with johannes about; missing help... probably also useful in hhalign and hhsearch... perhaps additionally a human readable output
+    //no help required
     else if (!strcmp(argv[i], "-omat")) {
       if (++i >= argc || argv[i][0] == '-') {
         help(par);
@@ -580,7 +547,6 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
       } else
         strcpy(par.alisbasename, argv[i]);
     }
-    //TODO read -{O,A}{fas,a2m,a3m} all read in pairwisealisfile -> there may be just one of these options
     else if (!strcmp(argv[i], "-Ofas")) {
       par.append = 0;
       par.outformat = 1;
@@ -636,7 +602,7 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
       Log::reporting_level() = par.v;
     } else if (!strcmp(argv[i], "-n") && (i < argc - 1))
       par.num_rounds = atoi(argv[++i]);
-    //TODO no help -- missing Gonnet
+    //no help required
     else if (!strncmp(argv[i], "-BLOSUM", 7)
         || !strncmp(argv[i], "-Blosum", 7)) {
       if (!strcmp(argv[i] + 7, "30"))
@@ -683,14 +649,14 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
       par.showdssp = 0;
     else if (!strncmp(argv[i], "-show_ssconf", 7))
       par.showconf = 1;
+    else if (!strncmp(argv[i], "-mark", 7))
+      par.mark = 1;
     else if (!strncmp(argv[i], "-add_cons", 5))
       par.cons = 1;
     else if (!strcmp(argv[i], "-realign_max") && (i < argc - 1))
       par.realign_max = atoi(argv[++i]);
     else if (!strcmp(argv[i], "-e") && (i < argc - 1))
       par.e = atof(argv[++i]);
-    else if (!strncmp(argv[i], "-addss", 6))
-      par.addss = 1;
     else if (!strcmp(argv[i], "-seq") && (i < argc - 1))
       par.nseqdis = atoi(argv[++i]);
     else if (!strcmp(argv[i], "-aliw") && (i < argc - 1))
@@ -769,13 +735,13 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
       par.egq = atof(argv[++i]);
     else if (!strcmp(argv[i], "-egt") && (i < argc - 1))
       par.egt = atof(argv[++i]);
-    //TODO: no help
+    //no help required
     else if (!strcmp(argv[i], "-alphaa") && (i < argc - 1))
       par.alphaa = atof(argv[++i]);
-    //TODO: no help
+    //no help required
     else if (!strcmp(argv[i], "-alphab") && (i < argc - 1))
       par.alphab = atof(argv[++i]);
-    //TODO: no help
+    //no help required
     else if (!strcmp(argv[i], "-alphac") && (i < argc - 1))
       par.alphac = atof(argv[++i]);
     else if (!strcmp(argv[i], "-noprefilt")) {
@@ -785,22 +751,16 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
       par.already_seen_filter = false;
     } else if (!strcmp(argv[i], "-min_prefilter_hits") && (i < argc - 1))
       par.min_prefilter_hits = atoi(argv[++i]);
-    //TODO: no help
     else if (!strcmp(argv[i], "-prepre_smax_thresh") && (i < argc - 1))
       par.preprefilter_smax_thresh = atoi(argv[++i]);
-    //TODO: no help
     else if (!strcmp(argv[i], "-pre_evalue_thresh") && (i < argc - 1))
       par.prefilter_evalue_thresh = atof(argv[++i]);
-    //TODO: no help
     else if (!strcmp(argv[i], "-pre_bitfactor") && (i < argc - 1))
       par.prefilter_bit_factor = atoi(argv[++i]);
-    //TODO: no help
     else if (!strcmp(argv[i], "-pre_gap_open") && (i < argc - 1))
       par.prefilter_gap_open = atoi(argv[++i]);
-    //TODO: no help
     else if (!strcmp(argv[i], "-pre_gap_extend") && (i < argc - 1))
       par.prefilter_gap_extend = atoi(argv[++i]);
-    //TODO: no help
     else if (!strcmp(argv[i], "-pre_score_offset") && (i < argc - 1))
       par.prefilter_score_offset = atoi(argv[++i]);
     else if (!strcmp(argv[i], "-realign_old_hits"))
@@ -813,7 +773,6 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
       par.ssm = atoi(argv[++i]);
     else if (!strcmp(argv[i], "-ssw") && (i < argc - 1))
       par.ssw = atof(argv[++i]);
-    //TODO: check with johannes; new in hhblits
     else if (!strcmp(argv[i], "-ssa") && (i < argc - 1))
       par.ssa = atof(argv[++i]);
     else if (!strcmp(argv[i], "-wg")) {
@@ -837,7 +796,7 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
       par.mact = atof(argv[++i]);
     else if (!strcmp(argv[i], "-sc") && (i < argc - 1))
       par.columnscore = atoi(argv[++i]);
-    //TODO: no help
+    //no help required
     else if (!strcmp(argv[i], "-scwin") && (i < argc - 1)) {
       par.columnscore = 5;
       par.half_window_size_local_aa_bg_freqs = std::max(1, atoi(argv[++i]));
@@ -859,6 +818,12 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
       par.csw = atof(argv[++i]);
     else if (!strcmp(argv[i], "-corr") && (i < argc - 1))
       par.corr = atof(argv[++i]);
+    else if (!strcmp(argv[i], "-ovlp") && (i < argc - 1))
+      par.min_overlap = atoi(argv[++i]);
+    else if (!strcmp(argv[i], "-tags"))
+      par.notags = 0;
+    else if (!strcmp(argv[i], "-notags"))
+      par.notags = 1;
     else {
       HH_LOG(WARNING) << "Ignoring unknown option " << argv[i] << std::endl;
     }
@@ -868,8 +833,7 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
 }
 
 void HHblits::mergeHitsToQuery(Hash<Hit>* previous_hits,
-                               Hash<char>* premerged_hits, int& seqs_found,
-                               int& cluster_found) {
+                               int& seqs_found, int& cluster_found) {
   // For each template below threshold
   hitlist.Reset();
   while (!hitlist.End()) {
@@ -892,13 +856,8 @@ void HHblits::mergeHitsToQuery(Hash<Hit>* previous_hits,
     seqs_found += SequencesInCluster(hit_cur.name);  // read number after second '|'
     cluster_found++;
 
-    // Skip merging this hit if hit alignment was already merged during premerging
-    if (premerged_hits->Contains((char*) ss_tmp.str().c_str()))
-      continue;
-
     // Read a3m alignment of hit from <file>.a3m file
     // Reading in next db MSA and merging it onto Qali
-
     Alignment Tali;
     hit_cur.entry->getTemplateA3M(par, pb, S, Sim, Tali);
 
@@ -1017,8 +976,7 @@ void HHblits::RescoreWithViterbiKeepAlignment(HMMSimd& q_vec,
 // Realign hits with MAC algorithm
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void HHblits::perform_realign(HMMSimd& q_vec, const char input_format,
-                              std::vector<HHEntry*>& hits_to_realign,
-                              const int premerge, Hash<char>* premerged_hits) {
+                              std::vector<HHEntry*>& hits_to_realign) {
 
   // 19/02/2014: F/B-algos are calculated in log-space
   //  q->Log2LinTransitionProbs(1.0); // transform transition freqs to lin space if not already done
@@ -1059,11 +1017,8 @@ void HHblits::perform_realign(HMMSimd& q_vec, const char input_format,
       continue;
     }
 
-    //TODO:
-    if (true) {  //nhits >= par.premerge) {
-      hit_vector.push_back(hitlist.ReadCurrentAddress());
-      n_realignments++;
-    }
+    hit_vector.push_back(hitlist.ReadCurrentAddress());
+    n_realignments++;
     nhits++;
   }
 
@@ -1165,13 +1120,11 @@ void HHblits::get_entries_of_all_hits(HitList& input,
 void HHblits::run(FILE* query_fh, char* query_path) {
   int cluster_found = 0;
   int seqs_found = 0;
-  int premerge = par.premerge;
 
   SearchCounter search_counter;
 
   Hit hit_cur;
   Hash<Hit>* previous_hits = new Hash<Hit>(1631, hit_cur);
-  Hash<char>* premerged_hits = new Hash<char>(1631);
 
   Qali = new Alignment();
   Qali_allseqs = new Alignment();
@@ -1185,9 +1138,6 @@ void HHblits::run(FILE* query_fh, char* query_path) {
   char input_format;
   ReadQueryFile(par, query_fh, input_format, par.wg, q, Qali, query_path, pb, S,
                 Sim);
-
-  if (Qali->N_in - Qali->N_ss > 1)
-    premerge = 0;
 
   if (par.allseqs) {
     *Qali_allseqs = *Qali;  // make a *deep* copy of Qali!
@@ -1222,16 +1172,6 @@ void HHblits::run(FILE* query_fh, char* query_path) {
 
   for (int round = 1; round <= par.num_rounds; round++) {
     HH_LOG(INFO) << "Iteration " << round << std::endl;
-
-    // Settings for different rounds
-    if (premerge > 0 && round > 1 && previous_hits->Size() >= premerge) {
-      HH_LOG(DEBUG1) << "Set premerge to 0! (premerge: " << premerge
-                               << "   iteration: " << round << "   hits.Size: "
-                               << previous_hits->Size() << ")" << std::endl;
-      premerge = 0;
-    } else {
-      premerge -= previous_hits->Size();
-    }
 
     // Save HMM without pseudocounts for prefilter query-profile
     *q_tmp = *q;
@@ -1292,7 +1232,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
     int max_template_length = getMaxTemplateLength(new_entries);
     if (max_template_length > par.maxres) {
       HH_LOG(WARNING)
-          << "database contains sequnces that exceeds maximum allowed size (maxres = "
+          << "database contains sequences that exceeds maximum allowed size (maxres = "
           << par.maxres << "). Maxres can be increased with parameter -maxres."
           << std::endl;
     }
@@ -1373,15 +1313,12 @@ void HHblits::run(FILE* query_fh, char* query_path) {
 
     // Realign hits with MAC algorithm
     if (par.realign)
-      perform_realign(q_vec, input_format, new_entries, premerge,
-                      premerged_hits);
+      perform_realign(q_vec, input_format, new_entries);
 
     // Generate alignment for next iteration
-    if (round < par.num_rounds || *par.alnfile || *par.psifile || *par.hhmfile
-        || *par.alisbasename) {
+    if (round < par.num_rounds || *par.alnfile || *par.psifile || *par.hhmfile || *par.alisbasename) {
       if (new_hits > 0) {
-        mergeHitsToQuery(previous_hits, premerged_hits, seqs_found,
-                         cluster_found);
+        mergeHitsToQuery(previous_hits, seqs_found, cluster_found);
       }
 
       // Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
@@ -1391,18 +1328,6 @@ void HHblits::run(FILE* query_fh, char* query_path) {
 
       if (par.notags)
         q->NeutralizeTags(pb);
-
-      // Calculate SSpred if we need to print out alis after each iteration or if last iteration
-      // TODO: we should get rid of this... since it calls psipred on the command line and is untested
-      if (par.addss
-          && (*par.alisbasename || round == par.num_rounds || new_hits == 0)) {
-        char ss_pred[par.maxres];
-        char ss_conf[par.maxres];
-
-        CalculateSS(q, ss_pred, ss_conf, par.psipred_data, par.psipred, pb);
-
-        Qali->AddSSPrediction(ss_pred, ss_conf);
-      }
 
       if (*par.alisbasename) {
         Alignment* tmp = new Alignment();
@@ -1509,8 +1434,6 @@ void HHblits::run(FILE* query_fh, char* query_path) {
   while (!previous_hits->End())
     previous_hits->ReadNext().Delete();  // Delete hit object
   delete previous_hits;
-
-  delete premerged_hits;
 }
 
 void HHblits::writeHHRFile(char* hhrFile) {

@@ -252,7 +252,7 @@ public:
   int realign_max;        // Realign max ... hits
   float maxmem;           // maximum available memory in GB for realignment (approximately)
 
-  char calibrate;         // calibration of query HMM?  0:no, 1:yes (write lamda,mu into query profile)
+//  char calibrate;         // calibration of query HMM?  0:no, 1:yes (write lamda,mu into query profile)
   char calm;              // derive P-values from: 0:query calibration  1:template calibration  2:both  3:Neural Network prediction
 
   //TODO: perhaps we can get rid of it
@@ -269,12 +269,6 @@ public:
 
   bool hmmer_used;        // True, if a HMMER database is used
 
-  // Directories for SS-prediction
-  int addss;                           // 1: calculate secondary structure 0: don't (default: 0)
-  char blast[NAMELEN];                 // BLAST binaries (not needed with csBLAST)
-  char psipred[NAMELEN];               // PsiPred binaries
-  char psipred_data[NAMELEN];          // PsiPred data
-
   // parameters for context-specific pseudocounts
   float csb;
   float csw;
@@ -282,8 +276,6 @@ public:
   bool nocontxt;
 
   // HHblits
-  //TODO: not used at the moment
-  int premerge;
   int dbsize;           // number of clusters of input database
 
   // HHblits Evalue calculation  (alpha = a + b(Neff(T) - 1)(1 - c(Neff(Q) - 1)) )
@@ -331,8 +323,6 @@ public:
   bool realign_old_hits;
   float neffmax;
   int threads;
-  //TODO: not used...
-  char query_hhmfile[NAMELEN];
 
   void SetDefaultPaths();
   void SetDefaults();
