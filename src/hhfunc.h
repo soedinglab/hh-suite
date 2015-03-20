@@ -28,15 +28,6 @@ void PrepareQueryHMM(Parameters& par, char& input_format, HMM* q, cs::Pseudocoun
 // Do precalculations for q and t to prepare comparison
 void PrepareTemplateHMM(Parameters& par, HMM* q, HMM* t, int format, float linear_tranistion_probs, const float* pb, const float R[20][20]);
 
-// Calculate secondary structure prediction with PSIPRED
-void CalculateSS(char *ss_pred, char *ss_conf, char *tmpfile, const char* psipred_data, const char* psipred);
-
-// Calculate secondary structure for given HMM and return prediction
-void CalculateSS(HMM* q, char *ss_pred, char *ss_conf, const char* psipred_data, const char* psipred, const float* pb);
-
-// Calculate secondary structure for given HMM
-void CalculateSS(HMM* q, const int maxres, const char* psipred_data, const char* psipred, const float* pb);
-
 // Write alignment in tab format (option -atab)
 void WriteToAlifile(FILE* alitabf, Hit* hit, const char forward, const char realign);
 

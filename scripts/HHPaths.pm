@@ -1,6 +1,6 @@
 # HHPaths.pm 
 
-#     HHsuite version 2.1.0 (March 2013)
+#     HHsuite version 3.0.0 (15-03-2015)
 #     (C) J. Soeding, A. Hauser 2012
 
 #     This program is free software: you can redistribute it and/or modify
@@ -16,8 +16,7 @@
 #     You should have received a copy of the GNU General Public License
 #     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#     We are very grateful for bug reports! Please contact us at soeding@genzentrum.lmu.de
-#     HHsuite version 2.0
+#     We are very grateful for bug reports! Please contact us at soeding@mpibpc.mpg.de
 
 # PLEASE INSERT CORRECT PATHS AT POSITIONS INDICATED BY ... BELOW
 # THE ENVIRONMENT VARIABLE HHLIB NEEDS TO BE SET TO YOUR LOCAL HH-SUITE DIRECTORY, 

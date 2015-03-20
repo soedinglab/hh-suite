@@ -11,7 +11,7 @@
 #include <sstream>
 
 void usage() {
-  std::cout << "A3M_Database_Reducer -i [ffindex_a3m_database_prefix] -o [ffindex_ca3m_database_prefix] -d [ffindex_sequence_database_prefix]" << std::endl;
+  std::cout << "a3m_database_reducer -i [ffindex_a3m_database_prefix] -o [ffindex_ca3m_database_prefix] -d [ffindex_sequence_database_prefix]" << std::endl;
 }
 
 int main(int argc, char **argv) {
@@ -65,15 +65,13 @@ int main(int argc, char **argv) {
   FILE *ca3m_index_fh = fopen(ca3mIndexFile.c_str(), "w");
 
   if (ca3m_data_fh == NULL) {
-    std::cerr << "Could not open ffindex ca3m data file! (" << ca3mDataFile << ")!" << std::endl;
+    std::cerr << "ERROR: Could not open ffindex ca3m data file! (" << ca3mDataFile << ")!" << std::endl;
     exit(1);
-    //TODO: throw error
   }
 
   if(ca3m_index_fh == NULL) {
-    std::cerr << "Could not open ffindex ca3m index file! (" << ca3mIndexFile << ")!" << std::endl;
+    std::cerr << "ERROR: Could not open ffindex ca3m index file! (" << ca3mIndexFile << ")!" << std::endl;
     exit(1);
-    //TODO: throw error
   }
 
   size_t ca3m_offset = 0;
@@ -86,15 +84,13 @@ int main(int argc, char **argv) {
   FILE *a3m_index_fh = fopen(a3mIndexFile.c_str(), "r");
 
   if (a3m_data_fh == NULL) {
-    std::cerr << "Could not open ffindex a3m data file! (" << a3mDataFile << ")!" << std::endl;
+    std::cerr << "ERROR: Could not open ffindex a3m data file! (" << a3mDataFile << ")!" << std::endl;
     exit(1);
-    //TODO: throw error
   }
 
   if(a3m_index_fh == NULL) {
-    std::cerr << "Could not open ffindex a3m index file! (" << a3mIndexFile << ")!" << std::endl;
+    std::cerr << "ERROR: Could not open ffindex a3m index file! (" << a3mIndexFile << ")!" << std::endl;
     exit(1);
-    //TODO: throw error
   }
 
   size_t a3m_offset;
@@ -102,9 +98,8 @@ int main(int argc, char **argv) {
   ffindex_index_t* a3m_index = ffindex_index_parse(a3m_index_fh, 0);
 
   if(a3m_index == NULL) {
-    std::cerr << "A3M index could not be loaded!" << std::endl;
+    std::cerr << "ERROR: A3M index could not be loaded!" << std::endl;
     exit(1);
-    //TODO: throw error
   }
 
   //prepare ffindex sequence database
@@ -115,15 +110,13 @@ int main(int argc, char **argv) {
   FILE *sequence_index_fh = fopen(sequenceIndexFile.c_str(), "r");
 
   if (sequence_data_fh == NULL) {
-    std::cerr << "Could not open ffindex sequence data file! (" << sequenceDataFile << ")!" << std::endl;
+    std::cerr << "ERROR: Could not open ffindex sequence data file! (" << sequenceDataFile << ")!" << std::endl;
     exit(1);
-    //TODO: throw error
   }
 
   if(sequence_index_fh == NULL) {
-    std::cerr << "Could not open ffindex sequence index file! (" << sequenceIndexFile << ")!" << std::endl;
+    std::cerr << "ERROR: Could not open ffindex sequence index file! (" << sequenceIndexFile << ")!" << std::endl;
     exit(1);
-    //TODO: throw error
   }
 
   size_t sequence_data_size;
@@ -131,9 +124,8 @@ int main(int argc, char **argv) {
   ffindex_index_t* sequence_index = ffindex_index_parse(sequence_index_fh, 80000000);
 
   if(sequence_index == NULL) {
-    std::cerr << "Sequence index could not be loaded!" << std::endl;
+    std::cerr << "ERROR: Sequence index could not be loaded!" << std::endl;
     exit(1);
-    //TODO: throw error
   }
 
   //prepare input stream
@@ -163,7 +155,7 @@ int main(int argc, char **argv) {
 
     }
     else {
-      std::cerr << "Could not compress A3M! ("<< entry->name << ")" << std::endl;
+      std::cerr << "WARNING: Could not compress A3M! ("<< entry->name << ")" << std::endl;
     }
 
     delete out_buffer;

@@ -49,14 +49,6 @@ void ReadQueryFile(Parameters& par, FILE* inf, char& input_format,
   }
   // ... or is it an alignment file
   else if (line[0] == '#' || line[0] == '>') {
-    if (par.calibrate) {
-      HH_LOG(ERROR) << "Error in " << __FILE__ << ":" << __LINE__ << ": "
-          << __func__ << ":" << std::endl;
-      HH_LOG(ERROR) << "\tonly HHM files can be calibrated.\n";
-      HH_LOG(ERROR) << "\tBuild an HHM file from your alignment with hhmake and rerun with the hhm file" << std::endl;
-      exit(1);
-    }
-
     if (strcmp(infile, "stdin")) {
     	HH_LOG(INFO) << infile << " is in A2M, A3M or FASTA format\n";
     }
@@ -211,163 +203,6 @@ void PrepareTemplateHMM(Parameters& par, HMM* q, HMM* t, int format, float linea
   return;
 }
 
-/////////////////////////////////////////////////////////////////////////////////////
-// Calculate secondary structure prediction with PSIPRED
-/////////////////////////////////////////////////////////////////////////////////////
-void CalculateSS(char *ss_pred, char *ss_conf, char *tmpfile,
-    const char* psipred_data, const char* psipred) {
-  // Initialize
-  std::string command;
-  char line[LINELEN] = "";
-  char filename[NAMELEN];
-  
-  strcpy(ss_pred, "-");
-  strcpy(ss_conf, "-");
-
-  // Run PSIPRED
-  
-  // Check for PSIPRED ver >= 3.0 (weights.dat4 doesn't exists anymore)
-  strcpy(filename, psipred_data);
-  strcat(filename, "/weights.dat4");
-  FILE* check_exists = fopen(filename, "r");
-  if (check_exists) {  // Psipred version < 3.0
-    command = (std::string) psipred + "/psipred " + (std::string) tmpfile
-        + ".mtx " + (std::string) psipred_data + "/weights.dat "
-        + (std::string) psipred_data + "/weights.dat2 "
-        + (std::string) psipred_data + "/weights.dat3 "
-        + (std::string) psipred_data + "/weights.dat4 > "
-        + (std::string) tmpfile + ".ss";
-  }
-  else {
-    command = (std::string) psipred + "/psipred " + (std::string) tmpfile
-        + ".mtx " + (std::string) psipred_data + "/weights.dat "
-        + (std::string) psipred_data + "/weights.dat2 "
-        + (std::string) psipred_data + "/weights.dat3 > "
-        + (std::string) tmpfile + ".ss";
-  }
-  runSystem(command);
-  command = (std::string) psipred + "/psipass2 " + (std::string) psipred_data
-      + "/weights_p2.dat 1 0.98 1.09 " + (std::string) tmpfile + ".ss2 "
-      + (std::string) tmpfile + ".ss > " + (std::string) tmpfile + ".horiz";
-  runSystem(command);
-
-  // Read results
-  strcpy(filename, tmpfile);
-  strcat(filename, ".horiz");
-  FILE* horizf = fopen(filename, "r");
-  if (!horizf)
-    return;
-
-  while (fgets(line, LINELEN, horizf)) {
-    char tmp_seq[NAMELEN] = "";
-    char* ptr = line;
-    if (!strncmp(line, "Conf:", 5)) {
-      ptr += 5;
-      strwrd(tmp_seq, ptr);
-      strcat(ss_conf, tmp_seq);
-    }
-    if (!strncmp(line, "Pred:", 5)) {
-      ptr += 5;
-      strwrd(tmp_seq, ptr);
-      strcat(ss_pred, tmp_seq);
-    }
-  }
-  fclose(horizf);
-
-  HH_LOG(DEBUG1) << "SS-pred: " << ss_pred << std::endl;
-  HH_LOG(DEBUG1) << "SS-conf: " << ss_conf << std::endl;
-}
-
-/////////////////////////////////////////////////////////////////////////////////////
-// Calculate secondary structure for given HMM and return prediction
-/////////////////////////////////////////////////////////////////////////////////////
-void CalculateSS(HMM* q, char *ss_pred, char *ss_conf, const char* psipred_data,
-    const char* psipred, const float* pb) {
-
-  if (q->divided_by_local_bg_freqs) {
-    HH_LOG(WARNING) << "Can not add predicted secondary structure when using column score 5!\n";
-    return;
-  }
-
-  char tmpfile[] = "/tmp/HHsuite_CaluclateSS_XXXXXX";
-  if (mkstemp(tmpfile) == -1) {
-    HH_LOG(ERROR) << "Could not create tmp file " << tmpfile << "!\n";
-    exit(4);
-  }
-  
-  // Write log-odds matrix from q to tmpfile.mtx
-  char filename[NAMELEN];
-  FILE* mtxf = NULL;
-  
-  strcpy(filename, tmpfile);
-  strcat(filename, ".mtx");
-  mtxf = fopen(filename, "w");
-  if (!mtxf)
-    OpenFileError(filename, __FILE__, __LINE__, __func__);
-
-  fprintf(mtxf, "%i\n", q->L);
-  fprintf(mtxf, "%s\n", q->seq[q->nfirst] + 1);
-  fprintf(mtxf,
-      "2.670000e-03\n4.100000e-02\n-3.194183e+00\n1.400000e-01\n2.670000e-03\n4.420198e-02\n-3.118986e+00\n1.400000e-01\n3.176060e-03\n1.339561e-01\n-2.010243e+00\n4.012145e-01\n");
-
-  for (int i = 1; i <= q->L; ++i) {
-    fprintf(mtxf, "-32768 ");
-    for (int a = 0; a < 20; ++a) {
-      int tmp = iround(50 * flog2(q->p[i][s2a[a]] / pb[s2a[a]]));
-      fprintf(mtxf, "%5i ", tmp);
-      if (a == 0) {   // insert logodds value for B
-        fprintf(mtxf, "%5i ", -32768);
-      }
-      else if (a == 18) {   // insert logodds value for X
-        fprintf(mtxf, "%5i ", -100);
-      }
-      else if (a == 19) {   // insert logodds value for Z
-        fprintf(mtxf, "%5i ", -32768);
-      }
-    }
-    fprintf(mtxf, "-32768 -400\n");
-  }
-  fclose(mtxf);
-
-  // Calculate secondary structure
-  CalculateSS(ss_pred, ss_conf, tmpfile, psipred_data, psipred);
-  
-  q->AddSSPrediction(ss_pred, ss_conf);
-
-  // Remove temp-files
-  std::string command = "rm " + (std::string) tmpfile + "*";
-  runSystem(command);
-}
-
-// Calculate secondary structure for given HMM
-void CalculateSS(HMM* q, const int maxres, const char* psipred_data,
-    const char* psipred, const float* pb) {
-  char ss_pred[maxres];
-  char ss_conf[maxres];
-
-  CalculateSS(q, ss_pred, ss_conf, psipred_data, psipred, pb);
-}
-
-/////////////////////////////////////////////////////////////////////////////////////
-// Read number of sequences in annotation, after second '|'
-/////////////////////////////////////////////////////////////////////////////////////
-int SequencesInCluster(char* name) {
-  int num = 1;
-  char *ptr = strchr(name, '|');
-  if (!strncmp(name, "cl|", 3) || !strncmp(name, "UP20|", 5)
-      || !strncmp(name, "NR20|", 5))   // kClust formatted database (NR20, ...)
-          {
-    if (*ptr == '|')
-      ptr = strchr(ptr, '|');
-    if (*ptr == '|') {
-      num = strint(ptr);
-      if (num < 0)
-        num = 1;
-    }
-  }
-  return num;
-}
-
 void InitializePseudocountsEngine(Parameters& par,
     cs::ContextLibrary<cs::AA>* context_lib, cs::Crf<cs::AA>* crf,
     cs::Pseudocounts<cs::AA>* pc_hhm_context_engine,
@@ -426,5 +261,24 @@ void DeletePseudocountsEngine(cs::ContextLibrary<cs::AA>* context_lib,
 }
 
 
+/////////////////////////////////////////////////////////////////////////////////////
+// Read number of sequences in annotation, after second '|'
+/////////////////////////////////////////////////////////////////////////////////////
+int SequencesInCluster(char* name) {
+  int num = 1;
+  char *ptr = strchr(name, '|');
+  if (!strncmp(name, "cl|", 3) || !strncmp(name, "UP20|", 5)
+      || !strncmp(name, "NR20|", 5))   // kClust formatted database (NR20, ...)
+          {
+    if (*ptr == '|')
+      ptr = strchr(ptr, '|');
+    if (*ptr == '|') {
+      num = strint(ptr);
+      if (num < 0)
+        num = 1;
+    }
+  }
+  return num;
+}
 
 

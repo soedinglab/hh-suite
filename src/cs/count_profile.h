@@ -24,6 +24,7 @@
 #include "sequence.h"
 #include "substitution_matrix-inl.h"
 #include "profile-inl.h"
+#include <sstream>
 
 namespace cs {
 
@@ -64,6 +65,7 @@ struct CountProfile {
 
     // Writes serialized count profile to stream.
     void Write(FILE* fout) const;
+    void Write(std::stringstream& ss) const;
 
     // Returns number of columns.
     size_t length() const { return counts.length(); }

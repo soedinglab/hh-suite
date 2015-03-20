@@ -96,29 +96,33 @@ public:
 
 	static void ProcessAllArguments(int argc, char** argv, Parameters& par);
 
-    //writer for non-mpi version
-    void writeHHRFile(char* hhrFile);
-    void writeAlisFile(char* basename);
-    void writeScoresFile(char* scoresFile);
-    void writePairwiseAlisFile(char* pairwieseAlisFile, char outformat);
-    void writeAlitabFile(char* alitabFile);
-    void writePsiFile(char* psiFile);
-    void writeHMMFile(char* HMMFile);
-    void writeA3MFile(char* A3MFile);
-    void writeMatricesFile(char* matricesOutputFileName);
+	//print methods for hhalign and hhblits
+	void printHitList();
+	void printHHRFile();
 
-    //output writer for mpi version
-    std::map<int, Alignment*>& getAlis();
-    static void writeHHRFile(HHblits& hhblits, std::stringstream& out);
-    static void writeScoresFile(HHblits& hhblits, std::stringstream& out);
-    static void writePairwiseAlisFile(HHblits& hhblits, std::stringstream& out);
-    static void writeAlitabFile(HHblits& hhblits, std::stringstream& out);
-    static void writePsiFile(HHblits& hhblits, std::stringstream& out);
-    static void writeHMMFile(HHblits& hhblits, std::stringstream& out);
-    static void writeA3MFile(HHblits& hhblits, std::stringstream& out);
-    static void writeMatricesFile(HHblits& hhblits, stringstream& out);
+  //writer for non-mpi version
+  void writeHHRFile(char* hhrFile);
+  void writeAlisFile(char* basename);
+  void writeScoresFile(char* scoresFile);
+  void writePairwiseAlisFile(char* pairwieseAlisFile, char outformat);
+  void writeAlitabFile(char* alitabFile);
+  void writePsiFile(char* psiFile);
+  void writeHMMFile(char* HMMFile);
+  void writeA3MFile(char* A3MFile);
+  void writeMatricesFile(char* matricesOutputFileName);
 
-    static void prepareDatabases(Parameters& par, std::vector<HHblitsDatabase*>& databases);
+  //output writer for mpi version
+  std::map<int, Alignment*>& getAlis();
+  static void writeHHRFile(HHblits& hhblits, std::stringstream& out);
+  static void writeScoresFile(HHblits& hhblits, std::stringstream& out);
+  static void writePairwiseAlisFile(HHblits& hhblits, std::stringstream& out);
+  static void writeAlitabFile(HHblits& hhblits, std::stringstream& out);
+  static void writePsiFile(HHblits& hhblits, std::stringstream& out);
+  static void writeHMMFile(HHblits& hhblits, std::stringstream& out);
+  static void writeA3MFile(HHblits& hhblits, std::stringstream& out);
+  static void writeMatricesFile(HHblits& hhblits, stringstream& out);
+
+  static void prepareDatabases(Parameters& par, std::vector<HHblitsDatabase*>& databases);
 
 	void run(FILE* query_fh, char* query_path);
 
@@ -169,9 +173,9 @@ protected:
 	HitList hitlist; // list of hits with one Hit object for each pairwise comparison done
 	std::map<int, Alignment*> alis;
 
-	void perform_realign(HMMSimd& q_vec, const char input_format, std::vector<HHEntry*>& hits_to_realign, const int premerge, Hash<char>* premerged_hits);
+	void perform_realign(HMMSimd& q_vec, const char input_format, std::vector<HHEntry*>& hits_to_realign);
 
-	void mergeHitsToQuery(Hash<Hit>* previous_hits, Hash<char>* premerged_hits, int& seqs_found, int& cluster_found);
+	void mergeHitsToQuery(Hash<Hit>* previous_hits, int& seqs_found, int& cluster_found);
 	void add_hits_to_hitlist(std::vector<Hit>& hits, HitList& hitlist);
 	void get_entries_of_selected_hits(HitList& input, std::vector<HHEntry*>& selected_entries);
 	void get_entries_of_all_hits(HitList& input, std::vector<HHEntry*>& selected_entries);
