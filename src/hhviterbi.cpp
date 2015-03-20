@@ -8,17 +8,66 @@
 #include "hhviterbi.h"
 #include "util.h"
 #include "hhutil.h"
+#include "hhhmm.h"
+
+
+Viterbi::Viterbi(int max_seq_length,bool local,float penalty_gap_query,float penalty_gap_template,
+        float correlation, int par_min_overlap, float shift, const int ss_mode, float ssw,
+        const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF],
+        const float S37[NSSPRED][MAXCF][NDSSP])
+: S73(S73), S33(S33), S37(S37)
+{
+    this->max_seq_length=max_seq_length;
+    this->local = local;
+    this->penalty_gap_query = penalty_gap_query;
+    this->penalty_gap_template = penalty_gap_template;
+    this->sMM_DG_MI_GD_IM_vec = (simd_float *) malloc_simd_float(VEC_SIZE*max_seq_length*5*sizeof(float));
+
+    this->correlation = correlation;
+    this->par_min_overlap = par_min_overlap;
+//    this->exclstr = new char[strlen(exclstr)+1];
+//    strcpy(this->exclstr, exclstr);
+    this->shift = shift;
+    this->ssw = ssw;
+//    //  S73[NDSSP][NSSPRED][MAXCF]
+//    //  7 * 3 * 10
+//    //  3 * 10 = 30
+//    //  32 <- next bigger simd size
+//    this->ss73_lookup =  (simd_int *) malloc_simd_float((NDSSP - 1) * 32 * sizeof(unsigned char));
+//    // S33[NSSPRED][MAXCF][NSSPRED][MAXCF]
+//    //  3 * 10 * (3 * 10)
+//    //  (3 * 10) = 30
+//    //  32 <- next bigger simd size
+//    this->ss33_lookup =  (simd_int *) malloc_simd_float((NSSPRED - 1) * (MAXCF - 1) * 32 * sizeof(unsigned char));
+//
+    // pre computed scores for one row
+    this->ss_score = (float *) malloc_simd_float(VEC_SIZE*max_seq_length*sizeof(float));
+    this->ss_mode = ss_mode;
+    
+
+}
+
+Viterbi::~Viterbi(){
+    free(sMM_DG_MI_GD_IM_vec);
+//    free(ss73_lookup);
+//    free(ss33_lookup);
+    free(ss_score);
+//    delete exclstr;
+}
+
+
+
 
 // static
 void Viterbi::ExcludeAlignment(ViterbiMatrix * matrix,HMMSimd* q_four, HMMSimd* t_four,int elem,
-                               int * i_steps, int * j_steps, int nsteps){
+        int * i_steps, int * j_steps, int nsteps){
     const HMM * q = (const HMM *) q_four->GetHMM(elem);
     const HMM * t = (const HMM *) t_four->GetHMM(elem);
     // Exclude cells in direct neighbourhood from all further alignments
     for(int step=1;step < nsteps;step++){
         int i=i_steps[step];
         int j=j_steps[step];
-        
+
         for (int ii=imax(i-2,1); ii<=imin(i+2,q->L); ++ii){
             matrix->setCellOff(ii, j, elem, true);
         }
@@ -27,31 +76,6 @@ void Viterbi::ExcludeAlignment(ViterbiMatrix * matrix,HMMSimd* q_four, HMMSimd* 
         }
     }
 }
-
-
-Viterbi::Viterbi(int max_seq_length,bool local,float penalty_gap_query,float penalty_gap_template, float correlation, int par_min_overlap, float shift){
-    this->max_seq_length=max_seq_length;
-    this->local = local;
-    this->penalty_gap_query = penalty_gap_query;
-    this->penalty_gap_template = penalty_gap_template;
-    sMM_DG_MI_GD_IM_vec = (simd_float *) malloc_simd_float(VEC_SIZE*max_seq_length*5*sizeof(float));
-    this->correlation = correlation;
-    this->par_min_overlap = par_min_overlap;
-//    this->exclstr = new char[strlen(exclstr)+1];
-//    strcpy(this->exclstr, exclstr);
-    this->shift = shift;
-}
-
-Viterbi::~Viterbi(){
-    free(sMM_DG_MI_GD_IM_vec);
-//    delete exclstr;
-}
-
-
-
-
-
-
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Trace back Viterbi alignment of two profiles based on matrices bXX[][]
@@ -68,7 +92,7 @@ Viterbi::BacktraceResult Viterbi::Backtrace(ViterbiMatrix * matrix,int elem,int 
     int * i_steps  = new int[maxAlignmentLength];
     int * j_steps  = new int[maxAlignmentLength];
     char * states  = new char[maxAlignmentLength];
-    
+
 
 
     // Back-tracing loop
@@ -76,14 +100,14 @@ Viterbi::BacktraceResult Viterbi::Backtrace(ViterbiMatrix * matrix,int elem,int 
     step=0;                 // steps through the matrix correspond to alignment columns (from 1 to nsteps)
     char state=ViterbiMatrix::MM;           // state with maximum score must be MM state  // already set at the end of Viterbi()
     i=start_i[elem]; j=start_j[elem];   // last aligned pair is (i2,j2)
-    
+
     while (state!=ViterbiMatrix::STOP)     // while (state!=STOP)  because STOP=0
     {
         step++;
         states[step] = state;
         i_steps[step] = i;
         j_steps[step] = j;
-        
+
         switch (state)
         {
             case ViterbiMatrix::MM: // current state is MM, previous state is bMM[i][j]
@@ -121,12 +145,12 @@ Viterbi::BacktraceResult Viterbi::Backtrace(ViterbiMatrix * matrix,int elem,int 
                 break;
         } //end switch (state)
     } //end while (state)
-    
+
     states[step] = ViterbiMatrix::MM;  // first state (STOP state) is set to MM state
     int nsteps=step;
-    
+
     Viterbi::BacktraceResult result;
-    
+
     result.i_steps = i_steps;
     result.j_steps = j_steps;
     result.states = states;
@@ -137,12 +161,22 @@ Viterbi::BacktraceResult Viterbi::Backtrace(ViterbiMatrix * matrix,int elem,int 
 }
 
 //TODO: inline
-Viterbi::ViterbiResult* Viterbi::Align(HMMSimd* q, HMMSimd* t,ViterbiMatrix * viterbiMatrix, int maxres){
+Viterbi::ViterbiResult* Viterbi::Align(HMMSimd* q, HMMSimd* t,ViterbiMatrix * viterbiMatrix,
+                                       int maxres, int ss_hmm_mode){
     Viterbi::ViterbiResult* result = new Viterbi::ViterbiResult();
-    if (viterbiMatrix->hasCellOff()==true) {
-        this->AlignWithCellOff(q,t,viterbiMatrix, maxres, result);
-    } else {
-        this->AlignWithOutCellOff(q,t,viterbiMatrix, maxres, result);
+
+    if(ss_mode == Hit::SCORE_ALIGNMENT){
+        if (viterbiMatrix->hasCellOff()==true) {
+            this->AlignWithCellOffAndSS(q,t,viterbiMatrix, maxres, result, ss_hmm_mode);
+        } else {
+            this->AlignWithOutCellOffAndSS(q,t,viterbiMatrix, maxres, result, ss_hmm_mode);
+        }
+    }else {
+        if (viterbiMatrix->hasCellOff()==true) {
+            this->AlignWithCellOff(q,t,viterbiMatrix, maxres, result);
+        } else {
+            this->AlignWithOutCellOff(q,t,viterbiMatrix, maxres, result);
+        }
     }
     viterbiMatrix->setCellOff(false); // the ViterbiAlign set all Cell of values to false
 
@@ -152,11 +186,11 @@ Viterbi::ViterbiResult* Viterbi::Align(HMMSimd* q, HMMSimd* t,ViterbiMatrix * vi
 
 //TODO: inline
 Viterbi::BacktraceScore Viterbi::ScoreForBacktrace(HMMSimd* q_four, HMMSimd* t_four,
-                                                          int elem,Viterbi::BacktraceResult * backtraceResult,
-                                                          float alignmentScore[VEC_SIZE],
-                                                          int ssm1,int ssm2)
+        int elem,Viterbi::BacktraceResult * backtraceResult,
+        float alignmentScore[VEC_SIZE],
+        int ss_hmm_mode)
 {
-    
+
     // Allocate new space for alignment scores
     const HMM * q = (const HMM *) q_four->GetHMM(elem);
     const HMM * t = (const HMM *) t_four->GetHMM(elem);
@@ -167,25 +201,25 @@ Viterbi::BacktraceScore Viterbi::ScoreForBacktrace(HMMSimd* q_four, HMMSimd* t_f
     float * S=new float[nsteps+1];
     float * S_ss=new float[nsteps+1];
     if (!S_ss) MemoryError("space for HMM-HMM alignments", __FILE__, __LINE__, __func__);
-    
+
     // Add contribution from secondary structure score, record score a long alignment,
     // and record template consensus sequence in master-slave-alignment to query sequence
-    
+
     float score_ss=0.0f;
     float score=alignmentScore[elem];
     float score_sort = 0.0f;
     float score_aass = 0.0f;
     float Pvalt = 1.0f;
     float logPvalt = 0.0f;
-    
-    int ssm=ssm1+ssm2;
+    //std::cout << "Backtrace"<< std::endl;
     for (int step=1; step<=nsteps; step++)
     {
         switch(states[step])
         {
             case ViterbiMatrix::MM:
                 S[step]    = Score(q->p[i_steps[step]],t->p[j_steps[step]]);
-                S_ss[step] = ScoreSS(q,t,i_steps[step],j_steps[step],ssm);
+                //std::cout << S[step] << std::cout;
+                S_ss[step] = ScoreSS(q,t,i_steps[step],j_steps[step], ssw, ss_hmm_mode, S73, S37, S33);
                 score_ss += S_ss[step];
                 break;
             case ViterbiMatrix::MI: //if gap in template
@@ -195,8 +229,8 @@ Viterbi::BacktraceScore Viterbi::ScoreForBacktrace(HMMSimd* q_four, HMMSimd* t_f
                 break;
         }
     }
-    
-    if (ssm2>=1) score-=score_ss;    // subtract SS score added during alignment!!!!
+
+    if (ss_mode == Hit::SCORE_ALIGNMENT) score-=score_ss;    // subtract SS score added during alignment!!!!
     //    printf("###New score %f",score);
     // Add contribution from correlation of neighboring columns to score
     float Scorr=0;
@@ -208,7 +242,7 @@ Viterbi::BacktraceScore Viterbi::ScoreForBacktrace(HMMSimd* q_four, HMMSimd* t_f
         for (int step=5; step<=nsteps; step++) Scorr+=S[step]*S[step-4];
         score+=correlation*Scorr;
     }
-    
+
     // Set score, P-value etc.
     score_sort = score_aass = -score;
     if (t->mu)
@@ -219,7 +253,7 @@ Viterbi::BacktraceScore Viterbi::ScoreForBacktrace(HMMSimd* q_four, HMMSimd* t_f
     else { logPvalt=0; Pvalt=1;}
     //   printf("%-10.10s lamda=%-9f  score=%-9f  logPval=%-9g\n",name,t->lamda,score,logPvalt);
     //DEBUG: Print out Viterbi path
-    
+
     Viterbi::BacktraceScore backtraceScore;
     backtraceScore.score_ss=score_ss;
     backtraceScore.score=score;
@@ -229,23 +263,23 @@ Viterbi::BacktraceScore Viterbi::ScoreForBacktrace(HMMSimd* q_four, HMMSimd* t_f
     backtraceScore.logPvalt=logPvalt;
     backtraceScore.S=S;
     backtraceScore.S_ss=S_ss;
-    
+
     if (Log::reporting_level() >= DEBUG1) {
-        Viterbi::PrintDebug(q,t,&backtraceScore,backtraceResult,ssm);
+        Viterbi::PrintDebug(q,t,&backtraceScore,backtraceResult, ss_mode);
     }
-    
+
     return backtraceScore;
 }
 
 
 void Viterbi::PrintDebug(const HMM * q,const HMM *t,Viterbi::BacktraceScore * backtraceScore,Viterbi::BacktraceResult * backtraceResult,
-                         const int ssm){
+        const int ssm){
     int nfirst=0;
     char * states=backtraceResult->states;
     int * i_steps=backtraceResult->i_steps;
     int * j_steps=backtraceResult->j_steps;
     int nsteps=backtraceResult->count;
-    
+
     printf("score=%7.3f  score_ss=%7.3f\n",backtraceScore->score,backtraceScore->score_ss);
     printf("step  Q T    i    j  state   score    T Q cf ss-score\n");
     for (int step=nsteps; step>=1; step--)
@@ -265,7 +299,8 @@ void Viterbi::PrintDebug(const HMM * q,const HMM *t,Viterbi::BacktraceScore * ba
                 break;
         }
         printf("%4i %4i     %2i %7.2f    ",i_steps[step],j_steps[step],(int)states[step],Score(q->p[i_steps[step]],t->p[j_steps[step]]));
-        printf("%c %c %1i %7.2f\n",i2ss(t->ss_dssp[j_steps[step]]),i2ss(q->ss_pred[i_steps[step]]),q->ss_conf[i_steps[step]]-1,ScoreSS(q,t,i_steps[step],j_steps[step],ssm));
+        printf("%c %c %1i %7.2f\n",i2ss(t->ss_dssp[j_steps[step]]),i2ss(q->ss_pred[i_steps[step]]),q->ss_conf[i_steps[step]]-1,
+                ScoreSS(q,t,i_steps[step],j_steps[step],ssw,ssm,S73,S37,S33));
     }
 }
 
@@ -277,7 +312,7 @@ void Viterbi::InitializeForAlignment(HMM* q, HMM* t, ViterbiMatrix * matrix, int
 {
     int i,j;
     int min_overlap;
-    
+
     if (self)
     {
         // Cross out cells in lower diagonal for self-comparison?
@@ -292,26 +327,26 @@ void Viterbi::InitializeForAlignment(HMM* q, HMM* t, ViterbiMatrix * matrix, int
     }
     else
     {
-        
+
         // Compare two different HMMs Q and T
         // Activate all cells in dynamic programming matrix
         for (i=1; i<=q->L; ++i)
             for (j=1; j<=t->L; ++j)
                 matrix->setCellOff(i, j, elem, false);  // no other cells crossed out yet
-        
+
         // Cross out cells that are excluded by the minimum-overlap criterion
         if (par_min_overlap==0)
             min_overlap = imin(60, (int)(0.333f*imin(q->L,t->L))+1); // automatic minimum overlap
         else
             min_overlap = imin(par_min_overlap, (int)(0.8f*imin(q->L, t->L)));
-        
+
         for (i=0; i<min_overlap; ++i)
             for (j=i-min_overlap+t->L+1; j<=t->L; ++j) // Lt-j+i>=Ovlap => j<=i-Ovlap+Lt => jmax=min{Lt,i-Ovlap+Lt}
                 matrix->setCellOff(i, j, elem, true);
         for (i=q->L-min_overlap+1; i<=q->L; ++i)
             for (j=1; j<i+min_overlap-q->L; ++j)      // Lq-i+j>=Ovlap => j>=i+Ovlap-Lq => jmin=max{1, i+Ovlap-Lq}
                 matrix->setCellOff(i, j, elem, true);
-        
+
 //        // Cross out rows which are contained in range given by exclstr ("3-57,238-314")
 //        if (exclstr)
 //        {
@@ -333,3 +368,65 @@ void Viterbi::InitializeForAlignment(HMM* q, HMM* t, ViterbiMatrix * matrix, int
 
 ////////////////////////////////////////////////////////////////////////
 #endif
+
+
+//void Viterbi::setSSLookupTable(float S73[NDSSP][NSSPRED][MAXCF],
+//        float S33[NSSPRED][MAXCF][NSSPRED][MAXCF])
+void Viterbi::setSSLookup(float S73[NDSSP][NSSPRED][MAXCF], float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]) {
+//    this->max33 = 0.0;
+//    // find maximum
+//    // avoid first position of all arrays to skip the NON SS case
+//    for (int B=1; B<NSSPRED; B++){
+//        for (int cf=1; cf<MAXCF; cf++){
+//            for (int BB=1; BB<NSSPRED; BB++){
+//                for (int ccf=1; ccf<MAXCF; ccf++){
+//                    max33 = std::max(max33, exp(S33[B][cf][BB][ccf]));
+//                }
+//            }
+//        }
+//    }
+//    for (int B=1; B<NSSPRED; B++){
+//        for (int cf=1; cf<MAXCF; cf++){
+//            for (int BB=1; BB<NSSPRED; BB++){
+//                for (int ccf=1; ccf<MAXCF; ccf++){
+//                    // convert score to linear space
+//                    float currScoreSS = exp(S33[B][cf][BB][ccf]);
+//                    // scale score
+//                    unsigned char intScore = (int) (currScoreSS / max33 * 255.0) ;
+//                    intScore = std::max(intScore, 1); // avoid 0 because it would break the Viterbi
+//                    const size_t index = (B  - 1) * (MAXCF   - 1)   * (NSSPRED - 1) * (MAXCF - 1)
+//                            + (cf - 1) * (NSSPRED - 1)   * (MAXCF   - 1)
+//                            + (BB - 1) * (MAXCF   - 1)   + (ccf     - 1);
+//                    ss33_lookup[index] = intScore;
+//                }
+//            }
+//        }
+//    }
+//    this->max73 = 0.0;
+//    // find maximum of S73 (avoid NON SS scores at position 0)
+//    for (int A = 1; A < NDSSP; A++) {
+//        for (int B = 1; B < NSSPRED; B++){
+//            for (int cf = 1; cf < MAXCF; cf++) {
+//                max73 = std::max(max73, exp(S73[A][B][cf]));
+//            }
+//        }
+//    }
+//
+//    // find maximum of S73 (avoid NON SS scores at position 0)
+//    for (int A = 1; A < NDSSP; A++) {
+//        for (int B = 1; B < NSSPRED; B++){
+//            for (int cf = 1; cf < MAXCF; cf++) {
+//                // convert score to linear space
+//                float currScoreSS = exp(exp(S73[A][B][cf]));
+//                // scale score
+//                unsigned char intScore = (int) (currScoreSS / max73 * 255.0) ;
+//                intScore = std::max(intScore, 1); // avoid 0 because it would break the Viterbi
+//                const size_t index = (A  - 1) * (NSSPRED - 1) * (MAXCF - 1)
+//                        + (B  - 1) * (MAXCF   - 1)
+//                        + (cf - 1);
+//                ss73_lookup[index] = intScore;
+//            }
+//        }
+//    }
+}
+

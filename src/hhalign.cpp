@@ -642,7 +642,7 @@ void HHalign::run(FILE* query_fh, char* query_path, char* template_path) {
   }
 
   ViterbiRunner viterbirunner(viterbiMatrices, dbs, par.threads);
-  std::vector<Hit> hits_to_add = viterbirunner.alignment(par, &q_vec, new_entries, par.qsc_db, pb, S, Sim, R);
+  std::vector<Hit> hits_to_add = viterbirunner.alignment(par, &q_vec, new_entries, par.qsc_db, pb, S, Sim, R, par.ssm, S73, S33, S37);
 
   hitlist.N_searched = new_entries.size();
   add_hits_to_hitlist(hits_to_add, hitlist);

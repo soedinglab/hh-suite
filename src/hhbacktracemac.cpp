@@ -193,7 +193,7 @@ void PosteriorDecoder::backtraceMAC(HMM & q, HMM & t, PosteriorMatrix & p_mm, Vi
 			j = hit.j[step];
 
 			hit.S[step] = Score(q.p[i], t.p[j]);
-			hit.S_ss[step] = ScoreSS(&q, &t, i, j, ssm);
+            hit.S_ss[step] = Viterbi::ScoreSS(&q, &t, i, j, ssw, ssm, S73, S37, S33);
 			hit.score_ss += hit.S_ss[step];
 //			hit.P_posterior[step] = powf(2, p_mm.getPosteriorValue(hit.i[step], hit.j[step], elem));
 			hit.P_posterior[step] = p_mm.getPosteriorValue(hit.i[step], hit.j[step]);

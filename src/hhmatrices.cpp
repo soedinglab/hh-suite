@@ -147,7 +147,9 @@ void SetSubstitutionMatrix(const char matrix, float* pb, float P[20][20], float 
 /////////////////////////////////////////////////////////////////////////////////////
 // Set secondary structure substitution matrix
 /////////////////////////////////////////////////////////////////////////////////////
-void SetSecStrucSubstitutionMatrix(const float ssa, float S73[NDSSP][NSSPRED][MAXCF], float S33[NSSPRED][MAXCF][NSSPRED][MAXCF])
+void SetSecStrucSubstitutionMatrix(const float ssa, float S73[NDSSP][NSSPRED][MAXCF],
+                                   float S37[NSSPRED][MAXCF][NDSSP],
+                                   float S33[NSSPRED][MAXCF][NSSPRED][MAXCF])
 {
   int A;        //observed ss state (determined dssp)
   int B,BB;     //predicted ss states (by psipred)
@@ -165,6 +167,15 @@ void SetSecStrucSubstitutionMatrix(const float ssa, float S73[NDSSP][NSSPRED][MA
 	  P73[A][B][cf] = 1.-ssa + ssa*Ppred[cf*NSSPRED*NDSSP + B*NDSSP + A];
 	  S73[A][B][cf] = log2(P73[A][B][cf]);
 	}
+    // map matrix S73 to S37
+    for (cf=0; cf<MAXCF; cf++){
+        for (A=0; A<NDSSP; A++){
+            for (B=0; B<NSSPRED; B++)
+            {
+                S37[B][cf][A] = S73[A][B][cf];
+            }
+        }
+    }
 
   for (B=0; B<NSSPRED; B++)
     for (cf=0; cf<MAXCF; cf++)

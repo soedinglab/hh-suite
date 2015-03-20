@@ -27,7 +27,13 @@ HMMSimd::HMMSimd(int maxres)
 {
     
     p = new float*[maxres];         // p[i][a] = prob of finding amino acid a in column i WITH OPTIMUM pseudocounts
-    for (int i=0; i<maxres; i++) p[i]=(float*) malloc_simd_float(VEC_SIZE*NAA*sizeof(float));  // align memory on 16b boundaries for SSE2
+    // align memory on 16b boundaries for SSE2
+    p_data = (float *) malloc_simd_float(maxres * VEC_SIZE * NAA * sizeof(float));
+    size_t currPos = 0;
+    for (int i=0; i<maxres; i++){
+        p[i] = p_data + currPos;
+        currPos += (VEC_SIZE * NAA);
+    }
     tr = malloc_simd_float(VEC_SIZE*maxres*sizeof(float)*7);
 //    tr_m2i = malloc_simd_float(VEC_SIZE*maxres*sizeof(float));
 //    tr_m2d = malloc_simd_float(VEC_SIZE*maxres*sizeof(float));
@@ -41,6 +47,9 @@ HMMSimd::HMMSimd(int maxres)
     for(unsigned int i = 0; i < VEC_SIZE; i++){
        ((int*)lengths)[i] = 0;
     }
+    this->dssp_index = (unsigned char *) malloc_simd_int(maxres * VEC_SIZE * sizeof(unsigned char));
+    this->pred_index = (unsigned char *) malloc_simd_int(maxres * VEC_SIZE * sizeof(unsigned char));
+
     this->maxres = maxres;
 }
 
@@ -54,7 +63,9 @@ HMMSimd::~HMMSimd()
     //M2M M2I M2D I2M I2I D2M D2D
     free(tr);
     free(lengths);
-    for (int i=0; i<maxres; i++) if (p[i])  free(p[i]);  else break;
+    free(dssp_index);
+    free(pred_index);
+    free(p_data);
     delete[] p;
     delete[] seqarr;
 }
@@ -118,6 +129,8 @@ void HMMSimd::MapHMMVector(std::vector<HMM *> hmms){
             for(int aa_i=0; aa_i < NAA;aa_i++){
                 p[i][aa_i*VEC_SIZE+seq_i]=curr->p[i][aa_i];
             }
+            pred_index[i * VEC_SIZE + seq_i] = (unsigned char) curr->ss_pred[i] * MAXCF + curr->ss_conf[i];
+            dssp_index[i * VEC_SIZE + seq_i] = (unsigned char) curr->ss_dssp[i];
         }
         for(int i = curr->L+1; i < this->L+1; i++){
             const unsigned int start_pos = i * VEC_SIZE * 7;
@@ -130,8 +143,10 @@ void HMMSimd::MapHMMVector(std::vector<HMM *> hmms){
             tr_scalar[start_pos+6*VEC_SIZE+seq_i] = -FLT_MAX;
 
             for(int aa_i=0; aa_i < NAA;aa_i++){
-                p[i][aa_i*VEC_SIZE+seq_i]=0;
+                p[i][aa_i*VEC_SIZE+seq_i] = 0;
             }
+            pred_index[i * VEC_SIZE + seq_i] = 0;
+            dssp_index[i * VEC_SIZE + seq_i] = 0;
         }
     }
 }

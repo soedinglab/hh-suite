@@ -131,8 +131,28 @@ macro(PCL_CHECK_FOR_SSE)
       HAVE_SSE4_1_EXTENSIONS)
 
     if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_CLANG)
+        set(CMAKE_REQUIRED_FLAGS "-mssse3")
+    endif(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_CLANG)
+
+
+    check_cxx_source_runs("
+      #include <tmmintrin.h>
+      int main ()
+      {
+        __m128i a, b;
+        int vals[4] = {1, 2, 3, 4};
+        const int mask = 123;
+        a = _mm_load_si128 ((__m128i*)vals);
+        b = _mm_shuffle_epi8 (a, a);
+        _mm_store_si128 ((__m128i*)vals,b);
+        return (0);
+      }"
+      HAVE_SSSE3_EXTENSIONS)
+
+    if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_CLANG)
         set(CMAKE_REQUIRED_FLAGS "-msse3")
     endif(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_CLANG)
+
 
     check_cxx_source_runs("
         #include <pmmintrin.h>
