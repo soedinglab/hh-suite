@@ -675,6 +675,7 @@ void HHsearch::run(FILE* query_fh, char* query_path) {
 //  else
 //    hitlist.GetPvalsFromCalibration(q, par.loc, par.calm, par.ssm, par.ssw);
 
+
 	// Set new ss weight for realign
 	par.ssw = par.ssw_realign;
 

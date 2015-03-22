@@ -56,7 +56,11 @@ class HMM {
   char cl[IDLEN];         // class ID (derived from name)
 
   float lamda, mu;  // coefficients for aa score distribution of HMM using parameters in 'Parameters par'
-
+  // ss modes
+  const static int NO_SS_INFORMATION = 0;
+  const static int PRED_DSSP = 1;
+  const static int DSSP_PRED = 2;
+  const static int PRED_PRED = 3;
   // Make a flat copy of q
   void FlatCopyTo(HMM* t);
 
@@ -99,6 +103,9 @@ class HMM {
       for (int a = 0; a < 20; a++)
         p[i][a] = f[i][a];
   };
+
+  // compute ss scoring mode based on q and t
+  static int computeScoreSSMode(HMM *q, HMM *t);
 
   // Divide aa probabilties by square root of locally averaged background frequencies
   void DivideBySqrtOfLocalBackgroundFreqs(const int D, const float* pb);
