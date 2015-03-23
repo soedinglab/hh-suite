@@ -8,10 +8,12 @@
 #ifndef HHVITERBI4_h
 #define HHVITERBI4_h
 #include <float.h>
-
+#include "hhhit.h"
 #include "hhviterbimatrix.h"
 #include "simd.h"
+#include "hhhmm.h"
 #include "hhhmmsimd.h"
+
 
 class Viterbi {
   public:
@@ -51,7 +53,8 @@ class Viterbi {
 
     Viterbi(int maxres, bool local, float penalty_gap_query,
         float penalty_gap_template, float correlation, int par_min_overlap,
-        float shift);
+        float shift, const int ss_mode, float ssw, const float S73[NDSSP][NSSPRED][MAXCF],
+        const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF], const float S37[NSSPRED][MAXCF][NDSSP]);
     ~Viterbi();
 
     /////////////////////////////////////////////////////////////////////////////////////
@@ -59,7 +62,7 @@ class Viterbi {
     // Alignes two HMMSimd objects
     /////////////////////////////////////////////////////////////////////////////////////
     ViterbiResult* Align(HMMSimd* q, HMMSimd* t, ViterbiMatrix * viterbiMatrix,
-        int maxres);
+        int maxres, int ss_hmm_mode);
 
     /////////////////////////////////////////////////////////////////////////////////////
     // Align
@@ -76,6 +79,21 @@ class Viterbi {
         int maxres, ViterbiResult* result);
 
     /////////////////////////////////////////////////////////////////////////////////////
+    // Align with SS score
+    // Alignes two HMMSimd objects
+    /////////////////////////////////////////////////////////////////////////////////////
+    void AlignWithOutCellOffAndSS(HMMSimd* q, HMMSimd* t,
+            ViterbiMatrix * viterbiMatrix, int maxres, ViterbiResult* result, int ss_hmm_mode);
+
+
+    /////////////////////////////////////////////////////////////////////////////////////
+    // Align with Cell Off and SS score
+    // Alignes two HMMSimd objects
+    /////////////////////////////////////////////////////////////////////////////////////
+    void AlignWithCellOffAndSS(HMMSimd* q, HMMSimd* t,
+            ViterbiMatrix * viterbiMatrix, int maxres, ViterbiResult* result, int ss_hmm_mode);
+
+    /////////////////////////////////////////////////////////////////////////////////////
     // Backtrace
     // Makes backtrace from start i, j position.
     /////////////////////////////////////////////////////////////////////////////////////
@@ -88,7 +106,7 @@ class Viterbi {
     /////////////////////////////////////////////////////////////////////////////////////
     BacktraceScore ScoreForBacktrace(HMMSimd* q_four, HMMSimd* t_four, int elem,
         Viterbi::BacktraceResult *backtraceResult,
-        float alignmentScore[VEC_SIZE], int ssm1, int ssm2);
+        float alignmentScore[VEC_SIZE], int ss_hmm_mode);
 
     /////////////////////////////////////////////////////////////////////////////////////
     // ExcludeAlignment
@@ -138,10 +156,86 @@ class Viterbi {
 
       res0 = simdf32_add(res0, res1);
       res2 = simdf32_add(res2, res3);
-
       return simdf32_add(res0, res2);
 
     }
+    
+    
+    void ss_score_simd(__m128i score_matrix_vec01
+                        , __m128i score_matrix_vec16
+                        , __m128i template_sequence
+                        , __m128 ssw
+                        , float * storeResult){
+        const __m128i sixteen_vec  = _mm_set1_epi8(16);
+        const __m128i fiveteen_vec = _mm_set1_epi8(15);
+        const __m128i zero = _mm_setzero_si128();
+        // create slice mask
+        // Example:
+        //	15	12	11	16	20	19	18	11	15	12	11	16	20	19	18	11
+        //                      if lt 16
+        //  255	255	255	0	0	0	0	255	255	255	255	0	0	0	0	255
+        __m128i lookup_mask01=_mm_cmplt_epi8(template_sequence,sixteen_vec);
+        __m128i lookup_mask16=_mm_cmpgt_epi8(template_sequence,fiveteen_vec);
+        // slice index
+        // Example:
+        //  255	255	255	0	0	0	0	255	255	255	255	0	0	0	0	255
+        //  15	12	11	16	20	19	18	11	15	12	11	16	20	19	18	11
+        //                          min
+        //  15	12	11	0	0	0	0	11	15	12	11	0	0	0	0	155
+        __m128i lookup_index01=_mm_min_epu8(lookup_mask01,template_sequence);
+        __m128i lookup_index16=_mm_min_epu8(lookup_mask16,template_sequence);
+        // 2xmal array lookup
+        __m128i score01 = _mm_shuffle_epi8(score_matrix_vec01, lookup_index01);
+        __m128i score16 = _mm_shuffle_epi8(score_matrix_vec16, lookup_index16);
+        // merge 0_15 and 16_31
+        __m128i res = _mm_add_epi8(score01,score16);
+
+        __m128i lo_16 = _mm_unpacklo_epi8(res, zero);
+        __m128i hi_16 = _mm_unpackhi_epi8(res,  zero);
+        __m128i in1 = _mm_unpacklo_epi16(lo_16, zero);
+        __m128i in2 = _mm_unpackhi_epi16(lo_16, zero);
+        __m128i in3 = _mm_unpacklo_epi16(hi_16, zero);
+        __m128i in4 = _mm_unpackhi_epi16(hi_16, zero);
+        __m128 flt_0_3   = _mm_cvtepi32_ps(in1);
+        flt_0_3   = _mm_mul_ps(flt_0_3, ssw);
+
+        __m128 flt_4_7   = _mm_cvtepi32_ps(in2);
+        flt_4_7   = _mm_mul_ps(flt_4_7, ssw);
+
+        __m128 flt_8_11  = _mm_cvtepi32_ps(in3);
+        flt_8_11   = _mm_mul_ps(flt_8_11, ssw);
+
+        __m128 flt_12_15 = _mm_cvtepi32_ps(in4);
+        flt_12_15   = _mm_mul_ps(flt_12_15, ssw);
+
+        _mm_storer_ps(storeResult,      flt_0_3);
+        _mm_storer_ps(storeResult + 4,  flt_4_7);
+        _mm_storer_ps(storeResult + 8,  flt_8_11);
+        _mm_storer_ps(storeResult + 12, flt_12_15);
+    }
+    
+    // Calculate secondary structure score between columns i and j of two HMMs (query and template)
+    static inline float ScoreSS(const HMM* q, const HMM* t, const int i,
+                                const int j, const float ssw, const int ssm,
+                                const float S73[NDSSP][NSSPRED][MAXCF],
+                                const float S37[NSSPRED][MAXCF][NDSSP],
+                                const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF])
+    {
+        switch (ssm) //SS scoring during alignment
+        {
+            case HMM::NO_SS_INFORMATION: // no SS scoring during alignment
+                return 0.0;
+            case HMM::PRED_DSSP: // t has dssp information, q has psipred information
+                return ssw * S37[ (int)q->ss_pred[i]][ (int)q->ss_conf[i]][ (int)t->ss_dssp[j]];
+            case HMM::DSSP_PRED: // q has dssp information, t has psipred information
+                return ssw * S73[ (int)q->ss_dssp[i]][ (int)t->ss_pred[j]][ (int)t->ss_conf[j]];
+            case HMM::PRED_PRED: // q has dssp information, t has psipred information
+                return ssw * S33[ (int)q->ss_pred[i]][ (int)q->ss_conf[i]][ (int)t->ss_pred[j]][ (int)t->ss_conf[j]];
+        }
+        return 0.0;
+    }
+
+
     
     
     inline void read_scoreline_sscore(char * templateSeq,
@@ -207,9 +301,11 @@ class Viterbi {
         return simdi8_set(0);
     }
 
-  private:
+    void setSSLookup(float S73[NDSSP][NSSPRED][MAXCF], float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]);
 
-    static void PrintDebug(const HMM * q, const HMM *t,
+private:
+
+    void PrintDebug(const HMM * q, const HMM *t,
         Viterbi::BacktraceScore * backtraceScore,
         Viterbi::BacktraceResult * backtraceResult, const int ssm);
 
@@ -227,7 +323,25 @@ class Viterbi {
     // sIM[i][j] = score of best alignment up to indices (i,j) ending in (Ins,Match)
     // sMI[i][j] = score of best alignment up to indices (i,j) ending in (Match,Ins)
     simd_float * sMM_DG_MI_GD_IM_vec; // one vector for cache line optimization
-    
+    // look up of linear ss scores scaled by (S/maxXX)*255
+//    simd_int *ss33_lookup;
+//    simd_int *ss73_lookup;
+
+//    float S73[NDSSP][NSSPRED][MAXCF];
+    const float (*S73)[NSSPRED][MAXCF];
+//    float S33[NSSPRED][MAXCF][NSSPRED][MAXCF];
+    const float (*S33)[MAXCF][NSSPRED][MAXCF];
+//    float S37[NSSPRED][MAXCF][NDSSP];
+    const float (*S37)[MAXCF][NDSSP];
+
+    // needed to scale SS back
+//    float max33;
+//    float max73;
+    float *ss_score;
+    // weight for ss score
+    float ssw;
+    // set the scoring mode for ss score (DSSP_PRED, PRED_DSSP, PRED_PRED)
+    int ss_mode;
 };
 
 #endif

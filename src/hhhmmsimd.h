@@ -23,6 +23,11 @@ public:
     simd_int * lengths;					// length of HMMs respectively
     //M2M M2I M2D I2M I2I D2M D2D
     simd_float * tr;               // tr_m2m[i] = log2 of transition probabilities M2M
+    // contains index lookup for SS score dssp
+    unsigned char *dssp_index;
+    // contains index lookup for SS score prediction
+    unsigned char *pred_index;
+
 
 //    simd_float * tr_m2m;               // tr_m2m[i] = log2 of transition probabilities M2M
 //    simd_float * tr_m2i;               // tr_m2i[i] = log2 of transition probabilities M2I
@@ -43,7 +48,8 @@ private:
     HMM ** seqarr;
     int maxres;
 
-
+    // contains profile data (aligned in memory)
+    float *p_data;
 };
 
 

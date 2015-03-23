@@ -136,6 +136,7 @@ protected:
 
 	// secondary structure matrices
 	float S73[NDSSP][NSSPRED][MAXCF];
+	float S37[NSSPRED][MAXCF][NDSSP];
 	float S33[NSSPRED][MAXCF][NSSPRED][MAXCF];
 
 	Parameters par;

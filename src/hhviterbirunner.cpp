@@ -21,21 +21,28 @@ void ViterbiConsumerThread::clear() {
 }
 
 void ViterbiConsumerThread::align(int maxres, int nseqdis) {
-    Viterbi::ViterbiResult* viterbiResult = viterbiAlgo->Align(q_simd, t_hmm_simd, viterbiMatrix, maxres);
+
+    
+    int ss_hmm_mode = HMM::computeScoreSSMode(q_simd->GetHMM(0), t_hmm_simd->GetHMM(0));
+    for(size_t i = 1; i < maxres; i++){
+        ss_hmm_mode = std::min(ss_hmm_mode,
+                               HMM::computeScoreSSMode(q_simd->GetHMM(0), t_hmm_simd->GetHMM(i)));
+    }
+    Viterbi::ViterbiResult* viterbiResult = viterbiAlgo->Align(q_simd, t_hmm_simd, viterbiMatrix, maxres, ss_hmm_mode);
     for (int elem = 0; elem < maxres; elem++) {
         HMM * curr_t_hmm = t_hmm_simd->GetHMM(elem);
         Viterbi::BacktraceResult backtraceResult = Viterbi::Backtrace(viterbiMatrix,
                                                                       elem, viterbiResult->i, viterbiResult->j);
-        
+
         Viterbi::BacktraceScore backtraceScore = viterbiAlgo->ScoreForBacktrace(
-                                                                                q_simd, t_hmm_simd, elem, &backtraceResult, viterbiResult->score, 0, 0);
-        
+                                                                                q_simd, t_hmm_simd, elem, &backtraceResult, viterbiResult->score, ss_hmm_mode);
+
         // Overwrite *hit[bin] with Viterbi scores, Probabilities etc. of hit_cur
         Hit hit_cur;
         hit_cur.lastrep = (backtraceScore.score <= SMIN) ? 1 : 0;
-        
+
         hit_cur.initHitFromHMM(curr_t_hmm, nseqdis);
-        
+
         hit_cur.realign_around_viterbi = false;
         hit_cur.score = backtraceScore.score;
         hit_cur.score_ss = backtraceScore.score_ss;
@@ -43,41 +50,43 @@ void ViterbiConsumerThread::align(int maxres, int nseqdis) {
         hit_cur.score_sort = backtraceScore.score_sort;
         hit_cur.S = backtraceScore.S;
         hit_cur.S_ss = backtraceScore.S_ss;
-        
+
         hit_cur.i1 = backtraceResult.i_steps[backtraceResult.count];
         hit_cur.j1 = backtraceResult.j_steps[backtraceResult.count];
-        
+
         hit_cur.i = backtraceResult.i_steps;
-        
+
         hit_cur.j = backtraceResult.j_steps;
         hit_cur.nsteps = backtraceResult.count;
-        
+
         hit_cur.states = backtraceResult.states;
-        
+
         hit_cur.matched_cols = backtraceResult.matched_cols;
-        
+
         hit_cur.i2 = viterbiResult->i[elem];
         hit_cur.j2 = viterbiResult->j[elem];
-        
+
         hit_cur.entry = curr_t_hmm->entry;
-        
+
         //                std::cout << "Thread: " << thread_id << std::endl;
         //                printf ("%-12.12s  %-12.12s   irep=%-2i  score=%6.2f   i=%d j=%d\n",hit_cur->name,hit_cur->fam,hit_cur->irep,hit_cur->score,viterbiResult.i[elem], viterbiResult.j[elem]);
         //                printf ("%-12.12s  %-12.12s   irep=%-2i  score=%6.2f\n",hit_cur->name,hit_cur->fam,hit_cur->irep,backtraceScore.score);
         hits.push_back(hit_cur); // insert hit at beginning of list (last repeats first!) Deep Copy of hit_cur
     }
-    
+
     delete viterbiResult;
 }
 
 
 
 std::vector<Hit> ViterbiRunner::alignment(Parameters& par, HMMSimd * q_simd,
-    std::vector<HHEntry*> dbfiles, const float qsc, float* pb, const float S[20][20],
-    const float Sim[20][20], const float R[20][20]) {
+    std::vector<HHEntry*> dbfiles, const float qsc, float* pb,
+    const float S[20][20], const float Sim[20][20], const float R[20][20], const int ssm_mode,
+    const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF],
+    const float S37[NSSPRED][MAXCF][NDSSP]) {
 
     HMM * q = q_simd->GetHMM(0);
-    
+    std::cout << ssm_mode << std::endl;
     // Initialize memory
     std::vector<HMM*> t_hmm;
     for(size_t i = 0; i < HMMSimd::VEC_SIZE * thread_count; i++) {
@@ -89,8 +98,7 @@ std::vector<Hit> ViterbiRunner::alignment(Parameters& par, HMMSimd * q_simd,
     std::vector<ViterbiConsumerThread *> threads;
     for (int thread_id = 0; thread_id < thread_count; thread_id++) {
         t_hmm_simd[thread_id] = new HMMSimd(par.maxres);
-        ViterbiConsumerThread * thread = new ViterbiConsumerThread(thread_id, par, q_simd, t_hmm_simd[thread_id],
-                                                                   viterbiMatrix[thread_id]);
+        ViterbiConsumerThread * thread = new ViterbiConsumerThread(thread_id, par, q_simd, t_hmm_simd[thread_id],viterbiMatrix[thread_id], ssm_mode, S73, S33, S37);
         threads.push_back(thread);
     }
 
@@ -105,11 +113,11 @@ std::vector<Hit> ViterbiRunner::alignment(Parameters& par, HMMSimd * q_simd,
         HH_LOG(INFO) << "Alternative alignment: " << alignment << std::endl;
         unsigned int allElementToAlignCount = dbfiles_to_align.size();
         unsigned int seqBlockSize = allElementToAlignCount;
-        
+
         if(alignment == 0 && par.early_stopping_filter){
             seqBlockSize = 2000;
         }
-        
+
         for(unsigned int seqJunkStart = 0; seqJunkStart <  allElementToAlignCount; seqJunkStart += seqBlockSize ){
             //sort by length to improve performance.
             //desc sort (for better utilisation ofthreads)
@@ -117,7 +125,7 @@ std::vector<Hit> ViterbiRunner::alignment(Parameters& par, HMMSimd * q_simd,
             sort(dbfiles_to_align.begin() + seqJunkStart,
                  dbfiles_to_align.begin() + (seqJunkStart + seqJunkSize),
                  HHDatabaseEntryCompare());
-            
+
             // read in data for thread
 #pragma omp parallel for schedule(dynamic, 1)
             for (unsigned int idb = seqJunkStart; idb < (seqJunkStart + seqJunkSize); idb += HMMSimd::VEC_SIZE) {
@@ -126,21 +134,21 @@ std::vector<Hit> ViterbiRunner::alignment(Parameters& par, HMMSimd * q_simd,
                     current_thread_id = omp_get_thread_num();
                 #endif
                 const int current_t_index = (current_thread_id * HMMSimd::VEC_SIZE);
-                
+
                 std::vector<HMM *> templates_to_align;
-                
+
                 // read in alignment
                 int maxResElem = imin((seqJunkStart + seqJunkSize) - (idb),
                                       HMMSimd::VEC_SIZE);
-                
+
                 for (int i = 0; i < maxResElem; i++) {
                     HHEntry* entry = dbfiles_to_align.at(idb + i);
-                    
+
                     int format_tmp = 0;
                     char wg = 1; // performance reason
                     entry->getTemplateHMM(par, wg, qsc, format_tmp, pb, S, Sim, t_hmm[current_t_index + i]);
                     t_hmm[current_t_index + i]->entry = entry;
-                    
+
                     PrepareTemplateHMM(par, q, t_hmm[current_t_index + i], format_tmp, false, pb, R);
                     templates_to_align.push_back(t_hmm[current_t_index + i]);
                 }
@@ -153,7 +161,6 @@ std::vector<Hit> ViterbiRunner::alignment(Parameters& par, HMMSimd * q_simd,
                   // Mask excluded regions
                   exclude_regions(par.exclstr, maxResElem, q_simd, t_hmm_simd[current_thread_id], viterbiMatrix[current_thread_id]);
                 }
-
                 // start next job
                 threads[current_thread_id]->align(maxResElem, par.nseqdis);
             } // idb loop
@@ -165,12 +172,12 @@ std::vector<Hit> ViterbiRunner::alignment(Parameters& par, HMMSimd * q_simd,
             for (unsigned int thread = 0; thread < threads.size(); thread++) {
                 threads[thread]->clear();
             }
-            
+
             if ( alignment == 0  && par.early_stopping_filter )
             {
                 float early_stopping_sum = calculateEarlyStop(par, q, ret_hits, seqJunkStart);
                 float filter_cutoff = seqJunkSize * par.filter_thresh;
-                
+
                 if( early_stopping_sum < filter_cutoff){
                     HH_LOG(INFO) << "Stop after DB-HHM: " << (seqJunkStart + seqJunkSize) << " because early stop  "
                     << early_stopping_sum << " < filter cutoff " << filter_cutoff << "\n";
@@ -191,7 +198,7 @@ std::vector<Hit> ViterbiRunner::alignment(Parameters& par, HMMSimd * q_simd,
     }
     threads.clear();
     delete[] t_hmm_simd;
-    
+
     for(size_t i = 0; i < HMMSimd::VEC_SIZE * thread_count; i++) {
       delete t_hmm[i];
     }
@@ -216,13 +223,13 @@ float ViterbiRunner::calculateEarlyStop(Parameters& par, HMM * q, std::vector<Hi
         float alpha = 0;
         float log_Pcut = log(par.prefilter_evalue_thresh / par.dbsize);
         float log_dbsize = log(par.dbsize);
-        
+
         if (par.prefilter)
             alpha = par.alphaa + par.alphab * (hit_neff - 1) * (1 - par.alphac * (q_neff - 1));
-        
+
         current_hit.Eval = exp(current_hit.logPval + log_dbsize + (alpha * log_Pcut));
         current_hit.logEval = current_hit.logPval + log_dbsize + (alpha * log_Pcut);
-        
+
         // Rolling average: replace oldest data point at par.filter_counter by newest one
         float eval_normalized = 1.0/(1.0+current_hit.Eval);
         early_stop_result += eval_normalized;
@@ -231,8 +238,8 @@ float ViterbiRunner::calculateEarlyStop(Parameters& par, HMM * q, std::vector<Hi
 //        printf("QLen: %4.2f q_neff: %4.2f  lambda: %4.2f mu: %4.2f\n",q_len, q_neff, lamda, mu);
 //        printf("log_Pcut: %4.2f log_dbsize: %4.2f alpha: %4.2f   \n",log_Pcut, log_dbsize, alpha);
 
-        
-        
+
+
     }
     return early_stop_result;
 }

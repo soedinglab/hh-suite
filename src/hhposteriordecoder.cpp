@@ -51,31 +51,35 @@ bool compareIndices(const MACTriple &a, const MACTriple &b) {
   }
 }
 
-PosteriorDecoder::PosteriorDecoder(int maxres, bool local, int q_length) :
+PosteriorDecoder::PosteriorDecoder(int maxres, bool local, int q_length, const float ssw,
+								const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF],
+								const float S37[NSSPRED][MAXCF][NDSSP]) :
 	m_max_res(maxres),
 	m_local(local),
-	m_q_length(q_length) {
+	m_q_length(q_length),
+ 	S73(S73), S33(S33), S37(S37)
+{
+	this->ssw = ssw;
+	this->m_jmin = 1;
+	this->m_curr = (PosteriorMatrixCol *) malloc_simd_float((m_max_res + 2 ) * sizeof(PosteriorMatrixCol));
+	this->m_prev = (PosteriorMatrixCol *) malloc_simd_float((m_max_res + 2 ) * sizeof(PosteriorMatrixCol));
 
-	m_jmin = 1;
-	m_curr = (PosteriorMatrixCol *) malloc_simd_float((m_max_res + 2 ) * sizeof(PosteriorMatrixCol));
-	m_prev = (PosteriorMatrixCol *) malloc_simd_float((m_max_res + 2 ) * sizeof(PosteriorMatrixCol));
+	this->m_s_curr = (double*) malloc_simd_float((m_max_res + 2 ) * sizeof(double));
+	this->m_s_prev = (double*) malloc_simd_float((m_max_res + 2 ) * sizeof(double));
 
-	m_s_curr = (double*) malloc_simd_float((m_max_res + 2 ) * sizeof(double));
-	m_s_prev = (double*) malloc_simd_float((m_max_res + 2 ) * sizeof(double));
-
-	p_last_col = (double*) malloc_simd_float(q_length * sizeof(double));
+	this->p_last_col = (double*) malloc_simd_float(q_length * sizeof(double));
 
 	//m_p_min = (m_local ? simdf32_set(0.0f) : simdf32_set(-FLT_MAX));
-	m_p_min_scalar = (m_local ? 1.0f : 0.0);
+	this->m_p_min_scalar = (m_local ? 1.0f : 0.0);
 
-	m_p_forward = malloc_simd_float( sizeof(float));
+	this->m_p_forward = malloc_simd_float( sizeof(float));
 
-	m_back_forward_matrix_threshold = 0.0001;
-	m_backward_entries.clear();
-	m_forward_entries.clear();
+	this->m_back_forward_matrix_threshold = 0.0001;
+	this->m_backward_entries.clear();
+	this->m_forward_entries.clear();
 
-	scale = new double[q_length + 2];
-	m_temp_hit = new Hit;
+	this->scale = new double[q_length + 2];
+	this->m_temp_hit = new Hit;
 }
 
 PosteriorDecoder::~PosteriorDecoder() {

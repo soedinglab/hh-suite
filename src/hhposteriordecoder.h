@@ -58,7 +58,9 @@ public:
 				alt_i(alt_i), alt_j(alt_j) {};
 	};
 
-	PosteriorDecoder(int maxres, bool local, int q_length);
+	PosteriorDecoder(int maxres, bool local, int q_length, const float ssw,
+			         const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF],
+					 const float S37[NSSPRED][MAXCF][NDSSP]);
 
 	virtual ~PosteriorDecoder();
 
@@ -82,6 +84,16 @@ private:
 	PosteriorMatrixCol * m_prev;
 	PosteriorMatrixCol * m_curr;
 
+	//	sec. structure data
+	float ssw;
+	//  SCORE_ALIGNMENT SCORE_BACKTRACE
+	int ss_mode;
+	//    float S73[NDSSP][NSSPRED][MAXCF];
+	const float (*S73)[NSSPRED][MAXCF];
+	//    float S33[NSSPRED][MAXCF][NSSPRED][MAXCF];
+	const float (*S33)[MAXCF][NSSPRED][MAXCF];
+	//    float S37[NSSPRED][MAXCF][NDSSP];
+	const float (*S37)[MAXCF][NDSSP];
 
 
 	double * m_s_curr;		// MAC scores - current

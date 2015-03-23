@@ -607,11 +607,74 @@ void HHsearch::run(FILE* query_fh, char* query_path) {
 	  viterbiMatrices[i]->AllocateBacktraceMatrix(q->L, max_template_length);
 	}
 
-  ViterbiRunner viterbirunner(viterbiMatrices, dbs, par.threads);
-  std::vector<Hit> hits_to_add = viterbirunner.alignment(par, &q_vec, new_entries, par.qsc_db, pb, S, Sim, R);
+    ViterbiRunner viterbirunner(viterbiMatrices, dbs, par.threads);
+    std::vector<Hit> hits_to_add = viterbirunner.alignment(par, &q_vec, new_entries, par.qsc_db, pb, S, Sim, R, par.ssm, S73, S33, S37);
 
-  hitlist.N_searched = new_entries.size();
-  add_hits_to_hitlist(hits_to_add, hitlist);
+    hitlist.N_searched = new_entries.size();
+    add_hits_to_hitlist(hits_to_add, hitlist);
+
+//TODO
+//  if (v1 >= 2)
+//    cout << "\n";
+//  v = v1;
+//
+//  // Sort list according to sortscore
+//  if (v >= 3)
+//    printf("Sorting hit list ...\n");
+//  hitlist.SortList();
+//
+//  // Fit EVD (with lamda, mu) to score distribution?
+//  if (par.calm == 3) {
+//    hitlist.CalculatePvalues(q, par.loc, par.ssm, par.ssw); // Use NN prediction of lamda and mu
+//  }
+//  else if ((par.calm != 1 && q->lamda == 0) || par.calibrate > 0) {
+//    if (v >= 2 && par.loc)
+//      printf("Fitting scores with EVD (first round) ...\n");
+//    hitlist.MaxLikelihoodEVD(q, 3, par.loc, par.ssm, par.ssw); // first ML fit: exclude 3 best superfamilies from fit
+//
+//    if (v >= 3)
+//      printf("Number of families present in database: %i\n", hitlist.fams); // DEBUG
+//    if (hitlist.fams >= 100) {
+//      if (par.loc) {
+//        if (v >= 2)
+//          printf("Fitting scores with EVD (second round) ...\n");
+//        hitlist.MaxLikelihoodEVD(q, 0, par.loc, par.ssm, par.ssw); // second ML fit: exclude superfamilies with E-value<MINEVALEXCL
+//        hitlist.ResortList();
+//      }
+//      else {
+//        if (v >= 2)
+//          fprintf(stderr,
+//              "WARNING: E-values for global alignment option may be unreliable.\n");
+//        hitlist.ResortList();
+//      }
+//    }
+//    else {
+//      if (v) {
+//        fprintf(stderr, "\nWARNING: no E-values could be calculated.\n");
+//        fprintf(stderr, "To calculate E-values you have two options:\n");
+//        fprintf(stderr,
+//            "1. Calibrate your query profile HMM with a calibration database:\n");
+//        fprintf(stderr, "   > hhsearch -i yourHMM.hhm -d cal.hhm -cal\n");
+//        fprintf(stderr,
+//            "   This will insert a line in yourHMM.hhm with lamda and mu of the score distribution.\n");
+//        fprintf(stderr,
+//            "   cal.hhm contains 1220 HMMs from different SCOP superfamilies and is supplied with HHsearch.\n");
+//        fprintf(stderr,
+//            "   Instead of cal.hhm you may also use any SCOP database file, e.g. scop70_1.69\n");
+//        fprintf(stderr,
+//            "   Note that your HMM needs to be recalibrated when changing HMM-HMM alignment options.\n");
+//        fprintf(stderr, "2. Append cal.hhm to your own database:\n");
+//        fprintf(stderr, "   > cat cal.hhm >> yourDB.hhm\n");
+//        fprintf(stderr,
+//            "   But note that HMMs contained in cal.hmm will pop up among your hits.\n");
+//      }
+//    }
+//    if (par.calm == 2)
+//      hitlist.GetPvalsFromCalibration(q, par.loc, par.calm, par.ssm, par.ssw);
+//  }
+//  else
+//    hitlist.GetPvalsFromCalibration(q, par.loc, par.calm, par.ssm, par.ssw);
+
 
 	// Set new ss weight for realign
 	par.ssw = par.ssw_realign;

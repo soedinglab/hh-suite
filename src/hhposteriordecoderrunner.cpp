@@ -25,10 +25,12 @@ int compareIrep(const void * a, const void * b) {
 }
 
 PosteriorDecoderRunner::PosteriorDecoderRunner( PosteriorMatrix **posterior_matrices,
-        ViterbiMatrix **backtrace_matrix, const int n_threads)
+        ViterbiMatrix **backtrace_matrix, const int n_threads, const float ssw,
+        const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF],
+        const float S37[NSSPRED][MAXCF][NDSSP])
         : m_posterior_matrices(posterior_matrices),
           m_backtrace_matrix(backtrace_matrix),
-          m_n_threads(n_threads) {}
+          m_n_threads(n_threads), S73(S73), S33(S33), S37(S37) {}
 
 PosteriorDecoderRunner::~PosteriorDecoderRunner() {
 }
@@ -57,7 +59,7 @@ void PosteriorDecoderRunner::executeComputation(HMM &q, std::vector<Hit *>  hits
     }
 
     // Routine to start consumer threads
-    std::vector<PosteriorDecoder *> *threads = initializeConsumerThreads(par.loc, target_max_length, q.L);
+    std::vector<PosteriorDecoder *> *threads = initializeConsumerThreads(par.loc, target_max_length, q.L, par.ssw, S73, S33, S37);
     // create one hmm for each threads
     HMM **t_hmm = new HMM *[m_n_threads];
     for (int i = 0; i < m_n_threads; i++) {
@@ -120,10 +122,13 @@ void PosteriorDecoderRunner::executeComputation(HMM &q, std::vector<Hit *>  hits
 //	- Memory of the PosteriorMatrix is freed by the consumer threads respectively
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 std::vector<PosteriorDecoder *> *PosteriorDecoderRunner::initializeConsumerThreads(char loc,
-                                                size_t max_target_size, size_t query_size) {
+                                                size_t max_target_size, size_t query_size,
+                                                const float ssw, const float S73[NDSSP][NSSPRED][MAXCF],
+                                                const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF],
+                                                const float S37[NSSPRED][MAXCF][NDSSP]) {
     std::vector<PosteriorDecoder *> *threads = new std::vector<PosteriorDecoder *>;
     for (int thread_id = 0; thread_id < m_n_threads; thread_id++) {
-        PosteriorDecoder *thread = new PosteriorDecoder(max_target_size, loc, query_size);
+        PosteriorDecoder *thread = new PosteriorDecoder(max_target_size, loc, query_size, ssw, S73, S33, S37);
         threads->push_back(thread);
     }
     return threads;

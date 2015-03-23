@@ -34,7 +34,7 @@ HHblits::HHblits(Parameters& parameters,
 
   // Set secondary structure substitution matrix
   if (par.ssm)
-    SetSecStrucSubstitutionMatrix(par.ssa, S73, S33);
+      SetSecStrucSubstitutionMatrix(par.ssa, S73, S37, S33);
 
   // Prepare pseudocounts
   if (!par.nocontxt && *par.clusterfile) {
@@ -935,7 +935,7 @@ void HHblits::RescoreWithViterbiKeepAlignment(HMMSimd& q_vec,
   std::vector<Hit> hits_to_add = viterbirunner.alignment(par, &q_vec,
                                                          hits_to_rescore,
                                                          par.qsc_db, pb, S, Sim,
-                                                         R);
+                                                         R, par.ssm, S73, S33, S37);
 
   for (std::vector<Hit>::size_type i = 0; i != hits_to_add.size(); i++) {
     stringstream ss_tmp;
@@ -1028,7 +1028,7 @@ void HHblits::perform_realign(HMMSimd& q_vec, const char input_format,
   }
 
   // Initialize a Null-value as a return value if not items are available anymore
-  PosteriorDecoderRunner runner(posteriorMatrices, viterbiMatrices, par.threads);
+  PosteriorDecoderRunner runner(posteriorMatrices, viterbiMatrices, par.threads, par.ssw, S73, S33, S37);
 
   HH_LOG(INFO)
       << "Realigning " << nhits
@@ -1265,7 +1265,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
     std::vector<Hit> hits_to_add = viterbirunner.alignment(par, &q_vec,
                                                            new_entries,
                                                            par.qsc_db, pb, S,
-                                                           Sim, R);
+                                                           Sim, R, par.ssm, S73, S33, S37);
 
     add_hits_to_hitlist(hits_to_add, hitlist);
 
@@ -1296,7 +1296,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
         std::vector<Hit> hits_to_add = viterbirunner.alignment(par, &q_vec,
                                                                old_entries,
                                                                par.qsc_db, pb,
-                                                               S, Sim, R);
+                                                               S, Sim, R, par.ssm, S73, S33, S37);
 
         add_hits_to_hitlist(hits_to_add, hitlist);
 

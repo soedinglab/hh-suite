@@ -1,4 +1,3 @@
-
 #include "hhviterbi.h"
 #include "hhviterbimatrix.h"
 
@@ -21,10 +20,21 @@ res        = simdui8_max(res,index_vec);
 // Compare HMMs with one another and look for sub-optimal alignments that share no pair with previous ones
 // The function is called with q and t
 /////////////////////////////////////////////////////////////////////////////////////
+#ifdef VITERBI_SS_SCORE
+#ifdef VITERBI_CELLOFF
+void Viterbi::AlignWithCellOffAndSS(HMMSimd* q, HMMSimd* t,ViterbiMatrix * viterbiMatrix,
+                                    int maxres, ViterbiResult* result, int ss_hmm_mode)
+#else
+void Viterbi::AlignWithOutCellOffAndSS(HMMSimd* q, HMMSimd* t,ViterbiMatrix * viterbiMatrix,
+                                    int maxres, ViterbiResult* result, int ss_hmm_mode)
+#endif
+#else
 #ifdef VITERBI_CELLOFF
 void Viterbi::AlignWithCellOff(HMMSimd* q, HMMSimd* t,ViterbiMatrix * viterbiMatrix, int maxres, ViterbiResult* result)
 #else
-void Viterbi::AlignWithOutCellOff(HMMSimd* q, HMMSimd* t,ViterbiMatrix * viterbiMatrix, int maxres, ViterbiResult* result)
+void Viterbi::AlignWithOutCellOff(HMMSimd* q, HMMSimd* t,ViterbiMatrix * viterbiMatrix,
+                                  int maxres, ViterbiResult* result)
+#endif
 #endif
 {
     
@@ -71,7 +81,21 @@ void Viterbi::AlignWithOutCellOff(HMMSimd* q, HMMSimd* t,ViterbiMatrix * viterbi
     const simd_int im_mm_vec     = simdi32_set(16);//   00010000
     const simd_int dg_mm_vec     = simdi32_set(32);//   00100000
     const simd_int mi_mm_vec     = simdi32_set(64);//   01000000
-    
+
+#ifdef VITERBI_SS_SCORE
+    HMM * q_s = q->GetHMM(0);
+    const unsigned char * t_index;
+    if(ss_hmm_mode == HMM::PRED_PRED || ss_hmm_mode == HMM::DSSP_PRED  ){
+        t_index = t->pred_index;
+        std::cout << "PRED!!!!" << std::endl;
+
+    }else if(ss_hmm_mode == HMM::PRED_DSSP){
+        t_index = t->dssp_index;
+        std::cout << "DSSP!!!!" << std::endl;
+
+    }
+    simd_float * ss_score_vec = (simd_float *) ss_score;
+#endif
     
 #ifdef AVX2
     const simd_int shuffle_mask_extract = _mm256_setr_epi8(0,  4,  8,  12, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -114,8 +138,7 @@ void Viterbi::AlignWithOutCellOff(HMMSimd* q, HMMSimd* t,ViterbiMatrix * viterbi
     
     simd_float score_vec     = simdf32_set(-FLT_MAX);
     simd_int byte_result_vec = simdi32_set(0);
-    
-    
+
     // Initialization of top row, i.e. cells (0,j)
     for (j=0; j <= t->L; ++j)
     {
@@ -125,25 +148,23 @@ void Viterbi::AlignWithOutCellOff(HMMSimd* q, HMMSimd* t,ViterbiMatrix * viterbi
         sMM_DG_MI_GD_IM_vec[index_pos_j + 2] = simdf32_set(-FLT_MAX);
         sMM_DG_MI_GD_IM_vec[index_pos_j + 3] = simdf32_set(-FLT_MAX);
         sMM_DG_MI_GD_IM_vec[index_pos_j + 4] = simdf32_set(-FLT_MAX);
-
     }
-    
     // Viterbi algorithm
     const int queryLength = q->L;
     for (i=1; i <= queryLength; ++i) // Loop through query positions i
     {
-        
+
         // If q is compared to t, exclude regions where overlap of q with t < min_overlap residues
         // Initialize cells
-        sMM_i_1_j_1 = simdf32_set(-(i-1)*penalty_gap_query);  // initialize at (i-1,0)
+        sMM_i_1_j_1 = simdf32_set(-(i - 1) * penalty_gap_query);  // initialize at (i-1,0)
         sIM_i_1_j_1 = simdf32_set(-FLT_MAX); // initialize at (i-1,jmin-1)
         sMI_i_1_j_1 = simdf32_set(-FLT_MAX);
         sDG_i_1_j_1 = simdf32_set(-FLT_MAX);
         sGD_i_1_j_1 = simdf32_set(-FLT_MAX);
-        
+
         // initialize at (i,jmin-1)
         const unsigned int index_pos_i = 0 * 5;
-        sMM_DG_MI_GD_IM_vec[index_pos_i + 0] = simdf32_set(-i*penalty_gap_query);           // initialize at (i,0)
+        sMM_DG_MI_GD_IM_vec[index_pos_i + 0] = simdf32_set(-i * penalty_gap_query);           // initialize at (i,0)
         sMM_DG_MI_GD_IM_vec[index_pos_i + 1] = simdf32_set(-FLT_MAX);
         sMM_DG_MI_GD_IM_vec[index_pos_i + 2] = simdf32_set(-FLT_MAX);
         sMM_DG_MI_GD_IM_vec[index_pos_i + 3] = simdf32_set(-FLT_MAX);
@@ -151,23 +172,48 @@ void Viterbi::AlignWithOutCellOff(HMMSimd* q, HMMSimd* t,ViterbiMatrix * viterbi
 #ifdef AVX2
         unsigned long long * sCO_MI_DG_IM_GD_MM_vec = (unsigned long long *) viterbiMatrix->getRow(i);
 #else
-        unsigned int   * sCO_MI_DG_IM_GD_MM_vec   = (unsigned int *) viterbiMatrix->getRow(i);
+        unsigned int *sCO_MI_DG_IM_GD_MM_vec = (unsigned int *) viterbiMatrix->getRow(i);
 #endif
-        
-        const unsigned int start_pos_tr_i_1 = (i-1) * 7;
-        const unsigned int start_pos_tr_i = (i) * 7;
-        const simd_float q_m2m = simdf32_load((float *) (q->tr+start_pos_tr_i_1 + 2)); // M2M
-        const simd_float q_m2d = simdf32_load((float *) (q->tr+start_pos_tr_i_1 + 3)); // M2D
-        const simd_float q_d2m = simdf32_load((float *) (q->tr+start_pos_tr_i_1 + 4)); // D2M
-        const simd_float q_d2d = simdf32_load((float *) (q->tr+start_pos_tr_i_1 + 5)); // D2D
-        const simd_float q_i2m = simdf32_load((float *) (q->tr+start_pos_tr_i_1 + 6)); // I2m
-        const simd_float q_i2i = simdf32_load((float *) (q->tr+start_pos_tr_i      )); // I2I
-        const simd_float q_m2i = simdf32_load((float *) (q->tr+start_pos_tr_i   + 1)); // M2I
 
-        
+        const unsigned int start_pos_tr_i_1 = (i - 1) * 7;
+        const unsigned int start_pos_tr_i = (i) * 7;
+        const simd_float q_m2m = simdf32_load((float *) (q->tr + start_pos_tr_i_1 + 2)); // M2M
+        const simd_float q_m2d = simdf32_load((float *) (q->tr + start_pos_tr_i_1 + 3)); // M2D
+        const simd_float q_d2m = simdf32_load((float *) (q->tr + start_pos_tr_i_1 + 4)); // D2M
+        const simd_float q_d2d = simdf32_load((float *) (q->tr + start_pos_tr_i_1 + 5)); // D2D
+        const simd_float q_i2m = simdf32_load((float *) (q->tr + start_pos_tr_i_1 + 6)); // I2m
+        const simd_float q_i2i = simdf32_load((float *) (q->tr + start_pos_tr_i)); // I2I
+        const simd_float q_m2i = simdf32_load((float *) (q->tr + start_pos_tr_i + 1)); // M2I
+
+
         // Find maximum score; global alignment: maxize only over last row and last column
         const bool findMaxInnerLoop = (local || i == queryLength);
         const int targetLength = t->L;
+#ifdef VITERBI_SS_SCORE
+
+        if(ss_hmm_mode == HMM::NO_SS_INFORMATION){
+            // set all to log(1.0) = 0.0
+            for (j = 0; j <= (targetLength*VEC_SIZE); j++) // Loop through template positions j
+            {
+                ss_score[j] = 0.0;
+            }
+        }else {
+            const float * score;
+            if(ss_hmm_mode == HMM::PRED_PRED){
+                score = &S33[ (int)q_s->ss_pred[i]][ (int)q_s->ss_conf[i]][0][0];
+            }else if (ss_hmm_mode == HMM::DSSP_PRED){
+                score = &S73[ (int)q_s->ss_dssp[i]][0][0];
+            }else{
+                score = &S37[ (int)q_s->ss_pred[i]][ (int)q_s->ss_conf[i]][0];
+            }
+            // access SS scores and write them to the ss_score array
+            for (j = 0; j <= (targetLength*VEC_SIZE); j++) // Loop through template positions j
+            {
+                ss_score[j] = ssw * score[t_index[j]];
+
+            }
+        }
+#endif
         for (j=1; j <= targetLength; ++j) // Loop through template positions j
         {
             simd_int index_vec;
@@ -184,8 +230,6 @@ void Viterbi::AlignWithOutCellOff(HMMSimd* q, HMMSimd* t,ViterbiMatrix * viterbi
             const simd_float t_i2i = simdf32_load((float *) (t->tr+start_pos_tr_j));   // I2i
             const simd_float t_m2i = simdf32_load((float *) (t->tr+start_pos_tr_j+1));     // M2I
            
-            // mm < min { 0 }
-            byte_result_vec = simdi_xor(byte_result_vec, byte_result_vec); // set 0 (faster)
             // Find max value
             // CALCULATE_MAX6( sMM_i_j,
             //                 smin,
@@ -234,6 +278,9 @@ void Viterbi::AlignWithOutCellOff(HMMSimd* q, HMMSimd* t,ViterbiMatrix * viterbi
             // TODO add secondary structure score
             // calculate amino acid profile-profile scores
             Si_vec = log2f4(ScalarProd20Vec((simd_float *) q->p[i],(simd_float *) t->p[j]));
+#ifdef VITERBI_SS_SCORE
+            Si_vec = simdf32_add(ss_score_vec[j], Si_vec);
+#endif
             Si_vec = simdf32_add(Si_vec, shift_vec);
             
             sMM_i_j = simdf32_add(sMM_i_j, Si_vec);
