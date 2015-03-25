@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from a3m import A3M_Container
+from a3m import A3MFormatError
 import fileinput
 import sys
 
@@ -11,7 +12,7 @@ def main():
   a3m = A3M_Container()
   
   if(filename.lower() == "stdin"):
-    fh = fileinput.input()
+    fh = sys.stdin
   else:
     fh = open(filename, "r")
     
@@ -20,7 +21,7 @@ def main():
     size = a3m.get_number_sequences()
     print(size)
   except A3MFormatError as e:
-    sys.stderr.write()
+    sys.stderr.write(e)
     exit(1)
 
 

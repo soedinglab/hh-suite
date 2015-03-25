@@ -40,7 +40,7 @@ class A3M_Container:
     tokens = header[1:].split()
     header_name = header[1:].split()[0]
     if header_name.endswith("_consensus"):
-      if consensus:
+      if self.consensus:
         raise A3MFormatError("Multiple definitions of consensus!")
       else:
         match_states = self.check_sequence(sequence)
@@ -157,7 +157,7 @@ class A3M_Container:
     for line in fh:
       if line[0] == "#":
         if is_first_line:
-          sequence_header = line
+          self.header = line
         else:
           #skip line
           pass
@@ -169,7 +169,9 @@ class A3M_Container:
           
         sequence_header = line.rstrip()
       else:
-        sequence += line.strip()
+        sequence += line.strip().strip("\x00")
+        
+      is_first_line = False
     
     if sequence_header:
       self.check_and_add_sequence(sequence_header, sequence)
