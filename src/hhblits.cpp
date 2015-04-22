@@ -670,6 +670,7 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
     else if (!strcmp(argv[i], "-cov") && (i < argc - 1))
       par.coverage = atoi(argv[++i]);
     else if (!strcmp(argv[i], "-diff") && (i < argc - 1))
+      //Will be zero if "Inf" or other non-numeric values are passed to atoi
       par.Ndiff = atoi(argv[++i]);
     else if (!strcmp(argv[i], "-all") || !strcmp(argv[i], "-nodiff")) {
       par.allseqs = true;
