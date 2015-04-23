@@ -101,7 +101,8 @@ void HHalign::help(Parameters& par, char all) {
   printf("Filter options applied to query MSA, template MSA, and result MSA              \n");
   printf(" -id   [0,100]  maximum pairwise sequence identity (def=%i)\n", par.max_seqid);
   printf(" -diff [0,inf[  filter MSAs by selecting most diverse set of sequences, keeping \n");
-  printf("                at least this many seqs in each MSA block of length 50 (def=%i) \n",par.Ndiff);
+  printf("                at least this many seqs in each MSA block of length 50 \n");
+  printf("                Zero and non-numerical values turn off the filtering. (def=%i) \n", par.Ndiff);
   printf(" -cov  [0,100]  minimum coverage with master sequence (%%) (def=%i)             \n", par.coverage);
   printf(" -qid  [0,100]  minimum sequence identity with master sequence (%%) (def=%i)    \n", par.qid);
   printf(" -qsc  [0,100]  minimum score per column with master sequence (default=%.1f)    \n", par.qsc);
