@@ -87,7 +87,7 @@ HMM* q = new HMM;         //Create a HMM with maximum of par.maxres match states
 /////////////////////////////////////////////////////////////////////////////////////
 void help(char all = 0) {
   printf("\n");
-  printf("HHmake %i.%i.%i (-)\n", HHSUITE_VERSION_MAJOR, HHSUITE_VERSION_MINOR, HHSUITE_VERSION_PATCH, HHSUITE_DATE);
+  printf("HHmake %i.%i.%i (%s)\n", HHSUITE_VERSION_MAJOR, HHSUITE_VERSION_MINOR, HHSUITE_VERSION_PATCH, HHSUITE_DATE);
   printf(
       "Build an HMM from an input alignment in A2M, A3M, or FASTA format,   \n");
   printf(

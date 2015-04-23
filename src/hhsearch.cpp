@@ -158,12 +158,11 @@ void HHsearch::help(Parameters& par, char all) {
   printf(" -diff [0,inf[  filter MSAs by selecting most diverse set of sequences, keeping \n");
   printf("                at least this many seqs in each MSA block of length 50 \n");
   printf("                Zero and non-numerical values turn off the filtering. (def=%i) \n", par.Ndiff);
-
   printf(" -cov  [0,100]  minimum coverage with master sequence (%%) (def=%i)             \n", par.coverage);
   printf(" -qid  [0,100]  minimum sequence identity with master sequence (%%) (def=%i)    \n", par.qid);
   printf(" -qsc  [0,100]  minimum score per column with master sequence (default=%.1f)    \n", par.qsc);
   printf(" -neff [1,inf]  target diversity of multiple sequence alignment (default=off)   \n");
-  printf(" -mark          do not filter out sequences marked by \">@\"in their name line  \n", par.qsc);
+  printf(" -mark          do not filter out sequences marked by \">@\"in their name line  \n");
   printf("\n");
 
   printf("HMM-HMM alignment options:                                                       \n");

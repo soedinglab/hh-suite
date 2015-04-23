@@ -76,7 +76,7 @@ char program_name[NAMELEN];
 /////////////////////////////////////////////////////////////////////////////////////
 void help() {
   printf("\n");
-  printf("HHfilter %i.%i.%i (-)\n", HHSUITE_VERSION_MAJOR, HHSUITE_VERSION_MINOR, HHSUITE_VERSION_PATCH, HHSUITE_DATE);
+  printf("HHfilter %i.%i.%i (%s)\n", HHSUITE_VERSION_MAJOR, HHSUITE_VERSION_MINOR, HHSUITE_VERSION_PATCH, HHSUITE_DATE);
   printf(
       "Filter an alignment by maximum pairwise sequence identity, minimum coverage,\n");
   printf(

@@ -106,7 +106,7 @@ void HHalign::help(Parameters& par, char all) {
   printf(" -cov  [0,100]  minimum coverage with master sequence (%%) (def=%i)             \n", par.coverage);
   printf(" -qid  [0,100]  minimum sequence identity with master sequence (%%) (def=%i)    \n", par.qid);
   printf(" -qsc  [0,100]  minimum score per column with master sequence (default=%.1f)    \n", par.qsc);
-  printf(" -mark          do not filter out sequences marked by \">@\"in their name line  \n", par.qsc);
+  printf(" -mark          do not filter out sequences marked by \">@\"in their name line  \n");
   printf("\n");
 
   printf("HMM-HMM alignment options:                                                       \n");
