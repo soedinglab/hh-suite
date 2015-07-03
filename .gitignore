@@ -24,5 +24,6 @@ tags
 /src/cstranslate
 /src/cstranslate
 .project
+.cproject
 /Debug
 /build

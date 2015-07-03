@@ -39,6 +39,7 @@ class A3M_Container:
   def check_and_add_consensus(self, header, sequence):
     tokens = header[1:].split()
     header_name = header[1:].split()[0]
+    print(header)
     if header_name.endswith("_consensus"):
       if self.consensus:
         raise A3MFormatError("Multiple definitions of consensus!")
