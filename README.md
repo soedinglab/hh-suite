@@ -21,7 +21,7 @@ Many posthumous thanks to Michael Farrar for his great code!
  Continuous Integration
 *****************************************************************************
 
-
+[ ![Codeship Status for soedinglab/hh-suite](https://codeship.com/projects/f79d89f0-03a1-0133-01be-62fced7320b0/status?branch=master)](https://codeship.com/projects/89223)
 
 
 *****************************************************************************
