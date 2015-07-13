@@ -367,6 +367,8 @@ sub AlignSW {
     $i=$$imax; $j=$$jmax;
     $$xseq=""; $$yseq="";
     while ($state) {
+   $i >= 0 or die("Error: \$i < 0 on line 370 in module Align.pm");
+   $j >= 0 or die("Error: \$j < 0 on line 371 in module Align.pm");
 	if ($state==1) {        
 	    # current state is M (match-match)
 	    unshift(@$ri,$i);
@@ -499,6 +501,16 @@ sub AlignNW {
     unshift (@yres,21); unshift (@ychr," "); # insert dummy 0'th element
     
     &SetSubstitutionMatrix;
+
+    my $OutsidePenalty = 999; # original value
+    # To avoid that i or j gets negative, set OutsidePenalty high enough
+    # It might be more efficient, to stop if $i=0 or $j=0 and add the gaps
+    my $maxlen = $Lx;
+    if ($Ly > $maxlen) { $maxlen = $Ly; }
+    my $Maxpenalty = 9; # absolute of minimum value from BLOSUM62
+    if ($main::g > $Maxpenalty) { $Maxpenalty = $main::g; }
+    $OutsidePenalty = ($maxlen + 1) * $Maxpenalty;
+    if ($OutsidePenalty < 999) { $OutsidePenalty = 999; }
     
    # Initialization
     $M[0][0]=$A[0][0]=$B[0][0]=0;
@@ -582,6 +594,9 @@ sub AlignNW {
     $i=$Lx; $j=$Ly;
     $$xseq=""; $$yseq="";
     while ($i || $j) {
+      $i >= 0 or die("Error: \$i < 0 on line 595 in module Align.pm");
+      $j >= 0 or die("Error: \$j < 0 on line 596 in module Align.pm");
+
 	if ($state==1) {        
 	    # current state is M (match-match)
 	    unshift(@$ri,$i);
