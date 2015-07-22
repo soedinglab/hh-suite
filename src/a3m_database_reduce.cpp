@@ -11,7 +11,7 @@
 #include <sstream>
 
 void usage() {
-  std::cout << "a3m_database_reducer -i [ffindex_a3m_database_prefix] -o [ffindex_ca3m_database_prefix] -d [ffindex_sequence_database_prefix]" << std::endl;
+  std::cout << "a3m_database_reduce -i [ffindex_a3m_database_prefix] -o [ffindex_ca3m_database_prefix] -d [ffindex_sequence_database_prefix]" << std::endl;
 }
 
 int main(int argc, char **argv) {

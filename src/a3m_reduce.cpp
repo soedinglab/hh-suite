@@ -3,7 +3,7 @@
 #include <sstream>
 
 void usage() {
-  std::cout << "USAGE: a3m_reducer -i [inputfile|stdin] -o [outputfile|stdout] -d [ffindex_sequence_database_prefix]" << std::endl;
+  std::cout << "USAGE: a3m_reduce -i [inputfile|stdin] -o [outputfile|stdout] -d [ffindex_sequence_database_prefix]" << std::endl;
 }
 
 int main(int argc, char **argv) {
