@@ -234,7 +234,7 @@ void HHblitsDatabase::getEntriesFromNames(
       } else {
         //TODO: error
         HH_LOG(WARNING)
-            << "warning: could not fetch entry from a3m or hhm!" << std::endl;
+            << "Could not fetch entry from a3m or hhm!" << std::endl;
         HH_LOG(WARNING) << "\tentry: " << hits[i].second << std::endl;
         HH_LOG(WARNING) << "\ta3m_db: " << a3m_database->data_filename
                                   << std::endl;
@@ -517,7 +517,7 @@ void HHFileEntry::getTemplateA3M(Parameters& par, float* pb,
   if (!strncmp(line, "HMMER", 5)) {
     // Uncomment this line to allow HMMER2/HMMER3 models as queries:
     HH_LOG(ERROR)
-        << "Error: Use of HMMER format as input will result in severe loss of sensitivity!\n";
+        << "Use of HMMER format as input will result in severe loss of sensitivity!\n";
   }
   // ... or is it an hhm file?
   else if (!strncmp(line, "NAME", 4) || !strncmp(line, "HH", 2)) {

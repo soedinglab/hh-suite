@@ -615,7 +615,7 @@ void HitList::PrintMatrices(HMM* q, std::stringstream& out,
 
   if (chosen == 0) {
     HH_LOG(WARNING)
-        << "Warning: No homologs found for printing matrix!" << std::endl;
+        << "No homologs found for printing matrix!" << std::endl;
     return;
   }
 

@@ -382,7 +382,7 @@ int HMM::Read(FILE* dbf, const int maxcol, const int nseqdis, float* pb,
 				} else //line contains sequence residues
 				{
 					if (k == -1) {
-					  HH_LOG(WARNING) 	<< "WARNING: Ignoring following line while reading HMM" << name << ":\n\'" << line << "\'" << std::endl;
+					  HH_LOG(WARNING) 	<< "Ignoring following line while reading HMM" << name << ":\n\'" << line << "\'" << std::endl;
 						continue;
 					}
 
@@ -400,7 +400,7 @@ int HMM::Read(FILE* dbf, const int maxcol, const int nseqdis, float* pb,
 								l++;
 							} else if (ss2i(line[h]) == -2) {
 								HH_LOG(WARNING) << std::endl
-										<< "WARNING: ignoring invalid symbol \'"
+										<< "Ignoring invalid symbol \'"
 										<< line[h] << "\' at pos. " << h
 										<< " in line '" << line << "' of HMM "
 										<< name << "\n";
@@ -419,7 +419,7 @@ int HMM::Read(FILE* dbf, const int maxcol, const int nseqdis, float* pb,
 								l++;
 							} else if (sa2i(line[h]) == -2) {
 								HH_LOG(WARNING) << std::endl
-										<< "WARNING: ignoring invalid symbol \'"
+										<< "Ignoring invalid symbol \'"
 										<< line[h] << "\' at pos. " << h
 										<< " in line '" << line << "' of HMM "
 										<< name << "\n";
@@ -438,7 +438,7 @@ int HMM::Read(FILE* dbf, const int maxcol, const int nseqdis, float* pb,
 								l++;
 							} else if (ss2i(line[h]) == -2) {
 								HH_LOG(WARNING) << std::endl
-										<< "WARNING: ignoring invalid symbol \'"
+										<< "Ignoring invalid symbol \'"
 										<< line[h] << "\' at pos. " << h
 										<< " in line '" << line << "' of HMM "
 										<< name << "\n";
@@ -455,7 +455,7 @@ int HMM::Read(FILE* dbf, const int maxcol, const int nseqdis, float* pb,
 								l++;
 							} else if (cf2i(line[h]) == -2) {
 								HH_LOG(WARNING) << std::endl
-										<< "WARNING: ignoring invalid symbol \'"
+										<< "Ignoring invalid symbol \'"
 										<< line[h] << "\' at pos. " << h
 										<< " in line '" << line << "' of HMM "
 										<< name << "\n";
@@ -471,7 +471,7 @@ int HMM::Read(FILE* dbf, const int maxcol, const int nseqdis, float* pb,
 								l++;
 							} else if (aa2i(line[h]) == -2) {
 								HH_LOG(WARNING) << std::endl
-										<< "WARNING: ignoring invalid symbol \'"
+										<< "Ignoring invalid symbol \'"
 										<< line[h] << "\' at pos. " << h
 										<< " in line '" << line << "' of HMM "
 										<< name << "\n";
@@ -583,16 +583,16 @@ int HMM::Read(FILE* dbf, const int maxcol, const int nseqdis, float* pb,
 				++i;
 				if (next_i != prev_i + 1)
 					if (++warn <= 5) {
-						HH_LOG(WARNING) << std::endl << "WARNING: in HMM " << name
+						HH_LOG(WARNING) << "In HMM " << name
 								<< " state " << prev_i
 								<< " is followed by state " << next_i << "\n";
 						if (warn == 5) {
 							HH_LOG(WARNING) << std::endl
-									<< "WARNING: further warnings while reading HMMs will be suppressed.\n";
+									<< "Further warnings while reading HMMs will be suppressed.\n";
 						}
 					}
 				if (i > L) {
-					HH_LOG(WARNING) << std::endl << "WARNING: in HMM " << name
+					HH_LOG(WARNING) << std::endl << "In HMM " << name
 							<< " there are more columns than the stated length "
 							<< L << ". Skipping HMM\n";
 					return 2;
@@ -644,7 +644,7 @@ int HMM::Read(FILE* dbf, const int maxcol, const int nseqdis, float* pb,
 			if (line[0] == '/' && line[1] == '/')
 				break;
 		} else
-			HH_LOG(WARNING) << std::endl << "WARNING: Ignoring line\n\'" << line
+			HH_LOG(WARNING) << std::endl << "Ignoring line\n\'" << line
 					<< "\'\nin HMM " << name << "\n";
 
 	} //while(getline)
@@ -671,7 +671,7 @@ int HMM::Read(FILE* dbf, const int maxcol, const int nseqdis, float* pb,
 				<< " of residues exceeded while reading HMM " << name << "\n";
 	}
 	if (!i) {
-		HH_LOG(WARNING) << std::endl << "WARNING: HMM " << name
+		HH_LOG(WARNING) << std::endl << "HMM " << name
 		    << " contains no match states. Check the alignment that gave rise to this HMM.\n";
 	}
 
@@ -800,7 +800,7 @@ int HMM::ReadHMMer(FILE* dbf, const char showcons, float* pb, char* filestr) {
 				strcut(ptr);
 				if (strlen(seq[nsa_dssp]) + strlen(ptr) >= (unsigned) (maxres))
 					printf(
-							"WARNING: HMM %s has SADSS records with more than %i residues.\n",
+							"HMM %s has SADSS records with more than %i residues.\n",
 							name, maxres);
 				else
 					strcat(seq[nsa_dssp], ptr);
@@ -821,7 +821,7 @@ int HMM::ReadHMMer(FILE* dbf, const char showcons, float* pb, char* filestr) {
 				strcut(ptr);
 				if (strlen(seq[nss_pred]) + strlen(ptr) >= (unsigned) (maxres))
 					printf(
-							"WARNING: HMM %s has SSPRD records with more than %i residues.\n",
+							"HMM %s has SSPRD records with more than %i residues.\n",
 							name, maxres);
 				else
 					strcat(seq[nss_pred], ptr);
@@ -841,7 +841,7 @@ int HMM::ReadHMMer(FILE* dbf, const char showcons, float* pb, char* filestr) {
 				strcut(ptr);
 				if (strlen(seq[nss_conf]) + strlen(ptr) >= (unsigned) (maxres))
 					printf(
-							"WARNING: HMM %s has SSPRD records with more than %i residues.\n",
+							"HMM %s has SSPRD records with more than %i residues.\n",
 							name, maxres);
 				else
 					strcat(seq[nss_conf], ptr);
@@ -880,7 +880,7 @@ int HMM::ReadHMMer(FILE* dbf, const char showcons, float* pb, char* filestr) {
 			if (lamda < 0) {
 				if (ignore_hmmer_cal == 0) {
 					HH_LOG(WARNING) << std::endl
-							<< "WARNING: some HMMs have been calibrated with HMMER's 'hmmcalibrate'. These calibrations will be ignored\n";
+							<< "Some HMMs have been calibrated with HMMER's 'hmmcalibrate'. These calibrations will be ignored\n";
 				}
 				ignore_hmmer_cal = 1;
 				mu = lamda = 0.0;
@@ -930,22 +930,22 @@ int HMM::ReadHMMer(FILE* dbf, const char showcons, float* pb, char* filestr) {
 				++i;
 				if (next_i != prev_i + 1)
 					if (++warn < 5) {
-						HH_LOG(WARNING) << std::endl << "WARNING: in HMM " << name
+						HH_LOG(WARNING) << std::endl << "In HMM " << name
 								<< " state " << prev_i
 								<< " is followed by state " << next_i << "\n";
 						if (warn == 5) {
 							HH_LOG(WARNING) << std::endl
-									<< "WARNING: further warnings while reading HMMs will be suppressed.\n";
+									<< "Further warnings while reading HMMs will be suppressed.\n";
 						}
 					}
 				if (i > L) {
-					HH_LOG(WARNING) << std::endl << "WARNING: in HMM " << name
+					HH_LOG(WARNING) << std::endl << "In HMM " << name
 							<< " there are more columns than the stated length "
 							<< L << ". Skipping columns.\n";
 					break;
 				}
 				if (i > L) {
-					HH_LOG(WARNING) << std::endl << "WARNING: in HMM " << name
+					HH_LOG(WARNING) << std::endl << "In HMM " << name
 							<< " there are more columns than the stated length "
 							<< L << "\n";
 				}
@@ -1065,17 +1065,17 @@ int HMM::ReadHMMer(FILE* dbf, const char showcons, float* pb, char* filestr) {
 	}
 
 	if (i != L) {
-		HH_LOG(WARNING) << std::endl << "WARNING: in HMM " << name
+		HH_LOG(WARNING) << std::endl << "In HMM " << name
 				<< " there are only " << i
 				<< " columns while the stated length is " << L << std::endl;
 	}
 	if (i >= maxres - 2) {
 		i = maxres - 2;
-		HH_LOG(WARNING) << std::endl << "WARNING: maximum number " << maxres - 2
+		HH_LOG(WARNING) << std::endl << "Maximum number " << maxres - 2
 				<< " of residues exceeded while reading HMM " << name << std::endl;
 	}
 	if (!i) {
-		HH_LOG(WARNING) << std::endl << "WARNING: HMM " << name
+		HH_LOG(WARNING) << std::endl << "HMM " << name
 				<< " contains no match states. Check the alignment that gave rise to this HMM." << std::endl;
 	}
 	L = i;
@@ -1314,7 +1314,7 @@ int HMM::ReadHMMer3(FILE* dbf, const char showcons, float* pb, char* filestr) {
 				strcut(ptr);
 				if (strlen(seq[nsa_dssp]) + strlen(ptr) >= (unsigned) (maxres))
 					printf(
-							"WARNING: HMM %s has SADSS records with more than %i residues.\n",
+							"HMM %s has SADSS records with more than %i residues.\n",
 							name, maxres);
 				else
 					strcat(seq[nsa_dssp], ptr);
@@ -1335,7 +1335,7 @@ int HMM::ReadHMMer3(FILE* dbf, const char showcons, float* pb, char* filestr) {
 				strcut(ptr);
 				if (strlen(seq[nss_pred]) + strlen(ptr) >= (unsigned) (maxres))
 					printf(
-							"WARNING: HMM %s has SSPRD records with more than %i residues.\n",
+							"HMM %s has SSPRD records with more than %i residues.\n",
 							name, maxres);
 				else
 					strcat(seq[nss_pred], ptr);
@@ -1355,7 +1355,7 @@ int HMM::ReadHMMer3(FILE* dbf, const char showcons, float* pb, char* filestr) {
 				strcut(ptr);
 				if (strlen(seq[nss_conf]) + strlen(ptr) >= (unsigned) (maxres))
 					printf(
-							"WARNING: HMM %s has SSPRD records with more than %i residues.\n",
+							"HMM %s has SSPRD records with more than %i residues.\n",
 							name, maxres);
 				else
 					strcat(seq[nss_conf], ptr);
@@ -1440,22 +1440,22 @@ int HMM::ReadHMMer3(FILE* dbf, const char showcons, float* pb, char* filestr) {
 				++i;
 				if (next_i != prev_i + 1)
 					if (++warn < 5) {
-						HH_LOG(WARNING) << std::endl << "WARNING: in HMM " << name
+						HH_LOG(WARNING) << "In HMM " << name
 								<< " state " << prev_i
 								<< " is followed by state " << next_i << "\n";
 						if (warn == 5) {
 							HH_LOG(WARNING) << std::endl
-									<< "WARNING: further warnings while reading HMMs will be suppressed.\n";
+									<< "Further warnings while reading HMMs will be suppressed.\n";
 						}
 					}
 				if (i > L) {
-					HH_LOG(WARNING) << std::endl << "WARNING: in HMM " << name
+					HH_LOG(WARNING) << std::endl << "In HMM " << name
 							<< " there are more columns than the stated length "
 							<< L << ". Skipping columns.\n";
 					break;
 				}
 				if (i > L) {
-					HH_LOG(WARNING) << std::endl << "WARNING: in HMM " << name
+					HH_LOG(WARNING) << std::endl << "In HMM " << name
 							<< " there are more columns than the stated length "
 							<< L << "\n";
 				}
@@ -1574,17 +1574,17 @@ int HMM::ReadHMMer3(FILE* dbf, const char showcons, float* pb, char* filestr) {
 		return 0; //End of db file -> stop reading in
 
 	if (i != L) {
-		HH_LOG(WARNING) << std::endl << "WARNING: in HMM " << name
+		HH_LOG(WARNING) << std::endl << "In HMM " << name
 				<< " there are only " << i
 				<< " columns while the stated length is " << L << "\n";
 	}
 	if (i >= maxres - 2) {
 		i = maxres - 2;
-		HH_LOG(WARNING) << std::endl << "WARNING: maximum number " << maxres - 2
+		HH_LOG(WARNING) << std::endl << "Maximum number " << maxres - 2
 				<< " of residues exceeded while reading HMM " << name << "\n";
 	}
 	if (!i) {
-		HH_LOG(WARNING) << std::endl << "WARNING: HMM " << name
+		HH_LOG(WARNING) << std::endl << "HMM " << name
 				<< " contains no match states. Check the alignment that gave rise to this HMM.\n";
 	}
 	L = i;

@@ -1418,7 +1418,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
   // Warn, if HMMER files were used
   if (par.hmmer_used) {
     HH_LOG(WARNING)
-        << "WARNING: Using HMMER files results in a drastically reduced sensitivity (>10%%).\n"
+        << "Using HMMER files results in a drastically reduced sensitivity (>10%%).\n"
         << " We recommend to use HHMs build by hhmake." << std::endl;
   }
 

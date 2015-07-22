@@ -149,7 +149,7 @@ void ReadDefaultsFile(int& argc_conf, char** argv_conf, char* program_path) {
   }
   else //found no line 'program_name   anything"
   {
-	HH_LOG(WARNING) << "WARNING: no default options for \'"<<program_name<<"\' found in "<<filename<<"\n";
+	HH_LOG(WARNING) << "No default options for \'"<<program_name<<"\' found in "<<filename<<"\n";
     return; //no line 'program_name   anything' found
   }
   //   configf.close();

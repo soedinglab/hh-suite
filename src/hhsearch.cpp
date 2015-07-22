@@ -644,13 +644,13 @@ void HHsearch::run(FILE* query_fh, char* query_path) {
 //      else {
 //        if (v >= 2)
 //          fprintf(stderr,
-//              "WARNING: E-values for global alignment option may be unreliable.\n");
+//              "E-values for global alignment option may be unreliable.\n");
 //        hitlist.ResortList();
 //      }
 //    }
 //    else {
 //      if (v) {
-//        fprintf(stderr, "\nWARNING: no E-values could be calculated.\n");
+//        fprintf(stderr, "\n no E-values could be calculated.\n");
 //        fprintf(stderr, "To calculate E-values you have two options:\n");
 //        fprintf(stderr,
 //            "1. Calibrate your query profile HMM with a calibration database:\n");

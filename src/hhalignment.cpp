@@ -219,7 +219,7 @@ void Alignment::Read(FILE* inf, char infile[], const char mark,
         {
       if (k >= MAXSEQ - 1) {
         if (k >= MAXSEQ) {
-          HH_LOG(WARNING) << "WARNING: maximum number " << MAXSEQ
+          HH_LOG(WARNING) << "Maximum number " << MAXSEQ
                                     << " of sequences exceeded in file "
                                     << infile << std::endl;
         }
@@ -394,7 +394,7 @@ void Alignment::Read(FILE* inf, char infile[], const char mark,
     else if (!skip_sequence) {
       if (k == -1) {
         HH_LOG(WARNING)
-            << "WARNING: No sequence name preceding following line in "
+            << "No sequence name preceding following line in "
             << infile << ":\n\'" << line << "\'\n";
         continue;
       }
@@ -410,7 +410,7 @@ void Alignment::Read(FILE* inf, char infile[], const char mark,
             cur_seq[l] = line[h];
             l++;
           } else if (aa2i(line[h]) == -2) {
-            HH_LOG(WARNING) << "WARNING: ignoring invalid symbol \'"
+            HH_LOG(WARNING) << "Ignoring invalid symbol \'"
                                       << line[h] << "\' at pos. " << h
                                       << " in line " << linenr << " of "
                                       << infile << "\n";
@@ -424,7 +424,7 @@ void Alignment::Read(FILE* inf, char infile[], const char mark,
             cur_seq[l] = ss2ss(line[h]);
             l++;
           } else
-          HH_LOG(WARNING) << "WARNING: ignoring invalid symbol \'"
+          HH_LOG(WARNING) << "Ignoring invalid symbol \'"
                                     << line[h] << "\' at pos. " << h
                                     << " in line " << linenr << " of " << infile
                                     << "\n";
@@ -436,7 +436,7 @@ void Alignment::Read(FILE* inf, char infile[], const char mark,
           if (sa2i(line[h]) >= 0)
             cur_seq[l++] = line[h];
           else {
-            HH_LOG(WARNING) << "WARNING: ignoring invalid symbol \'"
+            HH_LOG(WARNING) << "Ignoring invalid symbol \'"
                                       << line[h] << "\' at pos. " << h
                                       << " in line " << linenr << " of "
                                       << infile << "\n";
@@ -668,7 +668,7 @@ void Alignment::ReadCompressed(ffindex_entry_t* entry, char* data,
   strcpy(sname[k], cur_name);
 
   if (copy_pos >= maxcol - 1) {
-    HH_LOG(WARNING) << "WARNING: maximum number of residues "
+    HH_LOG(WARNING) << "Maximum number of residues "
                               << maxcol - 2 << " exceeded in sequence "
                               << sname[k] << std::endl;
   }
@@ -862,7 +862,7 @@ void Alignment::Compress(const char infile[], const char cons, const int maxres,
   // Warn, if there are gaps in a single sequence
   if (N_in - N_ss == 1 && M != 2 && strchr(seq[kfirst] + 1, '-') != NULL) {
     HH_LOG(DEBUG)
-        << "WARNING: File "
+        << "File "
         << infile
         << " has a single sequence containing gaps, which will be ignored.\nIf you want to treat the gaps as match states, use the '-M 100' option."
         << std::endl;
@@ -876,14 +876,14 @@ void Alignment::Compress(const char infile[], const char cons, const int maxres,
       if (N_in - N_ss <= 1) {
         M = 3;  // if only single sequence in input file, use M=3 (match states by first seq)
         HH_LOG(DEBUG)
-            << "WARNING: single sequence in file " << infile
+            << "Single sequence in file " << infile
             << " contains only " << match_states
             << " match_states! Switching to option -M first\n seq="
             << seq[kfirst] << std::endl;
       }
     } else {
       HH_LOG(DEBUG)
-          << "WARNING: single sequence in file " << infile << " contains only "
+          << "Single sequence in file " << infile << " contains only "
           << match_states
           << " match_states! Switching to option -M first\n seq=" << seq[kfirst]
           << std::endl;
@@ -912,7 +912,7 @@ void Alignment::Compress(const char infile[], const char cons, const int maxres,
         // ... but alignment contains no lower case residue
         if (k >= N_in) {
           HH_LOG(WARNING)
-              << "WARNING: input alignment "
+              << "Input alignment "
               << infile
               << " looks like aligned FASTA instead of A2M/A3M format. Consider using '-M first' or '-M 50'"
               << std::endl;
@@ -1005,7 +1005,7 @@ void Alignment::Compress(const char infile[], const char cons, const int maxres,
 
       if (L == maxres - 2) {
         HH_LOG(WARNING)
-            << "WARNING: Number of match columns too large. Only first " << L
+            << "Number of match columns too large. Only first " << L
             << " match columns will be kept!\n";
         break;
       }
@@ -1101,7 +1101,7 @@ void Alignment::Compress(const char infile[], const char cons, const int maxres,
         if (percent_gaps[l] <= float(Mgaps)) {
           if (i >= maxres - 2) {
             HH_LOG(WARNING)
-                << "WARNING: Number of match columns too large. Only first "
+                << "Number of match columns too large. Only first "
                 << i << " match columns will be kept!\n";
             break;
           }
@@ -1175,7 +1175,7 @@ void Alignment::Compress(const char infile[], const char cons, const int maxres,
         {
           if (i >= maxres - 2) {
             HH_LOG(WARNING)
-                << "WARNING: Number of match columns too large. Only first "
+                << "Number of match columns too large. Only first "
                 << i << " match columns will be kept!\n";
             break;
           }

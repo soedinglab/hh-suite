@@ -23,7 +23,7 @@ void ReadQueryFile(Parameters& par, FILE* inf, char& input_format,
   // Is infile a HMMER file?
   if (!strncmp(line, "HMMER", 5)) {
     // Uncomment this line to allow HMMER2/HMMER3 models as queries:
-    HH_LOG(ERROR) << "Error: Use of HMMER format as input will result in severe loss of sensitivity!\n";
+    HH_LOG(ERROR) << "Use of HMMER format as input will result in severe loss of sensitivity!\n";
   }
   // ... or is it an hhm file?
   else if (!strncmp(line, "NAME", 4) || !strncmp(line, "HH", 2)) {
@@ -87,7 +87,7 @@ void ReadQueryFile(Parameters& par, FILE* inf, char& input_format,
   }
 
   if (input_format == 0 && q->Neff_HMM > 11.0) {
-	  HH_LOG(WARNING) << "WARNING: MSA " << q->name << " looks too diverse (Neff=" << q->Neff_HMM << ">11). Better check it with an alignment viewer for non-homologous segments. Also consider building the MSA with hhblits using the - option to limit MSA diversity.\n";
+	  HH_LOG(WARNING) << "MSA " << q->name << " looks too diverse (Neff=" << q->Neff_HMM << ">11). Better check it with an alignment viewer for non-homologous segments. Also consider building the MSA with hhblits using the - option to limit MSA diversity.\n";
   }
 }
 
