@@ -49,7 +49,6 @@ const int HMMSCALE=1000;//Scaling number for log2-values in HMMs
 const int NFAMMAX=5119; //Size of hash for counting number of HMMs in each family
 const int MAXPROF=32766;//Maximum number of HMM scores for fitting EVD
 const float MAXENDGAPFRAC=0.1; //For weighting: include only columns into subalignment i that have a max fraction of seqs with endgap
-const float SMIN= 20.;  //Minimum score of hit needed to search for another repeat of same profile: p=exp(-(4-mu)/lamda)=0.01
 const float LAMDA=0.388; //lamda in score EVD used for -local mode in length correction: S = S-log(Lq*Lt)/LAMDA)
 const float LAMDA_GLOB=0.42; //lamda in score EVD used for -global mode
 const float PMAX=1E-2;  //Maximum single-repeat p-value that can contribute to whole-protein p-value
@@ -244,6 +243,7 @@ public:
   char loc;               // 0: local alignment (wrt. query), 1: global alignement
   char realign;           // realign database hits to be displayed with MAC algorithm
   int altali;             // find up to this many possibly overlapping alignments
+  float smin;             //Minimum score of hit needed to search for another repeat of same profile: p=exp(-(4-mu)/lamda)=0.01
   int columnscore;        // 0: no aa comp corr  1: 1/2(qav+tav) 2: template av freqs 3: query av freqs 4:...
   int half_window_size_local_aa_bg_freqs; // half-window size to average local aa background frequencies
   float corr;             // Weight of correlations between scores with |i-j|<=4

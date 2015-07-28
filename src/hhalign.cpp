@@ -119,7 +119,8 @@ void HHalign::help(Parameters& par, char all) {
     printf(" -realign       realign displayed hits with max. accuracy (MAC) algorithm \n");
     printf(" -excl <range>  exclude query positions from the alignment, e.g. '1-33,97-168' \n");
     printf(" -ovlp <int>    banded alignment: forbid <ovlp> largest diagonals |i-j| of DP matrix (def=%i)\n", par.min_overlap);
-    printf(" -alt <int>     show up to this many significant alternative alignments(def=%i)  \n", par.altali);
+    printf(" -alt <int>     show up to this many alternative alignments with raw score > smin(def=%i)  \n", par.altali);
+    printf(" -smin <float>  minimum raw score for alternative alignments (def=%.1f)  \n", par.smin);
     printf(" -shift [-1,1]  profile-profile score offset (def=%-.2f)                         \n", par.shift);
     printf(" -corr [0,1]    weight of term for pair correlations (def=%.2f)                \n", par.corr);
     printf(" -sc   <int>    amino acid score         (tja: template HMM at column j) (def=%i)\n", par.columnscore);
@@ -522,6 +523,8 @@ void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
       par.loc = 1;
     else if (!strncmp(argv[i], "-alt", 4) && (i < argc - 1))
       par.altali = atoi(argv[++i]);
+    else if (!strncmp(argv[i], "-smin", 4) && (i < argc - 1))
+      par.smin = atof(argv[++i]);
     else if (!strcmp(argv[i], "-realign"))
       par.realign = 1;
     else if (!strcmp(argv[i], "-norealign"))
