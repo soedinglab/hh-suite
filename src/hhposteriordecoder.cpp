@@ -172,7 +172,7 @@ void PosteriorDecoder::initializeForAlignment(HMM &q, HMM &t, Hit &hit, ViterbiM
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// Exclude Viterbi alignment of a hit
+// Activate cells around Viterbi alignment of a hit
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void PosteriorDecoder::maskViterbiAlignment(const int q_length, const int t_length,
 		ViterbiMatrix &celloff_matrix, const int elem, Hit const &hit) const {
@@ -222,9 +222,9 @@ void PosteriorDecoder::excludeMACAlignment(const int q_length, const int t_lengt
 			i = alignment.alt_i->at(q);
 			j = alignment.alt_j->at(q);
 
-			for (int ii = imax(i - 2, 1); ii <= imin(i + 2, q_length); ++ii)
+			for (int ii = imax(i - VITERBI_PATH_WIDTH, 1); ii <= imin(i + VITERBI_PATH_WIDTH, q_length); ++ii)
 				celloff_matrix.setCellOff(ii, j, elem, true);
-			for (int jj = imax(j - 2, 1); jj <= imin(j + 2, t_length); ++jj)
+			for (int jj = imax(j - VITERBI_PATH_WIDTH, 1); jj <= imin(j + VITERBI_PATH_WIDTH, t_length); ++jj)
 				celloff_matrix.setCellOff(i, jj, elem, true);
 		}
 	}

@@ -68,10 +68,10 @@ void Viterbi::ExcludeAlignment(ViterbiMatrix * matrix,HMMSimd* q_four, HMMSimd* 
         int i=i_steps[step];
         int j=j_steps[step];
 
-        for (int ii=imax(i-2,1); ii<=imin(i+2,q->L); ++ii){
+        for (int ii=imax(i- VITERBI_PATH_WIDTH,1); ii<=imin(i+ VITERBI_PATH_WIDTH,q->L); ++ii){
             matrix->setCellOff(ii, j, elem, true);
         }
-        for (int jj=imax(j-2,1); jj<=imin(j+2,t->L); ++jj){
+        for (int jj=imax(j- VITERBI_PATH_WIDTH,1); jj<=imin(j+ VITERBI_PATH_WIDTH,t->L); ++jj){
             matrix->setCellOff(i, jj, elem, true);
         }
     }
