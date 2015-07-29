@@ -43,11 +43,8 @@ private:
 			           										   const float ssw, const float S73[NDSSP][NSSPRED][MAXCF],
 															   const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF],
 															   const float S37[NSSPRED][MAXCF][NDSSP]);
-	void reinitializeSelectedMembers();
-	void calcNElementsToSubmit();
 	void initializeQueryHMMTransitions(HMM & q);
 	void cleanupThread(std::vector<PosteriorDecoder*> * threads);
-	void exclude_regions(char* exclstr, HMM* q_hmm, HMM* t_hmm, ViterbiMatrix* viterbiMatrix);
 };
 
 #endif /* HHPOSTERIORDECODERRUNNER_H_ */
