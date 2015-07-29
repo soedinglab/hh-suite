@@ -75,7 +75,7 @@ void PosteriorDecoderRunner::executeComputation(HMM &q, std::vector<Hit *>  hits
         // find next free worker thread
         int current_thread_id = 0;
 #ifdef OPENMP
-     current_thread_id = omp_get_thread_num();
+        current_thread_id = omp_get_thread_num();
 #endif
         PosteriorDecoder * decoder = threads->at(current_thread_id);
         std::vector<PosteriorDecoder::MACBacktraceResult> alignment_to_exclude;
@@ -96,6 +96,11 @@ void PosteriorDecoderRunner::executeComputation(HMM &q, std::vector<Hit *>  hits
             // add result to exclution paths (needed to align 2nd, 3rd, ... best alignment)
             alignment_to_exclude.push_back(PosteriorDecoder::MACBacktraceResult(hit_cur->alt_i, hit_cur->alt_j));
         } // end idb
+        // clear all backtrace paths
+        for (size_t ibt = 0; ibt < alignment_to_exclude.size(); ibt++) {
+            alignment_to_exclude[ibt].alt_i->clear();
+            alignment_to_exclude[ibt].alt_j->clear();
+        }
         // remove all backtrace paths
         alignment_to_exclude.clear();
     }    // end - alignment vector
@@ -125,7 +130,6 @@ std::vector<PosteriorDecoder *> *PosteriorDecoderRunner::initializeConsumerThrea
     return threads;
 }
 
-
 void PosteriorDecoderRunner::cleanupThread(
         std::vector<PosteriorDecoder *> *threads) {
     for (size_t i = 0; i < threads->size(); i++) {
@@ -145,4 +149,3 @@ void PosteriorDecoderRunner::initializeQueryHMMTransitions(HMM &q) {
     q.tr[q.L][D2M] = 1.0f;
     q.tr[q.L][D2D] = 0.0f;
 }
-

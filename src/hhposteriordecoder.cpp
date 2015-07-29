@@ -129,8 +129,8 @@ void PosteriorDecoder::realign(HMM &q, HMM &t, Hit &hit,
 void PosteriorDecoder::exclude_regions(char* exclstr, HMM & q_hmm, HMM & t_hmm, ViterbiMatrix& viterbiMatrix) {
 	char* ptr = exclstr;
 	while (true) {
-		int i0 = abs(strint(ptr));
-		int i1 = abs(strint(ptr));
+		const int i0 = abs(strint(ptr));
+		const int i1 = abs(strint(ptr));
 
 		if (!ptr) break;
 
@@ -238,12 +238,10 @@ void PosteriorDecoder::maskViterbiAlignment(const int q_length, const int t_leng
 void PosteriorDecoder::excludeMACAlignment(const int q_length, const int t_length, ViterbiMatrix & celloff_matrix, const int elem,
 										   PosteriorDecoder::MACBacktraceResult & alignment) {
 
-	int i,j;
 	if (alignment.alt_i && alignment.alt_j) {
 		for(size_t q = 0; q < alignment.alt_i->size(); q++) { //TODO: does not make sense
-			i = alignment.alt_i->at(q);
-			j = alignment.alt_j->at(q);
-
+			const int i = alignment.alt_i->at(q);
+			const int j = alignment.alt_j->at(q);
 			for (int ii = imax(i - 2, 1); ii <= imin(i + 2, q_length); ++ii){
 				celloff_matrix.setCellOff(ii, j, elem, true);
 			}
@@ -251,8 +249,6 @@ void PosteriorDecoder::excludeMACAlignment(const int q_length, const int t_lengt
 				celloff_matrix.setCellOff(i, jj, elem, true);
 			}
 		}
-		alignment.alt_i->clear();
-		alignment.alt_j->clear();
 	}
 }
 
