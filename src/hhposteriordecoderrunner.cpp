@@ -21,7 +21,7 @@
 int compareIrep(const void * a, const void * b) {
     Hit pa = *(Hit*)a;
     Hit pb = *(Hit*)b;
-    return (pb.irep < pa.irep);
+    return (pa.irep < pb.irep);
 }
 
 PosteriorDecoderRunner::PosteriorDecoderRunner( PosteriorMatrix **posterior_matrices,
@@ -87,21 +87,12 @@ void PosteriorDecoderRunner::executeComputation(HMM &q, std::vector<Hit *>  hits
                 hit_cur->entry->getTemplateHMM(par, par.wg, qsc, format_tmp, pb, S, Sim, t_hmm[current_thread_id]);
                 PrepareTemplateHMM(par, q_hmm, t_hmm[current_thread_id], format_tmp, true, pb, R);
             }
-            for (size_t ibt = 0; ibt < alignment_to_exclude.size(); ibt++) {
-                // Mask out previous found MAC alignments
-                decoder->excludeMACAlignment(q.L, hit_cur->L, *m_backtrace_matrix[current_thread_id], 0, alignment_to_exclude.at(ibt));
-            }
-
-            if(par.exclstr) {
-              // Mask excluded regions
-              exclude_regions(par.exclstr, q_hmm, t_hmm[current_thread_id], m_backtrace_matrix[current_thread_id]);
-            }
 
             //TODO: par.ssw_realign not used???
             // start realignment process
             decoder->realign(*q_hmm, *t_hmm[current_thread_id],
                     *hit_cur, *m_posterior_matrices[current_thread_id],
-                    *m_backtrace_matrix[current_thread_id], par.min_overlap, par.shift, par.mact, par.corr);
+                    *m_backtrace_matrix[current_thread_id], alignment_to_exclude, par.exclstr, par.min_overlap, par.shift, par.mact, par.corr);
             // add result to exclution paths (needed to align 2nd, 3rd, ... best alignment)
             alignment_to_exclude.push_back(PosteriorDecoder::MACBacktraceResult(hit_cur->alt_i, hit_cur->alt_j));
         } // end idb
@@ -142,22 +133,6 @@ void PosteriorDecoderRunner::cleanupThread(
     }
     threads->clear();
     delete threads;
-}
-
-void PosteriorDecoderRunner::exclude_regions(char* exclstr, HMM* q_hmm, HMM* t_hmm, ViterbiMatrix* viterbiMatrix) {
-  char* ptr = exclstr;
-  while (true) {
-    int i0 = abs(strint(ptr));
-    int i1 = abs(strint(ptr));
-
-    if (!ptr) break;
-
-    for (int i = i0; i <= std::min(i1, q_hmm->L); ++i) {
-      for (int j = 1; j <= t_hmm->L; ++j) {
-        viterbiMatrix->setCellOff(i, j, 0, true);
-      }
-    }
-  }
 }
 
 void PosteriorDecoderRunner::initializeQueryHMMTransitions(HMM &q) {

@@ -1,3 +1,9 @@
+//
+//  hhviterbialgorithm.cpp
+//
+//  Created by Martin Steinegger on 19.11.12.
+//  Copyright (c) 2012 -. All rights reserved.
+//
 #include "hhviterbi.h"
 #include "hhviterbimatrix.h"
 
@@ -229,7 +235,7 @@ void Viterbi::AlignWithOutCellOff(HMMSimd* q, HMMSimd* t,ViterbiMatrix * viterbi
             const simd_float t_i2m = simdf32_load((float *) (t->tr+start_pos_tr_j_1+6)); // I2m
             const simd_float t_i2i = simdf32_load((float *) (t->tr+start_pos_tr_j));   // I2i
             const simd_float t_m2i = simdf32_load((float *) (t->tr+start_pos_tr_j+1));     // M2I
-           
+            
             // Find max value
             // CALCULATE_MAX6( sMM_i_j,
             //                 smin,
@@ -393,7 +399,7 @@ void Viterbi::AlignWithOutCellOff(HMMSimd* q, HMMSimd* t,ViterbiMatrix * viterbi
 
 //            if(((sCO_MI_DG_IM_GD_MM_vec[j]  >>1) & 0x4040404040404040) > 0){
 //                for(int i = 0; i < 8; i++){
-//                    std::cout << ((float *) &cell_off_float_min_vec )[i] << " ";
+//                    std::cout << i << " " << j << " " << ((float *) &cell_off_float_min_vec )[i] << " ";
 //                }
 //                std::cout << std::endl;
 //            }

@@ -2,18 +2,6 @@
 
 #include <iostream>
 
-//ViterbiConsumerThread::ViterbiConsumerThread(int pthread_id, Viterbi* vit,
-//    HMMSimd* q_simd, HMMSimd* t_hmm_simd, ViterbiMatrix* pviterbiMatrix) :
-//    thread_id(pthread_id), viterbiAlgo(vit), q_simd(q_simd), t_hmm_simd(
-//        t_hmm_simd), viterbiMatrix(pviterbiMatrix), job_size(0) {
-//  hit_cur = new Hit();
-//}
-//
-//ViterbiConsumerThread::~ViterbiConsumerThread() {
-//  std::cout << "Destruct ViterbiConsumerThread" << std::endl;
-//  delete viterbiAlgo;
-//  delete hit_cur;
-//}
 
 void ViterbiConsumerThread::clear() {
     hits.clear();

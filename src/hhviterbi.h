@@ -1,5 +1,5 @@
 //
-//  hhviterbi4.h
+//  hhviterbi.h
 //
 //  Created by Martin Steinegger on 19.11.12.
 //  Copyright (c) 2012 -. All rights reserved.

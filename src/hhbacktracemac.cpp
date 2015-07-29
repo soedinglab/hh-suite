@@ -2,7 +2,7 @@
  * BacktraceMAC.C
  *
  *  Created on: May 1, 2014
- *      Author: stefan
+ *      Author: Martin Steinegger, Stefan Haunsberger
  */
 
 #include "hhposteriordecoder.h"
@@ -300,5 +300,3 @@ void PosteriorDecoder::initializeBacktrace(HMM & t, Hit & hit) {
 	  hit.P_posterior = NULL;
 	}
 }
-
-

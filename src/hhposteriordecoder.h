@@ -67,7 +67,9 @@ public:
 	/////////////////////////////////////////////////////////////////////////////////////
 	// Realign hits: compute F/B/MAC and MAC-backtrace algorithms SIMD
 	/////////////////////////////////////////////////////////////////////////////////////
-	void realign(HMM &q, HMM &t, Hit &hit, PosteriorMatrix &p_mm, ViterbiMatrix &viterbi_matrix, int par_min_overlap, float shift, float mact, float corr);
+	void realign(HMM &q, HMM &t, Hit &hit, PosteriorMatrix &p_mm, ViterbiMatrix &viterbi_matrix,
+				 std::vector<PosteriorDecoder::MACBacktraceResult> alignment_to_exclude, char * exclstr,
+				 int par_min_overlap, float shift, float mact, float corr);
 	void excludeMACAlignment(const int q_length, const int t_length, ViterbiMatrix &celloff_matrix, const int elem,
 			MACBacktraceResult & alignment);
 
@@ -109,15 +111,12 @@ private:
 //	PosteriorSharedVariables m_column_vars;
 
 //	simd_float m_p_min;    // used to distinguish between SW and NW algorithms in maximization
-	float m_p_min_scalar;    // used to distinguish between SW and NW algorithms in maximization
 
 //	std::vector<Hit *> m_temp_hit;	// temporary used hit objects for computation
 
 	const int m_max_res;
 	const bool m_local;				// local alignment
 	const int m_q_length;			// query length
-
-	int m_jmin;
 
 	simd_float * m_p_forward;
 
@@ -139,12 +138,11 @@ private:
 	void memorizeHitValues(Hit & curr_hit);
 	void restoreHitValues(Hit &curr_hit);
 
-	void setGlobalColumnPForward(simd_float * column, const simd_int & j_vec, const int i_count, const simd_float & values);
-
 	void printVector(simd_float * vec);
 	void printVector(simd_int * vec);
 	void printVector(float * vec);
 
+	void exclude_regions(char *exclstr, HMM &q_hmm, HMM &t_hmm, ViterbiMatrix &viterbiMatrix);
 };
 
 #endif /* HHPOSTERIORDECODER_H_ */

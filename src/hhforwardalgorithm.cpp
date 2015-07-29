@@ -2,7 +2,7 @@
  * hhforwardalgorithmscalar.C
  *
  *  Created on: Apr 16, 2014
- *      Author: stefan
+ *      Author: Martin Steinegger, Stefan Haunsberger
  */
 
 #include "hhposteriordecoder.h"

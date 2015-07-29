@@ -43,24 +43,23 @@
 
 
 bool compareIndices(const MACTriple &a, const MACTriple &b) {
-  if(a.i == b.i) {
-    return a.j < b.j;
-  }
-  else {
-    return a.i < b.i;
-  }
+	if(a.i == b.i) {
+		return a.j < b.j;
+	}
+	else {
+		return a.i < b.i;
+	}
 }
 
 PosteriorDecoder::PosteriorDecoder(int maxres, bool local, int q_length, const float ssw,
-								const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF],
-								const float S37[NSSPRED][MAXCF][NDSSP]) :
-	m_max_res(maxres),
-	m_local(local),
-	m_q_length(q_length),
- 	S73(S73), S33(S33), S37(S37)
+								   const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF],
+								   const float S37[NSSPRED][MAXCF][NDSSP]) :
+		m_max_res(maxres),
+		m_local(local),
+		m_q_length(q_length),
+		S73(S73), S33(S33), S37(S37)
 {
 	this->ssw = ssw;
-	this->m_jmin = 1;
 	this->m_curr = (PosteriorMatrixCol *) malloc_simd_float((m_max_res + 2 ) * sizeof(PosteriorMatrixCol));
 	this->m_prev = (PosteriorMatrixCol *) malloc_simd_float((m_max_res + 2 ) * sizeof(PosteriorMatrixCol));
 
@@ -70,7 +69,6 @@ PosteriorDecoder::PosteriorDecoder(int maxres, bool local, int q_length, const f
 	this->p_last_col = (double*) malloc_simd_float(q_length * sizeof(double));
 
 	//m_p_min = (m_local ? simdf32_set(0.0f) : simdf32_set(-FLT_MAX));
-	this->m_p_min_scalar = (m_local ? 1.0f : 0.0);
 
 	this->m_p_forward = malloc_simd_float( sizeof(float));
 
@@ -99,14 +97,23 @@ PosteriorDecoder::~PosteriorDecoder() {
 // Realign hits: compute F/B/MAC and MAC-backtrace algorithms
 /////////////////////////////////////////////////////////////////////////////////////
 void PosteriorDecoder::realign(HMM &q, HMM &t, Hit &hit,
-		PosteriorMatrix &p_mm, ViterbiMatrix &viterbi_matrix,
-		int par_min_overlap, float shift, float mact, float corr) {
+							   PosteriorMatrix &p_mm, ViterbiMatrix &viterbi_matrix,
+							   std::vector<PosteriorDecoder::MACBacktraceResult> alignment_to_exclude,
+							   char * exclstr, int par_min_overlap, float shift, float mact, float corr) {
 
 	HMM & curr_q_hmm = q;
 	HMM & curr_t_hmm = t;
 	memorizeHitValues(hit);
 	initializeForAlignment(curr_q_hmm, curr_t_hmm, hit, viterbi_matrix, 0, t.L, par_min_overlap);
+	for (size_t ibt = 0; ibt < alignment_to_exclude.size(); ibt++) {
+		// Mask out previous found MAC alignments
+		excludeMACAlignment(q.L, hit.L, viterbi_matrix, 0, alignment_to_exclude.at(ibt));
+	}
 
+	if(exclstr) {
+		// Mask excluded regions
+		exclude_regions(exclstr, curr_q_hmm, curr_t_hmm, viterbi_matrix);
+	}
 	forwardAlgorithm(curr_q_hmm, curr_t_hmm, hit, p_mm, viterbi_matrix, shift, 0);
 	//std::cout << hit->score << hit[elem]->Pforward << std::endl;
 
@@ -115,7 +122,24 @@ void PosteriorDecoder::realign(HMM &q, HMM &t, Hit &hit,
 	backtraceMAC(curr_q_hmm, curr_t_hmm, p_mm, viterbi_matrix, 0, hit, corr);
 	restoreHitValues(hit);
 	writeProfilesToHits(curr_q_hmm, curr_t_hmm, p_mm, hit);
+	// add result to exclution paths (needed to align 2nd, 3rd, ... best alignment)
 
+}
+
+void PosteriorDecoder::exclude_regions(char* exclstr, HMM & q_hmm, HMM & t_hmm, ViterbiMatrix& viterbiMatrix) {
+	char* ptr = exclstr;
+	while (true) {
+		int i0 = abs(strint(ptr));
+		int i1 = abs(strint(ptr));
+
+		if (!ptr) break;
+
+		for (int i = i0; i <= std::min(i1, q_hmm.L); ++i) {
+			for (int j = 1; j <= t_hmm.L; ++j) {
+				viterbiMatrix.setCellOff(i, j, 0, true);
+			}
+		}
+	}
 }
 
 
@@ -126,10 +150,10 @@ void PosteriorDecoder::realign(HMM &q, HMM &t, Hit &hit,
 //			--> Initialization of cell off matrix
 /////////////////////////////////////////////////////////////////////////////////////////////////
 void PosteriorDecoder::initializeForAlignment(HMM &q, HMM &t, Hit &hit, ViterbiMatrix &celloff_matrix,
-											const int elem, const int t_max_L, int par_min_overlap) {
+											  const int elem, const int t_max_L, int par_min_overlap) {
 
-  m_backward_entries.clear();
-  m_forward_entries.clear();
+	m_backward_entries.clear();
+	m_forward_entries.clear();
 
 	// First alignment of this pair of HMMs?
 	t.tr[0][M2M] = 1.0f;
@@ -143,7 +167,7 @@ void PosteriorDecoder::initializeForAlignment(HMM &q, HMM &t, Hit &hit, ViterbiM
 	t.tr[t.L][D2D] = 0.0f;
 	//    if (alt_i && alt_i->Size()>0) delete alt_i;
 	if(hit.alt_i) {
-	  delete hit.alt_i;
+		delete hit.alt_i;
 	}
 	hit.alt_i = new std::vector<int>();
 	//    if (alt_j && alt_j->Size()>0) delete alt_j;
@@ -175,7 +199,7 @@ void PosteriorDecoder::initializeForAlignment(HMM &q, HMM &t, Hit &hit, ViterbiM
 // Activate cells around Viterbi alignment of a hit
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void PosteriorDecoder::maskViterbiAlignment(const int q_length, const int t_length,
-		ViterbiMatrix &celloff_matrix, const int elem, Hit const &hit) const {
+											ViterbiMatrix &celloff_matrix, const int elem, Hit const &hit) const {
 
 	int i, j;
 
@@ -212,21 +236,23 @@ void PosteriorDecoder::maskViterbiAlignment(const int q_length, const int t_leng
 // Mask previous found alternative MAC alignments
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void PosteriorDecoder::excludeMACAlignment(const int q_length, const int t_length, ViterbiMatrix & celloff_matrix, const int elem,
-											PosteriorDecoder::MACBacktraceResult & alignment) {
+										   PosteriorDecoder::MACBacktraceResult & alignment) {
 
 	int i,j;
 	if (alignment.alt_i && alignment.alt_j) {
-		alignment.alt_i->clear();
-		alignment.alt_j->clear();
 		for(size_t q = 0; q < alignment.alt_i->size(); q++) { //TODO: does not make sense
 			i = alignment.alt_i->at(q);
 			j = alignment.alt_j->at(q);
 
-			for (int ii = imax(i - VITERBI_PATH_WIDTH, 1); ii <= imin(i + VITERBI_PATH_WIDTH, q_length); ++ii)
+			for (int ii = imax(i - 2, 1); ii <= imin(i + 2, q_length); ++ii){
 				celloff_matrix.setCellOff(ii, j, elem, true);
-			for (int jj = imax(j - VITERBI_PATH_WIDTH, 1); jj <= imin(j + VITERBI_PATH_WIDTH, t_length); ++jj)
+			}
+			for (int jj = imax(j - 2, 1); jj <= imin(j + 2, t_length); ++jj){
 				celloff_matrix.setCellOff(i, jj, elem, true);
+			}
 		}
+		alignment.alt_i->clear();
+		alignment.alt_j->clear();
 	}
 }
 

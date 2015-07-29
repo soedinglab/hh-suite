@@ -43,7 +43,7 @@ const int NTRANS=7;     //number of transitions recorded in HMM (M2M,M2I,M2D,I2M
 const int NCOLMIN=10;   //min number of cols in subalignment for calculating pos-specific weights w[k][i]
 const int ANY=20;       //number representing an X (any amino acid) internally
 const int GAP=21;       //number representing a gap internally
-const int FWD_BKW_PATHWITDH=2;       //cell off path width around viterbi alignment
+const int FWD_BKW_PATHWITDH=40;       //cell off path width around viterbi alignment
 const int ENDGAP=22;    //Important to distinguish because end gaps do not contribute to tansition counts
 const int HMMSCALE=1000;//Scaling number for log2-values in HMMs
 const int NFAMMAX=5119; //Size of hash for counting number of HMMs in each family
@@ -60,6 +60,7 @@ const int MINCOLS_REALIGN=6; // hits with MAC alignments with fewer matched colu
 const float LOG1000=log(1000.0);
 const float POSTERIOR_PROBABILITY_THRESHOLD = 0.01;
 const int VITERBI_PATH_WIDTH=40;
+
 //maximum number of bins (positions in thread queue)
 const int MAXBINS = 384;
 
