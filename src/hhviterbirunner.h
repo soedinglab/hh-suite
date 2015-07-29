@@ -44,7 +44,7 @@ public:
 	std::vector<std::pair<char *,Viterbi::BacktraceResult> > excludeAlignments;
 
 	void clear();
-	void align(int maxres, int nseqdis);
+	void align(int maxres, int nseqdis, const float smin);
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -69,7 +69,7 @@ private:
 			std::vector<HHEntry*> &dbfiles_to_align,
 			std::map<std::string ,std::vector<Viterbi::BacktraceResult > >  &excludeAlignments,
 			std::vector<ViterbiConsumerThread *> &threads,
-			int alignment);
+			int alignment, const float smin);
 
 
 	void exclude_alignments(int maxResElem, HMMSimd* q_simd, HMMSimd* t_hmm_simd,

@@ -151,7 +151,7 @@ void help(char all = 0) {
   if (all) {
     printf("Pseudocount (pc) options:                                                        \n");
     printf(" Context specific hhm pseudocounts:\n");
-    printf("  -pc_hhm_contxt_mode {0,..,3}      position dependence of pc admixture 'tau' (pc mode, default=%-i) \n",par.pc_hhm_context_engine.admix);
+    printf("  -pc_hhm_contxt_mode {0,..,3}   position dependence of pc admixture 'tau' (pc mode, default=%-i) \n",par.pc_hhm_context_engine.admix);
     printf("               0: no pseudo counts:    tau = 0                                  \n");
     printf("               1: constant             tau = a                                  \n");
     printf("               2: diversity-dependent: tau = a/(1+((Neff[i]-1)/b)^c)            \n");
@@ -162,7 +162,7 @@ void help(char all = 0) {
     printf("  -pc_hhm_contxt_c  [0,3]        extinction exponent c for mode 2 (def=%-.1f)                     \n\n",par.pc_hhm_context_engine.pcc);
 
     printf(" Context independent hhm pseudocounts (used for templates; used for query if contxt file is not available):\n");
-    printf("  -pc_hhm_nocontxt_mode {0,..,3}      position dependence of pc admixture 'tau' (pc mode, default=%-i) \n",par.pc_hhm_nocontext_mode);
+    printf("  -pc_hhm_nocontxt_mode {0,..,3}   position dependence of pc admixture 'tau' (pc mode, default=%-i) \n",par.pc_hhm_nocontext_mode);
     printf("               0: no pseudo counts:    tau = 0                                  \n");
     printf("               1: constant             tau = a                                  \n");
     printf("               2: diversity-dependent: tau = a/(1+((Neff[i]-1)/b)^c)            \n");

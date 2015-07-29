@@ -113,8 +113,6 @@ void help() {
   printf(
       "Other options:                                                               \n");
   printf(
-      " -addss        add predicted secondary structure information from PSIPRED    \n");
-  printf(
       " -maxres <int> max number of HMM columns (def=%5i)                           \n",
             par.maxres);
   printf("\n");

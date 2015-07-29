@@ -39,7 +39,6 @@ class A3M_Container:
   def check_and_add_consensus(self, header, sequence):
     tokens = header[1:].split()
     header_name = header[1:].split()[0]
-    print(header)
     if header_name.endswith("_consensus"):
       if self.consensus:
         raise A3MFormatError("Multiple definitions of consensus!")
@@ -148,15 +147,20 @@ class A3M_Container:
 
 
   def read_a3m(self, fh):
+    lines = fh.readlines()
+    self.read_a3m_from_lines(lines)
+    fh.close()
+    
+  def read_a3m_from_lines(self, lines):
     sequence_header = None
     sequence = ""
     
-    a3m = A3M_Container()
-    
     is_first_line = True
     
-    for line in fh:
-      if line[0] == "#":
+    for line in lines:
+      if len(line) == 0:
+        continue
+      elif line[0] == "#":
         if is_first_line:
           self.header = line
         else:
@@ -176,5 +180,4 @@ class A3M_Container:
     
     if sequence_header:
       self.check_and_add_sequence(sequence_header, sequence)
-      
-    fh.close()
+

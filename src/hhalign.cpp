@@ -49,8 +49,6 @@ void HHalign::help(Parameters& par, char all) {
   printf("%s", REFERENCE);
   printf("%s", COPYRIGHT);
   printf("\n");
-  printf("Output options:                                                           \n");
-  printf("\n");
 
   printf("Usage: hhalign -i query [-t template] [options]  \n");
   printf(" -i <file>      input/query: single sequence or multiple sequence alignment (MSA)\n");
@@ -196,7 +194,7 @@ void HHalign::help(Parameters& par, char all) {
     printf("An extended list of options can be obtained by calling 'hhalign -h all'\n");
   }
 
-  printf("Default options can be specified in './.hhdefaults' or '~/.hhdefaults'\n");
+  printf("Example: hhalign -i T0187.a3m -t d1hz4a_.hhm -o result.hhr\n");
 }
 
 /////////////////////////////////////////////////////////////////////////////////////

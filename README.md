@@ -45,7 +45,7 @@ With the sourcecode ready, simply run cmake with the default settings and librar
 ### Setting paths 
 
 #### Setting environment variables
-In your shell set environment variable HHLIB to ${INSTALL_BASE_DIR}, e.g (for bash, zsh, ksh):
+In your shell set environment variable HHLIB to ${INSTALL\_BASE\_DIR}, e.g (for bash, zsh, ksh):
 
 	export HHLIB=${INSTALL_BASE_DIR}
 
@@ -61,7 +61,7 @@ Add the location of HHsuite binaries and scripts to your search PATH variable
 
 #### Specify BLAST, PSIPRED, PDB, DSSP paths
 
-Specify paths in ${INSTALL_BASE_DIR}/scripts/HHPaths.pm where they are read by HHsuite's perl scripts.
+Specify paths in ${INSTALL\_BASE\_DIR}/scripts/HHPaths.pm where they are read by HHsuite's perl scripts.
 
 
 ### Download Databases

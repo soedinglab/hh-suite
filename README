@@ -1,0 +1,198 @@
+*****************************************************************************
+*****************************************************************************
+HHsuite for sensitive sequence searching version 3.0.0 (15-03-2015)
+
+ (C) Johannes Soeding, Markus Meier, Martin Steinegger, Michael Remmert, Andreas Hauser, Andreas Biegert 2015
+
+This README only serves as a quick start guide.
+For full documentation see the user guide in hhsuite-userguide.pdf
+
+########################################################################
+The hhsuite contains in file hhprefilter.cpp code adapted from Michael 
+Farrar (http://sites.google.com/site/farrarmichael/smith-waterman). 
+His code is marked in the file hhprefilter.cpp. For the copy right of that 
+code, please see the LICENSE file that comes with HHsuite.
+Reference: Farrar M. Striped Smith-Waterman speeds database searches six 
+times over other SIMD implementations. Bioinformatics. 2007, 23:156-61.
+Many posthumous thanks to Michael Farrar for his great code!
+########################################################################
+
+
+*****************************************************************************
+ Installation
+*****************************************************************************
+
+You can either compile from sources or use precompiled programs.
+
+Some distributions incorporate HH-suite on their own:
+
+Ubuntu/Debian/etc. DPKGs are provided by Laszlo Kajan:
+http://packages.debian.org/source/sid/hhsuite
+On current Debian/Ubuntu you can just install via the package manager, e.g.:
+$ apt-get install hhsuite
+
+For Archlinux you can find a PKGBUILD on aur:
+https://aur.archlinux.org/packages/hhsuite/
+
+
+*****************************************************************************
+A) Precompiled Binaries
+
+1. Dowloading
+
+Download the appropriate binaries from http://wwwuser.gwdg.de/~compbiol/data/releases/.
+
+ - hhsuite-latest.x86_64.rpm
+   Linux x86_64 RPM for Scientific Linux 6, RHEL 6, CentOS 6
+   which might also work for Fedora and SuSE.
+   $ rpm -hvU hhsuite-latest.x86_64.rpm
+
+ - hhsuite-latest-linux-x86_64.tar.gz
+   Linux x86_64 tar.gz (any linux).
+   Just untar and use the binaries in bin/:
+   $ tar xzf hhsuite-latest-linux-x86_64.tar.gz
+
+ - hhsuite-latest-macosx.tar.gz
+   Mac OSX x86_64. This is not provided for all versions.
+   Just untar and use the binaries in bin/:
+   $ tar xzf hhsuite-latest-macosx.tar.gz
+
+2. Set paths 
+
+2.1. In your shell set environment variable HHLIB to ${INSTALL_BASE_DIR}, 
+e.g (for bash, zsh, ksh):
+
+$ export HHLIB=${INSTALL_BASE_DIR}
+
+HHsearch and HHblits look for the column state library file cs219.lib
+and the context library file context_data.lib in $HHLIB/data/. The hh-suite
+perl scripts also read HHLIB to locate 
+
+Add the location of HH-suite binaries and scripts to your search PATH variable
+$ export PATH=${PATH}:${HHLIB}/bin:${HHLIB}/scripts
+
+
+2.2. Specify paths to BLAST, PSIPRED, PDB, DSSP etc. in 
+${HHLIB}/scripts/HHPaths.pm
+where they are read by the perl scripst in hh-suite.
+
+
+
+*****************************************************************************
+B) Compiling from sources
+
+1. Downloading
+
+Download the sources from http://wwwuser.gwdg.de/~compbiol/data/releases/, e.g.
+
+$ mkdir ~/programs/hh/
+$ cd ~/programs/hh/
+$ wget http://wwwuser.gwdg.de/~compbiol/data/releases/hhsuite-latest.tar.gz
+
+Unzip and untar
+
+$ tar -xzvf hhsuite-latest.tar.gz
+
+This will unpack the sources to hhsuite-<VERSION>.
+
+2. Compilation
+
+The following dependencies exist: cmake, perl, libpng, libz
+
+$ cd hhsuite-<VERSION>/
+$ mkdir build
+$ cd build
+$ cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX=${INSTALL_BASE_DIR} ..
+$ make
+
+Compilation produces by default static binaries. If you encounter missing
+library errors, also make sure you have the static versions installed, e.g.
+glibc-static, zlib-static and libpng-static. Package names and whether they are
+automatically installed or varies with distribution.
+On RHEL/Fedora/SL/CentOS etc. eg.:
+$ yum install glibc-static libpng-static zlib-static
+
+A dynamically linked version of the programs can be compiled with:
+
+$ make all
+
+3. Installation
+
+Install to the base directory defined in cmake's DCMAKE_INSTALL_PREFIX parameter,
+e.g. ${INSTALL_BASE_DIR}=/usr/local, where you want to install:
+
+$ make install
+
+
+4. Set paths 
+
+4.1. In your shell set environment variable HHLIB to ${INSTALL_BASE_DIR}, 
+e.g (for bash, zsh, ksh):
+
+$ export HHLIB=${INSTALL_BASE_DIR}
+
+HHsearch and HHblits look for the column state library file cs219.lib
+and the context library file context_data.lib in ${HHLIB}/data/. The hh-suite
+scripts also read HHLIB to locate 
+
+Add the location of HH-suite binaries and scripts to your search PATH variable
+$ export PATH=${PATH}:${INSTALL_BASE_DIR}/bin:${INSTALL_BASE_DIR}/scripts
+
+
+4.2. Specify paths to BLAST, PSIPRED, PDB, DSSP etc. in 
+${INSTALL_BASE_DIR}/scripts/HHPaths.pm
+where they are read by the perl scripst in hh-suite.
+
+
+5. Download Databases
+
+Download current databases from our FTP-server:
+http://wwwuser.gwdg.de/~compbiol/data/databases/hhsuite_dbs/
+
+To build up multiple sequences alignments using HHblits, either one of uniprot20 
+or nr20 dbs is sufficient.
+
+
+*****************************************************************************
+* Usage
+*****************************************************************************
+
+
+For performing a single search iteration of HHblits, run HHblits with the 
+following command:
+
+$ hhblits -i <input-file> -o <result-file> -n 1 -d <database-basename>
+
+For generating an alignment of homologous sequences:
+
+$ hhblits -i <input-file> -o <result-file> -oa3m <result-alignment> -d <database-basename>
+
+You can get a detailed list of options for HHblits by running HHblits with the "-h" option.
+
+Example (if HHLIB is set):
+
+$ hhblits -d $HHLIB/hhblits_dbs/uniprot20_02Sep11 -i $HHLIB/data/query.a3m
+
+
+*****************************************************************************
+* License
+*****************************************************************************
+
+The HHsearch/HHblits software package is distributed under Gnu Public Licence, Version 3.
+This means that the HH-suite is free software: you can redistribute it and/or modify it under the
+terms of the GNU General Public License as published by the Free Software Foundation, either
+version 3 of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+PURPOSE. See the GNU General Public License for more details.
+
+See the copy of the GNU General Public License in the LICENSE file. 
+If you do not have this file, see http://www.gnu.org/licenses/
+
+-- 
+For full documentation see the user guide in hhsuite-userguide.pdf
+
+
+We are very grateful for bug reports! 
+Please contact us at soeding@mpibpc.mgp.de

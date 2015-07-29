@@ -166,31 +166,31 @@ void HHsearch::help(Parameters& par, char all) {
   printf("\n");
 
   printf("HMM-HMM alignment options:                                                       \n");
-  printf(" -norealign     do NOT realign displayed hits with MAC algorithm (def=realign)   \n");
-  printf(" -ovlp <int>    banded alignment: forbid <ovlp> largest diagonals |i-j| of DP matrix (def=%i)\n", par.min_overlap);
-  printf(" -mact [0,1[    posterior prob threshold for MAC realignment controlling greedi- \n");
-  printf("                ness at alignment ends: 0:global >0.1:local (default=%.2f)       \n", par.mact);
-  printf(" -glob/-loc     use global/local alignment mode for searching/ranking (def=local)\n");
+  printf(" -norealign          do NOT realign displayed hits with MAC algorithm (def=realign)   \n");
+  printf(" -ovlp <int>         banded alignment: forbid <ovlp> largest diagonals |i-j| of DP matrix (def=%i)\n", par.min_overlap);
+  printf(" -mact [0,1[         posterior prob threshold for MAC realignment controlling greedi- \n");
+  printf("                     ness at alignment ends: 0:global >0.1:local (default=%.2f)       \n", par.mact);
+  printf(" -glob/-loc          use global/local alignment mode for searching/ranking (def=local)\n");
   if (all) {
-    printf(" -realign       realign displayed hits with max. accuracy (MAC) algorithm \n");
-    printf(" -excl <range>  exclude query positions from the alignment, e.g. '1-33,97-168' \n");
+    printf(" -realign            realign displayed hits with max. accuracy (MAC) algorithm \n");
+    printf(" -excl <range>       exclude query positions from the alignment, e.g. '1-33,97-168' \n");
     printf(" -realign_max <int>  realign max. <int> hits (default=%i)                        \n", par.realign_max);
-    printf(" -alt <int>     show up to this many alternative alignments with raw score > smin(def=%i)  \n", par.altali);
-    printf(" -smin <float>  minimum raw score for alternative alignments (def=%.1f)  \n", par.smin);
-    printf(" -shift [-1,1]  profile-profile score offset (def=%-.2f)                         \n", par.shift);
-    printf(" -corr [0,1]    weight of term for pair correlations (def=%.2f)                \n", par.corr);
-    printf(" -sc   <int>    amino acid score         (tja: template HMM at column j) (def=%i)\n", par.columnscore);
+    printf(" -alt <int>          show up to this many alternative alignments with raw score > smin(def=%i)  \n", par.altali);
+    printf(" -smin <float>       minimum raw score for alternative alignments (def=%.1f)  \n", par.smin);
+    printf(" -shift [-1,1]       profile-profile score offset (def=%-.2f)                         \n", par.shift);
+    printf(" -corr [0,1]         weight of term for pair correlations (def=%.2f)                \n", par.corr);
+    printf(" -sc   <int>         amino acid score         (tja: template HMM at column j) (def=%i)\n", par.columnscore);
     printf("        0       = log2 Sum(tja*qia/pa)   (pa: aa background frequencies)    \n");
     printf("        1       = log2 Sum(tja*qia/pqa)  (pqa = 1/2*(pa+ta) )               \n");
     printf("        2       = log2 Sum(tja*qia/ta)   (ta: av. aa freqs in template)     \n");
     printf("        3       = log2 Sum(tja*qia/qa)   (qa: av. aa freqs in query)        \n");
     printf("        5       local amino acid composition correction                     \n");
-    printf(" -ssm {0,..,4}  0:   no ss scoring                                             \n");
+    printf(" -ssm {0,..,4}    0:   no ss scoring                                             \n");
     printf("                1,2: ss scoring after or during alignment  [default=%1i]         \n", par.ssm);
     printf("                3,4: ss scoring after or during alignment, predicted vs. predicted\n");
-    printf(" -ssw [0,1]     weight of ss score  (def=%-.2f)                                  \n", par.ssw);
-    printf(" -ssa [0,1]     SS substitution matrix = (1-ssa)*I + ssa*full-SS-substition-matrix [def=%-.2f)\n", par.ssa);
-    printf(" -wg            use global sequence weighting for realignment!                   \n");
+    printf(" -ssw [0,1]          weight of ss score  (def=%-.2f)                                  \n", par.ssw);
+    printf(" -ssa [0,1]          SS substitution matrix = (1-ssa)*I + ssa*full-SS-substition-matrix [def=%-.2f)\n", par.ssa);
+    printf(" -wg                 use global sequence weighting for realignment!                   \n");
     printf("\n");
 
     printf("Gap cost options:                                                                \n");
@@ -207,7 +207,7 @@ void HHsearch::help(Parameters& par, char all) {
 
     printf("Pseudocount (pc) options:                                                        \n");
     printf(" Context specific hhm pseudocounts:\n");
-    printf("  -pc_hhm_contxt_mode {0,..,3}      position dependence of pc admixture 'tau' (pc mode, default=%-i) \n", par.pc_hhm_context_engine.admix);
+    printf("  -pc_hhm_contxt_mode {0,..,3}   position dependence of pc admixture 'tau' (pc mode, default=%-i) \n", par.pc_hhm_context_engine.admix);
     printf("               0: no pseudo counts:    tau = 0                                  \n");
     printf("               1: constant             tau = a                                  \n");
     printf("               2: diversity-dependent: tau = a/(1+((Neff[i]-1)/b)^c)            \n");
@@ -219,7 +219,7 @@ void HHsearch::help(Parameters& par, char all) {
     printf("\n");
 
     printf(" Context independent hhm pseudocounts (used for templates; used for query if contxt file is not available):\n");
-    printf("  -pc_hhm_nocontxt_mode {0,..,3}      position dependence of pc admixture 'tau' (pc mode, default=%-i) \n", par.pc_hhm_nocontext_mode);
+    printf("  -pc_hhm_nocontxt_mode {0,..,3}   position dependence of pc admixture 'tau' (pc mode, default=%-i) \n", par.pc_hhm_nocontext_mode);
     printf("               0: no pseudo counts:    tau = 0                                  \n");
     printf("               1: constant             tau = a                                  \n");
     printf("               2: diversity-dependent: tau = a/(1+((Neff[i]-1)/b)^c)            \n");

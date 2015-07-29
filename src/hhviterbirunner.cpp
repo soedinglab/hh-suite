@@ -20,7 +20,7 @@ void ViterbiConsumerThread::clear() {
     excludeAlignments.clear();
 }
 
-void ViterbiConsumerThread::align(int maxres, int nseqdis) {
+void ViterbiConsumerThread::align(int maxres, int nseqdis, const float smin) {
 
     
     int ss_hmm_mode = HMM::computeScoreSSMode(q_simd->GetHMM(0), t_hmm_simd->GetHMM(0));
@@ -39,7 +39,7 @@ void ViterbiConsumerThread::align(int maxres, int nseqdis) {
 
         // Overwrite *hit[bin] with Viterbi scores, Probabilities etc. of hit_cur
         Hit hit_cur;
-        hit_cur.lastrep = (backtraceScore.score <= SMIN) ? 1 : 0;
+        hit_cur.lastrep = (backtraceScore.score <= smin) ? 1 : 0;
 
         hit_cur.initHitFromHMM(curr_t_hmm, nseqdis);
 
@@ -162,13 +162,13 @@ std::vector<Hit> ViterbiRunner::alignment(Parameters& par, HMMSimd * q_simd,
                   exclude_regions(par.exclstr, maxResElem, q_simd, t_hmm_simd[current_thread_id], viterbiMatrix[current_thread_id]);
                 }
                 // start next job
-                threads[current_thread_id]->align(maxResElem, par.nseqdis);
+                threads[current_thread_id]->align(maxResElem, par.nseqdis, par.smin);
             } // idb loop
             // merge thread results
             // search hits for next alignment
             HH_LOG(INFO) << (seqJunkStart + seqJunkSize) <<  " alignments done" << std::endl;
 
-            merge_thread_results(ret_hits, dbfiles_to_align, excludeAlignments, threads, alignment);
+            merge_thread_results(ret_hits, dbfiles_to_align, excludeAlignments, threads, alignment, par.smin);
             for (unsigned int thread = 0; thread < threads.size(); thread++) {
                 threads[thread]->clear();
             }
@@ -247,7 +247,7 @@ float ViterbiRunner::calculateEarlyStop(Parameters& par, HMM * q, std::vector<Hi
 void ViterbiRunner::merge_thread_results(std::vector<Hit> &all_hits,
                                          std::vector<HHEntry*> &dbfiles_to_align,
                                          std::map<std::string, std::vector<Viterbi::BacktraceResult> > &excludeAlignments,
-                                         std::vector<ViterbiConsumerThread *> &threads, int alignment) {
+                                         std::vector<ViterbiConsumerThread *> &threads, int alignment, const float smin) {
     for (unsigned int thread = 0; thread < threads.size(); thread++) {
         ViterbiConsumerThread * current_thread = threads[thread];
         for (unsigned int hit = 0; hit < current_thread->hits.size(); hit++) {
@@ -255,7 +255,7 @@ void ViterbiRunner::merge_thread_results(std::vector<Hit> &all_hits,
             current_hit.irep = (alignment + 1);
             //        printf ("%-12.12s  %-12.12s   irep=%-2i  score=%6.2f\n",current_hit.name,current_hit.fam,                                                                       current_hit.irep,current_hit.score);
             all_hits.push_back(current_hit);
-            if (current_hit.score > SMIN) { // add to next alignmentif score for previous hit is better than SMIN
+            if (current_hit.score > smin) { // add to next alignmentif score for previous hit is better than SMIN
                 dbfiles_to_align.push_back(current_hit.entry);
                 Viterbi::BacktraceResult backtraceResult;
                 backtraceResult.i_steps = current_hit.i;
