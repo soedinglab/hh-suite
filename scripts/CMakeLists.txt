@@ -9,10 +9,9 @@ INSTALL(PROGRAMS
 
 INSTALL(PROGRAMS 
 	addss.pl  
-	checkA3M.pl	  
 	create_profile_from_hhm.pl	
 	hhmakemodel.pl	
-	hhsuitedb.pl  
+	hhsuitedb.py  
 	mergeali.pl
 	multithread.pl  
 	pdbfilter.pl  
@@ -21,5 +20,10 @@ INSTALL(PROGRAMS
 	pdb2fasta.pl    
 	reformat.pl   
 	splitfasta.pl
+	check_a3m.py	  
+	ffindex.py
+	a3m.py
+	get_a3m_size.py
+	is_huge_a3m.py
 	DESTINATION scripts
 )

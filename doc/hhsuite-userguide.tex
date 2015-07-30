@@ -1981,53 +1981,16 @@ MSAs and HMMs can also be added (-a) to or removed (-r) from an existing databas
 \small 
 \begin{verbatim}
 
-Usage: hhblitsdb.pl -o|-a|-r <db_name> [-ia3m <a3m_dir>] [-ihhm <hhm_dir>] [-ics <cs_dir>]... 
-
-With option -o, the following HH-suite database files can be generated:
- <db_name>_cs219.ffdata    packed file containing column-state sequences read from <cs_dir>
- <db_name>_cs219.ffindex   index file for packed column-state sequence file
- <db_name>_a3m.ffdata      packed file containing A3M alignments read from <a3m_dir>
- <db_name>_a3m.ffindex     index file for packed A3M file
- <db_name>_hhm.ffdata      packed file containing HHM-formatted HMMs read from <hhm_dir>
- <db_name>_hhm.ffindex     index file for packed HHM file
+Usage: hhsuitedb.py [options]
 
 Options:
- -o <db_name>    create database with this name
- -a <db_name>    append files to database with this name
- -r <db_name>    remove files from database with this name
- -ia3m <a3m_dir> input directory (or glob of directories) with A3M-formatted files
-                 These files MUST have extension 'a3m'.
- -ihhm <hhm_dir> input directory (or glob of directories) with HHM (or HMMER) files 
-                 These files MUST have extension 'hhm' (HHsuite) or 'hmm' (HMMER3). 
- -ics  <cs_dir>  input directory (or glob of directories) with column state sequences
- -csext <ext>    extension of column state sequences (default: cs219)
- -log <logfile>  log file recording stderr stream of cstranslate and hhmake commands
- -hmm            use HMMER-formatted files. These MUST have extension hmm
-                 (WARNING! HMMER format results in decreased performance over HHM format)
- -v [1-3]        verbose mode (default: 2)
- -cpu <int>      number of threads to generate cs219 and hhm files (default = 8)
- -f 'file_glob'  string with list of glob expressions of files to remove
- 
-Example 1: only -ia3m given; cs sequences and hhm files are generated from a3m files
-   perl hhblitsdb.pl -o databases/mydb -ia3m mydb/a3ms/ 
-
-Example 2: only -ihhm given; cs sequences are generated from hhm files, but no a3m db file 
-   perl hhblitsdb.pl -o databases/mydb -ihhm mydb/hhms/ 
-
-Example 3: -ia3m and -ihhm given; cs sequences are generated from a3m files
-   perl hhblitsdb.pl -o databases/mydb -ia3m mydb/a3ms/ -ihhm mydb/hhms/   
-
-Example 4: -ics, -ia3m, and -ihhm given; all db files are created 
-   perl hhblitsdb.pl -o databases/mydb -ia3m mydb/a3ms/ -ihhm mydb/hhms/ -ics mydb/cs/  
-
-Example 5: using glob expression to specify files (note the single quotes)
-   perl hhblitsdb.pl -o databases/mydb -ihhm 'mydbs*/hhms/*.hhm'  
-
-Example 6: add files to database; cs sequences and hhm files are generated from a3m files
-   perl hhblitsdb.pl -a databases/mydb -ia3m 'mydbs/a3ms/g1a*.a3m'  
-
-Example 7: remove files from database
-   perl hhblitsdb.pl -r databases/mydb -f 'mydbs/a3ms/g1a* mydbs2/*'  
+  -h, --help       show this help message and exit
+  --ia3m=<GLOB>    Glob for a3m files
+  --ics219=<GLOB>  Glob for cs219 files
+  --ihhm=<GLOB>    Glob for hhm files
+  -o FILE          Output hhsuite database basename
+  --cpu=INT        Number of threads that shall used
+  --force          Try to fix problems with the database
 
 \end{verbatim} 
 \normalsize
@@ -2084,7 +2047,6 @@ Option:
    -a [A|B]     filter alternative location identifier (e.g. A or B)
 \end{verbatim} 
 \normalsize
-
 
 
 \section{Selected changes from previous versions}
