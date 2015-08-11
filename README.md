@@ -1,3 +1,5 @@
+# Beta-Test
+
 # HHsuite for sensitive sequence searching version 3.0.0 (15-03-2015)
 
  (C) Johannes Soeding, Markus Meier, Martin Steinegger, Michael Remmert, Andreas Hauser, Andreas Biegert 2015
