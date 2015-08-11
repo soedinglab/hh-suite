@@ -67,7 +67,7 @@ Specify paths in ${INSTALL\_BASE\_DIR}/scripts/HHPaths.pm where they are read by
 
 
 ### Download Databases
-Download current databases from our [server](http://wwwuser.gwdg.de/~compbiol/data/databases/hhsuite_dbs/)
+Download current databases from our [server](http://wwwuser.gwdg.de/~compbiol/data/hhsuite/databases/hhsuite_dbs/)
 To build up multiple sequences alignments using HHblits uniprot20 is sufficient.
 
 
