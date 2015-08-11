@@ -104,7 +104,7 @@ For full documentation see the user guide in hhsuite-userguide.pdf
 
 
 We are very grateful for bug reports! 
-Please contact us at soeding@mpibpc.mgp.de
+Please contact us at soeding@mpibpc.mpg.de
 
 ## Links
 
