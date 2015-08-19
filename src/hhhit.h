@@ -117,7 +117,7 @@ class Hit
   float qsc;
 
   const static int SCORE_BACKTRACE = 2;
-  const static int SCORE_ALIGNMENT = 1;
+  const static int SCORE_ALIGNMENT = 2;
   const static int NO_SS_SCORE = 0;
 
   // Constructor (only set pointers to NULL)

@@ -165,6 +165,14 @@ Viterbi::ViterbiResult* Viterbi::Align(HMMSimd* q, HMMSimd* t,ViterbiMatrix * vi
                                        int maxres, int ss_hmm_mode){
     Viterbi::ViterbiResult* result = new Viterbi::ViterbiResult();
 
+    /* TODO: @Martin: Should be done for ss_mode == 2 and ss_mode == 4?
+     *            if ss_hmm_mode == 0, there is no need to do call the more expensive ss-version?
+     *            it might be bad, that templates with secondary information are treated like with no ss-information
+     *            due to one template without ss-information in the same badge...
+     *            on the other hand... what if you have a badge with ((dssp+psipred), dssp, psipred, (dssp+psipred))
+     *            you would choose a scoring against dssp, even if one template doesn't have dssp annotation.
+     *            Might this cause problems?
+     */
     if(ss_mode == Hit::SCORE_ALIGNMENT){
         if (viterbiMatrix->hasCellOff()==true) {
             this->AlignWithCellOffAndSS(q,t,viterbiMatrix, maxres, result, ss_hmm_mode);
