@@ -4,7 +4,7 @@
 
  (C) Johannes Soeding, Markus Meier, Martin Steinegger, Michael Remmert, Andreas Hauser, Andreas Biegert 2015
  
-[ ![Codeship Status for soedinglab/hh-suite](https://codeship.com/projects/f79d89f0-03a1-0133-01be-62fced7320b0/status?branch=master)](https://codeship.com/projects/89223)
+[ ![Codeship Status for soedinglab/hh-suite](https://codeship.com/projects/0936c290-2248-0133-bcb4-52bb0fef976f/status?branch=master)](https://codeship.com/projects/96085)
 
 The HH-suite is an open-source software package for sensitive protein sequence searching based on the pairwise alignment of hidden Markov models (HMMs).
 
