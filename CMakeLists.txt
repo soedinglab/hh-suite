@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.8.12)
 set(CMAKE_LEGACY_CYGWIN_WIN32 0)
 SET(HAVE_SSSE3 0 CACHE BOOL "Have SSSE3")
 SET(HAVE_AVX2 0 CACHE BOOL "Have AVX2")
