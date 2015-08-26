@@ -868,6 +868,7 @@ void HHblits::mergeHitsToQuery(Hash<Hit>* previous_hits,
 
     if (par.allseqs)  // need to keep *all* sequences in Qali_allseqs? => merge before filtering
       Qali_allseqs->MergeMasterSlave(hit_cur, Tali, hit_cur.name, par.maxcol);
+
     Tali.N_filtered = Tali.Filter(par.max_seqid_db, S, par.coverage_db,
                                   par.qid_db, par.qsc_db, par.Ndiff_db);
     Qali->MergeMasterSlave(hit_cur, Tali, hit_cur.name, par.maxcol);
@@ -877,7 +878,7 @@ void HHblits::mergeHitsToQuery(Hash<Hit>* previous_hits,
   }
 
   // Convert ASCII to int (0-20),throw out all insert states, record their number in I[k][i]
-  Qali->Compress("merged A3M file", par.cons, par.maxres, par.maxcol, par.M,
+  Qali->Compress("merged A3M file", par.cons, par.maxres, par.maxcol, par.M_template,
                  par.Mgaps);
 
   // Sort out the nseqdis most dissimilacd r sequences for display in the result alignments
