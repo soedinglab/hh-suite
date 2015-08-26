@@ -326,7 +326,7 @@ void HHDatabaseEntry::getTemplateHMM(Parameters& par, char use_global_weights,
                         hhdatabase->header_database->db_data, par.mark,
                         par.maxcol);
 
-    tali.Compress(entry->name, par.cons, par.maxres, par.maxcol, par.M,
+    tali.Compress(entry->name, par.cons, par.maxres, par.maxcol, par.M_template,
                   par.Mgaps);
 
     tali.N_filtered = tali.Filter(par.max_seqid_db, S, par.coverage_db,
@@ -398,7 +398,7 @@ void HHDatabaseEntry::getTemplateA3M(Parameters& par, float* pb,
     fclose(dbf);
   }
 
-  tali.Compress(entry->name, par.cons, par.maxres, par.maxcol, par.M,
+  tali.Compress(entry->name, par.cons, par.maxres, par.maxcol, par.M_template,
                 par.Mgaps);
 }
 
@@ -442,7 +442,7 @@ void HHEntry::getTemplateHMM(FILE* dbf, char* name, Parameters& par,
     else if (line[0] == '#' || line[0] == '>') {
       Alignment tali;
       tali.Read(dbf, name, par.mark, par.maxcol, par.nseqdis, line);
-      tali.Compress(name, par.cons, par.maxres, par.maxcol, par.M, par.Mgaps);
+      tali.Compress(name, par.cons, par.maxres, par.maxcol, par.M_template, par.Mgaps);
       //              qali.FilterForDisplay(par.max_seqid,par.coverage,par.qid,par.qsc,par.nseqdis);
       tali.N_filtered = tali.Filter(par.max_seqid_db, S, par.coverage_db,
                                     par.qid_db, qsc, par.Ndiff_db);
@@ -532,7 +532,7 @@ void HHFileEntry::getTemplateA3M(Parameters& par, float* pb,
 
     Alignment ali_tmp;
     ali_tmp.GetSeqsFromHMM(t);
-    ali_tmp.Compress(file, par.cons, par.maxres, par.maxcol, par.M, par.Mgaps);
+    ali_tmp.Compress(file, par.cons, par.maxres, par.maxcol, par.M_template, par.Mgaps);
     tali = ali_tmp;
   }
   // ... or is it an alignment file
@@ -544,7 +544,7 @@ void HHFileEntry::getTemplateA3M(Parameters& par, float* pb,
 
     // Convert ASCII to int (0-20),throw out all insert states, record their number in I[k][i]
     // and store marked sequences in name[k] and seq[k]
-    ali_tmp.Compress(file, par.cons, par.maxres, par.maxcol, par.M, par.Mgaps);
+    ali_tmp.Compress(file, par.cons, par.maxres, par.maxcol, par.M_template, par.Mgaps);
 
     tali = ali_tmp;
   } else {

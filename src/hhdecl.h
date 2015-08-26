@@ -204,6 +204,7 @@ public:
 
   int Mgaps;              // Maximum percentage of gaps for match states
   int M;                  // Match state assignment by  1:upper/lower case  2:percentage rule  3:marked sequence
+  int M_template;
   char matrix;            // Subst.matrix 0: Gonnet, 1: HSDM, 2: BLOSUM50
 
   char wg;                // 0: use local sequence weights   1: use global ones

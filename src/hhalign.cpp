@@ -529,13 +529,18 @@ void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
       par.realign = 0;
     else if (!strcmp(argv[i], "-M") && (i < argc - 1))
       //TODO: M a3m not defined in the help
-      if (!strcmp(argv[++i], "a2m") || !strcmp(argv[i], "a3m"))
+      if (!strcmp(argv[++i], "a2m") || !strcmp(argv[i], "a3m")){
         par.M = 1;
-      else if (!strcmp(argv[i], "first"))
+        par.M_template = 1;
+      }
+      else if (!strcmp(argv[i], "first")) {
         par.M = 3;
+        par.M_template = 3;
+      }
       else if (argv[i][0] >= '0' && argv[i][0] <= '9') {
         par.Mgaps = atoi(argv[i]);
         par.M = 2;
+        par.M_template = 2;
       }
       else
         HH_LOG(WARNING) << "Ignoring unknown argument: -M " << argv[i] << std::endl;

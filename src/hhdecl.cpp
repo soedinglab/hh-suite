@@ -99,6 +99,7 @@ void Parameters::SetDefaults() {
 	Neff = 0; // Filter alignment to a diversity (Neff) with a maximum Neff of par.Neff
 
 	M = 1;                     // match state assignment is by A2M/A3M
+	M_template = 1;
 	Mgaps = 50; // Above this percentage of gaps, columns are assigned to insert states (for par.M=2)
 
 	wg = 0;                // 0: use local sequence weights   1: use global ones
