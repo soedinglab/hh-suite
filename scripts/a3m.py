@@ -9,12 +9,12 @@ class A3MFormatError(Exception):
 
 
 class A3M_Container:
-  header = None
-  annotations = dict()
-  consensus = None
-  sequences = []
-  nr_match_states = None
-  
+  def __init__(self):
+    self.header = None
+    self.annotations = dict()
+    self.consensus = None
+    self.sequences = []
+    self.nr_match_states = None
   
   def get_number_sequences(self):
     return len(self.sequences)
@@ -144,6 +144,60 @@ class A3M_Container:
         raise A3MFormatError("Undefined character '"+c+"' in protein sequence!")
     
     return match_states
+  
+  def get_sub_sequence(self, sequence, limits):
+    allowed_match_states = set({'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'})
+    sub_sequence = ""
+    
+    for (start, end) in limits:
+      start_pos = 0
+      pos = -1
+      for i in range(len(sequence)):
+        if sequence[i] in allowed_match_states:
+          pos += 1
+          if pos + 1 == start:
+            start_pos = i
+            break
+          
+      end_pos = 0
+      pos = -1
+      for i in range(len(sequence)):
+        if sequence[i] in allowed_match_states:
+          pos += 1
+          if pos + 1 == end:
+            end_pos = i
+            break
+      sub_sequence += sequence[start_pos:end_pos+1]
+      
+    return sub_sequence
+  
+  
+  def get_content(self):
+    content = ""
+
+    if self.consensus:
+      content += self.consensus[0]+"\n"
+      content += self.consensus[1]+"\n"
+    
+    for (header, sequence) in self.sequences:
+      content += header+"\n"
+      content += sequence+"\n"
+      
+    return content
+    
+  
+  def split_a3m(self, limits):
+    new_a3m = A3M_Container()
+    
+    if self.consensus:    
+      new_consensus_sequence = self.get_sub_sequence(self.consensus[1], limits)
+      new_a3m.consensus = ((self.consensus[0], new_consensus_sequence))
+
+    for (header, sequence) in self.sequences:
+      new_sequence = self.get_sub_sequence(sequence, limits)
+      new_a3m.sequences.append((header, new_sequence))
+    
+    return new_a3m
 
 
   def read_a3m(self, fh):
