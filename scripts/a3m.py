@@ -147,13 +147,15 @@ class A3M_Container:
   
   def get_sub_sequence(self, sequence, limits):
     allowed_match_states = set({'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'})
+    allowed_gap_states = set({"-", "."})
+
     sub_sequence = ""
     
     for (start, end) in limits:
       start_pos = 0
       pos = -1
       for i in range(len(sequence)):
-        if sequence[i] in allowed_match_states:
+        if sequence[i] in allowed_match_states or sequence[i] in allowed_gap_states:
           pos += 1
           if pos + 1 == start:
             start_pos = i
@@ -162,7 +164,7 @@ class A3M_Container:
       end_pos = 0
       pos = -1
       for i in range(len(sequence)):
-        if sequence[i] in allowed_match_states:
+        if sequence[i] in allowed_match_states  or sequence[i] in allowed_gap_states:
           pos += 1
           if pos + 1 == end:
             end_pos = i
