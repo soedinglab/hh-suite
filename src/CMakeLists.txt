@@ -132,6 +132,8 @@ add_executable(hhblits_omp
   $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff_and_ss>
 )
 target_link_libraries (hhblits_omp ffindex)
+
+${CMAKE_CURRENT_BINARY_DIR}/hhblits_omp 
 endif()
 
 add_executable(hhmake
@@ -213,7 +215,6 @@ target_link_libraries (cstranslate ffindex)
 
 INSTALL(PROGRAMS 
 	${CMAKE_CURRENT_BINARY_DIR}/hhblits 
-	${CMAKE_CURRENT_BINARY_DIR}/hhblits_omp 
 	${CMAKE_CURRENT_BINARY_DIR}/hhmake 
 	${CMAKE_CURRENT_BINARY_DIR}/hhfilter 
 	${CMAKE_CURRENT_BINARY_DIR}/hhsearch 
