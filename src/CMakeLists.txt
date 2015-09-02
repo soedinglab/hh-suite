@@ -133,7 +133,11 @@ add_executable(hhblits_omp
 )
 target_link_libraries (hhblits_omp ffindex)
 
-${CMAKE_CURRENT_BINARY_DIR}/hhblits_omp 
+INSTALL(PROGRAMS 
+  ${CMAKE_CURRENT_BINARY_DIR}/hhblits_omp
+  DESTINATION bin
+)
+
 endif()
 
 add_executable(hhmake
