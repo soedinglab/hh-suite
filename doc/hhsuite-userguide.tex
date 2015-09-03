@@ -738,8 +738,8 @@ conjunction with -realign, the mact parameter is automatically set to 0 in order
 produce global alignments. In other words, both following two commands will give 
 global alignments:
 \begin{verbatim}
-$ hhsearch -i <query> -d <db.hhm> -realign -mact 0
-$ hhsearch -i <query> -d <db.hhm> -realign -global
+$ hhsearch -i <query> -d <db> -realign -mact 0
+$ hhsearch -i <query> -d <db> -realign -global
 \end{verbatim}
 
 The first version uses \emph{local} Viterbi to search and then uses MAC to realign the 
@@ -869,7 +869,7 @@ No_of_seqs    149 out of 272
 Neff          5.2 
 Searched_HMMs 13730
 Date          Wed Jan  4 17:44:24 2012
-Command       /cluster/user/soeding/hh/src/hhsearch -i query.a3m -d /cluster/user/soeding/databases/scop.hhm -cpu 18 
+Command       hhsearch -i query.a3m -d /cluster/user/soeding/databases/scop -cpu 18 
 
  No Hit                             Prob E-value P-value  Score    SS Cols Query HMM  Template HMM
   1 d1qpca_ d.144.1.7 (A:) Lymphoc  99.7 4.5E-17 3.2E-21  154.3  10.2   99  203-320    56-157 (272)
@@ -1267,8 +1267,7 @@ of the FASTA or A2M format.
 
 \subsection{HHsearch/HHblits model format (hhm-format)} \label{hhmformat}
 
-HMMs can be read by HHsearch/HHblits in HHsuite's own hhm format, as well as in HMMER format 
-(extension hmm) (\url{http://hmmer.org/}).
+HMMs can be read by HHsearch/HHblits in HHsuite's own hhm format.
 Performance is severely reduced when using HMMER-format, because HMMER adds more pseudocounts than HHsearch/HHblits
 that we cannot remove anymore. \emph{We therefore strongly advise against using models from HMMER with HHsuite.} 
 We recommend to get the original MSA files and generate hhm-formatted models using \verb`hhmake`, as described in 
