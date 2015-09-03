@@ -80,7 +80,9 @@ float S33[NSSPRED][MAXCF][NSSPRED][MAXCF];
 char program_name[NAMELEN];
 char program_path[NAMELEN];
 
-HMM* q = new HMM;         //Create a HMM with maximum of par.maxres match states
+char name[NAMELEN];
+char longname[DESCLEN];
+
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Help functions
@@ -176,10 +178,13 @@ void help(char all = 0) {
     printf(
         "  -nocontxt      use substitution-matrix instead of context-specific pseudocounts \n");
     printf(
-        "  -contxt <file> context file for computing context-specific pseudocounts (default=%s)\n",
+        "  -contxt <file> context file for computing context-specific pseudocounts (default=%s)\n\n",
         par.clusterfile);
+    printf("Other options:                                                                   \n");
+    printf(" -maxres <int>  max number of HMM columns (def=%5i)             \n", par.maxres);
     printf("\n");
   }
+
   printf("Example: %s -i test.a3m \n", program_name);
   printf("\n");
 }
@@ -188,6 +193,9 @@ void help(char all = 0) {
 //// Processing input options from command line and .hhdefaults file
 /////////////////////////////////////////////////////////////////////////////////////
 void ProcessArguments(int argc, char** argv) {
+  name[0] = '\0';
+  longname[0] = '\0';
+
   // Read command line options
   for (int i = 1; i <= argc - 1; i++) {
 	HH_LOG(DEBUG1) << i << "  " << argv[i] << std::endl;
@@ -236,8 +244,8 @@ void ProcessArguments(int argc, char** argv) {
     else if (!strncmp(argv[i], "-mark", 5))
       par.mark = 1;
     else if (!strcmp(argv[i], "-name") && (i < argc - 1)) {
-      strmcpy(q->name, argv[++i], NAMELEN - 1); //copy longname to name...
-      strmcpy(q->longname, argv[i], DESCLEN - 1);   //copy full name to longname
+      strmcpy(name, argv[++i], NAMELEN - 1); //copy longname to name...
+      strmcpy(longname, argv[i], DESCLEN - 1);   //copy full name to longname
     }
     else if (!strcmp(argv[i], "-id") && (i < argc - 1))
       par.max_seqid = atoi(argv[++i]);
@@ -283,6 +291,10 @@ void ProcessArguments(int argc, char** argv) {
     }
     else if (!strcmp(argv[i], "-wg")) {
       par.wg = 1;
+    }
+    else if (!strcmp(argv[i], "-maxres") && (i < argc - 1)) {
+      par.maxres = atoi(argv[++i]);
+      par.maxcol = 2 * par.maxres;
     }
     else if (!strcmp(argv[i], "-pcm") && (i < argc - 1))
       par.pc_hhm_context_engine.admix = (Pseudocounts::Admix) atoi(argv[++i]);
@@ -392,6 +404,8 @@ int main(int argc, char **argv) {
   // Process command line options (they override defaults from .hhdefaults file)
   ProcessArguments(argc, argv);
 
+
+
   // Check command line input and default values
   if (!*par.infile) {
     help();
@@ -400,6 +414,11 @@ int main(int argc, char **argv) {
   }
   if (par.nseqdis > MAXSEQDIS - 3)
     par.nseqdis = MAXSEQDIS - 3; //3 reserve for secondary structure
+
+  HMM* q = new HMM(par.nseqdis, par.maxres);         //Create a HMM with maximum of par.maxres match states
+  strmcpy(q->name, name, NAMELEN - 1); //copy longname to name...
+  strmcpy(q->longname, longname, DESCLEN - 1);   //copy full name to longname
+
 
   // Get basename
   RemoveExtension(q->file, par.infile); //Get basename of infile (w/o extension):
@@ -420,7 +439,7 @@ int main(int argc, char **argv) {
 
   // Read input file (HMM, HHM, or alignment format), and add pseudocounts etc.
   char input_format = 0;
-  Alignment* Qali = new Alignment();
+  Alignment* Qali = new Alignment(MAXSEQ, par.maxres);
   ReadQueryFile(par, par.infile, input_format, par.wg, q, Qali, pb, S, Sim);
   PrepareQueryHMM(par, input_format, q, pc_hhm_context_engine, pc_hhm_context_mode, pb, R);
 
