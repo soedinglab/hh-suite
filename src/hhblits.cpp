@@ -1132,8 +1132,8 @@ void HHblits::run(FILE* query_fh, char* query_path) {
   Hit hit_cur;
   Hash<Hit>* previous_hits = new Hash<Hit>(1631, hit_cur);
 
-  Qali = new Alignment();
-  Qali_allseqs = new Alignment();
+  Qali = new Alignment(MAXSEQ, par.maxres);
+  Qali_allseqs = new Alignment(MAXSEQ, par.maxres);
 
   q = new HMM(MAXSEQDIS, par.maxres);
   HMMSimd q_vec(par.maxres);
