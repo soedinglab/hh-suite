@@ -451,9 +451,7 @@ int main(int argc, char **argv) {
 
   // Print 'Done!'
   FILE* outf = NULL;
-  if (!strcmp(par.outfile, "stdout"))
-    printf("Done!\n");
-  else {
+  if (strcmp(par.outfile, "stdout")) {
     if (!*par.outfile) {
       outf = fopen(par.outfile, "a"); //open for append
       fprintf(outf, "Done!\n");
