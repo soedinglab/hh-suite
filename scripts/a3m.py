@@ -177,6 +177,9 @@ class A3M_Container:
   def get_content(self):
     content = ""
 
+    if self.header:
+      content += self.header+"\n"
+
     if self.consensus:
       content += self.consensus[0]+"\n"
       content += self.consensus[1]+"\n"
@@ -214,6 +217,7 @@ class A3M_Container:
     is_first_line = True
     
     for line in lines:
+      line = line.strip()
       if len(line) == 0:
         continue
       elif line[0] == "#":
