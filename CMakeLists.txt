@@ -26,6 +26,8 @@ set (HHSUITE_VERSION_MINOR 0)
 set (HHSUITE_VERSION_PATCH 0)
 set (HHSUITE_DATE "15-03-2015")
 
+set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
+
 include_directories(src)
 include_directories(lib/ffindex/src)
 
