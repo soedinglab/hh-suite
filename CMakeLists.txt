@@ -26,7 +26,17 @@ set (HHSUITE_VERSION_MINOR 0)
 set (HHSUITE_VERSION_PATCH 0)
 set (HHSUITE_DATE "15-03-2015")
 
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
+#set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
+
+INSTALL(FILES
+  hhsuite-userguide.pdf
+  LICENSE
+  README
+  PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
+  DESTINATION ./
+)
+
+
 
 include_directories(src)
 include_directories(lib/ffindex/src)
@@ -36,3 +46,39 @@ add_subdirectory(data)
 add_subdirectory(scripts)
 #add_subdirectory(doc)
 add_subdirectory(lib/ffindex)
+
+
+SET (CPACK_GENERATOR "DEB;TGZ;ZIP;RPM")
+SET (CPACK_DEBIAN_PACKAGE_MAINTAINER "Markus Meier")
+
+set(CPACK_SOURCE_IGNORE_FILES
+  ".synctex.gz$"
+  ".toc$"
+  ".blg$"
+  ".bbl$"
+  ".aux$"
+  ".log$"
+  ".dvi$"
+  ".out.ps$"
+  "/rpm/"
+  "^${PROJECT_SOURCE_DIR}/build/"
+  "^${PROJECT_SOURCE_DIR}/.git/"
+  "^${PROJECT_SOURCE_DIR}/.gitignore"
+  "^${PROJECT_SOURCE_DIR}/.gitattributes"
+  "^${PROJECT_SOURCE_DIR}/.gitmodules"
+  "^${PROJECT_SOURCE_DIR}/.pydevproject"
+  "^${PROJECT_SOURCE_DIR}/.project"
+  "^${PROJECT_SOURCE_DIR}/.cproject"
+  "^${PROJECT_SOURCE_DIR}/lib/ffindex/.git"
+  "^${PROJECT_SOURCE_DIR}/lib/ffindex/.git"
+  "^${PROJECT_SOURCE_DIR}/.autotools"
+  "^${PROJECT_SOURCE_DIR}/README.md"
+)
+
+set (CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
+set (CPACK_PACKAGE_VERSION_MAJOR "${HHSUITE_VERSION_MAJOR}")
+set (CPACK_PACKAGE_VERSION_MINOR "${HHSUITE_VERSION_MINOR}")
+set (CPACK_PACKAGE_VERSION_MINOR "${HHSUITE_VERSION_PATCH}")
+INCLUDE(CPack)
+
+
