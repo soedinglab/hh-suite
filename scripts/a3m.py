@@ -37,7 +37,6 @@ class A3M_Container:
   
   
   def check_and_add_consensus(self, header, sequence):
-    tokens = header[1:].split()
     header_name = header[1:].split()[0]
     if header_name.endswith("_consensus"):
       if self.consensus:
@@ -45,7 +44,7 @@ class A3M_Container:
       else:
         match_states = self.check_sequence(sequence)
         self.check_match_states(match_states)
-        consensus = (header, sequence)
+        self.consensus = (header, sequence)
         return True
     else:
       return False
