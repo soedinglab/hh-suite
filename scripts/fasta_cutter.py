@@ -14,8 +14,8 @@ def opt():
   parser.add_option("--overlap", dest="overlap", type=int,
                     help="Length of overlap of cutted sequences", metavar="INT")
 
-  parser.set_default(max_length, 14999)
-  parser.set_default(overlap, 100)
+  parser.set_default(max_length=14999)
+  parser.set_default(overlap=100)
   
   return parser
 
