@@ -74,7 +74,6 @@ std::vector<Hit> ViterbiRunner::alignment(Parameters& par, HMMSimd * q_simd,
     const float S37[NSSPRED][MAXCF][NDSSP]) {
 
     HMM * q = q_simd->GetHMM(0);
-    std::cout << ssm_mode << std::endl;
     // Initialize memory
     std::vector<HMM*> t_hmm;
     for(size_t i = 0; i < HMMSimd::VEC_SIZE * thread_count; i++) {

@@ -93,12 +93,8 @@ void Viterbi::AlignWithOutCellOff(HMMSimd* q, HMMSimd* t,ViterbiMatrix * viterbi
     const unsigned char * t_index;
     if(ss_hmm_mode == HMM::PRED_PRED || ss_hmm_mode == HMM::DSSP_PRED  ){
         t_index = t->pred_index;
-        std::cout << "PRED!!!!" << std::endl;
-
     }else if(ss_hmm_mode == HMM::PRED_DSSP){
         t_index = t->dssp_index;
-        std::cout << "DSSP!!!!" << std::endl;
-
     }
     simd_float * ss_score_vec = (simd_float *) ss_score;
 #endif
