@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
 """
-hhbsuite.py
-Creates HH-suite database files from A3M and HHM files 
-Usage: Usage: python hhsuite_db.py -o <db_name> [-ia3m <a3m_dir>] [-ihhm <hhm_dir>] [-ics <cs_dir>] [more_options]
+    hhbsuite.py
+    Creates HH-suite database files from A3M and HHM files 
+    Usage: Usage: python hhsuite_db.py -o <db_name> [-ia3m <a3m_dir>] [-ihhm <hhm_dir>] [-ics <cs_dir>] [more_options]
 
     HHsuite version 3.0.0 (15-03-2015)
 
