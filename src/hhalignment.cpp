@@ -2321,9 +2321,9 @@ void Alignment::FrequenciesAndTransitions(HMM* q, char use_global_weights,
   for (k = 0; k < N_in; ++k) {
     int nn;
     if (display[k]) {
-      if (n >= MAXSEQDIS) {
+      if (n >= q->maxseqdis) { //MAXSEQDIS) {
         if (mark)
-          HH_LOG(WARNING) << "Maximum number " << MAXSEQDIS << " of sequences for display of alignment exceeded" << std::endl;
+          HH_LOG(WARNING) << "Maximum number " << q->maxseqdis << " of sequences for display of alignment exceeded" << std::endl;
         break;
       }
       if (k == kss_dssp)

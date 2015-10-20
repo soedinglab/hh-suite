@@ -13,6 +13,7 @@
 /////////////////////////////////////////////////////////////////////////////////////
 HMM::HMM(int par_maxseqdis, int par_maxres) {
 	maxres = par_maxres;
+	maxseqdis = par_maxseqdis;
 	sname = new char*[par_maxseqdis];   // names of stored sequences
 	seq = new char*[par_maxseqdis]; // residues of stored sequences (first at pos 1!)
 	Neff_M = new float[maxres]; // Neff_M[i] = diversity of subalignment of seqs that have residue in col i

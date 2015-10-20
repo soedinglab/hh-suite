@@ -26,6 +26,7 @@ class HMM {
   HMM& operator=(HMM&);
 
   int maxres;
+  int maxseqdis;
 
   int n_display;  // number of sequences stored for display of alignment (INCLUDING >ss_ and >cf_ sequences)
   int n_seqs;  // number of sequences read in (INCLUDING >ss_ and >cf_ sequences)
