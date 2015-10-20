@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
 """
-hhbsuite.py
-Creates HH-suite database files from A3M and HHM files 
-Usage: Usage: python hhsuite_db.py -o <db_name> [-ia3m <a3m_dir>] [-ihhm <hhm_dir>] [-ics <cs_dir>] [more_options]
+    hhbsuite.py
+    Creates HH-suite database files from A3M and HHM files 
+    Usage: Usage: python hhsuite_db.py -o <db_name> [-ia3m <a3m_dir>] [-ihhm <hhm_dir>] [-ics <cs_dir>] [more_options]
 
     HHsuite version 3.0.0 (15-03-2015)
 
@@ -33,7 +33,7 @@ Usage: Usage: python hhsuite_db.py -o <db_name> [-ia3m <a3m_dir>] [-ihhm <hhm_di
 
 from optparse import OptionParser
 from glob import glob
-from subprocess import check_call, Popen
+from subprocess import check_call
 import ffindex
 import a3m
 import tempfile
@@ -97,6 +97,8 @@ def calculate_hhm(threads, a3m_base_path, hhm_base_path):
   
   large_a3ms = get_large_a3ms(a3m_base_path)
   large_a3m_index = os.path.join(tmp_dir, "large.ffindex")
+
+  a3m_index = read_ffindex(a3m_base_path+".ffindex")
   write_subset_index(a3m_index, large_a3ms, large_a3m_index)
   
   #TODO at the moment we are building all hmms...
@@ -119,7 +121,7 @@ def merge_databases(source_data_path, source_index_path, dest_data_path, dest_in
 
 
 def sort_database(data_path, index_path):
-  check_call(["ffindex_build", "-as", dest_data_path, dest_index_path])
+  check_call(["ffindex_build", "-as", data_path, index_path])
 
 
 def read_ffindex(file):
@@ -134,10 +136,11 @@ def read_ffindex(file):
   return index
 
 
-def write_subset_index(index, set, output_file):
+def write_subset_index(index, subset, output_file):
   fh = open(output_file, "w")
   for entry in index:
-    fh.write("{name:.64}\t{offset}\t{length}\n".format(name=entry[0], offset=entry[1], length=entry[2]))
+    if entry[0] in subset:
+      fh.write("{name:.64}\t{offset}\t{length}\n".format(name=entry[0], offset=entry[1], length=entry[2]))
   fh.close()
 
 
@@ -202,7 +205,7 @@ def handle_duplicates(suffix, calculate, threads, db_basename, force_mode):
   duplicates = get_duplicates(index)
   
   if(suffix == "a3m" and len(duplicates) > 0):
-    sys.stderr.write("ERROR: "+output_basename+"_a3m.ffindex contains duplicates!\n")
+    sys.stderr.write("ERROR: "+db_basename+"_a3m.ffindex contains duplicates!\n")
     sys.stderr.write("ERROR: Your database is broken!\n")
     exit(1);
     
@@ -306,7 +309,7 @@ def handle_overhead(suffix, db_basename, force_mode):
     return
 
   for f in overhead:
-    sys.stderr.write("WARNING: Entry "+f+" from "+output_basename+"_"+suffix+".ff{data,index} has no corresponding entry in the a3m database!\n")
+    sys.stderr.write("WARNING: Entry "+f+" from "+db_basename+"_"+suffix+".ff{data,index} has no corresponding entry in the a3m database!\n")
 
   if force_mode:
     sys.stderr.write("WARNING: Try to fix overhead entries!\n")
@@ -360,8 +363,6 @@ def check_a3m_format(db_basename, force_mode):
     
 
 def check_database(output_basename, threads, force_mode):
-  tmp_dir = tempfile.mkdtemp()
-  
   if not os.path.exists(output_basename+"_a3m.ffindex") or not os.path.exists(output_basename+"_a3m.ffdata"):
     sys.stderr.write("Error: No a3m database found!")
     exit(1)
@@ -447,7 +448,7 @@ def opt():
   return parser
   
 
-def check_options(options):
+def check_options(options, parser):
   if not options.nr_cores:
     sys.stderr.write("Please use --cpu!\n")
     parser.print_help()
@@ -462,7 +463,7 @@ def check_options(options):
 def main():
   parser = opt()
   (options, args) = parser.parse_args()
-  check_options(options)
+  check_options(options, parser)
   
   #Important to do a3m's first... deleting out of date hhm's and cs219's
   if(options.a3m_files_glob):

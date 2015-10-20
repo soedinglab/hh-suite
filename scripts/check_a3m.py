@@ -2,7 +2,6 @@
 
 from a3m import A3M_Container
 from a3m import A3MFormatError
-import fileinput
 import sys
 
 

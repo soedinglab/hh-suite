@@ -829,6 +829,8 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
       par.notags = 0;
     else if (!strcmp(argv[i], "-notags"))
       par.notags = 1;
+    else if (!strcmp(argv[i], "-maxfilt") && (i < argc - 1))
+      par.maxnumdb = atoi(argv[++i]);
     else {
       HH_LOG(WARNING) << "Ignoring unknown option " << argv[i] << std::endl;
     }
