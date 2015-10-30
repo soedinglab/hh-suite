@@ -341,7 +341,7 @@ int main(int argc, char **argv) {
   // Process command line options (they override defaults from .hhdefaults file)
   ProcessArguments(argc, argv);
 
-  Alignment* qali = new Alignment(MAXSEQDIS, par.maxres);
+  Alignment* qali = new Alignment(MAXSEQ, par.maxres);
   HMM* q = new HMM(MAXSEQDIS, par.maxres);        //Create a HMM with maximum of par.maxres match states
 
   // q is only available after maxres is known, so we had to move this here
