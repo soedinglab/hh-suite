@@ -20,7 +20,7 @@
  *     You should have received a copy of the GNU General Public License
  *     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
- *     We are very grateful for bug reports! Please contact us at soeding@genzentrum.lmu.de
+ *     We are very grateful for bug reports! Please contact us at soeding@mpibpc.mpg.de
 
  *     Reference:
  *     Remmert M., Biegert A., Hauser A., and Soding J.

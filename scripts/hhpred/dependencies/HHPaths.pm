@@ -16,7 +16,7 @@
 #     You should have received a copy of the GNU General Public License
 #     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#     We are very grateful for bug reports! Please contact us at soeding@genzentrum.lmu.de
+#     We are very grateful for bug reports! Please contact us at soeding@mpibpc.mpg.de
 #     HHsuite version 2.0
 
 # PLEASE INSERT CORRECT PATHS AT POSITIONS INDICATED BY ... BELOW
