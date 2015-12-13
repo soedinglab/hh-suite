@@ -108,7 +108,7 @@ Please contact us at soeding@mpibpc.mpg.de
 
 ## Links
 
-* [soeding lab](http://www.mpibpc.mpg.de/de/soeding)
+* [soeding lab](http://www.mpibpc.mpg.de/soeding)
 * [databases and precompiled hh-suite versions](http://wwwuser.gwdg.de/~compbiol/data/hhsuite/)
 
 
