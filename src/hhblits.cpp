@@ -880,7 +880,7 @@ void HHblits::mergeHitsToQuery(Hash<Hit>* previous_hits,
   }
 
   // Convert ASCII to int (0-20),throw out all insert states, record their number in I[k][i]
-  Qali->Compress("merged A3M file", par.cons, par.maxres, par.maxcol, par.M_template,
+  Qali->Compress("merged A3M file", par.cons, par.maxres, par.maxcol, 1,
                  par.Mgaps);
 
   // Sort out the nseqdis most dissimilacd r sequences for display in the result alignments
