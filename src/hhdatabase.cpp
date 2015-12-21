@@ -47,9 +47,9 @@ FFindexDatabase::FFindexDatabase(char* data_filename, char* index_filename,
   fclose(db_index_fh);
 
   if (db_index == NULL) {
-    HH_LOG(ERROR) << "In " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
-    HH_LOG(ERROR) << "\tCould not read index file" << index_filename << ". Is the file empty or corrupted?" << std::endl;
-    exit(1);
+    HH_LOG(WARNING) << "In " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+    HH_LOG(WARNING) << "\tCould not read index file" << index_filename << ". Is the file empty or corrupted?" << std::endl;
+//    exit(1);
   }
 
   db_data = ffindex_mmap_data(db_data_fh, &data_size);
