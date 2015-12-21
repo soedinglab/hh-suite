@@ -515,15 +515,15 @@ sub AlignNW {
    # Initialization
     $M[0][0]=$A[0][0]=$B[0][0]=0;
     for ($i=1; $i<=$Lx; $i++) {
-	$M[$i][0] = $OutsidePenalty;	
-	$A[$i][0] = $OutsidePenalty;	
+	$M[$i][0] = -1.0 * $OutsidePenalty;	
+	$A[$i][0] = -1.0 * $OutsidePenalty;	
 	$B[$i][0] = -$i*$main::g;
 	$Bbt[$i][0] = 0; # previous state was B as well (gap in y)
     }
     for ($j=1; $j<=$Ly; $j++) {
-	$M[0][$j] = $OutsidePenalty;	
+	$M[0][$j] = -1.0 * $OutsidePenalty;	
 	$A[0][$j] = -$j*$main::g;	
-	$B[0][$j] = $OutsidePenalty;
+	$B[0][$j] = -1.0 * $OutsidePenalty;
 	$Abt[0][$j] = 0; # previous state was A as well (gap in x)
     }
     
@@ -545,7 +545,7 @@ sub AlignNW {
     }
 
     # Finding maximum
-    $score = $OutsidePenalty;
+    $score = -1.0 * $OutsidePenalty;
     for ($i=1; $i<=$Lx; $i++) {
 	my $endgappenalty = ($Lx-$i)*$main::g;
 	if ($M[$i][$Ly]-$endgappenalty > $score) {
