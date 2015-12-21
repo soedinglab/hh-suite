@@ -635,7 +635,7 @@ sub MakeMultipleAlignment()
     # Write sequences into output file
     open (OUTFILE, ">$outfile") || die ("cannot open $outfile:$!");
     for ($k=0; $k<@hitnames; $k++) {
-	print(OUTFILE "$hitnames[$k]$hitseqs[$k]");
+	print(OUTFILE "\n$hitnames[$k]$hitseqs[$k]");
     }
     close OUTFILE;
     
