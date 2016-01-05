@@ -361,7 +361,7 @@ void HHsearch::ProcessArguments(int argc, char** argv, Parameters& par) {
 				help(par);
 				exit(4);
 			}
-			int v = atoi(argv[++i]);
+			int v = atoi(argv[i]);
 			par.v = Log::from_int(v);
 			Log::reporting_level() = par.v;
 		} else if (!strcmp(argv[i], "-p") && (i < argc - 1))
