@@ -66,7 +66,6 @@ def build_ffindex_database(files_file, data_path, index_path):
 
 
 def optimize_database(database_data_path, database_index_path):
-  print(os.path.getsize(database_data_path))
   if os.path.exists(database_data_path) and os.path.exists(database_index_path) and os.path.getsize(database_data_path) > 0 and os.path.getsize(database_index_path) > 0: 
     check_call(" ".join(["ffindex_build", "-as", database_data_path+".optimized", database_index_path+".optimized", "-d", database_data_path, "-i", database_index_path]), shell=True)
     shutil.move(database_data_path+".optimized", database_data_path)
@@ -74,8 +73,8 @@ def optimize_database(database_data_path, database_index_path):
 
 
 def get_large_a3ms(a3m_base_path):
-  entries = ffindex.read_index(a3m_base_path+"_a3m.ffindex")
-  data = ffindex.read_data(a3m_base_path+"_a3m.ffindex")
+  entries = ffindex.read_index(a3m_base_path+".ffindex")
+  data = ffindex.read_data(a3m_base_path+".ffindex")
   
   large_alignments = set()
   for entry in entries:
@@ -89,6 +88,9 @@ def get_large_a3ms(a3m_base_path):
     except:
       sys.stderr.write("Warning: A3M "+entry.name+" is corrupted!\n")
 
+  if len(entries) > 0 and len(large_alignments) == 0:
+    large_alignments.add(entries[0].name)
+
   return large_alignments
 
 
@@ -101,7 +103,6 @@ def calculate_hhm(threads, a3m_base_path, hhm_base_path):
   a3m_index = read_ffindex(a3m_base_path+".ffindex")
   write_subset_index(a3m_index, large_a3ms, large_a3m_index)
   
-  #TODO at the moment we are building all hmms...
   check_call(" ".join(["mpirun", "-np", threads, "ffindex_apply_mpi", a3m_base_path+".ffdata", large_a3m_index, "-d", hhm_base_path+".ffdata", "-i", hhm_base_path+".ffindex", "--", "hhmake", "-v", str(0), "-i", "stdin", "-o" ,"stdout"]), shell=True)
 
 
@@ -371,9 +372,8 @@ def check_database(output_basename, threads, force_mode):
     open(output_basename+"_cs219.ffindex", 'a').close()
     open(output_basename+"_cs219.ffdata", 'a').close()
     
-  if not os.path.exists(output_basename+"_cs219.ffindex") or os.path.exists(output_basename+"_cs219.ffdata"):
-    open(output_basename+"_hhm.ffindex", 'a').close()
-    open(output_basename+"_hhm.ffdata", 'a').close()
+  if not os.path.exists(output_basename+"_hhm.ffindex") or os.path.exists(output_basename+"_hhm.ffdata"):
+    calculate_hhm(threads, output_basename+"_a3m", output_basename+"_hhm")
 
   check_a3m_format(output_basename, force_mode)
   #TODO check hhm's...
