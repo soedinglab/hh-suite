@@ -116,6 +116,7 @@ void HHalign::help(Parameters& par, char all) {
   if (all) {
     printf(" -realign       realign displayed hits with max. accuracy (MAC) algorithm \n");
     printf(" -excl <range>  exclude query positions from the alignment, e.g. '1-33,97-168' \n");
+    printf(" -template_excl <range>  exclude template positions from the alignment, e.g. '1-33,97-168' \n");
     printf(" -ovlp <int>    banded alignment: forbid <ovlp> largest diagonals |i-j| of DP matrix (def=%i)\n", par.min_overlap);
     printf(" -alt <int>     show up to this many alternative alignments with raw score > smin(def=%i)  \n", par.altali);
     printf(" -smin <float>  minimum raw score for alternative alignments (def=%.1f)  \n", par.smin);
@@ -595,6 +596,15 @@ void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
       }
       par.exclstr = new char[strlen(argv[i])+1];
       strcpy(par.exclstr,argv[i]);
+    }
+    else if (!strcmp(argv[i],"-template_excl")) {
+      if (++i>=argc) {
+        help(par);
+        HH_LOG(ERROR) << "No expression following -excl" << std::endl;
+        exit(4);
+      }
+      par.template_exclstr = new char[strlen(argv[i])+1];
+      strcpy(par.template_exclstr,argv[i]);
     }
     else {
       HH_LOG(WARNING) << "Ignoring unknown option " << argv[i] << std::endl;

@@ -206,6 +206,7 @@ void Parameters::SetDefaults() {
 	strcpy(alitabfile, "");
 	strcpy(alisbasename, "");
 	exclstr = NULL;
+        template_exclstr = NULL;
 
 	max_number_matrices = 100;
 

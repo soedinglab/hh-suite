@@ -92,7 +92,7 @@ void PosteriorDecoderRunner::executeComputation(HMM &q, std::vector<Hit *>  hits
             // start realignment process
             decoder->realign(*q_hmm, *t_hmm[current_thread_id],
                     *hit_cur, *m_posterior_matrices[current_thread_id],
-                    *m_backtrace_matrix[current_thread_id], alignment_to_exclude, par.exclstr, par.min_overlap, par.shift, par.mact, par.corr);
+                    *m_backtrace_matrix[current_thread_id], alignment_to_exclude, par.exclstr, par.template_exclstr, par.min_overlap, par.shift, par.mact, par.corr);
             // add result to exclution paths (needed to align 2nd, 3rd, ... best alignment)
             alignment_to_exclude.push_back(PosteriorDecoder::MACBacktraceResult(hit_cur->alt_i, hit_cur->alt_j));
         } // end idb

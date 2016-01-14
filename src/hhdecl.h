@@ -175,6 +175,7 @@ public:
   char tfile[NAMELEN];    // template filename (in hhalign)
   char alitabfile[NAMELEN]; // where to write pairs of aligned residues (-atab option)
   char* exclstr;          // optional string containing list of excluded residues, e.g. '1-33,97-168'
+  char* template_exclstr;
   int aliwidth;           // number of characters per line in output alignments for HMM search
   float p;                // minimum probability for inclusion in hit list and alignments
   double E;               // maximum E-value for inclusion in hit list and alignment list

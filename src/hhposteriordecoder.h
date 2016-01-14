@@ -69,7 +69,7 @@ public:
 	/////////////////////////////////////////////////////////////////////////////////////
 	void realign(HMM &q, HMM &t, Hit &hit, PosteriorMatrix &p_mm, ViterbiMatrix &viterbi_matrix,
 				 std::vector<PosteriorDecoder::MACBacktraceResult> alignment_to_exclude, char * exclstr,
-				 int par_min_overlap, float shift, float mact, float corr);
+				 char* template_exclstr, int par_min_overlap, float shift, float mact, float corr);
 	void excludeMACAlignment(const int q_length, const int t_length, ViterbiMatrix &celloff_matrix, const int elem,
 			MACBacktraceResult & alignment);
 
@@ -143,6 +143,7 @@ private:
 	void printVector(float * vec);
 
 	void exclude_regions(char *exclstr, HMM &q_hmm, HMM &t_hmm, ViterbiMatrix &viterbiMatrix);
+        void exclude_template_regions(char* exclstr, HMM & q_hmm, HMM & t_hmm, ViterbiMatrix& viterbiMatrix);
 };
 
 #endif /* HHPOSTERIORDECODER_H_ */

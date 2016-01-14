@@ -99,7 +99,7 @@ PosteriorDecoder::~PosteriorDecoder() {
 void PosteriorDecoder::realign(HMM &q, HMM &t, Hit &hit,
 							   PosteriorMatrix &p_mm, ViterbiMatrix &viterbi_matrix,
 							   std::vector<PosteriorDecoder::MACBacktraceResult> alignment_to_exclude,
-							   char * exclstr, int par_min_overlap, float shift, float mact, float corr) {
+							   char * exclstr, char* template_exclstr, int par_min_overlap, float shift, float mact, float corr) {
 
 	HMM & curr_q_hmm = q;
 	HMM & curr_t_hmm = t;
@@ -114,6 +114,12 @@ void PosteriorDecoder::realign(HMM &q, HMM &t, Hit &hit,
 		// Mask excluded regions
 		exclude_regions(exclstr, curr_q_hmm, curr_t_hmm, viterbi_matrix);
 	}
+        
+        if(template_exclstr) {
+                 // Mask excluded regions
+                 exclude_template_regions(template_exclstr, curr_q_hmm, curr_t_hmm, viterbi_matrix);
+        }
+
 	forwardAlgorithm(curr_q_hmm, curr_t_hmm, hit, p_mm, viterbi_matrix, shift, 0);
 	//std::cout << hit->score << hit[elem]->Pforward << std::endl;
 
@@ -141,6 +147,23 @@ void PosteriorDecoder::exclude_regions(char* exclstr, HMM & q_hmm, HMM & t_hmm, 
 		}
 	}
 }
+
+void PosteriorDecoder::exclude_template_regions(char* exclstr, HMM & q_hmm, HMM & t_hmm, ViterbiMatrix& viterbiMatrix) {
+        char* ptr = exclstr;
+        while (true) {
+                const int j0 = abs(strint(ptr));
+                const int j1 = abs(strint(ptr));
+
+                if (!ptr) break;
+
+                for (int j = j0; j <= std::min(j1, t_hmm.L); ++j) {
+                        for (int i = 1; i <= q_hmm.L; ++i) {
+                                viterbiMatrix.setCellOff(i, j, 0, true);
+                        }
+                }
+        }
+}
+
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
