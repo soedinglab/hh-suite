@@ -148,6 +148,12 @@ std::vector<Hit> ViterbiRunner::alignment(Parameters& par, HMMSimd * q_simd,
                   // Mask excluded regions
                   exclude_regions(par.exclstr, maxResElem, q_simd, t_hmm_simd[current_thread_id], viterbiMatrix[current_thread_id]);
                 }
+
+                if(par.template_exclstr) {
+                  // Mask excluded regions
+                  exclude_template_regions(par.template_exclstr, maxResElem, q_simd, t_hmm_simd[current_thread_id], viterbiMatrix[current_thread_id]);
+                }
+
                 // start next job
                 threads[current_thread_id]->align(maxResElem, par.nseqdis, par.smin);
             } // idb loop
@@ -293,4 +299,26 @@ void ViterbiRunner::exclude_regions(char* exclstr, int maxResElem, HMMSimd* q_hm
     }
   }
 }
+
+void ViterbiRunner::exclude_template_regions(char* exclstr, int maxResElem, HMMSimd* q_hmm_simd, HMMSimd* t_hmm_simd, ViterbiMatrix* viterbiMatrix) {
+  char* ptr = exclstr;
+  while (true) {
+    int j0 = abs(strint(ptr));
+    int j1 = abs(strint(ptr));
+
+    if (!ptr) break;
+
+    for (int elem = 0; elem < maxResElem; elem++) {
+      HMM * curr_t_hmm = t_hmm_simd->GetHMM(elem);
+      HMM * curr_q_hmm = q_hmm_simd->GetHMM(elem);
+
+      for (int j=j0; j <= std::min(j1, curr_t_hmm->L); ++j) {
+        for (int i = 1; i <= curr_q_hmm->L; ++i) {
+          viterbiMatrix->setCellOff(i, j, elem, true);
+        }
+      }
+    }
+  }
+}
+
 
