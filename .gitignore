@@ -27,3 +27,4 @@ tags
 .cproject
 /Debug
 /build
+*__pycache__*

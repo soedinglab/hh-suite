@@ -963,9 +963,12 @@ The P-value is the E-value divided by the number of sequences in the database.
 It is the probability that in a \emph{pairwise} comparison a wrong hit will score at least 
 this good.
 
-\item{\verb`Score`}: the raw score is what comes out of the (Viterbi) HMM-HMM alignment excluding
-the secondary structure score. Informally speaking, it is the sum over the similarities 
-of aligned profile colmuns minus the gap penalties. 
+\item{\verb`Score`}: the raw score is computed by the Viterbi HMM-HMM alignment excluding the
+secondary structure score. It is the sum of similarities of the aligned profile columns
+minus the position-specific gap penalties in bits. The column similarity score is the 
+log-sum-of-odds score (base 2) as described in the original HHsearch paper 
+(Soding, Bioinformatics 2005). The gap penalties are the log2 of the state transition
+probabilities, e.g. from match state to insert or delete to match state.
 
 \item{\verb`SS`}: the secondary structure score.
 This score tells you how well the PSIPRED-predicted (3-state) or actual DSSP-determined 
