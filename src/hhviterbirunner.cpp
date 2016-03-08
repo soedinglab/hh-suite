@@ -267,8 +267,6 @@ void ViterbiRunner::exclude_alignments(int maxResElem, HMMSimd* q_simd,
                                        ViterbiMatrix* viterbiMatrix) {
     for (int elem = 0; elem < maxResElem; elem++) {
         HMM * curr_t_hmm = t_hmm_simd->GetHMM(elem);
-        std::cerr << "element: " << curr_t_hmm->entry->getName() << std::endl;
-        std::cerr << "counted elements: " << excludeAlignments.count(std::string(curr_t_hmm->entry->getName())) << std::endl;
         if (excludeAlignments.find(std::string(curr_t_hmm->entry->getName())) != excludeAlignments.end() && excludeAlignments[std::string(curr_t_hmm->entry->getName())].size() > 0) {
             std::vector<Viterbi::BacktraceResult> to_exclude = excludeAlignments[std::string(curr_t_hmm->entry->getName())];
             for (unsigned int i = 0; i < to_exclude.size(); i++) {
