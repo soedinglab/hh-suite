@@ -947,7 +947,7 @@ void HHblits::RescoreWithViterbiKeepAlignment(HMMSimd& q_vec,
 
   for (std::vector<Hit>::size_type i = 0; i != hits_to_add.size(); i++) {
     stringstream ss_tmp;
-    ss_tmp << hits_to_add[i].name << "__" << hits_to_add[i].irep;
+    ss_tmp << hits_to_add[i].file << "__" << hits_to_add[i].irep;
     if (previous_hits->Contains((char*) ss_tmp.str().c_str())) {
       Hit hit_cur = previous_hits->Remove((char*) ss_tmp.str().c_str());
       previous_hits->Add((char*) ss_tmp.str().c_str(), hits_to_add[i]);
