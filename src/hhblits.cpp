@@ -842,6 +842,7 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
 void HHblits::mergeHitsToQuery(Hash<Hit>* previous_hits,
                                int& seqs_found, int& cluster_found) {
   // For each template below threshold
+
   hitlist.Reset();
   while (!hitlist.End()) {
     Hit hit_cur = hitlist.ReadNext();
@@ -1289,36 +1290,6 @@ void HHblits::run(FILE* query_fh, char* query_path) {
       new_hits++;
     }
 
-    if (new_hits == 0 || round == par.num_rounds) {
-      if (round < par.num_rounds) {
-        HH_LOG(INFO) << "No new hits found in iteration " << round
-                               << " => Stop searching" << std::endl;
-      }
-
-      if (old_entries.size() > 0 && par.realign_old_hits) {
-        HH_LOG(INFO)
-            << "Rescoring previously found HMMs with Viterbi algorithm"
-            << std::endl;
-
-        ViterbiRunner viterbirunner(viterbiMatrices, dbs, par.threads);
-        std::vector<Hit> hits_to_add = viterbirunner.alignment(par, &q_vec,
-                                                               old_entries,
-                                                               par.qsc_db, pb,
-                                                               S, Sim, R, par.ssm, S73, S33, S37);
-
-        add_hits_to_hitlist(hits_to_add, hitlist);
-
-        // Add dbfiles_old to dbfiles_new for realign
-        new_entries.insert(new_entries.end(), old_entries.begin(),
-                           old_entries.end());
-      } else if (!par.realign_old_hits && previous_hits->Size() > 0) {
-        HH_LOG(INFO)
-            << "Rescoring previously found HMMs with Viterbi algorithm"
-            << std::endl;
-        RescoreWithViterbiKeepAlignment(q_vec, previous_hits);
-      }
-    }
-
     // Realign hits with MAC algorithm
     if (par.realign)
       perform_realign(q_vec, input_format, new_entries);
@@ -1400,9 +1371,36 @@ void HHblits::run(FILE* query_fh, char* query_path) {
           << MAXSEQ << "). Stop searching!" << std::endl;
     }
 
-    if (new_hits == 0 || round == par.num_rounds || q->Neff_HMM > par.neffmax
-        || Qali->N_in >= MAXSEQ)
+    if (new_hits == 0 || round == par.num_rounds || q->Neff_HMM > par.neffmax || Qali->N_in >= MAXSEQ) {
+      if (round < par.num_rounds) {
+        HH_LOG(INFO) << "No new hits found in iteration " << round
+                               << " => Stop searching" << std::endl;
+      }
+
+      if (old_entries.size() > 0 && par.realign_old_hits) {
+        HH_LOG(INFO)
+            << "Recalculating previously found HMMs with Viterbi algorithm"
+            << std::endl;
+
+        ViterbiRunner viterbirunner(viterbiMatrices, dbs, par.threads);
+        std::vector<Hit> hits_to_add = viterbirunner.alignment(par, &q_vec,
+                                                               old_entries,
+                                                               par.qsc_db, pb,
+                                                               S, Sim, R, par.ssm, S73, S33, S37);
+
+        add_hits_to_hitlist(hits_to_add, hitlist);
+
+        if (par.realign)
+          perform_realign(q_vec, input_format, old_entries);
+      } else if (!par.realign_old_hits && previous_hits->Size() > 0) {
+        HH_LOG(INFO)
+            << "Rescoring previously found HMMs with Viterbi algorithm"
+            << std::endl;
+        RescoreWithViterbiKeepAlignment(q_vec, previous_hits);
+      }
+
       break;
+    }
 
     // Write good hits to previous_hits hash and clear hitlist
     hitlist.Reset();
