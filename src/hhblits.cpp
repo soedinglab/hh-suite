@@ -1408,13 +1408,15 @@ void HHblits::run(FILE* query_fh, char* query_path) {
     hitlist.Reset();
     while (!hitlist.End()) {
       Hit hit_cur = hitlist.ReadNext();
-      char strtmp[NAMELEN + 6];
-      sprintf(strtmp, "%s__%i%c", hit_cur.file, hit_cur.irep, '\0');
+
+      stringstream ss_tmp;
+      ss_tmp << hit_cur.file << "__" << hit_cur.irep;
+
       if (!par.already_seen_filter || hit_cur.Eval > par.e
-          || previous_hits->Contains(strtmp))
+          || previous_hits->Contains((char*) ss_tmp.str().c_str()))
         hit_cur.Delete();  // Delete hit object (deep delete with Hit::Delete())
       else {
-        previous_hits->Add(strtmp, hit_cur);
+        previous_hits->Add((char*) ss_tmp.str().c_str(), hit_cur);
       }
 
       hitlist.Delete();  // Delete list record (flat delete)

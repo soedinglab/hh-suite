@@ -21,6 +21,7 @@ class Prefilter;
 #include "hhhit.h"
 #include "hhdatabase.h"
 #include "simd.h"
+#include "sstream"
 
 namespace hh {
 

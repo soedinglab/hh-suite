@@ -553,9 +553,11 @@ namespace hh {
         result.second = std::string(db_name);
 
         // check, if DB was searched in previous rounds
-        strcat(name, "__1");  // irep=1
 
-        if (previous_hits->Contains(name)) {
+        std::stringstream ss_tmp;
+        ss_tmp << name << "__" << 1;
+
+        if (previous_hits->Contains((char*) ss_tmp.str().c_str())) {
           old_prefilter_hits.push_back(result);
         }
         else {
