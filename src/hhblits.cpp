@@ -1184,10 +1184,14 @@ void HHblits::run(FILE* query_fh, char* query_path) {
 
     // Save HMM without pseudocounts for prefilter query-profile
     *q_tmp = *q;
+    HMM* q_rescore = new HMM(MAXSEQDIS, par.maxres);
+
+    //TODO: deep copy for rescoring of q
 
     PrepareQueryHMM(par, input_format, q, pc_hhm_context_engine,
                     pc_hhm_context_mode, pb, R);
-    q_vec.MapOneHMM(q);
+    *q_rescore = *q;
+    q_vec.MapOneHMM(q_rescore);
 
     ////////////////////////////////////////////
     // Prefiltering
@@ -1399,8 +1403,10 @@ void HHblits::run(FILE* query_fh, char* query_path) {
         RescoreWithViterbiKeepAlignment(q_vec, previous_hits);
       }
 
+      delete q_rescore;
       break;
     }
+
 
     // Write good hits to previous_hits hash and clear hitlist
     hitlist.Reset();
@@ -1419,6 +1425,8 @@ void HHblits::run(FILE* query_fh, char* query_path) {
 
       hitlist.Delete();  // Delete list record (flat delete)
     }
+
+    delete q_rescore;
   }
 
   // Warn, if HMMER files were used
