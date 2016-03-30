@@ -73,7 +73,7 @@ void Viterbi::AlignWithOutCellOff(HMMSimd* q, HMMSimd* t,ViterbiMatrix * viterbi
     // i-1:               CAAAAAAAAAAAAAAAAAA
     //  i :   BBBBBBBBBBBBBD
     // Variable declarations
-    
+
     const float smin = (this->local ? 0 : -FLT_MAX);  //used to distinguish between SW and NW algorithms in maximization
     const simd_float smin_vec    = simdf32_set(smin);
     const simd_float shift_vec   = simdf32_set(shift);
@@ -126,10 +126,9 @@ void Viterbi::AlignWithOutCellOff(HMMSimd* q, HMMSimd* t,ViterbiMatrix * viterbi
     int i,j;      //query and template match state indices
     simd_int i2_vec = simdi32_set(0);
     simd_int j2_vec = simdi32_set(0);
-    
     simd_float sMM_i_j = simdf32_set(0);
     simd_float sMI_i_j,sIM_i_j,sGD_i_j,sDG_i_j;
-    
+
     
     simd_float Si_vec;
     simd_float sMM_i_1_j_1;
@@ -192,13 +191,9 @@ void Viterbi::AlignWithOutCellOff(HMMSimd* q, HMMSimd* t,ViterbiMatrix * viterbi
         const bool findMaxInnerLoop = (local || i == queryLength);
         const int targetLength = t->L;
 #ifdef VITERBI_SS_SCORE
-
         if(ss_hmm_mode == HMM::NO_SS_INFORMATION){
             // set all to log(1.0) = 0.0
-            for (j = 0; j <= (targetLength*VEC_SIZE); j++) // Loop through template positions j
-            {
-                ss_score[j] = 0.0;
-            }
+            memset(ss_score, 0, (targetLength+1)*VECSIZE_FLOAT*sizeof(float));
         }else {
             const float * score;
             if(ss_hmm_mode == HMM::PRED_PRED){
@@ -209,10 +204,9 @@ void Viterbi::AlignWithOutCellOff(HMMSimd* q, HMMSimd* t,ViterbiMatrix * viterbi
                 score = &S37[ (int)q_s->ss_pred[i]][ (int)q_s->ss_conf[i]][0];
             }
             // access SS scores and write them to the ss_score array
-            for (j = 0; j <= (targetLength*VEC_SIZE); j++) // Loop through template positions j
+            for (j = 0; j <= (targetLength*VECSIZE_FLOAT); j++) // Loop through template positions j
             {
                 ss_score[j] = ssw * score[t_index[j]];
-
             }
         }
 #endif
@@ -377,9 +371,6 @@ void Viterbi::AlignWithOutCellOff(HMMSimd* q, HMMSimd* t,ViterbiMatrix * viterbi
             //because 10000000000000000000000000000000 = -2147483648 kills cmplt
 #ifdef VITERBI_CELLOFF
 #ifdef AVX2
-//            if(((sCO_MI_DG_IM_GD_MM_vec[j]  >>1) & 0x4040404040404040) > 0){
-//                std::cout << ((sCO_MI_DG_IM_GD_MM_vec[j]  >>1) & 0x4040404040404040   ) << std::endl;
-//            }
             simd_int matrix_vec    = _mm256_set1_epi64x(sCO_MI_DG_IM_GD_MM_vec[j]>>1);
             matrix_vec             = _mm256_shuffle_epi8(matrix_vec,shuffle_mask_celloff);
 #else
@@ -392,13 +383,6 @@ void Viterbi::AlignWithOutCellOff(HMMSimd* q, HMMSimd* t,ViterbiMatrix * viterbi
             simd_int cell_off_vec  = simdi_and(matrix_vec, co_vec);
             simd_int res_eq_co_vec = simdi32_gt(co_vec, cell_off_vec    ); // shift is because signed can't be checked here
             simd_float  cell_off_float_min_vec = (simd_float) simdi_andnot(res_eq_co_vec, float_min_vec); // inverse
-
-//            if(((sCO_MI_DG_IM_GD_MM_vec[j]  >>1) & 0x4040404040404040) > 0){
-//                for(int i = 0; i < 8; i++){
-//                    std::cout << i << " " << j << " " << ((float *) &cell_off_float_min_vec )[i] << " ";
-//                }
-//                std::cout << std::endl;
-//            }
             sMM_i_j = simdf32_add(sMM_i_j,cell_off_float_min_vec);    // add the cell off vec to sMM_i_j. Set -FLT_MAX to cell off
             sGD_i_j = simdf32_add(sGD_i_j,cell_off_float_min_vec);
             sIM_i_j = simdf32_add(sIM_i_j,cell_off_float_min_vec);
@@ -493,6 +477,7 @@ void Viterbi::AlignWithOutCellOff(HMMSimd* q, HMMSimd* t,ViterbiMatrix * viterbi
         result->score[seq_index]=((float*)&score_vec)[seq_index];
         result->i[seq_index] = ((int*)&i2_vec)[seq_index];
         result->j[seq_index] = ((int*)&j2_vec)[seq_index];
+//        std::cout << seq_index << "\t" << result->score[seq_index] << "\t" << result->i[seq_index] <<"\t" << result->j[seq_index] << std::endl;
     }
     
     //   printf("Template=%-12.12s  i=%-4i j=%-4i score=%6.3f\n",t->name,i2,j2,score);

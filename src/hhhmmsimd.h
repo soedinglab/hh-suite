@@ -12,9 +12,6 @@ class HMMSimd
 {
 public:
     
-    static const unsigned int VEC_SIZE=VECSIZE_FLOAT;
-
-    
     HMMSimd(int maxres);
     ~HMMSimd();
     HMMSimd& operator=(HMMSimd&);

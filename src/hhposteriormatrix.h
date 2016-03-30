@@ -11,8 +11,8 @@
 #include "simd.h"
 #include "hhhmmsimd.h"
 
-static const int VEC_SIZE = HMMSimd::VEC_SIZE;
-static const int IDX_CORR = HMMSimd::VEC_SIZE - 1;
+static const int VEC_SIZE = VECSIZE_FLOAT;
+static const int IDX_CORR = VECSIZE_FLOAT - 1;
 
 class PosteriorMatrix {
 public:
