@@ -129,7 +129,7 @@ private:
 	void macAlgorithm(HMM & q_hmm, HMM & t_hmm, Hit & hit_vec, PosteriorMatrix & p_mm,
 			ViterbiMatrix & viterbi_matrix, float par_mact, const int elem);
 	void backtraceMAC(HMM & q, HMM & t, PosteriorMatrix & p_mm, ViterbiMatrix & backtrace_matrix, const int elem, Hit & hit, float corr);
-	void writeProfilesToHits(HMM &q, HMM &t, PosteriorMatrix &p_mm, Hit &hit);
+	void writeProfilesToHits(HMM &q, HMM &t, PosteriorMatrix &p_mm, ViterbiMatrix & backtrace_matrix, Hit &hit);
 	void initializeBacktrace(HMM & t, Hit & hit);
 
 	void initializeForAlignment(HMM &q, HMM &t, Hit &hit, ViterbiMatrix &viterbi_matrix, const int elem, const int t_max_L, int par_min_overlap);
