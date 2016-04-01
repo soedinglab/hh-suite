@@ -177,11 +177,11 @@ int main(int argc, char **argv) {
   //no openmp parallelization in hhblits methods
 
   HHblits* hhblits_instances[MAXBINS];
+  par.threads = 1;
+
   for(int i = 0; i < threads; i++) {
     hhblits_instances[i] = new HHblits(par, databases);
   }
-
-  par.threads = 1;
 
   size_t range_start = 0;
   size_t range_end = index->n_entries;
@@ -199,8 +199,6 @@ int main(int argc, char **argv) {
     bin = omp_get_thread_num();
     omp_set_num_threads(1);
 #endif
-
-    hhblits_instances[bin]->Reset();
 
     FILE* inf = ffindex_fopen_by_entry(data, entry);
     if(inf == NULL) {

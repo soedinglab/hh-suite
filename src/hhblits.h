@@ -149,7 +149,6 @@ protected:
 	cs::Admix* pc_prefilter_context_mode;
 
 	// HHblits variables
-    // verbose mode
 
 	// Set to 1 if input in HMMER format (has already pseudocounts)
 	char config_file[NAMELEN];

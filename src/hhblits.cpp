@@ -234,6 +234,7 @@ void HHblits::Reset() {
   hitlist.Reset();
   while (!hitlist.End())
     hitlist.Delete().Delete();
+  hitlist.Reset();
 
   std::map<int, Alignment*>::iterator it;
   for (it = alis.begin(); it != alis.end(); it++) {
@@ -241,6 +242,7 @@ void HHblits::Reset() {
   }
   alis.clear();
 
+  // Prepare multi-threading - reserve memory for threads, intialize, etc.
   for (int bin = 0; bin < par.threads; bin++) {
     viterbiMatrices[bin]->DeleteBacktraceMatrix();
     posteriorMatrices[bin]->DeleteProbabilityMatrix();
@@ -1186,10 +1188,10 @@ void HHblits::run(FILE* query_fh, char* query_path) {
     *q_tmp = *q;
     HMM* q_rescore = new HMM(MAXSEQDIS, par.maxres);
 
-    //TODO: deep copy for rescoring of q
 
     PrepareQueryHMM(par, input_format, q, pc_hhm_context_engine,
                     pc_hhm_context_mode, pb, R);
+    //deep copy for rescoring of q
     *q_rescore = *q;
     q_vec.MapOneHMM(q_rescore);
 
@@ -1435,11 +1437,6 @@ void HHblits::run(FILE* query_fh, char* query_path) {
         << "Using HMMER files results in a drastically reduced sensitivity (>10%%).\n"
         << " We recommend to use HHMs build by hhmake." << std::endl;
   }
-
-//  if (*par.reduced_outfile) {
-//    float qscs[] = { -20, 0, 0.1, 0.2 };
-//    wiggleQSC(par.n_redundancy, qscs, 4, reducedHitlist);
-//  }
 
   for (size_t i = 0; i < all_entries.size(); i++) {
     delete all_entries[i];
