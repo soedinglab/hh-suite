@@ -49,7 +49,6 @@ bool compareIndices(const MACTriple &a, const MACTriple &b);
 
 class PosteriorDecoder {
 public:
-	static const int VEC_SIZE = HMMSimd::VEC_SIZE;
 
 	struct MACBacktraceResult {
 		std::vector<int> * alt_i;

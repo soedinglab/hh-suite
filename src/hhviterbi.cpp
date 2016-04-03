@@ -21,7 +21,7 @@ Viterbi::Viterbi(int max_seq_length,bool local,float penalty_gap_query,float pen
     this->local = local;
     this->penalty_gap_query = penalty_gap_query;
     this->penalty_gap_template = penalty_gap_template;
-    this->sMM_DG_MI_GD_IM_vec = (simd_float *) malloc_simd_float(VEC_SIZE*max_seq_length*5*sizeof(float));
+    this->sMM_DG_MI_GD_IM_vec = (simd_float *) malloc_simd_float(VECSIZE_FLOAT*max_seq_length*5*sizeof(float));
 
     this->correlation = correlation;
     this->par_min_overlap = par_min_overlap;
@@ -41,7 +41,7 @@ Viterbi::Viterbi(int max_seq_length,bool local,float penalty_gap_query,float pen
 //    this->ss33_lookup =  (simd_int *) malloc_simd_float((NSSPRED - 1) * (MAXCF - 1) * 32 * sizeof(unsigned char));
 //
     // pre computed scores for one row
-    this->ss_score = (float *) malloc_simd_float(VEC_SIZE*max_seq_length*sizeof(float));
+    this->ss_score = (float *) malloc_simd_float(VECSIZE_FLOAT*max_seq_length*sizeof(float));
     this->ss_mode = ss_mode;
     
 
@@ -81,7 +81,7 @@ void Viterbi::ExcludeAlignment(ViterbiMatrix * matrix,HMMSimd* q_four, HMMSimd* 
 // Trace back Viterbi alignment of two profiles based on matrices bXX[][]
 /////////////////////////////////////////////////////////////////////////////////////
 //TODO inline
-Viterbi::BacktraceResult Viterbi::Backtrace(ViterbiMatrix * matrix,int elem,int start_i[VEC_SIZE], int start_j[VEC_SIZE])
+Viterbi::BacktraceResult Viterbi::Backtrace(ViterbiMatrix * matrix,int elem,int start_i[VECSIZE_FLOAT], int start_j[VECSIZE_FLOAT])
 {
     // Trace back trough the matrices bXY[i][j] until first match state is found (STOP-state)
     int step;      // counts steps in path through 5-layered dynamic programming matrix
@@ -195,7 +195,7 @@ Viterbi::ViterbiResult* Viterbi::Align(HMMSimd* q, HMMSimd* t,ViterbiMatrix * vi
 //TODO: inline
 Viterbi::BacktraceScore Viterbi::ScoreForBacktrace(HMMSimd* q_four, HMMSimd* t_four,
         int elem,Viterbi::BacktraceResult * backtraceResult,
-        float alignmentScore[VEC_SIZE],
+        float alignmentScore[VECSIZE_FLOAT],
         int ss_hmm_mode)
 {
 
@@ -225,6 +225,7 @@ Viterbi::BacktraceScore Viterbi::ScoreForBacktrace(HMMSimd* q_four, HMMSimd* t_f
         {
             case ViterbiMatrix::MM:
                 S[step]    = Score(q->p[i_steps[step]],t->p[j_steps[step]]);
+//                printf("i=%d j=%d S=%d\n", i_steps[step], j_steps[step], Score(q->p[i_steps[step]],t->p[j_steps[step]]));
                 S_ss[step] = ScoreSS(q,t,i_steps[step],j_steps[step], ssw, ss_hmm_mode, S73, S37, S33);
                 score_ss += S_ss[step];
                 break;
@@ -235,9 +236,8 @@ Viterbi::BacktraceScore Viterbi::ScoreForBacktrace(HMMSimd* q_four, HMMSimd* t_f
                 break;
         }
     }
-
+//    printf("###old score %f\t",score);
     if (ss_mode == Hit::SCORE_ALIGNMENT) score-=score_ss;    // subtract SS score added during alignment!!!!
-    //    printf("###New score %f",score);
     // Add contribution from correlation of neighboring columns to score
     float Scorr=0;
     if (nsteps)
@@ -247,7 +247,11 @@ Viterbi::BacktraceScore Viterbi::ScoreForBacktrace(HMMSimd* q_four, HMMSimd* t_f
         for (int step=4; step<=nsteps; step++) Scorr+=S[step]*S[step-3];
         for (int step=5; step<=nsteps; step++) Scorr+=S[step]*S[step-4];
         score+=correlation*Scorr;
+//        printf("Scorr=%f\t",Scorr);
+//        printf("correlation=%f\t",correlation);
+
     }
+//    printf("new=%f\n",score);
 
     // Set score, P-value etc.
     score_sort = score_aass = -score;
@@ -371,68 +375,5 @@ void Viterbi::InitializeForAlignment(HMM* q, HMM* t, ViterbiMatrix * matrix, int
     }
 }
 
-
 ////////////////////////////////////////////////////////////////////////
 #endif
-
-
-//void Viterbi::setSSLookupTable(float S73[NDSSP][NSSPRED][MAXCF],
-//        float S33[NSSPRED][MAXCF][NSSPRED][MAXCF])
-void Viterbi::setSSLookup(float S73[NDSSP][NSSPRED][MAXCF], float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]) {
-//    this->max33 = 0.0;
-//    // find maximum
-//    // avoid first position of all arrays to skip the NON SS case
-//    for (int B=1; B<NSSPRED; B++){
-//        for (int cf=1; cf<MAXCF; cf++){
-//            for (int BB=1; BB<NSSPRED; BB++){
-//                for (int ccf=1; ccf<MAXCF; ccf++){
-//                    max33 = std::max(max33, exp(S33[B][cf][BB][ccf]));
-//                }
-//            }
-//        }
-//    }
-//    for (int B=1; B<NSSPRED; B++){
-//        for (int cf=1; cf<MAXCF; cf++){
-//            for (int BB=1; BB<NSSPRED; BB++){
-//                for (int ccf=1; ccf<MAXCF; ccf++){
-//                    // convert score to linear space
-//                    float currScoreSS = exp(S33[B][cf][BB][ccf]);
-//                    // scale score
-//                    unsigned char intScore = (int) (currScoreSS / max33 * 255.0) ;
-//                    intScore = std::max(intScore, 1); // avoid 0 because it would break the Viterbi
-//                    const size_t index = (B  - 1) * (MAXCF   - 1)   * (NSSPRED - 1) * (MAXCF - 1)
-//                            + (cf - 1) * (NSSPRED - 1)   * (MAXCF   - 1)
-//                            + (BB - 1) * (MAXCF   - 1)   + (ccf     - 1);
-//                    ss33_lookup[index] = intScore;
-//                }
-//            }
-//        }
-//    }
-//    this->max73 = 0.0;
-//    // find maximum of S73 (avoid NON SS scores at position 0)
-//    for (int A = 1; A < NDSSP; A++) {
-//        for (int B = 1; B < NSSPRED; B++){
-//            for (int cf = 1; cf < MAXCF; cf++) {
-//                max73 = std::max(max73, exp(S73[A][B][cf]));
-//            }
-//        }
-//    }
-//
-//    // find maximum of S73 (avoid NON SS scores at position 0)
-//    for (int A = 1; A < NDSSP; A++) {
-//        for (int B = 1; B < NSSPRED; B++){
-//            for (int cf = 1; cf < MAXCF; cf++) {
-//                // convert score to linear space
-//                float currScoreSS = exp(exp(S73[A][B][cf]));
-//                // scale score
-//                unsigned char intScore = (int) (currScoreSS / max73 * 255.0) ;
-//                intScore = std::max(intScore, 1); // avoid 0 because it would break the Viterbi
-//                const size_t index = (A  - 1) * (NSSPRED - 1) * (MAXCF - 1)
-//                        + (B  - 1) * (MAXCF   - 1)
-//                        + (cf - 1);
-//                ss73_lookup[index] = intScore;
-//            }
-//        }
-//    }
-}
-

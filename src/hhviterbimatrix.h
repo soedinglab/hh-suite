@@ -28,7 +28,6 @@
 
 class ViterbiMatrix {
 public:  
-    static const int VEC_SIZE=HMMSimd::VEC_SIZE;
 
     // Constructor (only set pointers to NULL)
     ViterbiMatrix();

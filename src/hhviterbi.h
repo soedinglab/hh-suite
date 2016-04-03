@@ -17,14 +17,13 @@
 
 class Viterbi {
   public:
-    static const int VEC_SIZE = HMMSimd::VEC_SIZE;
 
     struct ViterbiResult {
-        int i[VEC_SIZE];
-        int j[VEC_SIZE];
-        float score[VEC_SIZE];
+        int i[VECSIZE_FLOAT];
+        int j[VECSIZE_FLOAT];
+        float score[VECSIZE_FLOAT];
         ViterbiResult(){
-            for(int idx = 0; idx< VEC_SIZE;idx++){
+            for(int idx = 0; idx< VECSIZE_FLOAT;idx++){
                 i[idx] = -1;
                 j[idx] = -1;
                 score[idx] = 0.0f;
@@ -98,7 +97,7 @@ class Viterbi {
     // Makes backtrace from start i, j position.
     /////////////////////////////////////////////////////////////////////////////////////
     static BacktraceResult Backtrace(ViterbiMatrix * matrix, int elem,
-        int start_i[VEC_SIZE], int start_j[VEC_SIZE]);
+        int start_i[VECSIZE_FLOAT], int start_j[VECSIZE_FLOAT]);
 
     /////////////////////////////////////////////////////////////////////////////////////
     // ScoreForBacktrace
@@ -106,7 +105,7 @@ class Viterbi {
     /////////////////////////////////////////////////////////////////////////////////////
     BacktraceScore ScoreForBacktrace(HMMSimd* q_four, HMMSimd* t_four, int elem,
         Viterbi::BacktraceResult *backtraceResult,
-        float alignmentScore[VEC_SIZE], int ss_hmm_mode);
+        float alignmentScore[VECSIZE_FLOAT], int ss_hmm_mode);
 
     /////////////////////////////////////////////////////////////////////////////////////
     // ExcludeAlignment
@@ -159,61 +158,7 @@ class Viterbi {
       return simdf32_add(res0, res2);
 
     }
-    
-    
-    void ss_score_simd(__m128i score_matrix_vec01
-                        , __m128i score_matrix_vec16
-                        , __m128i template_sequence
-                        , __m128 ssw
-                        , float * storeResult){
-//        const __m128i sixteen_vec  = _mm_set1_epi8(16);
-//        const __m128i fiveteen_vec = _mm_set1_epi8(15);
-//        const __m128i zero = _mm_setzero_si128();
-//        // create slice mask
-//        // Example:
-//        //	15	12	11	16	20	19	18	11	15	12	11	16	20	19	18	11
-//        //                      if lt 16
-//        //  255	255	255	0	0	0	0	255	255	255	255	0	0	0	0	255
-//        __m128i lookup_mask01=_mm_cmplt_epi8(template_sequence,sixteen_vec);
-//        __m128i lookup_mask16=_mm_cmpgt_epi8(template_sequence,fiveteen_vec);
-//        // slice index
-//        // Example:
-//        //  255	255	255	0	0	0	0	255	255	255	255	0	0	0	0	255
-//        //  15	12	11	16	20	19	18	11	15	12	11	16	20	19	18	11
-//        //                          min
-//        //  15	12	11	0	0	0	0	11	15	12	11	0	0	0	0	155
-//        __m128i lookup_index01=_mm_min_epu8(lookup_mask01,template_sequence);
-//        __m128i lookup_index16=_mm_min_epu8(lookup_mask16,template_sequence);
-//        // 2xmal array lookup
-//        __m128i score01 = _mm_shuffle_epi8(score_matrix_vec01, lookup_index01);
-//        __m128i score16 = _mm_shuffle_epi8(score_matrix_vec16, lookup_index16);
-//        // merge 0_15 and 16_31
-//        __m128i res = _mm_add_epi8(score01,score16);
-//
-//        __m128i lo_16 = _mm_unpacklo_epi8(res, zero);
-//        __m128i hi_16 = _mm_unpackhi_epi8(res,  zero);
-//        __m128i in1 = _mm_unpacklo_epi16(lo_16, zero);
-//        __m128i in2 = _mm_unpackhi_epi16(lo_16, zero);
-//        __m128i in3 = _mm_unpacklo_epi16(hi_16, zero);
-//        __m128i in4 = _mm_unpackhi_epi16(hi_16, zero);
-//        __m128 flt_0_3   = _mm_cvtepi32_ps(in1);
-//        flt_0_3   = _mm_mul_ps(flt_0_3, ssw);
-//
-//        __m128 flt_4_7   = _mm_cvtepi32_ps(in2);
-//        flt_4_7   = _mm_mul_ps(flt_4_7, ssw);
-//
-//        __m128 flt_8_11  = _mm_cvtepi32_ps(in3);
-//        flt_8_11   = _mm_mul_ps(flt_8_11, ssw);
-//
-//        __m128 flt_12_15 = _mm_cvtepi32_ps(in4);
-//        flt_12_15   = _mm_mul_ps(flt_12_15, ssw);
-//
-//        _mm_storer_ps(storeResult,      flt_0_3);
-//        _mm_storer_ps(storeResult + 4,  flt_4_7);
-//        _mm_storer_ps(storeResult + 8,  flt_8_11);
-//        _mm_storer_ps(storeResult + 12, flt_12_15);
-    }
-    
+
     // Calculate secondary structure score between columns i and j of two HMMs (query and template)
     static inline float ScoreSS(const HMM* q, const HMM* t, const int i,
                                 const int j, const float ssw, const int ssm,
@@ -300,8 +245,6 @@ class Viterbi {
 //        return simdui8_adds(score01,score16);
         return simdi8_set(0);
     }
-
-    void setSSLookup(float S73[NDSSP][NSSPRED][MAXCF], float S33[NSSPRED][MAXCF][NSSPRED][MAXCF]);
 
 private:
 
