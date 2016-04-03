@@ -127,7 +127,7 @@ void PosteriorDecoder::realign(HMM &q, HMM &t, Hit &hit,
 	macAlgorithm(curr_q_hmm, curr_t_hmm, hit, p_mm, viterbi_matrix, mact, 0);
 	backtraceMAC(curr_q_hmm, curr_t_hmm, p_mm, viterbi_matrix, 0, hit, corr);
 	restoreHitValues(hit);
-	writeProfilesToHits(curr_q_hmm, curr_t_hmm, p_mm, hit);
+	writeProfilesToHits(curr_q_hmm, curr_t_hmm, p_mm, viterbi_matrix, hit);
 	// add result to exclution paths (needed to align 2nd, 3rd, ... best alignment)
 
 }

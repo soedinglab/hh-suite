@@ -8,9 +8,10 @@
 #include "hhposteriordecoder.h"
 #include "hhviterbi.h"
 #include <stddef.h>
+#include <cmath>
+#include <cfloat>
 
-
-void PosteriorDecoder::writeProfilesToHits(HMM &q, HMM &t, PosteriorMatrix &p_mm, Hit &hit) {
+void PosteriorDecoder::writeProfilesToHits(HMM &q, HMM &t, PosteriorMatrix &p_mm, ViterbiMatrix & backtrace_matrix, Hit &hit) {
 	if(hit.forward_profile) {
 		delete[] hit.forward_profile;
 	}
@@ -82,7 +83,7 @@ void PosteriorDecoder::writeProfilesToHits(HMM &q, HMM &t, PosteriorMatrix &p_mm
   for(int i = 1; i <= q.L; i++) {
     for(int j = 1; j <= t.L; j++) {
       float posterior = p_mm.getPosteriorValue(i, j);
-      if(posterior >= POSTERIOR_PROBABILITY_THRESHOLD) {
+      if(posterior >= POSTERIOR_PROBABILITY_THRESHOLD && !backtrace_matrix.getCellOff(i, j, 0) &&  std::isinf(posterior) == 0 && std::isnan(posterior) == 0) {
         posterior_entries++;
       }
     }
@@ -95,7 +96,8 @@ void PosteriorDecoder::writeProfilesToHits(HMM &q, HMM &t, PosteriorMatrix &p_mm
 	for(int i = 1; i <= q.L; i++) {
 		for(int j = 1; j <= t.L; j++) {
 			float posterior = p_mm.getPosteriorValue(i, j);
-			if(posterior >= POSTERIOR_PROBABILITY_THRESHOLD) {
+
+			if(posterior >= POSTERIOR_PROBABILITY_THRESHOLD && !backtrace_matrix.getCellOff(i, j, 0) && std::isinf(posterior) == 0 && std::isnan(posterior) == 0) {
 			  hit.posterior_matrix[posterior_index] = new float[3];
 			  hit.posterior_matrix[posterior_index][0] = i;
 			  hit.posterior_matrix[posterior_index][1] = j;

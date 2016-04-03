@@ -275,10 +275,10 @@ if ( $informat ne "hmm" ) {
 			$ss_conf =~ s/(\S{$numres})/$1\n/g
 			  ;                    # insert a line break every $numres residues
 		}
-		printf( ALIFILE ">ss_pred PSIPRED predicted secondary structure\n%s\n",
-			$ss_pred
-		);
-		printf( ALIFILE ">ss_conf PSIPRED confidence values\n%s\n", $ss_conf );
+		if (length($ss_pred) > 0 && length($ss_conf) > 0) {
+			printf( ALIFILE ">ss_pred PSIPRED predicted secondary structure\n%s\n", $ss_pred);
+			printf( ALIFILE ">ss_conf PSIPRED confidence values\n%s\n", $ss_conf );
+		}
 	}
 
 	# Append alignment sequences to psipred sequences
