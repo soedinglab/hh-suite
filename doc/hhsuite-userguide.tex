@@ -572,8 +572,9 @@ $ ffindex_from_fasta -s <db>_fas.ff{data,index} <db.fas>
 Now, to build an MSA with HHblits for each sequence in \verb`<db>_fas.ff{data,index}`, run\\[-1mm]
 
 \begin{verbatim}
-$ hhblits_omp -d <path_to/uniprot20> -i <db>_fas -o <db>_a3m_wo_ss \\
-    -n 2 -cpu <number_threads>
+$ mpirun -np <number_threads> ffindex_apply_mpi <db>_fas.ff{data,index} \\
+    -i <db>_a3m_wo_ss.ffindex -d <db>_a3m_wo_ss.ffdata -- 
+    hhblits -d <path_to/uniprot20> -i stdin -oa3m stdout -n 2 -cpu 1
 \end{verbatim}
 
 The MSAs are written to the ffindex \verb`<db>_a3m_wo_ss.ff{data,index}`. To be sure that everything went smoothly, check that the number of lines in \verb`<db>_a3m.ffindex` is the same as the number of lines in \verb`<db>_fas.ffindex`. 
@@ -583,7 +584,7 @@ The number of HHblits search iterations and the HMM inclusion E-value threshold 
 Now, add PSIPRED-predicted secondary structure and if possible DSSP secondary structure annotation to all MSAs:
 \begin{verbatim}
 $ mpirun -np <number_threads> ffindex_apply_mpi <db>_a3m_wo_ss.ff{data,index} \\
-    -i <db>_a3m.ffindex -d <db>_a3m.ffindex -- addss.pl stdin stdout 
+    -i <db>_a3m.ffindex -d <db>_a3m.ffdata -- addss.pl stdin stdout 
 $ rm <db>_wo_ss_a3m.ff{data,index}
 \end{verbatim}
 
