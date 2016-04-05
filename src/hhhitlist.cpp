@@ -470,11 +470,11 @@ void HitList::CalculatePvalues(HMM* q, const char loc, const char ssm,
 }
 
 void HitList::PrintMatrices(HMM* q, const char* matricesOutputFileName,
-    const size_t max_number_matrices, const float S[20][20]) {
+    const bool filter_matrices, const size_t max_number_matrices, const float S[20][20]) {
   std::stringstream out_ss(
       std::stringstream::in | std::stringstream::out
           | std::stringstream::binary);
-  PrintMatrices(q, out_ss, max_number_matrices, S);
+  PrintMatrices(q, out_ss, filter_matrices, max_number_matrices, S);
 
   if (strcmp(matricesOutputFileName, "stdout") == 0) {
     std::cout << out_ss.str();
@@ -495,7 +495,7 @@ void HitList::PrintMatrices(HMM* q, const char* matricesOutputFileName,
 }
 
 void HitList::PrintMatrices(HMM* q, std::stringstream& out,
-    const size_t max_number_matrices, const float S[20][20]) {
+     const bool filter_matrices, const size_t max_number_matrices, const float S[20][20]) {
   //limit matrices to par.max_number_matrices
   std::vector<Hit> hits;
 
@@ -555,57 +555,59 @@ void HitList::PrintMatrices(HMM* q, std::stringstream& out,
     }
   }
 
-  float** similarity_scores = new float*[hits.size()];
-  for (unsigned int i = 0; i < hits.size(); i++) {
-    similarity_scores[i] = new float[hits.size()];
-  }
-
-  for (unsigned int k = 0; k < hits.size(); k++) {
-    similarity_scores[k][k] = 1.0;
-    for (unsigned int k_comp = k + 1; k_comp < hits.size(); k_comp++) {
-      similarity_scores[k][k_comp] = 0;
-
-      Hit it = hits[k];
-      Hit it_comp = hits[k_comp];
-
-      for (int i = 1; i <= q->L; i++) {
-        similarity_scores[k][k_comp] += pow(
-            it.forward_profile[i] * it_comp.forward_profile[i], 0.5)
-            + pow(it.backward_profile[i] * it_comp.backward_profile[i], 0.5);
-      }
-
-      similarity_scores[k][k_comp] /= 2.0;
-      similarity_scores[k_comp][k] = similarity_scores[k][k_comp];
+  if(filter_matrices) {
+    float** similarity_scores = new float*[hits.size()];
+    for (unsigned int i = 0; i < hits.size(); i++) {
+      similarity_scores[i] = new float[hits.size()];
     }
-  }
-
-  //remove too similar alignments
-  while (chosen > max_number_matrices) {
-    float max_value = 0.0;
-    int max_index = 0;
 
     for (unsigned int k = 0; k < hits.size(); k++) {
-      float summed_similarity = 0;
-      for (unsigned int k_prim = 0; k_prim < hits.size(); k_prim++) {
-        if (picked_alignments[k_prim] && picked_alignments[k]) {
-          summed_similarity += similarity_scores[k][k_prim];
+      similarity_scores[k][k] = 1.0;
+      for (unsigned int k_comp = k + 1; k_comp < hits.size(); k_comp++) {
+        similarity_scores[k][k_comp] = 0;
+
+        Hit it = hits[k];
+        Hit it_comp = hits[k_comp];
+
+        for (int i = 1; i <= q->L; i++) {
+          similarity_scores[k][k_comp] += pow(
+              it.forward_profile[i] * it_comp.forward_profile[i], 0.5)
+              + pow(it.backward_profile[i] * it_comp.backward_profile[i], 0.5);
+        }
+
+        similarity_scores[k][k_comp] /= 2.0;
+        similarity_scores[k_comp][k] = similarity_scores[k][k_comp];
+      }
+    }
+
+    //remove too similar alignments
+    while (chosen > max_number_matrices) {
+      float max_value = 0.0;
+      int max_index = 0;
+
+      for (unsigned int k = 0; k < hits.size(); k++) {
+        float summed_similarity = 0;
+        for (unsigned int k_prim = 0; k_prim < hits.size(); k_prim++) {
+          if (picked_alignments[k_prim] && picked_alignments[k]) {
+            summed_similarity += similarity_scores[k][k_prim];
+          }
+        }
+
+        if (summed_similarity > max_value) {
+          max_value = summed_similarity;
+          max_index = k;
         }
       }
 
-      if (summed_similarity > max_value) {
-        max_value = summed_similarity;
-        max_index = k;
-      }
+      picked_alignments[max_index] = false;
+      chosen--;
     }
 
-    picked_alignments[max_index] = false;
-    chosen--;
+    for (unsigned int k = 0; k < hits.size(); k++) {
+      delete[] similarity_scores[k];
+    }
+    delete[] similarity_scores;
   }
-
-  for (unsigned int k = 0; k < hits.size(); k++) {
-    delete[] similarity_scores[k];
-  }
-  delete[] similarity_scores;
 
   HH_LOG(INFO) << "Printing alignment matrices..." << std::endl;
   HH_LOG(INFO) << "Total number of alignments    : " << hits.size()

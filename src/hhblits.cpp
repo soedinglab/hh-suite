@@ -454,6 +454,7 @@ void HHblits::help(Parameters& par, char all) {
   printf(" -cpu <int>     number of CPUs to use (for shared memory SMPs) (default=%i)      \n", par.threads);
   if (all) {
 	printf(" -scores <file> write scores for all pairwise comparisions to file               \n");
+	  printf(" -filter_matrices filter matrices for similarity to output at most 100 matrices\n");
     printf(" -atab   <file> write all alignments in tabular layout to file                   \n");
     printf(" -maxres <int>  max number of HMM columns (def=%5i)             \n", par.maxres);
     printf(" -maxmem [1,inf[ limit memory for realignment (in GB) (def=%.1f)          \n", par.maxmem);
@@ -529,6 +530,8 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
         exit(4);
       } else
         strcpy(par.alnfile, argv[i]);
+    } else if (!strcmp(argv[i], "-filter_matrices")) {
+        par.filter_matrices = true;
     } else if (!strcmp(argv[i], "-ohhm")) {
       if (++i >= argc || argv[i][0] == '-') {
         help(par);
@@ -1599,13 +1602,14 @@ void HHblits::writeA3MFile(HHblits& hhblits, std::stringstream& out) {
 
 void HHblits::writeMatricesFile(char* matricesOutputFileName) {
   if (*matricesOutputFileName) {
-    hitlist.PrintMatrices(q, matricesOutputFileName, par.max_number_matrices,
-                          S);
+    hitlist.PrintMatrices(q, matricesOutputFileName, par.filter_matrices,
+                          par.max_number_matrices, S);
   }
 }
 
 void HHblits::writeMatricesFile(HHblits& hhblits, stringstream& out) {
-  hhblits.hitlist.PrintMatrices(hhblits.q, out, hhblits.par.max_number_matrices,
+  hhblits.hitlist.PrintMatrices(hhblits.q, out, hhblits.par.filter_matrices,
+                                hhblits.par.max_number_matrices,
                                 hhblits.S);
 }
 
