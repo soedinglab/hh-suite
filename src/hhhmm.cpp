@@ -207,7 +207,7 @@ int HMM::Read(FILE* dbf, const int maxcol, const int nseqdis, float* pb,
 	char* ptr;                // pointer for string manipulation
 	int i = 0;                  // index for match state (first=1)
 	int a;                    // amino acid index
-	static int warn = 0;
+	int warn = 0;
 
 	//Delete name and seq matrices
 	if (!dont_delete_seqs) // Delete all sname and seq if no flat copy to hit object has been made
@@ -706,7 +706,7 @@ int HMM::ReadHMMer(FILE* dbf, const char showcons, float* pb, char* filestr) {
 	static char ignore_hmmer_cal = 0;
 	char* annotchr; // consensus amino acids in ASCII format, or, in HMMER format, the reference annotation character in insert line
 	annotchr = new char[maxres]; // consensus amino acids in ASCII format, or, in HMMER format, the reference annotation character in insert line
-	static int warn = 0;
+	int warn = 0;
 
 	L = 0;
 	Neff_HMM = 0;
@@ -1216,7 +1216,7 @@ int HMM::ReadHMMer3(FILE* dbf, const char showcons, float* pb, char* filestr) {
 	int k = 0;                  // index for seq[k]
 	char* annotchr; // consensus amino acids in ASCII format, or, in HMMER format, the reference annotation character in insert line
 	annotchr = new char[maxres]; // consensus amino acids in ASCII format, or, in HMMER format, the reference annotation character in insert line
-	static int warn = 0;
+	int warn = 0;
 
 	L = 0;
 	Neff_HMM = 0;

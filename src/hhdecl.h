@@ -165,6 +165,7 @@ public:
   char infile[NAMELEN];   // input filename
   char outfile[NAMELEN];  // output filename
   char matrices_output_file[NAMELEN];
+  bool filter_matrices;
   char pairwisealisfile[NAMELEN]; // output filename with pairwise alignments
   char alisbasename[NAMELEN];
   char alnfile[NAMELEN];  // name of output alignment file in A3M format (for iterative search)

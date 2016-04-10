@@ -234,6 +234,7 @@ void HHblits::Reset() {
   hitlist.Reset();
   while (!hitlist.End())
     hitlist.Delete().Delete();
+  hitlist.Reset();
 
   std::map<int, Alignment*>::iterator it;
   for (it = alis.begin(); it != alis.end(); it++) {
@@ -241,6 +242,7 @@ void HHblits::Reset() {
   }
   alis.clear();
 
+  // Prepare multi-threading - reserve memory for threads, intialize, etc.
   for (int bin = 0; bin < par.threads; bin++) {
     viterbiMatrices[bin]->DeleteBacktraceMatrix();
     posteriorMatrices[bin]->DeleteProbabilityMatrix();
@@ -452,6 +454,7 @@ void HHblits::help(Parameters& par, char all) {
   printf(" -cpu <int>     number of CPUs to use (for shared memory SMPs) (default=%i)      \n", par.threads);
   if (all) {
 	printf(" -scores <file> write scores for all pairwise comparisions to file               \n");
+	  printf(" -filter_matrices filter matrices for similarity to output at most 100 matrices\n");
     printf(" -atab   <file> write all alignments in tabular layout to file                   \n");
     printf(" -maxres <int>  max number of HMM columns (def=%5i)             \n", par.maxres);
     printf(" -maxmem [1,inf[ limit memory for realignment (in GB) (def=%.1f)          \n", par.maxmem);
@@ -527,6 +530,8 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
         exit(4);
       } else
         strcpy(par.alnfile, argv[i]);
+    } else if (!strcmp(argv[i], "-filter_matrices")) {
+        par.filter_matrices = true;
     } else if (!strcmp(argv[i], "-ohhm")) {
       if (++i >= argc || argv[i][0] == '-') {
         help(par);
@@ -1196,10 +1201,10 @@ void HHblits::run(FILE* query_fh, char* query_path) {
     *q_tmp = *q;
     HMM* q_rescore = new HMM(MAXSEQDIS, par.maxres);
 
-    //TODO: deep copy for rescoring of q
 
     PrepareQueryHMM(par, input_format, q, pc_hhm_context_engine,
                     pc_hhm_context_mode, pb, R);
+    //deep copy for rescoring of q
     *q_rescore = *q;
     q_vec.MapOneHMM(q_rescore);
 
@@ -1446,11 +1451,6 @@ void HHblits::run(FILE* query_fh, char* query_path) {
         << " We recommend to use HHMs build by hhmake." << std::endl;
   }
 
-//  if (*par.reduced_outfile) {
-//    float qscs[] = { -20, 0, 0.1, 0.2 };
-//    wiggleQSC(par.n_redundancy, qscs, 4, reducedHitlist);
-//  }
-
   for (size_t i = 0; i < all_entries.size(); i++) {
     delete all_entries[i];
   }
@@ -1618,13 +1618,14 @@ void HHblits::writeA3MFile(HHblits& hhblits, std::stringstream& out) {
 
 void HHblits::writeMatricesFile(char* matricesOutputFileName) {
   if (*matricesOutputFileName) {
-    hitlist.PrintMatrices(q, matricesOutputFileName, par.max_number_matrices,
-                          S);
+    hitlist.PrintMatrices(q, matricesOutputFileName, par.filter_matrices,
+                          par.max_number_matrices, S);
   }
 }
 
 void HHblits::writeMatricesFile(HHblits& hhblits, stringstream& out) {
-  hhblits.hitlist.PrintMatrices(hhblits.q, out, hhblits.par.max_number_matrices,
+  hhblits.hitlist.PrintMatrices(hhblits.q, out, hhblits.par.filter_matrices,
+                                hhblits.par.max_number_matrices,
                                 hhblits.S);
 }
 

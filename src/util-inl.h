@@ -310,26 +310,6 @@ inline float NormalizeToX(float* array, int length, float x, float* def_array =
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
-// Similar to spintf("%*g,w,val), but displays maximum number of digits within width w
-/////////////////////////////////////////////////////////////////////////////////////
-inline char* sprintg(float val, int w) {
-  static char str[100];
-  float log10val = safe_log10(fabs(val));
-  int neg = (val < 0 ? 1 : 0);
-  if (log10val >= w - neg - 1 || -log10val > 3) {
-    // positive exponential 1.234E+06
-    // negative exponential 1.234E-06
-    int d = w - 6 - neg;
-    sprintf(str, "%*.*e", w, d < 1 ? 1 : d, val);
-  }
-  else {
-    int d = log10val > 0 ? w - 2 - neg - int(log10val) : w - 2 - neg;
-    sprintf(str, "%#*.*f", w, d, val);
-  }
-  return str;
-}
-
-/////////////////////////////////////////////////////////////////////////////////////
 // String utilities
 /////////////////////////////////////////////////////////////////////////////////////
 
@@ -655,32 +635,6 @@ inline char* strsubst(char* str, const char str1[], const char str2[]) {
   return ptr;
 }
 
-// Gives elapsed time since first call to this function
-inline void ElapsedTimeSinceFirstCall(const char str[]) {
-  timeval t;
-  static double tfirst = 0;
-  if (tfirst == 0) {
-    gettimeofday(&t, NULL);
-    tfirst = 1E-6 * t.tv_usec + t.tv_sec;
-  }
-  gettimeofday(&t, NULL);
-  printf("Elapsed time since first call:%12.3fs %s\n",
-      1E-6 * t.tv_usec + t.tv_sec - tfirst, str);
-}
-
-// Gives elapsed time since last call to this function
-inline void ElapsedTimeSinceLastCall(const char str[]) {
-  timeval t;
-  static double tlast = 0.0;
-  if (tlast == 0.0) {
-    gettimeofday(&t, NULL);
-    tlast = 1.0E-6 * t.tv_usec + t.tv_sec;
-  }
-  gettimeofday(&t, NULL);
-  printf("Elapsed time since last call:%12.3fs %s\n",
-      1.0E-6 * t.tv_usec + t.tv_sec - tlast, str);
-  tlast = 1.0E-6 * t.tv_usec + t.tv_sec;
-}
 
 inline char* RemovePath(char outname[], char filename[]) {
   char* ptr;

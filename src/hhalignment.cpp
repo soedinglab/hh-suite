@@ -836,7 +836,7 @@ void Alignment::Compress(const char infile[], const char cons, const int maxres,
   int a;                  //amino acid index
   char c;
   int unequal_lengths = 0;  //k: seq k doesn't have same number of match states as seq 0 => WARNING
-  static short unsigned int h[MAXSEQ];  //points to next character in seq[k] to be written
+  short unsigned int h[MAXSEQ];  //points to next character in seq[k] to be written
 
   int M = par_M;
 
