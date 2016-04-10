@@ -199,6 +199,7 @@ void Parameters::SetDefaults() {
 	strcpy(matrices_output_file, "");
 	strcpy(pairwisealisfile, "");
 	strcpy(scorefile, "");
+    strcpy(m8file, "");
 	strcpy(indexfile, "");
 	strcpy(alnfile, "");
 	strcpy(hhmfile, "");

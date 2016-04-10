@@ -99,6 +99,7 @@ int main(int argc, char **argv) {
   hhblits.writeHHRFile(par.outfile);
   hhblits.writeAlisFile(par.alisbasename);
   hhblits.writeScoresFile(par.scorefile);
+  hhblits.writeM8(par.m8file);
   hhblits.writePairwiseAlisFile(par.pairwisealisfile, par.outformat);
   hhblits.writeAlitabFile(par.alitabfile);
   hhblits.writePsiFile(par.psifile);

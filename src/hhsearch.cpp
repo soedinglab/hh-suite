@@ -346,7 +346,17 @@ void HHsearch::ProcessArguments(int argc, char** argv, Parameters& par) {
 			} else {
 				strcpy(par.scorefile, argv[i]);
 			}
-		} else if (!strcmp(argv[i], "-atab")) {
+		}
+        else if (!strcmp(argv[i], "-blasttab")) {
+            if (++i >= argc || argv[i][0] == '-') {
+                help(par);
+                HH_LOG(ERROR) << "No file following -blasttab" << std::endl;
+                exit(4);
+            } else {
+                strcpy(par.m8file, argv[i]);
+            }
+        }
+        else if (!strcmp(argv[i], "-atab")) {
 			if (++i >= argc || argv[i][0] == '-') {
 				help(par);
 				HH_LOG(ERROR) << "No query file following -atab" << std::endl;
