@@ -29,27 +29,25 @@ void Parameters::SetDefaultPaths() {
 		Pathname(program_path, argv[0]);
 
 		/* we did not find HHLIB, if called with full path or in dist dir, we can try relative to program path */
-		if (program_path != NULL) {
-			strcat(strcpy(hhlib, program_path), "../lib/hh");
+		strcat(strcpy(hhlib, program_path), "../lib/hh");
+		strcat(strcpy(hhdata, hhlib), "/data");
+		strcat(strcpy(clusterfile, hhdata), "/context_data.crf");
+		strcat(strcpy(cs_library, hhdata), "/cs219.lib");
+		testf = fopen(cs_library, "r");
+		if (testf)
+			fclose(testf);
+		else {
+			HH_LOG(DEBUG) << "WARNING in HHsuite: Could not open " << cs_library << "\n";
+
+			strcat(strcpy(hhlib, program_path), "..");
 			strcat(strcpy(hhdata, hhlib), "/data");
 			strcat(strcpy(clusterfile, hhdata), "/context_data.crf");
 			strcat(strcpy(cs_library, hhdata), "/cs219.lib");
 			testf = fopen(cs_library, "r");
 			if (testf)
 				fclose(testf);
-			else {
+			else
 				HH_LOG(DEBUG) << "WARNING in HHsuite: Could not open " << cs_library << "\n";
-
-				strcat(strcpy(hhlib, program_path), "..");
-				strcat(strcpy(hhdata, hhlib), "/data");
-				strcat(strcpy(clusterfile, hhdata), "/context_data.crf");
-				strcat(strcpy(cs_library, hhdata), "/cs219.lib");
-				testf = fopen(cs_library, "r");
-				if (testf)
-					fclose(testf);
-				else
-					HH_LOG(DEBUG) << "WARNING in HHsuite: Could not open " << cs_library << "\n";
-			}
 		}
 	}
 	if (!testf) {
