@@ -1,5 +1,5 @@
 // hhfilterC: filter alignment in a2m format with maximum sequence identity of match states and minimum coverage
-// 
+//
 //     (C) Johannes Soeding 2012
 
 //     This program is free software: you can redistribute it and/or modify
@@ -17,7 +17,7 @@
 
 //     We are very grateful for bug reports! Please contact us at soeding@mpibpc.mpg.de
 
-//     Reference: 
+//     Reference:
 //     Remmert M., Biegert A., Hauser A., and Soding J.
 //     HHblits: Lightning-fast iterative protein sequence searching by HMM-HMM alignment.
 //     Nat. Methods, epub Dec 25, doi: 10.1038/NMETH.1818 (2011).
@@ -182,7 +182,7 @@ void ProcessArguments(int argc, char** argv) {
       par.Neff = atof(argv[++i]);
     else if (!strcmp(argv[i], "-Neff") && (i < argc - 1))
       par.Neff = atof(argv[++i]);
-    else if (!strcmp(argv[i], "-M") && (i < argc - 1))
+    else if (!strcmp(argv[i], "-M") && (i < argc - 1)) {
       if (!strcmp(argv[++i], "a2m") || !strcmp(argv[i], "a3m"))
         par.M = 1;
       else if (!strcmp(argv[i], "first"))
@@ -193,6 +193,7 @@ void ProcessArguments(int argc, char** argv) {
       }
       else
         HH_LOG(WARNING) << "Ignoring unknown argument: -M " << argv[i] << std::endl;
+    }
     else if (!strcmp(argv[i], "-def"))
       par.readdefaultsfile = 1;
     else if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help")) {
@@ -211,11 +212,11 @@ void ProcessArguments(int argc, char** argv) {
 //// MAIN PROGRAM
 /////////////////////////////////////////////////////////////////////////////////////
 int main(int argc, char **argv) {
-  Alignment qali;              //Create an alignment 
+  Alignment qali;              //Create an alignment
 
   char* argv_conf[MAXOPT]; // Input arguments from .hhconfig file (first=1: argv_conf[0] is not used)
-  int argc_conf;                  // Number of arguments in argv_conf 
-  
+  int argc_conf;                  // Number of arguments in argv_conf
+
   strcpy(par.infile, "");
   strcpy(par.outfile, "");
 
@@ -226,7 +227,7 @@ int main(int argc, char **argv) {
   par.argv = argv;
   par.argc = argc;
   RemovePathAndExtension(program_name, argv[0]);
-  
+
   // Enable changing verbose mode before defaults file and command line are processed
 	int v = 2;
 	for (int i = 1; i < argc; i++) {
@@ -281,7 +282,7 @@ int main(int argc, char **argv) {
   qali.Read(inf, par.infile, par.mark, par.maxcol, par.nseqdis);
   fclose(inf);
 
-  // Convert ASCII to int (0-20),throw out all insert states, record their number in I[k][i] 
+  // Convert ASCII to int (0-20),throw out all insert states, record their number in I[k][i]
   // and store marked sequences in name[k] and seq[k]
   qali.Compress(par.infile, par.cons, par.maxres, par.maxcol, par.M, par.Mgaps);
 
@@ -293,7 +294,7 @@ int main(int argc, char **argv) {
   // Remove sequences with seq. identity larger than seqid percent (remove the shorter of two)
   qali.N_filtered = qali.Filter(par.max_seqid, S, par.coverage, par.qid, par.qsc,
       par.Ndiff);
-  
+
   // Atune alignment diversity q.Neff with qsc to value Neff_goal
   if (par.Neff >= 1.0)
     qali.FilterNeff(par.wg, par.mark, par.cons, par.showcons, par.maxres, par.max_seqid, par.coverage, par.Neff, pb, S, Sim);
@@ -315,4 +316,3 @@ int main(int argc, char **argv) {
       printf("Done\n");
   }
 }
-

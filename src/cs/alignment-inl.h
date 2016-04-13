@@ -172,7 +172,7 @@ void Alignment<Abc>::ReadFastaFlavors(FILE* fin, std::vector<std::string>& heade
             if (buffer[0] == '#') {
                 name_ = std::string(buffer + 1);
             } else if (buffer[0] == '>') {
-                if (headers.empty() && 
+                if (headers.empty() &&
                     (strstr(buffer, ">ss_") == buffer || strstr(buffer, ">sa_") == buffer)) {
                   while (!feof(fin)) {
                     c = getc(fin);
@@ -839,12 +839,14 @@ Vector<double> PositionSpecificWeightsAndDiversity(const Alignment<Abc>& ali, Ma
             }  // for j over ncols
             Normalize(&wi[0], nseqs);
 
-            if (ncoli < kMinCols)  // number of columns in subalignment insufficient?
-                for (size_t k = 0; k < nseqs; ++k)
+            if (ncoli < kMinCols) {  // number of columns in subalignment insufficient?
+                for (size_t k = 0; k < nseqs; ++k) {
                     if (ali[i][k] < any)
                         wi[k] = wg[k];
                     else
                         wi[k] = 0.0f;
+                }
+            }
 
             neff[i] = 0.0f;
             for (size_t j = 0; j < ncols; ++j) {
