@@ -670,7 +670,7 @@ template<class Abc>
 void ReadAll(FILE* fin, AlignmentFormat format, std::vector< Alignment<Abc> >& v) {
     while (!feof(fin)) {
         v.push_back(Alignment<Abc>(fin, format));
-        uint8_t c = fgetc(fin);
+        int c = fgetc(fin);
         if (c == EOF) break;
         ungetc(c, fin);
     }
