@@ -330,7 +330,7 @@ void HHblits::help(Parameters& par, char all) {
     printf(" -maxfilt                  max number of hits allowed to pass 2nd prefilter (default=%i)   \n", par.maxnumdb);
     printf(" -min_prefilter_hits       min number of hits to pass prefilter (default=%i)               \n", par.min_prefilter_hits);
     printf(" -prepre_smax_thresh       min score threshold of ungapped prefilter (default=%i)               \n", par.preprefilter_smax_thresh);
-    printf(" -pre_evalue_thresh        max E-value threshold of Smith-Waterman prefilter score (default=%i)\n", par.prefilter_evalue_thresh);
+    printf(" -pre_evalue_thresh        max E-value threshold of Smith-Waterman prefilter score (default=%f)\n", par.prefilter_evalue_thresh);
     printf(" -pre_bitfactor            prefilter scores are in units of 1 bit / pre_bitfactor (default=%i)\n", par.prefilter_bit_factor);
     printf(" -pre_gap_open             gap open penalty in prefilter Smith-Waterman alignment (default=%i)\n", par.prefilter_gap_open);
     printf(" -pre_gap_extend           gap extend penalty in prefilter Smith-Waterman alignment (default=%i)\n", par.prefilter_gap_extend);
