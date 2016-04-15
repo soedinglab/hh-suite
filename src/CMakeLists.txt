@@ -209,7 +209,7 @@ add_executable(a3m_database_filter
 target_link_libraries (a3m_database_filter ffindex)
 
 add_executable(cstranslate
-  cs/cstranslate_app.cc $<TARGET_OBJECTS:CS_OBJECTS>
+  cs/cstranslate_app.cc $<TARGET_OBJECTS:CS_OBJECTS> $<TARGET_OBJECTS:A3M_COMPRESS_OBJECT>
 )
 target_link_libraries (cstranslate ffindex)
 

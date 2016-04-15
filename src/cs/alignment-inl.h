@@ -683,7 +683,7 @@ inline AlignmentFormat AlignmentFormatFromString(const std::string& s) {
         return FASTA_ALIGNMENT;
     else if (s == "a2m")
         return A2M_ALIGNMENT;
-    else if (s == "a3m")
+    else if (s == "a3m" || s == "ca3m")
         return A3M_ALIGNMENT;
     else if (s == "clu")
         return CLUSTAL_ALIGNMENT;

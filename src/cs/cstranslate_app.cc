@@ -30,6 +30,7 @@
 #include "matrix_pseudocounts-inl.h"
 #include "pssm.h"
 #include "sequence-inl.h"
+#include "a3m_compress.h"
 
 #ifdef OPENMP
 #include <omp.h>
@@ -40,6 +41,7 @@
 extern "C" {
   #include <ffindex.h>     // fast index-based database reading
   #include <ffutil.h>
+  #include <ext/fmemopen.h>
 }
 
 
@@ -200,7 +202,7 @@ void CSTranslateApp<Abc>::PrintOptions() const {
             "Input file with alignment or sequence");
     fprintf(out_, "  %-30s %s\n", "-o, --outfile <file>", "Output file for generated abstract state sequence (def: <infile>.as)");
     fprintf(out_, "  %-30s %s\n", "-a, --append <file>", "Append generated abstract state sequence to this file");
-    fprintf(out_, "  %-30s %s (def=%s)\n", "-I, --informat prf|seq|fas|...", "Input format: prf, seq, fas, a2m, or a3m", opts_.informat.c_str());
+    fprintf(out_, "  %-30s %s (def=%s)\n", "-I, --informat prf|seq|fas|...", "Input format: prf, seq, fas, a2m, a3m or ca3m", opts_.informat.c_str());
     fprintf(out_, "  %-30s %s (def=%s)\n", "-O, --outformat seq|prf", "Outformat: abstract state sequence or profile", opts_.outformat.c_str());
     fprintf(out_, "  %-30s %s\n", "-M, --match-assign [0:100]", "Make all FASTA columns with less than X% gaps match columns");
     fprintf(out_, "  %-30s %s\n", "", "(def: make columns with residue in first sequence match columns)");
@@ -211,7 +213,7 @@ void CSTranslateApp<Abc>::PrintOptions() const {
     fprintf(out_, "  %-30s %s (def=%-.1f)\n", "-c, --pc-ali [0,inf[", "Constant in pseudocount calculation for alignments", opts_.pc_ali);
     fprintf(out_, "  %-30s %s (def=%-.2f)\n", "-w, --weight [0,inf[", "Weight of abstract state column in emission calculation", opts_.weight_as);
     fprintf(out_, "  %-30s %s (def=off)\n", "-b, --binary", "Write binary instead of character sequence");
-    fprintf(out_, "  %-30s %s (def=off)\n", "-f, --ffindex", "Read from -i <ffindex>, write to -o <ffindex>; enables openmp if possible");
+    fprintf(out_, "  %-30s %s (def=off)\n", "-f, --ffindex", "Read from -i <ffindex>, write to -o <ffindex> (do not include _ca3m suffix for ca3m informat); enables openmp if possible");
 }
 
 template<class Abc>
@@ -496,6 +498,73 @@ int CSTranslateApp<Abc>::Run() {
       std::string input_data_file = opts_.infile + ".ffdata";
       std::string input_index_file = opts_.infile + ".ffindex";
 
+      // required ffindex files for ca3m case
+      size_t input_header_offset;
+      FILE *input_header_data_fh, *input_header_index_fh;
+      std::string input_header_data_file, input_header_index_file;
+      char* input_header_data;
+      ffindex_index_t* input_header_index;
+
+      size_t input_sequence_offset;
+      FILE *input_sequence_data_fh, *input_sequence_index_fh;
+      std::string input_sequence_data_file, input_sequence_index_file;
+      char* input_sequence_data;
+      ffindex_index_t* input_sequence_index;
+
+      if(opts_.informat == "ca3m") {
+        // infile has to be the ffindex basepath with no suffices
+        input_data_file = opts_.infile + "_ca3m.ffdata";
+        input_index_file = opts_.infile + "_ca3m.ffindex";
+
+        input_header_data_file = opts_.infile + "_header.ffdata";
+        input_header_index_file = opts_.infile + "_header.ffindex";
+
+        input_header_data_fh  = fopen(input_header_data_file.c_str(), "r");
+        input_header_index_fh = fopen(input_header_index_file.c_str(), "r");
+
+        if (input_header_data_fh == NULL) {
+          LOG(ERROR) << "Could not open ffindex input data file! (" << input_header_data_file << ")!" << std::endl;
+          exit(1);
+        }
+        if (input_header_index_fh == NULL) {
+          LOG(ERROR) << "Could not open ffindex input data file! (" << input_header_index_file << ")!" << std::endl;
+          exit(1);
+        }
+
+        input_header_data = ffindex_mmap_data(input_header_data_fh, &input_header_offset);
+        size_t header_entries = ffcount_lines(input_header_index_file.c_str());
+        input_header_index = ffindex_index_parse(input_header_index_fh, header_entries);
+
+        if (input_header_index == NULL) {
+          LOG(ERROR) << "Input index could not be loaded!" << std::endl;
+          exit(1);
+        }
+
+        input_sequence_data_file = opts_.infile + "_sequence.ffdata";
+        input_sequence_index_file = opts_.infile + "_sequence.ffindex";
+
+        input_sequence_data_fh  = fopen(input_sequence_data_file.c_str(), "r");
+        input_sequence_index_fh = fopen(input_sequence_index_file.c_str(), "r");
+
+        if (input_sequence_data_fh == NULL) {
+          LOG(ERROR) << "Could not open ffindex input data file! (" << input_sequence_data_file << ")!" << std::endl;
+          exit(1);
+        }
+        if (input_sequence_index_fh == NULL) {
+          LOG(ERROR) << "Could not open ffindex input data file! (" << input_sequence_index_file << ")!" << std::endl;
+          exit(1);
+        }
+
+        input_sequence_data = ffindex_mmap_data(input_sequence_data_fh, &input_sequence_offset);
+        size_t sequence_entries = ffcount_lines(input_sequence_index_file.c_str());
+        input_sequence_index = ffindex_index_parse(input_sequence_index_fh, sequence_entries);
+
+        if (input_sequence_index == NULL) {
+          LOG(ERROR) << "Input index could not be loaded!" << std::endl;
+          exit(1);
+        }
+      }
+
       FILE *input_data_fh  = fopen(input_data_file.c_str(), "r");
       FILE *input_index_fh = fopen(input_index_file.c_str(), "r");
 
@@ -543,7 +612,7 @@ int CSTranslateApp<Abc>::Run() {
       size_t input_range_end = input_index->n_entries;
 
       // Foreach entry
-      #pragma omp parallel for shared(input_index, input_data, output_data_fh, output_index_fh, output_offset)
+      #pragma omp parallel for shared(input_index, input_data, output_data_fh, output_index_fh, output_offset, input_sequence_index, input_sequence_data, input_header_index, input_header_data)
       for(size_t entry_index = input_range_start; entry_index < input_range_end; entry_index++) {
         ffindex_entry_t* entry = ffindex_get_entry_by_index(input_index, entry_index);
 
@@ -552,7 +621,22 @@ int CSTranslateApp<Abc>::Run() {
           continue;
         }
 
-        FILE* inf = ffindex_fopen_by_entry(input_data, entry);
+        FILE* inf;
+        char* a3m_buffer;
+        if(opts_.informat == "ca3m") {
+          std::ostringstream output;
+          char* data = ffindex_get_data_by_entry(input_data, entry);
+
+          compressed_a3m::extract_a3m(data, entry->length, input_sequence_index, input_sequence_data, input_header_index, input_header_data, &output);
+
+          std::string tmpOut = output.str();
+          a3m_buffer = strdup(tmpOut.c_str());
+
+          inf = fmemopen(a3m_buffer, tmpOut.length(), "r");
+        } else {
+          inf = ffindex_fopen_by_entry(input_data, entry);
+        }
+
         if(inf == NULL) {
           LOG(WARNING) << "Could not open input entry (" << entry->name << ")!" << std::endl;
           continue;
@@ -587,6 +671,10 @@ int CSTranslateApp<Abc>::Run() {
         }
 
         fclose(inf);
+
+        if(opts_.informat == "ca3m") {
+          free(a3m_buffer);
+        }
       }
     }
 
