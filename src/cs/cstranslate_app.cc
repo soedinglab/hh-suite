@@ -39,6 +39,7 @@
 
 extern "C" {
   #include <ffindex.h>     // fast index-based database reading
+  #include <ffutil.h>
 }
 
 
@@ -492,8 +493,8 @@ int CSTranslateApp<Abc>::Run() {
 	    }
     }
     else {
-      std::string input_data_file = opts_.infile+".ffdata";
-      std::string input_index_file = opts_.infile+".ffindex";
+      std::string input_data_file = opts_.infile + ".ffdata";
+      std::string input_index_file = opts_.infile + ".ffindex";
 
       FILE *input_data_fh  = fopen(input_data_file.c_str(), "r");
       FILE *input_index_fh = fopen(input_index_file.c_str(), "r");
@@ -510,14 +511,15 @@ int CSTranslateApp<Abc>::Run() {
 
       size_t input_offset;
       char* input_data = ffindex_mmap_data(input_data_fh, &input_offset);
-      ffindex_index_t* input_index = ffindex_index_parse(input_index_fh, 0);
+      size_t entries = ffcount_lines(input_index_file.c_str());
+      ffindex_index_t* input_index = ffindex_index_parse(input_index_fh, entries);
 
       if(input_index == NULL) {
         LOG(ERROR) << "Input index could not be loaded!" << std::endl;
         exit(1);
       }
 
-      //prepare ffindex ca3m database
+      //prepare output ffindex cs219 database
       std::string output_data_file = opts_.outfile+".ffdata";
       std::string output_index_file = opts_.outfile+".ffindex";
 
@@ -583,6 +585,8 @@ int CSTranslateApp<Abc>::Run() {
         {
           ffindex_insert_memory(output_data_fh, output_index_fh, &output_offset, const_cast<char*>(out_string.c_str()), out_string.size(), entry->name);
         }
+
+        fclose(inf);
       }
     }
 
