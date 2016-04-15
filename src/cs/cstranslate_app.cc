@@ -493,23 +493,23 @@ int CSTranslateApp<Abc>::Run() {
     }
     else {
       std::string input_data_file = opts_.infile+".ffdata";
-      std::string input_index_filea = opts_.infile+".ffindex";
+      std::string input_index_file = opts_.infile+".ffindex";
 
-      FILE *input__data_fh  = fopen(input_data_file.c_str(), "r");
-      FILE *input_index_fh = fopen(input_index_filea.c_str(), "r");
+      FILE *input_data_fh  = fopen(input_data_file.c_str(), "r");
+      FILE *input_index_fh = fopen(input_index_file.c_str(), "r");
 
-      if (input__data_fh == NULL) {
+      if (input_data_fh == NULL) {
         LOG(ERROR) << "Could not open ffindex input data file! (" << input_data_file << ")!" << std::endl;
         exit(1);
       }
 
       if(input_index_fh == NULL) {
-        LOG(ERROR) << "Could not open ffindex input index file! (" << input_index_filea << ")!" << std::endl;
+        LOG(ERROR) << "Could not open ffindex input index file! (" << input_index_file << ")!" << std::endl;
         exit(1);
       }
 
       size_t input_offset;
-      char* input_data = ffindex_mmap_data(input__data_fh, &input_offset);
+      char* input_data = ffindex_mmap_data(input_data_fh, &input_offset);
       ffindex_index_t* input_index = ffindex_index_parse(input_index_fh, 0);
 
       if(input_index == NULL) {
@@ -560,15 +560,15 @@ int CSTranslateApp<Abc>::Run() {
         CountProfile<Abc> profile;  // input profile we want to translate
         ReadProfile(inf, header, profile);
 
-        size_t profile_counts_lenght = profile.counts.length();
+        size_t profile_counts_length = profile.counts.length();
 
-        CountProfile<AS219> as_profile(profile_counts_lenght);  // output profile
+        CountProfile<AS219> as_profile(profile_counts_length);  // output profile
         Translate(profile, emission, as_profile);
 
         // Prepare abstract sequence in AS219 format
-        Sequence<AS219> as_seq(profile_counts_lenght);
+        Sequence<AS219> as_seq(profile_counts_length);
         as_seq.set_header(header);
-        BuildSequence(as_profile, profile_counts_lenght, as_seq);
+        BuildSequence(as_profile, profile_counts_length, as_seq);
 
         std::stringstream out_buffer;
 
