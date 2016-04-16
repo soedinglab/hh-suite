@@ -108,7 +108,7 @@ void Alignment<Abc>::Init(const std::vector<std::string>& headers,
                 seqs_[i][k] = Abc::kCharToInt[static_cast<int>(c)];
             else
                 throw Exception("Invalid character %c at position %i of sequence '%s'",
-                                c, i, headers_[k].c_str());
+                                c, i, seqs[k].c_str());
         }
     }
 
