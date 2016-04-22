@@ -621,18 +621,21 @@ int CSTranslateApp<Abc>::Run() {
           continue;
         }
 
+        if (opts_.verbose) {
+          fprintf(out_, "Processing entry: %s\n", entry->name);
+        }
+
+        std::ostringstream output;
+        std::string tmpOut;
         FILE* inf;
-        char* a3m_buffer;
         if(opts_.informat == "ca3m") {
-          std::ostringstream output;
           char* data = ffindex_get_data_by_entry(input_data, entry);
 
           compressed_a3m::extract_a3m(data, entry->length, input_sequence_index, input_sequence_data, input_header_index, input_header_data, &output);
 
-          std::string tmpOut = output.str();
-          a3m_buffer = strdup(tmpOut.c_str());
+          tmpOut = output.str();
 
-          inf = fmemopen(a3m_buffer, tmpOut.length(), "r");
+          inf = fmemopen(static_cast<void*>(const_cast<char*>(tmpOut.c_str())), tmpOut.length(), "r");
         } else {
           inf = ffindex_fopen_by_entry(input_data, entry);
         }
@@ -644,7 +647,12 @@ int CSTranslateApp<Abc>::Run() {
 
         string header;
         CountProfile<Abc> profile;  // input profile we want to translate
-        ReadProfile(inf, header, profile);
+        try {
+          ReadProfile(inf, header, profile);
+        } catch (const Exception &e) {
+          fprintf(out_, "Could not read entry: %s, Message: %s\n", entry->name, e.what());
+          continue;
+        }
 
         size_t profile_counts_length = profile.counts.length();
 
@@ -670,11 +678,8 @@ int CSTranslateApp<Abc>::Run() {
           ffindex_insert_memory(output_data_fh, output_index_fh, &output_offset, const_cast<char*>(out_string.c_str()), out_string.size(), entry->name);
         }
 
-        fclose(inf);
-
-        if(opts_.informat == "ca3m") {
-          free(a3m_buffer);
-        }
+        // FIXME: we are leaking inf, but if we fclose we get weird crashes
+        //fclose(inf);
       }
     }
 
