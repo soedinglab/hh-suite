@@ -296,8 +296,8 @@ void Alignment<Abc>::ReadA3M(FILE* fin, std::vector<std::string>& headers, std::
 
     // Insert gaps into A3M alignment
     std::vector<std::string> seqs_a2m(seqs.size(), "");
-    Matrix<std::string> inserts(seqs.size(), nmatch_cols, "");
-    std::vector<size_t> max_insert_len(nmatch_cols, 0);
+    Matrix<std::string> inserts(seqs.size(), nmatch_cols + 1, "");
+    std::vector<size_t> max_insert_len(nmatch_cols + 1, 0);
 
     // Move inserts before first match state into seqs_a2m and keep track of
     // longest first insert
