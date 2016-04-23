@@ -129,17 +129,6 @@ namespace cs {
       if (MPQ_rank == MPQ_MASTER) {
         MPQ_Master(1);
       } else {
-        if(false){
-          int i = 0;
-          char hostname[256];
-          gethostname(hostname, sizeof(hostname));
-          printf("PID %d on %s ready for attach\n", getpid(), hostname);
-          fflush(stdout);
-          while (0 == i) {
-            sleep(5);
-          }
-        }
-
         FILE *data_file_out = NULL, *index_file_out = NULL, *log_file_out = NULL;
         if (MPQ_rank != MPQ_MASTER) {
           char data_filename_out_rank[FILENAME_MAX];
