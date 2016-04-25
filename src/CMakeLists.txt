@@ -224,6 +224,8 @@ if(MPI_CXX_FOUND)
     target_link_libraries(cstranslate_mpi ${MPI_CXX_LIBRARIES})
     set_target_properties(cstranslate_mpi PROPERTIES COMPILE_FLAGS "${MPI_CXX_COMPILE_FLAGS}")
     set_target_properties(cstranslate_mpi PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
+
+	install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/cstranslate_mpi DESTINATION bin)
 endif()
 
 INSTALL(PROGRAMS 
@@ -238,7 +240,6 @@ INSTALL(PROGRAMS
 	${CMAKE_CURRENT_BINARY_DIR}/a3m_database_extract
 	${CMAKE_CURRENT_BINARY_DIR}/a3m_database_filter 
 	${CMAKE_CURRENT_BINARY_DIR}/cstranslate
-	${CMAKE_CURRENT_BINARY_DIR}/cstranslate_mpi
 	DESTINATION bin
 )
 
