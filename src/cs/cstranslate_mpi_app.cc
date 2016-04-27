@@ -19,6 +19,8 @@
 
 #include "cstranslate_mpi_app.h"
 
+#include <unistd.h>
+
 namespace cs {
   template<class Abc>
   int CSTranslateMpiApp<Abc>::Run() {
@@ -174,12 +176,21 @@ namespace cs {
 
         MPQ_Worker(CSTranslateMpiPayload<Abc>, env);
         if (env->log_file) {
+          int fd = fileno(env->log_file);
+          fflush(env->log_file);
+          fsync(fd);
           fclose(env->log_file);
         }
         if (env->index_file_out) {
+          int fd = fileno(env->index_file_out);
+          fflush(env->index_file_out);
+          fsync(fd);
           fclose(env->index_file_out);
         }
         if (env->data_file_out) {
+          int fd = fileno(env->data_file_out);
+          fflush(env->data_file_out);
+          fsync(fd);
           fclose(env->data_file_out);
         }
         free(env);
