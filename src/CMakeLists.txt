@@ -1,5 +1,13 @@
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../cmake")
 
+#Sanitizers
+if(${HAVE_SANITIZER})
+	include(FindUBSan)
+	include(FindASan)
+	include(FindMSan)
+	include(FindTSan)
+endif()
+
 #SSE
 if(${HAVE_AVX2})
     ADD_DEFINITIONS("-DAVX2")
