@@ -45,6 +45,7 @@ int main(int argc, char **argv) {
 
   hhsearch.writeHHRFile(par.outfile);
   hhsearch.writeScoresFile(par.scorefile);
+  hhsearch.writeM8(par.m8file);
   hhsearch.writePairwiseAlisFile(par.pairwisealisfile, par.outformat);
   hhsearch.writeAlitabFile(par.alitabfile);
   hhsearch.writePsiFile(par.psifile);

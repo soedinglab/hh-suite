@@ -41,6 +41,7 @@ int main(int argc, char **argv) {
 
   hhalign.writeHHRFile(par.outfile);
   hhalign.writeScoresFile(par.scorefile);
+  hhalign.writeM8(par.m8file);
   hhalign.writePairwiseAlisFile(par.pairwisealisfile, par.outformat);
   hhalign.writeAlitabFile(par.alitabfile);
   hhalign.writePsiFile(par.psifile);

@@ -104,6 +104,7 @@ public:
   void writeHHRFile(char* hhrFile);
   void writeAlisFile(char* basename);
   void writeScoresFile(char* scoresFile);
+  void writeM8(char* m8File);
   void writePairwiseAlisFile(char* pairwieseAlisFile, char outformat);
   void writeAlitabFile(char* alitabFile);
   void writePsiFile(char* psiFile);
@@ -115,6 +116,7 @@ public:
   std::map<int, Alignment*>& getAlis();
   static void writeHHRFile(HHblits& hhblits, std::stringstream& out);
   static void writeScoresFile(HHblits& hhblits, std::stringstream& out);
+  static void writeM8(HHblits& hhblits, std::stringstream& out);
   static void writePairwiseAlisFile(HHblits& hhblits, std::stringstream& out);
   static void writeAlitabFile(HHblits& hhblits, std::stringstream& out);
   static void writePsiFile(HHblits& hhblits, std::stringstream& out);

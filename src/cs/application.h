@@ -77,6 +77,9 @@ class Application {
   std::string         log_file_;       // name of logfile
   FILE*               log_fp_;         // file pointer to logfile
   FILE*               out_;            // file pointer to output stream
+
+  int argc_;
+  char** argv_;
 };
 
 }  // namespace cs

@@ -590,7 +590,17 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
       } else {
         strcpy(par.scorefile, argv[i]);
       }
-    } else if (!strcmp(argv[i], "-atab")) {
+    }
+    else if (!strcmp(argv[i], "-blasttab")) {
+        if (++i >= argc || argv[i][0] == '-') {
+            help(par);
+            HH_LOG(ERROR) << "No file following -blasttab" << std::endl;
+            exit(4);
+        } else {
+            strcpy(par.m8file, argv[i]);
+        }
+    }
+    else if (!strcmp(argv[i], "-atab")) {
       if (++i >= argc || argv[i][0] == '-') {
         help(par);
         HH_LOG(ERROR) << "No file following -atab" << std::endl;
@@ -1478,6 +1488,12 @@ void HHblits::writeScoresFile(char* scoresFile) {
   if (*scoresFile) {
     hitlist.PrintScoreFile(q, scoresFile);
   }
+}
+
+void HHblits::writeM8(char* m8File) {
+    if (*m8File) {
+        hitlist.PrintM8File(q, m8File);
+    }
 }
 
 void HHblits::writePairwiseAlisFile(char* pairwiseAlisFile, char outformat) {

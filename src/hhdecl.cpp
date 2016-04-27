@@ -200,6 +200,7 @@ void Parameters::SetDefaults() {
 	filter_matrices = false;
 	strcpy(pairwisealisfile, "");
 	strcpy(scorefile, "");
+    strcpy(m8file, "");
 	strcpy(indexfile, "");
 	strcpy(alnfile, "");
 	strcpy(hhmfile, "");

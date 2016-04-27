@@ -209,13 +209,24 @@ add_executable(a3m_database_filter
 target_link_libraries (a3m_database_filter ffindex)
 
 add_executable(cstranslate
-  cs/cstranslate_app.cc $<TARGET_OBJECTS:CS_OBJECTS>
+  cs/cstranslate_app.cc $<TARGET_OBJECTS:CS_OBJECTS> $<TARGET_OBJECTS:A3M_COMPRESS_OBJECT>
 )
 target_link_libraries (cstranslate ffindex)
 
-#add_executable(cstranslate_omp
-#  cs/cstranslate_omp.cc $<TARGET_OBJECTS:CS_OBJECTS>
-#)
+find_package(MPI QUIET)
+if(MPI_CXX_FOUND)
+    include_directories(${MPI_CXX_INCLUDE_PATH})
+
+    add_executable(cstranslate_mpi
+            cs/cstranslate_mpi_app.cc $<TARGET_OBJECTS:CS_OBJECTS> $<TARGET_OBJECTS:A3M_COMPRESS_OBJECT>
+            )
+    target_link_libraries(cstranslate_mpi ffindex mpq)
+    target_link_libraries(cstranslate_mpi ${MPI_CXX_LIBRARIES})
+    set_target_properties(cstranslate_mpi PROPERTIES COMPILE_FLAGS "${MPI_CXX_COMPILE_FLAGS}")
+    set_target_properties(cstranslate_mpi PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
+
+	install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/cstranslate_mpi DESTINATION bin)
+endif()
 
 INSTALL(PROGRAMS 
 	${CMAKE_CURRENT_BINARY_DIR}/hhblits 
@@ -228,7 +239,7 @@ INSTALL(PROGRAMS
 	${CMAKE_CURRENT_BINARY_DIR}/a3m_database_reduce
 	${CMAKE_CURRENT_BINARY_DIR}/a3m_database_extract
 	${CMAKE_CURRENT_BINARY_DIR}/a3m_database_filter 
-	${CMAKE_CURRENT_BINARY_DIR}/cstranslate 
+	${CMAKE_CURRENT_BINARY_DIR}/cstranslate
 	DESTINATION bin
 )
 

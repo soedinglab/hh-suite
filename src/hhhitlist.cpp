@@ -264,6 +264,78 @@ void HitList::PrintScoreFile(HMM* q, char* outputfile) {
   }
 }
 
+
+/////////////////////////////////////////////////////////////////////////////////////
+// Print score distribution into a blast tab file
+/////////////////////////////////////////////////////////////////////////////////////
+void HitList::PrintM8File(HMM* q, char* outputfile) {
+    std::stringstream outbuffer;
+    PrintM8File(q, outbuffer);
+    
+    if (strcmp(outputfile, "stdout") == 0) {
+        std::cout << outbuffer.str();
+    }
+    else {
+        std::ofstream out(outputfile);
+        if (!out.good()) {
+            HH_LOG(WARNING) << "In " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
+            HH_LOG(WARNING) << "\tCould not open \'" << outputfile << std::endl;
+            return;
+        }
+        
+        out << outbuffer.str();
+        
+        out.close();
+    }
+}
+
+
+void HitList::PrintM8File(HMM* q, std::stringstream& outbuffer) {
+    Hash<int> twice(10000); // make sure only one hit per HMM is listed
+    twice.Null(-1);
+    
+    Reset();
+
+    
+    //Blast tab format
+    // query target evalue score
+    // d1c8da_	Q32Z53	0.618	547	334	0	1	548	1	542	3.11E-185	646
+    
+    int i = 0;
+    while (!End()) {
+        i++;
+        Hit hit = ReadNext();
+        char line[LINELEN];
+        int gapOpenCount = 0;
+        int missMatchCount = 0;
+        int matchCount  = 0;
+        bool isGapOpen = false;
+        for (int step = hit.nsteps; step >= 1; step--){
+            if (hit.states[step] == GD || hit.states[step] == DG) {
+                if(isGapOpen == false){
+                gapOpenCount++;
+                }
+                isGapOpen = true;
+            }else if (hit.states[step] == MM){
+                if(hit.seq[hit.nfirst][hit.j[step]] == q->seq[hit.nfirst][hit.i[step]]){
+                    matchCount++;
+                }else{
+                    missMatchCount++;
+                }
+                isGapOpen = false;
+            }else{
+                isGapOpen = false;
+            }
+        }
+        sprintf(line, "%s\t%s\t%1.3f\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%.2E\t%.1f\n",
+                q->file, hit.file, static_cast<float>(matchCount)/static_cast<float>(hit.L), hit.L, missMatchCount, gapOpenCount,
+                hit.i1, hit.i2, hit.j1, hit.j2, hit.Eval, -hit.score_aass);
+        outbuffer << line;
+    }
+}
+
+
+
 void HitList::PrintScoreFile(HMM* q, std::stringstream& outbuffer) {
   Hash<int> twice(10000); // make sure only one hit per HMM is listed
   twice.Null(-1);

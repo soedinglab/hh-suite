@@ -294,6 +294,11 @@ void compressed_a3m::extract_a3m(char* data, size_t data_size,
     ffindex_entry_t* header_entry = ffindex_get_entry_by_index(ffindex_header_database_index, entry_index);
     char* header = ffindex_get_data_by_entry(ffindex_header_database_data, header_entry);
 
+    // make sure we always have a valid fasta prefix
+    if (header[0] != '>') {
+      output->put('>');
+    }
+
     output->write(header, header_entry->length - 1);
     output->put('\n');
 

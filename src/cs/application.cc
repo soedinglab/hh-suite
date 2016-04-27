@@ -47,6 +47,10 @@ Application::~Application() {
 }
 
 int Application::main(int argc, char* argv[], FILE* fout, const string& name) {
+  // save original arg parameters for e.g. mpi
+  argc_ = argc;
+  argv_ = argv;
+
   int status = 0;
   out_      = fout;
   app_name_ = name;
