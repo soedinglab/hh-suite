@@ -1391,7 +1391,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
     }
 
     if (new_hits == 0 || round == par.num_rounds || q->Neff_HMM > par.neffmax || Qali->N_in >= MAXSEQ) {
-      if (round < par.num_rounds) {
+      if (new_hits == 0 && round < par.num_rounds) {
         HH_LOG(INFO) << "No new hits found in iteration " << round
                                << " => Stop searching" << std::endl;
       }
