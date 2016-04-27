@@ -1,3 +1,5 @@
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../cmake")
+
 #SSE
 if(${HAVE_AVX2})
     ADD_DEFINITIONS("-DAVX2")
@@ -6,7 +8,6 @@ elseif(${HAVE_SSSE3})
     ADD_DEFINITIONS("-DSSE")
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mssse3")
 else()
-    set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/../cmake")
     include(CheckSSEFeatures)
     ADD_DEFINITIONS(${CXX_DFLAGS})
     if(${HAVE_AVX2_EXTENSIONS})
