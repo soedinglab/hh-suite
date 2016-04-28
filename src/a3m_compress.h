@@ -36,6 +36,12 @@ namespace compressed_a3m {
 
 
   unsigned short int get_start_pos(std::string aligned_sequence, char* full_sequence, size_t full_sequence_length);
+
+  void writeU16(std::ostream& file, uint16_t);
+  void readU16(char** ptr, uint16_t &result);
+
+  void writeU32(std::ostream& file, uint32_t);
+  void readU32(char**ptr, uint32_t &result);
 }
 
 std::string &rtrim(std::string &s);
@@ -43,11 +49,5 @@ std::string &rtrim(std::string &s);
 std::string getNameFromHeader(std::string &header);
 std::string getShortIdFromHeader(std::string &header);
 bool isConsensus(std::string &id);
-
-void writeU16(std::ostream& file, uint16_t);
-void readU16(char** ptr, uint16_t &result);
-
-void writeU32(std::ostream& file, uint32_t);
-void readU32(char**ptr, uint32_t &result);
 
 #endif /* A3M_REDUCER_H_ */
