@@ -117,7 +117,7 @@ namespace cs {
           this->input_header_index = header_db ? header_db->db_index : NULL;
           this->input_header_data = header_db ? header_db->db_data : NULL;
           this->input_sequence_index = sequence_db ? sequence_db->db_index : NULL;
-          this->input_header_data = sequence_db ? sequence_db->db_data : NULL;
+          this->input_sequence_data = sequence_db ? sequence_db->db_data : NULL;
 
           this->data_file_out = openWrite(data_filename_out.c_str());
           this->index_file_out = openWrite(index_filename_out.c_str());
@@ -190,9 +190,10 @@ namespace cs {
         if (this->opts_.informat == "ca3m") {
           char *entry_data = ffindex_get_data_by_entry(this->input_data, entry);
 
-          compressed_a3m::extract_a3m(entry_data, entry->length, this->input_sequence_index, this->input_sequence_data,
-                                      this->input_header_index,
-                                      this->input_header_data, &a3m_buffer);
+          compressed_a3m::extract_a3m(entry_data, entry->length,
+                                      this->input_sequence_index, this->input_sequence_data,
+                                      this->input_header_index, this->input_header_data,
+                                      &a3m_buffer);
 
           a3m_string = a3m_buffer.str();
 
