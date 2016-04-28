@@ -24,8 +24,6 @@
 namespace cs {
   template<class Abc>
   int CSTranslateMpiApp<Abc>::Run() {
-    ignore_signal(SIGPIPE);
-
     const bool isCa3m = this->opts_.informat == "ca3m";
 
     std::string input_data_file = this->opts_.infile + ".ffdata";

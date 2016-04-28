@@ -18,7 +18,6 @@
 */
 
 #include <sys/mman.h>
-#include <csignal>
 #include "cstranslate_app.h"
 
 extern "C" {
@@ -26,13 +25,6 @@ extern "C" {
 }
 
 namespace cs {
-  void ignore_signal(int signal) {
-    struct sigaction handler;
-    handler.sa_handler = SIG_IGN;
-    sigemptyset(&handler.sa_mask);
-    handler.sa_flags = 0;
-    sigaction(signal, &handler, NULL);
-  }
 
   template<class Abc>
   class CSTranslateMpiApp : public CSTranslateApp<Abc> {
