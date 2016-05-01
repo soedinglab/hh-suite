@@ -43,6 +43,8 @@ our $g=0.09; # endgap penalty for Align.pm
 our $v=2;    # verbose mode
 our $matrix="identity";
 
+my $TEMPDIR = $ENV{'TEMP'};
+
 # Global variables
 my $infile;            # input file
 my $outfile;           # output file
@@ -136,7 +138,7 @@ for ($line_index += 1; $line_index < scalar(@infile_lines); $line_index++) {
 my $is_stdout_output = 0;
 if ($outfile eq "stdout") {
 	$is_stdout_output = 1;
-	(undef, $outfile) = tempfile(UNLINK => 1, OPEN => 0);
+	(undef, $outfile) = tempfile(UNLINK => 1, OPEN => 0, DIR => $TEMPDIR);
 }
 
 if (&MakePdbFile($nameline,$aaq,$outfile) !=0) {exit(1);}

@@ -223,6 +223,9 @@ void Parameters::SetDefaults() {
 	neffmax = 10.0;
 	threads = 2;
 	nocontxt = false;
+
+	interim_filter = false;
+	interim_id_filter = false;
 }
 
 Parameters::Parameters() {

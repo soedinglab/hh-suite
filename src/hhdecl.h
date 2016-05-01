@@ -329,6 +329,9 @@ public:
   float neffmax;
   int threads;
 
+  bool interim_filter;
+  bool interim_id_filter;
+
   void SetDefaultPaths();
   void SetDefaults();
   Parameters();
