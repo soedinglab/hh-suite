@@ -846,6 +846,10 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
       par.notags = 1;
     else if (!strcmp(argv[i], "-maxfilt") && (i < argc - 1))
       par.maxnumdb = atoi(argv[++i]);
+    else if (!strcmp(argv[i], "-interim_filter"))
+      par.interim_filter = true;
+    else if (!strcmp(argv[i], "-interim_id_filter"))
+      par.interim_id_filter = true;
     else {
       HH_LOG(WARNING) << "Ignoring unknown option " << argv[i] << std::endl;
     }
@@ -856,8 +860,12 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
 
 void HHblits::mergeHitsToQuery(Hash<Hit>* previous_hits,
                                int& seqs_found, int& cluster_found) {
-  // For each template below threshold
 
+  // Remove sequences with seq. identity larger than seqid percent (remove the shorter of two)
+  const float COV_ABS = 25;     // min. number of aligned residues
+  int cov_tot = std::max(std::min((int) (COV_ABS / Qali->L * 100 + 0.5), 70), par.coverage);
+
+  // For each template below threshold
   hitlist.Reset();
   while (!hitlist.End()) {
     Hit hit_cur = hitlist.ReadNext();
@@ -889,6 +897,17 @@ void HHblits::mergeHitsToQuery(Hash<Hit>* previous_hits,
 
     Tali.N_filtered = Tali.Filter(par.max_seqid_db, S, par.coverage_db,
                                   par.qid_db, par.qsc_db, par.Ndiff_db);
+
+    if((par.interim_filter || par.interim_id_filter) && Tali.N_filtered + Qali->N_in >= MAXSEQ) {
+      if(par.interim_filter) {
+    	  Qali->N_filtered = Qali->Filter(par.max_seqid, S, cov_tot, par.qid, par.qsc, par.Ndiff);
+      }
+      if(par.interim_id_filter) {
+    	  Qali->N_filtered = Qali->FilterByIdentifier(par.max_seqid, S, cov_tot, par.qid, par.qsc, par.Ndiff);
+      }
+      Qali->Shrink();
+    }
+
     Qali->MergeMasterSlave(hit_cur, Tali, hit_cur.name, par.maxcol);
 
     if (Qali->N_in >= MAXSEQ)
@@ -903,10 +922,6 @@ void HHblits::mergeHitsToQuery(Hash<Hit>* previous_hits,
   Qali->FilterForDisplay(par.max_seqid, par.mark, S, par.coverage, par.qid,
                          par.qsc, par.nseqdis);
 
-  // Remove sequences with seq. identity larger than seqid percent (remove the shorter of two)
-  const float COV_ABS = 25;     // min. number of aligned residues
-  int cov_tot = std::max(std::min((int) (COV_ABS / Qali->L * 100 + 0.5), 70),
-                         par.coverage);
 
   HH_LOG(DEBUG) << "Filter new alignment with cov " << cov_tot
                           << std::endl;

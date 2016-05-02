@@ -31,6 +31,7 @@
 #include "pssm.h"
 #include "sequence-inl.h"
 #include "a3m_compress.h"
+#include "hhdatabase.h"
 
 #ifdef OPENMP
 #include <omp.h>
@@ -134,11 +135,9 @@ namespace cs {
   public:
     // Runs the csbuild application.
     virtual int Run() {
+      SetupEmissions();
       SetupPseudocountEngine();
       SetupAbstractStateEngine();
-
-      // Create emission functor needed for translation into abstract states
-      Emission<Abc> emission(1, opts_.weight_as, 1.0);
 
       if (!opts_.ffindex) {
         FILE *fin;
@@ -165,7 +164,7 @@ namespace cs {
           fputs("Translating count profile to abstract state alphabet AS219 ...\n", out_);
 
         CountProfile<AS219> as_profile(profile_counts_lenght);  // output profile
-        Translate(profile, emission, as_profile);
+        Translate(profile, as_profile);
 
         BuildSequence(as_profile, profile_counts_lenght, as_seq);
 
@@ -227,98 +226,34 @@ namespace cs {
         }
       }
       else {
+        const bool isCa3m = this->opts_.informat == "ca3m";
+
         std::string input_data_file = opts_.infile + ".ffdata";
         std::string input_index_file = opts_.infile + ".ffindex";
 
-        // required ffindex files for ca3m case
-        size_t input_header_offset;
-        FILE *input_header_data_fh, *input_header_index_fh;
-        std::string input_header_data_file, input_header_index_file;
-        char *input_header_data;
-        ffindex_index_t *input_header_index;
+        FFindexDatabase *header_db = NULL;
+        FFindexDatabase *sequence_db = NULL;
 
-        size_t input_sequence_offset;
-        FILE *input_sequence_data_fh, *input_sequence_index_fh;
-        std::string input_sequence_data_file, input_sequence_index_file;
-        char *input_sequence_data;
-        ffindex_index_t *input_sequence_index;
-
-        if (opts_.informat == "ca3m") {
+        if (isCa3m) {
           // infile has to be the ffindex basepath with no suffices
-          input_data_file = opts_.infile + "_ca3m.ffdata";
-          input_index_file = opts_.infile + "_ca3m.ffindex";
+          input_data_file = this->opts_.infile + "_ca3m.ffdata";
+          input_index_file = this->opts_.infile + "_ca3m.ffindex";
 
-          input_header_data_file = opts_.infile + "_header.ffdata";
-          input_header_index_file = opts_.infile + "_header.ffindex";
+          std::string input_header_data_file = this->opts_.infile + "_header.ffdata";
+          std::string input_header_index_file = this->opts_.infile + "_header.ffindex";
+          header_db = new FFindexDatabase(const_cast<char *>(input_header_data_file.c_str()),
+                                          const_cast<char *>(input_header_index_file.c_str()), false);
 
-          input_header_data_fh = fopen(input_header_data_file.c_str(), "r");
-          input_header_index_fh = fopen(input_header_index_file.c_str(), "r");
 
-          if (input_header_data_fh == NULL) {
-            fprintf(out_, "Could not open ffindex input data file! (%s)!\n", input_header_data_file.c_str());
-            exit(1);
-          }
-          if (input_header_index_fh == NULL) {
-            fprintf(out_, "Could not open ffindex input index file! (%s)!\n", input_header_index_file.c_str());
-            exit(1);
-          }
+          std::string input_sequence_data_file = this->opts_.infile + "_sequence.ffdata";
+          std::string input_sequence_index_file = this->opts_.infile + "_sequence.ffindex";
+          sequence_db = new FFindexDatabase(const_cast<char *>(input_sequence_data_file.c_str()),
+                                            const_cast<char *>(input_sequence_index_file.c_str()), false);
 
-          input_header_data = ffindex_mmap_data(input_header_data_fh, &input_header_offset);
-          size_t header_entries = ffcount_lines(input_header_index_file.c_str());
-          input_header_index = ffindex_index_parse(input_header_index_fh, header_entries);
-
-          if (input_header_index == NULL) {
-            LOG(ERROR) << "Input index could not be mapped!" << std::endl;
-            exit(1);
-          }
-
-          input_sequence_data_file = opts_.infile + "_sequence.ffdata";
-          input_sequence_index_file = opts_.infile + "_sequence.ffindex";
-
-          input_sequence_data_fh = fopen(input_sequence_data_file.c_str(), "r");
-          input_sequence_index_fh = fopen(input_sequence_index_file.c_str(), "r");
-
-          if (input_sequence_data_fh == NULL) {
-            fprintf(out_, "Could not open ffindex input data file! (%s)!\n", input_sequence_data_file.c_str());
-            exit(1);
-          }
-          if (input_sequence_index_fh == NULL) {
-            fprintf(out_, "Could not open ffindex input index file! (%s)!\n", input_sequence_index_file.c_str());
-            exit(1);
-          }
-
-          input_sequence_data = ffindex_mmap_data(input_sequence_data_fh, &input_sequence_offset);
-          size_t sequence_entries = ffcount_lines(input_sequence_index_file.c_str());
-          input_sequence_index = ffindex_index_parse(input_sequence_index_fh, sequence_entries);
-
-          if (input_sequence_index == NULL) {
-            LOG(ERROR) << "Input index could not be mapped!" << std::endl;
-            exit(1);
-          }
         }
 
-        FILE *input_data_fh = fopen(input_data_file.c_str(), "r");
-        FILE *input_index_fh = fopen(input_index_file.c_str(), "r");
-
-        if (input_data_fh == NULL) {
-          LOG(ERROR) << "Could not open ffindex input data file! (" << input_data_file << ")!" << std::endl;
-          exit(1);
-        }
-
-        if (input_index_fh == NULL) {
-          LOG(ERROR) << "Could not open ffindex input index file! (" << input_index_file << ")!" << std::endl;
-          exit(1);
-        }
-
-        size_t input_offset;
-        char *input_data = ffindex_mmap_data(input_data_fh, &input_offset);
-        size_t entries = ffcount_lines(input_index_file.c_str());
-        ffindex_index_t *input_index = ffindex_index_parse(input_index_fh, entries);
-
-        if (input_index == NULL) {
-          LOG(ERROR) << "Input index could not be loaded!" << std::endl;
-          exit(1);
-        }
+        FFindexDatabase input(const_cast<char *>(input_data_file.c_str()),
+                              const_cast<char *>(input_index_file.c_str()), isCa3m);
 
         //prepare output ffindex cs219 database
         std::string output_data_file = opts_.outfile + ".ffdata";
@@ -339,14 +274,13 @@ namespace cs {
 
         size_t output_offset = 0;
 
-
         size_t input_range_start = 0;
-        size_t input_range_end = input_index->n_entries;
+        size_t input_range_end = input.db_index->n_entries;
 
         // Foreach entry
-        #pragma omp parallel for shared(input_index, input_data, output_data_fh, output_index_fh, output_offset, input_sequence_index, input_sequence_data, input_header_index, input_header_data)
+        #pragma omp parallel for shared(input, sequence_db, header_db)
         for (size_t entry_index = input_range_start; entry_index < input_range_end; entry_index++) {
-          ffindex_entry_t *entry = ffindex_get_entry_by_index(input_index, entry_index);
+          ffindex_entry_t *entry = ffindex_get_entry_by_index(input.db_index, entry_index);
 
           if (entry == NULL) {
             LOG(WARNING) << "Could not open entry " << entry_index << " from input ffindex!" << std::endl;
@@ -357,20 +291,22 @@ namespace cs {
             fprintf(out_, "Processing entry: %s\n", entry->name);
           }
 
-          std::ostringstream output;
-          std::string tmpOut;
+          std::ostringstream a3m_buffer;
+          std::string a3m_string;
           FILE *inf;
-          if (opts_.informat == "ca3m") {
-            char *data = ffindex_get_data_by_entry(input_data, entry);
+          if (isCa3m) {
+            char *data = ffindex_get_data_by_entry(input.db_data, entry);
 
-            compressed_a3m::extract_a3m(data, entry->length, input_sequence_index, input_sequence_data,
-                                        input_header_index, input_header_data, &output);
+            compressed_a3m::extract_a3m(data, entry->length,
+                                        sequence_db->db_index, sequence_db->db_data,
+                                        header_db->db_index, header_db->db_data,
+                                        &a3m_buffer);
 
-            tmpOut = output.str();
+            a3m_string = a3m_buffer.str();
 
-            inf = fmemopen(static_cast<void *>(const_cast<char *>(tmpOut.c_str())), tmpOut.length(), "r");
+            inf = fmemopen(static_cast<void *>(const_cast<char *>(a3m_string.c_str())), a3m_string.length(), "r");
           } else {
-            inf = ffindex_fopen_by_entry(input_data, entry);
+            inf = ffindex_fopen_by_entry(input.db_data, entry);
           }
 
           if (inf == NULL) {
@@ -390,7 +326,7 @@ namespace cs {
           size_t profile_counts_length = profile.counts.length();
 
           CountProfile<AS219> as_profile(profile_counts_length);  // output profile
-          Translate(profile, emission, as_profile);
+          Translate(profile, as_profile);
 
           // Prepare abstract sequence in AS219 format
           Sequence<AS219> as_seq(profile_counts_length);
@@ -415,6 +351,11 @@ namespace cs {
 
           // FIXME: we are leaking inf, but if we fclose we get weird crashes
           //fclose(inf);
+        }
+
+        if (isCa3m) {
+          delete sequence_db;
+          delete header_db;
         }
       }
 
@@ -552,6 +493,10 @@ namespace cs {
       fclose(fin);
     };
 
+    void SetupEmissions() {
+      emission_.reset(new Emission<Abc>(1, this->opts_.weight_as, 1.0));
+    }
+
     // Writes abstract state sequence to outfile
     void WriteStateSequence(const Sequence<AS219> &seq, string outfile, bool append = false) const {
       FILE *fout;
@@ -650,9 +595,10 @@ namespace cs {
       fclose(fin);  // close input file
     };
 
-    void Translate(CountProfile<Abc> &profile, const Emission<Abc> &emission, CountProfile<cs::AS219> &as_profile) {
-      for (size_t i = 0; i < as_profile.length(); ++i)
-        CalculatePosteriorProbs(*as_lib_, emission, profile, i, as_profile.counts[i]);
+    void Translate(CountProfile<Abc> &profile, CountProfile<cs::AS219> &as_profile) {
+      for (size_t i = 0; i < as_profile.length(); ++i) {
+        CalculatePosteriorProbs(*as_lib_, *emission_, profile, i, as_profile.counts[i]);
+      }
       as_profile.name = GetBasename(opts_.infile, false);
       as_profile.name = as_profile.name.substr(0, as_profile.name.length() - 1);
     };
@@ -684,6 +630,8 @@ namespace cs {
     scoped_ptr<Crf<Abc> > pc_crf_;
     // Pseudocount engine
     scoped_ptr<Pseudocounts<Abc> > pc_;
+    // Emissions
+    scoped_ptr<Emission<Abc> > emission_;
   };  // class CSTranslateApp
 
 }  // namespace cs

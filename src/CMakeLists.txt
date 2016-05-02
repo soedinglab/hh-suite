@@ -218,7 +218,13 @@ add_executable(a3m_database_filter
 target_link_libraries (a3m_database_filter ffindex)
 
 add_executable(cstranslate
-  cs/cstranslate_app.cc $<TARGET_OBJECTS:CS_OBJECTS> $<TARGET_OBJECTS:A3M_COMPRESS_OBJECT>
+  cs/cstranslate_app.cc
+        $<TARGET_OBJECTS:CS_OBJECTS>
+        $<TARGET_OBJECTS:HH_OBJECTS>
+        $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff>
+        $<TARGET_OBJECTS:hhviterbialgorithm_and_ss>
+        $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff_and_ss>
+        $<TARGET_OBJECTS:A3M_COMPRESS_OBJECT>
 )
 target_link_libraries (cstranslate ffindex)
 
@@ -227,7 +233,13 @@ if(MPI_CXX_FOUND)
     include_directories(${MPI_CXX_INCLUDE_PATH})
 
     add_executable(cstranslate_mpi
-            cs/cstranslate_mpi_app.cc $<TARGET_OBJECTS:CS_OBJECTS> $<TARGET_OBJECTS:A3M_COMPRESS_OBJECT>
+            cs/cstranslate_mpi_app.cc
+            $<TARGET_OBJECTS:CS_OBJECTS>
+            $<TARGET_OBJECTS:HH_OBJECTS>
+            $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff>
+            $<TARGET_OBJECTS:hhviterbialgorithm_and_ss>
+            $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff_and_ss>
+            $<TARGET_OBJECTS:A3M_COMPRESS_OBJECT>
             )
     target_link_libraries(cstranslate_mpi ffindex mpq)
     target_link_libraries(cstranslate_mpi ${MPI_CXX_LIBRARIES})
