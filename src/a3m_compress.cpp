@@ -294,6 +294,11 @@ void compressed_a3m::extract_a3m(char* data, size_t data_size,
     ffindex_entry_t* header_entry = ffindex_get_entry_by_index(ffindex_header_database_index, entry_index);
     char* header = ffindex_get_data_by_entry(ffindex_header_database_data, header_entry);
 
+    // make sure we always have a valid fasta prefix
+    if (header[0] != '>') {
+      output->put('>');
+    }
+
     output->write(header, header_entry->length - 1);
     output->put('\n');
 
@@ -534,7 +539,7 @@ bool isConsensus(std::string &id) {
   return id.length() > 11 && id.substr(id.length() - 10, 10) == "_consensus";
 }
 
-void writeU16(std::ostream& file, uint16_t val) {
+void compressed_a3m::writeU16(std::ostream& file, uint16_t val) {
   unsigned char bytes[2];
 
   // extract the individual bytes from our value
@@ -545,7 +550,7 @@ void writeU16(std::ostream& file, uint16_t val) {
   file.write((char*) bytes, 2);
 }
 
-void readU16(char** ptr, uint16_t &result) {
+void compressed_a3m::readU16(char** ptr, uint16_t &result) {
   unsigned char array[2];
 
   array[0] = (unsigned char) (**ptr);
@@ -556,7 +561,7 @@ void readU16(char** ptr, uint16_t &result) {
   result = array[0] | (array[1] << 8);
 }
 
-void writeU32(std::ostream& file, uint32_t val) {
+void compressed_a3m::writeU32(std::ostream& file, uint32_t val) {
   unsigned char bytes[4];
 
   // extract the individual bytes from our value
@@ -569,7 +574,7 @@ void writeU32(std::ostream& file, uint32_t val) {
   file.write((char*) bytes, 4);
 }
 
-void readU32(char** ptr, uint32_t &result) {
+void compressed_a3m::readU32(char** ptr, uint32_t &result) {
   unsigned char array[4];
 
   array[0] = (unsigned char) (**ptr);

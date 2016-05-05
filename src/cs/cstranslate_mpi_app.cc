@@ -17,8 +17,8 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "cstranslate_app.h"
+#include "cstranslate_mpi_app.h"
 
-int main(int argc, char* argv[]) {
-  return cs::CSTranslateApp<cs::AA>().main(argc, argv, stdout, "cstranslate");
+int main(int argc, char *argv[]) {
+  return cs::CSTranslateMpiApp<cs::AA>().main(argc, argv, stdout, "cstranslate_mpi");
 }
