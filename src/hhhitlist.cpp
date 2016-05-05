@@ -571,6 +571,7 @@ void HitList::PrintMatrices(HMM* q, std::stringstream& out,
   //limit matrices to par.max_number_matrices
   std::vector<Hit> hits;
 
+  //remove invalid alignments
   const float tolerance = 0.10;
 
   Reset();
@@ -592,7 +593,10 @@ void HitList::PrintMatrices(HMM* q, std::stringstream& out,
     if (forward_profile_sum < 1.0 + tolerance
         && forward_profile_sum > 1.0 - tolerance
         && backward_profile_sum < 1.0 + tolerance
-        && backward_profile_sum > 1.0 - tolerance) {
+        && backward_profile_sum > 1.0 - tolerance
+        && hit_cur.forward_entries > 0 
+        && hit_cur.backward_entries > 0 
+        && hit_cur.posterior_entries > 0) {
       hits.push_back(hit_cur);
     }
   }
@@ -609,6 +613,7 @@ void HitList::PrintMatrices(HMM* q, std::stringstream& out,
   //remove duplicate alignments (mostly alignments which were realigned afterwards)
   for (int index1 = hits.size() - 1; index1 >= 0; index1--) {
     Hit it = hits[index1];
+    
     if (it.Probab < matix_probability_threshold) {
       picked_alignments[index1] = false;
       chosen--;
@@ -757,8 +762,6 @@ void HitList::PrintMatrices(HMM* q, std::stringstream& out,
     out.write(reinterpret_cast<const char*>(&delimiter_8_bit),
         sizeof(delimiter_8_bit));
     writeU16(out, delimiter_16_bit);
-
-
 
     //write forward matrix
     last_i = -1;
