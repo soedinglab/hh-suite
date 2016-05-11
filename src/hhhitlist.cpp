@@ -317,7 +317,7 @@ void HitList::PrintM8File(HMM* q, std::stringstream& outbuffer) {
                 }
                 isGapOpen = true;
             }else if (hit.states[step] == MM){
-                if(hit.seq[hit.nfirst][hit.j[step]] == q->seq[hit.nfirst][hit.i[step]]){
+                if(hit.seq[hit.nfirst][hit.j[step]] == q->seq[q->nfirst][hit.i[step]]){
                     matchCount++;
                 }else{
                     missMatchCount++;
@@ -328,7 +328,7 @@ void HitList::PrintM8File(HMM* q, std::stringstream& outbuffer) {
             }
         }
         sprintf(line, "%s\t%s\t%1.3f\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%.2E\t%.1f\n",
-                q->file, hit.file, static_cast<float>(matchCount)/static_cast<float>(hit.L), hit.L, missMatchCount, gapOpenCount,
+                q->name, hit.file, static_cast<float>(matchCount)/static_cast<float>(hit.L), hit.L, missMatchCount, gapOpenCount,
                 hit.i1, hit.i2, hit.j1, hit.j2, hit.Eval, -hit.score_aass);
         outbuffer << line;
     }
@@ -571,6 +571,7 @@ void HitList::PrintMatrices(HMM* q, std::stringstream& out,
   //limit matrices to par.max_number_matrices
   std::vector<Hit> hits;
 
+  //remove invalid alignments
   const float tolerance = 0.10;
 
   Reset();
@@ -592,7 +593,10 @@ void HitList::PrintMatrices(HMM* q, std::stringstream& out,
     if (forward_profile_sum < 1.0 + tolerance
         && forward_profile_sum > 1.0 - tolerance
         && backward_profile_sum < 1.0 + tolerance
-        && backward_profile_sum > 1.0 - tolerance) {
+        && backward_profile_sum > 1.0 - tolerance
+        && hit_cur.forward_entries > 0 
+        && hit_cur.backward_entries > 0 
+        && hit_cur.posterior_entries > 0) {
       hits.push_back(hit_cur);
     }
   }
@@ -609,6 +613,7 @@ void HitList::PrintMatrices(HMM* q, std::stringstream& out,
   //remove duplicate alignments (mostly alignments which were realigned afterwards)
   for (int index1 = hits.size() - 1; index1 >= 0; index1--) {
     Hit it = hits[index1];
+    
     if (it.Probab < matix_probability_threshold) {
       picked_alignments[index1] = false;
       chosen--;
@@ -757,8 +762,6 @@ void HitList::PrintMatrices(HMM* q, std::stringstream& out,
     out.write(reinterpret_cast<const char*>(&delimiter_8_bit),
         sizeof(delimiter_8_bit));
     writeU16(out, delimiter_16_bit);
-
-
 
     //write forward matrix
     last_i = -1;
