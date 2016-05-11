@@ -1474,7 +1474,7 @@ int Alignment::FilterByIdentifier(int max_seqid, const float S[20][20], int cove
     std::string id = it->first;
     std::vector<unsigned int> indices = it->second;
 
-    if (indices.size() < 10) {
+    if (indices.size() < 2) {
     	continue;
     }
 
