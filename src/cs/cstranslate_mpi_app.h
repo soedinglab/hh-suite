@@ -150,7 +150,7 @@ namespace cs {
             fclose(this->log_file);
           }
 
-          for (size_t i = 0; i < this->opts_.both ? 2 : 1; i++) {
+          for (size_t i = 0; i < (this->opts_.both ? 2 : 1); i++) {
             if (this->index_file_out[i]) {
               int fd = fileno(this->index_file_out[i]);
               fflush(this->index_file_out[i]);
@@ -335,6 +335,7 @@ namespace cs {
       fprintf(this->out_, "  %-30s %s (def=%-.2f)\n", "-w, --weight [0,inf[",
               "Weight of abstract state column in emission calculation", this->opts_.weight_as);
       fprintf(this->out_, "  %-30s %s (def=off)\n", "-b, --binary", "Write binary instead of character sequence");
+      fprintf(this->out_, "  %-30s %s (def=off)\n", "-2, --both", "Write both binary and plain character sequence");
     };
 
     // Prints usage banner to stream.
