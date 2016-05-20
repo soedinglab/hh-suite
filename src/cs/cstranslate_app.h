@@ -114,6 +114,8 @@ namespace cs {
     bool verbose;
     // ffindex
     bool ffindex;
+    // binary and not binary output
+    bool both;
   };  // CSTranslateAppOptions
 
   char GetMatchSymbol(double pp) {
@@ -336,7 +338,7 @@ namespace cs {
           std::stringstream out_buffer;
 
           if (opts_.outformat == "seq") {
-            WriteStateSequence(as_seq, out_buffer);
+            WriteStateSequence(as_seq, out_buffer, opts_.binary);
           } else {
             WriteStateProfile(as_profile, out_buffer);
           }
@@ -498,14 +500,14 @@ namespace cs {
     }
 
     // Writes abstract state sequence to outfile
-    void WriteStateSequence(const Sequence<AS219> &seq, string outfile, bool append = false) const {
+    void WriteStateSequence(const Sequence<AS219> &seq, string outfile, bool binary, bool append = false) const {
       FILE *fout;
       if (outfile.compare("stdout") == 0)
         fout = stdout;
       else
         fout = fopen(outfile.c_str(), append ? "a" : "w");
       if (!fout) throw Exception("Can't %s to file '%s'!", append ? "append" : "write", outfile.c_str());
-      if (opts_.binary) {
+      if (binary) {
         for (size_t i = 0; i < seq.length(); ++i) {
           fputc((char) seq[i], fout);
         }
@@ -517,8 +519,8 @@ namespace cs {
         fprintf(out_, "%s abstract state sequence to %s\n", append ? "Appended" : "Wrote", outfile.c_str());
     };
 
-    void WriteStateSequence(const Sequence<AS219> &seq, std::stringstream &ss) {
-      if (opts_.binary) {
+    void WriteStateSequence(const Sequence<AS219> &seq, std::stringstream &ss, bool binary) {
+      if (binary) {
         for (size_t i = 0; i < seq.length(); ++i) {
           ss.put((char) seq[i]);
         }
