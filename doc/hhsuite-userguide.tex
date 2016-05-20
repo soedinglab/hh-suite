@@ -574,7 +574,7 @@ Now, to build an MSA with HHblits for each sequence in \verb`<db>_fas.ff{data,in
 \begin{verbatim}
 $ mpirun -np <number_threads> ffindex_apply_mpi <db>_fas.ff{data,index} \\
     -i <db>_a3m_wo_ss.ffindex -d <db>_a3m_wo_ss.ffdata -- 
-    hhblits -d <path_to/uniprot20> -i stdin -oa3m stdout -n 2 -cpu 1
+    hhblits -d <path_to/uniprot20> -i stdin -oa3m stdout -n 2 -cpu 1 -v 0
 \end{verbatim}
 
 The MSAs are written to the ffindex \verb`<db>_a3m_wo_ss.ff{data,index}`. To be sure that everything went smoothly, check that the number of lines in \verb`<db>_a3m.ffindex` is the same as the number of lines in \verb`<db>_fas.ffindex`. 
