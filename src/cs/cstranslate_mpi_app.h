@@ -182,10 +182,8 @@ namespace cs {
       } else {
         if (mpq_status == MPQ_ERROR_NO_WORKERS) {
           fprintf(stderr, "MPQ_Init: Needs at least one worker process.\n");
-        } else if (mpq_status == MPQ_ERROR_TOO_MANY_WORKERS) {
-          fprintf(stderr, "MPQ_Init: Too many worker processes.\n");
+          exit(EXIT_FAILURE);
         }
-        exit(EXIT_FAILURE);
       }
 
       return EXIT_SUCCESS;
