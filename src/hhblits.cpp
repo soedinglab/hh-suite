@@ -1592,6 +1592,10 @@ void HHblits::writeScoresFile(HHblits& hhblits, std::stringstream& out) {
   hhblits.hitlist.PrintScoreFile(hhblits.q, out);
 }
 
+void HHblits::writeM8(HHblits& hhblits, std::stringstream& out) {
+  hhblits.hitlist.PrintM8File(hhblits.q, out);
+}
+
 void HHblits::writePairwiseAlisFile(HHblits& hhblits, std::stringstream& out) {
   hhblits.hitlist.PrintAlignments(hhblits.q, out, hhblits.par.showconf,
                                   hhblits.par.showcons, hhblits.par.showdssp,

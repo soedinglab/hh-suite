@@ -163,6 +163,7 @@ int main(int argc, char **argv) {
   makeOutputFFIndex(par.hhmfile, &HHblits::writeHMMFile, outputDatabases);
   makeOutputFFIndex(par.alnfile, &HHblits::writeA3MFile, outputDatabases);
   makeOutputFFIndex(par.matrices_output_file, &HHblits::writeMatricesFile, outputDatabases);
+  makeOutputFFIndex(par.m8file, &HHblits::writeM8, outputDatabases);
 
   std::vector<HHblitsDatabase*> databases;
   HHblits::prepareDatabases(par, databases);
