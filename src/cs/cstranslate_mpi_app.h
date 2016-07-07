@@ -27,46 +27,14 @@ extern "C" {
 }
 
 namespace cs {
-  // MPQ passes a temporary environment object into the worker, we can avoid this by just using class itself
-  class MPQWrapper {
+  template<class Abc>
+  class CSTranslateMpiApp : public CSTranslateApp<Abc> {
   public:
-    void Worker () {
-      int message[3];
-      while (1) {
-        MPI_Recv(message, 3, MPI_INT, MPQ_MASTER, MPQ_TAG_JOB, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        if (message[0] == MPQ_MSG_RELEASE) {
-          break;
-        }
-
-        Payload(message[1], message[2]);
-
-        message[0] = MPQ_MSG_DONE;
-        message[1] = 0;
-        message[2] = 0;
-
-        MPI_Send(message, 3, MPI_INT, MPQ_MASTER, MPQ_TAG_DONE, MPI_COMM_WORLD);
-      }
+    void static payload(void* env, const size_t start, const size_t end) {
+      CSTranslateMpiApp<Abc>* app = (CSTranslateMpiApp<Abc>*)env;
+      app->Payload(start, end);
     }
 
-  private:
-    virtual void Payload(const size_t start, const size_t end) = 0;
-
-    // copied from MPQ, keep in sync
-    enum {
-      MPQ_TAG_JOB,
-      MPQ_TAG_DONE
-    };
-
-    enum {
-      MPQ_MSG_RELEASE,
-      MPQ_MSG_JOB,
-      MPQ_MSG_DONE
-    };
-  };
-
-  template<class Abc>
-  class CSTranslateMpiApp : public CSTranslateApp<Abc>, private MPQWrapper {
-  public:
     virtual int Run() {
       std::string input_data_file = this->opts_.infile + ".ffdata";
       std::string input_index_file = this->opts_.infile + ".ffindex";
@@ -141,7 +109,7 @@ namespace cs {
           std::string log_filename_out = this->opts_.outfile + ".log";
           this->log_file = openWrite(log_filename_out.c_str());
 
-          Worker();
+          MPQ_Worker(payload, this);
 
           if (this->log_file) {
             int fd = fileno(this->log_file);
@@ -171,8 +139,8 @@ namespace cs {
             delete header_db;
           }
         }
-        MPQ_Finalize();
 
+        MPI_Barrier(MPI_COMM_WORLD);
         if (MPQ_rank == MPQ_MASTER) {
           ffmerge_splits(data_filename_out[0].c_str(), index_filename_out[0].c_str(), MPQ_size, 1);
           if (this->opts_.both) {
@@ -186,6 +154,7 @@ namespace cs {
         }
       }
 
+      MPI_Finalize();
       return EXIT_SUCCESS;
     };
 
