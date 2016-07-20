@@ -1,3 +1,19 @@
+# Ubuntu 14.04 Trusty support
+sudo: required
+dist: trusty
+
+addons:
+  apt:
+    sources:
+    # add PPAs with more up-to-date toolchains
+    - ubuntu-toolchain-r-test
+    - llvm-toolchain-precise-3.6
+    packages:
+    # install toolchains
+    - gcc-5
+    - g++-5
+    - clang-3.6
+    - cmake
 language: cpp
 
 compiler:
@@ -18,3 +34,30 @@ script:
 - cd build
 - cmake .. && make
 
+
+matrix:
+  include:
+    - compiler: gcc
+      addons:
+        apt:
+          packages:
+            - g++-4.9
+      env: COMPILER=g++-4.9
+    - compiler: gcc
+      addons:
+        apt:
+          packages:
+            - g++-5
+      env: COMPILER=g++-5
+    - compiler: clang
+      addons:
+        apt:
+          packages:
+            - clang-3.6
+      env: COMPILER=clang++-3.6
+    - compiler: clang
+      addons:
+        apt:
+          packages:
+            - clang-3.7
+      env: COMPILER=clang++-3.7
