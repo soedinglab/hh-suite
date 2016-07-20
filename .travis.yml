@@ -1,0 +1,20 @@
+language: cpp
+
+compiler:
+  - clang
+  - gcc
+
+export OMP_NUM_THREADS=4
+
+#for mpi it is better to unset CC and CXX
+before_install:
+- test -n $CC  && unset CC
+- test -n $CXX && unset CXX
+
+os:
+- linux
+- osx
+
+before_install:
+- git submodule update --init --recursive
+
