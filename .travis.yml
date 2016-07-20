@@ -16,14 +16,6 @@ addons:
     - cmake
 language: cpp
 
-compiler:
-  - clang
-  - gcc
-
-os:
-- linux
-- osx
-
 before_install:
 - git submodule update --init --recursive
 - test -n $CC  && unset CC
