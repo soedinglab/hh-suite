@@ -173,7 +173,7 @@ Viterbi::ViterbiResult* Viterbi::Align(HMMSimd* q, HMMSimd* t,ViterbiMatrix * vi
      *            you would choose a scoring against dssp, even if one template doesn't have dssp annotation.
      *            Might this cause problems?
      */
-    if(ss_mode == Hit::SCORE_ALIGNMENT){
+    if(ss_mode == Hit::SCORE_ALIGNMENT && ss_hmm_mode != HMM::NO_SS_INFORMATION){
         if (viterbiMatrix->hasCellOff()==true) {
             this->AlignWithCellOffAndSS(q,t,viterbiMatrix, maxres, result, ss_hmm_mode);
         } else {

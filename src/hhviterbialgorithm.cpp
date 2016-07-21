@@ -425,10 +425,14 @@ void Viterbi::AlignWithOutCellOff(HMMSimd* q, HMMSimd* t,ViterbiMatrix * viterbi
                 // output
                 //  0   0   0   MAX
                 simd_int lookup_mask_hi = (simd_int) simdf32_gt(sMM_i_j,score_vec);
+                simd_int lookup_mask_lo = simdi_andnot(lookup_mask_hi,simdi32_set(-1));
+
+                //simd_int lookup_mask_lo = (simd_int) simdf32_gt(score_vec,sMM_i_j);
+
                 // old score is higher
                 // output
                 //  MAX MAX MAX 0
-                simd_int lookup_mask_lo = (simd_int) simdf32_lt(sMM_i_j,score_vec);
+                //simd_int lookup_mask_lo = (simd_int) simdf32_lt(sMM_i_j,score_vec);
                 
                 
                 simd_int curr_pos_j   = simdi32_set(j);
@@ -441,6 +445,12 @@ void Viterbi::AlignWithOutCellOff(HMMSimd* q, HMMSimd* t,ViterbiMatrix * viterbi
                 i2_vec = simdi32_add(new_i_pos_hi,old_i_pos_lo);
                 
                 score_vec=simdf32_max(sMM_i_j,score_vec);
+//                printf("%d %d ",i, j);
+//                for(int seq_index=0; seq_index < maxres; seq_index++){
+//                    printf("(%d %d %d %.3f %.3f %d %d)\t",  seq_index, ((int*)&lookup_mask_hi)[seq_index], ((int*)&lookup_mask_lo)[seq_index], ((float*)&sMM_i_j)[seq_index], ((float*)&score_vec)[seq_index],
+//                           ((int*)&i2_vec)[seq_index], ((int*)&j2_vec)[seq_index]);
+//                }
+//                printf("\n");
             }
             
             
@@ -454,10 +464,12 @@ void Viterbi::AlignWithOutCellOff(HMMSimd* q, HMMSimd* t,ViterbiMatrix * viterbi
             // output
             //  0   0   0   MAX
             simd_int lookup_mask_hi = (simd_int) simdf32_gt(sMM_i_j,score_vec);
+//            simd_int lookup_mask_lo;
+            simd_int lookup_mask_lo = simdi_andnot(lookup_mask_hi,simdi32_set(-1));
+
             // old score is higher
             // output
             //  MAX MAX MAX 0
-            simd_int lookup_mask_lo = (simd_int) simdf32_lt(sMM_i_j,score_vec);
 
             
             simd_int curr_pos_j   = simdi32_set(j);
