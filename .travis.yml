@@ -4,17 +4,8 @@ dist: trusty
 
 addons:
   apt:
-    sources:
-    # add PPAs with more up-to-date toolchains
-    - ubuntu-toolchain-r-test
-    - llvm-toolchain-precise-3.6
     packages:
-    # install toolchains
-    - gcc-5
-    - g++-5
-    - clang-3.6
     - cmake
-    - mpi-default-dev
 language: cpp
 
 before_install:
@@ -49,6 +40,15 @@ matrix:
             - g++-5
             - mpi-default-dev
       env: COMPILER=g++-5
+    - compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-6
+            - mpi-default-dev
+      env: COMPILER=g++-6
     - compiler: clang
       addons:
         apt:
@@ -69,3 +69,16 @@ matrix:
             - clang-3.7
             - mpi-default-dev
       env: COMPILER=clang++-3.7
+    - compiler: clang
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-precise-3.8
+          packages:
+            - clang-3.8
+            - mpi-default-dev
+      env: COMPILER=clang++-3.8
+
+
+
