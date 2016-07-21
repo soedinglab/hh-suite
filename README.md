@@ -10,6 +10,13 @@
 
 The HH-suite is an open-source software package for sensitive protein sequence searching based on the pairwise alignment of hidden Markov models (HMMs).
 
+## WARNING ##
+We had to rename our repository for ffindex, so it might be necessary to run the following commands to update the submodule in your clone:
+
+	git pull
+	git submodule deinit
+	git sobmodule init
+
 
 ## Requirements
 
