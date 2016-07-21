@@ -1,5 +1,8 @@
 enable_testing()
 
+SET (CTEST_ENVIRONMENT
+  "HHLIB=${PROJECT_SOURCE_DIR}"
+)
 
 add_test(NAME hhblits COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/hhblits -h)
 add_test(NAME hhsearch COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/hhsearch -h)
