@@ -224,7 +224,7 @@ void Parameters::SetDefaults() {
 	threads = 2;
 	nocontxt = false;
 
-	interim_filter = InterimFilterStates::FULL;
+	interim_filter = InterimFilterStates::INTERIM_FILTER_FULL;
 }
 
 Parameters::Parameters() {

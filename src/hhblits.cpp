@@ -857,9 +857,9 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
         exit(4);
       } else {
         if(!strcmp(argv[i], "NONE")) {
-          par.interim_filter = InterimFilterStates::NONE;
+          par.interim_filter = INTERIM_FILTER_NONE;
         } else if(!strcmp(argv[i], "FULL")) {
-          par.interim_filter = InterimFilterStates::FULL;
+          par.interim_filter = INTERIM_FILTER_FULL;
         } else {
           help(par);
           HH_LOG(ERROR) << "No state out of NONE|FULL following -interim_filter" << std::endl;
@@ -915,7 +915,7 @@ void HHblits::mergeHitsToQuery(Hash<Hit>* previous_hits,
     Tali.N_filtered = Tali.Filter(par.max_seqid_db, S, par.coverage_db,
                                   par.qid_db, par.qsc_db, par.Ndiff_db);
 
-    if(par.interim_filter != InterimFilterStates::NONE && Tali.N_filtered + Qali->N_in >= MAXSEQ) {
+    if(par.interim_filter == INTERIM_FILTER_FULL && Tali.N_filtered + Qali->N_in >= MAXSEQ) {
   	  Qali->N_filtered = Qali->Filter(par.max_seqid, S, cov_tot, par.qid, par.qsc, par.Ndiff);
       Qali->Shrink();
     }
