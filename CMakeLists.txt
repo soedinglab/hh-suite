@@ -24,7 +24,9 @@ set (HHSUITE_VERSION_MINOR 0)
 set (HHSUITE_VERSION_PATCH 0)
 set (HHSUITE_DATE "15-03-2015")
 
-#set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 INSTALL(FILES
   hhsuite-userguide.pdf
@@ -40,6 +42,7 @@ include_directories(lib/ffindex/src)
 add_subdirectory(src)
 add_subdirectory(data)
 add_subdirectory(scripts)
+add_subdirectory(test)
 #add_subdirectory(doc)
 add_subdirectory(lib/ffindex)
 
@@ -77,4 +80,4 @@ set (CPACK_PACKAGE_VERSION_MINOR "${HHSUITE_VERSION_MINOR}")
 set (CPACK_PACKAGE_VERSION_MINOR "${HHSUITE_VERSION_PATCH}")
 INCLUDE(CPack)
 
-
+enable_testing()

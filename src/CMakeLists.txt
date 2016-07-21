@@ -143,7 +143,7 @@ add_executable(hhblits_omp
 target_link_libraries (hhblits_omp ffindex)
 
 INSTALL(PROGRAMS 
-  ${CMAKE_CURRENT_BINARY_DIR}/hhblits_omp
+  ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/hhblits_omp
   DESTINATION bin
 )
 
@@ -246,27 +246,27 @@ if(MPI_CXX_FOUND)
     set_target_properties(cstranslate_mpi PROPERTIES COMPILE_FLAGS "${MPI_CXX_COMPILE_FLAGS}")
     set_target_properties(cstranslate_mpi PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
 
-	install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/cstranslate_mpi DESTINATION bin)
+    install(PROGRAMS ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/cstranslate_mpi DESTINATION bin)
 endif()
 
 INSTALL(PROGRAMS 
-	${CMAKE_CURRENT_BINARY_DIR}/hhblits 
-	${CMAKE_CURRENT_BINARY_DIR}/hhmake 
-	${CMAKE_CURRENT_BINARY_DIR}/hhfilter 
-	${CMAKE_CURRENT_BINARY_DIR}/hhsearch 
-	${CMAKE_CURRENT_BINARY_DIR}/hhalign 
-	${CMAKE_CURRENT_BINARY_DIR}/hhconsensus 
-	${CMAKE_CURRENT_BINARY_DIR}/a3m_extract
-	${CMAKE_CURRENT_BINARY_DIR}/a3m_database_reduce
-	${CMAKE_CURRENT_BINARY_DIR}/a3m_database_extract
-	${CMAKE_CURRENT_BINARY_DIR}/a3m_database_filter 
-	${CMAKE_CURRENT_BINARY_DIR}/cstranslate
+	${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/hhblits 
+	${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/hhmake 
+	${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/hhfilter 
+	${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/hhsearch 
+	${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/hhalign 
+	${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/hhconsensus 
+	${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/a3m_extract
+	${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/a3m_database_reduce
+	${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/a3m_database_extract
+	${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/a3m_database_filter 
+	${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/cstranslate
 	DESTINATION bin
 )
 
 if (OPENMP_FOUND)
 INSTALL(PROGRAMS 
-	${CMAKE_CURRENT_BINARY_DIR}/hhblits_omp 
+	${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/hhblits_omp 
 	DESTINATION bin
 )
 endif()
