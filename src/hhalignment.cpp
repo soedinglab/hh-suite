@@ -1454,58 +1454,6 @@ int Alignment::Filter(int max_seqid, const float S[20][20], int coverage,
   return Filter2(keep, coverage, qid, qsc, 20, max_seqid, N, S);
 }
 
-int Alignment::FilterByIdentifier(int max_seqid, const float S[20][20], int coverage,
-        int qid, float qsc, int N) {
-  char* keep_tmp = new char[maxseq + 2];
-
-  std::map<std::string, std::vector<unsigned int> > id_to_indices;
-  for (int k = 0; k < N_in; k++) {
-	if(k != kfirst && k != kss_dssp && k != ksa_dssp && k != kss_pred && k != kss_conf) {
-	  std::string id(sname[k]);
-	  if(id_to_indices.find(id) == id_to_indices.end()) {
-		std::vector<unsigned int> list_of_indices;
-		id_to_indices[id] = list_of_indices;
-	  }
-	  id_to_indices[id].push_back(k);
-	}
-  }
-
-  for (std::map<std::string, std::vector<unsigned int> >::iterator it = id_to_indices.begin(); it != id_to_indices.end(); ++it) {
-    std::string id = it->first;
-    std::vector<unsigned int> indices = it->second;
-
-    if (indices.size() < 2) {
-    	continue;
-    }
-
-    for(int k = 0; k < N_in; k++) {
-      keep_tmp[k] = 0;
-    }
-
-    for(size_t i = 0; i < indices.size(); i++) {
-      keep_tmp[indices[i]] = 1;
-    }
-
-    keep_tmp[kfirst] = 2;
-
-    Filter2(keep_tmp, coverage, qid, qsc, 20, max_seqid, N, S);
-
-    for(size_t i = 0; i < indices.size(); i++) {
-      keep[indices[i]] = keep_tmp[indices[i]];
-    }
-  }
-
-  int n = 0;
-  for(int k = 0; k < N_in; k++) {
-    if(keep[k] == 1 || keep[k] == 2) {
-      n += 1;
-    }
-  }
-
-  delete[] keep_tmp;
-  return n;
-}
-
 void Alignment::Shrink() {
   char** new_X = new char*[maxseq + 2];
   short unsigned int** new_I = new short unsigned int*[maxseq + 2];;

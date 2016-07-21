@@ -341,11 +341,10 @@ void HHblits::help(Parameters& par, char all) {
 
   printf("Filter options applied to query MSA, database MSAs, and result MSA              \n");
   printf(" -all           show all sequences in result MSA; do not filter result MSA      \n");
-  printf(" -interim_filter NONE|FULL|ID  \n");
-  printf("                filter sequences of query MSA during merging to avoid early stop (default: ID)\n");
+  printf(" -interim_filter NONE|FULL  \n");
+  printf("                filter sequences of query MSA during merging to avoid early stop (default: FULL)\n");
   printf("                  NONE: disables the intermediate filter \n");
   printf("                  FULL: if an early stop occurs compare filter seqs in an all vs. all comparison\n");
-  printf("                  ID:   if an early stop occurs compare aligned seqs with the same identifier\n");
   printf(" -id   [0,100]  maximum pairwise sequence identity (def=%i)\n", par.max_seqid);
   printf(" -diff [0,inf[  filter MSAs by selecting most diverse set of sequences, keeping \n");
   printf("                at least this many seqs in each MSA block of length 50 \n");
@@ -861,11 +860,9 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
           par.interim_filter = InterimFilterStates::NONE;
         } else if(!strcmp(argv[i], "FULL")) {
           par.interim_filter = InterimFilterStates::FULL;
-        } else if(!strcmp(argv[i], "ID")) {
-          par.interim_filter = InterimFilterStates::ID;
         } else {
           help(par);
-          HH_LOG(ERROR) << "No state out of NONE|FULL|ID following -interim_filter" << std::endl;
+          HH_LOG(ERROR) << "No state out of NONE|FULL following -interim_filter" << std::endl;
           exit(4);
         }
       }
@@ -919,12 +916,7 @@ void HHblits::mergeHitsToQuery(Hash<Hit>* previous_hits,
                                   par.qid_db, par.qsc_db, par.Ndiff_db);
 
     if(par.interim_filter != InterimFilterStates::NONE && Tali.N_filtered + Qali->N_in >= MAXSEQ) {
-      if(par.interim_filter == InterimFilterStates::FULL) {
-    	  Qali->N_filtered = Qali->Filter(par.max_seqid, S, cov_tot, par.qid, par.qsc, par.Ndiff);
-      }
-      if(par.interim_filter  == InterimFilterStates::ID) {
-    	  Qali->N_filtered = Qali->FilterByIdentifier(par.max_seqid, S, cov_tot, par.qid, par.qsc, par.Ndiff);
-      }
+  	  Qali->N_filtered = Qali->Filter(par.max_seqid, S, cov_tot, par.qid, par.qsc, par.Ndiff);
       Qali->Shrink();
     }
 

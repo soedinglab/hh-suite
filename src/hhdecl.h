@@ -110,7 +110,7 @@ const pair_states MI = pair_states(DEPRECATED_MI);
 
 
 //states for the interim filter of the query msa during merging
-enum InterimFilterStates {NONE=0, FULL=1, ID=2};
+enum InterimFilterStates {NONE=0, FULL=1};
 
 #include "util.h"
 #include "hhdatabase.h"

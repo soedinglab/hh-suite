@@ -76,7 +76,6 @@ public:
   // Apply sequence identity filter
   int FilterForDisplay(int max_seqid, const char mark, const float S[20][20], int coverage=0, int qid=0, float qsc=0, int N=0);
   int Filter(int max_seqid, const float S[20][20], int coverage=0, int qid=0, float qsc=0, int N=0);
-  int FilterByIdentifier(int max_seqid, const float S[20][20], int coverage=0, int qid=0, float qsc=0, int N=0);
   int Filter2(char keep[], int coverage, int qid, float qsc, int seqid1, int seqid2, int Ndiff, const float S[20][20]);
   void Shrink();
 
