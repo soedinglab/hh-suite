@@ -108,6 +108,10 @@ const pair_states DG = pair_states(DEPRECATED_DG);
 //__DEPRECATED__
 const pair_states MI = pair_states(DEPRECATED_MI);
 
+
+//states for the interim filter of the query msa during merging
+enum InterimFilterStates {NONE=0, FULL=1, ID=2};
+
 #include "util.h"
 #include "hhdatabase.h"
 
@@ -329,8 +333,7 @@ public:
   float neffmax;
   int threads;
 
-  bool interim_filter;
-  bool interim_id_filter;
+  InterimFilterStates interim_filter;
 
   void SetDefaultPaths();
   void SetDefaults();

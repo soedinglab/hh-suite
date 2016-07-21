@@ -341,6 +341,11 @@ void HHblits::help(Parameters& par, char all) {
 
   printf("Filter options applied to query MSA, database MSAs, and result MSA              \n");
   printf(" -all           show all sequences in result MSA; do not filter result MSA      \n");
+  printf(" -interim_filter NONE|FULL|ID  \n");
+  printf("                filter sequences of query MSA during merging to avoid early stop (default: ID)\n");
+  printf("                  NONE: disables the intermediate filter \n");
+  printf("                  FULL: if an early stop occurs compare filter seqs in an all vs. all comparison\n");
+  printf("                  ID:   if an early stop occurs compare aligned seqs with the same identifier\n");
   printf(" -id   [0,100]  maximum pairwise sequence identity (def=%i)\n", par.max_seqid);
   printf(" -diff [0,inf[  filter MSAs by selecting most diverse set of sequences, keeping \n");
   printf("                at least this many seqs in each MSA block of length 50 \n");
@@ -846,10 +851,25 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
       par.notags = 1;
     else if (!strcmp(argv[i], "-maxfilt") && (i < argc - 1))
       par.maxnumdb = atoi(argv[++i]);
-    else if (!strcmp(argv[i], "-interim_filter"))
-      par.interim_filter = true;
-    else if (!strcmp(argv[i], "-interim_id_filter"))
-      par.interim_id_filter = true;
+    else if (!strcmp(argv[i], "-interim_filter")){
+      if (++i >= argc || argv[i][0] == '-') {
+        help(par);
+        HH_LOG(ERROR) << "No state following -interim_filter" << std::endl;
+        exit(4);
+      } else {
+        if(!strcmp(argv[i], "NONE")) {
+          par.interim_filter = InterimFilterStates::NONE;
+        } else if(!strcmp(argv[i], "FULL")) {
+          par.interim_filter = InterimFilterStates::FULL;
+        } else if(!strcmp(argv[i], "ID")) {
+          par.interim_filter = InterimFilterStates::ID;
+        } else {
+          help(par);
+          HH_LOG(ERROR) << "No state out of NONE|FULL|ID following -interim_filter" << std::endl;
+          exit(4);
+        }
+      }
+    }
     else {
       HH_LOG(WARNING) << "Ignoring unknown option " << argv[i] << std::endl;
     }
@@ -898,11 +918,11 @@ void HHblits::mergeHitsToQuery(Hash<Hit>* previous_hits,
     Tali.N_filtered = Tali.Filter(par.max_seqid_db, S, par.coverage_db,
                                   par.qid_db, par.qsc_db, par.Ndiff_db);
 
-    if((par.interim_filter || par.interim_id_filter) && Tali.N_filtered + Qali->N_in >= MAXSEQ) {
-      if(par.interim_filter) {
+    if(par.interim_filter != InterimFilterStates::NONE && Tali.N_filtered + Qali->N_in >= MAXSEQ) {
+      if(par.interim_filter == InterimFilterStates::FULL) {
     	  Qali->N_filtered = Qali->Filter(par.max_seqid, S, cov_tot, par.qid, par.qsc, par.Ndiff);
       }
-      if(par.interim_id_filter) {
+      if(par.interim_filter  == InterimFilterStates::ID) {
     	  Qali->N_filtered = Qali->FilterByIdentifier(par.max_seqid, S, cov_tot, par.qid, par.qsc, par.Ndiff);
       }
       Qali->Shrink();
