@@ -6,12 +6,9 @@ addons:
   apt:
     packages:
     - cmake
-language: cpp
 
 before_install:
 - git submodule update --init --recursive
-- test -n $CC  && unset CC
-- test -n $CXX && unset CXX
 
 script:
 - mkdir build
