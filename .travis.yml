@@ -30,7 +30,7 @@ matrix:
           packages:
             - g++-4.9
             - mpi-default-dev
-      env: COMPILER=g++-4.9
+      env: CXX=g++-4.9
     - compiler: gcc
       addons:
         apt:
@@ -39,7 +39,7 @@ matrix:
           packages:
             - g++-5
             - mpi-default-dev
-      env: COMPILER=g++-5
+      env: CXX=g++-5
     - compiler: gcc
       addons:
         apt:
@@ -48,7 +48,7 @@ matrix:
           packages:
             - g++-6
             - mpi-default-dev
-      env: COMPILER=g++-6
+      env: CXX=g++-6
     - compiler: clang
       addons:
         apt:
@@ -58,7 +58,7 @@ matrix:
           packages:
             - clang-3.6
             - mpi-default-dev
-      env: COMPILER=clang++-3.6
+      env: CXX=clang++-3.6
     - compiler: clang
       addons:
         apt:
@@ -68,7 +68,7 @@ matrix:
           packages:
             - clang-3.7
             - mpi-default-dev
-      env: COMPILER=clang++-3.7
+      env: CXX=clang++-3.7
     - compiler: clang
       addons:
         apt:
@@ -78,7 +78,7 @@ matrix:
           packages:
             - clang-3.8
             - mpi-default-dev
-      env: COMPILER=clang++-3.8
+      env: CXX=clang++-3.8
 
 
 
