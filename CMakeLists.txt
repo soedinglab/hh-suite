@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 2.8.12)
 project(hhsuite CXX)
 
+option(UserInstallOption "UserInstallOption" OFF)
+
+
 SET(HAVE_SSSE3 0 CACHE BOOL "Have SSSE3")
 SET(HAVE_AVX2 0 CACHE BOOL "Have AVX2")
 
@@ -45,6 +48,7 @@ add_subdirectory(scripts)
 add_subdirectory(test)
 #add_subdirectory(doc)
 add_subdirectory(lib/ffindex)
+add_subdirectory(lib/pdbx)
 
 
 SET (CPACK_GENERATOR "DEB;TGZ;ZIP;RPM")

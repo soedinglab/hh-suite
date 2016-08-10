@@ -25,5 +25,7 @@ INSTALL(PROGRAMS
 	a3m.py
 	get_a3m_size.py
 	is_huge_a3m.py
+	pdbfilter.py
+	cif2fasta.py
 	DESTINATION scripts
 )
