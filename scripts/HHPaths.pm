@@ -72,7 +72,7 @@ $ENV{"PATH"} = $hhscripts.":".$ENV{"PATH"}; # Add hh scripts directory to enviro
 ################################################################################################
 sub System()
 {
-    if ($v>=2) {printf("\$ %s\n",$_[0]);} 
+    if ($v>=2) {printf(STDERR "\$ %s\n",$_[0]);} 
     system($_[0]);
     if ($? == -1) {
 	die("\nError: failed to execute '$_[0]': $!\n\n");	

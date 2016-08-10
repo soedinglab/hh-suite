@@ -226,7 +226,7 @@ if ( $informat ne "hmm" ) {
 	}
 
 	# Filter alignment to diversity $neff
-	if ( $v >= 1 ) { printf("Filtering alignment to diversity $neff ...\n"); }
+	if ( $v >= 1 ) { printf(STDERR "Filtering alignment to diversity $neff ...\n"); }
 	&HHPaths::System(
 		"hhfilter -v $v2 -neff $neff -i $tmpfile.in.a3m -o $tmpfile.in.a3m");
 
@@ -248,13 +248,13 @@ if ( $informat ne "hmm" ) {
 				$ss_dssp =~ s/(\S{$numres})/$1\n/g;
 			}
 			printf( ALIFILE ">ss_dssp\n%s\n", $ss_dssp );
-			if ( $v >= 1 ) { print("\nAdding DSSP state sequence ...\n"); }
+			if ( $v >= 1 ) { print(STDERR "\nAdding DSSP state sequence ...\n"); }
 		}
 	}
 
 	# Secondary structure prediction with psipred
 	if ( $v >= 2 ) {
-		print("Predicting secondary structure with PSIPRED ... ");
+		print(STDERR "Predicting secondary structure with PSIPRED ... ");
 	}
 	&RunPsipred("$tmpfile.sq");
 
@@ -302,7 +302,7 @@ if ( $informat ne "hmm" ) {
 		close(IN)
 	}
 
-	if ( $v >= 2 ) { print("done \n"); }
+	if ( $v >= 2 ) { print(STDERR "done \n"); }
 }
 ##############################################################
 # HMMER format
@@ -503,7 +503,7 @@ else {
 
 	&HHPaths::System("rm $tmpfile.mtx $tmpfile.ss $tmpfile.ss2");
 	if ( $v >= 2 ) {
-		printf( "Added PSIPRED secondary structure to %i models\n", $nmodels );
+		printf( STDERR "Added PSIPRED secondary structure to %i models\n", $nmodels );
 	}
 }
 
@@ -629,7 +629,7 @@ sub AppendDsspSequences() {
 			}
 
 			# PDB ID? (8fab_A, 1a0i)
-			elsif ( $line =~ /^>(\d[a-z0-9]{3})_?(\S?)\s/ ) {
+                        elsif ( $line =~ /^>(\d[A-Za-z0-9]{3})_?(\S?)\s/ ) {
 				$pdbcode = $1;
 				if ( $2 ne "" ) { $qrange = "$2:"; }
 				else { $qrange = "-"; }
@@ -646,7 +646,7 @@ sub AppendDsspSequences() {
 
 			else {
 				if ( $v >= 3 ) {
-					print(
+					print( STDERR
 						"Warning: no pdb code found in sequence name '$name'\n"
 					);
 				}
@@ -665,11 +665,12 @@ sub AppendDsspSequences() {
 	}
 	close(QFILE);
 	if ( $v >= 3 ) {
-		printf( "Searching DSSP state assignments: name=%s  range=%s\n",
+		printf( STDERR "Searching DSSP state assignments: name=%s  range=%s\n",
 			$name, $qrange);
 	}
 
 	# Try to open dssp file
+        $pdbcode =~ tr/[A-Z]/[a-z]/;
 	my $dsspfile = "$dsspdir/$pdbcode.dssp";
 	if ( -e $dsspfile ) {
 		( $aa_dssp, $ss_dssp, $sa_dssp ) = &readDSSP( $dsspfile, $qrange );
@@ -891,7 +892,8 @@ sub OpenPDBfile() {
 		$pdbfile = "$pdbdir/divided/" . substr( $pdbcode, 1, 2 ) . "/";
 	}
 	else { $pdbfile = "$pdbdir/"; }
-	if ( $pdbdir =~ /divided.?$/ ) {
+
+        if ( $pdbdir =~ /divided.?$/ ) {
 		$pdbfile .= substr( $pdbcode, 1, 2 ) . "/";
 	}
 	if ( -e $pdbfile . "pdb$pdbcode.ent" ) { $pdbfile .= "pdb$pdbcode.ent"; }
@@ -901,7 +903,8 @@ sub OpenPDBfile() {
 	elsif ( -e $pdbfile . "pdb$pdbcode.ent.Z" ) {
 		$pdbfile .= "pdb$pdbcode.ent.Z";
 	}
-	elsif ( -e $pdbfile . "$pdbcode.pdb" ) { $pdbfile . "$pdbcode.pdb"; }
+	elsif ( -e $pdbfile . "$pdbcode.pdb" ) { $pdbfile .= "$pdbcode.pdb"; }
+        elsif ( -e $pdbfile . "$pdbcode.cif" ) { $pdbfile .= "$pdbcode.cif"; }
 	else {
 		if ( $v >= 3 ) {
 			printf( STDERR "Warning in $program: Cannot find pdb file $pdbfile"
@@ -909,6 +912,7 @@ sub OpenPDBfile() {
 		}
 		return "";
 	}
+
 	if ( !open( PDBFILE, "$pdbfile" ) ) {
 		if ( $v >= 3 ) {
 			printf( STDERR "Error in $program: Cannot open pdb file: $!\n" );
