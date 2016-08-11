@@ -1,5 +1,12 @@
 #!/usr/bin/env python
 
+"""
+Created in Jun 2016
+
+@author: Harald Voehringer
+"""
+
+
 from itertools import groupby
 from collections import namedtuple, defaultdict
 import textwrap
@@ -89,26 +96,26 @@ def read_cluster(cluster_file):
 
 def read_pdblist(in_file):
 
-	pdb_list = set()
-	
-	with open(in_file) as fh:
-		for line in fh:
-			if line.startswith('#'):
-				continue
+    pdb_list = set()
+    
+    with open(in_file) as fh:
+        for line in fh:
+            if line.startswith('#'):
+                continue
 
-			strip_line = line.strip()
-			pdb_code = strip_line.split('_')[0]
+            strip_line = line.strip()
+            pdb_code = strip_line.split('_')[0]
 
-			# this is a very very basic check
-			if len(pdb_code) != 4:
-				print ('! Warning: {line} seems to be an incorrect identifer. Skipping it.'.format(
-					line = strip_line))
-				continue
-			
-			pdb = strip_line.upper()
-			pdb_list.add(pdb)
+            # this is a very very basic check
+            if len(pdb_code) != 4:
+                print ('! Warning: {line} seems to be an incorrect identifer. Skipping it.'.format(
+                    line = strip_line))
+                continue
+            
+            pdb = strip_line.upper()
+            pdb_list.add(pdb)
 
-	return pdb_list
+    return pdb_list
 
 def select_sequences(clusters, annotations):
 
@@ -174,8 +181,8 @@ def select_sequences(clusters, annotations):
                     r = best_comp))    
 
         if best_entry_res == None and best_entry_rfr == None and best_entry_comp == None:
-        	print ('! Warning: Did not find any representative entry for cluster {c}.'.format(
-        		c = cluster))
+            print ('! Warning: Did not find any representative entry for cluster {c}.'.format(
+                c = cluster))
     
     return selected_sequences
 
@@ -230,35 +237,35 @@ def main():
     annot = read_fasta_annotations(args.annotations)
 
     print ("Found {i} clusters.".format(
-    	i = len(clu70.keys())))
+        i = len(clu70.keys())))
 
     # choose representative sequences from clusters
     selection = select_sequences(clu70, annot)
 
     # make sure that pdbs specified in the argument are included
     if args.include:
-    	to_include = read_pdblist(args.include)
-    	for pdb in to_include:
-    		if pdb in fasta.keys():
-    			if pdb not in selection:
-    				if DEBUG:
-    					print ('Adding {p}.'.format(
-    						p = pdb))
-    				selection.add(pdb)
-    		else:
-    			print ('! Warning: {p} was not found in input fasta.'.format(
-    				p = pdb))
+        to_include = read_pdblist(args.include)
+        for pdb in to_include:
+            if pdb in fasta.keys():
+                if pdb not in selection:
+                    if DEBUG:
+                        print ('Adding {p}.'.format(
+                            p = pdb))
+                    selection.add(pdb)
+            else:
+                print ('! Warning: {p} was not found in input fasta.'.format(
+                    p = pdb))
 
     # removes entries
     if args.remove:
-    	to_remove = read_pdblist(args.remove)
-    	for pdb in to_remove:
-    		if pdb in selection:
-    			if DEBUG:
-    				print ('Removing {p}.'.format(
-    					p = pdb))
-    			selection.remove(pdb)
-    	
+        to_remove = read_pdblist(args.remove)
+        for pdb in to_remove:
+            if pdb in selection:
+                if DEBUG:
+                    print ('Removing {p}.'.format(
+                        p = pdb))
+                selection.remove(pdb)
+        
     # write them to file
     write_sequences(args.out_file, fasta, selection)
 
