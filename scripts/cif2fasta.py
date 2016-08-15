@@ -710,17 +710,16 @@ def write_to_file(line_list, fname, pdb_filter):
 def opt():
     # Initiate a OptionParser Class
     usage = "usage: cif2fasta.py -i cif_folder -o *.fasta -c num_cores -v"
-    description = """cif2fasta.py takes a folder that contains cifs as input and converts cif sequences
-    into fasta format."""
-    parser = OptionParser(usage=usage, description=description)
+    description = "cif2fasta.py takes a folder that contains cif files as input and outputs their sequences into fasta file."
+    parser = OptionParser(usage = usage, description = description)
     # Call add_options to the parser
-    parser.add_option("-i", help="Input mmCIF folder.", dest="input_files", metavar="GLOB")
-    parser.add_option("-o", help="Output fasta file.", dest="output_files", metavar="FILE")  
-    parser.add_option("-p", help="Output PDB filter file (optional).", dest="pdb_filter", default = False)   
-    parser.add_option("-s", help="SCOP annotation.", dest="scop", default = False)   
-    parser.add_option('-c', help="Number of cores.", dest="cores", type=int, default=1)
-    parser.add_option('-l', help="Remove chains with a length < 30 (default).", dest="seq_len", type=int, default=30)
-    parser.add_option('-v', help='Verbose Mode (quit = 0, full verbosity = 2).', dest='bool', default=0, type = int)
+    parser.add_option("-i", help = "input cif folder.", dest = "input_files", metavar = "DIR")
+    parser.add_option("-o", help = "output fasta file.", dest = "output_files", metavar = "FILE")  
+    parser.add_option("-p", help = "output PDB filter file (optional).", dest= "pdb_filter", default = False, metavar = "FILE")   
+    parser.add_option("-s", help = "SCOP annotation.", dest = "scop", default = False, metavar = "FILE")   
+    parser.add_option('-c', help = "number of cores (default = 1).", dest = "cores", type = int, default = 1, metavar = "INT")
+    parser.add_option('-l', help = "Remove chains with a length < X (default = 30).", dest = "seq_len", type = int, default = 30, metavar = "INT")
+    parser.add_option('-v', help = 'Verbose Mode (quiet = 0, full verbosity = 2).', dest = 'bool', default = 0, type = int, metavar = "INT")
 
     return parser
  

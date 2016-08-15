@@ -200,21 +200,21 @@ def write_sequences(out_file, fasta_db, selected_sequences):
 def arg():
     import argparse
     description = """
-    PDB filter takes the clusters determined by MMseqs and a fasta file as input and selects for 
-    cluster the structures which have the best resolution, R-free factor and/or completness. 
+    pdbfilter.py selects from sequence clusters (determined by MMSeqs) the sequences 
+    which have the best resolution, R-free factor and/or completness and writes them to a fasta file. 
     """.replace('\n', '')
     
-    epilog = 'Author: Harald Voehringer (2016)'
+    epilog = '2016 Harald Voehringer'
     # Initiate a ArgumentParser Class
     parser = argparse.ArgumentParser(description = description, epilog = epilog)
     
     # Call add_options to the parser
-    parser.add_argument('fasta', help = 'Input fasta')    
-    parser.add_argument('cluster', help = 'Clusters determined by MMseqs.')
-    parser.add_argument('annotations', help = 'Annotations file (contains information about resolution, R-free and Completness).')
-    parser.add_argument('out_file', help = 'Output fasta file')
-    parser.add_argument('-i', '--include', help = 'Include PDB chains (makes sure that sequences are included within the resulting fasta)')
-    parser.add_argument('-r', '--remove', help = 'Include PDB chain (makes sure that sequences are included within the resulting fasta)')
+    parser.add_argument('fasta', help = 'input fasta file (created by cif2fasta.py)', metavar = 'FILE')    
+    parser.add_argument('cluster', help = 'sequence clusters (MMseqs)', metavar = 'FILE')
+    parser.add_argument('annotations', help = 'annotations file (created by cif2fasta using the -p flag, contains information about resolution, R-free and completness of sequences).', metavar = 'FILE')
+    parser.add_argument('out_file', help = 'output fasta file', metavar = 'FILE')
+    parser.add_argument('-i', '--include', help = 'include PDB chains', metavar = 'FILE')
+    parser.add_argument('-r', '--remove', help = 'exclude PDB chains', metavar = 'FILE')
 
     parser.add_argument('-v', '--verbose', action = 'store_true', help = 'verbose mode')
 

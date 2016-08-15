@@ -393,6 +393,8 @@ hhconsensus    Calculate the consensus sequence for an A3M/FASTA input file
 reformat.pl    Reformat one or many MSAs
 addss.pl       Add PSIPRED predicted secondary structure to an MSA or HHM file
 hhmakemodel.pl Generate MSAs or coarse 3D models from HHsearch or HHblits results	
+hhmakemodel.py Generates coarse 3D models from HHsearch or HHblits results and modifies 
+               cif files such that they are compatible with MODELLER
 hhsuitedb.py   Build HHsuite database with prefiltering, packed MSA/HMM, and index files
 splitfasta.pl  Split a multiple-sequence FASTA file into multiple single-sequence files
 renumberpdb.pl Generate PDB file with indices renumbered to match input sequence indices
@@ -401,7 +403,10 @@ HHPaths.pm     Configuration file with paths to the PDB, BLAST, PSIPRED etc.
 
 mergeali.pl    Merge MSAs in A3M format according to an MSA of their seed sequences
 pdb2fasta.pl   Generate FASTA sequence file from SEQRES records of globbed pdb files
+cif2fasta.py	  Generate a FASTA sequence from the pdbx_seq_one_letter_code entry 
+               of the entity_poly of globbed cif files
 pdbfilter.pl   Generate representative set of PDB/SCOP sequences from pdb2fasta.pl output
+pdbfilter.py   Generate representative set of PDB/SCOP sequences from cif2fasta.py output
 \end{verbatim} 
 \normalsize
 
@@ -555,10 +560,6 @@ $ java -jar ~/bioinfo/alnedit.jar query.fil.fas .
 %\end{center}
 %\end{figure}
 
-
-
-
-
 \subsection{Building customized databases} \label{building_dbs}
 
 It is simple to build custom HHsuite databases using the same tools we use to build the standard HHsuite databases (except uniprot20). An example application is to search for homologs among all proteins of an organism. To build your own HHsuite database from a set of sequences, you first need to generate an MSA with predicted secondary structure for every sequence in the set.
@@ -622,6 +623,44 @@ $ mv <db>_a3m_ordered.ffdata <db>_a3m.ffdata
 
 As with all perl/python scripts and binaries in the HHsuite, a list of additional options can be retrieved by calling the scripts without parameters.
 
+\subsection*{Example: Building a database from the PDB}
+
+%Applications in protein-protein or protein-drug interactions often require our users to find homologous protein sequences from the PDB. 
+To make efficient sequence searches in the PDB we provide a precompiled PDB70 database containing PDB sequences clustered at 70 \% sequence identity. However, to find a larger variety of template sequences a larger database with more redundancy are required. For this reason, the HHsuite provides tools to build a custom PDB database. Also, the clustering of sequences is possible using MMSeqs. Here, we describe the steps required to build a custom PDBXX database.
+
+First, you have to download the entire mmCIF database (this is the successor of the PDB file format) by executing
+
+\begin{verbatim}
+$ rsync --progress -rlpt -v -z --port=33444 rsync.wwpdb.org::ftp/data/structures/
+divided/mmCIF <cif_dir>
+\end{verbatim}
+
+and unzip the downloaded files into a single directory \verb`<all_cifs>`. Then, use \verb`cif2fasta.py` to extract all sequences from the mmCif database.
+
+\begin{verbatim}
+$ python3 cif2fasta.py -i <all_cifs> -o pdb100.fas -c <num_cores> -p pdb_filter.dat
+\end{verbatim}
+
+The script will scan the folder \verb`<all_cifs>` for files ending with \verb`*.cif` and write each sequence and its associated chain identifier annotated in \verb`pdbx_seq_one_letter_code` from the \verb`entity_poly` table to the fasta file \verb`pdb100.fas`. Note that \verb`cif2fasta.py` by default removes sequences which are shorter than 30 residues and/or comprise only the residue 'X'. 
+
+At this stage, you might consider to cluster the sequences using MMSeqs, if this however, is not important to you skip the following step and continue with the instructions described in Section \ref{building_dbs}. To cluster the sequences of \verb`pdb100.fas` at a sequence identity of \verb`X` and with a coverage of \verb`Y` run MMSeqs using these options.
+
+\begin{verbatim}
+$ mmseqs createdb pdb100.fas <clu_dir>/pdb100
+$ mmseqs clusteringworkflow <clu_dir>/pdb100 <clu_dir>/pdbXX_clu 
+/tmp/clustering -c Y --min-seq-id X
+$ mmseqs createtsv <clu_dir>/pdb100 <clu_dir>/pdb100 <clu_dir>/pdbXX_clu 
+<clu_dir>/pdbXX_clu.tsv
+\end{verbatim}
+
+MMSeqs yields tab separated file \verb`pdbXX_clu.tsv` which contains cluster assignments for all sequences. Representative sequences are selected by \verb`pdbfilter.py` which chooses up to three sequences for each cluster by identifying the ones having either the highest resolution ($\mathring{A}$), the largest R-free value or the largest "completeness"\footnote{We compute the completeness of a protein structure by dividing the number of residues that are found in the ATOM section by the total number of residues declared in the pdbx\_seq\_one\_letter\_code entry of the entity\_poly table.}. 
+
+\begin{verbatim}
+$ python3 pdbfilter.py pdb100.fas pdbXX_clu.tsv pdb_filter.dat pdbXX.fas 
+-i pdb70_to_include.dat -r pdb70_to_remove.dat
+\end{verbatim}
+
+\verb`pdbfilter.py` takes the original fasta file (\verb`pdb100.fas`) and the annotation file \verb`pdb_filter.dat` which both were created by \verb`cif2fasta.py`, and the cluster assignments from MMSeqs (\verb`pdb70_clu.tsv`) as input and yields final \verb`pdbXX.fas`. Use this fasta file to complete the creation of your database as described in Section 3.5.
 
 \subsection{Modifying or extending existing databases}
 
@@ -1956,7 +1995,7 @@ Usage: perl addss.pl <ali file> [<outfile>] [-fas|-a3m|-clu|-sto]
 \normalsize
 
 
-\subsection{{\tt hhmakemodel.pl} -- generate MSAs or coarse 3D models from HHsearch results file}
+\subsection{{\tt hhmakemodel.pl} and {\tt hhmakemodel.py} -- generate MSAs or coarse 3D models from HHsearch results file}
 
 From the top hits in an hhsearch output file (hhr), you can  
 \begin{itemize}
@@ -2003,6 +2042,32 @@ homology modeling package.
 \end{verbatim} 
 \normalsize
 
+Analogously, \verb`hhmakemodel.py` generates a MSA containing all representative template sequences from all selected alignments in PIR format. Note that in \verb`hhmakemodel.py` you have to specify the folder containing the *.cif files which make up the alignment. The script will modify the ATOM section of those cif files according to the residue numbering in the alignment. Use these renumbered cifs file together with the PIR alignment output in MODELLER\cite{Sali:1993}.
+
+\small
+\begin{verbatim}
+usage: hhmakemodel.py [-h] [-v] [-m INT [INT ...]] [-e FLOAT] [-r FLOAT] [-c]
+                      FILE DIR FILE DIR
+
+Creates a MODELLER alignment (*.pir) from a HHSearch results file (*.hhr).
+
+positional arguments:
+  FILE              results file from HHsearch with hit list and alignment
+  DIR               path to the folder containing cif files
+  FILE              output file (PIR-formatted multiple alignment)
+  DIR               path to the folder where modified cif files should be
+                    written to
+
+optional arguments:
+  -h, --help        show this help message and exit
+  -v, --verbose     verbose mode
+  -m INT [INT ...]  pick hits with specified indices (e.g. -m 2 5)
+  -e FLOAT          maximum E-Value threshold (e.g. -e 0.001)
+  -r FLOAT          residue ratio (filter alignments that have contribute at
+                    least residues according to the specified ratio).
+  -c                convert non-canonical residues (default = True)
+\end{verbatim} 
+\normalsize
 
 \subsection{{\tt hhsuitedb.pl} -- Build an HHsuite database }
 
@@ -2079,6 +2144,58 @@ Option:
 \end{verbatim} 
 \normalsize
 
+\subsection{{\tt cif2fasta.py} -- Create a fasta file from cif files}
+
+An example of the usage of \verb`cif2fasta.py` is provided in Section \ref{building_dbs}. 
+
+\small 
+\begin{verbatim}
+Usage: cif2fasta.py -i cif_folder -o *.fasta -c num_cores -v
+
+cif2fasta.py takes a folder that contains cif files as input and outputs their
+sequences into fasta file.
+
+Options:
+  -h, --help  show this help message and exit
+  -i DIR      input cif folder.
+  -o FILE     output fasta file.
+  -p FILE     output PDB filter file (optional).
+  -s FILE     SCOP annotation.
+  -c INT      number of cores (default = 1).
+  -l INT      Remove chains with a length < X (default = 30).
+  -v INT      Verbose Mode (quiet = 0, full verbosity = 2).
+\end{verbatim} 
+\normalsize
+
+\subsection{{\tt pdbfilter.py} -- Filter sequences from the PDB (requires MMSeqs)}
+
+An example of the usage of \verb`pdbfilter.py` is provided in Section \ref{building_dbs}. Note that the annotations file which is required to select the proper PDB is created by \verb`cif2fasta.py` using the -p flag.
+
+\small 
+\begin{verbatim}
+usage: pdbfilter.py [-h] [-i FILE] [-r FILE] [-v] FILE FILE FILE FILE
+
+pdbfilter.py selects from sequence clusters (determined by MMSeqs) the
+sequences which have the best resolution, R-free factor and/or completness and
+writes them to a fasta file.
+
+positional arguments:
+  FILE                  input fasta file (created by cif2fasta.py)
+  FILE                  sequence clusters (MMseqs)
+  FILE                  annotations file (created by cif2fasta using the -p
+                        flag, contains information about resolution, R-free
+                        and completness of sequences).
+  FILE                  output fasta file
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -i FILE, --include FILE
+                        include PDB chains
+  -r FILE, --remove FILE
+                        exclude PDB chains
+  -v, --verbose         verbose mode
+\end{verbatim} 
+\normalsize
 
 \section{Selected changes from previous versions}
 
