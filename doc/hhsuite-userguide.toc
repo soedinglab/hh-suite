@@ -9,49 +9,49 @@
 \contentsline {subsection}{\numberline {3.1}Overview of programs}{10}{subsection.3.1}
 \contentsline {subsection}{\numberline {3.2}Searching databases of HMMs using HHsearch and HHblits}{10}{subsection.3.2}
 \contentsline {subsection}{\numberline {3.3}Generating a multiple sequence alignment using HHblits}{11}{subsection.3.3}
-\contentsline {subsection}{\numberline {3.4}Visually checking an MSA for corrupted regions}{13}{subsection.3.4}
-\contentsline {subsection}{\numberline {3.5}Building customized databases}{14}{subsection.3.5}
-\contentsline {subsection}{\numberline {3.6}Modifying or extending existing databases}{16}{subsection.3.6}
-\contentsline {section}{\numberline {4}Frequently asked questions}{17}{section.4}
-\contentsline {subsection}{\numberline {4.1}How do I report a bug? }{17}{subsection.4.1}
-\contentsline {subsection}{\numberline {4.2}What is HMM-HMM comparison and why is it so powerful?}{17}{subsection.4.2}
-\contentsline {subsection}{\numberline {4.3}When can the HHsuite be useful for me?}{18}{subsection.4.3}
-\contentsline {subsection}{\numberline {4.4}What does homology mean and why is it important?}{18}{subsection.4.4}
-\contentsline {subsection}{\numberline {4.5}How can I verify if a database match is homologous?}{18}{subsection.4.5}
-\contentsline {subsection}{\numberline {4.6}What does the maximum accuracy alignment algorithm do?}{20}{subsection.4.6}
-\contentsline {subsection}{\numberline {4.7}How is the MSA diversity Neff calculated?}{21}{subsection.4.7}
-\contentsline {subsection}{\numberline {4.8}On how to use HHsuite tools}{21}{subsection.4.8}
-\contentsline {subsection}{\numberline {4.9}About HHsuite databases}{22}{subsection.4.9}
-\contentsline {subsection}{\numberline {4.10}About unexpected HHsuite behavior and troubleshooting}{23}{subsection.4.10}
-\contentsline {section}{\numberline {5}HHsearch/HHblits output: hit list and pairwise alignments}{25}{section.5}
-\contentsline {subsection}{\numberline {5.1}Summary hit list}{25}{subsection.5.1}
-\contentsline {subsection}{\numberline {5.2}HMM-HMM pairwise alignments}{26}{subsection.5.2}
-\contentsline {section}{\numberline {6}File formats}{28}{section.6}
-\contentsline {subsection}{\numberline {6.1}Multiple sequence alignment formats}{28}{subsection.6.1}
-\contentsline {subsection}{\numberline {6.2}HHsearch/HHblits model format (hhm-format)}{31}{subsection.6.2}
-\contentsline {section}{\numberline {7}Summary of command-line parameters}{33}{section.7}
-\contentsline {subsection}{\numberline {7.1}{\tt hhblits} -- HMM-HMM-based lighting-fast iterative sequence search}{33}{subsection.7.1}
-\contentsline {subsection}{\numberline {7.2}{\tt hhsearch} -- search a database of HMMs with a query MSA or HMM}{36}{subsection.7.2}
-\contentsline {subsection}{\numberline {7.3}{\tt hhfilter} -- filter an MSA}{38}{subsection.7.3}
-\contentsline {subsection}{\numberline {7.4}{\tt hhmake} -- build an HMM from an input alignment}{39}{subsection.7.4}
-\contentsline {subsection}{\numberline {7.5}{\tt hhalign} -- align a query MSA/HMM to a template MSA/HMM}{40}{subsection.7.5}
-\contentsline {subsection}{\numberline {7.6}{\tt reformat.pl} -- reformat one or many alignments}{41}{subsection.7.6}
-\contentsline {subsection}{\numberline {7.7}{\tt addss.pl} -- add predicted secondary structure to an MSA or HMM}{42}{subsection.7.7}
-\contentsline {subsection}{\numberline {7.8}{\tt hhmakemodel.pl} and {\tt hhmakemodel.py} -- generate MSAs or coarse 3D models from HHsearch results file}{42}{subsection.7.8}
-\contentsline {subsection}{\numberline {7.9}{\tt hhsuitedb.pl} -- Build an HHsuite database }{44}{subsection.7.9}
-\contentsline {subsection}{\numberline {7.10}{\tt multithread.pl} -- Run a command for many files in parallel using multiple threads}{44}{subsection.7.10}
-\contentsline {subsection}{\numberline {7.11}{\tt splitfasta.pl} -- Split multi-sequence FASTA file into single-sequence files}{44}{subsection.7.11}
-\contentsline {subsection}{\numberline {7.12}{\tt renumberpdb.pl} -- Renumber indices in PDB file to match input sequence indices}{44}{subsection.7.12}
-\contentsline {subsection}{\numberline {7.13}{\tt cif2fasta.py} -- Create a fasta file from cif files}{45}{subsection.7.13}
-\contentsline {subsection}{\numberline {7.14}{\tt pdbfilter.py} -- Filter sequences from the PDB (requires MMSeqs)}{45}{subsection.7.14}
-\contentsline {section}{\numberline {8}Selected changes from previous versions}{46}{section.8}
-\contentsline {subsection}{\numberline {8.1}Up to 3.0.0 (March 2015)}{46}{subsection.8.1}
-\contentsline {subsection}{\numberline {8.2}Up to 2.1.0 (March 2013)}{46}{subsection.8.2}
-\contentsline {subsection}{\numberline {8.3}Up to 2.0.16 (January 2013)}{47}{subsection.8.3}
-\contentsline {subsection}{\numberline {8.4}Up to 2.0.2 (January 2012)}{47}{subsection.8.4}
-\contentsline {subsection}{\numberline {8.5}1.6.0 (November 2010)}{47}{subsection.8.5}
-\contentsline {subsection}{\numberline {8.6}1.5.0 (August 2007)}{48}{subsection.8.6}
-\contentsline {section}{\numberline {9}License}{49}{section.9}
-\contentsline {section}{\numberline {10}Contributors and Contact}{50}{section.10}
-\contentsline {section}{\numberline {11}Acknowlegements}{51}{section.11}
-\contentsline {section}{References}{51}{section.11}
+\contentsline {subsection}{\numberline {3.4}Visually checking an MSA for corrupted regions}{15}{subsection.3.4}
+\contentsline {subsection}{\numberline {3.5}Building customized databases}{16}{subsection.3.5}
+\contentsline {subsection}{\numberline {3.6}Modifying or extending existing databases}{18}{subsection.3.6}
+\contentsline {section}{\numberline {4}Frequently asked questions}{19}{section.4}
+\contentsline {subsection}{\numberline {4.1}How do I report a bug? }{19}{subsection.4.1}
+\contentsline {subsection}{\numberline {4.2}What is HMM-HMM comparison and why is it so powerful?}{19}{subsection.4.2}
+\contentsline {subsection}{\numberline {4.3}When can the HHsuite be useful for me?}{19}{subsection.4.3}
+\contentsline {subsection}{\numberline {4.4}What does homology mean and why is it important?}{20}{subsection.4.4}
+\contentsline {subsection}{\numberline {4.5}How can I verify if a database match is homologous?}{20}{subsection.4.5}
+\contentsline {subsection}{\numberline {4.6}What does the maximum accuracy alignment algorithm do?}{21}{subsection.4.6}
+\contentsline {subsection}{\numberline {4.7}How is the MSA diversity Neff calculated?}{22}{subsection.4.7}
+\contentsline {subsection}{\numberline {4.8}On how to use HHsuite tools}{23}{subsection.4.8}
+\contentsline {subsection}{\numberline {4.9}About HHsuite databases}{24}{subsection.4.9}
+\contentsline {subsection}{\numberline {4.10}About unexpected HHsuite behavior and troubleshooting}{25}{subsection.4.10}
+\contentsline {section}{\numberline {5}HHsearch/HHblits output: hit list and pairwise alignments}{26}{section.5}
+\contentsline {subsection}{\numberline {5.1}Summary hit list}{26}{subsection.5.1}
+\contentsline {subsection}{\numberline {5.2}HMM-HMM pairwise alignments}{28}{subsection.5.2}
+\contentsline {section}{\numberline {6}File formats}{30}{section.6}
+\contentsline {subsection}{\numberline {6.1}Multiple sequence alignment formats}{30}{subsection.6.1}
+\contentsline {subsection}{\numberline {6.2}HHsearch/HHblits model format (hhm-format)}{33}{subsection.6.2}
+\contentsline {section}{\numberline {7}Summary of command-line parameters}{35}{section.7}
+\contentsline {subsection}{\numberline {7.1}{\tt hhblits} -- HMM-HMM-based lighting-fast iterative sequence search}{35}{subsection.7.1}
+\contentsline {subsection}{\numberline {7.2}{\tt hhsearch} -- search a database of HMMs with a query MSA or HMM}{38}{subsection.7.2}
+\contentsline {subsection}{\numberline {7.3}{\tt hhfilter} -- filter an MSA}{40}{subsection.7.3}
+\contentsline {subsection}{\numberline {7.4}{\tt hhmake} -- build an HMM from an input alignment}{41}{subsection.7.4}
+\contentsline {subsection}{\numberline {7.5}{\tt hhalign} -- align a query MSA/HMM to a template MSA/HMM}{42}{subsection.7.5}
+\contentsline {subsection}{\numberline {7.6}{\tt reformat.pl} -- reformat one or many alignments}{43}{subsection.7.6}
+\contentsline {subsection}{\numberline {7.7}{\tt addss.pl} -- add predicted secondary structure to an MSA or HMM}{44}{subsection.7.7}
+\contentsline {subsection}{\numberline {7.8}{\tt hhmakemodel.pl} and {\tt hhmakemodel.py} -- generate MSAs or coarse 3D models from HHsearch results file}{44}{subsection.7.8}
+\contentsline {subsection}{\numberline {7.9}{\tt hhsuitedb.pl} -- Build an HHsuite database }{45}{subsection.7.9}
+\contentsline {subsection}{\numberline {7.10}{\tt multithread.pl} -- Run a command for many files in parallel using multiple threads}{46}{subsection.7.10}
+\contentsline {subsection}{\numberline {7.11}{\tt splitfasta.pl} -- Split multi-sequence FASTA file into single-sequence files}{46}{subsection.7.11}
+\contentsline {subsection}{\numberline {7.12}{\tt renumberpdb.pl} -- Renumber indices in PDB file to match input sequence indices}{46}{subsection.7.12}
+\contentsline {subsection}{\numberline {7.13}{\tt cif2fasta.py} -- Create a fasta file from cif files}{46}{subsection.7.13}
+\contentsline {subsection}{\numberline {7.14}{\tt pdbfilter.py} -- Filter sequences from the PDB (requires MMSeqs)}{47}{subsection.7.14}
+\contentsline {section}{\numberline {8}Selected changes from previous versions}{47}{section.8}
+\contentsline {subsection}{\numberline {8.1}Up to 3.0.0 (March 2015)}{47}{subsection.8.1}
+\contentsline {subsection}{\numberline {8.2}Up to 2.1.0 (March 2013)}{48}{subsection.8.2}
+\contentsline {subsection}{\numberline {8.3}Up to 2.0.16 (January 2013)}{48}{subsection.8.3}
+\contentsline {subsection}{\numberline {8.4}Up to 2.0.2 (January 2012)}{49}{subsection.8.4}
+\contentsline {subsection}{\numberline {8.5}1.6.0 (November 2010)}{49}{subsection.8.5}
+\contentsline {subsection}{\numberline {8.6}1.5.0 (August 2007)}{50}{subsection.8.6}
+\contentsline {section}{\numberline {9}License}{51}{section.9}
+\contentsline {section}{\numberline {10}Contributors and Contact}{52}{section.10}
+\contentsline {section}{\numberline {11}Acknowlegements}{52}{section.11}
+\contentsline {section}{References}{52}{section.11}

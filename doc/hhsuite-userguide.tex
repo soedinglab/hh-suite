@@ -531,6 +531,81 @@ detect remote homologs.
 
 Previous versions of HHsuite (the 'HHsearch package') included a perl script \verb`buildali.pl` to build MSAs for a query sequence using PSI-BLAST as its search engine. Because HHblits performs better than PSI-BLAST in all aspects that we have tested, we decided to remove this script from HHsuite. It can still be downloaded as part of HHsearch version 1.5.0.
 
+\subsection*{Example: Comparative protein structure modeling using HHblits and MODELLER}
+
+A three-dimensional (3D) structure greatly facilitates the functional characterization of proteins. However, for many proteins there are no experimental structures available, and thus, comparative modeling to known protein structures may provide useful insights. In this method, a 3D structure of a given protein sequence (target) is predicted based on alignments to one or more proteins of known structures (templates). In the following, we demonstrate how to create alignments for a unresolved protein with HHblits and the PDB70 database. We then convert search results from HHblits to build a comparative model using MODELLER (v9.16).
+
+In 1999, Wu et all. reported the genomic sequence and evolutionary analysis of lactate dehydrogenase genes from \textit{Trichomonas vaginalis} (TvLDH). Surprisingly, the corresponding protein sequence was most similar to the malate dehydrogenase (TvMDH) of the same organism implying TvLDH arose from TvMDH by convergent evolution. In the meantime, the structure of TvLDH has been resolved, however, for instructional purposes suppose that there is no 3D structure for the protein. 
+
+To get started we obtain the protein sequence of TvLDH from GeneBank (accession number \href{http://www.ncbi.nlm.nih.gov/nuccore/AF060233}{AF060233.1}). We first copy-paste the protein sequence into a new file named \verb`query.seq`. The content of this file should somewhat look similar to this.
+
+\footnotesize 
+\begin{verbatim}
+>TvLDH
+MSEAAHVLITGAAGQIGYILSHWIASGELYGDRQVYLHLLDIPPAMNRLTALTMELEDCAFPHLAGFVATTDP
+KAAFKDIDCAFLVASMPLKPGQVRADLISSNSVIFKNTGEYLSKWAKPSVKVLVIGNPDNTNCEIAMLHAKNL
+KPENFSSLSMLDQNRAYYEVASKLGVDVKDVHDIIVWGNHGESMVADLTQATFTKEGKTQKVVDVLDHDYVFD
+TFFKKIGHRAWDILEHRGFTSAASPTKAAIQHMKAWLFGTAPGEVLSMGIPVPEGNPYGIKPGVVFSFPCNVD
+KEGKIHVVEGFKVNDWLREKLDFTEKDLFHEKEIALNHLAQ
+\end{verbatim}
+\normalsize
+
+The search results obtained by querying the TvLDH sequence against the PDB70 will be significantly better if we use a MSA instead of a single sequence. For this reason, we first query the protein sequence of TvLDH against the uniprot20 database which covers the whole protein sequence space. By executing
+
+\begin{verbatim}
+$ hhblits -i query.seq -d uniprot -oa3m query.a3m  -cpu 4 -n 1
+\end{verbatim}
+
+we obtain a MSA in a3m format which contains several sequences that are similar to TvLDH. Now we can use the \verb`query.a3m` and search the PDB70 database for similar protein structures.
+
+\begin{verbatim}
+$ hhblits -i query.a3m -o results.hhr -d pdb70 -cpu 4 -n 1
+\end{verbatim}
+
+Note that we now output a hhr file \verb`results.hhr` instead of an a3m file. Before we convert the search results to a format that is readable by MODELLER, let us quickly inspect \verb`results.hhr`.
+
+\footnotesize 
+\begin{verbatim}
+Query         TvLDH
+Match_columns 333
+No_of_seqs    2547 out of 8557
+Neff          11.6151
+Searched_HMMs 1566
+Date          Tue Aug 16 11:35:02 2016
+Command       hhblits -i query.a3m -o results.hhr -d pdb70 -cpu 32 -n 2
+
+ No Hit                             Prob E-value P-value  Score    SS Cols Query HMM  Template HMM
+  1 7MDH_C MALATE DEHYDROGENASE; C 100.0 1.5E-39 1.3E-43  270.1   0.0  326    3-333    31-358 (375)
+  2 4UUL_A L-LACTATE DEHYDROGENASE 100.0 1.8E-35 1.6E-39  244.5   0.0  332    1-332     1-332 (341)
+  3 4UUP_A MALATE DEHYDROGENASE (E 100.0 2.2E-35 1.9E-39  243.8   0.0  332    1-332     1-332 (341)
+  4 4UUM_B L-LACTATE DEHYDROGENASE 100.0 5.7E-35 5.1E-39  241.5   0.0  333    1-333     1-333 (341)
+  5 1CIV_A NADP-MALATE DEHYDROGENA 100.0 1.6E-34 1.5E-38  241.3   0.0  326    2-332    40-367 (385)
+  6 1Y7T_A Malate dehydrogenase(E. 100.0 3.4E-34 3.1E-38  235.3   0.0  324    1-331     1-325 (327)
+  7 4I1I_A Malate dehydrogenase (E 100.0 3.8E-34 3.4E-38  236.4   0.0  319    2-327    22-343 (345)
+  8 1BMD_A MALATE DEHYDROGENASE (E  99.9 5.9E-34 5.3E-38  233.9   0.0  324    1-331     1-325 (327)
+  9 4H7P_B Malate dehydrogenase (E  99.9 9.9E-34 8.9E-38  233.9   0.0  319    2-327    22-343 (345)
+ 10 2EWD_B lactate dehydrogenase,   99.9 1.1E-33 9.5E-38  231.1   0.0  306    1-328     1-314 (317)
+ 
+ (...)
+\end{verbatim}
+\normalsize
+
+We find that there are several templates that have a high similarity to our query. Interestingly, the hit with the most significant E-value score is also malate dehydrogenase. We will use this structure as a basis for our comparative model. In order to build the model we first have to obtain the template structure(s). We can get 7MDH by typing the following commands
+
+\begin{verbatim}
+$ mkdir templates
+$ cd templates
+$ wget http://files.rcsb.org/download/7MDH.cif 
+$ cd ..
+\end{verbatim}
+
+To convert our search results \verb`results.hhr` into an alignment that is readable by MODELLER we use \verb`hhmakemodel.py`.
+
+\begin{verbatim}
+$ python3 hhmakemodel.py results.hhr templates/ TvLDH.pir ./ -m 1
+\end{verbatim}
+
+This script takes four positional arguments: the results file in hhr format, the path to the folder containing all templates in cif format, the output pir file, and folder where the processed cif files should be written to. The \verb`-m` flag tells \verb`hhmakemodel.py` to only include the first hit in the pir alignment. The pir file together with processed cifs can be used as an input for MODELLER (please refer to the MODELLER documentation for further help).
 
 \subsection{Visually checking an MSA for corrupted regions}
 
@@ -626,24 +701,24 @@ As with all perl/python scripts and binaries in the HHsuite, a list of additiona
 \subsection*{Example: Building a database from the PDB}
 
 %Applications in protein-protein or protein-drug interactions often require our users to find homologous protein sequences from the PDB. 
-To make efficient sequence searches in the PDB we provide a precompiled PDB70 database containing PDB sequences clustered at 70 \% sequence identity. However, to find a larger variety of template sequences a larger database with more redundancy are required. For this reason, the HHsuite provides tools to build a custom PDB database. Also, the clustering of sequences is possible using MMSeqs. Here, we describe the steps required to build a custom PDBXX database.
+To make efficient sequence searches in the PDB we provide a precompiled PDB70 database containing PDB sequences clustered at 70 \% sequence identity. However, to find a larger variety of PDB templates, larger databases with more redundancy are required. For this reason, the HHsuite provides tools to build a custom PDB database. In this tutorial, we describe the steps required to build a custom PDB database.
 
-First, you have to download the entire mmCIF database (this is the successor of the PDB file format) by executing
+First, download the entire PDB database from \href{http://www.rcsb.org/pdb/static.do?p=download/ftp/index.html}{RSCB} in cif file format (this is the successor of the pdb file format) by executing
 
 \begin{verbatim}
 $ rsync --progress -rlpt -v -z --port=33444 rsync.wwpdb.org::ftp/data/structures/
 divided/mmCIF <cif_dir>
 \end{verbatim}
 
-and unzip the downloaded files into a single directory \verb`<all_cifs>`. Then, use \verb`cif2fasta.py` to extract all sequences from the mmCif database.
+and unzip the files into a single directory \verb`<all_cifs>`. Then, run \verb`cif2fasta.py` by typing
 
 \begin{verbatim}
 $ python3 cif2fasta.py -i <all_cifs> -o pdb100.fas -c <num_cores> -p pdb_filter.dat
 \end{verbatim}
 
-The script will scan the folder \verb`<all_cifs>` for files ending with \verb`*.cif` and write each sequence and its associated chain identifier annotated in \verb`pdbx_seq_one_letter_code` from the \verb`entity_poly` table to the fasta file \verb`pdb100.fas`. Note that \verb`cif2fasta.py` by default removes sequences which are shorter than 30 residues and/or comprise only the residue 'X'. 
+The script scans the folder \verb`<all_cifs>` for files with the suffix \verb`*.cif` and write each sequence and its associated chain identifier annotated in \verb`pdbx_seq_one_letter_code` entry from the \verb`entity_poly` table to the fasta file \verb`pdb100.fas`. By specifying the optional \verb`-p` flag, \verb`cif2fasta.py` creates an additional file \verb`pdb_filter.dat` which is required by \verb`pdbfilter.py` in a later step. Note that \verb`cif2fasta.py` by default removes sequences which are shorter than 30 residues and/or comprise only the residue 'X'. 
 
-At this stage, you might consider to cluster the sequences using MMSeqs, if this however, is not important to you skip the following step and continue with the instructions described in Section \ref{building_dbs}. To cluster the sequences of \verb`pdb100.fas` at a sequence identity of \verb`X` and with a coverage of \verb`Y` run MMSeqs using these options.
+If you wish to exhaustively search the PDB, skip the following steps and continue with the instructions described in Section \ref{building_dbs}. However, to increase the speed of database searches, e.g. on systems with limited resources, you can reduce the number of sequences by clustering them with MMSeqs and selecting representative sequences with \verb`pdbfilter.py`. To cluster the sequences of \verb`pdb100.fas` at a sequence identity of \verb`X` and a coverage of \verb`Y` run MMSeqs using these options.
 
 \begin{verbatim}
 $ mmseqs createdb pdb100.fas <clu_dir>/pdb100
@@ -660,7 +735,7 @@ $ python3 pdbfilter.py pdb100.fas pdbXX_clu.tsv pdb_filter.dat pdbXX.fas
 -i pdb70_to_include.dat -r pdb70_to_remove.dat
 \end{verbatim}
 
-\verb`pdbfilter.py` takes the original fasta file (\verb`pdb100.fas`) and the annotation file \verb`pdb_filter.dat` which both were created by \verb`cif2fasta.py`, and the cluster assignments from MMSeqs (\verb`pdb70_clu.tsv`) as input and yields final \verb`pdbXX.fas`. Use this fasta file to complete the creation of your database as described in Section 3.5.
+\verb`pdbfilter.py` takes the original fasta file (\verb`pdb100.fas`) and the annotation file \verb`pdb_filter.dat` which both were created by \verb`cif2fasta.py`, and the cluster assignments from MMSeqs (\verb`pdb70_clu.tsv`) as input and outputs the final \verb`pdbXX.fas`. Use this fasta file to complete the creation of your database (see Section \ref{building_dbs}).
 
 \subsection{Modifying or extending existing databases}
 
@@ -1981,7 +2056,11 @@ If the input file is an MSA, the predicted secondary structure and confidence va
 special annotation sequences with names \verb`>ss_pred`, \verb`>ss_conf`, and \verb`>ss_dssp` to the top of the output 
 A3M alignment. If no output file is given, the output file will have the same name as the input file, 
 except for the extension being replaced by \verb`'.a3m'`. Allowed input formats are A2M/FASTA (default), 
-A3M (-a3m), CLUSTAL (-clu), STOCKHOLM (-sto), HMMER (-hmm).
+A3M (-a3m), CLUSTAL (-clu), STOCKHOLM (-sto), HMMER (-hmm). Note that in order to add PSIPRED and DSSP annotations corresponding paths
+have to be set in \verb`HHPaths.pm`. To add DSSP annotations \verb`addss.pl` first checks a folder of precomputed dssp files which 
+can be obtained from \href{http://www.cmbi.ru.nl/dssp.html}{here}. If the dssp file for a particular structure is not available, \verb`addss.pl` tries to 
+execute the DSSP binary \verb`mkdssp`. Please keep in mind that only the current DSSP version (2.2.1) supports structures in cif format, and that compiling the software 
+may cause problems on several systems. If you have troubles to compile DSSP you may try to delete all occurrences of \verb`"static"` in its Makefile.
 
 If the input file contains HMMER models, records SSPRD and SSCON containing predicted secondary 
 structure and confidence values are added to each model. In this case the output file name is 

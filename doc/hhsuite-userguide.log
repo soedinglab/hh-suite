@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.15 (TeX Live 2014) (preloaded format=pdflatex 2015.1.30)  15 AUG 2016 12:47
+This is pdfTeX, Version 3.14159265-2.6-1.40.15 (TeX Live 2014) (preloaded format=pdflatex 2015.1.30)  17 AUG 2016 14:09
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -502,409 +502,409 @@ File: hhblits-hhsearch.png Graphic file (type png)
 <use hhblits-hhsearch.png>
 Package pdftex.def Info: hhblits-hhsearch.png used on input line 442.
 (pdftex.def)             Requested size: 234.73523pt x 176.08595pt.
- [11 <./hhblits-hhsearch.png>] [12]
+ [11 <./hhblits-hhsearch.png>] [12] [13] [14]
 
-LaTeX Warning: Citation `Gonzalez:2010' on page 13 undefined on input line 537.
+LaTeX Warning: Citation `Gonzalez:2010' on page 15 undefined on input line 612.
 
 
-[13]
-Underfull \hbox (badness 10000) in paragraph at lines 573--574
+[15]
+Underfull \hbox (badness 10000) in paragraph at lines 648--649
 
  []
 
-[14]
-Overfull \hbox (7.67062pt too wide) in paragraph at lines 622--622
+[16]
+Overfull \hbox (7.67062pt too wide) in paragraph at lines 697--697
 []\OT1/cmtt/m/n/10.95 $ ffindex_order sorting.dat <db>_hhm.ff{data,index} <db>_
 hhm_ordered.ff{data,index}[] 
  []
 
 
-Overfull \hbox (7.67062pt too wide) in paragraph at lines 622--622
+Overfull \hbox (7.67062pt too wide) in paragraph at lines 697--697
 []\OT1/cmtt/m/n/10.95 $ ffindex_order sorting.dat <db>_a3m.ff{data,index} <db>_
 a3m_ordered.ff{data,index}[] 
  []
 
 
-Overfull \hbox (7.67062pt too wide) in paragraph at lines 642--642
+Overfull \hbox (7.67062pt too wide) in paragraph at lines 717--717
 []\OT1/cmtt/m/n/10.95 $ python3 cif2fasta.py -i <all_cifs> -o pdb100.fas -c <nu
 m_cores> -p pdb_filter.dat[] 
  []
 
-[15]
-Overfull \hbox (18.0163pt too wide) in paragraph at lines 663--664
+[17]
+Overfull \hbox (18.0163pt too wide) in paragraph at lines 738--739
 \OT1/cmr/m/n/10.95 which both were cre-ated by []\OT1/cmtt/m/n/10.95 cif2fasta.
 py\OT1/cmr/m/n/10.95 , and the clus-ter as-sign-ments from MM-Seqs ([]\OT1/cmtt
 /m/n/10.95 pdb70_clu.tsv\OT1/cmr/m/n/10.95 )
  []
 
-[16]
-Overfull \hbox (7.67062pt too wide) in paragraph at lines 694--694
+
+Overfull \hbox (7.67062pt too wide) in paragraph at lines 769--769
 []\OT1/cmtt/m/n/10.95 $ ffindex_order sorting.dat <db>_hhm.ff{data,index} <db>_
 hhm_ordered.ff{data,index}[] 
  []
 
 
-Overfull \hbox (7.67062pt too wide) in paragraph at lines 694--694
+Overfull \hbox (7.67062pt too wide) in paragraph at lines 769--769
 []\OT1/cmtt/m/n/10.95 $ ffindex_order sorting.dat <db>_a3m.ff{data,index} <db>_
 a3m_ordered.ff{data,index}[] 
  []
 
-
-Overfull \hbox (36.41406pt too wide) in paragraph at lines 709--709
+[18]
+Overfull \hbox (36.41406pt too wide) in paragraph at lines 784--784
 []\OT1/cmtt/m/n/10.95 $ hhsuitedb.py -o <db> --cpu 1 --ia3m=<a3m_glob> --ics219
 =<cs219_glob> --ihhm=<hhm_glob>[] 
  []
 
-[17]
 
-LaTeX Warning: Citation `Todd:2001' on page 18 undefined on input line 726.
+LaTeX Warning: Citation `Todd:2001' on page 19 undefined on input line 801.
 
 
-LaTeX Warning: Citation `Pawlowski:2000' on page 18 undefined on input line 726
+LaTeX Warning: Citation `Pawlowski:2000' on page 19 undefined on input line 801
 .
 
 
-LaTeX Warning: Citation `Rychlewski:1998' on page 18 undefined on input line 72
-6.
+LaTeX Warning: Citation `Rychlewski:1998' on page 19 undefined on input line 80
+1.
 
 
-LaTeX Warning: Citation `Kinch:2002' on page 18 undefined on input line 726.
+LaTeX Warning: Citation `Kinch:2002' on page 19 undefined on input line 801.
 
 
-LaTeX Warning: Citation `Soding:2006a' on page 18 undefined on input line 726.
+LaTeX Warning: Citation `Soding:2006a' on page 19 undefined on input line 801.
 
 
-LaTeX Warning: Citation `Alva:2010' on page 18 undefined on input line 726.
-
-
-LaTeX Warning: Citation `Chothia:1986' on page 18 undefined on input line 729.
-
-
-LaTeX Warning: Citation `Todd:2001' on page 18 undefined on input line 729.
-
-
-LaTeX Warning: Citation `Alva:2010' on page 18 undefined on input line 729.
-
-
-LaTeX Warning: Citation `Remmert:2010' on page 18 undefined on input line 729.
-
-[18]
-
-LaTeX Warning: Citation `Soding:2006b' on page 19 undefined on input line 760.
+LaTeX Warning: Citation `Alva:2010' on page 19 undefined on input line 801.
 
 [19]
 
-LaTeX Warning: Citation `Mariani:2011' on page 20 undefined on input line 764.
+LaTeX Warning: Citation `Chothia:1986' on page 20 undefined on input line 804.
 
 
-LaTeX Warning: Citation `Battey:2007' on page 20 undefined on input line 764.
+LaTeX Warning: Citation `Todd:2001' on page 20 undefined on input line 804.
 
 
-LaTeX Warning: Citation `Durbin:2008' on page 20 undefined on input line 774.
+LaTeX Warning: Citation `Alva:2010' on page 20 undefined on input line 804.
 
 
-LaTeX Warning: Citation `Biegert:2008' on page 20 undefined on input line 774.
+LaTeX Warning: Citation `Remmert:2010' on page 20 undefined on input line 804.
+
+[20]
+
+LaTeX Warning: Citation `Soding:2006b' on page 21 undefined on input line 835.
 
 
-LaTeX Warning: Citation `Soding:2005b' on page 20 undefined on input line 786.
+LaTeX Warning: Citation `Mariani:2011' on page 21 undefined on input line 839.
 
 
-LaTeX Warning: Citation `Hildebrand:2009' on page 20 undefined on input line 78
-6.
-
-[20] [21]
-
-LaTeX Warning: Citation `Sadreyev:2008' on page 22 undefined on input line 838.
+LaTeX Warning: Citation `Battey:2007' on page 21 undefined on input line 839.
 
 
-[22]
+LaTeX Warning: Citation `Durbin:2008' on page 21 undefined on input line 849.
 
-LaTeX Warning: Citation `Remmert:2011' on page 23 undefined on input line 877.
 
-[23] [24] [25] [26] [27] [28] [29]
-Overfull \hbox (3.64589pt too wide) in paragraph at lines 1273--1273
+LaTeX Warning: Citation `Biegert:2008' on page 21 undefined on input line 849.
+
+
+LaTeX Warning: Citation `Soding:2005b' on page 21 undefined on input line 861.
+
+
+LaTeX Warning: Citation `Hildebrand:2009' on page 21 undefined on input line 86
+1.
+
+[21] [22] [23]
+
+LaTeX Warning: Citation `Sadreyev:2008' on page 24 undefined on input line 913.
+
+
+[24]
+
+LaTeX Warning: Citation `Remmert:2011' on page 25 undefined on input line 952.
+
+[25] [26] [27] [28] [29] [30] [31]
+Overfull \hbox (3.64589pt too wide) in paragraph at lines 1348--1348
 [][]\OT1/cmr/bx/n/10.95 Secondary struc-ture in-for-ma-tion in A3M/A2M or FASTA
  MSAs for HH-search/HHblits 
  []
 
-[30]
-Overfull \hbox (16.43517pt too wide) in paragraph at lines 1341--1346
+[32]
+Overfull \hbox (16.43517pt too wide) in paragraph at lines 1416--1421
 \OT1/cmr/m/n/10.95 duced when us-ing HMMER-format, be-cause HM-MER adds more ps
 eu-do-counts than HH-search/HHblits
  []
 
-[31] [32] [33]
-Overfull \hbox (8.27538pt too wide) in paragraph at lines 1623--1623
+[33] [34]
+Overfull \hbox (8.27538pt too wide) in paragraph at lines 1698--1698
 [] \OT1/cmtt/m/n/10 -add_cons      generate consensus sequence as master sequen
 ce of query MSA (default=don't)[] 
  []
 
-
-Overfull \hbox (8.27538pt too wide) in paragraph at lines 1623--1623
+[35]
+Overfull \hbox (8.27538pt too wide) in paragraph at lines 1698--1698
 [] \OT1/cmtt/m/n/10 -maxfilt                  max number of hits allowed to pas
 s 2nd prefilter (default=20000)[] 
  []
 
 
-Overfull \hbox (24.02524pt too wide) in paragraph at lines 1623--1623
+Overfull \hbox (24.02524pt too wide) in paragraph at lines 1698--1698
 [] \OT1/cmtt/m/n/10 -pre_evalue_thresh        max E-value threshold of Smith-Wa
 terman prefilter score (default=0)[] 
  []
 
 
-Overfull \hbox (18.77528pt too wide) in paragraph at lines 1623--1623
+Overfull \hbox (18.77528pt too wide) in paragraph at lines 1698--1698
 [] \OT1/cmtt/m/n/10 -pre_bitfactor            prefilter scores are in units of 
 1 bit / pre_bitfactor (default=4)[] 
  []
 
 
-Overfull \hbox (24.02524pt too wide) in paragraph at lines 1623--1623
+Overfull \hbox (24.02524pt too wide) in paragraph at lines 1698--1698
 [] \OT1/cmtt/m/n/10 -pre_gap_open             gap open penalty in prefilter Smi
 th-Waterman alignment (default=20)[] 
  []
 
 
-Overfull \hbox (29.27519pt too wide) in paragraph at lines 1623--1623
+Overfull \hbox (29.27519pt too wide) in paragraph at lines 1698--1698
 [] \OT1/cmtt/m/n/10 -pre_gap_extend           gap extend penalty in prefilter S
 mith-Waterman alignment (default=4)[] 
  []
 
 
-Overfull \hbox (55.52496pt too wide) in paragraph at lines 1623--1623
+Overfull \hbox (55.52496pt too wide) in paragraph at lines 1698--1698
 [] \OT1/cmtt/m/n/10 -pre_score_offset         offset on sequence profile scores
  in prefilter S-W alignment (default=50)[] 
  []
 
-[34]
-Overfull \hbox (45.02505pt too wide) in paragraph at lines 1623--1623
+
+Overfull \hbox (45.02505pt too wide) in paragraph at lines 1698--1698
 [] \OT1/cmtt/m/n/10 -ovlp <int>          banded alignment: forbid <ovlp> larges
 t diagonals |i-j| of DP matrix (def=0)[] 
  []
 
 
-Overfull \hbox (24.02524pt too wide) in paragraph at lines 1623--1623
+Overfull \hbox (24.02524pt too wide) in paragraph at lines 1698--1698
 [] \OT1/cmtt/m/n/10 -alt <int>           show up to this many alternative align
 ments with raw score > smin(def=4)[] 
  []
 
 
-Overfull \hbox (29.27519pt too wide) in paragraph at lines 1623--1623
+Overfull \hbox (29.27519pt too wide) in paragraph at lines 1698--1698
 [] \OT1/cmtt/m/n/10 -ssa [0,1]           ss confusion matrix = (1-ssa)*I + ssa*
 psipred-confusion-matrix [def=1.00)[] 
  []
 
-
-Overfull \hbox (29.27519pt too wide) in paragraph at lines 1623--1623
+[36]
+Overfull \hbox (29.27519pt too wide) in paragraph at lines 1698--1698
 []  \OT1/cmtt/m/n/10 -pc_hhm_contxt_mode {0,..,3}   position dependence of pc a
 dmixture 'tau' (pc mode, default=2)[] 
  []
 
 
-Overfull \hbox (92.27464pt too wide) in paragraph at lines 1623--1623
+Overfull \hbox (92.27464pt too wide) in paragraph at lines 1698--1698
 [] \OT1/cmtt/m/n/10 Context independent hhm pseudocounts (used for templates; u
 sed for query if contxt file is not available):[] 
  []
 
 
-Overfull \hbox (39.7751pt too wide) in paragraph at lines 1623--1623
+Overfull \hbox (39.7751pt too wide) in paragraph at lines 1698--1698
 []  \OT1/cmtt/m/n/10 -pc_hhm_nocontxt_mode {0,..,3}   position dependence of pc
  admixture 'tau' (pc mode, default=2)[] 
  []
 
 
-Overfull \hbox (60.77492pt too wide) in paragraph at lines 1623--1623
+Overfull \hbox (60.77492pt too wide) in paragraph at lines 1698--1698
 []  \OT1/cmtt/m/n/10 -pc_prefilter_contxt_mode {0,..,3}   position dependence o
 f pc admixture 'tau' (pc mode, default=3)[] 
  []
 
-[35]
-Overfull \hbox (71.27483pt too wide) in paragraph at lines 1623--1623
+
+Overfull \hbox (71.27483pt too wide) in paragraph at lines 1698--1698
 []  \OT1/cmtt/m/n/10 -pc_prefilter_nocontxt_mode {0,..,3}   position dependence
  of pc admixture 'tau' (pc mode, default=2)[] 
  []
 
-
-Overfull \hbox (129.02432pt too wide) in paragraph at lines 1623--1623
+[37]
+Overfull \hbox (129.02432pt too wide) in paragraph at lines 1698--1698
 []  \OT1/cmtt/m/n/10 -contxt <file> context file for computing context-specific
  pseudocounts (default=${HHLIB}/data/context_data.crf)[] 
  []
 
-[36]
-Overfull \hbox (8.27538pt too wide) in paragraph at lines 1754--1754
+
+Overfull \hbox (8.27538pt too wide) in paragraph at lines 1829--1829
 [] \OT1/cmtt/m/n/10 -add_cons      generate consensus sequence as master sequen
 ce of query MSA (default=don't)[] 
  []
 
-
-Overfull \hbox (39.7751pt too wide) in paragraph at lines 1754--1754
+[38]
+Overfull \hbox (39.7751pt too wide) in paragraph at lines 1829--1829
 [] \OT1/cmtt/m/n/10 -ovlp <int>         banded alignment: forbid <ovlp> largest
  diagonals |i-j| of DP matrix (def=0)[] 
  []
 
 
-Overfull \hbox (18.77528pt too wide) in paragraph at lines 1754--1754
+Overfull \hbox (18.77528pt too wide) in paragraph at lines 1829--1829
 [] \OT1/cmtt/m/n/10 -alt <int>          show up to this many alternative alignm
 ents with raw score > smin(def=4)[] 
  []
 
 
-Overfull \hbox (45.02505pt too wide) in paragraph at lines 1754--1754
+Overfull \hbox (45.02505pt too wide) in paragraph at lines 1829--1829
 [] \OT1/cmtt/m/n/10 -ssa [0,1]          SS substitution matrix = (1-ssa)*I + ss
 a*full-SS-substition-matrix [def=1.00)[] 
  []
 
-[37]
-Overfull \hbox (29.27519pt too wide) in paragraph at lines 1754--1754
+
+Overfull \hbox (29.27519pt too wide) in paragraph at lines 1829--1829
 []  \OT1/cmtt/m/n/10 -pc_hhm_contxt_mode {0,..,3}   position dependence of pc a
 dmixture 'tau' (pc mode, default=2)[] 
  []
 
-
-Overfull \hbox (92.27464pt too wide) in paragraph at lines 1754--1754
+[39]
+Overfull \hbox (92.27464pt too wide) in paragraph at lines 1829--1829
 [] \OT1/cmtt/m/n/10 Context independent hhm pseudocounts (used for templates; u
 sed for query if contxt file is not available):[] 
  []
 
 
-Overfull \hbox (39.7751pt too wide) in paragraph at lines 1754--1754
+Overfull \hbox (39.7751pt too wide) in paragraph at lines 1829--1829
 []  \OT1/cmtt/m/n/10 -pc_hhm_nocontxt_mode {0,..,3}   position dependence of pc
  admixture 'tau' (pc mode, default=2)[] 
  []
 
 
-Overfull \hbox (129.02432pt too wide) in paragraph at lines 1754--1754
+Overfull \hbox (129.02432pt too wide) in paragraph at lines 1829--1829
 []  \OT1/cmtt/m/n/10 -contxt <file> context file for computing context-specific
  pseudocounts (default=${HHLIB}/data/context_data.crf)[] 
  []
 
-[38]
-Overfull \hbox (29.27519pt too wide) in paragraph at lines 1853--1853
+[40]
+Overfull \hbox (29.27519pt too wide) in paragraph at lines 1928--1928
 []  \OT1/cmtt/m/n/10 -pc_hhm_contxt_mode {0,..,3}   position dependence of pc a
 dmixture 'tau' (pc mode, default=0)[] 
  []
 
-[39]
-Overfull \hbox (92.27464pt too wide) in paragraph at lines 1853--1853
+
+Overfull \hbox (92.27464pt too wide) in paragraph at lines 1928--1928
 [] \OT1/cmtt/m/n/10 Context independent hhm pseudocounts (used for templates; u
 sed for query if contxt file is not available):[] 
  []
 
 
-Overfull \hbox (39.7751pt too wide) in paragraph at lines 1853--1853
+Overfull \hbox (39.7751pt too wide) in paragraph at lines 1928--1928
 []  \OT1/cmtt/m/n/10 -pc_hhm_nocontxt_mode {0,..,3}   position dependence of pc
  admixture 'tau' (pc mode, default=2)[] 
  []
 
 
-Overfull \hbox (129.02432pt too wide) in paragraph at lines 1853--1853
+Overfull \hbox (129.02432pt too wide) in paragraph at lines 1928--1928
 []  \OT1/cmtt/m/n/10 -contxt <file> context file for computing context-specific
  pseudocounts (default=${HHLIB}/data/context_data.crf)[] 
  []
 
-
-Overfull \hbox (29.27519pt too wide) in paragraph at lines 1914--1914
+[41]
+Overfull \hbox (29.27519pt too wide) in paragraph at lines 1989--1989
 [] \OT1/cmtt/m/n/10 -oa3m <file>   write query alignment in a3m or PSI-BLAST fo
 rmat (-opsi) to file (default=none)[] 
  []
 
 
-Overfull \hbox (76.52478pt too wide) in paragraph at lines 1914--1914
+Overfull \hbox (76.52478pt too wide) in paragraph at lines 1989--1989
 [] \OT1/cmtt/m/n/10 -aa3m <file>   append query alignment in a3m (-aa3m) or PSI
 -BLAST format (-apsi )to file (default=none)[] 
  []
 
 
-Overfull \hbox (8.27538pt too wide) in paragraph at lines 1914--1914
+Overfull \hbox (8.27538pt too wide) in paragraph at lines 1989--1989
 [] \OT1/cmtt/m/n/10 -add_cons      generate consensus sequence as master sequen
 ce of query MSA (default=don't)[] 
  []
 
-[40] [41]
+[42] [43]
 
-LaTeX Warning: Citation `Sali:1993' on page 42 undefined on input line 2008.
+LaTeX Warning: Citation `Sali:1993' on page 44 undefined on input line 2087.
 
-[42]
+[44]
 
-LaTeX Warning: Citation `Sali:1993' on page 43 undefined on input line 2045.
+LaTeX Warning: Citation `Sali:1993' on page 45 undefined on input line 2124.
 
-[43]
-Overfull \hbox (50.27501pt too wide) in paragraph at lines 2122--2122
+[45]
+Overfull \hbox (50.27501pt too wide) in paragraph at lines 2201--2201
 []\OT1/cmtt/m/n/10 Write files into current directory and name each file by the
  first word after ">" in the name line.[] 
  []
 
 
-Overfull \hbox (50.27501pt too wide) in paragraph at lines 2144--2144
+Overfull \hbox (50.27501pt too wide) in paragraph at lines 2223--2223
 [] \OT1/cmtt/m/n/10 The program reads an input sequence in FASTA/A3M which must
  have a SCOP domain, PDB chain, or DALI[] 
  []
 
 
-Overfull \hbox (50.27501pt too wide) in paragraph at lines 2144--2144
+Overfull \hbox (50.27501pt too wide) in paragraph at lines 2223--2223
 [] \OT1/cmtt/m/n/10 domain identifier (e.g. d1hz4a_, 1hz4_A, or 1hz4A_1). It re
 ads the corresponding PDB file from the[] 
  []
 
 
-Overfull \hbox (39.7751pt too wide) in paragraph at lines 2144--2144
+Overfull \hbox (39.7751pt too wide) in paragraph at lines 2223--2223
 [] \OT1/cmtt/m/n/10 given pdb directory and  generates a new PDB file by aligni
 ng the input sequence to the sequence[] 
  []
 
 
-Overfull \hbox (29.27519pt too wide) in paragraph at lines 2144--2144
+Overfull \hbox (29.27519pt too wide) in paragraph at lines 2223--2223
 [] \OT1/cmtt/m/n/10 extracted from the ATOM records of the corresponding pdb ch
 ain and renumbering the residues in[] 
  []
 
 
-Overfull \hbox (24.02524pt too wide) in paragraph at lines 2144--2144
+Overfull \hbox (24.02524pt too wide) in paragraph at lines 2223--2223
 [] \OT1/cmtt/m/n/10 (HETATM records for MSE (selenomethionine) will be interpre
 ted as ATOM records for MET in the[] 
  []
 
-[44] [45] [46]
-Overfull \hbox (170.34192pt too wide) in paragraph at lines 2264--2266
+[46] [47]
+Overfull \hbox (170.34192pt too wide) in paragraph at lines 2343--2345
 []\OT1/cmr/m/n/10.95 All er-ror mes-sages are now writ-ten to stderr (not std-o
 ut) and are of the form []\OT1/cmtt/m/n/10.95 Error in <program_name>: <error d
 escription>\OT1/cmr/m/n/10.95 . 
  []
 
+[48]
 
-LaTeX Warning: Citation `Remmert:2011' on page 47 undefined on input line 2293.
+LaTeX Warning: Citation `Remmert:2011' on page 49 undefined on input line 2372.
 
 
-[47] [48]
+[49] [50]
 
-LaTeX Warning: Citation `Farrar:2007' on page 49 undefined on input line 2455.
+LaTeX Warning: Citation `Farrar:2007' on page 51 undefined on input line 2534.
 
-[49]
-Underfull \hbox (badness 10000) in paragraph at lines 2480--2488
+[51]
+Underfull \hbox (badness 10000) in paragraph at lines 2559--2567
 
  []
 
 Missing character: There is no Ã in font cmr10!
 Missing character: There is no ¼ in font cmr10!
-[50]
 No file hhsuite-userguide.bbl.
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 2516.
-[51]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 2516.
+[52]
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 2595.
+ [53]
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 2595.
  (./hhsuite-userguide.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 2516.
-Package atveryend Info: Empty hook `AtEndAfterFileList' on input line 2516.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 2595.
+Package atveryend Info: Empty hook `AtEndAfterFileList' on input line 2595.
 
 
 LaTeX Warning: There were undefined references.
 
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 2516.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 2595.
  ) 
 Here is how much of TeX's memory you used:
- 10100 strings out of 493117
- 140519 string characters out of 6135433
+ 10105 strings out of 493117
+ 140563 string characters out of 6135433
  219964 words of memory out of 5000000
- 13340 multiletter control sequences out of 15000+600000
- 11560 words of font info for 43 fonts, out of 8000000 for 9000
+ 13341 multiletter control sequences out of 15000+600000
+ 11727 words of font info for 44 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  35i,18n,30p,1811b,535s stack positions out of 5000i,500n,10000p,200000b,80000s
 </usr/local/texlive/2014/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb
@@ -920,11 +920,12 @@ live/2014/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/texl
 ive/2014/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb></usr/local/texli
 ve/2014/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb></usr/local/texliv
 e/2014/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt12.pfb></usr/local/texlive
-/2014/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt8.pfb>
-Output written on hhsuite-userguide.pdf (51 pages, 363126 bytes).
+/2014/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt8.pfb></usr/local/texlive/2
+014/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt9.pfb>
+Output written on hhsuite-userguide.pdf (53 pages, 386227 bytes).
 PDF statistics:
- 679 PDF objects out of 1000 (max. 8388607)
- 604 compressed objects within 7 object streams
- 142 named destinations out of 1000 (max. 500000)
+ 698 PDF objects out of 1000 (max. 8388607)
+ 620 compressed objects within 7 object streams
+ 145 named destinations out of 1000 (max. 500000)
  462 words of extra memory for PDF output out of 10000 (max. 10000000)
 

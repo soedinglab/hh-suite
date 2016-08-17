@@ -418,7 +418,9 @@ def get_query_name(hhr_file):
                     pdb_code = m.group(1)
                     chain = m.group(2)
                 else: 
-                    raise ValueError('Input HHR-File Does not seem to be a PDB-Structure')
+                    pdb_code = 'UKNP'
+                    chain = 'A'
+                    # raise ValueError('Input HHR-File Does not seem to be a PDB-Structure')
 
                 break
 
@@ -2217,7 +2219,7 @@ def main():
         selected_templates = data
         
         print ('Creating pir file using all templates ({n})'.format(
-        	n = len(selected_templates)))
+            n = len(selected_templates)))
 
     query_grid = create_query_grid(selected_templates) # load query grid
     gapless_query_grid = create_gapless_grid(query_grid) # remove gaps
