@@ -1158,7 +1158,7 @@ sub ExtractPdbcodeAndChain()
 #	return 1; # no SCOP/DALI/pdb sequence 
     }
 
-    &FindPDBfile($pdbcode, $chain);
+    $pdbfile = &FindPDBfile($pdbcode, $chain);
 
     if ($pdbfile eq "") {
 	if ($v>=2) {print("Warning: no pdb file found for sequence name '$name'\n");} 
