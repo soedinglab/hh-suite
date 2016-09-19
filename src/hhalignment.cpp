@@ -1473,7 +1473,7 @@ void Alignment::Shrink() {
   int new_N_in = N_in;
   int new_k = 0;
   for(int k = 0; k < N_in; k++) {
-	if(keep[k] == 0 && k != new_kss_dssp && k != new_ksa_dssp && k != new_kss_pred && k != new_kss_conf && k != new_kfirst) {
+	if(keep[k] == 0 && k != kss_dssp && k != ksa_dssp && k != kss_pred && k != kss_conf && k != kfirst) {
 	  free(X[k]);
 	  delete[] I[k];
 	  delete[] sname[k];
