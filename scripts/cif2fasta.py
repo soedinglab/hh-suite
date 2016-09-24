@@ -33,6 +33,9 @@ THREE2ONE = {
         'CAF': 'C', 'NIY': 'Y', 'OAS': 'S', 'SCH': 'C', 'MK8': 'L', 'SME': 'M', 'LYZ': 'K'
     }
 
+CANONICAL_RESIDUES = set(['A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M', 'N', 'P',
+      'Q', 'R', 'S', 'T', 'V', 'W', 'Y'])
+
 class CIF2FASTA(object):
     
     def __init__(self, cif_path):
@@ -47,7 +50,13 @@ class CIF2FASTA(object):
             data = []
             reader = PdbxReader(cif_fh)
             reader.read(data)
-            return data[0]                    
+            if len(data) == 0:
+                return None
+            else:
+                return data[0]
+
+    def is_valid(self):
+        return self.block != None
  
     def chain_to_seq(self):
         """Extracts the sequence of the cif from entity_poly.pdbx_seq_one_letter_code"""
@@ -445,6 +454,7 @@ def parse_seq(orginal_seq):
         start_pos = seq.find('(')
         stop_pos = seq.find(')')
         residue = seq[start_pos + 1:stop_pos]
+        print(residue)
 
         try:
             canonical = THREE2ONE[residue]
@@ -464,8 +474,19 @@ def parse_seq(orginal_seq):
             pre_seq = seq[0:start_pos]
             post_seq = seq[stop_pos+1:]
             seq = pre_seq + canonical + post_seq
+    
+    seq = seq.replace('\n', '')
+    seq_array = []
+    
+    for c in seq:
+        if c in CANONICAL_RESIDUES:
+            seq_array.append(c)
+        else:
+            seq_array.append('X')
 
-    return seq.replace('\n', '')
+    seq = ''.join(seq_array)
+
+    return seq
     
     
 def get_paths(in_folder, out_folder):
@@ -681,7 +702,11 @@ def wrapper_function(paths):
     out_file = paths[1]
     
     cif2fasta = CIF2FASTA(in_file)
-    fasta_entry = create_fasta_entry2(cif2fasta)
+    if cif2fasta.is_valid():
+        fasta_entry = create_fasta_entry2(cif2fasta)
+    else:
+        print("Warning: Could not read %".format(in_file), file=sys.stderr)
+        fasta_entry = None
 
     return fasta_entry
 
@@ -696,8 +721,9 @@ def write_to_file(line_list, fname, pdb_filter):
         pdb_filter = open(pdb_filter, 'w')
 
         for line in line_list:
-            fasta_file.write(line[0])
-            pdb_filter.write(line[1])
+            if line != None:
+                fasta_file.write(line[0])
+                pdb_filter.write(line[1])
 
         fasta_file.close()
         pdb_filter.close()
@@ -705,7 +731,8 @@ def write_to_file(line_list, fname, pdb_filter):
         fasta_file = open(fname, 'w')
 
         for line in line_list:
-            fasta_file.write(line[0])
+            if line != None:
+                fasta_file.write(line[0])
 
 def opt():
     # Initiate a OptionParser Class
