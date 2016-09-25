@@ -56,7 +56,7 @@ class CIF2FASTA(object):
                 return data[0]
 
     def is_valid(self):
-        return self.block != None
+        return self.block is not None
  
     def chain_to_seq(self):
         """Extracts the sequence of the cif from entity_poly.pdbx_seq_one_letter_code"""
@@ -219,11 +219,11 @@ class CIF2FASTA(object):
                         residue = 'X'
 
                     # try to get the chain identifier from alt_chain first, if this does not work use label_asym_id
-                    if alt_chain != None:
+                    if alt_chain is not None:
                     	atom_seq[alt_chain] += residue
 
                     # sometimes we find the right chain identifier not in the alt_chain
-                    if not (atom_chain in atom_seq.keys()) and atom_chain != None:
+                    if not (atom_chain in atom_seq.keys()) and atom_chain is not None:
                     	atom_seq[atom_chain] += residue
                         
                     current_residue = res_num
@@ -454,7 +454,6 @@ def parse_seq(orginal_seq):
         start_pos = seq.find('(')
         stop_pos = seq.find(')')
         residue = seq[start_pos + 1:stop_pos]
-        print(residue)
 
         try:
             canonical = THREE2ONE[residue]
@@ -721,7 +720,7 @@ def write_to_file(line_list, fname, pdb_filter):
         pdb_filter = open(pdb_filter, 'w')
 
         for line in line_list:
-            if line != None:
+            if line is not None:
                 fasta_file.write(line[0])
                 pdb_filter.write(line[1])
 
@@ -731,7 +730,7 @@ def write_to_file(line_list, fname, pdb_filter):
         fasta_file = open(fname, 'w')
 
         for line in line_list:
-            if line != None:
+            if line is not None:
                 fasta_file.write(line[0])
 
 def opt():
