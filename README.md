@@ -15,7 +15,7 @@ We had to rename our repository for ffindex, so it might be necessary to run the
 
 	git pull
 	git submodule deinit
-	git sobmodule init
+	git submodule init
 
 
 ## Requirements
