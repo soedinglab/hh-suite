@@ -23,6 +23,7 @@ We had to rename our repository for ffindex, so it might be necessary to run the
 To compile from source, you will need:
  * a recent C/C++ compiler
  * [CMake](http://cmake.org/) 2.8.12 or later
+ * install [pdbx python library](https://github.com/soedinglab/pdbx)
 
 
 ## Installation

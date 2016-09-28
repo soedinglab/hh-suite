@@ -144,19 +144,19 @@ def select_sequences(clusters, annotations):
         # iterate through each entry in nodes while selecting the representative sequence
         for node in nodes:
             
-            if (node.res != None) and (node.res < best_res):
+            if (node.res is not None) and (node.res < best_res):
                 best_res = node.res
                 best_entry_res = node.entry
 
-            if (node.rfr != None) and (node.rfr < best_rfr):
+            if (node.rfr is not None) and (node.rfr < best_rfr):
                 best_rfr = node.rfr
                 best_entry_rfr = node.entry
 
-            if (node.comp != None) and (node.comp > best_comp):
+            if (node.comp is not None) and (node.comp > best_comp):
                 best_comp = node.comp
                 best_entry_comp = node.entry
 
-        if best_entry_res != None:
+        if best_entry_res is not None:
             selected_sequences.add(best_entry_res)
             
             if DEBUG:
@@ -164,7 +164,7 @@ def select_sequences(clusters, annotations):
                     n = best_entry_res,
                     r = best_res))
 
-        if best_entry_rfr != None:
+        if best_entry_rfr is not None:
             selected_sequences.add(best_entry_rfr)
             
             if DEBUG:
@@ -172,7 +172,7 @@ def select_sequences(clusters, annotations):
                     n = best_entry_rfr,
                     r = best_rfr))
         
-        if best_entry_comp != None:
+        if best_entry_comp is not None:
             selected_sequences.add(best_entry_comp)
             
             if DEBUG:

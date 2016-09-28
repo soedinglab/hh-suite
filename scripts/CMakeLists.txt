@@ -27,5 +27,6 @@ INSTALL(PROGRAMS
 	is_huge_a3m.py
 	pdbfilter.py
 	cif2fasta.py
+	hhmakemodel.py
 	DESTINATION scripts
 )

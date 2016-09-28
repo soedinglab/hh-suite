@@ -1,6 +1,3 @@
 [submodule "lib/ffindex"]
 	path = lib/ffindex
 	url = https://github.com/soedinglab/ffindex_soedinglab.git
-[submodule "lib/pdbx"]
-	path = lib/pdbx
-	url = https://github.com/soedinglab/pdbx.git
