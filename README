@@ -16,6 +16,7 @@ For full documentation see the user guide in hhsuite-userguide.pdf
 To compile from source, you will need:
  * a recent C/C++ compiler
  * CMake 2.8.12 or later
+ * pdbx python library for example from https://github.com/soedinglab/pdbx
 
 *****************************************************************************
 2. Installation
