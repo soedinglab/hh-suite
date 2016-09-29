@@ -56,6 +56,9 @@ def read_fasta_annotations(fname):
 
     with open(fname) as fh:
         for line in fh:
+            if len(line) > 0 and line[0] == '#':
+                continue
+
             identifier, res, r_free, comp, method = line.strip().split('\t')
 
             try:

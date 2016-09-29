@@ -719,6 +719,8 @@ def write_to_file(line_list, fname, pdb_filter):
         fasta_file = open(fname, 'w')
         pdb_filter = open(pdb_filter, 'w')
 
+        pdb_filter.write('#pdb_chain\tresolution\tr_free\tcompleteness\tmethod\n')
+
         for line in line_list:
             if line is not None:
                 fasta_file.write(line[0])
