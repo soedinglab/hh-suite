@@ -116,7 +116,7 @@ void help(char all = 0) {
   printf(
       "               Beware of overflows! All these sequences are stored in memory.\n");
   printf(
-      " -cons         make consensus sequence master sequence of query MSA \n");
+      " -add_cons         make consensus sequence master sequence of query MSA \n");
   printf(
       " -name <name>  use this name for HMM (default: use name of first sequence)   \n");
   printf("\n");
@@ -239,7 +239,7 @@ void ProcessArguments(int argc, char** argv) {
     }
     else if (!strcmp(argv[i], "-seq") && (i < argc - 1))
       par.nseqdis = atoi(argv[++i]);
-    else if (!strncmp(argv[i], "-cons", 5))
+    else if (!strncmp(argv[i], "-add_cons", 5))
       par.cons = 1;
     else if (!strncmp(argv[i], "-mark", 5))
       par.mark = 1;

@@ -193,7 +193,6 @@ void ProcessArguments(int argc, char** argv) {
       }
       else
         HH_LOG(WARNING) << "Ignoring unknown argument: -M " << argv[i] << std::endl;
-
     else if (!strcmp(argv[i], "-def"))
       par.readdefaultsfile = 1;
     else if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help")) {

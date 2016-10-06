@@ -62,6 +62,8 @@ void ReadQueryFile(Parameters& par, FILE* inf, char& input_format,
     // and store marked sequences in name[k] and seq[k]
     ali_tmp.Compress(infile, par.cons, par.maxres, par.maxcol, par.M, par.Mgaps);
 
+    ali_tmp.Shrink();
+
     // Sort out the nseqdis most dissimilar sequences for display in the output alignments
     ali_tmp.FilterForDisplay(par.max_seqid, par.mark, S, par.coverage, par.qid, par.qsc, par.nseqdis);
 
@@ -75,6 +77,8 @@ void ReadQueryFile(Parameters& par, FILE* inf, char& input_format,
     // Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
     ali_tmp.FrequenciesAndTransitions(q, use_global_weights, par.mark, par.cons,
         par.showcons, par.maxres, pb, Sim);
+
+
 
     *qali = ali_tmp;
     input_format = 0;

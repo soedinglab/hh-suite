@@ -496,7 +496,6 @@ void Alignment::Read(FILE* inf, char infile[], const char mark,
       }
       cur_seq[l] = '\0';  //Ensure that cur_seq ends with a '\0' character
     }  //end else
-
   }
   /////////////////////////////////////////////////////////////////////////
 
@@ -902,7 +901,7 @@ void Alignment::Compress(const char infile[], const char cons, const int maxres,
     case 1:
     default:
 
-      // Warn if alignment is ment to be -M first or -M <%> instead of A2M/A3M
+      // Warn if alignment is meant to be -M first or -M <%> instead of A2M/A3M
       // Seed/query sequence contains a gap ...
       if (strchr(seq[kfirst], '-')) {
         unsigned int len = strlen(seq[kfirst]) - 1;
@@ -1115,6 +1114,13 @@ void Alignment::Compress(const char infile[], const char cons, const int maxres,
               seq[k][h[k]++] = MatchChr(seq[k][l]);
               X[k][i] = X[k][l];
               I[k][i] = 0;
+
+              //kfirst might not be copied in the case of consensus sequences
+              //so it will be deleted and kfirst will be set to 0
+              //kfirst needs to be set to the next following sequence
+              if (kfirst == -1) {
+                kfirst = k;
+              }
             } else if (k == kss_dssp || k == kss_pred) {
               seq[k][h[k]++] = MatchChr(seq[k][l]);
               X[k][i] = ss2i(seq[k][l]);
@@ -1124,6 +1130,10 @@ void Alignment::Compress(const char infile[], const char cons, const int maxres,
             } else if (k == kss_conf) {
               seq[k][h[k]++] = seq[k][l];
               X[k][i] = cf2i(seq[k][l]);
+            }
+            //consensus sequence, keep[kfirst] == 0
+            else if (k == kfirst) {
+              kfirst = -1;
             }
           }
         } else {
@@ -1267,12 +1277,12 @@ void Alignment::Compress(const char infile[], const char cons, const int maxres,
     exit(1);
   }
 
-  // Avert user about -cons option?
+  // Avert user about -add_cons option?
   if (!cons) {
     for (i = 1; i <= L; ++i)
       if (X[kfirst][i] == GAP) {
         HH_LOG(INFO)
-            << "NOTE: Use the '-cons' option to calculate a consensus sequence as first sequence of the alignment.\n";
+            << "NOTE: Use the '-add_cons' option to calculate a consensus sequence as first sequence of the alignment with hhconsensus or hhmake.\n";
         break;
       }
   }
@@ -1443,6 +1453,7 @@ int Alignment::FilterForDisplay(int max_seqid, const char mark,
     n_display++;
   }
   delete[] dummy;
+
   return n_display;
 }
 
