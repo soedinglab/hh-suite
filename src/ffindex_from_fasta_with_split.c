@@ -186,32 +186,12 @@ int main(int argn, char **argv)
   /* Sort the index entries and write back */
   if(sort)
   {
-    rewind(index_header_file);
-    ffindex_index_t* index = ffindex_index_parse(index_header_file, 0);
-    if(index == NULL)
-    {
-      perror("ffindex_index_parse failed");
-      exit(EXIT_FAILURE);
-    }
-    fclose(index_header_file);
-    ffindex_sort_index_file(index);
-    index_header_file = fopen(index_header_filename, "w");
-    if(index_header_file == NULL) { perror(index_header_filename); return EXIT_FAILURE; }
-    err += ffindex_write(index, index_header_file);
-
-    rewind(index_sequence_file);
-    index = ffindex_index_parse(index_sequence_file, 0);
-    if(index == NULL)
-    {
-      perror("ffindex_index_parse failed");
-      exit(EXIT_FAILURE);
-    }
-    fclose(index_sequence_file);
-    ffindex_sort_index_file(index);
-    index_sequence_file = fopen(index_sequence_filename, "w");
-    if(index_sequence_file == NULL) { perror(index_sequence_filename); return EXIT_FAILURE; }
-    err += ffindex_write(index, index_sequence_file);
+	ff_sort_index(index_header_filename, index_header_file);
+	ff_sort_index(index_sequence_filename, index_sequence_file);
   }
+
+  fclose(index_header_file);
+  fclose(index_sequence_file);
 
   return err;
 }

@@ -353,7 +353,13 @@ namespace cs {
 
           // FIXME: we are leaking inf, but if we fclose we get weird crashes
           //fclose(inf);
+
         }
+
+        ff_sort_index(output_index_file.c_str(), output_index_fh);
+
+        fclose(output_index_fh);
+        fclose(output_data_fh);
 
         if (isCa3m) {
           delete sequence_db;

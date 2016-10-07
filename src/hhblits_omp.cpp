@@ -28,8 +28,13 @@ struct OutputFFIndex {
     void (*print)(HHblits&, std::stringstream&);
 
     void close() {
-      fclose(data_fh);
+      char index_filename[NAMELEN];
+      snprintf(index_filename, FILENAME_MAX, "%s.ffindex", base);
+
+      ff_sort_index(index_filename, index_fh);
+
       fclose(index_fh);
+      fclose(data_fh);
     }
 
     void saveOutput(HHblits& hhblits, char* name) {

@@ -190,6 +190,9 @@ int main(int argc, char **argv) {
     delete out_buffer;
   }
 
+  ff_sort_index(a3mIndexFile.c_str(), a3m_index_fh);
+
   fclose(a3m_data_fh);
+  fclose(a3m_index_fh);
 }
 
