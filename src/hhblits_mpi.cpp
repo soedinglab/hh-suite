@@ -10,14 +10,15 @@
 #include "hhdecl.h"
 #include "hhblits.h"
 
-#ifdef OPENMP
-    #include <omp.h>
-#endif
-
 extern "C" {
     #include <ffindex.h>
     #include <mpq/mpq.h>
 }
+#ifdef OPENMP
+    #include <omp.h>
+#endif
+
+
 
 struct OutputFFIndex {
     char base[NAMELEN];
@@ -177,7 +178,6 @@ struct HHblits_MPQ_Wrapper {
 
   void Payload(const size_t start, const size_t end) {
     // Foreach entry in the input file
-    #pragma omp parallel for schedule(dynamic, 1)
     for (size_t entry_index = start; entry_index < end; entry_index++) {
       ffindex_entry_t* entry = ffindex_get_entry_by_index(index, entry_index);
       if (entry == NULL) {
@@ -190,12 +190,9 @@ struct HHblits_MPQ_Wrapper {
       hhblits->run(inf, entry->name);
       fclose(inf);
 
-      #pragma omp critical
-      {
-        for (size_t i = 0; i < outputDatabases->size(); i++) {
-		  outputDatabases->operator [](i).saveOutput(*hhblits, entry->name);
-	    }
-      }
+      for (size_t i = 0; i < outputDatabases->size(); i++) {
+	    outputDatabases->operator [](i).saveOutput(*hhblits, entry->name);
+	  }
     }
   }
 };
@@ -208,6 +205,12 @@ void static payload(void* env, const size_t start, const size_t end) {
 int main(int argc, char **argv) {
   Parameters par;
   HHblits::ProcessAllArguments(argc, argv, par);
+
+  //hhblits_mpi will be parallelized with openmpi, no other parallelization
+  par.threads = 1;
+  #ifdef OPENMP
+    omp_set_num_threads(par.threads);
+  #endif
 
   char data_filename[NAMELEN];
   char index_filename[NAMELEN];
@@ -270,9 +273,6 @@ int main(int argc, char **argv) {
       std::vector<HHblitsDatabase*> databases;
       HHblits::prepareDatabases(par, databases);
 
-      #ifdef OPENMP
-        omp_set_num_threads(par.threads);
-      #endif
       HHblits hhblits(par, databases);
 
       HHblits_MPQ_Wrapper* wrapper = new HHblits_MPQ_Wrapper(data, index, hhblits, outputDatabases);
