@@ -269,6 +269,8 @@ int main(int argc, char **argv) {
           outputDatabases);
       makeOutputFFIndex(par.matrices_output_file, MPQ_rank, &HHblits::writeMatricesFile,
           outputDatabases);
+      makeOutputFFIndex(par.m8file, MPQ_rank, &HHblits::writeM8,
+          outputDatabases);
 
       std::vector<HHblitsDatabase*> databases;
       HHblits::prepareDatabases(par, databases);
