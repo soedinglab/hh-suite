@@ -89,16 +89,16 @@ const char HHBLITS_REFERENCE[] =
 
 class HHblits {
 public:
-	HHblits(Parameters& parameters, std::vector<HHblitsDatabase*>& databases);
-	virtual ~HHblits();
+  HHblits(Parameters& parameters, std::vector<HHblitsDatabase*>& databases);
+  virtual ~HHblits();
 
-	void Reset();
+  void Reset();
 
-	static void ProcessAllArguments(int argc, char** argv, Parameters& par);
+  static void ProcessAllArguments(int argc, char** argv, Parameters& par);
 
-	//print methods for hhalign and hhblits
-	void printHitList();
-	void printHHRFile();
+  //print methods for hhalign and hhblits
+  void printHitList();
+  void printHHRFile();
 
   //writer for non-mpi version
   void writeHHRFile(char* hhrFile);

@@ -229,6 +229,22 @@ add_executable(cstranslate
 target_link_libraries (cstranslate ffindex)
 
 find_package(MPI QUIET)
+
+if(MPI_CXX_FOUND)
+    add_executable(hhblits_mpi
+	         hhblits_mpi.cpp $<TARGET_OBJECTS:CS_OBJECTS> $<TARGET_OBJECTS:HH_OBJECTS>
+	         $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff>
+	         $<TARGET_OBJECTS:hhviterbialgorithm_and_ss>
+	         $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff_and_ss>
+	       )
+    target_link_libraries(hhblits_mpi ffindex mpq)
+    target_link_libraries(hhblits_mpi ${MPI_CXX_LIBRARIES})
+    set_target_properties(hhblits_mpi PROPERTIES COMPILE_FLAGS "${MPI_CXX_COMPILE_FLAGS}")
+    set_target_properties(hhblits_mpi PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
+
+    install(PROGRAMS ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/hhblits_mpi DESTINATION bin)
+endif()
+
 if(MPI_CXX_FOUND)
     include_directories(${MPI_CXX_INCLUDE_PATH})
 
