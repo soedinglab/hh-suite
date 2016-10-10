@@ -127,26 +127,26 @@ add_library(CS_OBJECTS OBJECT ${CS_SOURCE})
 
 # add the executable
 add_executable(hhblits 
-	hhblits_app.cpp	$<TARGET_OBJECTS:CS_OBJECTS> $<TARGET_OBJECTS:HH_OBJECTS>
-	$<TARGET_OBJECTS:hhviterbialgorithm_with_celloff>
-	$<TARGET_OBJECTS:hhviterbialgorithm_and_ss>
-	$<TARGET_OBJECTS:hhviterbialgorithm_with_celloff_and_ss>
+    hhblits_app.cpp	$<TARGET_OBJECTS:CS_OBJECTS> $<TARGET_OBJECTS:HH_OBJECTS>
+    $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff>
+    $<TARGET_OBJECTS:hhviterbialgorithm_and_ss>
+    $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff_and_ss>
 )
 target_link_libraries (hhblits ffindex)
+
 if (OPENMP_FOUND)
-add_executable(hhblits_omp
-  hhblits_omp.cpp $<TARGET_OBJECTS:CS_OBJECTS> $<TARGET_OBJECTS:HH_OBJECTS>
-  $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff>
-  $<TARGET_OBJECTS:hhviterbialgorithm_and_ss>
-  $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff_and_ss>
-)
-target_link_libraries (hhblits_omp ffindex)
+    add_executable(hhblits_omp
+        hhblits_omp.cpp $<TARGET_OBJECTS:CS_OBJECTS> $<TARGET_OBJECTS:HH_OBJECTS>
+        $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff>
+        $<TARGET_OBJECTS:hhviterbialgorithm_and_ss>
+        $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff_and_ss>
+    )
+    target_link_libraries (hhblits_omp ffindex)
 
-INSTALL(PROGRAMS 
-  ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/hhblits_omp
-  DESTINATION bin
-)
-
+    INSTALL(PROGRAMS 
+        ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/hhblits_omp
+        DESTINATION bin
+    )
 endif()
 
 add_executable(hhmake
@@ -231,6 +231,9 @@ target_link_libraries (cstranslate ffindex)
 find_package(MPI QUIET)
 
 if(MPI_CXX_FOUND)
+    include_directories(${MPI_CXX_INCLUDE_PATH})
+
+    #hhblits_mpi
     add_executable(hhblits_mpi
 	         hhblits_mpi.cpp $<TARGET_OBJECTS:CS_OBJECTS> $<TARGET_OBJECTS:HH_OBJECTS>
 	         $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff>
@@ -243,11 +246,8 @@ if(MPI_CXX_FOUND)
     set_target_properties(hhblits_mpi PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
 
     install(PROGRAMS ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/hhblits_mpi DESTINATION bin)
-endif()
 
-if(MPI_CXX_FOUND)
-    include_directories(${MPI_CXX_INCLUDE_PATH})
-
+    #cstranslate_mpi
     add_executable(cstranslate_mpi
             cs/cstranslate_mpi_app.cc
             $<TARGET_OBJECTS:CS_OBJECTS>
@@ -280,9 +280,3 @@ INSTALL(PROGRAMS
 	DESTINATION bin
 )
 
-if (OPENMP_FOUND)
-INSTALL(PROGRAMS 
-	${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/hhblits_omp 
-	DESTINATION bin
-)
-endif()

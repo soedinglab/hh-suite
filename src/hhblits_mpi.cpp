@@ -51,80 +51,7 @@ struct OutputFFIndex {
       snprintf(data_filename, FILENAME_MAX, "%s.ffdata", base);
       snprintf(index_filename, FILENAME_MAX, "%s.ffindex", base);
 
-      FILE *data_file = NULL, *index_file = NULL;
-      size_t offset = 0;
-
-      data_file  = fopen(data_filename, "w");
-      if( data_file == NULL) {
-        HH_LOG(ERROR) << "Could not open " << data_filename << std::endl;
-        exit(1);
-      }
-
-      index_file = fopen(index_filename, "w");
-      if(index_file == NULL) {
-        HH_LOG(ERROR) << "Could not open " << index_filename << std::endl;
-        exit(1);
-      }
-
-      offset = 0;
-
-      /* Append other ffindexes */
-      for (int i = 0; i < mpi_num_procs; i++) {
-        char data_file_name_to_add[FILENAME_MAX];
-        char index_file_name_to_add[FILENAME_MAX];
-
-        snprintf(data_file_name_to_add, FILENAME_MAX, "%s.%d.ffdata", base, i);
-        snprintf(index_file_name_to_add, FILENAME_MAX, "%s.%d.ffindex", base,
-            i);
-
-        FILE* data_file_to_add = fopen(data_file_name_to_add, "r");
-        if (data_file_to_add == NULL) {
-          //TODO: throw error
-        }
-
-        FILE* index_file_to_add = fopen(index_file_name_to_add, "r");
-        if (index_file_to_add == NULL) {
-          //TODO: throw error
-        }
-
-        size_t data_size;
-        char *data_to_add = ffindex_mmap_data(data_file_to_add, &data_size);
-        ffindex_index_t* index_to_add = ffindex_index_parse(index_file_to_add,
-            0);
-
-        for(size_t entry_i = 0; entry_i < index_to_add->n_entries; entry_i++)
-        {
-          ffindex_entry_t *entry = ffindex_get_entry_by_index(index_to_add, entry_i);
-          ffindex_insert_memory(data_file, index_file, &offset, ffindex_get_data_by_entry(data_to_add, entry), entry->length - 1, entry->name);
-        }
-
-        fclose(data_file_to_add);
-        fclose(index_file_to_add);
-
-        remove(data_file_name_to_add);
-        remove(index_file_name_to_add);
-
-        //TODO: free memory???
-      }
-
-      fclose(data_file);
-
-      /* Sort the index entries and write back */
-      rewind(index_file);
-      ffindex_index_t* index = ffindex_index_parse(index_file, 0);
-      if (index == NULL) {
-        //TODO: throw error
-      }
-      fclose(index_file);
-      ffindex_sort_index_file(index);
-      index_file = fopen(index_filename, "w");
-      if (index_file == NULL) {
-        //TODO: throw error
-      }
-      ffindex_write(index, index_file);
-
-      fclose(index_file);
-      //TODO: free memory???
+      ffmerge_splits(data_filename, index_filename, mpi_num_procs, true);
     }
 };
 
@@ -141,9 +68,9 @@ void makeOutputFFIndex(char* par, const int mpi_rank,
     char data_filename_out_rank[NAMELEN];
     char index_filename_out_rank[NAMELEN];
 
-    snprintf(data_filename_out_rank, FILENAME_MAX, "%s.%d.ffdata", par,
+    snprintf(data_filename_out_rank, FILENAME_MAX, "%s.ffdata.%d", par,
         mpi_rank);
-    snprintf(index_filename_out_rank, FILENAME_MAX, "%s.%d.ffindex", par,
+    snprintf(index_filename_out_rank, FILENAME_MAX, "%s.ffindex.%d", par,
         mpi_rank);
 
     db.data_fh = fopen(data_filename_out_rank, "w+");
@@ -191,8 +118,8 @@ struct HHblits_MPQ_Wrapper {
       fclose(inf);
 
       for (size_t i = 0; i < outputDatabases->size(); i++) {
-	    outputDatabases->operator [](i).saveOutput(*hhblits, entry->name);
-	  }
+        outputDatabases->operator [](i).saveOutput(*hhblits, entry->name);
+      }
     }
   }
 };

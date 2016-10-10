@@ -356,7 +356,8 @@ namespace cs {
 
         }
 
-        ff_sort_index(output_index_file.c_str(), output_index_fh);
+        fflush(output_index_fh);
+        ffsort_index(output_index_file.c_str(), output_index_fh);
 
         fclose(output_index_fh);
         fclose(output_data_fh);
