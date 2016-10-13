@@ -45,14 +45,16 @@ T** malloc_matrix(int dim1, int dim2) {
     // Compute mem sizes rounded up to nearest multiple of ALIGN_FLOAT
     size_t size_pointer_array = ICEIL(dim1*sizeof(T*), ALIGN_FLOAT);
     size_t dim2_padded = ICEIL(dim2*sizeof(T), ALIGN_FLOAT)/sizeof(T);
- 
+
     T** matrix = (T**) mem_align( ALIGN_FLOAT, size_pointer_array + dim1*dim2_padded*sizeof(T) );
     if (matrix == NULL)
         return matrix;
-    
+
     T* ptr = (T*) (matrix + (size_pointer_array/sizeof(T*)) );
     for (int i=0; i<dim1; ++i) {
         matrix[i] = ptr;
+        for (int j=0; j<dim2; ++j)
+            ptr[j] = T(0);
         ptr += dim2_padded;
     }
     return matrix;

@@ -413,10 +413,10 @@ void HHEntry::getTemplateHMM(FILE* dbf, char* name, Parameters& par,
       HH_LOG(ERROR) << "In " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
       HH_LOG(ERROR) << "\tThis should not happen!" << std::endl;
     }
-
-    while (strscn(line) == NULL)
-      fgetline(line, LINELEN, dbf);  // skip lines that contain only white space
-
+    while (strscn(line) == NULL) {
+    	
+	if (!fgetline(line, LINELEN, dbf)) break;  // skip lines that contain only white space
+    }
     // read HMMER3 format
     if (!strncmp(line, "HMMER3", 6)) {
       format = 1;

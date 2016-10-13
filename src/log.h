@@ -112,8 +112,8 @@ inline LogLevel Log::from_int(const int level) {
 typedef Log FILELog;
 
 #define HH_LOG(level) \
-    if (level > Log::reporting_level()) ; \
-    else Log().Get(level)
+  if (level <= Log::reporting_level()) \
+    Log().Get(level)
 
 inline std::string NowTime()
 {

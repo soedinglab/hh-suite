@@ -330,7 +330,7 @@ void HHblits::help(Parameters& par, char all) {
     printf(" -maxfilt                  max number of hits allowed to pass 2nd prefilter (default=%i)   \n", par.maxnumdb);
     printf(" -min_prefilter_hits       min number of hits to pass prefilter (default=%i)               \n", par.min_prefilter_hits);
     printf(" -prepre_smax_thresh       min score threshold of ungapped prefilter (default=%i)               \n", par.preprefilter_smax_thresh);
-    printf(" -pre_evalue_thresh        max E-value threshold of Smith-Waterman prefilter score (default=%i)\n", par.prefilter_evalue_thresh);
+    printf(" -pre_evalue_thresh        max E-value threshold of Smith-Waterman prefilter score (default=%f)\n", par.prefilter_evalue_thresh);
     printf(" -pre_bitfactor            prefilter scores are in units of 1 bit / pre_bitfactor (default=%i)\n", par.prefilter_bit_factor);
     printf(" -pre_gap_open             gap open penalty in prefilter Smith-Waterman alignment (default=%i)\n", par.prefilter_gap_open);
     printf(" -pre_gap_extend           gap extend penalty in prefilter Smith-Waterman alignment (default=%i)\n", par.prefilter_gap_extend);
@@ -640,7 +640,7 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
         par.matrix = 80;
       else
         HH_LOG(WARNING) << "Ignoring unknown option " << argv[i] << std::endl;
-    } else if (!strcmp(argv[i], "-M") && (i < argc - 1))
+    } else if (!strcmp(argv[i], "-M") && (i < argc - 1)) {
       if (!strcmp(argv[++i], "a2m") || !strcmp(argv[i], "a3m"))
         par.M = 1;
       else if (!strcmp(argv[i], "first"))
@@ -650,6 +650,7 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
         par.M = 2;
       } else
         HH_LOG(WARNING) << "Ignoring unknown argument: -M " << argv[i] << std::endl;
+    }
     else if (!strcmp(argv[i], "-p") && (i < argc - 1))
       par.p = atof(argv[++i]);
     else if (!strcmp(argv[i], "-E") && (i < argc - 1))

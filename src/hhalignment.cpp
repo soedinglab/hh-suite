@@ -1305,13 +1305,17 @@ void Alignment::Compress(const char infile[], const char cons, const int maxres,
       for (i = 1; i <= L; ++i)
         HH_LOG(DEBUG1) << char(i2aa(X[k][i]));
       HH_LOG(DEBUG1) << "\n";
-      for (i = 1; i <= L; ++i)
-        if (I[k][i] == 0)
+      for (i = 1; i <= L; ++i) {
+        if (I[k][i] == 0) {
           HH_LOG(DEBUG1) << "-";
-        else if (I[k][i] > 9)
+        }
+        else if (I[k][i] > 9) {
           HH_LOG(DEBUG1) << "X";
-        else
-        HH_LOG(DEBUG1) << I[k][i];
+        }
+        else {
+          HH_LOG(DEBUG1) << I[k][i];
+        }
+      }
     }
     HH_LOG(DEBUG1) << "\n";
   }
@@ -3175,13 +3179,15 @@ void Alignment::Transitions_from_I_state(HMM* q, char* in, const int maxres) {
         }
 
         // Check whether number of columns in subalignment is sufficient
-        if (ncol >= NCOLMIN)
+        if (ncol >= NCOLMIN) {
           // Take global weights
-          for (k = 0; k < N_in; ++k)
+          for (k = 0; k < N_in; ++k) {
             if (in[k] && I[k][i] > 0)
               wi[k] = wg[k];
             else
               wi[k] = 0.0;
+          }
+        }
 
         // Calculate Neff[i]
         Neff[i] = 0.0;
@@ -3380,13 +3386,15 @@ void Alignment::Transitions_from_D_state(HMM* q, char* in, const int maxres) {
         }
 
         // Check whether number of columns in subalignment is sufficient
-        if (ncol < NCOLMIN)
+        if (ncol < NCOLMIN) {
           // Take global weights
-          for (k = 0; k < N_in; ++k)
+          for (k = 0; k < N_in; ++k) {
             if (in[k] && X[k][i] == GAP)
               wi[k] = wg[k];
             else
               wi[k] = 0.0;
+          }
+        }
 
         // Calculate Neff[i]
         Neff[i] = 0.0;

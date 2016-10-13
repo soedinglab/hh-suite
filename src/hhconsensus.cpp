@@ -33,7 +33,7 @@
 #include "hhhalfalignment.h" // class HalfAlignment
 #include "hhfunc.h"      // some functions common to hh programs
 /////////////////////////////////////////////////////////////////////////////////////
-// Global variables 
+// Global variables
 /////////////////////////////////////////////////////////////////////////////////////
 Parameters par;
 
@@ -206,7 +206,7 @@ void ProcessArguments(int argc, char** argv) {
       par.coverage = atoi(argv[++i]);
     else if (!strcmp(argv[i], "-diff") && (i < argc - 1))
       par.Ndiff = atoi(argv[++i]);
-    else if (!strcmp(argv[i], "-M") && (i < argc - 1))
+    else if (!strcmp(argv[i], "-M") && (i < argc - 1)) {
       if (!strcmp(argv[++i], "a2m") || !strcmp(argv[i], "a3m"))
         par.M = 1;
       else if (!strcmp(argv[i], "first"))
@@ -217,6 +217,7 @@ void ProcessArguments(int argc, char** argv) {
       }
       else
         HH_LOG(WARNING) << "Ignoring unknown argument: -M " << argv[i] << std::endl;
+    }
     else if (!strcmp(argv[i], "-Gonnet"))
       par.matrix = 0;
     else if (!strncmp(argv[i], "-BLOSUM", 7)
@@ -300,7 +301,7 @@ int main(int argc, char **argv) {
   strcpy(par.infile, "");
   strcpy(par.outfile, "");
   strcpy(par.alnfile, "");
-  
+
   //Default parameter settings
   par.nseqdis = MAXSEQ - 1;        // maximum number of sequences to be written
   par.showcons = 0;
@@ -316,7 +317,7 @@ int main(int argc, char **argv) {
   par.argv = argv;
   par.argc = argc;
   RemovePathAndExtension(program_name, argv[0]);
-  
+
   // Enable changing verbose mode before defaults file and command line are processed
   int v = 2;
   for (int i = 1; i < argc; i++) {
@@ -408,13 +409,13 @@ int main(int argc, char **argv) {
     q->AddAminoAcidPseudocounts(0, par.pc_hhm_nocontext_a,
         par.pc_hhm_nocontext_b, par.pc_hhm_nocontext_c);
   }
-  
+
   q->CalculateAminoAcidBackground(pb);
-  
+
   if (par.columnscore == 5 && !q->divided_by_local_bg_freqs)
     q->DivideBySqrtOfLocalBackgroundFreqs(
         par.half_window_size_local_aa_bg_freqs, pb);
-  
+
   // Write consensus sequence to sequence file
   // Consensus sequence is calculated in hhalignment.C, Alignment::FrequenciesAndTransitions()
   if (*par.outfile) {
@@ -463,4 +464,3 @@ int main(int argc, char **argv) {
       pc_hhm_context_mode, pc_prefilter_context_engine,
       pc_prefilter_context_mode);
 }
-

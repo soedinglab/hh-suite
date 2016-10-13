@@ -17,7 +17,7 @@
 
 //     We are very grateful for bug reports! Please contact us at soeding@mpibpc.mpg.de
 
-//     Reference: 
+//     Reference:
 //     Remmert M., Biegert A., Hauser A., and Soding J.
 //     HHblits: Lightning-fast iterative protein sequence searching by HMM-HMM alignment.
 //     Nat. Methods, epub Dec 25, doi: 10.1038/NMETH.1818 (2011).
@@ -261,7 +261,7 @@ void ProcessArguments(int argc, char** argv) {
       par.Neff = atof(argv[++i]);
     else if (!strcmp(argv[i], "-Neff") && (i < argc - 1))
       par.Neff = atof(argv[++i]);
-    else if (!strcmp(argv[i], "-M") && (i < argc - 1))
+    else if (!strcmp(argv[i], "-M") && (i < argc - 1)) {
       if (!strcmp(argv[++i], "a2m") || !strcmp(argv[i], "a3m"))
         par.M = 1;
       else if (!strcmp(argv[i], "first"))
@@ -272,6 +272,7 @@ void ProcessArguments(int argc, char** argv) {
       }
       else
         HH_LOG(WARNING) << "Ignoring unknown argument: -M " << argv[i] << std::endl;
+    }
     else if (!strcmp(argv[i], "-Gonnet"))
       par.matrix = 0;
     else if (!strncmp(argv[i], "-BLOSUM", 7)
@@ -465,4 +466,3 @@ int main(int argc, char **argv) {
   delete Qali;
   DeletePseudocountsEngine(context_lib, crf, pc_hhm_context_engine, pc_hhm_context_mode, pc_prefilter_context_engine, pc_prefilter_context_mode);
 }
-
