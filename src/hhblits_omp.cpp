@@ -32,7 +32,7 @@ struct OutputFFIndex {
       snprintf(index_filename, FILENAME_MAX, "%s.ffindex", base);
 
       fflush(index_fh);
-      ffsort_index(index_filename, index_fh);
+      ffsort_index(index_filename, &index_fh);
 
       fclose(index_fh);
       fclose(data_fh);
@@ -52,6 +52,7 @@ struct OutputFFIndex {
     }
 
     void sort() {
+      return;
       /* Sort the index entries and write back */
       char index_filename[NAMELEN];
       snprintf(index_filename, FILENAME_MAX, "%s.ffindex", base);

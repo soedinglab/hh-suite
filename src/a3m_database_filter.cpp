@@ -201,7 +201,7 @@ int main(int argc, char **argv) {
   }
 
   fflush(oa3m_index_fh);
-  ffsort_index(oa3mIndexFile.c_str(), oa3m_index_fh);
+  ffsort_index(oa3mIndexFile.c_str(), &oa3m_index_fh);
 
   fclose(oa3m_index_fh);
   fclose(oa3m_data_fh);
