@@ -356,11 +356,11 @@ namespace cs {
 
         }
 
-        fflush(output_index_fh);
-        ffsort_index(output_index_file.c_str(), &output_index_fh);
-
         fclose(output_index_fh);
         fclose(output_data_fh);
+
+
+        ffsort_index(output_index_file.c_str());
 
         if (isCa3m) {
           delete sequence_db;

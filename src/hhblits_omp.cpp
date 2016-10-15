@@ -31,11 +31,10 @@ struct OutputFFIndex {
       char index_filename[NAMELEN];
       snprintf(index_filename, FILENAME_MAX, "%s.ffindex", base);
 
-      fflush(index_fh);
-      ffsort_index(index_filename, &index_fh);
-
       fclose(index_fh);
       fclose(data_fh);
+
+      ffsort_index(index_filename);
     }
 
     void saveOutput(HHblits& hhblits, char* name) {
@@ -49,34 +48,6 @@ struct OutputFFIndex {
       fflush(data_fh);
       fflush(index_fh);
       number_entries++;
-    }
-
-    void sort() {
-      return;
-      /* Sort the index entries and write back */
-      char index_filename[NAMELEN];
-      snprintf(index_filename, FILENAME_MAX, "%s.ffindex", base);
-
-      rewind(index_fh);
-      ffindex_index_t* index = ffindex_index_parse(index_fh, number_entries);
-      fclose(index_fh);
-
-      if (index == NULL) {
-        HH_LOG(ERROR) << "Could not read index from " << index_filename << " for sorting!" << std::endl;
-        return;
-      }
-
-      ffindex_sort_index_file(index);
-
-      index_fh = fopen(index_filename, "w");
-
-      if (index_fh == NULL) {
-        HH_LOG(ERROR) << "Could not open " << index_filename << " for sorting!" << std::endl;
-        return;
-      }
-
-      ffindex_write(index, index_fh);
-      free(index);
     }
 };
 
@@ -243,7 +214,6 @@ int main(int argc, char **argv) {
   databases.clear();
 
   for (size_t i = 0; i < outputDatabases.size(); i++) {
-    outputDatabases[i].sort();
     outputDatabases[i].close();
   }
 }

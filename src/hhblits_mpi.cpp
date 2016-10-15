@@ -7,6 +7,7 @@
 
 #include <mpi.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include "hhdecl.h"
 #include "hhblits.h"
 
@@ -43,16 +44,6 @@ struct OutputFFIndex {
       fflush(data_fh);
       fflush(index_fh);
     }
-
-    void merge(const int mpi_num_procs) {
-      char data_filename[FILENAME_MAX];
-      char index_filename[FILENAME_MAX];
-
-      snprintf(data_filename, FILENAME_MAX, "%s.ffdata", base);
-      snprintf(index_filename, FILENAME_MAX, "%s.ffindex", base);
-
-      ffmerge_splits(data_filename, index_filename, mpi_num_procs, true);
-    }
 };
 
 void makeOutputFFIndex(char* par, const int mpi_rank,
@@ -69,9 +60,9 @@ void makeOutputFFIndex(char* par, const int mpi_rank,
     char index_filename_out_rank[NAMELEN];
 
     snprintf(data_filename_out_rank, FILENAME_MAX, "%s.ffdata.%d", par,
-        mpi_rank);
+        mpi_rank - 1);
     snprintf(index_filename_out_rank, FILENAME_MAX, "%s.ffindex.%d", par,
-        mpi_rank);
+        mpi_rank - 1);
 
     db.data_fh = fopen(data_filename_out_rank, "w+");
     db.index_fh = fopen(index_filename_out_rank, "w+");
@@ -87,6 +78,18 @@ void makeOutputFFIndex(char* par, const int mpi_rank,
     }
 
     outDatabases.push_back(db);
+  }
+}
+
+void merge_splits(const char* prefix) {
+  if (*prefix) {
+    char data_filename[FILENAME_MAX];
+    char index_filename[FILENAME_MAX];
+
+    snprintf(data_filename, FILENAME_MAX, "%s.ffdata", prefix);
+    snprintf(index_filename, FILENAME_MAX, "%s.ffindex", prefix);
+
+    ffmerge_splits(data_filename, index_filename, MPQ_size - 1, true);
   }
 }
 
@@ -175,6 +178,7 @@ int main(int argc, char **argv) {
   }
 
   int mpq_status = MPQ_Init(argc, argv, index->n_entries);
+
   if (mpq_status == MPQ_SUCCESS) {
     if (MPQ_rank == MPQ_MASTER) {
       MPQ_Master(1);
@@ -214,14 +218,20 @@ int main(int argc, char **argv) {
       for (size_t i = 0; i < outputDatabases.size(); i++) {
         outputDatabases[i].close();
       }
+    }
 
-      MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(MPI_COMM_WORLD);
 
-      if (MPQ_rank == MPQ_MASTER) {
-        for (size_t i = 0; i < outputDatabases.size(); i++) {
-          outputDatabases[i].merge(MPQ_size);
-        }
-      }
+    if (MPQ_rank == MPQ_MASTER) {
+      merge_splits(par.outfile);
+      merge_splits(par.scorefile);
+      merge_splits(par.pairwisealisfile);
+      merge_splits(par.alitabfile);
+      merge_splits(par.psifile);
+      merge_splits(par.hhmfile);
+      merge_splits(par.alnfile);
+      merge_splits(par.matrices_output_file);
+      merge_splits(par.m8file);
     }
   } else {
     if (mpq_status == MPQ_ERROR_NO_WORKERS) {
