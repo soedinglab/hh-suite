@@ -182,6 +182,10 @@ int compressed_a3m::compress_a3m(char* input, size_t input_size,
       header = std::string(&input[start_index], index - start_index);
 
       id = getNameFromHeader(header);
+      std::cerr << id << std::endl;
+      id = getShortIdFromHeader(id);
+      std::cerr << id << std::endl;
+
 
       //check if consensus or sequence
       consensus_flag = isConsensus(id);
