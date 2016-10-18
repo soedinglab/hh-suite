@@ -164,6 +164,6 @@ int main(int argc, char **argv) {
   fclose(ca3m_index_fh);
   fclose(ca3m_data_fh);
 
-  ffsort_index(a3mIndexFile.c_str());
+  ffsort_index(ca3mIndexFile.c_str());
 }
 

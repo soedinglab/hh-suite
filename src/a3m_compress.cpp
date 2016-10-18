@@ -161,7 +161,8 @@ int compressed_a3m::compress_a3m(char* input, size_t input_size,
           nr_consensus++;
         }
         else {
-          if(compressed_a3m::compress_sequence(id, sequence,
+          std::string short_id = getShortIdFromHeader(id);
+          if(compressed_a3m::compress_sequence(short_id, sequence,
               ffindex_sequence_database_index, ffindex_sequence_database_data,
               output)) {
             nr_sequences++;
@@ -182,10 +183,6 @@ int compressed_a3m::compress_a3m(char* input, size_t input_size,
       header = std::string(&input[start_index], index - start_index);
 
       id = getNameFromHeader(header);
-      std::cerr << id << std::endl;
-      id = getShortIdFromHeader(id);
-      std::cerr << id << std::endl;
-
 
       //check if consensus or sequence
       consensus_flag = isConsensus(id);
