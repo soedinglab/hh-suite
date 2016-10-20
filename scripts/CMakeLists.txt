@@ -27,5 +27,6 @@ INSTALL(PROGRAMS
 	pdbfilter.py
 	cif2fasta.py
 	hhmakemodel.py
+  hh_reader.py
 	DESTINATION scripts
 )
