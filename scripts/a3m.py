@@ -12,7 +12,7 @@ class A3MFormatError(Exception):
 class A3M_Container:
     RESIDUES = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     VALID_MATCH_STATES = set(RESIDUES)
-    VALID_INSERTION_STATES = set(RESIDUES)
+    VALID_INSERTION_STATES = set(RESIDUES.lower())
     VALID_GAP_STATES = set("-.")
     VALID_SS_CONF_STATES = set("0123456789")
     VALID_SS_STATES = set("ECH")
@@ -131,6 +131,7 @@ class A3M_Container:
 
         invalid_states = set(sequence) - self.VALID_MATCH_STATES
         invalid_states -= self.VALID_GAP_STATES
+        invalid_states -= self.VALID_INSERTION_STATES
 
         if len(invalid_states):
             raise A3MFormatError(

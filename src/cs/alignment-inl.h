@@ -153,9 +153,33 @@ void Alignment<Abc>::Read(FILE* fin, AlignmentFormat format) {
         default:
             throw Exception("Unsupported alignment input format %i!", format);
     }
+
     Init(headers, seqs);
 
     LOG(DEBUG4) << *this;
+}
+
+template<class Abc>
+void Alignment<Abc>::FilterSequencesByHeaders(std::vector<std::string>& headers, std::vector<std::string>& seqs) {
+    std::vector<std::string> ignored_headers;
+    ignored_headers.push_back("ss_pred");
+    ignored_headers.push_back("ss_conf");
+    ignored_headers.push_back("ss_dssp");
+
+    for (int i = headers.size() - 1; i >= 0; i--) {
+        bool remove_header = false;
+        for (size_t j = 0; j < ignored_headers.size(); j++) {
+            if (!headers[i].compare(0, ignored_headers[j].size(), ignored_headers[j])) {
+                remove_header = true;
+                break;
+            }
+        }
+        //TODO: also delete consensus sequence if included???
+        if(remove_header) {
+            headers.erase(headers.begin() + i);
+            seqs.erase(seqs.begin() + i);
+        }
+    }
 }
 
 template<class Abc>
@@ -281,6 +305,8 @@ void Alignment<Abc>::ReadA2M(FILE* fin, std::vector<std::string>& headers, std::
 template<class Abc>
 void Alignment<Abc>::ReadA3M(FILE* fin, std::vector<std::string>& headers, std::vector<std::string>& seqs) {
     ReadFastaFlavors(fin, headers, seqs);
+
+    FilterSequencesByHeaders(headers, seqs);
 
     // Check number of match states
     const size_t nseqs = seqs.size();

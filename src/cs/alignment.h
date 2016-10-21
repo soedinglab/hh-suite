@@ -76,6 +76,9 @@ class Alignment {
 	  // Fills match_idx__ with the indices of all match columns.
 	  void SetMatchIndices();
 
+    // Removes sequences with headers indicating non-protein sequences (secondary structure predictions)
+    void FilterSequencesByHeaders(std::vector<std::string>& headers, std::vector<std::string>& seqs);
+
 	  // Reads an alignment in FASTA format.
 	  void ReadFasta(FILE* fin, std::vector<std::string>& headers, std::vector<std::string>& seqs);
 
