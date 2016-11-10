@@ -660,7 +660,7 @@ The number of HHblits search iterations and the HMM inclusion E-value threshold 
 Now, add PSIPRED-predicted secondary structure and if possible DSSP secondary structure annotation to all MSAs:
 \begin{verbatim}
 $ mpirun -np <number_threads> ffindex_apply_mpi <db>_a3m_wo_ss.ff{data,index} \\
-    -i <db>_a3m.ffindex -d <db>_a3m.ffdata -- addss.pl stdin stdout 
+    -i <db>_a3m.ffindex -d <db>_a3m.ffdata -- addss.pl -v 0 stdin stdout
 $ rm <db>_wo_ss_a3m.ff{data,index}
 \end{verbatim}
 
@@ -668,7 +668,7 @@ We also need to generate an HHM file for each MSA file:
 
 \begin{verbatim}
 $ mpirun -np <number_threads> ffindex_apply_mpi <db>_a3m.ff{data,index} \\
-    -i <db>_hhm.ffindex -d <db>_hhm.ffindex -- hhmake -i stdin -o stdout -v 0
+    -i <db>_hhm.ffindex -d <db>_hhm.ffdata -- hhmake -i stdin -o stdout -v 0
 \end{verbatim}
 
 In order to build the ffindex containing the column state sequences for prefiltering for each a3m we run:
