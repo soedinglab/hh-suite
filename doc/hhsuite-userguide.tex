@@ -387,7 +387,7 @@ hhblits        (Iteratively) search an HHsuite database with a query sequence or
 hhsearch       Search an HHsuite database with a query MSA or HMM
 hhmake         Build an HMM from an input MSA 
 hhfilter       Filter an MSA by max sequence identity, coverage, and other criteria
-hhalign        Calculate pairwise alignments, dot plots etc. for two HMMs/MSAs
+hhalign        Calculate pairwise alignments etc. for two HMMs/MSAs
 hhconsensus    Calculate the consensus sequence for an A3M/FASTA input file
 
 reformat.pl    Reformat one or many MSAs
@@ -1936,8 +1936,7 @@ Align a query alignment/HMM to a template alignment/HMM by HMM-HMM alignment.
 If only one alignment/HMM is given it is compared to itself and the best
 off-diagonal alignment plus all further non-overlapping alignments above 
 significance threshold are shown. The command also allows to sample
-alignments randomly, to generate png-files with dot plots showing 
-alignments or to print out a list of indices of aligned residue pairs. 
+alignments randomly or to print out a list of indices of aligned residue pairs. 
 
 \small 
 \begin{verbatim}
@@ -2486,7 +2485,7 @@ your \verb`.bashrc` or equivalent file instead (See Installation).
   reliable as for -local. The Probabilities were recalibrated.
 }
 \item{A new binary hhalign has been added. It is similar to hhsearch, but performs
-  only pairwise comparisons. It can produce dot plots, tables of aligned 
+  only pairwise comparisons. It can produce tables of aligned 
   residues, and it can sample alternative alignments stochastically. It uses 
   the MAC algorithm by default. 
 }

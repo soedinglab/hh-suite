@@ -1081,13 +1081,14 @@ void Alignment::Compress(const char infile[], const char cons, const int maxres,
       for (l = 1; l <= L; l++) {
         float res = 0;
         float gap = 0;
-        for (k = 0; k < N_in; ++k)
+        for (k = 0; k < N_in; ++k) {
           if (keep[k]) {
             if (X[k][l] < GAP)
               res += wg[k];   // AA or ANY; Changed from <ANY
-            else if (X[k][l] != ENDGAP)
+            else// if (X[k][l] != ENDGAP)
               gap += wg[k];  // else: GAP. ENDGAPs are ignored for counting percentage (multi-domain proteins)
           }
+        }
         percent_gaps[l] = 100. * gap / (res + gap);
         HH_LOG(DEBUG1) << "percent gaps[" << l << "]="
                                  << percent_gaps[l] << " first seq:"
