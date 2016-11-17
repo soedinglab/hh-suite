@@ -50,7 +50,7 @@ void HHalign::help(Parameters& par, char all) {
   printf("%s", COPYRIGHT);
   printf("\n");
 
-  printf("Usage: hhalign -i query [-t template] [options]  \n");
+  printf("Usage: hhalign -i query -t template [options]  \n");
   printf(" -i <file>      input/query: single sequence or multiple sequence alignment (MSA)\n");
   printf("                in a3m, a2m, or FASTA format, or HMM in hhm format\n");
   printf(" -t <file>      input/template: single sequence or multiple sequence alignment (MSA)\n");
