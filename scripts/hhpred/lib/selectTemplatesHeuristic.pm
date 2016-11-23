@@ -82,7 +82,6 @@ sub presetAccPosteriors {
     my $queryLength = shift;
     my $outbase = shift;
     my $tlist = shift;
-    my $config = shift;
 
     my $verbose = 3;
 
@@ -224,8 +223,6 @@ sub ChooseTemplatesScoringHeuristic
                              ## if preselect = 2 => preselect first element in predictions
                              ## otherwise do not preselect anything
     my $templateList = shift;
-    my $config = shift;
-
 
     my $verbose = 3;
 
@@ -262,7 +259,7 @@ sub ChooseTemplatesScoringHeuristic
     my %accepted;
     
     ## calculate posterior probabilities for all templates in list
-    %accPosteriors = &presetAccPosteriors($queryLength, $outbase, $templateList, $config);
+    %accPosteriors = &presetAccPosteriors($queryLength, $outbase, $templateList);
 
     ## set maxProb to zero array
     for (my $i=0; $i<$queryLength; $i++) {
@@ -281,7 +278,7 @@ sub ChooseTemplatesScoringHeuristic
 
 	## for each preselected template, calculate posterior probabilities 
 	print "calling presetAccPosteriors...\n";
-	my %accPosteriorsPreset = &presetAccPosteriors($queryLength, $outbase, $preselectedTemplates, $config);
+	my %accPosteriorsPreset = &presetAccPosteriors($queryLength, $outbase, $preselectedTemplates);
 
 	## to be filled with all not preselected templates
 	my $tmpTemplateList = TemplateList->new();
