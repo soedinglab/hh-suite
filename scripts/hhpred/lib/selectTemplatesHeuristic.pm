@@ -216,7 +216,6 @@ sub UpdateMaxProb {
 ## TODO: split this function into 2 parts?
 sub ChooseTemplatesScoringHeuristic 
 {
-    my $queryName = shift;
     my $queryPath = shift;
     my $queryLength = shift;
     my $outbase = shift;

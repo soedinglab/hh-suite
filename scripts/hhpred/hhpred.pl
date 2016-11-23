@@ -199,7 +199,7 @@ $tList->print();
 ## preselect template (best according to similarity, sumprobs, probability
 ## and fill up rest with heuristic
 if ($config->get_preselectTemplates()) {
-    $tList = &ChooseTemplatesScoringHeuristic($queryName, $workingDir, $queryLength, $outbase, 100, 1, $tList, $config);
+    $tList = &ChooseTemplatesScoringHeuristic($workingDir, $queryLength, $outbase, 100, 1, $tList, $config);
 
     print "preselected templates:\n";
     $tList->print();
@@ -233,7 +233,7 @@ if ($config->get_rankTemplates()) {
 ## final template selection
 if ($config->get_multiTemplate()) {
     my $maxNumTemplates = $config->get_maxNumOfTemplates();
-    $tList = &ChooseTemplatesScoringHeuristic($queryName, $workingDir, $queryLength, $outbase, $maxNumTemplates, 2, $tList, $config);
+    $tList = &ChooseTemplatesScoringHeuristic($workingDir, $queryLength, $outbase, $maxNumTemplates, 2, $tList, $config);
 } else {
     $tList = &SingleTemplateSelection($tList);
 }
