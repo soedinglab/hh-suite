@@ -7,6 +7,9 @@ use strict;
 use config;
 use utilities;
 
+use File::Temp qw/ tempfile tempdir /;
+
+
 our @ISA = qw(Exporter);
 our @EXPORT = qw(Filtering FilteringRanking RemoveSSFromA3m);
 
@@ -56,7 +59,6 @@ sub RemoveSSFromA3m {
 ## 
 #######################################################
 sub Filtering {
-    my $queryName = shift;
     my $outbase = shift;        ## basename of outputs wrt query during filtering (e.g. filt.a3m), remove these outputs later
     my $templateList = shift;
     my $server = shift;
@@ -157,14 +159,8 @@ sub Filtering {
 #    my $pid   = getppid();
 
     ## copy a3m files into temporary directory
-    my $randID = &randBetween(1000, 9999);
-    my $tmpDir = "/tmp/Filtering$queryName$randID";
-    while (-e $tmpDir) {
-    $randID = &randBetween(1000, 9999);
-    $tmpDir .= "$randID";
-    }
-    
-    &System("mkdir $tmpDir");   
+    my $tmpDir = tempdir( CLEANUP => 1 );    
+
 
     for (my $i=0; $i<$templateList->size(); $i++) {
     my $tt = $templateList->get($i);
@@ -187,7 +183,7 @@ sub Filtering {
     #filtersteps:
     #############       
 
-    &System("cp $outbase.a3m $tmpDir/$queryName.filt.a3m");
+    &System("cp $outbase.a3m $tmpDir/query.filt.a3m");
 
     
     my $hhrnr = -1; 
@@ -229,15 +225,15 @@ sub Filtering {
         }
         
         #filter query:
-        &System("$hhfilter -i $tmpDir/$queryName.filt.a3m -id 100 -diff 0 -qsc  $qsc -o $tmpDir/$queryName.filt.a3m -v 1");      
+        &System("$hhfilter -i $tmpDir/query.filt.a3m -id 100 -diff 0 -qsc  $qsc -o $tmpDir/query.filt.a3m -v 1");      
         
-        sleep 1 while ( !(-e "$tmpDir/$queryName.filt.a3m") );      
+        sleep 1 while ( !(-e "$tmpDir/query.filt.a3m") );      
 
-        &System("$hhmake -i $tmpDir/$queryName.filt.a3m -diff 100 -o $tmpDir/$queryName.filt.hhm -v 1"); 
-        sleep 1 while ( !(-e "$tmpDir/$queryName.filt.hhm") );      
+        &System("$hhmake -i $tmpDir/query.filt.a3m -diff 100 -o $tmpDir/query.filt.hhm -v 1"); 
+        sleep 1 while ( !(-e "$tmpDir/query.filt.hhm") );      
         
         #hhsearch:
-        &System($config->get_hhsearch() . " -cpu " . $config->get_cpus() . " -i $tmpDir/$queryName.filt.hhm -d \"$db\" -o $outbase.$hhrnr.hhr $options -Z $HITS -B $HITS -atab $outbase.$hhrnr.tab");       
+        &System($config->get_hhsearch() . " -cpu " . $config->get_cpus() . " -i $tmpDir/query.filt.hhm -d \"$db\" -o $outbase.$hhrnr.hhr $options -Z $HITS -B $HITS -atab $outbase.$hhrnr.tab");       
 
         sleep 1 while ( !(-e "$outbase.$hhrnr.hhr") );      
 

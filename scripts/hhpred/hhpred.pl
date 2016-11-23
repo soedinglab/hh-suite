@@ -209,7 +209,7 @@ if ($config->get_preselectTemplates()) {
 #############################
 ## filtering
 if ($config->get_doFiltering()) {
-    $tList =  &Filtering($queryName, $outbase, $tList, $server, $config);
+    $tList =  &Filtering($outbase, $tList, $server, $config);
 
     print "Filtered templates:\n";
     $tList->print();
