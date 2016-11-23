@@ -61,7 +61,6 @@ sub RemoveSSFromA3m {
 sub Filtering {
     my $outbase = shift;        ## basename of outputs wrt query during filtering (e.g. filt.a3m), remove these outputs later
     my $templateList = shift;
-    my $server = shift;
     my $config = shift;
     my $qscStep = shift || 0.1;
 
