@@ -241,7 +241,6 @@ sub ChooseTemplatesScoringHeuristic
     
     my %templateAlreadyAccepted;
     
-    my $inbase = "$queryPath/$queryName";
     ## heuristic parameter
     my $alpha = 1;
     my $yshift = 0.95;
