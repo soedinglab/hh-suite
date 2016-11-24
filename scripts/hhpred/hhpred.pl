@@ -220,7 +220,7 @@ if ($config->get_doFiltering()) {
 ## rank templates with NN
 if ($config->get_rankTemplates()) {
     my $rankingNN = TMscoreNN->new();
-    $rankingNN->rank_templates($tList, $queryLength, $config);
+    $rankingNN->rank_templates($tList, $queryLength);
     
     $allRankedTemplates = $tList;
 
