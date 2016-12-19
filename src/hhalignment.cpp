@@ -1100,8 +1100,22 @@ void Alignment::Compress(const char infile[], const char cons, const int maxres,
         h[k] = 1;
         seq[k][0] = '-';
       }
+
+      int border = 0;
+      if(L <= 20) {
+        border = 0;
+      }
+      else if(L <= 40) {
+        border = 20;
+      }
+      else {
+        border = 40;
+      }
+
       for (l = 1; l <= L; l++) {
-        if (percent_gaps[l] <= float(Mgaps)) {
+        // for first and last columns look for slightly shifted columns for nr gaps
+        if ((l <= L - border && percent_gaps[std::max(border, l)] <= float(Mgaps)) ||
+            (l > border && percent_gaps[std::min(L - border + 1, l)] <= float(Mgaps))) {
           if (i >= maxres - 2) {
             HH_LOG(WARNING)
                 << "Number of match columns too large. Only first "
