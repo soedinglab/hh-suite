@@ -570,6 +570,11 @@ void HitList::PrintMatrices(HMM* q, std::stringstream& out,
      const bool filter_matrices, const size_t max_number_matrices, const float S[20][20]) {
   //limit matrices to par.max_number_matrices
   std::vector<Hit> hits;
+  int protein_max_length = 4000;
+
+  if(q->L >= protein_max_length) {
+    return;
+  }
 
   //remove invalid alignments
   const float tolerance = 0.10;
@@ -614,7 +619,7 @@ void HitList::PrintMatrices(HMM* q, std::stringstream& out,
   for (int index1 = hits.size() - 1; index1 >= 0; index1--) {
     Hit it = hits[index1];
     
-    if (it.Probab < matix_probability_threshold) {
+    if (it.Probab < matix_probability_threshold || it.L >= protein_max_length) {
       picked_alignments[index1] = false;
       chosen--;
     }
