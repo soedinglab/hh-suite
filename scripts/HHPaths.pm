@@ -28,7 +28,7 @@ package HHPaths;
 use vars qw(@ISA @EXPORT @EXPORT_OK %EXPORT_TAGS $VERSION);
 use Exporter;
 our $v;
-our $VERSION = "version 2.0.16 (February 2013)";
+our $VERSION = "version 3.0.0 (15-03-2015)";
 our @ISA     = qw(Exporter);
 our @EXPORT  = qw($VERSION $hhlib $hhdata $hhbin $hhscripts $execdir $datadir $ncbidir $dummydb $pdbdir $dsspdir $dssp $cs_lib $context_lib $v);
 
