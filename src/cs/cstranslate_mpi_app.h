@@ -142,9 +142,9 @@ namespace cs {
 
         MPI_Barrier(MPI_COMM_WORLD);
         if (MPQ_rank == MPQ_MASTER) {
-          ffmerge_splits(data_filename_out[0].c_str(), index_filename_out[0].c_str(), MPQ_size - 1, 1);
+          ffmerge_splits(data_filename_out[0].c_str(), index_filename_out[0].c_str(), 1, MPQ_size, true);
           if (this->opts_.both) {
-            ffmerge_splits(data_filename_out[1].c_str(), index_filename_out[1].c_str(), MPQ_size - 1, 1);
+            ffmerge_splits(data_filename_out[1].c_str(), index_filename_out[1].c_str(), 1, MPQ_size, true);
           }
         }
       } else {
