@@ -1,4 +1,4 @@
-#!/usr/bin/env perl
+#!/usr/bin/perl
 #
 # addss.pl
 # Add PSIPRED secondary structure prediction (and DSSP annotation) to an MSA or HMMER file.

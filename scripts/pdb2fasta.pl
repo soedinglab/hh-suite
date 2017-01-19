@@ -1,4 +1,4 @@
-#! /usr/bin/env perl
+#! /usr/bin/perl
 #
 # pdb2fasta.pl - generate FASTA nonredundant sequence file from SEQRES records of globbed pdb files.
 

@@ -1,4 +1,4 @@
-#!/usr/bin/env perl
+#!/usr/bin/perl
 #
 # multithread.pl: 
 # Run a command with different file names as arguments on multiple threads in parallel 

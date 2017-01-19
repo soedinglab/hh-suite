@@ -1580,7 +1580,7 @@ Prefilter options
  -maxfilt                  max number of hits allowed to pass 2nd prefilter (default=20000)   
  -min_prefilter_hits       min number of hits to pass prefilter (default=100)               
  -prepre_smax_thresh       min score threshold of ungapped prefilter (default=10)               
- -pre_evalue_thresh        max E-value threshold of Smith-Waterman prefilter score (default=0)
+ -pre_evalue_thresh        max E-value threshold of Smith-Waterman prefilter score (default=1000.0)
  -pre_bitfactor            prefilter scores are in units of 1 bit / pre_bitfactor (default=4)
  -pre_gap_open             gap open penalty in prefilter Smith-Waterman alignment (default=20)
  -pre_gap_extend           gap extend penalty in prefilter Smith-Waterman alignment (default=4)
@@ -1689,7 +1689,7 @@ Other options:
  -neffmax ]1,20] skip further search iterations when diversity Neff of query MSA 
                 becomes larger than neffmax (default=10.0)
  -cpu <int>     number of CPUs to use (for shared memory SMPs) (default=2)      
- -scores <file> write scores for all pairwise comparisions to file               
+ -scores <file> write scores for all pairwise comparisons to file               
  -atab   <file> write all alignments in tabular layout to file                   
  -maxres <int>  max number of HMM columns (def=20001)             
  -maxmem [1,inf[ limit memory for realignment (in GB) (def=3.0)          
@@ -1820,7 +1820,7 @@ Pseudocount (pc) options:
 Other options:                                                                   
  -v <int>       verbose mode: 0:no screen output  1:only warings  2: verbose (def=2)
  -cpu <int>     number of CPUs to use (for shared memory SMPs) (default=2)      
- -scores <file> write scores for all pairwise comparisions to file               
+ -scores <file> write scores for all pairwise comparisons to file               
  -atab   <file> write all alignments in tabular layout to file                   
  -maxres <int>  max number of HMM columns (def=20001)             
  -maxmem [1,inf[ limit memory for realignment (in GB) (def=3.0)          

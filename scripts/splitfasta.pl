@@ -1,4 +1,4 @@
-#! /usr/bin/env perl
+#! /usr/bin/perl
 # splitfasta.pl 
 # Split a file with multiple, FASTA formatted sequences into many single-sequence FASTA files
 #

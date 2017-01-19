@@ -1,4 +1,4 @@
-#! /usr/bin/env perl
+#! /usr/bin/perl
 # pdbfilter.pl - Read pdb or SCOP sequences from infile and write representative set of sequences to outfile
 
 #

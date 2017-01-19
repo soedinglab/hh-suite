@@ -44,7 +44,7 @@ void CrfState<Abc>::Read(FILE* fin) {
     assert(len & 1);
     if (nalph != Abc::kSize)
         throw Exception("Alphabet size of serialized CRF state should be %d"
-                        "but is acutally %d!", Abc::kSize, nalph);
+                        "but is actually %d!", Abc::kSize, nalph);
 
     // If everything went fine we can resize our data memmbers
     context_weights.Resize(len);

@@ -1,4 +1,4 @@
-#!/usr/bin/env perl
+#!/usr/bin/perl
 # renumberpdb.pl - generate a PDB file with renumbered indices that match residue indices in input sequence
 # Usage:   renumberpdb.pl [options] infile [outfile] 
 # Example: renumberpdb.pl d1hz4a_.a3m d1hz4a_.pdb

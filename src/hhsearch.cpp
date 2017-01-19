@@ -238,10 +238,10 @@ void HHsearch::help(Parameters& par, char all) {
   }
 
 	printf("Other options:                                                                   \n");
-  printf(" -v <int>       verbose mode: 0:no screen output  1:only warings  2: verbose (def=%i)\n", par.v);
+  printf(" -v <int>       verbose mode: 0:no screen output  1:only warnings  2: verbose (def=%i)\n", par.v);
   printf(" -cpu <int>     number of CPUs to use (for shared memory SMPs) (default=%i)      \n", par.threads);
   if (all) {
-  printf(" -scores <file> write scores for all pairwise comparisions to file               \n");
+  printf(" -scores <file> write scores for all pairwise comparisons to file               \n");
     printf(" -atab   <file> write all alignments in tabular layout to file                   \n");
     printf(" -maxres <int>  max number of HMM columns (def=%5i)             \n", par.maxres);
     printf(" -maxmem [1,inf[ limit memory for realignment (in GB) (def=%.1f)          \n", par.maxmem);
@@ -254,6 +254,8 @@ void HHsearch::help(Parameters& par, char all) {
   }
 
 	printf("Example: hhsearch -i a.1.1.1.a3m -d scop70_1.71\n");
+  printf("\n");
+  printf("Download databases from <http://wwwuser.gwdg.de/~compbiol/data/hhsuite/databases/hhsuite_dbs/>.\n");
 }
 
 /////////////////////////////////////////////////////////////////////////////////////

@@ -330,7 +330,7 @@ void HHblits::help(Parameters& par, char all) {
     printf(" -maxfilt                  max number of hits allowed to pass 2nd prefilter (default=%i)   \n", par.maxnumdb);
     printf(" -min_prefilter_hits       min number of hits to pass prefilter (default=%i)               \n", par.min_prefilter_hits);
     printf(" -prepre_smax_thresh       min score threshold of ungapped prefilter (default=%i)               \n", par.preprefilter_smax_thresh);
-    printf(" -pre_evalue_thresh        max E-value threshold of Smith-Waterman prefilter score (default=%f)\n", par.prefilter_evalue_thresh);
+    printf(" -pre_evalue_thresh        max E-value threshold of Smith-Waterman prefilter score (default=%.1f)\n", par.prefilter_evalue_thresh);
     printf(" -pre_bitfactor            prefilter scores are in units of 1 bit / pre_bitfactor (default=%i)\n", par.prefilter_bit_factor);
     printf(" -pre_gap_open             gap open penalty in prefilter Smith-Waterman alignment (default=%i)\n", par.prefilter_gap_open);
     printf(" -pre_gap_extend           gap extend penalty in prefilter Smith-Waterman alignment (default=%i)\n", par.prefilter_gap_extend);
@@ -457,7 +457,7 @@ void HHblits::help(Parameters& par, char all) {
   printf("                becomes larger than neffmax (default=%.1f)\n", par.neffmax);
   printf(" -cpu <int>     number of CPUs to use (for shared memory SMPs) (default=%i)      \n", par.threads);
   if (all) {
-	printf(" -scores <file> write scores for all pairwise comparisions to file               \n");
+	printf(" -scores <file> write scores for all pairwise comparisons to file               \n");
 	  printf(" -filter_matrices filter matrices for similarity to output at most 100 matrices\n");
     printf(" -atab   <file> write all alignments in tabular layout to file                   \n");
     printf(" -maxres <int>  max number of HMM columns (def=%5i)             \n", par.maxres);
@@ -469,7 +469,12 @@ void HHblits::help(Parameters& par, char all) {
     printf("An extended list of options can be obtained by calling 'hhblits -h all'\n");
     printf("\n");
   }
-  printf("Example: %s -i query.fas -oa3m query.a3m -n 1  \n", program_name);
+  printf("Examples:\n");
+  printf("hhblist -i query.fas -o query.hhr -d ./uniclust30\n");
+  printf("\n");
+  printf("hhblits -i query.fas -o query.hhr -oa3m query.a3m -n 1 -d ./uniclust30\n");
+  printf("\n");
+  printf("Download databases from <http://wwwuser.gwdg.de/~compbiol/data/hhsuite/databases/hhsuite_dbs/>.\n");
 }
 
 

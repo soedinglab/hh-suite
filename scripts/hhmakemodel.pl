@@ -1,4 +1,4 @@
-#! /usr/bin/env perl
+#! /usr/bin/perl
 #
 # hhmakemodel.pl 
 # Generate a model from an output alignment of hhsearch. 

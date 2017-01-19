@@ -1,4 +1,4 @@
-#!/usr/bin/env perl
+#!/usr/bin/perl
 #
 # create_profile_from_hmmer.pl 
 # Create a profile (.prf) from a given HMMER/HMMER3 file

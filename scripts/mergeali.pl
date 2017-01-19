@@ -1,4 +1,4 @@
-#! /usr/bin/env perl
+#! /usr/bin/perl
 # mergeali.pl- Merge multiple alignments in A3M format via a multiple alignment of their seed sequences.
 # Usage: mergeali.pl [-i] infile.fas [-o] outfile.a3m [options]
 

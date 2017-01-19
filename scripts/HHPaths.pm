@@ -31,6 +31,7 @@ our $v;
 our $VERSION = "version 3.0.0 (15-03-2015)";
 our @ISA     = qw(Exporter);
 our @EXPORT  = qw($VERSION $hhlib $hhdata $hhbin $hhscripts $execdir $datadir $ncbidir $dummydb $pdbdir $dsspdir $dssp $cs_lib $context_lib $v);
+push @EXPORT, qw($hhshare $hhbdata);
 
 ##############################################################################################
 # PLEASE COMPLETE THE PATHS ... TO PSIPRED AND OLD-STYLE BLAST (NOT BLAST+) (NEEDED FOR PSIPRED) 
@@ -54,11 +55,13 @@ our $dssp    =  "/cluster/databases/dssp/bin/dsspcmbi";  # where is the dssp bin
 # The lines below probably do not need to be changed
 
 # Setting paths for hh-suite perl scripts
-our $hhlib    = $ENV{"HHLIB"};     # main hh-suite directory
-our $hhdata   = $hhlib."/data";    # path to data directory for hhblits, example files
+our $hhlib    = $ENV{"HHLIB"} || "/usr/lib/hhsuite";     # main hh-suite directory
+our $hhshare  = $ENV{"HHLIB"} || "/usr/share/hhsuite";   # main hh-suite directory
+our $hhdata   = $hhshare."/data";  # path to arch indep data directory for hhblits, example files
+our $hhbdata  = $hhlib."/data";    # path to arch dep data directory for hhblits, example files
 our $hhbin    = $hhlib."/bin";     # path to cstranslate (path to hhsearch, hhblits etc. should be in environment variable PATH)
-our $hhscripts= $hhlib."/scripts"; # path to hh perl scripts (addss.pl, reformat.pl, hhblitsdb.pl etc.)
-our $dummydb  = $hhdata."/do_not_delete"; # Name of dummy blast db for PSIPRED (single sequence formatted with NCBI formatdb)
+our $hhscripts= $hhshare."/scripts"; # path to hh perl scripts (addss.pl, reformat.pl, hhblitsdb.pl etc.)
+our $dummydb  = $hhbdata."/do_not_delete"; # Name of dummy blast db for PSIPRED (single sequence formatted with NCBI formatdb)
 
 # HHblits data files
 our $cs_lib = "$hhdata/cs219.lib";

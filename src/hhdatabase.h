@@ -14,7 +14,9 @@ class HHFileEntry;
 
 class FFindexDatabase;
 
+
 extern "C" {
+#include <stdlib.h>
 #include <ffindex.h>
 }
 
@@ -24,6 +26,7 @@ extern "C" {
 #include "hhhit.h"
 #include "log.h"
 #include "hhalignment.h"
+
 
 class FFindexDatabase {
   public:
