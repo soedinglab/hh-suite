@@ -60,9 +60,9 @@ void makeOutputFFIndex(char* par, const int mpi_rank,
     char index_filename_out_rank[NAMELEN];
 
     snprintf(data_filename_out_rank, FILENAME_MAX, "%s.ffdata.%d", par,
-        mpi_rank - 1);
+        mpi_rank);
     snprintf(index_filename_out_rank, FILENAME_MAX, "%s.ffindex.%d", par,
-        mpi_rank - 1);
+        mpi_rank);
 
     db.data_fh = fopen(data_filename_out_rank, "w+");
     db.index_fh = fopen(index_filename_out_rank, "w+");
@@ -89,7 +89,7 @@ void merge_splits(const char* prefix) {
     snprintf(data_filename, FILENAME_MAX, "%s.ffdata", prefix);
     snprintf(index_filename, FILENAME_MAX, "%s.ffindex", prefix);
 
-    ffmerge_splits(data_filename, index_filename, MPQ_size - 1, true);
+    ffmerge_splits(data_filename, index_filename, 1, MPQ_size, true);
   }
 }
 
