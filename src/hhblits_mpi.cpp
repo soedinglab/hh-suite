@@ -89,7 +89,7 @@ void merge_splits(const char* prefix) {
     snprintf(data_filename, FILENAME_MAX, "%s.ffdata", prefix);
     snprintf(index_filename, FILENAME_MAX, "%s.ffindex", prefix);
 
-    ffmerge_splits(data_filename, index_filename, 1, MPQ_size, true);
+    ffmerge_splits(data_filename, index_filename, 1, MPQ_size - 1, true);
   }
 }
 
