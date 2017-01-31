@@ -39,12 +39,12 @@ INSTALL(FILES
 include_directories(src)
 include_directories(lib/ffindex/src)
 
+add_subdirectory(lib/ffindex)
 add_subdirectory(src)
 add_subdirectory(data)
 add_subdirectory(scripts)
 add_subdirectory(test)
 #add_subdirectory(doc)
-add_subdirectory(lib/ffindex)
 
 
 SET (CPACK_GENERATOR "DEB;TGZ;ZIP;RPM")
