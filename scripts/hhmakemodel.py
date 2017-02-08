@@ -53,7 +53,6 @@ class Grid:
         return self._grid_width
 
     def get_cell(self, row, col):
-        
         return self._cells[row][col]
 
     def get_seq_start(self, row):
@@ -182,7 +181,6 @@ class QueryGrid(Grid):
     
     def get_query_start(self, row):
         """ Returns the query start position """
-        
         return self.get_seq_start(row) + 1
 
     def get_query_end(self, row):
@@ -453,16 +451,17 @@ def get_pdb_entry_id(block):
 
 def create_template_grid(hhr_data):
     """ Creates a template grid """
-    
+
     total_seq = len(hhr_data)
-    templ_max = max( [ hhr.start[0] + len(hhr.template_ali) for hhr in hhr_data ] ) - 1
+    templ_max = max( [ hhr.start[0] + len(to_seq(hhr.template_ali)) for hhr in hhr_data ] ) - 1
 
 
     template_grid = TemplateGrid(total_seq, templ_max)
 
     for row, template in enumerate(hhr_data):
         seq_start = template.start[0] - 1
-        seq_end = seq_start + len(template.template_ali)
+        templatealignment = to_seq(template.template_ali)
+        seq_end = seq_start + len(templatealignment)
 
         # Load Meta Data
         start = template.start[1]
@@ -487,25 +486,36 @@ def create_template_grid(hhr_data):
 
         # Write sequence into the grid
         for pos, col in enumerate(range(seq_start, seq_end)):
-            template_grid.set_cell(row, col, template.template_ali[pos])
+            template_grid.set_cell(row, col, templatealignment[pos])
 
     return template_grid
+
+
+def to_seq(ali):
+    if isinstance(ali, list):
+        return ''.join(ali)
+    else:
+        return ali
+    
 
 def create_query_grid(hhr_data):
     """ Creates a Query Grid """
     
     total_seq = len(hhr_data)
-    query_max = max( [ hhr.start[0] + len(hhr.query_ali) for hhr in hhr_data ] ) - 1
+    query_max = max( [ hhr.start[0] + len(to_seq(hhr.query_ali)) for hhr in hhr_data ] ) - 1
 
     query_grid = QueryGrid(total_seq, query_max)
 
     for row, query in enumerate(hhr_data):
+
+        queryalignment = to_seq(query.query_ali)
         query_start = query.start[0] - 1
-        query_end = query_start + len(query.query_ali)
+        query_end = query_start + len(queryalignment)
 
         for pos, col in enumerate(range(query_start, query_end)):
-            if query.query_ali[pos] not in ['Z', 'U', 'O', 'J', 'X', 'B']: # CAUTION
-                query_grid.set_cell(row, col, query.query_ali[pos])
+            if queryalignment[pos] not in ['Z', 'U', 'O', 'J', 'X', 'B']: # CAUTION
+
+                query_grid.set_cell(row, col, queryalignment[pos])
 
     return query_grid
 
@@ -580,6 +590,7 @@ def compare_with_cifs(template_grid, folder, output_path, convert, threshold):
         # get the pdb code and strand id from the current template
         pdb_code = template_grid._pdb_code[row]
         chain = template_grid._chain[row]
+
 
         # load mmCif file accordingly
         if pdb_code in cif_edits.keys():
@@ -694,6 +705,7 @@ def compare_with_cifs(template_grid, folder, output_path, convert, threshold):
                 res_cif = cif_seq[pos_cif]
             except KeyError:
                 res_cif = -1
+                
 
             match = True if res_tem == res_cif else False
 
@@ -2222,13 +2234,13 @@ def main():
             n = len(selected_templates)))
 
     query_grid = create_query_grid(selected_templates) # load query grid
+    
     gapless_query_grid = create_gapless_grid(query_grid) # remove gaps
     processed_query_grid = process_query_grid(query_grid, gapless_query_grid) # insert gaps
     glob_seq = derive_global_seq(processed_query_grid, query_name, query_chain) # derive query sequence
-    template_grid = create_template_grid(selected_templates) # create template grid
+    template_grid = create_template_grid(selected_templates) # create template grid 
     gapless_template_grid = create_gapless_grid(template_grid) # remove gaps
     processed_template_grid = process_template_grid(query_grid, gapless_template_grid) # insert gaps to template sequnces
-    
     final_grid = compare_with_cifs(processed_template_grid, args.cifs, args.output, args.c, args.r) # compare with atom section of cifs
     remove_self_alignment(final_grid, query_name) # remove self alignment if any
     
