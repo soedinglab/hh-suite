@@ -182,7 +182,7 @@ void HHblits::ProcessAllArguments(int argc, char** argv, Parameters& par) {
     par.num_rounds = 1;
   else if (par.num_rounds > 8) {
     if (v >= 1) {
-      HH_LOG(WARNING) << "Number of iterations (" << par.num_rounds << ") to large => Set to 8 iterations\n";
+      HH_LOG(WARNING) << "Number of iterations (" << par.num_rounds << ") too large => Set to 8 iterations\n";
     }
     par.num_rounds = 8;
   }
