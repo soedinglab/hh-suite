@@ -499,6 +499,10 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
         exit(4);
       } else {
         std::string db(argv[i]);
+        if (HHDatabase::checkDatabaseConflicts(argv[i])) {
+          HH_LOG(ERROR) << "Ambiguous database basename. Choose either a A3M or CA3M database." << std::endl;
+          exit(4);
+        }
         par.db_bases.push_back(db);
       }
     } else if (!strcmp(argv[i], "-contxt")

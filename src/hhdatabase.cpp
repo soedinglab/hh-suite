@@ -78,6 +78,27 @@ void HHDatabase::buildDatabaseName(const char* base, const char* extension,
   strcat(databaseName, suffix);
 }
 
+bool HHDatabase::checkDatabaseConflicts(const char* base) {
+
+  char a3m_index_filename[NAMELEN];
+  char a3m_data_filename[NAMELEN];
+
+  char ca3m_index_filename[NAMELEN];
+  char ca3m_data_filename[NAMELEN];
+
+  buildDatabaseName(base, "a3m", ".ffdata", a3m_data_filename);
+  buildDatabaseName(base, "a3m", ".ffindex", a3m_index_filename);
+
+  buildDatabaseName(base, "ca3m", ".ffdata", ca3m_data_filename);
+  buildDatabaseName(base, "ca3m", ".ffindex", ca3m_index_filename);
+
+  if (file_exists(ca3m_index_filename) && file_exists(ca3m_data_filename)
+      && file_exists(a3m_index_filename) && file_exists(a3m_data_filename)) {
+    return true;
+  }
+  return false;
+}
+
 HHblitsDatabase::HHblitsDatabase(const char* base) {
   cs219_database = NULL;
 

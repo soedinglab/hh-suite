@@ -49,9 +49,11 @@ class HHDatabase {
     HHDatabase();
     virtual ~HHDatabase();
 
-  protected:
-    void buildDatabaseName(const char* base, const char* extension,
-        const char* suffix, char* databaseName);
+    static bool checkDatabaseConflicts(const char* base);
+
+protected:
+    static void buildDatabaseName(const char* base, const char* extension,
+                                  const char* suffix, char* databaseName);
 };
 
 class HHblitsDatabase: HHDatabase {
@@ -72,7 +74,6 @@ class HHblitsDatabase: HHDatabase {
         const int preprefilter_smax_thresh, const int min_prefilter_hits, const int maxnumdb,
         const float R[20][20], std::vector<HHEntry*>& new_entries,
         std::vector<HHEntry*>& old_entries);
-
 
     char* basename;
 
