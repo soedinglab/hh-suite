@@ -16,7 +16,7 @@ int main(int argc, char **argv) {
   HHsearch::ProcessAllArguments(argc, argv, par);
 
   std::vector<HHblitsDatabase*> databases;
-  HHblits::prepareDatabases(par, databases);
+  HHsearch::prepareDatabases(par, databases);
 
 #ifdef OPENMP
   omp_set_num_threads(par.threads);

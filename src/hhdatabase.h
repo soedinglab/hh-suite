@@ -58,7 +58,7 @@ protected:
 
 class HHblitsDatabase: HHDatabase {
   public:
-    HHblitsDatabase(const char* base);
+    HHblitsDatabase(const char* base, bool initCs219 = true);
     ~HHblitsDatabase();
 
     void initPrefilter(const char* cs_library);
@@ -81,6 +81,8 @@ class HHblitsDatabase: HHDatabase {
 
     FFindexDatabase* a3m_database;
     FFindexDatabase* hhm_database;
+
+    FFindexDatabase* query_database;
 
     bool use_compressed;
     FFindexDatabase* ca3m_database;

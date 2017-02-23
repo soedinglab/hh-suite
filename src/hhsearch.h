@@ -36,11 +36,9 @@
 const char HHSEARCH_REFERENCE[] =
     "Soding, J. Protein homology detection by HMM-HMM comparison. Bioinformatics 21:951-960 (2005).\n";
 
-class HHsearch: public HHblits {
+class HHsearch {
 public:
-    HHsearch(Parameters& par, std::vector<HHblitsDatabase*>& databases);
-    virtual ~HHsearch();
-    void run(FILE* query_fh, char* query_path);
+    static void prepareDatabases(Parameters& par, std::vector<HHblitsDatabase*>& databases);
     static void ProcessAllArguments(int argc, char** argv, Parameters& par);
 private:
     static void help(Parameters& par, char all = 0);
