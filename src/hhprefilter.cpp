@@ -255,9 +255,9 @@ namespace hh {
   ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Pull out all names from prefilter db file and copy into dbfiles_new for full HMM-HMM comparison
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-  void Prefilter::init_no_prefiltering(FFindexDatabase* cs219_database,
+  void Prefilter::init_no_prefiltering(FFindexDatabase* query_database,
       std::vector<std::pair<int, std::string> >& prefiltered_entries) {
-    ffindex_index_t* db_index = cs219_database->db_index;
+    ffindex_index_t* db_index = query_database->db_index;
 
     for (size_t n = 0; n < db_index->n_entries; n++) {
       ffindex_entry_t* entry = ffindex_get_entry_by_index(db_index, n);

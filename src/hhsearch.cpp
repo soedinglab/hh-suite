@@ -3,17 +3,24 @@
 #include "hhsearch.h"
 #include "hhsuite_config.h"
 
-HHsearch::HHsearch(Parameters& par, std::vector<HHblitsDatabase*>& databases) :
-		HHblits(par, databases) {
-}
+void HHsearch::prepareDatabases(Parameters& par,
+                                std::vector<HHblitsDatabase*>& databases) {
+    for (size_t i = 0; i < par.db_bases.size(); i++) {
+        HHblitsDatabase* db = new HHblitsDatabase(par.db_bases[i].c_str(), false);
+        databases.push_back(db);
+    }
 
-HHsearch::~HHsearch() {
-
+    par.dbsize = 0;
+    for (size_t i = 0; i < databases.size(); i++) {
+        par.dbsize += databases[i]->query_database->db_index->n_entries;
+    }
 }
 
 void HHsearch::ProcessAllArguments(int argc, char** argv, Parameters& par) {
 	par.argv = argv;
 	par.argc = argc;
+
+    par.prefilter = false;
 
 	par.num_rounds = 1;
 
@@ -578,143 +585,4 @@ void HHsearch::ProcessArguments(int argc, char** argv, Parameters& par) {
 		}
 		HH_LOG(DEBUG1) << i << "  " << argv[i] << endl;
 	} // end of for-loop for command line input
-}
-
-void HHsearch::run(FILE* query_fh, char* query_path) {
-	int cluster_found = 0;
-	int seqs_found = 0;
-
-	Hit hit_cur;
-	Hash<Hit>* previous_hits = new Hash<Hit>(1631, hit_cur);
-
-  Qali = new Alignment();
-  Qali_allseqs = new Alignment();
-
-	q = new HMM(MAXSEQDIS, par.maxres);
-	HMMSimd q_vec(par.maxres);
-	q_tmp = new HMM(MAXSEQDIS, par.maxres);
-
-	// Read input file (HMM, HHM, or alignment format), and add pseudocounts etc.
-	Qali->N_in = 0;
-	char input_format = 0;
-	ReadQueryFile(par, query_fh, input_format, par.wg, q, Qali, query_path, pb,
-			S, Sim);
-	PrepareQueryHMM(par, input_format, q, pc_hhm_context_engine,
-			pc_hhm_context_mode, pb, R);
-    q_vec.MapOneHMM(q);
-    *q_tmp = *q;
-
-	// Set query columns in His-tags etc to Null model distribution
-	if (par.notags)
-		q->NeutralizeTags(pb);
-
-	// Search databases
-
-	std::vector<HHEntry*> new_entries;
-	if (!par.prefilter) {
-		for (size_t i = 0; i < dbs.size(); i++) {
-			dbs[i]->initNoPrefilter(new_entries);
-		}
-	}
-
-	int max_template_length = getMaxTemplateLength(new_entries);
-    if(max_template_length > par.maxres){
-      HH_LOG(WARNING) << "database contains sequnces that exceeds maximum allowed size (maxres = "
-        << par.maxres << "). Maxres can be increased with parameter -maxres." <<std::endl;
-    }
-    max_template_length = std::min(max_template_length, par.maxres);
-	for(int i = 0; i < par.threads; i++) {
-	  viterbiMatrices[i]->AllocateBacktraceMatrix(q->L, max_template_length);
-	}
-
-    ViterbiRunner viterbirunner(viterbiMatrices, dbs, par.threads);
-    std::vector<Hit> hits_to_add = viterbirunner.alignment(par, &q_vec, new_entries, par.qsc_db, pb, S, Sim, R, par.ssm, S73, S33, S37);
-
-    hitlist.N_searched = new_entries.size();
-    add_hits_to_hitlist(hits_to_add, hitlist);
-
-//TODO
-//  if (v1 >= 2)
-//    cout << "\n";
-//  v = v1;
-//
-//  // Sort list according to sortscore
-//  if (v >= 3)
-//    printf("Sorting hit list ...\n");
-//  hitlist.SortList();
-//
-//  // Fit EVD (with lamda, mu) to score distribution?
-//  if (par.calm == 3) {
-//    hitlist.CalculatePvalues(q, par.loc, par.ssm, par.ssw); // Use NN prediction of lamda and mu
-//  }
-//  else if ((par.calm != 1 && q->lamda == 0) || par.calibrate > 0) {
-//    if (v >= 2 && par.loc)
-//      printf("Fitting scores with EVD (first round) ...\n");
-//    hitlist.MaxLikelihoodEVD(q, 3, par.loc, par.ssm, par.ssw); // first ML fit: exclude 3 best superfamilies from fit
-//
-//    if (v >= 3)
-//      printf("Number of families present in database: %i\n", hitlist.fams); // DEBUG
-//    if (hitlist.fams >= 100) {
-//      if (par.loc) {
-//        if (v >= 2)
-//          printf("Fitting scores with EVD (second round) ...\n");
-//        hitlist.MaxLikelihoodEVD(q, 0, par.loc, par.ssm, par.ssw); // second ML fit: exclude superfamilies with E-value<MINEVALEXCL
-//        hitlist.ResortList();
-//      }
-//      else {
-//        if (v >= 2)
-//          fprintf(stderr,
-//              "E-values for global alignment option may be unreliable.\n");
-//        hitlist.ResortList();
-//      }
-//    }
-//    else {
-//      if (v) {
-//        fprintf(stderr, "\n no E-values could be calculated.\n");
-//        fprintf(stderr, "To calculate E-values you have two options:\n");
-//        fprintf(stderr,
-//            "1. Calibrate your query profile HMM with a calibration database:\n");
-//        fprintf(stderr, "   > hhsearch -i yourHMM.hhm -d cal.hhm -cal\n");
-//        fprintf(stderr,
-//            "   This will insert a line in yourHMM.hhm with lamda and mu of the score distribution.\n");
-//        fprintf(stderr,
-//            "   cal.hhm contains 1220 HMMs from different SCOP superfamilies and is supplied with HHsearch.\n");
-//        fprintf(stderr,
-//            "   Instead of cal.hhm you may also use any SCOP database file, e.g. scop70_1.69\n");
-//        fprintf(stderr,
-//            "   Note that your HMM needs to be recalibrated when changing HMM-HMM alignment options.\n");
-//        fprintf(stderr, "2. Append cal.hhm to your own database:\n");
-//        fprintf(stderr, "   > cat cal.hhm >> yourDB.hhm\n");
-//        fprintf(stderr,
-//            "   But note that HMMs contained in cal.hmm will pop up among your hits.\n");
-//      }
-//    }
-//    if (par.calm == 2)
-//      hitlist.GetPvalsFromCalibration(q, par.loc, par.calm, par.ssm, par.ssw);
-//  }
-//  else
-//    hitlist.GetPvalsFromCalibration(q, par.loc, par.calm, par.ssm, par.ssw);
-
-
-	// Set new ss weight for realign
-	par.ssw = par.ssw_realign;
-
-	// Realign hits with MAC algorithm
-	if (par.realign) {
-		perform_realign(q_vec, input_format, new_entries);
-	}
-
-	mergeHitsToQuery(previous_hits, seqs_found, cluster_found);
-
-	// Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
-	Qali->FrequenciesAndTransitions(q, par.wg, par.mark, par.cons, par.showcons,
-			par.maxres, pb, Sim, NULL, true);
-
-	if (par.notags)
-		q->NeutralizeTags(pb);
-
-	for(size_t i = 0; i < new_entries.size(); i++) {
-	  delete new_entries[i];
-	}
-	new_entries.clear();
 }
