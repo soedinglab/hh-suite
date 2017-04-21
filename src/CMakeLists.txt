@@ -8,6 +8,9 @@ if(${HAVE_SANITIZER})
 	include(FindTSan)
 endif()
 
+
+if(X86 OR X86_64)
+
 #SSE
 if(${HAVE_AVX2})
     ADD_DEFINITIONS("-DAVX2")
@@ -26,6 +29,12 @@ else()
         message( FATAL_ERROR "SSSE3 is needed to run compile! CMake will exit." )
     endif(${HAVE_AVX2_EXTENSIONS})
 endif()
+
+else() #
+
+message("!! NOT X86 OR X86_64 !!")
+
+endif() # NOT X86 OR X86_64
 
 
 

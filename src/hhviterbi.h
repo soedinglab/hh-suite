@@ -122,6 +122,7 @@ class Viterbi {
         int elem, bool self, int par_min_overlap);
 
 
+#if defined(SSE) // X86* arch only for _mm_prefetch 
     static inline simd_float ScalarProd20Vec(simd_float* qi, simd_float* tj) {
       _mm_prefetch((char * ) &qi[4], _MM_HINT_T0);
       _mm_prefetch((char * ) &tj[4], _MM_HINT_T0);
@@ -158,6 +159,35 @@ class Viterbi {
       return simdf32_add(res0, res2);
 
     }
+#else
+    static inline simd_float ScalarProd20Vec(simd_float* qi, simd_float* tj) {
+
+      simd_float res0 = simdf32_mul(tj[0], qi[0]);
+      simd_float res1 = simdf32_mul(tj[1], qi[1]);
+      simd_float res2 = simdf32_mul(tj[2], qi[2]);
+      simd_float res3 = simdf32_mul(tj[3], qi[3]);
+      res0 = simdf32_add(simdf32_mul(tj[ 4],qi[ 4]), res0);
+      res1 = simdf32_add(simdf32_mul(tj[ 5],qi[ 5]), res1);
+      res2 = simdf32_add(simdf32_mul(tj[ 6],qi[ 6]), res2);
+      res3 = simdf32_add(simdf32_mul(tj[ 7],qi[ 7]), res3);
+      res0 = simdf32_add(simdf32_mul(tj[ 8],qi[ 8]), res0);
+      res1 = simdf32_add(simdf32_mul(tj[ 9],qi[ 9]), res1);
+      res2 = simdf32_add(simdf32_mul(tj[10],qi[10]), res2);
+      res3 = simdf32_add(simdf32_mul(tj[11],qi[11]), res3);
+      res0 = simdf32_add(simdf32_mul(tj[12],qi[12]), res0);
+      res1 = simdf32_add(simdf32_mul(tj[13],qi[13]), res1);
+      res2 = simdf32_add(simdf32_mul(tj[14],qi[14]), res2);
+      res3 = simdf32_add(simdf32_mul(tj[15],qi[15]), res3);
+      res0 = simdf32_add(simdf32_mul(tj[16],qi[16]), res0);
+      res1 = simdf32_add(simdf32_mul(tj[17],qi[17]), res1);
+      res2 = simdf32_add(simdf32_mul(tj[18],qi[18]), res2);
+      res3 = simdf32_add(simdf32_mul(tj[19],qi[19]), res3);
+      res0 = simdf32_add(res0, res1);
+      res2 = simdf32_add(res2, res3);
+      return simdf32_add(res0, res2);
+
+    }
+#endif
 
     // Calculate secondary structure score between columns i and j of two HMMs (query and template)
     static inline float ScoreSS(const HMM* q, const HMM* t, const int i,

@@ -19,6 +19,25 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
   set(CMAKE_COMPILER_IS_ICC 1)
 endif()
 
+
+message("-- Processor is ${CMAKE_SYSTEM_PROCESSOR}")
+
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "amd64.*|x86_64.*|AMD64.*")
+  set(X86_64 1)
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "i686.*|i386.*|x86.*|amd64.*|AMD64.*")
+  set(X86 1)
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm.*|ARM.*)")
+  set(ARM 1)
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64.*|AARCH64.*)")
+  set(AARCH64 1)
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "PPC64*|ppc64*|powerpc64*")
+  set(PPC64 1)
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "PPC*|ppc*|powerpc*")
+  set(PPC 1)
+endif()
+
+
+
 set (HHSUITE_VERSION_MAJOR 3)
 set (HHSUITE_VERSION_MINOR 0)
 set (HHSUITE_VERSION_PATCH 0)

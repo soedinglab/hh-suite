@@ -28,7 +28,10 @@
 #ifdef OPENMP
 #include <omp.h>
 #endif
+
+#ifdef SSE
 #include <emmintrin.h>
+#endif
 
 using std::cout;
 using std::cerr;
