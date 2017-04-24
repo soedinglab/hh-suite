@@ -182,7 +182,7 @@ void HHblits::ProcessAllArguments(int argc, char** argv, Parameters& par) {
     par.num_rounds = 1;
   else if (par.num_rounds > 8) {
     if (v >= 1) {
-      HH_LOG(WARNING) << "Number of iterations (" << par.num_rounds << ") to large => Set to 8 iterations\n";
+      HH_LOG(WARNING) << "Number of iterations (" << par.num_rounds << ") too large => Set to 8 iterations\n";
     }
     par.num_rounds = 8;
   }
@@ -499,6 +499,10 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
         exit(4);
       } else {
         std::string db(argv[i]);
+        if (HHDatabase::checkDatabaseConflicts(argv[i])) {
+          HH_LOG(ERROR) << "Ambiguous database basename. Choose either a A3M or CA3M database." << std::endl;
+          exit(4);
+        }
         par.db_bases.push_back(db);
       }
     } else if (!strcmp(argv[i], "-contxt")

@@ -49,14 +49,16 @@ class HHDatabase {
     HHDatabase();
     virtual ~HHDatabase();
 
-  protected:
-    void buildDatabaseName(const char* base, const char* extension,
-        const char* suffix, char* databaseName);
+    static bool checkDatabaseConflicts(const char* base);
+
+protected:
+    static void buildDatabaseName(const char* base, const char* extension,
+                                  const char* suffix, char* databaseName);
 };
 
 class HHblitsDatabase: HHDatabase {
   public:
-    HHblitsDatabase(const char* base);
+    HHblitsDatabase(const char* base, bool initCs219 = true);
     ~HHblitsDatabase();
 
     void initPrefilter(const char* cs_library);
@@ -73,13 +75,14 @@ class HHblitsDatabase: HHDatabase {
         const float R[20][20], std::vector<HHEntry*>& new_entries,
         std::vector<HHEntry*>& old_entries);
 
-
     char* basename;
 
     FFindexDatabase* cs219_database;
 
     FFindexDatabase* a3m_database;
     FFindexDatabase* hhm_database;
+
+    FFindexDatabase* query_database;
 
     bool use_compressed;
     FFindexDatabase* ca3m_database;

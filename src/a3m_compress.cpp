@@ -216,7 +216,8 @@ int compressed_a3m::compress_a3m(char* input, size_t input_size,
       //TODO: Warning
     }
     else {
-      if(compressed_a3m::compress_sequence(id, sequence,
+      std::string short_id = getShortIdFromHeader(id);
+      if(compressed_a3m::compress_sequence(short_id, sequence,
           ffindex_sequence_database_index, ffindex_sequence_database_data,
           output)) {
         nr_sequences++;
@@ -529,11 +530,12 @@ std::string getShortIdFromHeader(std::string &id) {
     }
   }
 
+  std::string short_id = id;
   if(first_pipe_index != id.length() && second_pipe_index != id.length()) {
-    return id.substr(first_pipe_index + 1, second_pipe_index - first_pipe_index - 1);
+    short_id = id.substr(first_pipe_index + 1, second_pipe_index - first_pipe_index - 1);
   }
 
-  return id;
+  return short_id;
 }
 
 bool isConsensus(std::string &id) {

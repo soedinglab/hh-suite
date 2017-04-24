@@ -78,7 +78,28 @@ void HHDatabase::buildDatabaseName(const char* base, const char* extension,
   strcat(databaseName, suffix);
 }
 
-HHblitsDatabase::HHblitsDatabase(const char* base) {
+bool HHDatabase::checkDatabaseConflicts(const char* base) {
+
+  char a3m_index_filename[NAMELEN];
+  char a3m_data_filename[NAMELEN];
+
+  char ca3m_index_filename[NAMELEN];
+  char ca3m_data_filename[NAMELEN];
+
+  buildDatabaseName(base, "a3m", ".ffdata", a3m_data_filename);
+  buildDatabaseName(base, "a3m", ".ffindex", a3m_index_filename);
+
+  buildDatabaseName(base, "ca3m", ".ffdata", ca3m_data_filename);
+  buildDatabaseName(base, "ca3m", ".ffindex", ca3m_index_filename);
+
+  if (file_exists(ca3m_index_filename) && file_exists(ca3m_data_filename)
+      && file_exists(a3m_index_filename) && file_exists(a3m_data_filename)) {
+    return true;
+  }
+  return false;
+}
+
+HHblitsDatabase::HHblitsDatabase(const char* base, bool initCs219) {
   cs219_database = NULL;
 
   a3m_database = NULL;
@@ -93,32 +114,53 @@ HHblitsDatabase::HHblitsDatabase(const char* base) {
   basename = new char[strlen(base) + 1];
   strcpy(basename, base);
 
-  char cs219_index_filename[NAMELEN];
-  char cs219_data_filename[NAMELEN];
+  if (initCs219) {
+      char cs219_index_filename[NAMELEN];
+      char cs219_data_filename[NAMELEN];
 
-  buildDatabaseName(base, "cs219", ".ffdata", cs219_data_filename);
-  buildDatabaseName(base, "cs219", ".ffindex", cs219_index_filename);
+      buildDatabaseName(base, "cs219", ".ffdata", cs219_data_filename);
+      buildDatabaseName(base, "cs219", ".ffindex", cs219_index_filename);
 
-  cs219_database = new FFindexDatabase(cs219_data_filename,
-                                       cs219_index_filename, use_compressed);
+      cs219_database = new FFindexDatabase(cs219_data_filename,
+                                           cs219_index_filename, use_compressed);
+  }
 
   if (!checkAndBuildCompressedDatabase(base)) {
     char a3m_index_filename[NAMELEN];
     char a3m_data_filename[NAMELEN];
 
-    char hhm_index_filename[NAMELEN];
-    char hhm_data_filename[NAMELEN];
-
     buildDatabaseName(base, "a3m", ".ffdata", a3m_data_filename);
     buildDatabaseName(base, "a3m", ".ffindex", a3m_index_filename);
+
+    if (file_exists(a3m_data_filename) && file_exists(a3m_index_filename)) {
+      a3m_database = new FFindexDatabase(a3m_data_filename, a3m_index_filename,
+                                         use_compressed);
+    }
+
+    char hhm_index_filename[NAMELEN];
+    char hhm_data_filename[NAMELEN];
 
     buildDatabaseName(base, "hhm", ".ffdata", hhm_data_filename);
     buildDatabaseName(base, "hhm", ".ffindex", hhm_index_filename);
 
-    a3m_database = new FFindexDatabase(a3m_data_filename, a3m_index_filename,
-                                       use_compressed);
-    hhm_database = new FFindexDatabase(hhm_data_filename, hhm_index_filename,
-                                       use_compressed);
+    if (file_exists(hhm_data_filename) && file_exists(hhm_index_filename)) {
+      hhm_database = new FFindexDatabase(hhm_data_filename, hhm_index_filename,
+                                         use_compressed);
+    }
+
+    if (a3m_database == NULL && hhm_database == NULL) {
+      HH_LOG(ERROR) << "Could find neither hhm_db nor a3m_db!" << std::endl;
+      exit(1);
+    } else if (a3m_database != NULL && hhm_database == NULL) {
+      query_database = a3m_database;
+    } else if (a3m_database == NULL && hhm_database != NULL) {
+      query_database = hhm_database;
+    } else {
+      // both exist, use the a3m
+      query_database = a3m_database;
+    }
+  } else {
+    query_database = cs219_database;
   }
 
   prefilter = NULL;
@@ -148,7 +190,7 @@ void HHblitsDatabase::initPrefilter(const char* cs_library) {
 
 void HHblitsDatabase::initNoPrefilter(std::vector<HHEntry*>& new_entries) {
   std::vector<std::pair<int, std::string> > new_entry_names;
-  hh::Prefilter::init_no_prefiltering(cs219_database, new_entry_names);
+  hh::Prefilter::init_no_prefiltering(query_database, new_entry_names);
 
   getEntriesFromNames(new_entry_names, new_entries);
 }
@@ -214,14 +256,16 @@ void HHblitsDatabase::getEntriesFromNames(
                                              entry);
       entries.push_back(hhentry);
     } else {
-      entry = ffindex_get_entry_by_name(
-          hhm_database->db_index, const_cast<char*>(hits[i].second.c_str()));
+      if (hhm_database != NULL) {
+        entry = ffindex_get_entry_by_name(
+            hhm_database->db_index, const_cast<char*>(hits[i].second.c_str()));
 
-      if (entry != NULL) {
-        HHEntry* hhentry = new HHDatabaseEntry(hits[i].first, this,
-                                               hhm_database, entry);
-        entries.push_back(hhentry);
-        continue;
+        if (entry != NULL) {
+          HHEntry* hhentry = new HHDatabaseEntry(hits[i].first, this,
+                                                 hhm_database, entry);
+          entries.push_back(hhentry);
+          continue;
+        }
       }
 
       entry = ffindex_get_entry_by_name(
