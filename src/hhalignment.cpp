@@ -215,17 +215,15 @@ void Alignment::Read(FILE* inf, char infile[], const char mark,
 
   /////////////////////////////////////////////////////////////////////////
   // Read infile line by line
-  while (firstline || (fgetline(line, LINELEN, inf) && k < MAXSEQ)) {
+  while (firstline || (fgetline(line, LINELEN, inf))) {
     linenr++;
     firstline = NULL;
     if (line[0] == '>')             //line contains sequence name
         {
       if (k >= MAXSEQ - 1) {
-        if (k >= MAXSEQ) {
-          HH_LOG(WARNING) << "Maximum number " << MAXSEQ
-                                    << " of sequences exceeded in file "
-                                    << infile << std::endl;
-        }
+        HH_LOG(WARNING) << "Maximum number " << MAXSEQ
+                                  << " of sequences exceeded in file "
+                                  << infile << std::endl;
         break;
       }
 
