@@ -400,6 +400,11 @@ void HHDatabaseEntry::getTemplateA3M(Parameters& par, float* pb,
 
   tali.Compress(entry->name, par.cons, par.maxres, par.maxcol, par.M_template,
                 par.Mgaps);
+
+  if(tali.L != sequence_length) {
+    HH_LOG(ERROR) << "ERROR: sequence length (" << sequence_length << ") does not fit to read MSA (match states: "<< tali.L << ") of file " << getName() << "!" << std::endl;
+    HH_LOG(ERROR) << "\tYour cs219 states might not fit your multiple sequence alignments." << std::endl;
+  }
 }
 
 void HHEntry::getTemplateHMM(FILE* dbf, char* name, Parameters& par,
@@ -460,6 +465,11 @@ void HHEntry::getTemplateHMM(FILE* dbf, char* name, Parameters& par,
       HH_LOG(ERROR) << line << "'\n";
       exit(1);
     }
+  }
+
+  if(t->L != sequence_length) {
+    HH_LOG(ERROR) << "ERROR: sequence length (" << sequence_length << ") does not fit to read MSA (match states: "<< t->L << ") of file " << getName() << "!" << std::endl;
+    HH_LOG(ERROR) << "\tYour cs219 states might not fit your multiple sequence alignments." << std::endl;
   }
 }
 
