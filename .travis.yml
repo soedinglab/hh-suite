@@ -86,3 +86,13 @@ matrix:
             - clang-3.9
             - mpi-default-dev
       env: CXX=clang++-3.9
+    - compiler: clang
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-trusty-4.0
+          packages:
+            - clang-4.0
+            - mpi-default-dev
+      env: CXX=clang++-4.0
