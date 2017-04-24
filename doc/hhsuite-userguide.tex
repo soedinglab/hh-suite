@@ -975,6 +975,21 @@ Also try using \verb`-cpu 1 -maxmem 1` to reduce memory requirements. If it stil
 \item For some of the alignments with differing scores, check if the db aligment on the server is the same as the one in your local database. You can download the db MSA by clicking the alignment logo above the query-template pairwise profile-profile alignment.
 \end{itemize}
 
+{\bf I find an alignment of my query and a template with the exact same sequence, but they are aligned incorrectly.} I find a gap inserted at residue position 92 in query and position 99 in template:
+
+\begin{verbatim}
+Q ss_pred             CcEEEeeCCCC-CCCeEEEEEECCeeEEEEEEECCCCcEEEEEEeeCCHHHHHHHHhhCCCccceeEEEecccCCCCCCe
+Q Pr_1             81 GAFLIRESESA-PGDFSLSVKFGNDVQHFKVLRDGAGKYFLWVVKFNSLNELVDYHRSTSVSRNQQIFLRDIEQVPQQPT  159 (217)
+Q Consensus        81 ~~~~~~~~~~~-~~~~~~s~~~~~~~~~~~i~~~~~~~~~~~~~~f~s~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  159 (217)
+                      |.+++|.+... ++.+.+ +..++.++|+++.....+.|+.+...|.++..++.++...+....................
+T Consensus        81 G~flvR~s~~~~~~~~~l-v~~~~~v~h~~i~~~~~g~~~~~~~~f~sl~~Lv~~y~~~~~~~~~~~~l~~~~~~~~~~~  159 (217)
+T 1gri_A           81 GAFLIRESESAPGDFSLS-VKFGNDVQHFKVLRDGAGKYFLWVVKFNSLNELVDYHRSTSVSRNQQIFLRDIEQVPQQPT  159 (217)
+T ss_dssp             TCEEEEECSSSTTCEEEE-EEETTEEEEEEEEECSSSCEESSSCEESSHHHHHHHHHHSCSSSSTTCCCCBCCCCCCCCC
+T ss_pred             CeEEEEECCCCCCCcEEE-EECCCceeEEEEEECCCCcEEEeeEecCCHHHHHHHhhcCCCccccceeccccccccCCce
+\end{verbatim}
+
+The seemingly incorrect alignment is explained by the fact that hhsearch / hhblits aligns profile HMMs, not sequences directly. In this example, the query and template multiple sequence alignments (MSAs) from which the profile HMMs were built are \emph{not} identical, as one can see for instance from the differing Consensus annotation strings and different predicted secondary structure strings. The underying MSAs probably contain the exact same alignment ambiguity in this region, with some member sequences being shifted by one positions between positions 92 and 99  relative to the master sequence of the MSA.
+
 
 \section{HHsearch/HHblits output: hit list and pairwise alignments}\label{outformat}
 
