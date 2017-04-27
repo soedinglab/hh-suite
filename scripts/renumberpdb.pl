@@ -379,7 +379,7 @@ sub OpenPDBfile() {
     if    (-e $pdbfile."pdb$pdbcode.ent")   {$pdbfile.="pdb$pdbcode.ent";}
     elsif (-e $pdbfile."pdb$pdbcode.ent.gz") {$pdbfile="gunzip -c $pdbfile"."pdb$pdbcode.ent.gz |";}
     elsif (-e $pdbfile."pdb$pdbcode.ent.Z") {$pdbfile="gunzip -c $pdbfile"."pdb$pdbcode.ent.Z |";}
-    elsif (-e $pdbfile."$pdbcode.pdb")      {$pdbfile."$pdbcode.pdb";}
+    elsif (-e $pdbfile."$pdbcode.pdb")      {$pdbfile.="$pdbcode.pdb";}
     else {
 	printf(STDERR "Error in $program: Cannot find pdb file $pdbfile"."pdb$pdbcode.ent!\n"); 
 	return "";
