@@ -1964,9 +1964,9 @@ void HMM::AddAminoAcidPseudocounts(char pcm, float pca, float pcb, float pcc) {
 
 int HMM::computeScoreSSMode( HMM *q,  HMM *t){
 	int returnMode = HMM::NO_SS_INFORMATION;
-	if      (q->nss_pred>=0 && t->nss_dssp>=0) returnMode=HMM::PRED_DSSP;
-	else if (q->nss_dssp>=0 && t->nss_pred>=0) returnMode=HMM::DSSP_PRED;
-	else if (q->nss_pred>=0 && t->nss_pred>=0) returnMode=HMM::PRED_PRED;
+    returnMode |= (q->nss_pred>=0 && t->nss_dssp>=0) ? HMM::PRED_DSSP : 0;
+    returnMode |= (q->nss_dssp>=0 && t->nss_pred>=0) ? HMM::DSSP_PRED : 0;
+    returnMode |= (q->nss_pred>=0 && t->nss_pred>=0) ? HMM::PRED_PRED : 0;
 	return returnMode;
 }
 

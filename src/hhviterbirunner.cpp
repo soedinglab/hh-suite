@@ -10,11 +10,9 @@ void ViterbiConsumerThread::clear() {
 
 void ViterbiConsumerThread::align(int maxres, int nseqdis, const float smin) {
 
-    
-    int ss_hmm_mode = HMM::computeScoreSSMode(q_simd->GetHMM(0), t_hmm_simd->GetHMM(0));
-    for(size_t i = 1; i < maxres; i++){
-        ss_hmm_mode = std::min(ss_hmm_mode,
-                               HMM::computeScoreSSMode(q_simd->GetHMM(0), t_hmm_simd->GetHMM(i)));
+    int ss_hmm_mode = 0xFF;
+    for(size_t i = 0; i < maxres; i++){
+        ss_hmm_mode &=  HMM::computeScoreSSMode(q_simd->GetHMM(0), t_hmm_simd->GetHMM(i));
     }
     Viterbi::ViterbiResult* viterbiResult = viterbiAlgo->Align(q_simd, t_hmm_simd, viterbiMatrix, maxres, ss_hmm_mode);
     for (int elem = 0; elem < maxres; elem++) {
