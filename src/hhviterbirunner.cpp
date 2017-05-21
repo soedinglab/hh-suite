@@ -61,7 +61,7 @@ void ViterbiConsumerThread::align(int maxres, int nseqdis, const float smin) {
         hit_cur.entry = curr_t_hmm->entry;
         
 //                        std::cout << "Thread: " << thread_id << std::endl;
-        HH_LOG(INFO) << string_format ("%d %-12.12s  %-12.12s   irep=%-2i  score=%6.2f ss_scor=%6.2f i=%d j=%d nstep=%d ssm_mode=%d t_ss_pred=%d t_ss_dssp=%d",elem, hit_cur.name,hit_cur.fam,hit_cur.irep,hit_cur.score, hit_cur.score_ss,viterbiResult->i[elem], viterbiResult->j[elem], hit_cur.nsteps, ss_hmm_mode, t_hmm_simd->GetHMM(elem)->nss_pred, t_hmm_simd->GetHMM(elem)->nss_dssp) << std::endl;
+//       HH_LOG(INFO) << string_format ("%d %-12.12s  %-12.12s   irep=%-2i  score=%6.2f ss_scor=%6.2f i=%d j=%d nstep=%d ssm_mode=%d t_ss_pred=%d t_ss_dssp=%d",elem, hit_cur.name,hit_cur.fam,hit_cur.irep,hit_cur.score, hit_cur.score_ss,viterbiResult->i[elem], viterbiResult->j[elem], hit_cur.nsteps, ss_hmm_mode, t_hmm_simd->GetHMM(elem)->nss_pred, t_hmm_simd->GetHMM(elem)->nss_dssp) << std::endl;
 //                        printf ("%-12.12s  %-12.12s   irep=%-2i  score=%6.2f\n",hit_cur.file,hit_cur.fam,hit_cur.irep,backtraceScore.score);
         hits.push_back(hit_cur); // insert hit at beginning of list (last repeats first!) Deep Copy of hit_cur
     }
