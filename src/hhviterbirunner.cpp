@@ -10,12 +10,16 @@ void ViterbiConsumerThread::clear() {
 
 void ViterbiConsumerThread::align(int maxres, int nseqdis, const float smin) {
 
-    
-    int ss_hmm_mode = HMM::computeScoreSSMode(q_simd->GetHMM(0), t_hmm_simd->GetHMM(0));
-    for(size_t i = 1; i < maxres; i++){
-        ss_hmm_mode = std::min(ss_hmm_mode,
-                               HMM::computeScoreSSMode(q_simd->GetHMM(0), t_hmm_simd->GetHMM(i)));
+    int consensus_ss_hmm_mode = 0xFF;
+    for(size_t i = 0; i < maxres; i++){
+        consensus_ss_hmm_mode &=  HMM::computeScoreSSMode(q_simd->GetHMM(0), t_hmm_simd->GetHMM(i));
     }
+    // The following code solves the problem if more than 1 bit is set in "consensus_ss_hmm_mode".
+    // It will pick the best possible mode
+    int ss_hmm_mode = (consensus_ss_hmm_mode & HMM::PRED_DSSP);
+    ss_hmm_mode = (ss_hmm_mode == 0) ? consensus_ss_hmm_mode & HMM::DSSP_PRED : 0;
+    ss_hmm_mode = (ss_hmm_mode == 0) ? consensus_ss_hmm_mode & HMM::PRED_PRED : 0;
+
     Viterbi::ViterbiResult* viterbiResult = viterbiAlgo->Align(q_simd, t_hmm_simd, viterbiMatrix, maxres, ss_hmm_mode);
     for (int elem = 0; elem < maxres; elem++) {
         HMM * curr_t_hmm = t_hmm_simd->GetHMM(elem);
@@ -55,9 +59,9 @@ void ViterbiConsumerThread::align(int maxres, int nseqdis, const float smin) {
         hit_cur.j2 = viterbiResult->j[elem];
 
         hit_cur.entry = curr_t_hmm->entry;
-
+        
 //                        std::cout << "Thread: " << thread_id << std::endl;
-        //                printf ("%-12.12s  %-12.12s   irep=%-2i  score=%6.2f   i=%d j=%d\n",hit_cur->name,hit_cur->fam,hit_cur->irep,hit_cur->score,viterbiResult.i[elem], viterbiResult.j[elem]);
+//       HH_LOG(INFO) << string_format ("%d %-12.12s  %-12.12s   irep=%-2i  score=%6.2f ss_scor=%6.2f i=%d j=%d nstep=%d ssm_mode=%d t_ss_pred=%d t_ss_dssp=%d",elem, hit_cur.name,hit_cur.fam,hit_cur.irep,hit_cur.score, hit_cur.score_ss,viterbiResult->i[elem], viterbiResult->j[elem], hit_cur.nsteps, ss_hmm_mode, t_hmm_simd->GetHMM(elem)->nss_pred, t_hmm_simd->GetHMM(elem)->nss_dssp) << std::endl;
 //                        printf ("%-12.12s  %-12.12s   irep=%-2i  score=%6.2f\n",hit_cur.file,hit_cur.fam,hit_cur.irep,backtraceScore.score);
         hits.push_back(hit_cur); // insert hit at beginning of list (last repeats first!) Deep Copy of hit_cur
     }

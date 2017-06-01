@@ -61,7 +61,7 @@ class HMM {
   const static int NO_SS_INFORMATION = 0;
   const static int PRED_DSSP = 1;
   const static int DSSP_PRED = 2;
-  const static int PRED_PRED = 3;
+  const static int PRED_PRED = 4;
   // Make a flat copy of q
   void FlatCopyTo(HMM* t);
 
