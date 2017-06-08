@@ -151,7 +151,7 @@ void HHsearch::help(Parameters& par, char all) {
     printf(" -seq <int>     max. number of query/template sequences displayed (default=%i)  \n", par.nseqdis);
     printf(" -aliw <int>    number of columns per line in alignment list (default=%i)       \n", par.aliwidth);
     printf(" -p [0,100]     minimum probability in summary and alignment list (default=%G)  \n", par.p);
-    printf(" -E [0,inf[     maximum E-value in summary and alignment list (default=%G)      \n", par.E);
+    printf(" -E [0,inf]     maximum E-value in summary and alignment list (default=%G)      \n", par.E);
     printf(" -Z <int>       maximum number of lines in summary hit list (default=%i)        \n", par.Z);
     printf(" -z <int>       minimum number of lines in summary hit list (default=%i)        \n", par.z);
     printf(" -B <int>       maximum number of alignments in alignment list (default=%i)     \n", par.B);
@@ -162,7 +162,7 @@ void HHsearch::help(Parameters& par, char all) {
   printf("Filter options applied to query MSA, database MSAs, and result MSA              \n");
   printf(" -all           show all sequences in result MSA; do not filter result MSA      \n");
   printf(" -id   [0,100]  maximum pairwise sequence identity (def=%i)\n", par.max_seqid);
-  printf(" -diff [0,inf[  filter MSAs by selecting most diverse set of sequences, keeping \n");
+  printf(" -diff [0,inf]  filter MSAs by selecting most diverse set of sequences, keeping \n");
   printf("                at least this many seqs in each MSA block of length 50 \n");
   printf("                Zero and non-numerical values turn off the filtering. (def=%i) \n", par.Ndiff);
   printf(" -cov  [0,100]  minimum coverage with master sequence (%%) (def=%i)             \n", par.coverage);
@@ -175,7 +175,7 @@ void HHsearch::help(Parameters& par, char all) {
   printf("HMM-HMM alignment options:                                                       \n");
   printf(" -norealign          do NOT realign displayed hits with MAC algorithm (def=realign)   \n");
   printf(" -ovlp <int>         banded alignment: forbid <ovlp> largest diagonals |i-j| of DP matrix (def=%i)\n", par.min_overlap);
-  printf(" -mact [0,1[         posterior prob threshold for MAC realignment controlling greedi- \n");
+  printf(" -mact [0,1]         posterior prob threshold for MAC realignment controlling greedi- \n");
   printf("                     ness at alignment ends: 0:global >0.1:local (default=%.2f)       \n", par.mact);
   printf(" -glob/-loc          use global/local alignment mode for searching/ranking (def=local)\n");
   if (all) {
@@ -201,15 +201,15 @@ void HHsearch::help(Parameters& par, char all) {
     printf("\n");
 
     printf("Gap cost options:                                                                \n");
-    printf(" -gapb [0,inf[  Transition pseudocount admixture (def=%-.2f)                     \n", par.gapb);
-    printf(" -gapd [0,inf[  Transition pseudocount admixture for open gap (default=%-.2f)    \n", par.gapd);
+    printf(" -gapb [0,inf]  Transition pseudocount admixture (def=%-.2f)                     \n", par.gapb);
+    printf(" -gapd [0,inf]  Transition pseudocount admixture for open gap (default=%-.2f)    \n", par.gapd);
     printf(" -gape [0,1.5]  Transition pseudocount admixture for extend gap (def=%-.2f)      \n", par.gape);
-    printf(" -gapf ]0,inf]  factor to increase/reduce gap open penalty for deletes (def=%-.2f) \n", par.gapf);
-    printf(" -gapg ]0,inf]  factor to increase/reduce gap open penalty for inserts (def=%-.2f) \n", par.gapg);
-    printf(" -gaph ]0,inf]  factor to increase/reduce gap extend penalty for deletes(def=%-.2f)\n", par.gaph);
-    printf(" -gapi ]0,inf]  factor to increase/reduce gap extend penalty for inserts(def=%-.2f)\n", par.gapi);
-    printf(" -egq  [0,inf[  penalty (bits) for end gaps aligned to query residues (def=%-.2f) \n",  par.egq);
-    printf(" -egt  [0,inf[  penalty (bits) for end gaps aligned to template residues (def=%-.2f)\n", par.egt);
+    printf(" -gapf [0,inf]  factor to increase/reduce gap open penalty for deletes (def=%-.2f) \n", par.gapf);
+    printf(" -gapg [0,inf]  factor to increase/reduce gap open penalty for inserts (def=%-.2f) \n", par.gapg);
+    printf(" -gaph [0,inf]  factor to increase/reduce gap extend penalty for deletes(def=%-.2f)\n", par.gaph);
+    printf(" -gapi [0,inf]  factor to increase/reduce gap extend penalty for inserts(def=%-.2f)\n", par.gapi);
+    printf(" -egq  [0,inf]  penalty (bits) for end gaps aligned to query residues (def=%-.2f) \n",  par.egq);
+    printf(" -egt  [0,inf]  penalty (bits) for end gaps aligned to template residues (def=%-.2f)\n", par.egt);
     printf("\n");
 
     printf("Pseudocount (pc) options:                                                        \n");
@@ -221,7 +221,7 @@ void HHsearch::help(Parameters& par, char all) {
     printf("               3: CSBlast admixture:   tau = a(1+b)/(Neff[i]+b)                 \n");
     printf("               (Neff[i]: number of effective seqs in local MSA around column i) \n");
     printf("  -pc_hhm_contxt_a  [0,1]        overall pseudocount admixture (def=%-.1f)                        \n", par.pc_hhm_context_engine.pca);
-    printf("  -pc_hhm_contxt_b  [1,inf[      Neff threshold value for mode 2 (def=%-.1f)                      \n", par.pc_hhm_context_engine.pcb);
+    printf("  -pc_hhm_contxt_b  [1,inf]      Neff threshold value for mode 2 (def=%-.1f)                      \n", par.pc_hhm_context_engine.pcb);
     printf("  -pc_hhm_contxt_c  [0,3]        extinction exponent c for mode 2 (def=%-.1f)                     \n", par.pc_hhm_context_engine.pcc);
     printf("\n");
 
@@ -232,7 +232,7 @@ void HHsearch::help(Parameters& par, char all) {
     printf("               2: diversity-dependent: tau = a/(1+((Neff[i]-1)/b)^c)            \n");
     printf("               (Neff[i]: number of effective seqs in local MSA around column i) \n");
     printf("  -pc_hhm_nocontxt_a  [0,1]        overall pseudocount admixture (def=%-.1f)                        \n", par.pc_hhm_nocontext_a);
-    printf("  -pc_hhm_nocontxt_b  [1,inf[      Neff threshold value for mode 2 (def=%-.1f)                      \n", par.pc_hhm_nocontext_b);
+    printf("  -pc_hhm_nocontxt_b  [1,inf]      Neff threshold value for mode 2 (def=%-.1f)                      \n", par.pc_hhm_nocontext_b);
     printf("  -pc_hhm_nocontxt_c  [0,3]        extinction exponent c for mode 2 (def=%-.1f)                     \n", par.pc_hhm_nocontext_c);
     printf("\n");
 
@@ -251,7 +251,7 @@ void HHsearch::help(Parameters& par, char all) {
   printf(" -scores <file> write scores for all pairwise comparisons to file               \n");
     printf(" -atab   <file> write all alignments in tabular layout to file                   \n");
     printf(" -maxres <int>  max number of HMM columns (def=%5i)             \n", par.maxres);
-    printf(" -maxmem [1,inf[ limit memory for realignment (in GB) (def=%.1f)          \n", par.maxmem);
+    printf(" -maxmem [1,inf] limit memory for realignment (in GB) (def=%.1f)          \n", par.maxmem);
   }
   printf("\n");
 
