@@ -1,12 +1,9 @@
-
-
-
-
 package aminoAcid;
 
 require Exporter;
 
 use strict;
+use warnings;
 
 our @ISA = qw(Exporter);
 our @EXPORT = qw(@SIM);
@@ -124,11 +121,11 @@ sub printSimilarityMatrix {
     my $self = shift;
 
     for (my $i=0; $i<20; $i++) {
-	for (my $j=0; $j<20; $j++) {
-	    my $me = sprintf("%.3f", $SIM[$i][$j]);
-	    print "$me ";
-	}
-	print "\n";
+	    for (my $j=0; $j<20; $j++) {
+	        my $me = sprintf("%.3f", $SIM[$i][$j]);
+	        print "$me ";
+	    }
+	    print "\n";
     }
 }
 
@@ -144,44 +141,46 @@ sub setupSubstitutionMatrix {
 
     my $b;
     if ($matrix == 0) {
-	for (my $a=0; $a<20; ++$a) {
-	    for ($pb[$a]=0.0, $b=0; $b<20; ++$b) {
-		$P[$a][$b] = 0.000001 * $GONNET[$a*20 + $b];
+	    for (my $a=0; $a<20; ++$a) {
+	        for ($pb[$a]=0.0, $b=0; $b<20; ++$b) {
+		        $P[$a][$b] = 0.000001 * $GONNET[$a*20 + $b];
+	        }
 	    }
-	}
-	for (my $a=0; $a<20; ++$a) { $P[$a][20] = $P[20][$a] = 1.0 };
+	    for (my $a=0; $a<20; ++$a) { 
+            $P[$a][20] = $P[20][$a] = 1.0 
+        }
     } else {
-	&setupBlosumMatrix($matrix, \@P, \@pb);
+	    &setupBlosumMatrix($matrix, \@P, \@pb);
     }
     
     my $sumab=0.0;
     for (my $a=0; $a<20; $a++) {
-	for (my $b=0; $b<20; $b++) {
-	    $sumab += $P[$a][$b];
-	}
+	    for (my $b=0; $b<20; $b++) {
+	        $sumab += $P[$a][$b];
+	    }
     }
     for (my $a=0; $a<20; $a++) {
-	for (my $b=0; $b<20; $b++) {
-	    $P[$a][$b] /= $sumab;
-	}
+	    for (my $b=0; $b<20; $b++) {
+	        $P[$a][$b] /= $sumab;
+	    }
     }
     for (my $a=0; $a<20; $a++) {
-	for ($pb[$a]=0.0, my $b=0; $b<20; $b++) {
-	    $pb[$a] += $P[$a][$b];
-	}
+	    for ($pb[$a]=0.0, my $b=0; $b<20; $b++) {
+	        $pb[$a] += $P[$a][$b];
+	    }
     }
 
     for (my $a=0; $a<20; ++$a) {
-	for (my $b=0; $b<20; ++$b) {   
-	    $R[$a][$b] = $P[$a][$b]/$pb[$b];
-	}
+	    for (my $b=0; $b<20; ++$b) {   
+	        $R[$a][$b] = $P[$a][$b]/$pb[$b];
+	    }
     }
   
     ## Precompute matrix R for amino acid pseudocounts:
     for (my $a=0; $a<20; ++$a) {
-	for (my $b=0; $b<20; ++$b) {
-	    $SIM[$a][$b] = log($R[$a][$b]/$pb[$a])/log(2);
-	}
+	    for (my $b=0; $b<20; ++$b) {
+	        $SIM[$a][$b] = log($R[$a][$b]/$pb[$a])/log(2);
+	    }
     }
 }
 
@@ -197,22 +196,20 @@ sub setupBlosumMatrix {
     my $n = 0;
 
     for (my $a=0; $a<20; $a++) {
-	for ($pb[$a]=0.0, my $b=0; $b<=$a; $b++, $n++) {
-	    $P[$a][$b] = $BLOSUM62[$n];
-	}
+	    for ($pb[$a]=0.0, my $b=0; $b<=$a; $b++, $n++) {
+	        $P[$a][$b] = $BLOSUM62[$n];
+	    }
     }
     for (my $a=0; $a<19; $a++) {
-	for (my $b=$a+1; $b<20; $b++) {
-	    $P[$a][$b] = $P[$b][$a]; 
-	}
+	    for (my $b=$a+1; $b<20; $b++) {
+	        $P[$a][$b] = $P[$b][$a]; 
+	    }
     }
     for (my $a=0; $a<20; $a++) {
-	$P[$a][20] = 1.0;
-	$P[20][$a] = 1.0;
+	    $P[$a][20] = 1.0;
+	    $P[20][$a] = 1.0;
     }  
 }
 
-
 1;
- 
-    
+     

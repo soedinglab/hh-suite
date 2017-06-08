@@ -62,7 +62,7 @@ sub read_from_file {
 ## which has as inputs score, sumProb/L, SS and template resolution (in A).
 ## Then sort templates wrt predicted TM score
 sub rank_templates {
-    my ($self, $templateList, $queryLength, $config) = @_;
+    my ($self, $templateList, $queryLength) = @_;
 
 #    print "reading resolutions of templates...\n";
     my %resolutions = &extractAllPDBResolutions();
@@ -103,7 +103,6 @@ sub predict {
     my $self = shift;
     my $template = shift;
     my $queryLength = shift;
-    my $config = shift;
 
     my $TMscore = 0;
     my %resolutions = &extractAllPDBResolutions();

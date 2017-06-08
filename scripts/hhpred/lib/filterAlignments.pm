@@ -7,6 +7,12 @@ use strict;
 use config;
 use utilities;
 
+use File::Temp qw/ tempfile tempdir /;
+use File::Copy;
+
+use lib $ENV{"HHLIB"}."/scripts";
+use HHPaths;    
+
 our @ISA = qw(Exporter);
 our @EXPORT = qw(Filtering FilteringRanking RemoveSSFromA3m);
 
@@ -56,10 +62,8 @@ sub RemoveSSFromA3m {
 ## 
 #######################################################
 sub Filtering {
-    my $queryName = shift;
     my $outbase = shift;        ## basename of outputs wrt query during filtering (e.g. filt.a3m), remove these outputs later
     my $templateList = shift;
-    my $server = shift;
     my $config = shift;
     my $qscStep = shift || 0.1;
 
@@ -157,14 +161,11 @@ sub Filtering {
 #    my $pid   = getppid();
 
     ## copy a3m files into temporary directory
-    my $randID = &randBetween(1000, 9999);
-    my $tmpDir = "/tmp/Filtering$queryName$randID";
-    while (-e $tmpDir) {
-    $randID = &randBetween(1000, 9999);
-    $tmpDir .= "$randID";
-    }
-    
-    &System("mkdir $tmpDir");   
+    my $tmpDir = tempdir( CLEANUP => 1 );
+
+    # Directory for moving hhm files for filtering
+    my $hhm_tmpDir = tempdir( CLEANUP => 1, DIR => $tmpDir );
+    my $am_tmpDir = tempdir( CLEANUP => 1, DIR => $tmpDir );
 
     for (my $i=0; $i<$templateList->size(); $i++) {
     my $tt = $templateList->get($i);
@@ -187,7 +188,7 @@ sub Filtering {
     #filtersteps:
     #############       
 
-    &System("cp $outbase.a3m $tmpDir/$queryName.filt.a3m");
+    &System("cp $outbase.a3m $tmpDir/query.filt.a3m");
 
     
     my $hhrnr = -1; 
@@ -213,8 +214,7 @@ sub Filtering {
         } else {
         foreach my $fileToFilter (split(/\s+/, $a3msToFilter))  {
             &System("$hhfilter -i $fileToFilter -id 100 -diff 0 -qsc $qsc -o $fileToFilter.out -v $v &> /dev/null");
-
-            sleep 1 while (! -e "$fileToFilter.out");
+            1 while (! -e "$fileToFilter.out");
             $filteredA3mFiles .= "$fileToFilter.out ";
         }
         
@@ -224,22 +224,49 @@ sub Filtering {
             $base =~ s/\.a3m\.out$//;
             
             &System("$hhmake -i $fileToMake -diff 100 -o $base.hhm -v $v &> /dev/null");
-            sleep 1 while (! -e "$base.hhm");
+            1 while (! -e "$base.hhm");
         }
         }
-        
-        #filter query:
-        &System("$hhfilter -i $tmpDir/$queryName.filt.a3m -id 100 -diff 0 -qsc  $qsc -o $tmpDir/$queryName.filt.a3m -v 1");      
-        
-        sleep 1 while ( !(-e "$tmpDir/$queryName.filt.a3m") );      
+        # Move all hmm files to the hhm directory
+        move($_, $hhm_tmpDir) for glob("$tmpDir/*.hhm");
+        move($_, $am_tmpDir) for glob("$tmpDir/*.a3m.out");
 
-        &System("$hhmake -i $tmpDir/$queryName.filt.a3m -diff 100 -o $tmpDir/$queryName.filt.hhm -v 1"); 
-        sleep 1 while ( !(-e "$tmpDir/$queryName.filt.hhm") );      
+              
+        # Build ffindex for hhm
+        System("$hhbin/ffindex_build -s $tmpDir/filt_hhm.ffdata $tmpDir/filt_hhm.ffindex $hhm_tmpDir");
+        System("$hhbin/ffindex_build -as $tmpDir/filt_hhm.ffdata $tmpDir/filt_hhm.ffindex $hhm_tmpDir");
+        1 while ((! -e "$tmpDir/filt_hhm.ffdata") && (! -e "$tmpDir/filt_hhm.ffindex"));        
+        unlink($_) for glob("$hhm_tmpDir/*");
+        rmdir($hhm_tmpDir);
+        # Build ffindex for a3m
+        System("$hhbin/ffindex_build -s $tmpDir/filt_a3m.ffdata $tmpDir/filt_a3m.ffindex $am_tmpDir");
+        System("$hhbin/ffindex_build -as $tmpDir/filt_a3m.ffdata $tmpDir/filt_a3m.ffindex $am_tmpDir");
+        1 while ((! -e "$tmpDir/filt_a3m.ffdata") && (! -e "$tmpDir/filt_a3m.ffindex"));        
+        unlink($_) for glob("$am_tmpDir/*");
+        rmdir($am_tmpDir);
+
+        # CStranslate
+        System("$hhbin/cstranslate -A $hhdata/cs219.lib -D $hhdata/context_data.lib -f -i $tmpDir/filt_a3m -o $tmpDir/filt_cs219 -I a3m -b");
+        1 while ((! -e "$tmpDir/filt_cs219.ffdata") && (! -e "$tmpDir/filt_cs219.ffindex"));        
+
+        #filter query:
+        &System("$hhfilter -i $tmpDir/query.filt.a3m -id 100 -diff 0 -qsc  $qsc -o $tmpDir/query.filt.a3m -v 1");      
+        1 while ( !(-e "$tmpDir/query.filt.a3m") );      
+
+        &System("$hhmake -i $tmpDir/query.filt.a3m -diff 100 -o $tmpDir/query.filt.hhm -v 1"); 
+        1 while ( !(-e "$tmpDir/query.filt.hhm") );              
         
         #hhsearch:
-        &System($config->get_hhsearch() . " -cpu " . $config->get_cpus() . " -i $tmpDir/$queryName.filt.hhm -d \"$db\" -o $outbase.$hhrnr.hhr $options -Z $HITS -B $HITS -atab $outbase.$hhrnr.tab");       
-
-        sleep 1 while ( !(-e "$outbase.$hhrnr.hhr") );      
+        &System($config->get_hhsearch() . " -cpu " . $config->get_cpus() . " -i $tmpDir/query.filt.hhm -d $tmpDir/filt -o $outbase.$hhrnr.hhr $options -Z $HITS -B $HITS -atab $outbase.$hhrnr.tab");       
+        1 while ( !(-e "$outbase.$hhrnr.hhr") );   
+          
+        # unlink ffindices
+        unlink("$tmpDir/filt_a3m.ffdata");
+        unlink("$tmpDir/filt_a3m.ffindex");
+        unlink("$tmpDir/filt_hhm.ffdata");
+        unlink("$tmpDir/filt_hhm.ffindex");
+        unlink("$tmpDir/filt_cs219.ffdata");
+        unlink("$tmpDir/filt_cs219.ffindex");
 
         my $tListFiltered = TemplateList->new();
         $tListFiltered->hhr_to_TemplateList("$outbase.$hhrnr.hhr");
