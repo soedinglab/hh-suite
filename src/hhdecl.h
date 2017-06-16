@@ -8,7 +8,6 @@
 #ifndef HHDECL_H_
 #define HHDECL_H_
 
-#include <execinfo.h>
 #include <signal.h>
 #include <unistd.h>
 #include <iostream>
