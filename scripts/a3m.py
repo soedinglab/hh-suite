@@ -70,9 +70,12 @@ class A3M_Container:
         return False
 
     def check_match_states(self, match_states):
+        if not self.nr_match_states:
+            self.nr_match_states = match_states
+
         if match_states == 0:
             raise A3MFormatError("Sequence with zero match states!")
-        elif self.nr_match_states and match_states != self.nr_match_states:
+        elif match_states != self.nr_match_states:
             raise A3MFormatError(
                 ("Sequence with diverging number "
                  "of match states ({} vs. {})!").format(
@@ -80,8 +83,7 @@ class A3M_Container:
                     self.nr_match_states
                 )
             )
-        else:
-            self.nr_match_states = match_states
+
 
     def check_ss_conf(self, sequence):
         count_match_states = sum((c in self.VALID_SS_CONF_STATES
@@ -96,6 +98,8 @@ class A3M_Container:
             raise A3MFormatError(
                 ("Undefined character(s) '{}' in predicted "
                  "secondary structure confidence!").format(invalid_states))
+        else:
+            return True
 
     def check_ss_pred(self, sequence):
         count_match_states = sum((c in self.VALID_SS_STATES
@@ -110,6 +114,8 @@ class A3M_Container:
             raise A3MFormatError(
                ("Undefined character(s) '{}' in predicted "
                 "secondary structure!").format(invalid_states))
+        else:
+            return True
 
     def check_dssp(self, sequence):
         count_match_states = sum(
@@ -122,12 +128,15 @@ class A3M_Container:
             raise A3MFormatError(
                 ("Undefined character(s) '{}' in "
                  "dssp annotation!").format(invalid_states))
+        else:
+            return True
 
     def check_sequence(self, sequence):
         count_match_states = sum((c in self.VALID_MATCH_STATES
                                  or c in self.VALID_GAP_STATES)
                                  for c in sequence)
         self.check_match_states(count_match_states)
+
 
         invalid_states = set(sequence) - self.VALID_MATCH_STATES
         invalid_states -= self.VALID_GAP_STATES
@@ -137,6 +146,8 @@ class A3M_Container:
             raise A3MFormatError(
                ("Undefined character(s) '{}' in "
                 "protein sequence!").format(invalid_states))
+        else:
+            return True
 
     def get_sub_sequence(self, sequence, limits):
         sub_sequence = []
