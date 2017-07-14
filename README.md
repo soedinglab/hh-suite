@@ -98,7 +98,9 @@ It might be good to do the following steps in a fresh VM with Ubuntu.
 1. Adjust `/README.md` (see TODOs)
 	The following line has to be updated
 
-  		HHsuite for sensitive sequence searching version <b>current version</b> (<b>release date</b>)
+    <pre>
+  		HHsuite for sensitive sequence searching version <b>current_version</b> (<b>release_date</b>)
+    </pre>
 
 1. Adjust `/CMakeLists.txt`
 	1. Update the version number
