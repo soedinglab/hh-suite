@@ -6,10 +6,24 @@ from pdbx.reader.PdbxReader import PdbxReader
 from pdbx.writer.PdbxWriter import PdbxWriter
 import re, os, sys, tempfile, glob
 
+from operator import itemgetter  # hzhu
+from itertools import groupby    # hzhu
+
 EMPTY = '*'
 GAP = '-'
 DEBUG_MODE = False
 
+class Gap: 
+    """ A gap is a continuous stretch of indels.
+        It is defined by a opening position and a size/length
+    """
+    def __init__(self, open_pos, size):
+        self.open_pos = open_pos   # gap opening position
+        self.size = size           # num of indels in the gap
+
+    def __repr__(self):
+        return 'Gap opening pos = %d, size = %d' % (self.open_pos, self.size)
+        
 class Grid:
     """
     Implementation of 2D grid of cells
@@ -51,7 +65,7 @@ class Grid:
         """ Return the width of the grid """
         
         return self._grid_width
-
+    
     def get_cell(self, row, col):
         return self._cells[row][col]
 
@@ -77,7 +91,7 @@ class Grid:
 
         return None
 
-    def get_gaps(self, row):
+    def get_gaps(self, row): 
         """ Return the position of gaps in a row """
         
         gaps = list()
@@ -90,6 +104,25 @@ class Grid:
 
         return gaps
 
+    def get_gaps_ref_gapless(self, row):
+        """ Return the pos of gaps in a row.
+            The opening positions of the gaps are wrt. the gapless seq
+        """
+        # get all the indels
+        indels = self.get_gaps(row)  
+        gaps = []
+        # combine continuous indels into a gap
+        for k,i in groupby( enumerate(indels), lambda x: x[0]-x[1] ):
+            g = list(map(itemgetter(1), i))
+            gaps.append( Gap(g[0], len(g)) )
+
+        # offset the gap opening positions
+        for i in range(1, len(gaps)):
+            # offset by total gap number before
+            gaps[i].open_pos -= sum([gaps[j].size for j in range(i)])
+            
+        return gaps  # a list of Gap instances
+    
     def get_seq_indeces(self, row):
 
         seq = list()
@@ -98,31 +131,51 @@ class Grid:
                 seq.append(pos)
 
         return seq
+            
+    ## def get_gap_list(self):  # hzhu commented this out. wrote a new version
+    ##     """ Returns a list of list of all gap positions in the sequence grid. """
+    ##     gap_pos = set()
+
+    ##     for row in range(self.get_grid_height()):
+    ##         for gap in self.get_gaps(row):
+    ##             gap_pos.add(gap)
+
+    ##     gap_pos = list(sorted(gap_pos))
+    ##     boundaries = [ (x + 1) for x, y in zip(gap_pos, gap_pos[1:]) if y - x != 1 ]
+ 
+    ##     gap_list = list()
+    ##     prev = 0
+ 
+    ##     for boundary in boundaries:
+    ##         sub_list = [ pos for pos in gap_pos[prev:] if pos < boundary ]
+    ##         gap_list.append(sub_list)
+    ##         prev += len(sub_list)
+ 
+    ##     gap_list.append([ x for x in gap_pos[prev:]])
+    
+    ##     return gap_list
 
     def get_gap_list(self):
-        """ Returns a list of list of all gap positions in the sequence grid """
-        
-        gap_pos = set()
-
+        """ Returns a list of Gap instances for all rows in the grid
+        """
+        gap_dict = dict()  # each position should occur as gap at most once
+                           # keys are gap openning positions
+                           # values are Gap instances
+        gap_list = []
         for row in range(self.get_grid_height()):
-            for gap in self.get_gaps(row):
-                gap_pos.add(gap)
-
-        gap_pos = list(sorted(gap_pos))
-        boundaries = [ (x + 1) for x, y in zip(gap_pos, gap_pos[1:]) if y - x != 1 ]
+            gap_pos = []
+            gaps = self.get_gaps_ref_gapless(row)
+             
+            for g in gaps:
+                if g.open_pos in gap_dict: # if there is already gaps at this open pos
+                    if g.size > gap_dict[g.open_pos].size: # if new gap is bigger
+                        gap_dict[g.open_pos] = g  # keep the larger gap as they overlap
+                else:
+                    gap_dict[g.open_pos] = g
+                    
+        gap_list = sorted(list(gap_dict.values()), key=lambda x: x.open_pos) # sort according to start position
+        return gap_list  # a list of Gap instances
         
-        gap_list = list()
-        prev = 0
-        
-        for boundary in boundaries:
-            sub_list = [ pos for pos in gap_pos[prev:] if pos < boundary ]
-            gap_list.append(sub_list)
-            prev += len(sub_list)
-        
-        gap_list.append([ x for x in gap_pos[prev:]])
-        
-        return gap_list
-                
     def set_gap(self, row, col):
         """ Set cell with index (row, col) to be a gap """
         
@@ -160,7 +213,38 @@ class Grid:
             
             self._grid_width += 1
 
-    def remove_gaps(self):
+    def insert_gaps_row(self, cols, row):
+        """ Intert gaps into cols only for certain row"""
+        for col in cols:
+            if col >= self.get_seq_start(row) and col < self.get_seq_end(row):
+                self._cells[row].insert(col, GAP)
+            else:
+                self._cells[row].insert(col, EMPTY)
+            # NOTE: grid_with should not be changed after every row is updated.    
+            #self._grid_width += 1
+
+    def clean_trail_empty(self):
+        """ Remove all trailing EMPTY and pad grid to same width"""
+        # first find out the max length (exluding trailing EMPTY)
+        max_width = 0
+        for row in range(self._grid_height):
+            for i in range(len(self._cells[row])-1, -1, -1):
+                if self._cells[row][i] != EMPTY:
+                    break
+            if i+1 > max_width:
+                max_width = i+1
+                
+        # delete excessive EMPTY        
+        for row in range(self._grid_height):
+            del self._cells[row][max_width:]
+
+        # then pad all rows to the same length
+        [self._cells[row].append( EMPTY * (max_width-len(self._cells[row])) ) \
+                                 for row in range(self._grid_height) if len(self._cells[row]) < max_width]
+        self._grid_width = max_width
+        return
+    
+    def remove_gaps(self, keep_width=True): # hzhu add keep_width option
         """ Removes all gaps from the grid. """
 
         for row in range(self.get_grid_height()):
@@ -171,8 +255,15 @@ class Grid:
 
             self._cells[row] = [ self._cells[row][col] for col in not_gap ]
 
-            for del_pos in range(self._grid_width - len(not_gap)):
-                self._cells[row].append(EMPTY)
+            if keep_width:  # hzhu only pad to original width if desired
+                for del_pos in range(self._grid_width - len(not_gap)):
+                    self._cells[row].append(EMPTY)
+
+        if not keep_width: # hzhu if width is not kept, make sure width is consistent
+            self.clean_trail_empty()
+                    
+        return
+                
 
 class QueryGrid(Grid):
 
@@ -209,7 +300,7 @@ class TemplateGrid(Grid):
         self._chain = list()
         self._organism = list()
         self._resolution = list()
-
+        
     def display(self):
         """ Return multi-line string represenation for grid """
         
@@ -449,6 +540,30 @@ def get_pdb_entry_id(block):
     
     return entry_id
 
+
+def template_id_to_pdb(template_id):
+    """
+    Extracts PDB ID and chain name from the provided template id
+    """
+    # match PDBID without chain (8fab, 1a01)
+    m = re.match(r'/^(\d[A-Za-z0-9]{3})$', template_id)
+    if m:
+        return m.group(1).upper(), 'A'
+    
+    # PDB CODE with chain Identifier
+    m = re.match(r'^(\d[A-Za-z0-9]{3})_(\S)$', template_id)
+    if m:
+        return m.group(1).upper(), m.group(2).upper()
+
+    # Match DALI ID
+    m = re.match(r'^(\d[A-Za-z0-9]{3})([A-Za-z0-9]?)_\d+$', template_id)
+    if m:
+        return m.group(1).upper(), m.group(2).upper()
+    
+    # No PDB code and chain identified
+    return None, None
+
+
 def create_template_grid(hhr_data):
     """ Creates a template grid """
 
@@ -466,8 +581,9 @@ def create_template_grid(hhr_data):
         # Load Meta Data
         start = template.start[1]
         end = template.end[1]
-        pdb_code = template.template_id.split("_")[0].upper()
-        chain = template.template_id.split("_")[1].upper()
+
+        # Get pdb_code and chain identifier of template
+        pdb_code, chain =  template_id_to_pdb(template.template_id)
 
         m = re.search("(\d+.\d+)A", template.template_info) # try to extract resolution of the structure
         
@@ -523,20 +639,20 @@ def create_gapless_grid(grid):
     """ Returns a gapless grid """
 
     gapless = deepcopy(grid)
-    gapless.remove_gaps()
+    gapless.remove_gaps(keep_width=False)  # hzhu:  shrink grid
 
     return gapless
 
 def process_query_grid(query_grid, gapless_grid):
-    """ Processes a query grid sucht that it contains all gaps """
-
+    """ Processes a query grid sucht that it contains all gaps
+    """
     gaplist = query_grid.get_gap_list()
     off_set = 0
-
-    for gaps in gaplist:
-        gapless_grid.insert_gaps([ gap + off_set for gap in gaps ])
-        off_set += len(gaps) 
-
+    
+    for g in gaplist:
+        gapless_grid.insert_gaps([ p + off_set for p in range(g.open_pos, g.open_pos+g.size) ])
+        off_set += g.size
+        
     return gapless_grid
 
 def derive_global_seq(processed_query_grid, query_name, query_chain):
@@ -554,17 +670,33 @@ def derive_global_seq(processed_query_grid, query_name, query_chain):
 
     return header + ''.join(global_seq) + '*'
 
-def process_template_grid(query_grid, gapless_template_grid):
-    """ Insertes Gaps into the template grid """
+def process_template_grid(query_grid, template_grid):
+    """ Insertes Gaps into the template grid
+        Only add gaps from **other** query_grids into template grid (NOT gapless)
+    """
+    gaplist = query_grid.get_gap_list()  # use this to keep the offset
+    
+    for row in range(template_grid.get_grid_height()):
+        # do NOT consider gaps in current query row         
+        gaplist_row = query_grid.get_gaps_ref_gapless(row)
+        gapdict_row = dict(zip([g.open_pos for g in gaplist_row],
+                               [g.size     for g in gaplist_row]))
+        off_set = 0
+        for g in gaplist:
+            # if there is a gap with same opening position in the current row,
+            # only consider g if it is larger than the on in the current row
+            if g.open_pos in gapdict_row:
+                if g.size > gapdict_row[g.open_pos]: 
+                    template_grid.insert_gaps_row([ p + off_set for p in range(g.open_pos,
+                                                                              g.open_pos+g.size-gapdict_row[g.open_pos]) ], row)
+            else:
+                template_grid.insert_gaps_row([ p + off_set for p in range(g.open_pos, g.open_pos+g.size) ], row)
+                 
+            off_set += g.size  # even if the gaps are not inserted, the offset should be adjusted
 
-    gaplist = query_grid.get_gap_list()
-    off_set = 0
-
-    for gaps in gaplist:
-        gapless_template_grid.insert_gaps([ gap + off_set for gap in gaps ])
-        off_set += len(gaps) 
-
-    return gapless_template_grid      
+    template_grid.clean_trail_empty()  # clean the redundant trailing EMPTY char
+    
+    return template_grid
 
 def compare_with_cifs(template_grid, folder, output_path, convert, threshold):
     """
@@ -589,7 +721,7 @@ def compare_with_cifs(template_grid, folder, output_path, convert, threshold):
     for row in range(template_grid.get_grid_height()):
         # get the pdb code and strand id from the current template
         pdb_code = template_grid._pdb_code[row]
-        chain = template_grid._chain[row]
+        chain = template_grid._chain[row]  # hhr users pdb chain ID
 
 
         # load mmCif file accordingly
@@ -619,22 +751,29 @@ def compare_with_cifs(template_grid, folder, output_path, convert, threshold):
         for atom_row in range(0, atom_site.getRowCount()):
             
             try:
+                if atom_site.getValue('label_comp_id', atom_row) == 'HOH':
+                    continue
                 cif_chain = atom_site.getValue('label_asym_id', atom_row)
+                pdb_chain = atom_site.getValue('auth_asym_id', atom_row)   # use PDB chain ID
             except IndexError:
                 pass
 
             cif_chains.add(cif_chain)
 
             # We do not care about the residues apart from the chain
-            if cif_chain != chain:
+            #if cif_chain != chain: # hzhu
+            if pdb_chain != chain:  # hhr uses PDB chain, not the cif chain! hzhu
                 continue     
-            
+            # and update the chain id from pdb_chain to cif_chain
+            if atom_site.getValue('group_PDB', atom_row).startswith('ATOM'):  # hzhu in case HETATM ruins ch id
+                template_grid._chain[row] = cif_chain
+                
             # get the residue and the residue number 
             try:
                 res_num = int(atom_site.getValue("label_seq_id", atom_row))
             except ValueError:
                 continue
-            
+
             residue = atom_site.getValue('label_comp_id', atom_row)
             residue = convert_aa_code(residue, convert)         
 
@@ -700,7 +839,7 @@ def compare_with_cifs(template_grid, folder, output_path, convert, threshold):
             template_grid.get_template_end(row) + 1), template_grid.get_seq_indeces(row)):
 
             res_tem = template_grid.get_cell(row, pos_tem)
-            
+
             try:
                 res_cif = cif_seq[pos_cif]
             except KeyError:
@@ -2234,16 +2373,26 @@ def main():
             n = len(selected_templates)))
 
     query_grid = create_query_grid(selected_templates) # load query grid
-    
+    print ('query_grid')
+    print(query_grid)
     gapless_query_grid = create_gapless_grid(query_grid) # remove gaps
+    print ('gapless_query_grid')
+    print(gapless_query_grid)
     processed_query_grid = process_query_grid(query_grid, gapless_query_grid) # insert gaps
+    ##processed_query_grid = process_query_grid(query_grid, query_grid) # insert gaps
+    print ('processed_query_grid')
+    print (processed_query_grid)
     glob_seq = derive_global_seq(processed_query_grid, query_name, query_chain) # derive query sequence
-    template_grid = create_template_grid(selected_templates) # create template grid 
-    gapless_template_grid = create_gapless_grid(template_grid) # remove gaps
-    processed_template_grid = process_template_grid(query_grid, gapless_template_grid) # insert gaps to template sequnces
+    template_grid = create_template_grid(selected_templates) # create template grid
+    print ('template_grid')
+    print (template_grid)
+    processed_template_grid = process_template_grid(query_grid, template_grid) # insert gaps to template sequnces
+    print ('processed_query_grid')
+    print (processed_query_grid)
+    print ('hzhu processed_template_grid')
+    print (processed_template_grid)
     final_grid = compare_with_cifs(processed_template_grid, args.cifs, args.output, args.c, args.r) # compare with atom section of cifs
     remove_self_alignment(final_grid, query_name) # remove self alignment if any
-    
     write_to_file([glob_seq, final_grid.display()], args.pir)
 
 
