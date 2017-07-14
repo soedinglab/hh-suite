@@ -93,7 +93,7 @@ For generating an alignment of homologous sequences:
 
 You can get a detailed list of options for HHblits by running HHblits with the "-h" option.
 
-## Building packages for a Release
+## Building packages for a release
 It might be good to do the following steps in a fresh VM with Ubuntu.
 1. Adjust `/README.md` (see TODOs)
 	The following line has to be updated
