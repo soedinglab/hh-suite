@@ -74,7 +74,7 @@ def optimize_database(database_data_path, database_index_path):
 
 def get_large_a3ms(a3m_base_path):
   entries = ffindex.read_index(a3m_base_path+".ffindex")
-  data = ffindex.read_data(a3m_base_path+".ffindex")
+  data = ffindex.read_data(a3m_base_path+".ffdata")
   
   large_alignments = set()
   for entry in entries:
@@ -83,7 +83,7 @@ def get_large_a3ms(a3m_base_path):
     try:
       alignment.read_a3m_from_lines(lines)
       
-      if alignment.get_number_sequences() > 50:
+      if alignment.number_sequences > 50:
         large_alignments.add(entry.name)
     except:
       sys.stderr.write("Warning: A3M "+entry.name+" is corrupted!\n")
