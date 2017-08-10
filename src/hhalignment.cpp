@@ -836,7 +836,7 @@ void Alignment::Compress(const char infile[], const char cons, const int maxres,
   int a;                  //amino acid index
   char c;
   int unequal_lengths = 0;  //k: seq k doesn't have same number of match states as seq 0 => WARNING
-  short unsigned int h[MAXSEQ];  //points to next character in seq[k] to be written
+  short unsigned int * h= new short unsigned int[MAXSEQ];  //points to next character in seq[k] to be written
 
   int M = par_M;
 
@@ -1320,6 +1320,7 @@ void Alignment::Compress(const char infile[], const char cons, const int maxres,
     }
     HH_LOG(DEBUG1) << "\n";
   }
+    delete [] h;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -2543,7 +2544,7 @@ void Alignment::Amino_acid_frequencies_and_transitions_from_M_state(
   int a;                      // amino acid (0..19)
   int** n = NULL;  // n[j][a] = number of seq's with some non-gap amino acid at column i AND residue a at position j
   float** w_contrib = NULL;  // weight contribution of amino acid a at pos. j to weight of a sequence
-  float wi[MAXSEQ];  // weight of sequence k in column i, calculated from subalignment i
+  float * wi = new float[MAXSEQ];  // weight of sequence k in column i, calculated from subalignment i
   float Neff[maxres];         // diversity of subalignment i
   int nseqi = 0;                // number of sequences in subalignment i
   int ncol = 0;                // number of columns j that contribute to Neff[i]
@@ -2746,7 +2747,7 @@ void Alignment::Amino_acid_frequencies_and_transitions_from_M_state(
       free(w_contrib[j]);
     delete[] (w_contrib);
   }
-
+  delete [] wi;
   // Delete f[j]
   free(f);
   delete[] naa;
@@ -3091,7 +3092,7 @@ void Alignment::Transitions_from_I_state(HMM* q, char* in, const int maxres) {
   int a;                      // amino acid (0..19)
   int naa;                    // number of different amino acids
   int** n;  // n[j][a] = number of seq's with some residue at column i AND a at position j
-  float wi[MAXSEQ];  // weight of sequence k in column i, calculated from subalignment i
+  float * wi = new float[MAXSEQ];  // weight of sequence k in column i, calculated from subalignment i
   float Neff[maxres];         // diversity of subalignment i
   int nseqi;                  // number of sequences in subalignment i
   int ncol;                  // number of columns j that contribute to Neff[i]
@@ -3263,6 +3264,7 @@ void Alignment::Transitions_from_I_state(HMM* q, char* in, const int maxres) {
   for (j = 1; j <= L; ++j)
     delete[] (n[j]);
   delete[] (n);
+  delete[] wi;
 
   q->tr[0][I2M] = 0;
   q->tr[0][I2I] = -100000;
@@ -3296,7 +3298,7 @@ void Alignment::Transitions_from_D_state(HMM* q, char* in, const int maxres) {
   int a;                      // amino acid (0..19)
   int naa;                    // number of different amino acids
   int** n;  // n[j][a] = number of seq's with some residue at column i AND a at position j
-  float wi[MAXSEQ];  // weight of sequence k in column i, calculated from subalignment i
+  float * wi = new float[MAXSEQ];  // weight of sequence k in column i, calculated from subalignment i
   float Neff[maxres];         // diversity of subalignment i
   int nseqi = 0;      // number of sequences in subalignment i (for DEBUGGING)
   int ncol = 0;              // number of columns j that contribute to Neff[i]
@@ -3482,12 +3484,14 @@ void Alignment::Transitions_from_D_state(HMM* q, char* in, const int maxres) {
   q->Neff_D[0] = 99.999;
 
   // Assign Neff_D[i]
-  for (i = 1; i <= L; ++i)
+  for (i = 1; i <= L; ++i){
     q->Neff_D[i] = Neff[i];
-
+  }
+  delete [] wi;
   // delete n[][]
-  for (j = 1; j <= L; ++j)
+  for (j = 1; j <= L; ++j){
     delete[] (n[j]);
+  }
   delete[] (n);
   return;
 }

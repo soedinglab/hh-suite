@@ -211,8 +211,8 @@ void FullAlignment::PrintHHR(std::stringstream& out, Hit& hit, const char showco
   int h = 0;    //counts position (column) in alignment
   int hh = 0;   //points to column at start of present output block of alignment
   int k;      //counts sequences in query and template 
-  short unsigned int lq[MAXSEQ]; // lq[k] counts index of residue from query sequence k to be printed next;
-  short unsigned int lt[MAXSEQ]; // lt[k] counts index of residue from template sequence k to be printed next;
+  short unsigned int * lq= new short unsigned int[MAXSEQ]; // lq[k] counts index of residue from query sequence k to be printed next;
+  short unsigned int * lt= new short unsigned int[MAXSEQ]; // lt[k] counts index of residue from template sequence k to be printed next;
   char namestr[NAMELEN]; //name of sequence
   int iq = hit.i1; // match state counter for query HMM (displayed in consensus line)
   int jt = hit.j1; // match state counter for template HMM (displayed in consensus line)
@@ -384,6 +384,8 @@ void FullAlignment::PrintHHR(std::stringstream& out, Hit& hit, const char showco
     hh = h;
     out << std::endl << std::endl;
   }
+  delete [] lq;
+  delete [] lt;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
