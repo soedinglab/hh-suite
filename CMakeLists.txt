@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.12)
 project(hhsuite CXX)
 
-SET(HAVE_SSSE3 0 CACHE BOOL "Have SSSE3")
+SET(HAVE_SSE2 0 CACHE BOOL "Have SSE2")
 SET(HAVE_AVX2 0 CACHE BOOL "Have AVX2")
 
 #set(CMAKE_BUILD_TYPE Release)

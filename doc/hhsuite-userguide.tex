@@ -141,11 +141,11 @@ Here, num\_threads is the number of threads specified with option \verb`-cpu <in
 Due to the high number of random file accesses by HHblits, it is important for good efficiency that the databases used by HHblits are placed in RAM disk or on a local solid state drive (SSD). See section \ref{efficiency} for details.
 
 
-\subsubsection*{Support for SSSE3 instruction set} 
+\subsubsection*{Support for SSE2 instruction set}
 
-HHblits needs to run on CPUs supporting at least the SSSE3 (Supplemental Streaming SIMD Extensions 3) instruction set. (See \url{https://en.wikipedia.org/wiki/SSSE3} for an explanation of SSSE3.) Starting with the Woodcrest Xeons in 2006, all Intel CPUs support SSSE3. By default, the HHsuite binaries are compiled using the most evolved supported instruction set on the computer used for compiling.
+HHblits needs to run on CPUs supporting at least the SSE2 (Streaming SIMD Extensions 2) instruction set. (See \url{https://en.wikipedia.org/wiki/SSE2} for an explanation of SSE2.) Every 64-bit CPU also supports SSE2. By default, the HHsuite binaries are compiled using the most evolved supported instruction set on the computer used for compiling.
 
-However, you may limit the used instruction set to SSSE3 with the cmake compile flag \verb`-DHAVE_SSSE3=1`
+However, you may limit the used instruction set to SSE2 with the cmake compile flag \verb`-DHAVE_SSE2=1`
 The precompiled standard binaries are compiled with this flag. 
 
 \subsection{Installation from source code} 

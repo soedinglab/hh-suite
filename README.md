@@ -128,7 +128,7 @@ It might be good to do the following steps in a fresh VM with Ubuntu.
         mkdir build
         cd build
 
-        cmake -DCMAKE_INSTALL_PREFIX=/home/mmeier/opt/hh-suite -DHAVE_SSSE3=1 \
+        cmake -DCMAKE_INSTALL_PREFIX=/home/mmeier/opt/hh-suite -DHAVE_SSE2=1 \
         -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF \
         -DCMAKE_EXE_LINKER_FLAGS_RELEASE=-static -static-libgcc \
         -static-libstdc++ -DCMAKE_FIND_LIBRARY_SUFFIXES=.a ..
