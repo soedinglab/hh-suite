@@ -152,8 +152,17 @@ if (OPENMP_FOUND)
     )
     target_link_libraries (hhblits_omp ffindex)
 
+    add_executable(hhsearch_omp
+        hhsearch_omp.cpp $<TARGET_OBJECTS:CS_OBJECTS> $<TARGET_OBJECTS:HH_OBJECTS>
+        $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff>
+        $<TARGET_OBJECTS:hhviterbialgorithm_and_ss>
+        $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff_and_ss>
+    )
+    target_link_libraries (hhsearch_omp ffindex)
+
     INSTALL(PROGRAMS 
         ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/hhblits_omp
+        ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/hhsearch_omp
         DESTINATION bin
     )
 endif()
