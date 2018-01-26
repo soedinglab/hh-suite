@@ -204,6 +204,15 @@ if (OPENMP_FOUND)
             hhviterbialgorithm_with_celloff_and_ss
             )
     INSTALL(PROGRAMS hhblits_omp DESTINATION bin)
+
+    add_executable(hhsearch_omp hhsearch_omp.cpp)
+    target_link_libraries(hhsearch_omp
+            ffindex CS_OBJECTS HH_OBJECTS
+            hhviterbialgorithm_with_celloff
+            hhviterbialgorithm_and_ss
+            hhviterbialgorithm_with_celloff_and_ss
+            )
+    INSTALL(PROGRAMS hhsearch_omp DESTINATION bin)
 endif ()
 
 find_package(MPI QUIET)
