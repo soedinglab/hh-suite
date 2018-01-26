@@ -1,11 +1,9 @@
-
 INSTALL(PROGRAMS
 	Align.pm  
 	HHPaths.pm  
 	PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
 	DESTINATION scripts
 )
-
 
 INSTALL(PROGRAMS 
 	addss.pl  
@@ -27,6 +25,6 @@ INSTALL(PROGRAMS
 	pdbfilter.py
 	cif2fasta.py
 	hhmakemodel.py
-  hh_reader.py
+	hh_reader.py
 	DESTINATION scripts
 )

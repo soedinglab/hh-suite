@@ -112,7 +112,7 @@ GETOPT_INLINE GetOpt_pp::GetOpt_pp(int argc, char* argv[], _EnvTag) {
 }
 
 GETOPT_INLINE GetOpt_pp& GetOpt_pp::operator >> (
-    const _Option& opt) throw (GetOptEx) {
+    const _Option& opt) {
   if (_last != _Option::ParsingError) {
     _last = opt(_shortOps, _longOps, _flags);
 

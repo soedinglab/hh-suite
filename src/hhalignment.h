@@ -1,15 +1,18 @@
 // hhalignment.h
 
-#include <iostream>   // cin, cout, cerr
-#include <fstream>    // ofstream, ifstream
-#include <stdio.h>    // printf
-#include <stdlib.h>   // exit
-#include <string>     // strcmp, strstr
-#include <math.h>     // sqrt, pow
-#include <limits.h>   // INT_MIN
-#include <float.h>    // FLT_MIN
-#include <time.h>     // clock
-#include <ctype.h>    // islower, isdigit etc
+#ifndef HHALIGNMENT_H_
+#define HHALIGNMENT_H_
+
+#include <iostream>  // cin, cout, cerr
+#include <fstream>   // ofstream, ifstream
+#include <cstdio>    // printf
+#include <cstdlib>   // exit
+#include <string>    // strcmp, strstr
+#include <cmath>     // sqrt, pow
+#include <climits>   // INT_MIN
+#include <cfloat>    // FLT_MIN
+#include <ctime>     // clock
+#include <cctype>    // islower, isdigit etc
 #include <cstring>
 
 #include "hhdecl.h"
@@ -21,13 +24,9 @@
 
 #include "log.h"
 
-
 extern "C" {
 #include <ffindex.h>     // fast index-based database reading
 }
-
-#ifndef HHALIGNMENT_H_
-#define HHALIGNMENT_H_
 
 class Alignment
 {

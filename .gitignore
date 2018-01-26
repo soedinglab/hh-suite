@@ -27,3 +27,7 @@ tags
 /Debug
 /build
 *__pycache__*
+
+.DS_Store
+cmake-build-*/
+.idea/

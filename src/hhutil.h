@@ -5,16 +5,15 @@
  *      Author: meiermark
  */
 
+#ifndef HHUTIL_H_
+#define HHUTIL_H_
+
 #include <errno.h>
 
 #include <iostream>
 
 #include "hhdecl.h"
 #include "hhutil-inl.h"
-
-#ifndef HHUTIL_H_
-#define HHUTIL_H_
-
 
 int FormatError(const char infile[], const char* file, const int line, const char* func, const char details[]="");
 
@@ -29,7 +28,7 @@ int InternalError(const char errstr[], const char* file, const int line, const c
 /////////////////////////////////////////////////////////////////////////////////////
 //// Execute system command
 /////////////////////////////////////////////////////////////////////////////////////
-void runSystem(std::string cmd);
+void runSystem(const std::string &cmd);
 
 
 /////////////////////////////////////////////////////////////////////////////////////

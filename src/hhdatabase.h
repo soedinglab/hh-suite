@@ -11,12 +11,13 @@
 class HHEntry;
 class HHDatabaseEntry;
 class HHFileEntry;
-
+class Alignment;
 class FFindexDatabase;
+
+#include <cstdlib>
 
 
 extern "C" {
-#include <stdlib.h>
 #include <ffindex.h>
 }
 

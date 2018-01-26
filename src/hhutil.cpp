@@ -41,7 +41,7 @@ int InternalError(const char errstr[], const char* file, const int line, const c
 /////////////////////////////////////////////////////////////////////////////////////
 //// Execute system command
 /////////////////////////////////////////////////////////////////////////////////////
-void runSystem(std::string cmd)
+void runSystem(const std::string &cmd)
 {
   HH_LOG(INFO) << "Command: " << cmd << "!\n";
   int res = system(cmd.c_str());

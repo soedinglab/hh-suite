@@ -470,7 +470,7 @@ void HHblits::help(Parameters& par, char all) {
     printf("\n");
   }
   printf("Examples:\n");
-  printf("hhblist -i query.fas -o query.hhr -d ./uniclust30\n");
+  printf("hhblits -i query.fas -o query.hhr -d ./uniclust30\n");
   printf("\n");
   printf("hhblits -i query.fas -o query.hhr -oa3m query.a3m -n 1 -d ./uniclust30\n");
   printf("\n");

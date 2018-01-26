@@ -26,13 +26,6 @@
 
 #include <sys/time.h>
 
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::ios;
-using std::ifstream;
-using std::ofstream;
-
 // context-specific pseudocounts
 #include "cs.h"
 #include "context_library.h"
