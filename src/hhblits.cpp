@@ -1527,6 +1527,400 @@ void HHblits::run(FILE* query_fh, char* query_path) {
   delete previous_hits;
 }
 
+
+void HHblits::run(ffindex_entry_t* entry, char* data,
+      ffindex_index_t* sequence_index, char* seq,
+      ffindex_index_t* header_index, char* header) {
+    
+    
+    q=new HMM(MAXSEQDIS, par.maxres);
+    
+    Qali = new Alignment(MAXSEQ, par.maxres);
+    Qali_allseqs = new Alignment(MAXSEQ, par.maxres);
+
+
+
+    // Read alignment from infile into matrix X[k][l] as ASCII (and supply first line as extra argument)
+    Qali->ReadCompressed(entry,data,
+      sequence_index, seq,
+      header_index, header,
+      par.mark, par.maxcol);
+
+
+    // Convert ASCII to int (0-20),throw out all insert states, record their number in I[k][i]
+    // and store marked sequences in name[k] and seq[k]
+    Qali->Compress(par.infile, par.cons, par.maxres, par.maxcol, par.M, par.Mgaps);
+
+    Qali->Shrink();
+
+    // Sort out the nseqdis most dissimilar sequences for display in the output alignments
+    Qali->FilterForDisplay(par.max_seqid, par.mark, S, par.coverage, par.qid, par.qsc, par.nseqdis);
+
+
+    // Remove sequences with seq. identity larger than seqid percent (remove the shorter of two)
+    Qali->N_filtered = Qali->Filter(par.max_seqid, S, par.coverage, par.qid, par.qsc, par.Ndiff);
+
+    if (par.Neff >= 0.999)
+    	Qali->FilterNeff(par.wg, par.mark, par.cons, par.showcons,
+          par.maxres, par.max_seqid, par.coverage, par.Neff, pb, S, Sim);
+
+    // Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
+    Qali->FrequenciesAndTransitions(q, par.wg, par.mark, par.cons,
+        par.showcons, par.maxres, pb, Sim);
+
+
+
+  int cluster_found = 0;
+  int seqs_found = 0;
+
+  SearchCounter search_counter;
+
+  Hit hit_cur;
+  Hash<Hit>* previous_hits = new Hash<Hit>(1631, hit_cur);
+
+
+
+  HMMSimd q_vec(par.maxres);
+  q_tmp = new HMM(MAXSEQDIS, par.maxres);
+
+  // Read query input file (HHM or alignment format) without adding pseudocounts
+  Qali->N_in = 0;
+  char input_format;
+  
+  /*ReadQueryFile(par, query_fh, input_format, par.wg, q, Qali, query_path, pb, S,
+                Sim);
+                */
+                
+
+  if (par.allseqs) {
+    *Qali_allseqs = *Qali;  // make a *deep* copy of Qali!
+    for (int k = 0; k < Qali_allseqs->N_in; ++k)
+      Qali_allseqs->keep[k] = 1;  // keep *all* sequences (reset filtering in Qali)
+  }
+
+  // Set query columns in His-tags etc to Null model distribution
+  if (par.notags)
+    q->NeutralizeTags(pb);
+
+  //save all entries pointer in this vector to delete, when it's safe
+  std::vector<HHEntry*> all_entries;
+  std::vector<HHEntry*> new_entries;
+  std::vector<HHEntry*> old_entries;
+
+  if (!par.prefilter) {
+    for (size_t i = 0; i < dbs.size(); i++) {
+      dbs[i]->initNoPrefilter(new_entries);
+    }
+    all_entries.insert(all_entries.end(), new_entries.begin(),
+                       new_entries.end());
+
+    for (size_t i = 0; i < all_entries.size(); i++) {
+      search_counter.append(std::string(all_entries[i]->getName()));
+    }
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////
+  // Main loop overs search iterations
+  //////////////////////////////////////////////////////////////////////////////////
+
+  for (int round = 1; round <= par.num_rounds; round++) {
+    HH_LOG(INFO) << "Iteration " << round << std::endl;
+
+    // Save HMM without pseudocounts for prefilter query-profile
+    *q_tmp = *q;
+    HMM* q_rescore = new HMM(MAXSEQDIS, par.maxres);
+
+
+    PrepareQueryHMM(par, input_format, q, pc_hhm_context_engine,
+                    pc_hhm_context_mode, pb, R);
+    //deep copy for rescoring of q
+    *q_rescore = *q;
+    q_vec.MapOneHMM(q_rescore);
+
+    ////////////////////////////////////////////
+    // Prefiltering
+    ////////////////////////////////////////////
+
+    if (par.prefilter) {
+      HH_LOG(INFO) << "Prefiltering database" << std::endl;
+
+      new_entries.clear();
+      old_entries.clear();
+
+      // Add Pseudocounts to q_tmp
+      if (par.nocontxt) {
+        // Generate an amino acid frequency matrix from f[i][a] with full pseudocount admixture (tau=1) -> g[i][a]
+        q_tmp->PreparePseudocounts(R);
+        // Add amino acid pseudocounts to query: p[i][a] = (1-tau)*f[i][a] + tau*g[i][a]
+        q_tmp->AddAminoAcidPseudocounts(par.pc_prefilter_nocontext_mode,
+                                        par.pc_prefilter_nocontext_a,
+                                        par.pc_prefilter_nocontext_b,
+                                        par.pc_prefilter_nocontext_c);
+      } else {
+        // Add context specific pseudocounts (now always used, because clusterfile is necessary)
+        q_tmp->AddContextSpecificPseudocounts(pc_prefilter_context_engine,
+                                              pc_prefilter_context_mode);
+      }
+
+      q_tmp->CalculateAminoAcidBackground(pb);
+
+      for (size_t i = 0; i < dbs.size(); i++) {
+        dbs[i]->prefilter_db(q_tmp, previous_hits, par.threads,
+                             par.prefilter_gap_open, par.prefilter_gap_extend,
+                             par.prefilter_score_offset,
+                             par.prefilter_bit_factor,
+                             par.prefilter_evalue_thresh,
+                             par.prefilter_evalue_coarse_thresh,
+                             par.preprefilter_smax_thresh,
+                             par.min_prefilter_hits, par.maxnumdb, R,
+                             new_entries, old_entries);
+      }
+
+      for (size_t i = 0; i < new_entries.size(); i++) {
+        search_counter.append(std::string(new_entries[i]->getName()));
+      }
+
+      all_entries.insert(all_entries.end(), new_entries.begin(),
+                         new_entries.end());
+      all_entries.insert(all_entries.end(), old_entries.begin(),
+                         old_entries.end());
+    }
+
+    int max_template_length = getMaxTemplateLength(new_entries);
+    if (max_template_length > par.maxres) {
+      HH_LOG(WARNING)
+          << "database contains sequences that exceeds maximum allowed size (maxres = "
+          << par.maxres << "). Maxres can be increased with parameter -maxres."
+          << std::endl;
+    }
+    max_template_length = std::min(max_template_length, par.maxres);
+    for (int i = 0; i < par.threads; i++) {
+      viterbiMatrices[i]->AllocateBacktraceMatrix(q->L, max_template_length);
+    }
+
+    hitlist.N_searched = search_counter.getCounter();
+
+    if (new_entries.size() == 0) {
+      HH_LOG(INFO) << "No HMMs pass prefilter => Stop searching!"
+                             << std::endl;
+      break;
+    }
+
+    // Search datbases
+    HH_LOG(INFO)
+        << "HMMs passed 2nd prefilter (gapped profile-profile alignment)   : "
+        << new_entries.size() + old_entries.size() << std::endl;
+    HH_LOG(INFO)
+        << "HMMs passed 2nd prefilter and not found in previous iterations : "
+        << new_entries.size() << std::endl;
+    HH_LOG(INFO) << "Scoring " << new_entries.size()
+                           << " HMMs using HMM-HMM Viterbi alignment"
+                           << std::endl;
+
+    // Main Viterbi HMM-HMM search
+    ViterbiRunner viterbirunner(viterbiMatrices, dbs, par.threads);
+    std::vector<Hit> hits_to_add = viterbirunner.alignment(par, &q_vec,
+                                                           new_entries,
+                                                           par.qsc_db, pb, S,
+                                                           Sim, R, par.ssm, S73, S33, S37);
+
+    add_hits_to_hitlist(hits_to_add, hitlist);
+
+    // check for new hits or end with iteration
+    int new_hits = 0;
+    hitlist.Reset();
+    while (!hitlist.End()) {
+      Hit hit_cur = hitlist.ReadNext();
+      if (hit_cur.Eval > 100.0 * par.e)
+        break;  // E-value much too large
+      if (hit_cur.Eval > par.e)
+        continue;  // E-value too large
+      new_hits++;
+    }
+
+    if (new_hits == 0 || round == par.num_rounds) {
+      if (round < par.num_rounds) {
+        HH_LOG(INFO) << "No new hits found in iteration " << round
+                     << " => Stop searching" << std::endl;
+      }
+
+      if (old_entries.size() > 0 && par.realign_old_hits) {
+        HH_LOG(INFO)
+            << "Rescoring previously found HMMs with Viterbi algorithm"
+            << std::endl;
+
+        ViterbiRunner viterbirunner(viterbiMatrices, dbs, par.threads);
+        std::vector<Hit> hits_to_add = viterbirunner.alignment(par, &q_vec,
+                                                                  old_entries,
+                                                                  par.qsc_db, pb,
+                                                                  S, Sim, R, par.ssm, S73, S33, S37);
+        add_hits_to_hitlist(hits_to_add, hitlist);
+        // Add dbfiles_old to dbfiles_new for realign
+        new_entries.insert(new_entries.end(), old_entries.begin(),
+                             old_entries.end());
+      } else if (!par.realign_old_hits && previous_hits->Size() > 0) {
+         HH_LOG(INFO)
+             << "Rescoring previously found HMMs with Viterbi algorithm"
+             << std::endl;
+         RescoreWithViterbiKeepAlignment(q_vec, previous_hits);
+      }
+    }
+
+    // Realign hits with MAC algorithm
+    if (par.realign)
+      perform_realign(q_vec, input_format, new_entries);
+
+    // Generate alignment for next iteration
+    if (round < par.num_rounds || *par.alnfile || *par.psifile || *par.hhmfile || *par.alisbasename) {
+      if (new_hits > 0) {
+        mergeHitsToQuery(previous_hits, seqs_found, cluster_found);
+      }
+
+      // Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
+      Qali->FrequenciesAndTransitions(q, par.wg, par.mark, par.cons,
+                                      par.showcons, par.maxres, pb, Sim, NULL,
+                                      true);
+
+      if (par.notags)
+        q->NeutralizeTags(pb);
+
+      if (*par.alisbasename) {
+        Alignment* tmp = new Alignment();
+        if (par.allseqs) {
+          (*tmp) = (*Qali_allseqs);
+        } else {
+          (*tmp) = (*Qali);
+        }
+
+        alis[round] = tmp;
+      }
+    }
+    // Update counts for log
+    else if (round == par.num_rounds) {
+      hitlist.Reset();
+      while (!hitlist.End()) {
+        Hit hit_cur = hitlist.ReadNext();
+
+        // E-value much too large
+        if (hit_cur.Eval > 100.0 * par.e)
+          break;
+
+        // E-value too large
+        if (hit_cur.Eval > par.e)
+          continue;
+
+        stringstream ss_tmp;
+        ss_tmp << hit_cur.file << "__" << hit_cur.irep;
+        // Already in alignment?
+        if (previous_hits->Contains((char*) ss_tmp.str().c_str()))
+          continue;
+
+        // Add number of sequences in this cluster to total found
+        // read number after second '|'
+        seqs_found += SequencesInCluster(hit_cur.name);
+        cluster_found++;
+      }
+    }
+
+    HH_LOG(INFO) << seqs_found << " sequences belonging to "
+                           << cluster_found
+                           << " database HMMs found with an E-value < " << par.e
+                           << std::endl;
+
+    if (round < par.num_rounds || *par.alnfile || *par.psifile || *par.hhmfile
+        || *par.alisbasename) {
+      HH_LOG(INFO)
+          << "Number of effective sequences of resulting query HMM: Neff = "
+          << q->Neff_HMM << std::endl;
+    }
+
+    if (q->Neff_HMM > par.neffmax && round < par.num_rounds) {
+      HH_LOG(INFO)
+          << "Diversity is above threshold (" << par.neffmax
+          << "). Stop searching! (Change threshold using -neffmax <float>.)"
+          << std::endl;
+    }
+
+    if (Qali->N_in >= MAXSEQ) {
+      HH_LOG(INFO)
+          << "Maximun number of sequences in query alignment reached ("
+          << MAXSEQ << "). Stop searching!" << std::endl;
+    }
+
+    if (new_hits == 0 || round == par.num_rounds || q->Neff_HMM > par.neffmax || Qali->N_in >= MAXSEQ) {
+//      if (new_hits == 0 && round < par.num_rounds) {
+//        HH_LOG(INFO) << "No new hits found in iteration " << round
+//                               << " => Stop searching" << std::endl;
+//      }
+//
+//      if (old_entries.size() > 0 && par.realign_old_hits) {
+//        HH_LOG(INFO)
+//            << "Recalculating previously found HMMs with Viterbi algorithm"
+//            << std::endl;
+//
+//        ViterbiRunner viterbirunner(viterbiMatrices, dbs, par.threads);
+//        std::vector<Hit> hits_to_add = viterbirunner.alignment(par, &q_vec,
+//                                                               old_entries,
+//                                                               par.qsc_db, pb,
+//                                                               S, Sim, R, par.ssm, S73, S33, S37);
+//
+//        add_hits_to_hitlist(hits_to_add, hitlist);
+//
+//        if (par.realign)
+//          perform_realign(q_vec, input_format, old_entries);
+//      } else if (!par.realign_old_hits && previous_hits->Size() > 0) {
+//        HH_LOG(INFO)
+//            << "Rescoring previously found HMMs with Viterbi algorithm"
+//            << std::endl;
+//        RescoreWithViterbiKeepAlignment(q_vec, previous_hits);
+//      }
+
+      delete q_rescore;
+      break;
+    }
+
+
+    // Write good hits to previous_hits hash and clear hitlist
+    hitlist.Reset();
+    while (!hitlist.End()) {
+      Hit hit_cur = hitlist.ReadNext();
+
+      stringstream ss_tmp;
+      ss_tmp << hit_cur.file << "__" << hit_cur.irep;
+
+      if (!par.already_seen_filter || hit_cur.Eval > par.e
+          || previous_hits->Contains((char*) ss_tmp.str().c_str()))
+        hit_cur.Delete();  // Delete hit object (deep delete with Hit::Delete())
+      else {
+        previous_hits->Add((char*) ss_tmp.str().c_str(), hit_cur);
+      }
+
+      hitlist.Delete();  // Delete list record (flat delete)
+    }
+
+    delete q_rescore;
+  }
+
+  // Warn, if HMMER files were used
+  if (par.hmmer_used) {
+    HH_LOG(WARNING)
+        << "Using HMMER files results in a drastically reduced sensitivity (>10%%).\n"
+        << " We recommend to use HHMs build by hhmake." << std::endl;
+  }
+
+  for (size_t i = 0; i < all_entries.size(); i++) {
+    delete all_entries[i];
+  }
+  all_entries.clear();
+
+  previous_hits->Reset();
+  while (!previous_hits->End())
+    previous_hits->ReadNext().Delete();  // Delete hit object
+  delete previous_hits;
+}
+
+
+
 void HHblits::writeHHRFile(char* hhrFile) {
   if (*hhrFile) {
     hitlist.PrintHHR(q_tmp, hhrFile, par.maxdbstrlen, par.showconf,

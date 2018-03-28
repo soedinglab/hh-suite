@@ -111,6 +111,7 @@ int main(int argc, char **argv) {
   FILE *data_file = fopen(data_filename, "r");
   FILE *index_file = fopen(index_filename, "r");
 
+
   if (data_file == NULL) {
     HH_LOG(ERROR) << "Input data file " << data_filename << " does not exist!" << std::endl;
     exit(EXIT_FAILURE);
