@@ -74,6 +74,9 @@ namespace cs {
           this->input_index = input.db_index;
           this->input_data = input.db_data;
 
+          // Make sure the database is accessed in a linearly on the FS
+          std::sort(this->input_index->entries, this->input_index->entries + this->input_index->n_entries, compareEntryByOffset());
+
           FFindexDatabase *header_db = NULL;
           FFindexDatabase *sequence_db = NULL;
 
@@ -321,6 +324,12 @@ namespace cs {
         exit(1);
       }
       return out;
+    };
+
+    struct compareEntryByOffset {
+      bool operator() (const ffindex_entry_t& lhs, const ffindex_entry_t& rhs) const {
+        return (lhs.offset < rhs.offset);
+      }
     };
 
     ffindex_index_t *input_index;
