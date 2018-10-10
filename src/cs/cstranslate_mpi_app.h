@@ -74,6 +74,9 @@ namespace cs {
           this->input_index = input.db_index;
           this->input_data = input.db_data;
 
+          // Make sure the database is accessed in a linearly on the FS
+          std::sort(this->input_index->entries, this->input_index->entries + this->input_index->n_entries, compareEntryByOffset());
+
           FFindexDatabase *header_db = NULL;
           FFindexDatabase *sequence_db = NULL;
 
@@ -203,18 +206,10 @@ namespace cs {
           continue;
         }
 
-        size_t profile_counts_length = profile.counts.length();
-
-        CountProfile<AS219> as_profile(profile_counts_length);  // output profile
-        this->Translate(profile, as_profile);
-
-        // Prepare abstract sequence in AS219 format
-        Sequence<AS219> as_seq(profile_counts_length);
-        as_seq.set_header(header);
-        this->BuildSequence(as_profile, profile_counts_length, as_seq);
-
         std::stringstream out_buffer[2];
         if (this->opts_.outformat == "seq") {
+          Sequence<AS219> as_seq = TranslateIntoStateSequence<AS219>(profile, *(this->as_lib_), *(this->emission_));
+          as_seq.set_header(header);
           if(this->opts_.both) {
             this->WriteStateSequence(as_seq, out_buffer[0], true);
             this->WriteStateSequence(as_seq, out_buffer[1], false);
@@ -222,6 +217,12 @@ namespace cs {
             this->WriteStateSequence(as_seq, out_buffer[0], this->opts_.binary);
           }
         } else {
+          // Prepare abstract sequence in AS219 format
+          CountProfile<AS219> as_profile(profile.counts.length());  // output profile
+          Sequence<AS219> as_seq(profile.counts.length());
+          as_seq.set_header(header);
+          this->Translate(profile, as_profile);
+          this->BuildSequence(as_profile, profile.counts.length(), as_seq);
           this->WriteStateProfile(as_profile, out_buffer[0]);
         }
         std::string out_string = out_buffer[0].str();
@@ -321,6 +322,12 @@ namespace cs {
         exit(1);
       }
       return out;
+    };
+
+    struct compareEntryByOffset {
+      bool operator() (const ffindex_entry_t& lhs, const ffindex_entry_t& rhs) const {
+        return (lhs.offset < rhs.offset);
+      }
     };
 
     ffindex_index_t *input_index;

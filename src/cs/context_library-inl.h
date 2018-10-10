@@ -266,19 +266,16 @@ Sequence<AS> TranslateIntoStateSequence(const CountsInput& input,
 
   for (size_t i = 0; i < input.length(); ++i) {
     // Calculate posterior probabilities given sequence window around 'i'
-    CalculatePosteriorProbs(lib, emission, input, i, &pp[0]);
-    // Find state with maximal posterior prob and assign it to as_seq[i]
+    double max = -FLT_MAX;
     size_t k_max = 0;
-    double p_max = pp[0];
-    for (size_t k = 1; k < AS::kSize; ++k) {
-      if (pp[k] > p_max) {
-        k_max = k;
-        p_max = pp[k];
-      }
+    for (size_t k = 0; k < lib.size(); ++k) {
+      assert(lib[k].is_log);
+      pp[k] = lib[k].prior + emission(lib[k].probs, input, i);
+      k_max = (pp[k] > max ) ? k : k_max;
+      max   = (pp[k] > max ) ? pp[k] : max;
     }
     as_seq[i] = k_max;
   }
-
   return as_seq;
 }
 
