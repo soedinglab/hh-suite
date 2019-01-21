@@ -140,6 +140,7 @@ add_executable(hhblits
     $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff>
     $<TARGET_OBJECTS:hhviterbialgorithm_and_ss>
     $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff_and_ss>
+    $<TARGET_OBJECTS:ssw>
 )
 target_link_libraries (hhblits ffindex)
 
@@ -149,6 +150,7 @@ if (OPENMP_FOUND)
         $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff>
         $<TARGET_OBJECTS:hhviterbialgorithm_and_ss>
         $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff_and_ss>
+        $<TARGET_OBJECTS:ssw>
     )
     target_link_libraries (hhblits_omp ffindex)
 
@@ -157,6 +159,7 @@ if (OPENMP_FOUND)
         $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff>
         $<TARGET_OBJECTS:hhviterbialgorithm_and_ss>
         $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff_and_ss>
+        $<TARGET_OBJECTS:ssw>
     )
     target_link_libraries (hhsearch_omp ffindex)
 
@@ -165,6 +168,7 @@ if (OPENMP_FOUND)
         $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff>
         $<TARGET_OBJECTS:hhviterbialgorithm_and_ss>
         $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff_and_ss>
+        $<TARGET_OBJECTS:ssw>
     )
     target_link_libraries (hhblits_ca3m ffindex)
 
@@ -183,6 +187,7 @@ add_executable(hhmake
   $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff>
   $<TARGET_OBJECTS:hhviterbialgorithm_and_ss>
   $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff_and_ss>
+  $<TARGET_OBJECTS:ssw>
 )
 target_link_libraries (hhmake ffindex)
 
@@ -191,6 +196,7 @@ add_executable(hhfilter
   $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff>
   $<TARGET_OBJECTS:hhviterbialgorithm_and_ss>
   $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff_and_ss>
+  $<TARGET_OBJECTS:ssw>
 )
 target_link_libraries (hhfilter ffindex)
 
@@ -199,6 +205,7 @@ add_executable(hhsearch
   $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff>
   $<TARGET_OBJECTS:hhviterbialgorithm_and_ss>
   $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff_and_ss>
+  $<TARGET_OBJECTS:ssw>
 )
 target_link_libraries (hhsearch ffindex)
 
@@ -207,6 +214,7 @@ add_executable(hhalign
   $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff>
   $<TARGET_OBJECTS:hhviterbialgorithm_and_ss>
   $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff_and_ss>
+  $<TARGET_OBJECTS:ssw>
 )
 target_link_libraries (hhalign ffindex)
 
@@ -215,6 +223,7 @@ add_executable(hhconsensus
   $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff>
   $<TARGET_OBJECTS:hhviterbialgorithm_and_ss>
   $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff_and_ss>
+  $<TARGET_OBJECTS:ssw>
 )
 target_link_libraries (hhconsensus ffindex)
 
@@ -254,6 +263,7 @@ add_executable(cstranslate
         $<TARGET_OBJECTS:hhviterbialgorithm_and_ss>
         $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff_and_ss>
         $<TARGET_OBJECTS:A3M_COMPRESS_OBJECT>
+        $<TARGET_OBJECTS:ssw>
 )
 target_link_libraries (cstranslate ffindex)
 
@@ -268,6 +278,7 @@ if(MPI_CXX_FOUND)
 	         $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff>
 	         $<TARGET_OBJECTS:hhviterbialgorithm_and_ss>
 	         $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff_and_ss>
+             $<TARGET_OBJECTS:ssw>
 	       )
     target_link_libraries(hhblits_mpi ffindex mpq)
     target_link_libraries(hhblits_mpi ${MPI_CXX_LIBRARIES})
@@ -285,6 +296,7 @@ if(MPI_CXX_FOUND)
             $<TARGET_OBJECTS:hhviterbialgorithm_and_ss>
             $<TARGET_OBJECTS:hhviterbialgorithm_with_celloff_and_ss>
             $<TARGET_OBJECTS:A3M_COMPRESS_OBJECT>
+            $<TARGET_OBJECTS:ssw>
             )
     target_link_libraries(cstranslate_mpi ffindex mpq)
     target_link_libraries(cstranslate_mpi ${MPI_CXX_LIBRARIES})

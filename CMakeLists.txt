@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.12)
-project(hhsuite CXX)
+project(hhsuite C CXX)
 
 SET(HAVE_SSE2 0 CACHE BOOL "Have SSE2")
 SET(HAVE_AVX2 0 CACHE BOOL "Have AVX2")
@@ -57,6 +57,7 @@ INSTALL(FILES
 
 include_directories(src)
 include_directories(lib/ffindex/src)
+include_directories(lib/ssw/src)
 
 add_subdirectory(lib/ffindex)
 add_subdirectory(src)
@@ -100,3 +101,10 @@ set (CPACK_PACKAGE_VERSION_MINOR "${HHSUITE_VERSION_PATCH}")
 INCLUDE(CPack)
 
 enable_testing()
+
+set(SSW_SOURCE 
+      ${CMAKE_CURRENT_SOURCE_DIR}/lib/ssw/src/ssw.h
+      ${CMAKE_CURRENT_SOURCE_DIR}/lib/ssw/src/ssw.c
+)
+
+add_library(ssw OBJECT ${SSW_SOURCE})
