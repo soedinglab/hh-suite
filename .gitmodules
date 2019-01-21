@@ -3,4 +3,4 @@
 	url = https://github.com/soedinglab/ffindex_soedinglab.git
 [submodule "lib/ssw"]
 	path = lib/ssw
-	url = https://github.com/stigvp/Complete-Striped-Smith-Waterman-Library
+	url = https://github.com/stigvp/Complete-Striped-Smith-Waterman-Library.git
