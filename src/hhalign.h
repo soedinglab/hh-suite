@@ -60,7 +60,7 @@ class HHalign : public HHblits {
   public:
     HHalign(Parameters& par, std::vector<HHblitsDatabase*>& databases);
     virtual ~HHalign();
-    void run(FILE* query_fh, char* query_path, char* template_path);
+    void run(FILE* query_fh, char* query_path, std::vector<std::string>& template_paths);
     static void ProcessAllArguments(int argc, char** argv, Parameters& par);
 
   private:

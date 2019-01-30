@@ -177,7 +177,7 @@ public:
   char scorefile[NAMELEN];// table of scores etc for all HMMs in searched database
   char m8file[NAMELEN];   // blast tab format for all HMMs in searched database
   char indexfile[NAMELEN];// optional file containing indeices of aligned residues in given alignment
-  char tfile[NAMELEN];    // template filename (in hhalign)
+  std::vector<std::string> tfiles;    // template filenames (in hhalign)
   char alitabfile[NAMELEN]; // where to write pairs of aligned residues (-atab option)
   char* exclstr;          // optional string containing list of excluded residues, e.g. '1-33,97-168'
   char* template_exclstr;
