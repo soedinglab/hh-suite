@@ -1098,34 +1098,34 @@ void HHblits::perform_realign(HMMSimd& q_vec, const char input_format,
     runner.executeComputation(*q, hit_vector, par, par.qsc_db, pb, S, Sim, R);
 
 
-//  // Delete all hitlist entries with too short alignments
-//  nhits = 0;
-//  hitlist.Reset();
-//  while (!hitlist.End()) {
-//    Hit hit_cur = hitlist.ReadNext();
-//    //printf("Deleting alignment of %s with length %i? irep=%i nhits=%-2i  par.B=%-3i  par.Z=%-3i par.e=%.2g par.b=%-3i  par.z=%-3i par.p=%.2g\n",hit_cur.name,hit_cur.matched_cols,hit_cur.irep,nhits,par.B,par.Z,par.e,par.b,par.z,par.p);
-//
-//    if (nhits > par.realign_max && nhits >= imax(par.B, par.Z))
-//      break;
-//    if (hit_cur.Eval > par.e) {
-//      if (nhits >= imax(par.B, par.Z))
-//        continue;
-//      if (nhits >= imax(par.b, par.z) && hit_cur.Probab < par.p)
-//        continue;
-//      if (nhits >= imax(par.b, par.z) && hit_cur.Eval > par.E)
-//        continue;
-//    }
-//
-//    if (hit_cur.matched_cols < MINCOLS_REALIGN) {
-//      HH_LOG(LogLevel::DEBUG) << "Deleting alignment of " << hit_cur.name
-//          << " with length " << hit_cur.matched_cols << std::endl;
-//      hitlist.Delete().Delete();        // delete the list record and hit object
-//      // // Make sure only realigned alignments get displayed! JS: Why? better unrealigned than none.
-//      // if (last_round)
-//      // if (par.B>par.Z) par.B--; else if (par.B==par.Z) {par.B--; par.Z--;} else par.Z--;
-//    }
-//    nhits++;
-//  }
+  // Delete all hitlist entries with too short alignments
+  nhits = 0;
+  hitlist.Reset();
+  while (!hitlist.End()) {
+    Hit hit_cur = hitlist.ReadNext();
+    //printf("Deleting alignment of %s with length %i? irep=%i nhits=%-2i  par.B=%-3i  par.Z=%-3i par.e=%.2g par.b=%-3i  par.z=%-3i par.p=%.2g\n",hit_cur.name,hit_cur.matched_cols,hit_cur.irep,nhits,par.B,par.Z,par.e,par.b,par.z,par.p);
+
+    if (nhits > par.realign_max && nhits >= imax(par.B, par.Z))
+      break;
+    if (hit_cur.Eval > par.e) {
+      if (nhits >= imax(par.B, par.Z))
+        continue;
+      if (nhits >= imax(par.b, par.z) && hit_cur.Probab < par.p)
+        continue;
+      if (nhits >= imax(par.b, par.z) && hit_cur.Eval > par.E)
+        continue;
+    }
+
+    if (hit_cur.matched_cols < MINCOLS_REALIGN) {
+      HH_LOG(LogLevel::DEBUG) << "Deleting alignment of " << hit_cur.name
+          << " with length " << hit_cur.matched_cols << std::endl;
+      hitlist.Delete().Delete();        // delete the list record and hit object
+      // // Make sure only realigned alignments get displayed! JS: Why? better unrealigned than none.
+      // if (last_round)
+      // if (par.B>par.Z) par.B--; else if (par.B==par.Z) {par.B--; par.Z--;} else par.Z--;
+    }
+    nhits++;
+  }
 }
 
 
