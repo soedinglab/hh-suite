@@ -1117,7 +1117,7 @@ void HHblits::perform_realign(HMMSimd& q_vec, const char input_format,
     }
 
     if (hit_cur.matched_cols < MINCOLS_REALIGN) {
-      HH_LOG(LogLevel::DEBUG) << "Deleting alignment of " << hit_cur.name
+      HH_LOG(DEBUG) << "Deleting alignment of " << hit_cur.name
           << " with length " << hit_cur.matched_cols << std::endl;
       hitlist.Delete().Delete();        // delete the list record and hit object
       // // Make sure only realigned alignments get displayed! JS: Why? better unrealigned than none.
