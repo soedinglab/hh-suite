@@ -213,6 +213,16 @@ if (OPENMP_FOUND)
             hhviterbialgorithm_with_celloff_and_ss
             )
     INSTALL(PROGRAMS hhsearch_omp DESTINATION bin)
+
+    add_executable(hhblits_ca3m hhblits_ca3m.cpp
+            )
+    target_link_libraries (hhblits_ca3m
+            ffindex CS_OBJECTS HH_OBJECTS
+            hhviterbialgorithm_with_celloff
+            hhviterbialgorithm_and_ss
+            hhviterbialgorithm_with_celloff_and_ss
+            )
+    INSTALL(PROGRAMS hhsearch_ca3m DESTINATION bin)
 endif ()
 
 find_package(MPI QUIET)
