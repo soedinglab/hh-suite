@@ -205,7 +205,7 @@ void HHalign::ProcessAllArguments(int argc, char** argv, Parameters& par) {
   par.argv = argv;
   par.argc = argc;
 
-  strcpy(par.tfile, "");
+  par.tfiles.resize(0);
   strcpy(par.alnfile, "");
   par.p = 0.0; // minimum threshold for inclusion in hit list and alignment listing
   par.E = 1e6; // maximum threshold for inclusion in hit list and alignment listing
@@ -292,11 +292,13 @@ void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
     else if (!strcmp(argv[i], "-t")) {
       if (++i >= argc || argv[i][0] == '-') {
         help(par);
-        HH_LOG(ERROR) << "No template file following -d" << std::endl;
+        HH_LOG(ERROR) << "No template file following -t" << std::endl;
         exit(4);
       }
-      else
-        strcpy(par.tfile, argv[i]);
+      else {
+        std::string tfile(argv[i]);
+        par.tfiles.push_back(tfile);
+      }
     }
     else if (!strcmp(argv[i], "-o")) {
       if (++i >= argc) {
@@ -614,9 +616,13 @@ void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
   } // end of for-loop for command line input
 }
 
-void HHalign::run(FILE* query_fh, char* query_path, char* template_path) {
+void HHalign::run(FILE* query_fh, char* query_path, std::vector<std::string>& template_paths) {
   HH_LOG(DEBUG) << "Query file : " << query_path << "\n";
-  HH_LOG(DEBUG) << "Template file: " << template_path << "\n";
+  HH_LOG(DEBUG) << "Template files:";
+  for (size_t i = 0; i < template_paths.size(); ++i) {
+    HH_LOG(DEBUG) << " " << template_paths[i];
+  }
+  HH_LOG(DEBUG) << "\n";
 
   int cluster_found = 0;
   int seqs_found = 0;
@@ -645,9 +651,13 @@ void HHalign::run(FILE* query_fh, char* query_path, char* template_path) {
   if (par.notags)
     q->NeutralizeTags(pb);
 
-  HHEntry* template_entry = new HHFileEntry(template_path, par.maxres);
   std::vector<HHEntry*> new_entries;
-  new_entries.push_back(template_entry);
+  for (size_t i = 0; i < template_paths.size(); i++) {
+    char tfile[NAMELEN];  // HHFileEntry requres non-const char*, so we do this
+    strcpy(tfile, template_paths[i].c_str());
+    HHEntry* template_entry = new HHFileEntry(tfile, par.maxres);
+    new_entries.push_back(template_entry);
+  }
 
   int max_template_length = getMaxTemplateLength(new_entries);
   for(int i = 0; i < par.threads; i++) {

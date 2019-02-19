@@ -130,6 +130,9 @@ public:
   static void prepareDatabases(Parameters& par, std::vector<HHblitsDatabase*>& databases);
 
 	void run(FILE* query_fh, char* query_path);
+    void run(ffindex_entry_t* entry, char* data,
+      ffindex_index_t* sequence_index, char* seq,
+      ffindex_index_t* header_index, char* header);
 
 protected:
 	// substitution matrix flavours

@@ -427,7 +427,7 @@ class CIF2FASTA(object):
             r_free = refine.getValue('ls_R_factor_R_free')
 
             try: 
-                r_free = float(r_free)
+                return float(r_free)
             except ValueError:
                 return False
 

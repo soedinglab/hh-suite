@@ -837,7 +837,7 @@ sub ChangeDistanceRestraints {
 		$PDBs[$t][$1]=[$2,$3,$4,$5,$6,$7]; 
 
 		## speed up: save all atoms for a given residue (in a given template); will be needed later to compute the distance between "matching" atoms
-	 	if (not defined(@{$atomsForResidue[$t][$4]})) {
+	 	if (not @{$atomsForResidue[$t][$4]}) {
  		    $atomsForResidue[$t][$4] = [$1];
  		}
  		else {
@@ -1229,12 +1229,12 @@ sub DistanceInTemplate {
     my $e = 0; 
     my $f = 0;
 
-    if (defined @{$atomsForResidue[$templatenr][$tempresidueOne]}) {
+    if (@{$atomsForResidue[$templatenr][$tempresidueOne]}) {
 	foreach my $atom (@{$atomsForResidue[$templatenr][$tempresidueOne]}) {
 	    push(@coordinatesOne, [$PDBs[$templatenr][$atom][0],$PDBs[$templatenr][$atom][1],$PDBs[$templatenr][$atom][3],$PDBs[$templatenr][$atom][4],$PDBs[$templatenr][$atom][5]]);
 	}
     }
-    if (defined @{$atomsForResidue[$templatenr][$tempresidueTwo]}) {
+    if (@{$atomsForResidue[$templatenr][$tempresidueTwo]}) {
 	foreach my $atom (@{$atomsForResidue[$templatenr][$tempresidueTwo]}) {
 	    push(@coordinatesTwo, [$PDBs[$templatenr][$atom][0],$PDBs[$templatenr][$atom][1],$PDBs[$templatenr][$atom][3],$PDBs[$templatenr][$atom][4],$PDBs[$templatenr][$atom][5]]);
 	}

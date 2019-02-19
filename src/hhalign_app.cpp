@@ -32,7 +32,7 @@ int main(int argc, char **argv) {
       exit(1);
   }
 
-  hhalign.run(inf, par.infile, par.tfile);
+  hhalign.run(inf, par.infile, par.tfiles);
   fclose(inf);
 
   if(Log::reporting_level() >= INFO) {
