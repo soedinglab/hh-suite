@@ -17,7 +17,7 @@ public:
   void FreeMemory();
   void Build(HMM* q, Hit& hit, const int nseqdis, const float S[20][20]);
   void PrintHeader(std::stringstream& out, HMM* q, Hit& hit);
-  void PrintHHR(std::stringstream& out, Hit& hit, const char showconf, const char showcons, const char showdssp, const char showpred, const int aliwidth);
+  void PrintHHR(std::stringstream& out, Hit& hit, const char showconf, const char showcons, const char showdssp, const char showpred, const int aliwidth, const int maxseq);
   void PrintA2M(std::stringstream& out, Hit& hit, const char showcons, const char showdssp, const char showpred, const int aliwidth);
   void PrintFASTA(std::stringstream& out, Hit& hit, const char showcons, const char showdssp, const char showpred, const int aliwidth);
   void PrintA3M(std::stringstream& out, Hit& hit, const char showcons, const char showdssp, const char showpred, const int aliwidth);

@@ -133,10 +133,9 @@ void HitList::PrintHHR(HMM* q, char* outfile, const unsigned int maxdbstrlen,
     const char showconf, const char showcons, const char showdssp,
     const char showpred, const int b, const int B, const int z, const int Z,
     const int aliwidth, const int nseqdis, const float p, const double E,
-    const int argc, char** argv, const float S[20][20]) {
+    const int argc, char** argv, const float S[20][20], const int maxseq) {
   std::stringstream out;
-  PrintHHR(q, out, maxdbstrlen, showconf, showcons, showdssp, showpred, b, B, z,
-      Z, aliwidth, nseqdis, p, E, argc, argv, S);
+  PrintHHR(q, out, maxdbstrlen, showconf, showcons, showdssp, showpred, b, B, z, Z, aliwidth, nseqdis, p, E, argc, argv, S, maxseq);
 
   if (strcmp(outfile, "stdout") == 0) {
     std::cout << out.str();
@@ -157,10 +156,9 @@ void HitList::PrintHHR(HMM* q, std::stringstream& out,
     const char showdssp, const char showpred, const int b, const int B,
     const int z, const int Z, const int aliwidth, const int nseqdis,
     const float p, const double E, const int argc, char** argv,
-    const float S[20][20]) {
+    const float S[20][20], const int maxseq) {
   PrintHitList(q, out, maxdbstrlen, z, Z, p, E, argc, argv);
-  PrintAlignments(q, out, showconf, showcons, showdssp, showpred, p, aliwidth,
-      nseqdis, b, B, E, S, 0);
+  PrintAlignments(q, out, showconf, showcons, showdssp, showpred, p, aliwidth, nseqdis, b, B, E, S, maxseq, 0);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -169,10 +167,9 @@ void HitList::PrintHHR(HMM* q, std::stringstream& out,
 void HitList::PrintAlignments(HMM* q, char* outfile, const char showconf,
     const char showcons, const char showdssp, const char showpred,
     const float p, const int aliwidth, const int nseqdis, const int b,
-    const int B, const double E, const float S[20][20], char outformat) {
+    const int B, const double E, const float S[20][20], const int maxseq, char outformat) {
   std::stringstream out;
-  PrintAlignments(q, out, showconf, showcons, showdssp, showpred, p, aliwidth,
-      nseqdis, b, B, E, S, outformat);
+  PrintAlignments(q, out, showconf, showcons, showdssp, showpred, p, aliwidth, nseqdis, b, B, E, S, maxseq, outformat);
 
   if (strcmp(outfile, "stdout") == 0) {
     std::cout << out.str();
@@ -196,7 +193,7 @@ void HitList::PrintAlignments(HMM* q, char* outfile, const char showconf,
 void HitList::PrintAlignments(HMM* q, std::stringstream& out,
     const char showconf, const char showcons, const char showdssp,
     const char showpred, const float p, const int aliwidth, const int nseqdis,
-    const int b, const int B, const double E, const float S[20][20],
+    const int b, const int B, const double E, const float S[20][20], const int maxseq,
     char outformat) {
   FullAlignment qt_ali(nseqdis + 10); // maximum 10 annotation (pseudo) sequences (ss_dssp, sa_dssp, ss_pred, ss_conf, consens,...)
   int nhits = 0;
@@ -220,8 +217,7 @@ void HitList::PrintAlignments(HMM* q, std::stringstream& out,
     out << "No " << nhits << std::endl;
     if (outformat == 0) {
       qt_ali.PrintHeader(out, q, hit);
-      qt_ali.PrintHHR(out, hit, showconf, showcons, showdssp, showpred,
-          aliwidth);
+      qt_ali.PrintHHR(out, hit, showconf, showcons, showdssp, showpred, aliwidth, maxseq);
     }
     // FASTA format
     else if (outformat == 1) {

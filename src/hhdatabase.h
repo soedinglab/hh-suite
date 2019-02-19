@@ -138,7 +138,7 @@ class HHDatabaseEntry : public HHEntry {
 
 class HHFileEntry : public HHEntry {
   public:
-    HHFileEntry(char* file);
+    HHFileEntry(char* file, int sequence_length);
     ~HHFileEntry();
 
     void getTemplateA3M(Parameters& par, float* pb, const float S[20][20],

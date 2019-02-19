@@ -147,22 +147,26 @@ void Hit::DeleteIndices() {
 float Hit::calculateSimilarity(HMM* q, const float S[20][20]) {
 	float alignment_similarity = 0.0;
 
-	char template_mapping[MAXRES];
-	char query_mapping[MAXRES];
+	std::string template_mapping;
+    template_mapping.reserve(20000);
+	std::string query_mapping;
+    query_mapping.reserve(20000);
 
 	char c;
 	int l = 1;
 	int i = 1;
 	while ((c = seq[nfirst][l++])) {
-		if (c != '.' && !(c >= 'a' && c <= 'z'))
-			template_mapping[i++] = c;
+		if (c != '.' && !(c >= 'a' && c <= 'z')) {
+			template_mapping.push_back(c);
+        }
 	}
 
 	l = 1;
 	i = 1;
 	while ((c = q->seq[q->nfirst][l++])) {
-		if (c != '.' && !(c >= 'a' && c <= 'z'))
-			query_mapping[i++] = c;
+		if (c != '.' && !(c >= 'a' && c <= 'z')) {
+			query_mapping.push_back(c);
+        }
 	}
 
 	for (int step = nsteps; step >= 1; step--) {

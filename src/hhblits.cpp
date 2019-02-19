@@ -6,7 +6,6 @@
  */
 
 #include "hhblits.h"
-
 #include "hhsuite_config.h"
 
 //TODO: get rid of exit(1)... throw errors ... better for parallelization over several queries
@@ -916,7 +915,7 @@ void HHblits::mergeHitsToQuery(Hash<Hit>* previous_hits,
 
     // Read a3m alignment of hit from <file>.a3m file
     // Reading in next db MSA and merging it onto Qali
-    Alignment Tali;
+    Alignment Tali(par.maxseq, par.maxres);
     hit_cur.entry->getTemplateA3M(par, pb, S, Sim, Tali);
 
     if (par.allseqs)  // need to keep *all* sequences in Qali_allseqs? => merge before filtering
@@ -925,24 +924,22 @@ void HHblits::mergeHitsToQuery(Hash<Hit>* previous_hits,
     Tali.N_filtered = Tali.Filter(par.max_seqid_db, S, par.coverage_db,
                                   par.qid_db, par.qsc_db, par.Ndiff_db);
 
-    if(par.interim_filter == INTERIM_FILTER_FULL && Tali.N_filtered + Qali->N_in >= MAXSEQ) {
+    if(par.interim_filter == INTERIM_FILTER_FULL && Tali.N_filtered + Qali->N_in >= par.maxseq) {
   	  Qali->N_filtered = Qali->Filter(par.max_seqid, S, cov_tot, par.qid, par.qsc, par.Ndiff);
       Qali->Shrink();
     }
 
     Qali->MergeMasterSlave(hit_cur, Tali, hit_cur.name, par.maxcol);
 
-    if (Qali->N_in >= MAXSEQ)
+    if (Qali->N_in >= par.maxseq)
       break;  // Maximum number of sequences reached
   }
 
   // Convert ASCII to int (0-20),throw out all insert states, record their number in I[k][i]
-  Qali->Compress("merged A3M file", par.cons, par.maxres, par.maxcol, 1,
-                 par.Mgaps);
+  Qali->Compress("merged A3M file", par.cons, par.maxcol, 1, par.Mgaps);
 
   // Sort out the nseqdis most dissimilacd r sequences for display in the result alignments
-  Qali->FilterForDisplay(par.max_seqid, par.mark, S, par.coverage, par.qid,
-                         par.qsc, par.nseqdis);
+  Qali->FilterForDisplay(par.max_seqid, par.mark, S, par.coverage, par.qid, par.qsc, par.nseqdis);
 
 
   HH_LOG(DEBUG) << "Filter new alignment with cov " << cov_tot
@@ -1187,8 +1184,8 @@ void HHblits::run(FILE* query_fh, char* query_path) {
   Hit hit_cur;
   Hash<Hit>* previous_hits = new Hash<Hit>(1631, hit_cur);
 
-  Qali = new Alignment(MAXSEQ, par.maxres);
-  Qali_allseqs = new Alignment(MAXSEQ, par.maxres);
+  Qali = new Alignment(par.maxseq, par.maxres);
+  Qali_allseqs = new Alignment(par.maxseq, par.maxres);
 
   q = new HMM(MAXSEQDIS, par.maxres);
   HMMSimd q_vec(par.maxres);
@@ -1385,15 +1382,13 @@ void HHblits::run(FILE* query_fh, char* query_path) {
       }
 
       // Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
-      Qali->FrequenciesAndTransitions(q, par.wg, par.mark, par.cons,
-                                      par.showcons, par.maxres, pb, Sim, NULL,
-                                      true);
+      Qali->FrequenciesAndTransitions(q, par.wg, par.mark, par.cons, par.showcons, pb, Sim, NULL, true);
 
       if (par.notags)
         q->NeutralizeTags(pb);
 
       if (*par.alisbasename) {
-        Alignment* tmp = new Alignment();
+        Alignment* tmp = new Alignment(par.maxseq, par.maxres);
         if (par.allseqs) {
           (*tmp) = (*Qali_allseqs);
         } else {
@@ -1449,13 +1444,12 @@ void HHblits::run(FILE* query_fh, char* query_path) {
           << std::endl;
     }
 
-    if (Qali->N_in >= MAXSEQ) {
+    if (Qali->N_in >= par.maxseq) {
       HH_LOG(INFO)
-          << "Maximun number of sequences in query alignment reached ("
-          << MAXSEQ << "). Stop searching!" << std::endl;
+          << "Maximun number of sequences in query alignment reached (" << par.maxseq << "). Stop searching!" << std::endl;
     }
 
-    if (new_hits == 0 || round == par.num_rounds || q->Neff_HMM > par.neffmax || Qali->N_in >= MAXSEQ) {
+    if (new_hits == 0 || round == par.num_rounds || q->Neff_HMM > par.neffmax || Qali->N_in >= par.maxseq) {
 //      if (new_hits == 0 && round < par.num_rounds) {
 //        HH_LOG(INFO) << "No new hits found in iteration " << round
 //                               << " => Stop searching" << std::endl;
@@ -1532,7 +1526,7 @@ void HHblits::writeHHRFile(char* hhrFile) {
     hitlist.PrintHHR(q_tmp, hhrFile, par.maxdbstrlen, par.showconf,
                      par.showcons, par.showdssp, par.showpred, par.b, par.B,
                      par.z, par.Z, par.aliwidth, par.nseqdis, par.p, par.E,
-                     par.argc, par.argv, S);
+                     par.argc, par.argv, S, par.maxseq);
   }
 }
 
@@ -1565,7 +1559,7 @@ void HHblits::writePairwiseAlisFile(char* pairwiseAlisFile, char outformat) {
   if (*pairwiseAlisFile) {
     hitlist.PrintAlignments(q, pairwiseAlisFile, par.showconf, par.showcons,
                             par.showdssp, par.showpred, par.p, par.aliwidth,
-                            par.nseqdis, par.b, par.B, par.E, S, outformat);
+                            par.nseqdis, par.b, par.B, par.E, S, par.maxseq, outformat);
   }
 }
 
@@ -1619,7 +1613,8 @@ void HHblits::writeHHRFile(HHblits& hhblits, std::stringstream& out) {
                            hhblits.par.b, hhblits.par.B, hhblits.par.z,
                            hhblits.par.Z, hhblits.par.aliwidth,
                            hhblits.par.nseqdis, hhblits.par.p, hhblits.par.E,
-                           hhblits.par.argc, hhblits.par.argv, hhblits.S);
+                           hhblits.par.argc, hhblits.par.argv, hhblits.S,
+                           hhblits.par.maxseq);
 }
 
 void HHblits::printHitList() {
@@ -1635,7 +1630,7 @@ void HHblits::printHHRFile() {
                            par.b, par.B, par.z,
                            par.Z, par.aliwidth,
                            par.nseqdis, par.p, par.E,
-                           par.argc, par.argv, S);
+                           par.argc, par.argv, S, par.maxseq);
 }
 
 void HHblits::writeScoresFile(HHblits& hhblits, std::stringstream& out) {
@@ -1652,7 +1647,7 @@ void HHblits::writePairwiseAlisFile(HHblits& hhblits, std::stringstream& out) {
                                   hhblits.par.showpred, hhblits.par.p,
                                   hhblits.par.aliwidth, hhblits.par.nseqdis,
                                   hhblits.par.b, hhblits.par.B, hhblits.par.E,
-                                  hhblits.S, hhblits.par.outformat);
+                                  hhblits.S, hhblits.par.maxseq, hhblits.par.outformat);
 }
 
 void HHblits::writeAlitabFile(HHblits& hhblits, std::stringstream& out) {

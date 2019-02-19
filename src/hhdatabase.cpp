@@ -355,7 +355,7 @@ void HHDatabaseEntry::getTemplateHMM(Parameters& par, char use_global_weights,
                                      const float S[20][20],
                                      const float Sim[20][20], HMM* t) {
   if (ffdatabase->isCompressed) {
-    Alignment tali;
+    Alignment tali(par.maxseq, par.maxres);
 
     char* data = ffindex_get_data_by_entry(ffdatabase->db_data, entry);
 
@@ -370,22 +370,19 @@ void HHDatabaseEntry::getTemplateHMM(Parameters& par, char use_global_weights,
                         hhdatabase->header_database->db_data, par.mark,
                         par.maxcol);
 
-    tali.Compress(entry->name, par.cons, par.maxres, par.maxcol, par.M_template,
-                  par.Mgaps);
+    tali.Compress(entry->name, par.cons, par.maxcol, par.M_template, par.Mgaps);
 
     tali.N_filtered = tali.Filter(par.max_seqid_db, S, par.coverage_db,
                                   par.qid_db, qsc, par.Ndiff_db);
     t->name[0] = t->longname[0] = t->fam[0] = '\0';
-    tali.FrequenciesAndTransitions(t, use_global_weights, par.mark, par.cons,
-                                   par.showcons, par.maxres, pb, Sim);
+    tali.FrequenciesAndTransitions(t, use_global_weights, par.mark, par.cons, par.showcons, pb, Sim);
 
     format = 0;
   } else {
     FILE* dbf = ffindex_fopen_by_entry(ffdatabase->db_data, entry);
     char* name = new char[strlen(entry->name) + 1];
     strcpy(name, entry->name);
-    HHEntry::getTemplateHMM(dbf, name, par, use_global_weights, qsc, format, pb,
-                            S, Sim, t);
+    HHEntry::getTemplateHMM(dbf, name, par, use_global_weights, qsc, format, pb, S, Sim, t);
     fclose(dbf);
     delete[] name;
   }
@@ -442,8 +439,7 @@ void HHDatabaseEntry::getTemplateA3M(Parameters& par, float* pb,
     fclose(dbf);
   }
 
-  tali.Compress(entry->name, par.cons, par.maxres, par.maxcol, par.M_template,
-                par.Mgaps);
+  tali.Compress(entry->name, par.cons, par.maxcol, par.M_template, par.Mgaps);
 
   if(tali.L > sequence_length) {
     HH_LOG(ERROR) << "sequence length (" << sequence_length << ") does not fit to read MSA (match states: "<< tali.L << ") of file " << getName() << "!" << std::endl;
@@ -489,15 +485,13 @@ void HHEntry::getTemplateHMM(FILE* dbf, char* name, Parameters& par,
     }
     // read a3m alignment
     else if (line[0] == '#' || line[0] == '>') {
-      Alignment tali;
+      Alignment tali(par.maxseq, par.maxres);
       tali.Read(dbf, name, par.mark, par.maxcol, par.nseqdis, line);
-      tali.Compress(name, par.cons, par.maxres, par.maxcol, par.M_template, par.Mgaps);
+      tali.Compress(name, par.cons, par.maxcol, par.M_template, par.Mgaps);
       //              qali.FilterForDisplay(par.max_seqid,par.coverage,par.qid,par.qsc,par.nseqdis);
-      tali.N_filtered = tali.Filter(par.max_seqid_db, S, par.coverage_db,
-                                    par.qid_db, qsc, par.Ndiff_db);
+      tali.N_filtered = tali.Filter(par.max_seqid_db, S, par.coverage_db, par.qid_db, qsc, par.Ndiff_db);
       t->name[0] = t->longname[0] = t->fam[0] = '\0';
-      tali.FrequenciesAndTransitions(t, use_global_weights, par.mark, par.cons,
-                                     par.showcons, par.maxres, pb, Sim);
+      tali.FrequenciesAndTransitions(t, use_global_weights, par.mark, par.cons, par.showcons, pb, Sim);
       format = 0;
     } else {
       HH_LOG(ERROR) << "In " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
@@ -521,8 +515,8 @@ char* HHDatabaseEntry::getName() {
   return entry->name;
 }
 
-HHFileEntry::HHFileEntry(char* file)
-    : HHEntry(MAXRES) {
+HHFileEntry::HHFileEntry(char* file, int sequence_length)
+    : HHEntry(sequence_length) {
   this->file = new char[strlen(file) + 1];
   strcpy(this->file, file);
 }
@@ -584,21 +578,21 @@ void HHFileEntry::getTemplateA3M(Parameters& par, float* pb,
     rewind(inf);
     t->Read(inf, par.maxcol, par.nseqdis, pb, path);
 
-    Alignment ali_tmp;
+    Alignment ali_tmp(par.maxseq, par.maxres);
     ali_tmp.GetSeqsFromHMM(t);
-    ali_tmp.Compress(file, par.cons, par.maxres, par.maxcol, par.M_template, par.Mgaps);
+    ali_tmp.Compress(file, par.cons, par.maxcol, par.M_template, par.Mgaps);
     tali = ali_tmp;
   }
   // ... or is it an alignment file
   else if (line[0] == '#' || line[0] == '>') {
-    Alignment ali_tmp;
+    Alignment ali_tmp(par.maxseq, par.maxres);
 
     // Read alignment from infile into matrix X[k][l] as ASCII (and supply first line as extra argument)
     ali_tmp.Read(inf, file, par.mark, par.maxcol, par.nseqdis, line);
 
     // Convert ASCII to int (0-20),throw out all insert states, record their number in I[k][i]
     // and store marked sequences in name[k] and seq[k]
-    ali_tmp.Compress(file, par.cons, par.maxres, par.maxcol, par.M_template, par.Mgaps);
+    ali_tmp.Compress(file, par.cons, par.maxcol, par.M_template, par.Mgaps);
 
     tali = ali_tmp;
   } else {

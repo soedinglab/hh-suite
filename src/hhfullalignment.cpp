@@ -206,13 +206,13 @@ void FullAlignment::PrintHeader(std::stringstream& out, HMM* q, Hit& hit) {
 /////////////////////////////////////////////////////////////////////////////////////
 // Print out full alignment in HHR format
 /////////////////////////////////////////////////////////////////////////////////////
-void FullAlignment::PrintHHR(std::stringstream& out, Hit& hit, const char showconf, const char showcons, const char showdssp, const char showpred, const int aliwidth) {
+void FullAlignment::PrintHHR(std::stringstream& out, Hit& hit, const char showconf, const char showcons, const char showdssp, const char showpred, const int aliwidth, const int maxseq) {
   const int NLEN = 14;  //Length of name field in front of multiple alignment
   int h = 0;    //counts position (column) in alignment
   int hh = 0;   //points to column at start of present output block of alignment
   int k;      //counts sequences in query and template 
-  short unsigned int * lq= new short unsigned int[MAXSEQ]; // lq[k] counts index of residue from query sequence k to be printed next;
-  short unsigned int * lt= new short unsigned int[MAXSEQ]; // lt[k] counts index of residue from template sequence k to be printed next;
+  short unsigned int* lq = new short unsigned int[maxseq]; // lq[k] counts index of residue from query sequence k to be printed next;
+  short unsigned int* lt = new short unsigned int[maxseq]; // lt[k] counts index of residue from template sequence k to be printed next;
   char namestr[NAMELEN]; //name of sequence
   int iq = hit.i1; // match state counter for query HMM (displayed in consensus line)
   int jt = hit.j1; // match state counter for template HMM (displayed in consensus line)

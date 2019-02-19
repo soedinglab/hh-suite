@@ -21,7 +21,7 @@ class CSCounts;
 
 class HMM {
  public:
-  HMM(int maxseqdis = MAXSEQDIS, int maxres = MAXRES);
+  HMM(int maxseqdis, int maxres);
   ~HMM();
   HMM& operator=(HMM&);
 

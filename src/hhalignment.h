@@ -54,7 +54,7 @@ public:
 
   char* keep;             // keep[k]=1 if sequence is included in amino acid frequencies; 0 otherwise (first=0)
 
-  Alignment(int maxseq=MAXSEQ, int maxres=MAXRES);
+  Alignment(int maxseq, int maxres);
   ~Alignment();
   Alignment& operator=(Alignment&);
 
@@ -70,7 +70,7 @@ public:
   
   // Convert ASCII to numbers between 0 and 20, throw out all insert states, 
   // record their number in I[k][i] and store sequences to be displayed in sname[k] and seq[k]
-  void Compress(const char infile[NAMELEN], const char cons, const int maxres, const int maxcol, const int par_M, const int Mgaps);
+  void Compress(const char infile[NAMELEN], const char cons, const int maxcol, const int par_M, const int Mgaps);
 
   // Apply sequence identity filter
   int FilterForDisplay(int max_seqid, const char mark, const float S[20][20], int coverage=0, int qid=0, float qsc=0, int N=0);
@@ -80,26 +80,26 @@ public:
 
 
   void FilterNeff(char use_global_weights, const char mark, const char cons,
-			const char showcons, const int maxres, const int max_seqid, const int coverage,
+			const char showcons, const int max_seqid, const int coverage,
 			const float Neff, const float* pb, const float S[20][20], const float Sim[20][20]);
   float filter_by_qsc(float qsc, char use_global_weights, const char mark, const char cons,
-			const char showcons, const int maxres, const int max_seqid, const int coverage,
+			const char showcons, const int max_seqid, const int coverage,
 			char* keep_orig, const float* pb, const float S[20][20], const float Sim[20][20]);
 
   // Calculate AA frequencies q.p[i][a] and transition probabilities q.tr[i][a] from alignment
   void FrequenciesAndTransitions(HMM* q, char use_global_weights,
-			const char mark, const char cons, const char showcons, const int maxres,
+			const char mark, const char cons, const char showcons,
 			const float* pb, const float Sim[20][20], char* in=NULL, bool time=false);
 
   // Calculate freqs q.f[i][a] and transitions q.tr[i][a] (a=MM,MI,MD) with pos-specific subalignments
   void Amino_acid_frequencies_and_transitions_from_M_state(HMM* q,
-			char use_global_weights, char* in, const int maxres, const float* pb);
+			char use_global_weights, char* in, const float* pb);
 
   // Calculate transitions q.tr[i][a] (a=DM,DD) with pos-specific subalignments
-  void Transitions_from_D_state(HMM* q, char* in, const int maxres);
+  void Transitions_from_D_state(HMM* q, char* in);
 
   // Calculate transitions q.tr[i][a] (a=DM,DD) with pos-specific subalignments
-  void Transitions_from_I_state(HMM* q, char* in, const int maxres);
+  void Transitions_from_I_state(HMM* q, char* in);
   
   // Write alignment without insert states to alignment file
   void WriteWithoutInsertsToFile(const char* alnfile, const char append);
@@ -136,6 +136,7 @@ private:
   int* last;              // last  residue in sequence k
   int* ksort;             // index for sorting sequences: X[ksort[k]]
   int maxseq;
+  int maxres;
   int FilterWithCoreHMM(char in[], float coresc, HMM* qcore, const float* pb);
   char * initX(int len);
   

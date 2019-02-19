@@ -24,7 +24,7 @@ using std::ofstream;
 /////////////////////////////////////////////////////////////////////////////////////
 // Object constructor
 /////////////////////////////////////////////////////////////////////////////////////
-Alignment::Alignment(int maxseq, int maxres) {
+Alignment::Alignment(int maxseq, int maxres) : maxseq(maxseq), maxres(maxres) {
   longname = new char[DESCLEN];
   sname = new char*[maxseq + 2];
   seq = new char*[maxseq + 2];
@@ -34,7 +34,6 @@ Alignment::Alignment(int maxseq, int maxres) {
   keep = new char[maxseq + 2];
   display = new char[maxseq + 2];
   wg = new float[maxseq + 2];
-  this->maxseq = maxseq;
   nseqs = new int[maxres + 2];
   N_in = L = 0;
   nres = NULL;           // number of residues per sequence k
@@ -185,8 +184,7 @@ Alignment& Alignment::operator=(Alignment& ali) {
 /////////////////////////////////////////////////////////////////////////////////////
 // Reads in an alignment from file into matrix seq[k][l] as ASCII
 /////////////////////////////////////////////////////////////////////////////////////
-void Alignment::Read(FILE* inf, char infile[], const char mark,
-                     const int maxcol, const int nseqdis, char* firstline) {
+void Alignment::Read(FILE* inf, char infile[], const char mark, const int maxcol, const int nseqdis, char* firstline) {
   int l;                  // Postion in alignment incl. gaps (first=1)
   int h;                  // Position in input line (first=0)
   int k;                  // Index of sequence being read currently (first=0)
@@ -218,12 +216,10 @@ void Alignment::Read(FILE* inf, char infile[], const char mark,
   while (firstline || (fgetline(line, LINELEN, inf))) {
     linenr++;
     firstline = NULL;
-    if (line[0] == '>')             //line contains sequence name
-        {
-      if (k >= MAXSEQ - 1) {
-        HH_LOG(WARNING) << "Maximum number " << MAXSEQ
-                                  << " of sequences exceeded in file "
-                                  << infile << std::endl;
+    // line contains sequence name
+    if (line[0] == '>') {
+      if (k >= maxseq - 1) {
+        HH_LOG(WARNING) << "Maximum number " << maxseq  << " of sequences exceeded in file " << infile << std::endl;
         break;
       }
 
@@ -828,15 +824,14 @@ void Alignment::ReadCompressed(ffindex_entry_t* entry, char* data,
 // Convert ASCII in seq[k][l] to int (0-20) in X[k][i], throw out all insert states, record their number in I[k][i]
 // and store sequences to be displayed in seq[k]
 /////////////////////////////////////////////////////////////////////////////////////
-void Alignment::Compress(const char infile[], const char cons, const int maxres,
-                         const int maxcol, const int par_M, const int Mgaps) {
+void Alignment::Compress(const char infile[], const char cons, const int maxcol, const int par_M, const int Mgaps) {
   int i;                  //Index for match state (first=1)
   int l;                  //Postion in alignment incl. gaps (first=1)
   int k;                  //Index for sequences (first=0)
   int a;                  //amino acid index
   char c;
   int unequal_lengths = 0;  //k: seq k doesn't have same number of match states as seq 0 => WARNING
-  short unsigned int * h= new short unsigned int[MAXSEQ];  //points to next character in seq[k] to be written
+  short unsigned int * h = new short unsigned int[maxseq];  //points to next character in seq[k] to be written
 
   int M = par_M;
 
@@ -1021,14 +1016,11 @@ void Alignment::Compress(const char infile[], const char cons, const int maxres,
       float* percent_gaps = new float[maxcol];  //percentage of gaps in column k (with weighted sequences)
 
       //determine number of columns L in alignment
-      L = strlen(seq[kfirst]) - 1;
+      size_t L = strlen(seq[kfirst]) - 1;
 
       // Conversion to integer representation, checking for unequal lengths and initialization
-      if (nres == NULL)
-        nres = new int[N_in];
-      for (k = 0; k < N_in; ++k) {
-        if (!keep[k])
-          continue;
+      int *nres = new int[N_in];
+      for (int k = 0; k < N_in; ++k) {
         int nr = 0;
         wg[k] = 0;
         nres[k] = 0;
@@ -1045,17 +1037,23 @@ void Alignment::Compress(const char infile[], const char cons, const int maxres,
         break;
 
       // Quick and dirty calculation of the weight per sequence wg[k]
-      for (l = 1; l <= L; l++)  // for all positions l in alignment
-          {
-        int naa = 0;            //number of different amino acids
-        for (a = 0; a < 20; ++a)
+        // for all positions l in alignment
+      for (size_t l = 1; l <= L; l++) {
+          //number of different amino acids
+        int naa = 0;
+        for (a = 0; a < 20; ++a) {
           nl[a] = 0;
-        for (k = 0; k < N_in; ++k)
-          if (keep[k])
+        }
+        for (k = 0; k < N_in; ++k) {
+          if (keep[k]) {
             nl[(int) X[k][l]]++;
-        for (a = 0; a < 20; ++a)
-          if (nl[a])
+          }
+        }
+        for (a = 0; a < 20; ++a) {
+          if (nl[a]) {
             ++naa;
+          }
+        }
         if (!naa)
           naa = 1;  //naa=0 when column consists of only gaps and Xs (=ANY)
         for (k = 0; k < N_in; ++k)
@@ -1269,6 +1267,8 @@ void Alignment::Compress(const char infile[], const char cons, const int maxres,
     exit(1);
   }
 
+  delete [] h;
+
   if (L == 0) {
     HH_LOG(ERROR) << "Error in " << __FILE__ << ":" << __LINE__
                             << ": " << __func__ << ":" << std::endl;
@@ -1320,7 +1320,6 @@ void Alignment::Compress(const char infile[], const char cons, const int maxres,
     }
     HH_LOG(DEBUG1) << "\n";
   }
-    delete [] h;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -2090,10 +2089,8 @@ int Alignment::FilterWithCoreHMM(char in[], float coresc, HMM* qcore,
 // Filter alignment to given diversity/Neff
 /////////////////////////////////////////////////////////////////////////////////////
 void Alignment::FilterNeff(char use_global_weights, const char mark,
-                           const char cons, const char showcons,
-                           const int maxres, const int max_seqid,
-                           const int coverage, const float Neff,
-                           const float* pb, const float S[20][20],
+                           const char cons, const char showcons, const int max_seqid, const int coverage,
+                           const float Neff, const float* pb, const float S[20][20],
                            const float Sim[20][20]) {
   const float TOLX = 0.01;
   const float TOLY = 0.02;
@@ -2107,9 +2104,8 @@ void Alignment::FilterNeff(char use_global_weights, const char mark,
   float y1 = 1.0;
   float y;
 
-  HMM q;
-  FrequenciesAndTransitions(&q, use_global_weights, mark, cons, showcons,
-                            maxres, pb, Sim);
+  HMM q(MAXSEQDIS, maxres);
+  FrequenciesAndTransitions(&q, use_global_weights, mark, cons, showcons, pb, Sim);
   y = y0 = q.Neff_HMM;
   if (fabs(Neff - y0) < TOLY) {
     return;
@@ -2121,8 +2117,7 @@ void Alignment::FilterNeff(char use_global_weights, const char mark,
     return;
   }
 
-  y1 = filter_by_qsc(x1, use_global_weights, mark, cons, showcons, maxres,
-                     max_seqid, coverage, keep_orig, pb, S, Sim);
+  y1 = filter_by_qsc(x1, use_global_weights, mark, cons, showcons, max_seqid, coverage, keep_orig, pb, S, Sim);
   if (fabs(Neff - y1) < TOLY) {
     return;
   }
@@ -2132,8 +2127,7 @@ void Alignment::FilterNeff(char use_global_weights, const char mark,
     const float w = 0.5;  // mixture coefficient
     x = w * (0.5 * (x0 + x1))
         + (1 - w) * (x0 + (Neff - y0) * (x1 - x0) / (y1 - y0));  // mixture of bisection and linear interpolation
-    y = filter_by_qsc(x, use_global_weights, mark, cons, showcons, maxres,
-                      max_seqid, coverage, keep_orig, pb, S, Sim);
+    y = filter_by_qsc(x, use_global_weights, mark, cons, showcons, max_seqid, coverage, keep_orig, pb, S, Sim);
     if (y > Neff) {
       x0 = x;
       y0 = y;
@@ -2144,22 +2138,20 @@ void Alignment::FilterNeff(char use_global_weights, const char mark,
   } while (fabs(Neff - y) > TOLY && x1 - x0 > TOLX);
 
   // Write filtered alignment WITH insert states (lower case) to alignment file
-  HH_LOG(DEBUG) << "Found Neff=" << y << " at filter threshold qsc="
-                          << x << std::endl;
+  HH_LOG(DEBUG) << "Found Neff=" << y << " at filter threshold qsc=" << x << std::endl;
 }
 
 float Alignment::filter_by_qsc(float qsc, char use_global_weights,
-                               const char mark, const char cons,
-                               const char showcons, const int maxres,
+                               const char mark, const char cons, const char showcons,
                                const int max_seqid, const int coverage,
                                char* keep_orig, const float* pb,
                                const float S[20][20], const float Sim[20][20]) {
-  HMM q;
+  HMM q(MAXSEQDIS, maxres);
   for (int k = 0; k < N_in; ++k)
     keep[k] = keep_orig[k];
   Filter2(keep, coverage, 0, qsc, max_seqid + 1, max_seqid, 0, S);
-  FrequenciesAndTransitions(&q, use_global_weights, mark, cons, showcons,
-                            maxres, pb, Sim);  // Might be sped up by calculating wg and calling only Amino_acid_frequencies_and_transitions_from_M_state(q,in);
+  // Might be sped up by calculating wg and calling only Amino_acid_frequencies_and_transitions_from_M_state(q,in);
+  FrequenciesAndTransitions(&q, use_global_weights, mark, cons, showcons, pb, Sim);
   return q.Neff_HMM;
 }
 
@@ -2168,8 +2160,7 @@ float Alignment::filter_by_qsc(float qsc, char use_global_weights,
 /////////////////////////////////////////////////////////////////////////////////////
 void Alignment::FrequenciesAndTransitions(HMM* q, char use_global_weights,
                                           const char mark, const char cons,
-                                          const char showcons, const int maxres,
-                                          const float* pb,
+                                          const char showcons, const float* pb,
                                           const float Sim[20][20], char* in,
                                           bool time) {
   int k;                // index of sequence
@@ -2237,10 +2228,10 @@ void Alignment::FrequenciesAndTransitions(HMM* q, char use_global_weights,
     for (k = 0; k < N_in; ++k)
       X[k][L + 1] = ENDGAP;  // does it have an influence?
 
-    Amino_acid_frequencies_and_transitions_from_M_state(q, use_global_weights,
-                                                        in, maxres, pb);  // use subalignments of seqs with residue in i
-    Transitions_from_I_state(q, in, maxres);  // use subalignments of seqs with insert in i
-    Transitions_from_D_state(q, in, maxres);  // use subalignments of seqs with delete in i. Must be last of these three calls if par.wg==1!
+    // use subalignments of seqs with residue in i
+    Amino_acid_frequencies_and_transitions_from_M_state(q, use_global_weights, in, pb);
+    Transitions_from_I_state(q, in);  // use subalignments of seqs with insert in i
+    Transitions_from_D_state(q, in);  // use subalignments of seqs with delete in i. Must be last of these three calls if par.wg==1!
     //if (time) { ElapsedTimeSinceLastCall("Do pos-specific sequence weighting and calculate amino acid frequencies and transitions"); }
   } else  // N_filtered==1
   {
@@ -2525,9 +2516,7 @@ void Alignment::FrequenciesAndTransitions(HMM* q, char use_global_weights,
 // Calculate freqs q->f[i][a] and transitions q->tr[i][a] (a=MM,MI,MD) with pos-specific subalignments
 // Pos-specific weights are calculated like in "GetPositionSpecificWeights()"
 /////////////////////////////////////////////////////////////////////////////////////
-void Alignment::Amino_acid_frequencies_and_transitions_from_M_state(
-    HMM* q, char use_global_weights, char* in, const int maxres,
-    const float* pb) {
+void Alignment::Amino_acid_frequencies_and_transitions_from_M_state(HMM* q, char use_global_weights, char* in, const float* pb) {
   // Calculate position-dependent weights wi[k] for each i.
   // For calculation of weights in column i use sub-alignment
   // over sequences which have a *residue* in column i (no gap, no end gap)
@@ -2544,8 +2533,8 @@ void Alignment::Amino_acid_frequencies_and_transitions_from_M_state(
   int a;                      // amino acid (0..19)
   int** n = NULL;  // n[j][a] = number of seq's with some non-gap amino acid at column i AND residue a at position j
   float** w_contrib = NULL;  // weight contribution of amino acid a at pos. j to weight of a sequence
-  float * wi = new float[MAXSEQ];  // weight of sequence k in column i, calculated from subalignment i
-  float Neff[maxres];         // diversity of subalignment i
+  float* wi = new float[maxseq];  // weight of sequence k in column i, calculated from subalignment i
+  float* Neff = new float[maxres];         // diversity of subalignment i
   int nseqi = 0;                // number of sequences in subalignment i
   int ncol = 0;                // number of columns j that contribute to Neff[i]
   char change;  // has the set of sequences in subalignment changed? 0:no  1:yes
@@ -2576,7 +2565,7 @@ void Alignment::Amino_acid_frequencies_and_transitions_from_M_state(
     }
   }
   q->Neff_HMM = 0.0f;
-  Neff[0] = 0.0;  // if the first column has no residues (i.e. change==0), Neff[i]=Neff[i-1]=Neff[0]
+  Neff[0] = 0.0f;  // if the first column has no residues (i.e. change==0), Neff[i]=Neff[i-1]=Neff[0]
 
   //////////////////////////////////////////////////////////////////////////////////////////////
   // Main loop through alignment columns
@@ -2748,6 +2737,7 @@ void Alignment::Amino_acid_frequencies_and_transitions_from_M_state(
     delete[] (w_contrib);
   }
   delete [] wi;
+  delete [] Neff;
   // Delete f[j]
   free(f);
   delete[] naa;
@@ -3075,7 +3065,7 @@ void Alignment::Amino_acid_frequencies_and_transitions_from_M_state(
 /////////////////////////////////////////////////////////////////////////////////////
 // Calculate transitions q->tr[i][a] (a=DM,DD) with pos-specific subalignments
 /////////////////////////////////////////////////////////////////////////////////////
-void Alignment::Transitions_from_I_state(HMM* q, char* in, const int maxres) {
+void Alignment::Transitions_from_I_state(HMM* q, char* in) {
   // Calculate position-dependent weights wi[k] for each i.
   // For calculation of weights in column i use sub-alignment
   // over sequences which have a INSERT in column i
@@ -3092,7 +3082,7 @@ void Alignment::Transitions_from_I_state(HMM* q, char* in, const int maxres) {
   int a;                      // amino acid (0..19)
   int naa;                    // number of different amino acids
   int** n;  // n[j][a] = number of seq's with some residue at column i AND a at position j
-  float * wi = new float[MAXSEQ];  // weight of sequence k in column i, calculated from subalignment i
+  float * wi = new float[maxseq];  // weight of sequence k in column i, calculated from subalignment i
   float Neff[maxres];         // diversity of subalignment i
   int nseqi;                  // number of sequences in subalignment i
   int ncol;                  // number of columns j that contribute to Neff[i]
@@ -3281,7 +3271,7 @@ void Alignment::Transitions_from_I_state(HMM* q, char* in, const int maxres) {
 /////////////////////////////////////////////////////////////////////////////////////
 // Calculate transitions q->tr[i][a] (a=DM,DD) with pos-specific subalignments
 /////////////////////////////////////////////////////////////////////////////////////
-void Alignment::Transitions_from_D_state(HMM* q, char* in, const int maxres) {
+void Alignment::Transitions_from_D_state(HMM* q, char* in) {
   // Calculate position-dependent weights wi[k] for each i.
   // For calculation of weights in column i use sub-alignment
   // over sequences which have a DELETE in column i
@@ -3298,8 +3288,8 @@ void Alignment::Transitions_from_D_state(HMM* q, char* in, const int maxres) {
   int a;                      // amino acid (0..19)
   int naa;                    // number of different amino acids
   int** n;  // n[j][a] = number of seq's with some residue at column i AND a at position j
-  float * wi = new float[MAXSEQ];  // weight of sequence k in column i, calculated from subalignment i
-  float Neff[maxres];         // diversity of subalignment i
+  float* wi = new float[maxseq];  // weight of sequence k in column i, calculated from subalignment i
+  float* Neff = new float[maxres];         // diversity of subalignment i
   int nseqi = 0;      // number of sequences in subalignment i (for DEBUGGING)
   int ncol = 0;              // number of columns j that contribute to Neff[i]
   char change;  // has the set of sequences in subalignment changed? 0:no  1:yes
@@ -3353,7 +3343,7 @@ void Alignment::Transitions_from_D_state(HMM* q, char* in, const int maxres) {
       // If there is no sequence in subalignment j ...
       if (nseqi == 0) {
         ncol = 0;
-        Neff[i] = 0.0;  // effective number of sequences = 0!
+        Neff[i] = 0.0f;  // effective number of sequences = 0!
         q->tr[i][D2M] = -100000;
         q->tr[i][D2D] = -100000;
         continue;
@@ -3400,7 +3390,7 @@ void Alignment::Transitions_from_D_state(HMM* q, char* in, const int maxres) {
         }
 
         // Calculate Neff[i]
-        Neff[i] = 0.0;
+        Neff[i] = 0.0f;
         for (j = 1; j <= L; ++j) {
           if (n[j][ENDGAP] > MAXENDGAPFRAC * nseqi)
             continue;
@@ -3487,7 +3477,8 @@ void Alignment::Transitions_from_D_state(HMM* q, char* in, const int maxres) {
   for (i = 1; i <= L; ++i){
     q->Neff_D[i] = Neff[i];
   }
-  delete [] wi;
+  delete[] Neff;
+  delete[] wi;
   // delete n[][]
   for (j = 1; j <= L; ++j){
     delete[] (n[j]);
@@ -3638,11 +3629,11 @@ void Alignment::MergeMasterSlave(Hit& hit, Alignment& Tali, char* ta3mfile,
   for (k = 0; k < Tali.N_in; ++k) {
     if (!Tali.keep[k])
       continue;
-    if (N_in >= MAXSEQ) {
+    if (N_in >= maxseq) {
       HH_LOG(WARNING) << "Warning in " << __FILE__ << ":" << __LINE__
                                 << ": " << __func__ << ":" << std::endl;
       HH_LOG(WARNING)
-          << "\tmaximum number of " << MAXSEQ
+          << "\tmaximum number of " << maxseq
           << " sequences exceeded while reading " << ta3mfile
           << ". Skipping all following sequences of this MSA" << std::endl;
       break;

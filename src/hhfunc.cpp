@@ -42,9 +42,9 @@ void ReadQueryFile(Parameters& par, FILE* inf, char& input_format,
       HH_LOG(INFO) << "Extracting representative sequences from " << infile << " to merge later with matched database sequences\n";
     }
 
-    Alignment ali_tmp(MAXSEQ, par.maxres);
+    Alignment ali_tmp(par.maxseq, par.maxres);
     ali_tmp.GetSeqsFromHMM(q);
-    ali_tmp.Compress(infile, par.cons, par.maxres, par.maxcol, par.M, par.Mgaps);
+    ali_tmp.Compress(infile, par.cons, par.maxcol, par.M, par.Mgaps);
     *qali = ali_tmp;
   }
   // ... or is it an alignment file
@@ -53,14 +53,14 @@ void ReadQueryFile(Parameters& par, FILE* inf, char& input_format,
     	HH_LOG(INFO) << infile << " is in A2M, A3M or FASTA format\n";
     }
 
-    Alignment ali_tmp(MAXSEQ, par.maxres);
+    Alignment ali_tmp(par.maxseq, par.maxres);
 
     // Read alignment from infile into matrix X[k][l] as ASCII (and supply first line as extra argument)
     ali_tmp.Read(inf, infile, par.mark, par.maxcol, par.nseqdis, line);
 
     // Convert ASCII to int (0-20),throw out all insert states, record their number in I[k][i]
     // and store marked sequences in name[k] and seq[k]
-    ali_tmp.Compress(infile, par.cons, par.maxres, par.maxcol, par.M, par.Mgaps);
+    ali_tmp.Compress(infile, par.cons, par.maxcol, par.M, par.Mgaps);
 
     ali_tmp.Shrink();
 
@@ -71,14 +71,10 @@ void ReadQueryFile(Parameters& par, FILE* inf, char& input_format,
     ali_tmp.N_filtered = ali_tmp.Filter(par.max_seqid, S, par.coverage, par.qid, par.qsc, par.Ndiff);
 
     if (par.Neff >= 0.999)
-    	ali_tmp.FilterNeff(use_global_weights, par.mark, par.cons, par.showcons,
-          par.maxres, par.max_seqid, par.coverage, par.Neff, pb, S, Sim);
+    	ali_tmp.FilterNeff(use_global_weights, par.mark, par.cons, par.showcons, par.max_seqid, par.coverage, par.Neff, pb, S, Sim);
 
     // Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
-    ali_tmp.FrequenciesAndTransitions(q, use_global_weights, par.mark, par.cons,
-        par.showcons, par.maxres, pb, Sim);
-
-
+    ali_tmp.FrequenciesAndTransitions(q, use_global_weights, par.mark, par.cons, par.showcons, pb, Sim);
 
     *qali = ali_tmp;
     input_format = 0;
@@ -113,8 +109,7 @@ void ReadQueryFile(Parameters& par, char* infile, char& input_format,
     Pathname(path, infile);
   }
   
-  ReadQueryFile(par, inf, input_format, use_global_weights, q, qali, infile, pb,
-      S, Sim);
+  ReadQueryFile(par, inf, input_format, use_global_weights, q, qali, infile, pb, S, Sim);
 
   fclose(inf);
 }

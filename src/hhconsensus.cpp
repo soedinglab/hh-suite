@@ -303,7 +303,7 @@ int main(int argc, char **argv) {
   strcpy(par.alnfile, "");
 
   //Default parameter settings
-  par.nseqdis = MAXSEQ - 1;        // maximum number of sequences to be written
+  par.nseqdis = par.maxseq - 1;        // maximum number of sequences to be written
   par.showcons = 0;
   par.cons = 1;
   par.Ndiff = 0;
@@ -342,7 +342,7 @@ int main(int argc, char **argv) {
   // Process command line options (they override defaults from .hhdefaults file)
   ProcessArguments(argc, argv);
 
-  Alignment* qali = new Alignment(MAXSEQ, par.maxres);
+  Alignment* qali = new Alignment(par.maxseq, par.maxres);
   HMM* q = new HMM(MAXSEQDIS, par.maxres);        //Create a HMM with maximum of par.maxres match states
 
   // q is only available after maxres is known, so we had to move this here

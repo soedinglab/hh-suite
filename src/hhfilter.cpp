@@ -212,15 +212,13 @@ void ProcessArguments(int argc, char** argv) {
 //// MAIN PROGRAM
 /////////////////////////////////////////////////////////////////////////////////////
 int main(int argc, char **argv) {
-  Alignment qali;              //Create an alignment
-
   char* argv_conf[MAXOPT]; // Input arguments from .hhconfig file (first=1: argv_conf[0] is not used)
   int argc_conf;                  // Number of arguments in argv_conf
 
   strcpy(par.infile, "");
   strcpy(par.outfile, "");
 
-  par.nseqdis = MAXSEQ - 1;        // maximum number of sequences to be written
+  par.nseqdis = par.maxseq - 1;        // maximum number of sequences to be written
   par.Ndiff = 0;                 // no filtering for maximum diversity
 
   // Make command line input globally available
@@ -279,12 +277,13 @@ int main(int argc, char **argv) {
     inf = stdin;
   }
 
+  Alignment qali(par.maxseq, par.maxres);              //Create an alignment
   qali.Read(inf, par.infile, par.mark, par.maxcol, par.nseqdis);
   fclose(inf);
 
   // Convert ASCII to int (0-20),throw out all insert states, record their number in I[k][i]
   // and store marked sequences in name[k] and seq[k]
-  qali.Compress(par.infile, par.cons, par.maxres, par.maxcol, par.M, par.Mgaps);
+  qali.Compress(par.infile, par.cons, par.maxcol, par.M, par.Mgaps);
 
   // Filter by minimum score per column with query sequence?
   //TODO: nonsense???
@@ -297,7 +296,7 @@ int main(int argc, char **argv) {
 
   // Atune alignment diversity q.Neff with qsc to value Neff_goal
   if (par.Neff >= 1.0)
-    qali.FilterNeff(par.wg, par.mark, par.cons, par.showcons, par.maxres, par.max_seqid, par.coverage, par.Neff, pb, S, Sim);
+    qali.FilterNeff(par.wg, par.mark, par.cons, par.showcons, par.max_seqid, par.coverage, par.Neff, pb, S, Sim);
 
   // Write filtered alignment WITH insert states (lower case) to alignment file
   qali.WriteToFile(par.outfile, par.append);

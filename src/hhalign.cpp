@@ -624,8 +624,8 @@ void HHalign::run(FILE* query_fh, char* query_path, char* template_path) {
   Hit hit_cur;
   Hash<Hit>* previous_hits = new Hash<Hit>(1631, hit_cur);
 
-  Qali = new Alignment();
-  Qali_allseqs = new Alignment();
+  Qali = new Alignment(par.maxseq, par.maxres);
+  Qali_allseqs = new Alignment(par.maxseq, par.maxres);
 
   q = new HMM(MAXSEQDIS, par.maxres);
   HMMSimd q_vec(par.maxres);
@@ -645,7 +645,7 @@ void HHalign::run(FILE* query_fh, char* query_path, char* template_path) {
   if (par.notags)
     q->NeutralizeTags(pb);
 
-  HHEntry* template_entry = new HHFileEntry(template_path);
+  HHEntry* template_entry = new HHFileEntry(template_path, par.maxres);
   std::vector<HHEntry*> new_entries;
   new_entries.push_back(template_entry);
 
@@ -671,7 +671,7 @@ void HHalign::run(FILE* query_fh, char* query_path, char* template_path) {
   mergeHitsToQuery(previous_hits, seqs_found, cluster_found);
 
   // Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
-  Qali->FrequenciesAndTransitions(q, par.wg, par.mark, par.cons, par.showcons, par.maxres, pb, Sim, NULL, true);
+  Qali->FrequenciesAndTransitions(q, par.wg, par.mark, par.cons, par.showcons, pb, Sim, NULL, true);
 
   if (par.notags)
       q->NeutralizeTags(pb);

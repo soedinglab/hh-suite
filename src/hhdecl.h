@@ -29,9 +29,7 @@ class Parameters;
 const char REFERENCE[]="Remmert M, Biegert A, Hauser A, and Soding J.\nHHblits: Lightning-fast iterative protein sequence searching by HMM-HMM alignment.\nNat. Methods 9:173-175 (2011).\n";
 const char COPYRIGHT[]="(C) Johannes Soeding, Michael Remmert, Andreas Biegert, Andreas Hauser\n";
 
-const int MAXSEQ=65535; //max number of sequences in input alignment (must be <~30000 on cluster nodes??)
 const int LINELEN=524288; //max length of line read in from input files; must be >= MAXCOL
-const int MAXRES=20000;
 const int MAXSEQDIS=10238;//max number of sequences stored in 'hit' objects and displayed in output alignment
 const int IDLEN=255;     //max length of scop hierarchy id and pdb-id
 const int DESCLEN=32765;//max length of sequence description (longname)
@@ -45,13 +43,10 @@ const int GAP=21;       //number representing a gap internally
 const int FWD_BKW_PATHWITDH=40;       //cell off path width around viterbi alignment
 const int ENDGAP=22;    //Important to distinguish because end gaps do not contribute to tansition counts
 const int HMMSCALE=1000;//Scaling number for log2-values in HMMs
-const int NFAMMAX=5119; //Size of hash for counting number of HMMs in each family
 const int MAXPROF=32766;//Maximum number of HMM scores for fitting EVD
 const float MAXENDGAPFRAC=0.1; //For weighting: include only columns into subalignment i that have a max fraction of seqs with endgap
 const float LAMDA=0.388; //lamda in score EVD used for -local mode in length correction: S = S-log(Lq*Lt)/LAMDA)
 const float LAMDA_GLOB=0.42; //lamda in score EVD used for -global mode
-const float PMAX=1E-2;  //Maximum single-repeat p-value that can contribute to whole-protein p-value
-const float MINEVALEXCL=0.5; //above this E-value from first ML fit hits are not used for final ML fit of EVD
 const int SELFEXCL=3;   // exclude self-alignments with j-i<SELFEXCL
 const float PLTY_GAPOPEN=6.0f; // for -qsc option (filter for min similarity to query): 6 bits to open gap
 const float PLTY_GAPEXTD=1.0f; // for -qsc option (filter for min similarity to query): 1 bit to extend gap
@@ -67,8 +62,6 @@ const int MAXBINS = 384;
 const int NDSSP=8;      //number of different ss states determined by dssp: 0-7 (0: no state available)
 const int NSSPRED=4;    //number of different ss states predicted by psipred: 0-3 (0: no prediction availabe)
 const int MAXCF=11;     //number of different confidence values: 0-10 (0: no prediction availabe)
-const int NSA=7;        //number of classes relative solvent accesiblity (0:no coord,  1:<2%, 2:<14%, 3:<33%, 4:<55%, 5:>55%, 6:S-S bridge)
-
 
 // const char aa[]="ARNDCQEGHILKMFPSTWYVX-";
 //Amino acids Sorted by alphabet     -> internal numbers a
@@ -113,7 +106,6 @@ enum InterimFilterStates {INTERIM_FILTER_NONE=0, INTERIM_FILTER_FULL=1};
 
 #include "util.h"
 #include "hhdatabase.h"
-
 
 // Pseudocounts
 namespace Pseudocounts {
@@ -273,6 +265,7 @@ public:
 
   int maxcol;             // max number of columns in sequence/MSA input files; must be <= LINELEN and >= maxres
   int maxres;             // max number of states in HMM; must be <= LINELEN
+  int maxseq;             // max number of sequences in MSA
   int maxnumdb;           // max number of hits allowed past prefilter
 
   bool hmmer_used;        // True, if a HMMER database is used
