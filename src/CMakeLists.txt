@@ -98,9 +98,6 @@ set(HH_SOURCE
         simd.h
         )
 
-add_library(HH_OBJECTS ${HH_SOURCE})
-add_dependencies(HH_OBJECTS generated)
-
 add_library(hhviterbialgorithm_with_celloff hhviterbialgorithm.cpp)
 set_property(TARGET hhviterbialgorithm_with_celloff PROPERTY COMPILE_FLAGS "-DVITERBI_CELLOFF=1")
 
@@ -110,52 +107,33 @@ set_property(TARGET hhviterbialgorithm_with_celloff_and_ss PROPERTY COMPILE_FLAG
 add_library(hhviterbialgorithm_and_ss hhviterbialgorithm.cpp)
 set_property(TARGET hhviterbialgorithm_and_ss PROPERTY COMPILE_FLAGS "-DVITERBI_SS_SCORE=1")
 
-add_executable(hhblits hhblits_app.cpp)
-target_link_libraries(hhblits
-        ffindex CS_OBJECTS HH_OBJECTS
+add_library(HH_OBJECTS ${HH_SOURCE})
+add_dependencies(HH_OBJECTS generated)
+target_link_libraries(HH_OBJECTS
+        ffindex
+        mpq
+        CS_OBJECTS
         hhviterbialgorithm_with_celloff
         hhviterbialgorithm_and_ss
-        hhviterbialgorithm_with_celloff_and_ss
-        )
+        hhviterbialgorithm_with_celloff_and_ss)
+
+add_executable(hhblits hhblits_app.cpp)
+target_link_libraries(hhblits HH_OBJECTS)
 
 add_executable(hhmake hhmake.cpp)
-target_link_libraries(hhmake
-        ffindex CS_OBJECTS HH_OBJECTS
-        hhviterbialgorithm_with_celloff
-        hhviterbialgorithm_and_ss
-        hhviterbialgorithm_with_celloff_and_ss
-        )
+target_link_libraries(hhmake HH_OBJECTS)
+
 add_executable(hhfilter hhfilter.cpp)
-target_link_libraries(hhfilter
-        ffindex CS_OBJECTS HH_OBJECTS
-        hhviterbialgorithm_with_celloff
-        hhviterbialgorithm_and_ss
-        hhviterbialgorithm_with_celloff_and_ss
-        )
+target_link_libraries(hhfilter HH_OBJECTS)
 
 add_executable(hhsearch hhsearch_app.cpp)
-target_link_libraries(hhsearch
-        ffindex CS_OBJECTS HH_OBJECTS
-        hhviterbialgorithm_with_celloff
-        hhviterbialgorithm_and_ss
-        hhviterbialgorithm_with_celloff_and_ss
-        )
+target_link_libraries(hhsearch HH_OBJECTS)
 
 add_executable(hhalign hhalign_app.cpp)
-target_link_libraries(hhalign
-        ffindex CS_OBJECTS HH_OBJECTS
-        hhviterbialgorithm_with_celloff
-        hhviterbialgorithm_and_ss
-        hhviterbialgorithm_with_celloff_and_ss
-        )
+target_link_libraries(hhalign HH_OBJECTS)
 
 add_executable(hhconsensus hhconsensus.cpp)
-target_link_libraries(hhconsensus
-        ffindex CS_OBJECTS HH_OBJECTS
-        hhviterbialgorithm_with_celloff
-        hhviterbialgorithm_and_ss
-        hhviterbialgorithm_with_celloff_and_ss
-        )
+target_link_libraries(hhconsensus HH_OBJECTS)
 
 add_library(A3M_COMPRESS a3m_compress.cpp)
 
@@ -175,12 +153,7 @@ add_executable(a3m_database_filter a3m_database_filter.cpp)
 target_link_libraries(a3m_database_filter ffindex A3M_COMPRESS)
 
 add_executable(cstranslate cs/cstranslate_app.cc)
-target_link_libraries(cstranslate
-        ffindex CS_OBJECTS HH_OBJECTS A3M_COMPRESS
-        hhviterbialgorithm_with_celloff
-        hhviterbialgorithm_and_ss
-        hhviterbialgorithm_with_celloff_and_ss
-        )
+target_link_libraries(cstranslate HH_OBJECTS A3M_COMPRESS)
 
 INSTALL(PROGRAMS
         hhblits
@@ -200,32 +173,15 @@ INSTALL(PROGRAMS
 
 if (OPENMP_FOUND)
     add_executable(hhblits_omp hhblits_omp.cpp)
-    target_link_libraries(hhblits_omp
-            ffindex CS_OBJECTS HH_OBJECTS
-            hhviterbialgorithm_with_celloff
-            hhviterbialgorithm_and_ss
-            hhviterbialgorithm_with_celloff_and_ss
-            )
-    INSTALL(PROGRAMS hhblits_omp DESTINATION bin)
+    target_link_libraries(hhblits_omp HH_OBJECTS)
 
     add_executable(hhsearch_omp hhsearch_omp.cpp)
-    target_link_libraries(hhsearch_omp
-            ffindex CS_OBJECTS HH_OBJECTS
-            hhviterbialgorithm_with_celloff
-            hhviterbialgorithm_and_ss
-            hhviterbialgorithm_with_celloff_and_ss
-            )
-    INSTALL(PROGRAMS hhsearch_omp DESTINATION bin)
+    target_link_libraries(hhsearch_omp HH_OBJECTS)
 
-    add_executable(hhblits_ca3m hhblits_ca3m.cpp
-            )
-    target_link_libraries (hhblits_ca3m
-            ffindex CS_OBJECTS HH_OBJECTS
-            hhviterbialgorithm_with_celloff
-            hhviterbialgorithm_and_ss
-            hhviterbialgorithm_with_celloff_and_ss
-            )
-    INSTALL(PROGRAMS hhsearch_ca3m DESTINATION bin)
+    add_executable(hhblits_ca3m hhblits_ca3m.cpp)
+    target_link_libraries (hhblits_ca3m HH_OBJECTS)
+
+    INSTALL(PROGRAMS hhblits_omp hhsearch_omp hhblits_ca3m DESTINATION bin)
 endif ()
 
 find_package(MPI QUIET)
@@ -233,29 +189,14 @@ if (MPI_CXX_FOUND)
     include_directories(${MPI_CXX_INCLUDE_PATH})
 
     add_executable(hhblits_mpi hhblits_mpi.cpp)
-    target_link_libraries(hhblits_mpi
-            ffindex mpq CS_OBJECTS HH_OBJECTS
-            hhviterbialgorithm_with_celloff
-            hhviterbialgorithm_and_ss
-            hhviterbialgorithm_with_celloff_and_ss
-            ${MPI_CXX_LIBRARIES}
-            )
+    target_link_libraries(hhblits_mpi HH_OBJECTS ${MPI_CXX_LIBRARIES})
     set_target_properties(hhblits_mpi PROPERTIES COMPILE_FLAGS "${MPI_CXX_COMPILE_FLAGS}")
     set_target_properties(hhblits_mpi PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
 
-    install(PROGRAMS hhblits_mpi DESTINATION bin)
-
     add_executable(cstranslate_mpi cs/cstranslate_mpi_app.cc)
-    target_link_libraries(cstranslate_mpi
-            ffindex mpq CS_OBJECTS HH_OBJECTS A3M_COMPRESS
-            hhviterbialgorithm_with_celloff
-            hhviterbialgorithm_and_ss
-            hhviterbialgorithm_with_celloff_and_ss
-            ${MPI_CXX_LIBRARIES}
-            )
+    target_link_libraries(cstranslate_mpi HH_OBJECTS A3M_COMPRESS ${MPI_CXX_LIBRARIES})
     set_target_properties(cstranslate_mpi PROPERTIES COMPILE_FLAGS "${MPI_CXX_COMPILE_FLAGS}")
     set_target_properties(cstranslate_mpi PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
 
-    install(PROGRAMS cstranslate_mpi DESTINATION bin)
+    install(PROGRAMS hhblits_mpi cstranslate_mpi DESTINATION bin)
 endif ()
-
