@@ -1,3 +1,5 @@
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+
 if (${HAVE_AVX2})
     ADD_DEFINITIONS("-DAVX2")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx2 -Wa,-q")
@@ -111,7 +113,6 @@ add_library(HH_OBJECTS ${HH_SOURCE})
 add_dependencies(HH_OBJECTS generated)
 target_link_libraries(HH_OBJECTS
         ffindex
-        mpq
         CS_OBJECTS
         hhviterbialgorithm_with_celloff
         hhviterbialgorithm_and_ss
@@ -189,12 +190,12 @@ if (MPI_CXX_FOUND)
     include_directories(${MPI_CXX_INCLUDE_PATH})
 
     add_executable(hhblits_mpi hhblits_mpi.cpp)
-    target_link_libraries(hhblits_mpi HH_OBJECTS ${MPI_CXX_LIBRARIES})
+    target_link_libraries(hhblits_mpi HH_OBJECTS mpq ${MPI_CXX_LIBRARIES})
     set_target_properties(hhblits_mpi PROPERTIES COMPILE_FLAGS "${MPI_CXX_COMPILE_FLAGS}")
     set_target_properties(hhblits_mpi PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
 
     add_executable(cstranslate_mpi cs/cstranslate_mpi_app.cc)
-    target_link_libraries(cstranslate_mpi HH_OBJECTS A3M_COMPRESS ${MPI_CXX_LIBRARIES})
+    target_link_libraries(cstranslate_mpi HH_OBJECTS A3M_COMPRESS mpq ${MPI_CXX_LIBRARIES})
     set_target_properties(cstranslate_mpi PROPERTIES COMPILE_FLAGS "${MPI_CXX_COMPILE_FLAGS}")
     set_target_properties(cstranslate_mpi PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
 
