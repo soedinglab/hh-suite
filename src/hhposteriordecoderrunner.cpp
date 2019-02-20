@@ -19,6 +19,10 @@
 
 #include <map>
 
+#ifdef OPENMP
+#include <omp.h>
+#endif
+
 int compareIrep(const void * a, const void * b) {
     Hit pa = *(Hit*)a;
     Hit pb = *(Hit*)b;
