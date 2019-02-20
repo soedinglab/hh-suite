@@ -6,6 +6,8 @@
  */
 
 #include "a3m_compress.h"
+
+#include <cstdint>
 #ifdef OPENMP
 #include <omp.h>
 #endif
