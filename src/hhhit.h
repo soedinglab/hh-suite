@@ -2,7 +2,6 @@
 #ifndef HHHIT_H_
 #define HHHIT_H_
 
-#include <iostream>
 #include <fstream>
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,18 +24,6 @@ class Hit;
 #include "log.h"
 
 #include "hhhit-inl.h"
-
-struct Posterior_Triple {
-	int query_pos;
-	int template_pos;
-	float posterior_probability;
-
-	Posterior_Triple(int query_pos, int template_pos, float posterior_probability) {
-		this->query_pos = query_pos;
-		this->template_pos = template_pos;
-		this->posterior_probability = posterior_probability;
-	}
-};
 
 /////////////////////////////////////////////////////////////////////////////////////
 // // Describes an alignment of two profiles. Used as list element in Hits : List<Hit> 
@@ -127,23 +114,8 @@ class Hit
   // Free all allocated memory (to delete list of hits)
   void Delete();
 
-  void AllocateIndices(int len);
-  void DeleteIndices();
-
   // Comparison (used to sort list of hits)
-  int operator<(const Hit& hit2)  {return score_sort<hit2.score_sort;}
-
-  static int compare_score_sort(const Hit& hit1, const Hit& hit2) {
-    return hit1.score_sort < hit2.score_sort;
-  }
-
-  static int compare_sum_of_probs(const Hit& hit1, const Hit& hit2) {
-    return hit1.sum_of_probs > hit2.sum_of_probs;
-  }
-
-  static bool compare_evalue(const Hit& hit1, const Hit& hit2) {
-    return hit1.Eval < hit2.Eval;
-  }
+  int operator<(const Hit& hit2)  {return score_sort < hit2.score_sort;}
 
   void initHitFromHMM(HMM * t, const int nseqdis);
 
@@ -215,46 +187,6 @@ private:
     return 100.0 / (1.0 + t * t); // ??? JS Jul'12
   }
 };
-
-struct ViterbiScores {
-  ViterbiScores(){
-    score = 0.0;
-    score_aass = 0.0;
-    score_ss = 0.0;
-    Pval = 0.0;
-    Pvalt = 0.0;
-    logPval = 0.0;
-    logPvalt = 0.0;
-    Eval = 0.0;
-    logEval = 0.0;
-    Probab = 0.0;
-  };
-
-  ViterbiScores(Hit& hit) {
-    score = hit.score;
-    score_aass = hit.score_aass;
-    score_ss = hit.score_ss;
-    Pval = hit.Pval;
-    Pvalt = hit.Pvalt;
-    logPval = hit.logPval;
-    logPvalt = hit.logPvalt;
-    Eval = hit.Eval;
-    logEval = hit.logEval;
-    Probab = hit.Probab;
-  }
-
-  float score;
-  float score_aass;
-  float score_ss;
-  double Pval;
-  double Pvalt;
-  double logPval;
-  double logPvalt;
-  double Eval;
-  double logEval;
-  float Probab;
-};
-
 
 double Pvalue(double x, double a[]);
 double Pvalue(float x, float lamda, float mu);

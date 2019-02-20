@@ -10,7 +10,7 @@
 
 #include <sstream>
 #include <string>
-#include <stdio.h>
+#include <cstdio>
 #include <sys/time.h>
 
 inline std::string NowTime();

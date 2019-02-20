@@ -17,11 +17,12 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "utils.h"
 
 #ifndef RAN_H_
 #define RAN_H_
 
+#include "utils.h"
+#include <cmath>
 
 namespace cs {
 

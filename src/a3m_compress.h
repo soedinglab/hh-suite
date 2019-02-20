@@ -8,15 +8,12 @@
 #ifndef A3M_REDUCER_H_
 #define A3M_REDUCER_H_
 
-#include <ctype.h>
 #include <iostream>
+#include <ctype.h>
 #include <fstream>
 #include <string>
-#include <getopt.h>
-#include <string.h>
-#include <stdlib.h>
+#include <cstdlib>
 #include <algorithm>
-#include <stdint.h>
 #include <cstring>
 #include <climits>
 

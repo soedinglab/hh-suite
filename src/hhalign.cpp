@@ -199,7 +199,7 @@ void HHalign::help(Parameters& par, char all) {
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
-//// Processing input options from command line and .hhdefaults file
+//// Processing input options from command line
 /////////////////////////////////////////////////////////////////////////////////////
 void HHalign::ProcessAllArguments(int argc, char** argv, Parameters& par) {
   par.argv = argv;
@@ -220,30 +220,7 @@ void HHalign::ProcessAllArguments(int argc, char** argv, Parameters& par) {
 
   par.num_rounds = 1;
 
-  // Enable changing verbose mode before command line are processed
-  int v = 2;
-  for (int i = 1; i < argc; i++) {
-    if (strcmp(argv[i], "-v") == 0) {
-      v = atoi(argv[i + 1]);
-      break;
-    }
-  }
-  par.v = Log::from_int(v);
-  Log::reporting_level() = par.v;
-
   par.SetDefaultPaths();
-
-  // Process default otpions from .hhdefaults file
-  char* argv_conf[MAXOPT];
-  int argc_conf = 0;
-
-  ReadDefaultsFile(argc_conf, argv_conf, argv[0]);
-  ProcessArguments(argc_conf, argv_conf, par);
-
-  for (int n = 1; n < argc_conf; n++)
-    delete[] argv_conf[n];
-
-  // Process command line options (they override defaults from .hhdefaults file)
   ProcessArguments(argc, argv, par);
 
   // Check needed files
@@ -612,7 +589,7 @@ void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
     else {
       HH_LOG(WARNING) << "Ignoring unknown option " << argv[i] << std::endl;
     }
-    HH_LOG(DEBUG1) << i << "  " << argv[i] << endl;
+    HH_LOG(DEBUG1) << i << "  " << argv[i] << std::endl;
   } // end of for-loop for command line input
 }
 
@@ -653,9 +630,7 @@ void HHalign::run(FILE* query_fh, char* query_path, std::vector<std::string>& te
 
   std::vector<HHEntry*> new_entries;
   for (size_t i = 0; i < template_paths.size(); i++) {
-    char tfile[NAMELEN];  // HHFileEntry requres non-const char*, so we do this
-    strcpy(tfile, template_paths[i].c_str());
-    HHEntry* template_entry = new HHFileEntry(tfile, par.maxres);
+    HHEntry* template_entry = new HHFileEntry(template_paths[i].c_str(), par.maxres);
     new_entries.push_back(template_entry);
   }
 

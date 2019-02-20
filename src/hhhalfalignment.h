@@ -9,13 +9,11 @@
 #define HHHALFALIGNMENT_H
 
 #include <cstdlib>
-#include <iostream>
-
 
 class HalfAlignment
 {
 public:
-  HalfAlignment(int maxseqdis=MAXSEQDIS);
+  explicit HalfAlignment(int maxseqdis);
   ~HalfAlignment();
 
   // Initialize HalfAlignment; create index arrays s [],l[], m[]

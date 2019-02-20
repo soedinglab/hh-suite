@@ -1,6 +1,5 @@
 // hhconsensus.cpp: read A3M/FASTA file and calculate consensus sequence
 
-#include <iostream>
 #include <fstream>    // ofstream, ifstream
 #include <cstdio>     // printf
 #include <algorithm>  // min,max
@@ -121,7 +120,7 @@ void help() {
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
-//// Processing input options from command line and .hhdefaults file
+//// Processing input options from command line
 /////////////////////////////////////////////////////////////////////////////////////
 void ProcessArguments(int argc, char** argv) {
   // Read command line options
@@ -260,8 +259,6 @@ void ProcessArguments(int argc, char** argv) {
       par.gaph = atof(argv[++i]);
     else if (!strcmp(argv[i], "-gapi") && (i < argc - 1))
       par.gapi = atof(argv[++i]);
-    else if (!strcmp(argv[i], "-def"))
-      par.readdefaultsfile = 1;
     else if (!strcmp(argv[i], "-maxres") && (i < argc - 1))
         par.maxres = par.maxcol = atoi(argv[++i]);
     else if (!strcmp(argv[i], "-nocontxt"))
@@ -295,9 +292,6 @@ void ProcessArguments(int argc, char** argv) {
 //// MAIN PROGRAM
 /////////////////////////////////////////////////////////////////////////////////////
 int main(int argc, char **argv) {
-  char* argv_conf[MAXOPT]; // Input arguments from .hhdefaults file (first=1: argv_conf[0] is not used)
-  int argc_conf;               // Number of arguments in argv_conf
-
   strcpy(par.infile, "");
   strcpy(par.outfile, "");
   strcpy(par.alnfile, "");
@@ -318,28 +312,7 @@ int main(int argc, char **argv) {
   par.argc = argc;
   RemovePathAndExtension(program_name, argv[0]);
 
-  // Enable changing verbose mode before defaults file and command line are processed
-  int v = 2;
-  for (int i = 1; i < argc; i++) {
-    if (!strcmp(argv[i], "-def"))
-      par.readdefaultsfile = 1;
-    else if (strcmp(argv[i], "-v") == 0) {
-      v = atoi(argv[i + 1]);
-    }
-  }
-  par.v = Log::from_int(v);
-  Log::reporting_level() = par.v;
-
   par.SetDefaultPaths();
-
-  // Read .hhdefaults file?
-  if (par.readdefaultsfile) {
-    // Process default otpions from .hhconfig file
-    ReadDefaultsFile(argc_conf, argv_conf);
-    ProcessArguments(argc_conf, argv_conf);
-  }
-
-  // Process command line options (they override defaults from .hhdefaults file)
   ProcessArguments(argc, argv);
 
   Alignment* qali = new Alignment(par.maxseq, par.maxres);
@@ -438,7 +411,7 @@ int main(int argc, char **argv) {
 
   // Print A3M/A2M/FASTA output alignment
   if (*par.alnfile) {
-    HalfAlignment qa;
+    HalfAlignment qa(MAXSEQDIS);
     int n = imin(q->n_display,
         par.nseqdis + (q->nss_dssp >= 0) + (q->nss_pred >= 0)
             + (q->nss_conf >= 0) + (q->ncons >= 0));

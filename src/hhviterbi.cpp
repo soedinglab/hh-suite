@@ -10,7 +10,6 @@
 #include "hhutil.h"
 #include "hhhmm.h"
 
-
 Viterbi::Viterbi(int max_seq_length,bool local,float penalty_gap_query,float penalty_gap_template,
         float correlation, int par_min_overlap, float shift, const int ss_mode, float ssw,
         const float S73[NDSSP][NSSPRED][MAXCF], const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF],

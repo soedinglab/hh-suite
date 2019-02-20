@@ -77,7 +77,7 @@ private:
 			ViterbiMatrix* viterbiMatrix);
 
 	void exclude_regions(char* exclstr, int maxResElem, HMMSimd* q_hmm_simd, HMMSimd* t_hmm_simd, ViterbiMatrix* viterbiMatrix);
-  void exclude_template_regions(char* exclstr, int maxResElem, HMMSimd* q_hmm_simd, HMMSimd* t_hmm_simd, ViterbiMatrix* viterbiMatrix);
+	void exclude_template_regions(char* exclstr, int maxResElem, HMMSimd* q_hmm_simd, HMMSimd* t_hmm_simd, ViterbiMatrix* viterbiMatrix);
 
 	float calculateEarlyStop(Parameters& par, HMM * q, std::vector<Hit> &all_hits, unsigned int startPos);
 

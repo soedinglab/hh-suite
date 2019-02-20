@@ -8,9 +8,7 @@
 #ifndef HHDECL_H_
 #define HHDECL_H_
 
-#include <signal.h>
 #include <unistd.h>
-#include <iostream>
 
 class Parameters;
 
@@ -34,7 +32,6 @@ const int MAXSEQDIS=10238;//max number of sequences stored in 'hit' objects and 
 const int IDLEN=255;     //max length of scop hierarchy id and pdb-id
 const int DESCLEN=32765;//max length of sequence description (longname)
 const int NAMELEN=(PATH_MAX>512? PATH_MAX:512); //max length of file names etc., defined in limits.h
-const int MAXOPT=127;   //Maximum number of options to be read in from .hhconfig or command line
 const int NAA=20;       //number of amino acids (0-19)
 const int NTRANS=7;     //number of transitions recorded in HMM (M2M,M2I,M2D,I2M,I2I,D2M,D2D)
 const int NCOLMIN=10;   //min number of cols in subalignment for calculating pos-specific weights w[k][i]
@@ -252,11 +249,6 @@ public:
   int realign_max;        // Realign max ... hits
   float maxmem;           // maximum available memory in GB for realignment (approximately)
 
-//  char calibrate;         // calibration of query HMM?  0:no, 1:yes (write lamda,mu into query profile)
-  char calm;              // derive P-values from: 0:query calibration  1:template calibration  2:both  3:Neural Network prediction
-
-  //TODO: perhaps we can get rid of it
-  int readdefaultsfile ;  // read defaults file ./.hhdefaults or HOME/.hhdefaults?
   int min_overlap;        // all cells of dyn. programming matrix with L_T-j+i or L_Q-i+j < min_overlap will be ignored
   char notags;            // neutralize His-tags, FLAG tags, C-myc tags?
 

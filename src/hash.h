@@ -37,9 +37,7 @@
 #define HASH_H_
 
 #include <cstring>
-#include <iostream>
 #include "list.h"
-
 
 template<class Typ> 
 class Pair
@@ -179,14 +177,12 @@ public:
   // Return length of longest key INCLUDING DELETED KEYS (excluding \0)
   int MaxLen()  {return max_len;}  
 
-  //print out list of keys and data
-  void Print();
-
-  //print out list of keys
-  void PrintKeys();
-
-  //Print out hash with internal representation as array 
-  void DebugPrint();
+//  //print out list of keys and data
+//  void Print();
+//  //print out list of keys
+//  void PrintKeys();
+//  //Print out hash with internal representation as array
+//  void DebugPrint();
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -642,52 +638,52 @@ int Hash<Typ>::Contains(const char* key) {
 /////////////////////////////////////////////////////////////////////////////////////////////
 //print out list of keys and data
 /////////////////////////////////////////////////////////////////////////////////////////////
-template<class Typ>
-void Hash<Typ>::Print() {
-  char key[MaxLen() + 1];
-
-  std::cout << "\nPrint hash:\n";
-  Reset();
-  while (!End())
-    std::cout << key << "->" << ReadNext(key) << "\n";
-}
-/////////////////////////////////////////////////////////////////////////////////////////////
-//print out list of keys and data
-/////////////////////////////////////////////////////////////////////////////////////////////
-template<class Typ>
-void Hash<Typ>::PrintKeys() {
-  char key[MaxLen() + 1];
-
-  std::cout << "\nPrint hash-keys:\n";
-  Reset();
-  while (!End())
-    std::cout << key << "\n";
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////////
-//Print out hash with internal representation as array
-/////////////////////////////////////////////////////////////////////////////////////////////
-template<class Typ>
-void Hash<Typ>::DebugPrint() {
-  Pair<Typ>* pairp;
-  Slot<Typ>* pslot;
-
-  std::cout << "\n";
-  std::cout << "Debug-print hash:";
-  for (int i = 0; i < num_slots; i++) {
-    pslot = slot[i];
-    if (pslot) {
-      std::cout << "\nhash value " << i;
-      pslot->Reset();
-      while (!pslot->End()) {
-        pairp = pslot->ReadNextAddress();
-        std::cout << "  " << pairp->key << "->" << pairp->data;
-      }
-    }
-  }
-  std::cout << "\n\n";
-  return;
-}
+//template<class Typ>
+//void Hash<Typ>::Print() {
+//  char key[MaxLen() + 1];
+//
+//  std::cout << "\nPrint hash:\n";
+//  Reset();
+//  while (!End())
+//    std::cout << key << "->" << ReadNext(key) << "\n";
+//}
+///////////////////////////////////////////////////////////////////////////////////////////////
+////print out list of keys and data
+///////////////////////////////////////////////////////////////////////////////////////////////
+//template<class Typ>
+//void Hash<Typ>::PrintKeys() {
+//  char key[MaxLen() + 1];
+//
+//  std::cout << "\nPrint hash-keys:\n";
+//  Reset();
+//  while (!End())
+//    std::cout << key << "\n";
+//}
+//
+///////////////////////////////////////////////////////////////////////////////////////////////
+////Print out hash with internal representation as array
+///////////////////////////////////////////////////////////////////////////////////////////////
+//template<class Typ>
+//void Hash<Typ>::DebugPrint() {
+//  Pair<Typ>* pairp;
+//  Slot<Typ>* pslot;
+//
+//  std::cout << "\n";
+//  std::cout << "Debug-print hash:";
+//  for (int i = 0; i < num_slots; i++) {
+//    pslot = slot[i];
+//    if (pslot) {
+//      std::cout << "\nhash value " << i;
+//      pslot->Reset();
+//      while (!pslot->End()) {
+//        pairp = pslot->ReadNextAddress();
+//        std::cout << "  " << pairp->key << "->" << pairp->data;
+//      }
+//    }
+//  }
+//  std::cout << "\n\n";
+//  return;
+//}
 
 
 

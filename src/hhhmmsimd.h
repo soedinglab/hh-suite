@@ -5,10 +5,6 @@
 #include "hhhmm.h"
 #include "simd.h"
 
-#ifdef SSE
-#include <emmintrin.h>
-#endif
-
 class HMMSimd
 {
 public:

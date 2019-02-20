@@ -12,55 +12,16 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <iostream>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "hhalignment.h"
+#include "hhprefilter.h"
 #include "hhdecl.h"
 #include "hhhmm.h"
 #include "util-inl.h"
 
-FFindexDatabase::FFindexDatabase(char* data_filename, char* index_filename,
-                                 bool isCompressed) {
-
-  this->isCompressed = isCompressed;
-
-  this->data_filename = new char[strlen(data_filename) + 1];
-  strcpy(this->data_filename, data_filename);
-
-  db_data_fh = fopen(data_filename, "r");
-  if (db_data_fh == NULL) {
-    OpenFileError(data_filename, __FILE__, __LINE__, __func__);
-  }
-
-  FILE* db_index_fh = fopen(index_filename, "r");
-  if (db_index_fh == NULL) {
-    OpenFileError(index_filename, __FILE__, __LINE__, __func__);
-  }
-
-  size_t ca3m_data_size = CountLinesInFile(index_filename);
-  db_index = NULL;
-  db_index = ffindex_index_parse(db_index_fh, ca3m_data_size);
-
-  fclose(db_index_fh);
-
-  if (db_index == NULL) {
-    HH_LOG(WARNING) << "In " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
-    HH_LOG(WARNING) << "\tCould not read index file" << index_filename << ". Is the file empty or corrupted?" << std::endl;
-//    exit(1);
-  }
-
-  db_data = ffindex_mmap_data(db_data_fh, &data_size);
-}
-
-FFindexDatabase::~FFindexDatabase() {
-  delete[] data_filename;
-  munmap(db_data, data_size);
-  free(db_index);
-  fclose(db_data_fh);
-}
 
 HHDatabase::HHDatabase() {
 
@@ -185,12 +146,12 @@ HHblitsDatabase::~HHblitsDatabase() {
 }
 
 void HHblitsDatabase::initPrefilter(const char* cs_library) {
-  prefilter = new hh::Prefilter(cs_library, cs219_database);
+  prefilter = new Prefilter(cs_library, cs219_database);
 }
 
 void HHblitsDatabase::initNoPrefilter(std::vector<HHEntry*>& new_entries) {
   std::vector<std::pair<int, std::string> > new_entry_names;
-  hh::Prefilter::init_no_prefiltering(query_database, new_entry_names);
+  Prefilter::init_no_prefiltering(query_database, new_entry_names);
 
   getEntriesFromNames(new_entry_names, new_entries);
 }
@@ -199,7 +160,7 @@ void HHblitsDatabase::initSelected(std::vector<std::string>& selected_templates,
                                    std::vector<HHEntry*>& new_entries) {
 
   std::vector<std::pair<int, std::string> > new_entry_names;
-  hh::Prefilter::init_selected(cs219_database, selected_templates,
+  Prefilter::init_selected(cs219_database, selected_templates,
                                new_entry_names);
 
   getEntriesFromNames(new_entry_names, new_entries);
@@ -515,10 +476,8 @@ char* HHDatabaseEntry::getName() {
   return entry->name;
 }
 
-HHFileEntry::HHFileEntry(char* file, int sequence_length)
-    : HHEntry(sequence_length) {
-  this->file = new char[strlen(file) + 1];
-  strcpy(this->file, file);
+HHFileEntry::HHFileEntry(const char* file, int sequence_length)
+    : HHEntry(sequence_length), file(strdup(file)) {
 }
 
 HHFileEntry::~HHFileEntry() {
@@ -617,8 +576,7 @@ int getMaxTemplateLength(std::vector<HHEntry*>& entries) {
   int max_template_length = 0;
 
   for (size_t i = 0; i < entries.size(); i++) {
-    max_template_length = std::max(max_template_length,
-                                   entries[i]->sequence_length);
+    max_template_length = std::max(max_template_length,entries[i]->sequence_length);
   }
 
   return max_template_length;

@@ -5,16 +5,14 @@
  *      Author: Markus Meier (markus.meier@mpibpc.mpg.de)
  */
 
-#include <mpi.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include "hhdecl.h"
 #include "hhblits.h"
 
+#include <mpi.h>
 extern "C" {
     #include <ffindex.h>
     #include <mpq/mpq.h>
 }
+
 #ifdef OPENMP
     #include <omp.h>
 #endif

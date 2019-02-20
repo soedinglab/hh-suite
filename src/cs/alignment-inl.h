@@ -22,7 +22,6 @@
 
 #include "alignment.h"
 
-#include "blast_hits.h"
 #include "sequence-inl.h"
 
 namespace cs {
@@ -54,31 +53,6 @@ Alignment<Abc>::Alignment(const Sequence<Abc>& seq) {
     std::vector<std::string> seqs;
     headers.push_back(seq.header());
     seqs.push_back(seq.ToString());
-    Init(headers, seqs);
-}
-
-template<class Abc>
-Alignment<Abc>::Alignment(const BlastHits& hits, bool best) {
-    std::vector<std::string> headers;
-    std::vector<std::string> seqs;
-
-    typedef typename BlastHits::ConstHitIter HitIter;
-    typedef typename BlastHits::ConstHspIter HspIter;
-    for (HitIter hit = hits.begin(); hit != hits.end(); ++hit) {
-        for (HspIter hsp = hit->hsps.begin(); hsp != hit->hsps.end(); ++hsp) {
-            // Construct query anchored alignment string
-            std::string seq(hsp->query_start - 1, '-');
-            for (size_t i =  0; i < hsp->length; ++i)
-                if (hsp->query_seq[i] != '-')
-                    seq += hsp->subject_seq[i];
-            seq.append(hits.query_length() - seq.length(), '-');
-
-            headers.push_back(hit->definition);
-            seqs.push_back(seq);
-
-            if (best) break;
-        }
-    }
     Init(headers, seqs);
 }
 

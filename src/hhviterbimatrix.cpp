@@ -10,8 +10,6 @@
 #define HHVITERBIMATRIX_c
 #include "hhviterbimatrix.h"
 
-
-
 ViterbiMatrix::ViterbiMatrix(){
     this->bCO_MI_DG_IM_GD_MM_vec=NULL;
     this->cellOff = false;
@@ -23,8 +21,6 @@ ViterbiMatrix::ViterbiMatrix(){
 ViterbiMatrix::~ViterbiMatrix(){
     DeleteBacktraceMatrix();
 }
-
-
 
 /////////////////////////////////////////////////////////////////////////////////////
 //// Allocate memory for dynamic programming matrix
@@ -60,8 +56,8 @@ void ViterbiMatrix::DeleteBacktraceMatrix() {
         return;
     }
 
-    free(this->bCO_MI_DG_IM_GD_MM_vec);
-    this->bCO_MI_DG_IM_GD_MM_vec = NULL;
+    free(bCO_MI_DG_IM_GD_MM_vec);
+    bCO_MI_DG_IM_GD_MM_vec = NULL;
 
     max_query_length = 0;
     max_template_length = 0;

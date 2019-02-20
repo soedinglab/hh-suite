@@ -8,23 +8,22 @@
 #ifndef HHBLITS_H_
 #define HHBLITS_H_
 
-#include <iostream>
 #include <fstream>
 #include <cstdio>
 #include <algorithm>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 #include <sstream>
 #include <vector>
-#include <math.h>
-#include <limits.h>
+#include <cmath>
+#include <climits>
 #include <float.h>
 #include <ctype.h>
 #include <time.h>
 #include <errno.h>
 #include <cassert>
-#include <stdexcept>
 #include <map>
+
 #ifdef OPENMP
 #include <omp.h>
 #endif
@@ -32,17 +31,6 @@
 #ifdef SSE
 #include <emmintrin.h>
 #endif
-
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::ios;
-using std::ifstream;
-using std::ofstream;
-using std::string;
-using std::stringstream;
-using std::vector;
-using std::pair;
 
 #include <sys/time.h>
 
@@ -54,7 +42,6 @@ extern "C" {
 #include "context_library.h"
 #include "library_pseudocounts-inl.h"
 #include "crf_pseudocounts-inl.h"
-#include "abstract_state_matrix.h"
 
 #include "hhdecl.h"
 #include "list.h"
@@ -116,7 +103,6 @@ public:
   void writeMatricesFile(char* matricesOutputFileName);
 
   //output writer for mpi version
-  std::map<int, Alignment*>& getAlis();
   static void writeHHRFile(HHblits& hhblits, std::stringstream& out);
   static void writeScoresFile(HHblits& hhblits, std::stringstream& out);
   static void writeM8(HHblits& hhblits, std::stringstream& out);
@@ -125,7 +111,7 @@ public:
   static void writePsiFile(HHblits& hhblits, std::stringstream& out);
   static void writeHMMFile(HHblits& hhblits, std::stringstream& out);
   static void writeA3MFile(HHblits& hhblits, std::stringstream& out);
-  static void writeMatricesFile(HHblits& hhblits, stringstream& out);
+  static void writeMatricesFile(HHblits& hhblits, std::stringstream& out);
 
   static void prepareDatabases(Parameters& par, std::vector<HHblitsDatabase*>& databases);
 
@@ -156,11 +142,6 @@ protected:
 	cs::Pseudocounts<cs::AA>* pc_prefilter_context_engine;
 	cs::Admix* pc_prefilter_context_mode;
 
-	// HHblits variables
-
-	// Set to 1 if input in HMMER format (has already pseudocounts)
-	char config_file[NAMELEN];
-
 	//database filenames
 	std::vector<HHblitsDatabase*> dbs;
 
@@ -181,17 +162,13 @@ protected:
 	std::map<int, Alignment*> alis;
 
 	void perform_realign(HMMSimd& q_vec, const char input_format, std::vector<HHEntry*>& hits_to_realign);
-
 	void mergeHitsToQuery(Hash<Hit>* previous_hits, int& seqs_found, int& cluster_found);
 	void add_hits_to_hitlist(std::vector<Hit>& hits, HitList& hitlist);
-	void get_entries_of_selected_hits(HitList& input, std::vector<HHEntry*>& selected_entries);
-	void get_entries_of_all_hits(HitList& input, std::vector<HHEntry*>& selected_entries);
 
 
 private:
 	static void help(Parameters& par, char all = 0);
 	static void ProcessArguments(int argc, char** argv, Parameters& par);
-
 	void RescoreWithViterbiKeepAlignment(HMMSimd& q_vec, Hash<Hit>* previous_hits);
 };
 

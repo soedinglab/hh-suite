@@ -34,7 +34,6 @@
 // STL includes
 #include <algorithm>
 #include <bitset>
-#include <iostream>
 #include <iomanip>
 #include <set>
 #include <string>
@@ -54,16 +53,11 @@
 #include "aa.h"
 #include "as.h"
 #include "assert_helpers.h"
-#include "bitset.h"
-#include "dna.h"
-#include "exception.h"
 #include "io.h"
 #include "log.h"
 #include "matrix.h"
 #include "ran.h"
 #include "scoped_ptr.h"
-#include "shared_ptr.h"
-#include "timer.h"
 #include "utils.h"
 #include "vector.h"
 

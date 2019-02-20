@@ -119,30 +119,7 @@ void HHblits::ProcessAllArguments(int argc, char** argv, Parameters& par) {
   par.early_stopping_filter = true;
   par.filter_thresh = 0.01;
 
-  // Enable changing verbose mode before command line is processed
-  int v = 2;
-  for (int i = 1; i < argc; i++) {
-    if (strcmp(argv[i], "-v") == 0) {
-      v = atoi(argv[i + 1]);
-      break;
-    }
-  }
-  par.v = Log::from_int(v);
-  Log::reporting_level() = par.v;
-
   par.SetDefaultPaths();
-
-  // Process default otpions from .hhdefaults file
-  char* argv_conf[MAXOPT];
-  int argc_conf = 0;
-
-  ReadDefaultsFile(argc_conf, argv_conf, argv[0]);
-  ProcessArguments(argc_conf, argv_conf, par);
-
-  for (int n = 1; n < argc_conf; n++)
-    delete[] argv_conf[n];
-
-  // Process command line options (they override defaults from .hhdefaults file)
   ProcessArguments(argc, argv, par);
 
   // Check needed files
@@ -180,9 +157,7 @@ void HHblits::ProcessAllArguments(int argc, char** argv, Parameters& par) {
   if (par.num_rounds < 1)
     par.num_rounds = 1;
   else if (par.num_rounds > 8) {
-    if (v >= 1) {
-      HH_LOG(WARNING) << "Number of iterations (" << par.num_rounds << ") too large => Set to 8 iterations\n";
-    }
+    HH_LOG(WARNING) << "Number of iterations (" << par.num_rounds << ") too large => Set to 8 iterations\n";
     par.num_rounds = 8;
   }
 
@@ -483,7 +458,7 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
 
   //Processing command line input
   for (int i = 1; i < argc; i++) {
-    HH_LOG(DEBUG1) << i << "  " << argv[i] << endl;
+    HH_LOG(DEBUG1) << i << "  " << argv[i] << std::endl;
     if (!strcmp(argv[i], "-i")) {
       if (++i >= argc || argv[i][0] == '-') {
         help(par);
@@ -904,7 +879,7 @@ void HHblits::mergeHitsToQuery(Hash<Hit>* previous_hits,
       continue;  // leave out too short alignments
 
     // Already in alignment
-    stringstream ss_tmp;
+    std::stringstream ss_tmp;
     ss_tmp << hit_cur.file << "__" << hit_cur.irep;
     if (previous_hits->Contains((char*) ss_tmp.str().c_str()))
       continue;
@@ -996,7 +971,7 @@ void HHblits::RescoreWithViterbiKeepAlignment(HMMSimd& q_vec,
                                                          R, par.ssm, S73, S33, S37);
 
   for (std::vector<Hit>::size_type i = 0; i != hits_to_add.size(); i++) {
-    stringstream ss_tmp;
+    std::stringstream ss_tmp;
     ss_tmp << hits_to_add[i].file << "__" << hits_to_add[i].irep;
     if (previous_hits->Contains((char*) ss_tmp.str().c_str())) {
       Hit hit_cur = previous_hits->Remove((char*) ss_tmp.str().c_str());
@@ -1125,61 +1100,11 @@ void HHblits::perform_realign(HMMSimd& q_vec, const char input_format,
   }
 }
 
-
-void HHblits::get_entries_of_selected_hits(
-    HitList& input, std::vector<HHEntry*>& selected_entries) {
-  std::set<std::string> output_set;
-
-  int n_realignments = 0;
-
-  input.Reset();
-  while (!input.End()) {
-    Hit hit_cur = input.ReadNext();
-    if (n_realignments >= par.realign_max
-        && n_realignments >= imax(par.B, par.Z))
-      break;
-
-    if (hit_cur.Eval > par.e) {
-      if (n_realignments >= imax(par.B, par.Z))
-        continue;
-      if (n_realignments >= imax(par.b, par.z) && hit_cur.Probab < par.p)
-        continue;
-      if (n_realignments >= imax(par.b, par.z) && hit_cur.Eval > par.E)
-        continue;
-    }
-
-    std::string ss_tmp = std::string(hit_cur.entry->getName());
-
-    if (output_set.find(ss_tmp) == output_set.end()) {
-      output_set.insert(ss_tmp);
-      selected_entries.push_back(hit_cur.entry);
-      n_realignments++;
-    }
-  }
-}
-
-void HHblits::get_entries_of_all_hits(HitList& input,
-                                      std::vector<HHEntry*>& selected_entries) {
-  std::set<std::string> output_set;
-
-  input.Reset();
-  while (!input.End()) {
-    Hit hit_cur = input.ReadNext();
-
-    std::string ss_tmp = std::string(hit_cur.entry->getName());
-
-    if (output_set.find(ss_tmp) == output_set.end()) {
-      output_set.insert(ss_tmp);
-      selected_entries.push_back(hit_cur.entry);
-    }
-  }
-}
-
 void HHblits::run(FILE* query_fh, char* query_path) {
   int cluster_found = 0;
   int seqs_found = 0;
 
-  SearchCounter search_counter;
+  std::set<std::string> search_counter;
 
   Hit hit_cur;
   Hash<Hit>* previous_hits = new Hash<Hit>(1631, hit_cur);
@@ -1220,7 +1145,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
                        new_entries.end());
 
     for (size_t i = 0; i < all_entries.size(); i++) {
-      search_counter.append(std::string(all_entries[i]->getName()));
+      search_counter.insert(all_entries[i]->getName());
     }
   }
 
@@ -1282,7 +1207,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
       }
 
       for (size_t i = 0; i < new_entries.size(); i++) {
-        search_counter.append(std::string(new_entries[i]->getName()));
+        search_counter.insert(new_entries[i]->getName());
       }
 
       all_entries.insert(all_entries.end(), new_entries.begin(),
@@ -1303,7 +1228,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
       viterbiMatrices[i]->AllocateBacktraceMatrix(q->L, max_template_length);
     }
 
-    hitlist.N_searched = search_counter.getCounter();
+    hitlist.N_searched = search_counter.size();
 
     if (new_entries.size() == 0) {
       HH_LOG(INFO) << "No HMMs pass prefilter => Stop searching!"
@@ -1412,7 +1337,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
         if (hit_cur.Eval > par.e)
           continue;
 
-        stringstream ss_tmp;
+        std::stringstream ss_tmp;
         ss_tmp << hit_cur.file << "__" << hit_cur.irep;
         // Already in alignment?
         if (previous_hits->Contains((char*) ss_tmp.str().c_str()))
@@ -1487,7 +1412,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
     while (!hitlist.End()) {
       Hit hit_cur = hitlist.ReadNext();
 
-      stringstream ss_tmp;
+      std::stringstream ss_tmp;
       ss_tmp << hit_cur.file << "__" << hit_cur.irep;
 
       if (!par.already_seen_filter || hit_cur.Eval > par.e
@@ -1529,8 +1454,8 @@ void HHblits::run(ffindex_entry_t* entry, char* data,
     
     q=new HMM(MAXSEQDIS, par.maxres);
     
-    Qali = new Alignment(MAXSEQ, par.maxres);
-    Qali_allseqs = new Alignment(MAXSEQ, par.maxres);
+    Qali = new Alignment(par.maxseq, par.maxres);
+    Qali_allseqs = new Alignment(par.maxseq, par.maxres);
 
 
 
@@ -1543,7 +1468,7 @@ void HHblits::run(ffindex_entry_t* entry, char* data,
 
     // Convert ASCII to int (0-20),throw out all insert states, record their number in I[k][i]
     // and store marked sequences in name[k] and seq[k]
-    Qali->Compress(par.infile, par.cons, par.maxres, par.maxcol, par.M, par.Mgaps);
+    Qali->Compress(par.infile, par.cons, par.maxcol, par.M, par.Mgaps);
 
     Qali->Shrink();
 
@@ -1555,19 +1480,17 @@ void HHblits::run(ffindex_entry_t* entry, char* data,
     Qali->N_filtered = Qali->Filter(par.max_seqid, S, par.coverage, par.qid, par.qsc, par.Ndiff);
 
     if (par.Neff >= 0.999)
-    	Qali->FilterNeff(par.wg, par.mark, par.cons, par.showcons,
-          par.maxres, par.max_seqid, par.coverage, par.Neff, pb, S, Sim);
+    	Qali->FilterNeff(par.wg, par.mark, par.cons, par.showcons, par.max_seqid, par.coverage, par.Neff, pb, S, Sim);
 
     // Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
-    Qali->FrequenciesAndTransitions(q, par.wg, par.mark, par.cons,
-        par.showcons, par.maxres, pb, Sim);
+    Qali->FrequenciesAndTransitions(q, par.wg, par.mark, par.cons,par.showcons, pb, Sim);
 
 
 
   int cluster_found = 0;
   int seqs_found = 0;
 
-  SearchCounter search_counter;
+  std::set<std::string> search_counter;
 
   Hit hit_cur;
   Hash<Hit>* previous_hits = new Hash<Hit>(1631, hit_cur);
@@ -1609,7 +1532,7 @@ void HHblits::run(ffindex_entry_t* entry, char* data,
                        new_entries.end());
 
     for (size_t i = 0; i < all_entries.size(); i++) {
-      search_counter.append(std::string(all_entries[i]->getName()));
+      search_counter.insert(all_entries[i]->getName());
     }
   }
 
@@ -1671,7 +1594,7 @@ void HHblits::run(ffindex_entry_t* entry, char* data,
       }
 
       for (size_t i = 0; i < new_entries.size(); i++) {
-        search_counter.append(std::string(new_entries[i]->getName()));
+        search_counter.insert(new_entries[i]->getName());
       }
 
       all_entries.insert(all_entries.end(), new_entries.begin(),
@@ -1692,7 +1615,7 @@ void HHblits::run(ffindex_entry_t* entry, char* data,
       viterbiMatrices[i]->AllocateBacktraceMatrix(q->L, max_template_length);
     }
 
-    hitlist.N_searched = search_counter.getCounter();
+    hitlist.N_searched = search_counter.size();
 
     if (new_entries.size() == 0) {
       HH_LOG(INFO) << "No HMMs pass prefilter => Stop searching!"
@@ -1771,15 +1694,13 @@ void HHblits::run(ffindex_entry_t* entry, char* data,
       }
 
       // Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
-      Qali->FrequenciesAndTransitions(q, par.wg, par.mark, par.cons,
-                                      par.showcons, par.maxres, pb, Sim, NULL,
-                                      true);
+      Qali->FrequenciesAndTransitions(q, par.wg, par.mark, par.cons,par.showcons, pb, Sim, NULL,true);
 
       if (par.notags)
         q->NeutralizeTags(pb);
 
       if (*par.alisbasename) {
-        Alignment* tmp = new Alignment();
+        Alignment* tmp = new Alignment(par.maxseq, par.maxres);
         if (par.allseqs) {
           (*tmp) = (*Qali_allseqs);
         } else {
@@ -1803,7 +1724,7 @@ void HHblits::run(ffindex_entry_t* entry, char* data,
         if (hit_cur.Eval > par.e)
           continue;
 
-        stringstream ss_tmp;
+        std::stringstream ss_tmp;
         ss_tmp << hit_cur.file << "__" << hit_cur.irep;
         // Already in alignment?
         if (previous_hits->Contains((char*) ss_tmp.str().c_str()))
@@ -1835,13 +1756,13 @@ void HHblits::run(ffindex_entry_t* entry, char* data,
           << std::endl;
     }
 
-    if (Qali->N_in >= MAXSEQ) {
+    if (Qali->N_in >= par.maxseq) {
       HH_LOG(INFO)
           << "Maximun number of sequences in query alignment reached ("
-          << MAXSEQ << "). Stop searching!" << std::endl;
+          << par.maxseq << "). Stop searching!" << std::endl;
     }
 
-    if (new_hits == 0 || round == par.num_rounds || q->Neff_HMM > par.neffmax || Qali->N_in >= MAXSEQ) {
+    if (new_hits == 0 || round == par.num_rounds || q->Neff_HMM > par.neffmax || Qali->N_in >= par.maxseq) {
 //      if (new_hits == 0 && round < par.num_rounds) {
 //        HH_LOG(INFO) << "No new hits found in iteration " << round
 //                               << " => Stop searching" << std::endl;
@@ -1879,7 +1800,7 @@ void HHblits::run(ffindex_entry_t* entry, char* data,
     while (!hitlist.End()) {
       Hit hit_cur = hitlist.ReadNext();
 
-      stringstream ss_tmp;
+      std::stringstream ss_tmp;
       ss_tmp << hit_cur.file << "__" << hit_cur.irep;
 
       if (!par.already_seen_filter || hit_cur.Eval > par.e
@@ -1928,7 +1849,7 @@ void HHblits::writeAlisFile(char* basename) {
   if (*basename) {
     std::map<int, Alignment*>::iterator it;
     for (it = alis.begin(); it != alis.end(); it++) {
-      stringstream ss_tmp;
+      std::stringstream ss_tmp;
       ss_tmp << basename << "_" << (*it).first << ".a3m";
       std::string id = ss_tmp.str();
 
@@ -1994,10 +1915,6 @@ void HHblits::writeA3MFile(char* A3MFile) {
     else
       Qali->WriteToFile(A3MFile, par.append, "a3m");
   }
-}
-
-std::map<int, Alignment*>& HHblits::getAlis() {
-  return alis;
 }
 
 void HHblits::writeHHRFile(HHblits& hhblits, std::stringstream& out) {
@@ -2081,7 +1998,7 @@ void HHblits::writeMatricesFile(char* matricesOutputFileName) {
   }
 }
 
-void HHblits::writeMatricesFile(HHblits& hhblits, stringstream& out) {
+void HHblits::writeMatricesFile(HHblits& hhblits, std::stringstream& out) {
   hhblits.hitlist.PrintMatrices(hhblits.q, out, hhblits.par.filter_matrices,
                                 hhblits.par.max_number_matrices,
                                 hhblits.S);

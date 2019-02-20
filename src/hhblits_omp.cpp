@@ -5,19 +5,11 @@
  *      Author: meiermark
  */
 
-#include <stdio.h>
-#include <sys/mman.h>
+#include "hhblits.h"
 
 #ifdef OPENMP
 #include <omp.h>
 #endif
-
-#include "hhdecl.h"
-#include "hhblits.h"
-
-extern "C" {
-#include <ffindex.h>
-}
 
 struct OutputFFIndex {
     char base[NAMELEN];

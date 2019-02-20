@@ -11,7 +11,6 @@
 #ifndef LIST_H_
 #define LIST_H_
 
-#include <iostream>
 #include <cstdlib>
 
 #include "log.h"
@@ -174,9 +173,6 @@ class List {
 
     // Get current position within list (0 <= pos <= Size+1)
     int GetPos();
-
-    //print out list (elements assumed int)
-    void PrintList();
 
     // Get largest data element (Null element for empty list)
     Typ Largest();
@@ -542,25 +538,6 @@ int List<Typ>::GetPos() {
   for (el = head; el != current; el = el->next)
     pos++;
   return pos;
-}
-
-////////////////////////////////////////////////////////////////////////////
-//print out list
-////////////////////////////////////////////////////////////////////////////
-template<class Typ>
-void List<Typ>::PrintList() {
-  int j = 0;
-  ListEl<Typ>* c = current;
-  Reset();
-  printf("List: ");
-  while (!End()) {
-    j++;
-    std::cout << j << " " << ReadNext() << "  ";
-    if (!(j % 10))
-      std::cout << "\n      ";
-  }
-  std::cout << "\n";
-  current = c;
 }
 
 ////////////////////////////////////////////////////////////////////////////

@@ -7,10 +7,10 @@
 
 #include "hhposteriordecoder.h"
 
-#define CALCULATE_MAX4(max, var1, var2, var3, var4, varb)       \
-if (var1>var2) { max=var1; varb=ViterbiMatrix::STOP;}                   \
-else           { max=var2; varb=ViterbiMatrix::MM;};                            \
-if (var3>max)  { max=var3; varb=ViterbiMatrix::MI;};                            \
+#define CALCULATE_MAX4(max, var1, var2, var3, var4, varb) \
+if (var1>var2) { max=var1; varb=ViterbiMatrix::STOP;}     \
+else           { max=var2; varb=ViterbiMatrix::MM;};      \
+if (var3>max)  { max=var3; varb=ViterbiMatrix::MI;};      \
 if (var4>max)  { max=var4; varb=ViterbiMatrix::IM;};
 
 

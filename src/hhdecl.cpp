@@ -154,7 +154,6 @@ void Parameters::SetDefaults() {
 	columnscore = 1; // Default column score is 1: null model pnul = 1/2 * (q_av(a)+p_av(a))
 	half_window_size_local_aa_bg_freqs = 40;
 	min_overlap = 0;           // automatic minimum overlap used
-	readdefaultsfile = 0; // Default = do not read a defaults file ./.hhdefaults or HOME/.hhdefaults
 	maxdbstrlen = 200; // maximum length of database string to be printed in 'Command' line of hhr file
 
 	notags = 1;                // neutralize His-tags, FLAG-tags, C-myc-tags

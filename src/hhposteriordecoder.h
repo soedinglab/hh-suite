@@ -28,16 +28,14 @@
 
 #ifndef HHPOSTERIORDECODER_H_
 #define HHPOSTERIORDECODER_H_
-#include <map>
 #include <vector>
-#include <stddef.h>
+#include <cstddef>
 #include <algorithm>
 
 #include "hhhmmsimd.h"
 #include "hhviterbimatrix.h"
 #include "hhposteriormatrix.h"
 #include "hhviterbi.h"
-using std::map;
 
 struct MACTriple {
   int i;

@@ -1,6 +1,5 @@
 // hhhitlist.h
 
-#include <iostream>   // cin, cout, cerr
 #include <fstream>    // ofstream, ifstream
 #include <stdio.h>    // printf
 #include <stdlib.h>   // exit
@@ -23,19 +22,6 @@
 #ifndef HHHITLIST_H
 #define HHHITLIST_H
 
-class SearchCounter {
-  public:
-    SearchCounter();
-    ~SearchCounter();
-
-    int getCounter();
-    void append(std::string id);
-
-  private:
-    std::set<std::string> already_seen;
-};
-
-
 /////////////////////////////////////////////////////////////////////////////////////
 // HitList is a list of hits of type Hit which can be operated upon by several anaylsis methods 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -44,11 +30,8 @@ class HitList : public List<Hit>
 private:
   double score[MAXPROF];        // HHsearch score of each HMM for ML fit
   double weight[MAXPROF];       // weight of each HMM = 1/(size_fam[tfam]*size_sfam[hit.sfam]) for ML fit
-  int Nprof;                    // Number of HMMs for ML fit
 
 public:
-  int fams;                     // number of families found found in hitlist
-  int sfams;                    // number of superfamilies found in hitlist
   int N_searched;               // number of sequences searched from HMM database
   Hash<float>* blast_logPvals;  // Hash containing names and log(P-values) read from BLAST file (needed for HHblits)
 

@@ -20,8 +20,6 @@
 #ifndef CS_CONTEXT_LIBRARY_H_
 #define CS_CONTEXT_LIBRARY_H_
 
-#include "abstract_state_matrix.h"
-#include "co_emission.h"
 #include "context_profile.h"
 #include "pseudocounts-inl.h"
 
@@ -83,9 +81,6 @@ class ContextLibrary {
   ContextProfile<Abc>& operator[](size_t i) { return profiles_[i]; }
   const ContextProfile<Abc>& operator[](size_t i) const { return profiles_[i]; }
 
-  // Initializes profile at index 'k' with given profile.
-  void SetProfile(size_t k, const ContextProfile<Abc>& p);
-
   // Returns an iterator pointing to beginning of profiles.
   ProfileIter begin() { return &profiles_[0]; }
 
@@ -100,10 +95,6 @@ class ContextLibrary {
 
   // Writes the profile library in serialization format to output stream.
   void Write(FILE* fout) const;
-
-  // Sorts context states by relative entropy of central column and assigns
-  // new state indices according to this new ordering
-  void SortByEntropy();
 
  private:
    // Initializes the library from serialized data read from stream.
@@ -145,114 +136,11 @@ double CalculatePosteriorProbs(const ContextLibrary<Abc>& lib,
                                CenterPos i,
                                double* pp);
 
-// Strategy for initializing library by sampling from training set of count
-// profiles, optionally adding pseudocounts.
-template<class Abc>
-class SamplingLibraryInit : public LibraryInit<Abc> {
- public:
-  typedef std::vector< CountProfile<Abc> > TrainingSet;
-
-  SamplingLibraryInit(const TrainingSet& trainset,
-                      const Pseudocounts<Abc>& pc,
-                      const Admix& admix,
-                      unsigned int seed = 0)
-      : trainset_(trainset),
-        pc_(pc),
-        admix_(admix),
-        seed_(seed) {}
-
-  virtual ~SamplingLibraryInit() {}
-
-  virtual void operator() (ContextLibrary<Abc>& lib) const;
-
- private:
-  const TrainingSet& trainset_;
-  const Pseudocounts<Abc>& pc_;
-  const Admix& admix_;
-  const unsigned int seed_;
-};  // SamplingLibraryInit
-
-
-// Strategy that initializes profile probs by sammpling from gaussian distribution
-// with mean at background frequencies.
-template<class Abc>
-class GaussianLibraryInit : public LibraryInit<Abc> {
- public:
-  GaussianLibraryInit(double sigma,
-                      const SubstitutionMatrix<Abc>& sm,
-                      unsigned int seed = 0)
-      : sigma_(sigma), sm_(sm), seed_(seed) {}
-
-  virtual ~GaussianLibraryInit() {}
-
-  virtual void operator() (ContextLibrary<Abc>& lib) const;
-
- protected:
-  double sigma_;
-  const SubstitutionMatrix<Abc>& sm_;
-  unsigned int seed_;
-};  // class GaussianLibraryInit
-
-// Uses a CRF for initialization
-template<class Abc>
-class CrfBasedLibraryInit : public LibraryInit<Abc> {
- public:
-  CrfBasedLibraryInit(
-      const Crf<Abc>& crf, 
-      double wcenter = 1.6,
-      double wdecay  = 0.85,
-      double neff    = 1.0) :
-    crf_(crf), wcenter_(wcenter), wdecay_(wdecay), neff_(neff) {}
-
-  virtual ~CrfBasedLibraryInit() {}
-
-  virtual void operator() (ContextLibrary<Abc>& lib) const;
-
- protected:
-  const Crf<Abc>& crf_;
-  const double wcenter_;
-  const double wdecay_;
-  const double neff_;
-};  // class CrfBasedLibraryInit
-
 // Translate a sequence or count profile into an abstract state sequence.
 template<class AS, class Abc, class CountsInput>
 Sequence<AS> TranslateIntoStateSequence(const CountsInput& input,
                                         const ContextLibrary<Abc>& lib,
                                         const Emission<Abc>& emission);
-
-// Translate a sequence or count profile into an abstract state profile given
-// the learned context-to-state mutation probabilities in 'matrix'.
-template<class AS, class Abc, class CountsInput>
-Profile<AS> TranslateIntoStateProfile(const CountsInput& input,
-                                      const ContextLibrary<Abc>& lib,
-                                      const Emission<Abc>& emission,
-                                      const AbstractStateMatrix<AS>& matrix);
-
-// Learns a color-space SOM from a full-blown context-library.
-template<class Abc>
-void LearnContextMap(const ContextLibrary<Abc>& lib,
-                     ContextLibrary<Abc>& som,
-                     const CoEmission<Abc>& co_emission,
-                     int nsteps,          // number of learning steps
-                     double sigma = 5.0,  // initial neighborhood gaussian sigma
-                     double alpha = 0.1,  // initial learning rate
-                     double tau1 = 0.0,   // timescale parameter for sigma
-                     double tau2 = 0.0,   // timescale parameter for alpha
-                     unsigned int seed = 0);
-
-// Assigns each context profile in given context lib an RBG color based learned SOM
-template<class Abc>
-void AssignContextColors(ContextLibrary<Abc>& lib,
-                         const ContextLibrary<Abc>& som,
-                         const CoEmission<Abc>& co_emission,
-                         double color_offset = 0.2);
-
-// Assigns each context profile a unique name based on its position in learned SOM
-template<class Abc>
-void AssignContextNames(ContextLibrary<Abc>& lib,
-                        const ContextLibrary<Abc>& som,
-                        const CoEmission<Abc>& co_emission);
 
 }  // namespace cs
 

@@ -2,7 +2,6 @@
 
 #include "hhmatrices.h"
 
-
 void SetBlosumMatrix(const char matrix, const float BlosumXX[], float* pb, float P[20][20])
 {
   int a,b,n=0;

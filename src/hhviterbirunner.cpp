@@ -1,8 +1,5 @@
 #include "hhviterbirunner.h"
 
-#include <iostream>
-
-
 void ViterbiConsumerThread::clear() {
     hits.clear();
     excludeAlignments.clear();

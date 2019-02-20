@@ -12,21 +12,13 @@
 #ifdef OPENMP
 #include <omp.h>
 #endif
-namespace hh {
-class Prefilter;
-}
 
 #include "hhhmm.h"
 #include "hash.h"
 #include "hhhit.h"
-#include "hhdatabase.h"
 #include "simd.h"
 #include "sstream"
-
-namespace hh {
-
-const int SHORT_BIAS = 32768;
-const int NUMCOLSTATES = cs::AS219::kSize;
+#include "ffindexdatabase.h"
 
 //////////////////////////////////////////////////////////////////////////////////////////
 //     This file contains code adapted from Michael Farrar
@@ -60,9 +52,10 @@ const int NUMCOLSTATES = cs::AS219::kSize;
 //     Many thanks posthumously for your great code!
 //     Johannes
 
+class FFindexDatabase;
+
 
 class Prefilter {
-
 public:
 	Prefilter(const char* cs_library, FFindexDatabase* cs219_database);
 	virtual ~Prefilter();
@@ -116,7 +109,5 @@ private:
 	void checkCSFormat(size_t nr_checks);
 	void stripe_query_profile(HMM* q_tmp, const int prefilter_score_offset, const int prefilter_bit_factor, const int W, unsigned char* qc);
 };
-
-} /* namespace hh */
 
 #endif /* HHPREFILTER_H_ */

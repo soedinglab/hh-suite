@@ -22,7 +22,6 @@
 //     HHblits: Lightning-fast iterative protein sequence searching by HMM-HMM alignment.
 //     Nat. Methods, epub Dec 25, doi: 10.1038/NMETH.1818 (2011).
 
-#include <iostream>
 #include <fstream>    // ofstream, ifstream
 #include <stdio.h>    // printf
 #include <stdlib.h>   // exit
@@ -190,7 +189,7 @@ void help(char all = 0) {
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
-//// Processing input options from command line and .hhdefaults file
+//// Processing input options from command line
 /////////////////////////////////////////////////////////////////////////////////////
 void ProcessArguments(int argc, char** argv) {
   name[0] = '\0';
@@ -322,8 +321,6 @@ void ProcessArguments(int argc, char** argv) {
       par.gaph = atof(argv[++i]);
     else if (!strcmp(argv[i], "-gapi") && (i < argc - 1))
       par.gapi = atof(argv[++i]);
-    else if (!strcmp(argv[i], "-def"))
-      par.readdefaultsfile = 1;
     else if (!strcmp(argv[i], "-nocontxt")) {
       par.nocontxt = 1;
     }
@@ -351,9 +348,6 @@ void ProcessArguments(int argc, char** argv) {
 
 
 int main(int argc, char **argv) {
-  char* argv_conf[MAXOPT]; // Input arguments from .hhdefaults file (first=1: argv_conf[0] is not used)
-  int argc_conf;               // Number of arguments in argv_conf
-
   strcpy(par.infile, "");
   strcpy(par.outfile, "");
   strcpy(par.alnfile, "");
@@ -380,29 +374,7 @@ int main(int argc, char **argv) {
   par.argc = argc;
   RemovePathAndExtension(program_name, argv[0]);
 
-  // Enable changing verbose mode before defaults file and command line are processed
-  int v = 2;
-  for (int i = 1; i < argc; i++) {
-    if (!strcmp(argv[i], "-def"))
-      par.readdefaultsfile = 1;
-    else if (strcmp(argv[i], "-v") == 0) {
-		v = atoi(argv[i + 1]);
-		break;
-	}
-  }
-  par.v = Log::from_int(v);
-  Log::reporting_level() = par.v;
-
   par.SetDefaultPaths();
-
-  // Read .hhdefaults file?
-  if (par.readdefaultsfile) {
-    // Process default otpions from .hhconfig file
-    ReadDefaultsFile(argc_conf, argv_conf);
-    ProcessArguments(argc_conf, argv_conf);
-  }
-
-  // Process command line options (they override defaults from .hhdefaults file)
   ProcessArguments(argc, argv);
 
 
@@ -440,27 +412,15 @@ int main(int argc, char **argv) {
 
   // Read input file (HMM, HHM, or alignment format), and add pseudocounts etc.
   char input_format = 0;
-  Alignment* Qali = new Alignment(MAXSEQ, par.maxres);
+  Alignment* Qali = new Alignment(par.maxseq, par.maxres);
   ReadQueryFile(par, par.infile, input_format, par.wg, q, Qali, pb, S, Sim);
   PrepareQueryHMM(par, input_format, q, pc_hhm_context_engine, pc_hhm_context_mode, pb, R);
 
   // Write HMM to output file in HHsearch format
   q->WriteToFile(par.outfile, par.append, par.max_seqid, par.coverage, par.qid, par.Ndiff, par.qsc, par.argc, par.argv, pb);
 
-  if (v >= 3)
+  if (par.v >= 3)
     WriteToScreen(par.outfile, 1000); // (max 1000 lines)
-
-  // Print 'Done!'
-  FILE* outf = NULL;
-  if (strcmp(par.outfile, "stdout")) {
-    if (!*par.outfile) {
-      outf = fopen(par.outfile, "a"); //open for append
-      fprintf(outf, "Done!\n");
-      fclose(outf);
-    }
-    if (v >= 2)
-      printf("Done\n");
-  }
 
   delete q;
   delete Qali;

@@ -8,7 +8,9 @@
 
 #include "a3m_compress.h"
 
+#include <getopt.h>
 #include <sstream>
+#include <iostream>
 
 void usage() {
   std::cout << "USAGE: a3m_database_extract -i [ffindex_ca3m_database_prefix] -o [ffindex_a3m_database_prefix] -d [ffindex_sequence_database_prefix] -q [ffindex_header_database_prefix]" << std::endl;

@@ -131,14 +131,6 @@ inline float Score(float* qi, float* tj) {
   return fast_log2(ScalarProd20(qi, tj));
 }
 
-// Calculate secondary structure score between columns i and j of two HMMs (query and template)
-static inline float ScoreSS(const HMM* q, const HMM* t, const int i,
-    const int j, const int ssm) {
-  //TODO
-  return 0.0;
-}
-
-
 //// Calculate score between columns i and j of two HMMs (query and template)
 //inline float ProbFwd(float* qi, float* tj) {
 //  return ScalarProd20(qi, tj); //

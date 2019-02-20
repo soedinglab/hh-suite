@@ -83,6 +83,8 @@ set(HH_SOURCE
         hhviterbimatrix-inl.h
         hhviterbimatrix.cpp
         hhbackwardalgorithm.cpp
+        ffindexdatabase.h
+        ffindexdatabase.cpp
         hhdatabase.h
         hhdatabase.cpp
         hhhalfalignment.h

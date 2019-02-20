@@ -52,9 +52,7 @@
      Many thanks posthumously for your great code!
  */
 
-#include <stdio.h>
 #include "hhblits.h"
-#include "hhdecl.h"
 
 void checkOutput(Parameters& par) {
   if (!*par.outfile) {

@@ -224,15 +224,12 @@ void InitializePseudocountsEngine(Parameters& par,
   else {
     context_lib = new cs::ContextLibrary<cs::AA>(fin);
     cs::TransformToLog(*context_lib);
-    pc_hhm_context_engine = new cs::LibraryPseudocounts<cs::AA>(*context_lib,
-        par.csw, par.csb);
-    pc_prefilter_context_engine = new cs::LibraryPseudocounts<cs::AA>(
-        *context_lib, par.csw, par.csb);
+    pc_hhm_context_engine = new cs::LibraryPseudocounts<cs::AA>(*context_lib, par.csw, par.csb);
+    pc_prefilter_context_engine = new cs::LibraryPseudocounts<cs::AA>(*context_lib, par.csw, par.csb);
   }
   fclose(fin);
   pc_hhm_context_engine->SetTargetNeff(par.pc_hhm_context_engine.target_neff);
-  pc_prefilter_context_engine->SetTargetNeff(
-      par.pc_prefilter_context_engine.target_neff);
+  pc_prefilter_context_engine->SetTargetNeff(par.pc_prefilter_context_engine.target_neff);
 
   // Prepare pseudocounts admixture method
   pc_hhm_context_mode = par.pc_hhm_context_engine.CreateAdmix();

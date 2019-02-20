@@ -15,8 +15,9 @@
  */
 
 #include "hhposteriordecoderrunner.h"
-
 #include "util.h"
+
+#include <map>
 
 int compareIrep(const void * a, const void * b) {
     Hit pa = *(Hit*)a;

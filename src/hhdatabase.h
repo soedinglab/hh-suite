@@ -10,40 +10,17 @@
 
 class HHEntry;
 class HHDatabaseEntry;
-class HHFileEntry;
 class Alignment;
-class FFindexDatabase;
+class Prefilter;
 
 #include <cstdlib>
 
-
-extern "C" {
-#include <ffindex.h>
-}
-
+#include "ffindexdatabase.h"
 #include "hhutil.h"
-#include "hhprefilter.h"
 #include "hash.h"
 #include "hhhit.h"
 #include "log.h"
 #include "hhalignment.h"
-
-
-class FFindexDatabase {
-  public:
-    FFindexDatabase(char* data_filename, char* index_filename, bool isCompressed);
-    virtual ~FFindexDatabase();
-
-    ffindex_index_t* db_index;
-    char* db_data;
-    char* data_filename;
-
-    bool isCompressed;
-
-  private:
-    size_t data_size;
-    FILE* db_data_fh;
-};
 
 class HHDatabase {
   public:
@@ -95,7 +72,7 @@ class HHblitsDatabase: HHDatabase {
         std::vector<HHEntry*>& entries);
     bool checkAndBuildCompressedDatabase(const char* base);
 
-    hh::Prefilter* prefilter;
+    Prefilter* prefilter;
 };
 
 class HHEntry {
@@ -138,7 +115,7 @@ class HHDatabaseEntry : public HHEntry {
 
 class HHFileEntry : public HHEntry {
   public:
-    HHFileEntry(char* file, int sequence_length);
+    HHFileEntry(const char* file, int sequence_length);
     ~HHFileEntry();
 
     void getTemplateA3M(Parameters& par, float* pb, const float S[20][20],

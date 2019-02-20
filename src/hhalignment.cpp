@@ -10,13 +10,6 @@
 #include <vector>
 #include <map>
 
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::ios;
-using std::ifstream;
-using std::ofstream;
-
 /////////////////////////////////////////////////////////////////////////////////////
 // Class Alignment
 /////////////////////////////////////////////////////////////////////////////////////
@@ -1966,126 +1959,6 @@ int Alignment::Filter2(char keep[], int coverage, int qid, float qsc,
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
-// Filter out all sequences below a minimum score per column with profile qcore
-/////////////////////////////////////////////////////////////////////////////////////
-int Alignment::FilterWithCoreHMM(char in[], float coresc, HMM* qcore,
-                                 const float* pb) {
-  int k;     // count sequences in alignment
-  int i;     // column in query alignment
-  int a;     // amino acid (0..19)
-  int n = 1;   // number of sequences that passed filter
-  float** logodds = new float*[L + 1];  // log-odds ratios for HMM qcore
-  char gap;  // 1: previous state in seq k was a gap  0: previous state in seq k was an amino acid
-  float score;  // score of sequence k aligned with qcore
-
-  for (i = 1; i <= L; ++i)
-    logodds[i] = new float[21];
-
-  // Determine first[k], last[k]?
-  if (first == NULL) {
-    first = new int[N_in];  // first non-gap position in sequence k
-    last = new int[N_in];  // last  non-gap position in sequence k
-    for (k = 0; k < N_in; ++k)  // do this for ALL sequences, not only those with in[k]==1 (since in[k] may be display[k])
-        {
-      for (i = 1; i <= L; ++i)
-        if (X[k][i] < NAA)
-          break;
-      first[k] = i;
-      for (i = L; i >= 1; i--)
-        if (X[k][i] < NAA)
-          break;
-      last[k] = i;
-    }
-  }
-
-  // Determine number of residues nres[k]?
-  if (nres == NULL) {
-    nres = new int[N_in];
-    for (k = 0; k < N_in; ++k)  // do this for ALL sequences, not only those with in[k]==1 (since in[k] may be display[k])
-        {
-      int nr = 0;
-      for (i = first[k]; i <= last[k]; ++i)
-        if (X[k][i] < NAA)
-          nr++;
-      nres[k] = nr;
-      //    printf("%20.20s nres=%3i  first=%3i  last=%3i\n",sname[k],nr,f,l);
-    }
-  }
-
-  // Precalculate the log-odds for qcore
-  for (i = 1; i <= L; ++i) {
-    for (a = 0; a < NAA; ++a)
-      logodds[i][a] = fast_log2(qcore->p[i][a] / pb[a]);
-    logodds[i][ANY] = -0.5;  // half a bit penalty for X
-
-//       printf("         A     R     N     D     C     Q     E     G     H     I     L     K     M     F     P     S     T     W     Y     V\n");
-//       printf("%6i ",i);
-//       for (a=0; a<20; ++a) fprintf(stdout,"%5.1f ",100 * qcore->f[i][a]);
-//       printf("\n");
-//       printf("       ");
-//       for (a=0; a<20; ++a) fprintf(stdout,"%5.1f ",100 * qcore->g[i][a]);
-//       printf("\n");
-//       printf("       ");
-//       for (a=0; a<20; ++a) fprintf(stdout,"%5.1f ",100 * qcore->p[i][a]);
-//       printf("\n");
-//       printf("       ");
-//       for (a=0; a<20; ++a) fprintf(stdout,"%5.1f ",100*pb[a]);
-//       printf("\n");
-//       printf("       ");
-//       for (a=0; a<20; ++a) fprintf(stdout,"%5.2f ",fast_log2(qcore->p[i][a]/pb[a]));
-//       printf("\n");
-  }
-
-  // Main loop: test all sequences k
-  for (k = kfirst + 1; k < N_in; ++k) {
-    if (!in[k])
-      continue;  // if in[k]==0 sequence k will be suppressed directly
-
-    // float score_M=0.0;
-    // float score_prev=0.0;
-
-    // Calculate score of sequence k with core HMM
-    score = 0;
-    gap = 0;
-    for (i = first[k]; i <= last[k]; ++i) {
-      // score_M=0.0;
-      if (X[k][i] <= ANY)       // current state is Match
-          {
-        // score_M=logodds[i][ (int)X[k][i]];
-        score += logodds[i][(int) X[k][i]];
-        if (gap)
-          score += qcore->tr[i][D2M];
-        else
-          score += qcore->tr[i][M2M];
-        gap = 0;
-      } else if (X[k][i] == GAP)  // current state is Delete (ignore ENDGAPs)
-          {
-        if (gap)
-          score += qcore->tr[i][D2D];
-        else
-          score += qcore->tr[i][M2D];
-        gap = 1;
-      }
-      if (I[k][i])
-        score += qcore->tr[i][M2I] + (I[k][i] - 1) * qcore->tr[i][I2I]
-            + qcore->tr[i][I2M];
-//        if (k==2) printf("i=%3i %c:%c   score_M=%6.2f   score=%6.2f  score_sum=%6.2f \n",i,i2aa(X[kfirst][i]),i2aa(X[k][i]),score_M,score-score_prev,score);
-      // score_prev=score;
-    }
-
-    printf("k=%3i score=%6.2f\n", k, score);
-    if (score < nres[k] * coresc)
-      in[k] = 0;
-    else
-      n++;          // reject sequence k?
-  }
-  for (i = 1; i <= L; ++i)
-    delete[] logodds[i];
-  delete[] logodds;
-  return n;
-}
-
-/////////////////////////////////////////////////////////////////////////////////////
 // Filter alignment to given diversity/Neff
 /////////////////////////////////////////////////////////////////////////////////////
 void Alignment::FilterNeff(char use_global_weights, const char mark,
@@ -4030,10 +3903,4 @@ void Alignment::GetPositionSpecificWeights(float* w[],
 
   }
   return;
-}
-
-// Set keep[] and display[] arrays to 0 to mark seqs as non-printable
-void Alignment::MarkSeqsAsNonPrintable() {
-  for (int k = 0; k < N_in; ++k)
-    keep[k] = display[k] = 0;
 }

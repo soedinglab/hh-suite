@@ -21,8 +21,8 @@
 #define CS_ALIGNMENT_H_
 
 #include <valarray>
+#include <vector>
 
-#include "blast_hits.h"
 #include "sequence.h"
 #include "globals.h"
 #include "matrix.h"
@@ -110,10 +110,6 @@ class Alignment {
 
     // Constructs an alignment from a single sequence.
     Alignment(const Sequence<Abc>& seq);
-
-    // Constructs a query anchored alignment from BLAST hits. If flag best is set
-    // to true only the best HSP of each hit is included in the alignment.
-    Alignment(const BlastHits& hits, bool best = false);
 
     // All memeber are automatically destructed
     ~Alignment() {}

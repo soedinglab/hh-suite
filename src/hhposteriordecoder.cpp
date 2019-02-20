@@ -28,19 +28,6 @@
 
 #include "hhposteriordecoder.h"
 #include "util.h"
-#include <float.h>
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
-// This method checks if the counter (j_vec) is lower than t.L+1 respectively (j <= t.L)
-//	If this is the case the value is kept, if not it is replaced by -FLT_MAX and the new vector is returned.
-//	Because there is no lower-equal t.L has been incremented by one (--> m_t_lengths_le = t.L + 1)
-///////////////////////////////////////////////////////////////////////////////////////////////////
-#define SetMinFloat_GT(j_vec, values, result) \
-	min_float_vec = simdf32_set(-FLT_MAX);	\
-	mask_lt = (simd_float)simdi32_lt(j_vec, m_t_lengths_le);		\
-	result = simdf_or(simdf_and(mask_lt, values),																\
-									simdf_andnot(mask_lt, min_float_vec));	// set to -FLT_MAX
-
 
 bool compareIndices(const MACTriple &a, const MACTriple &b) {
 	if(a.i == b.i) {

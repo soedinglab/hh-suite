@@ -22,7 +22,6 @@
 //     HHblits: Lightning-fast iterative protein sequence searching by HMM-HMM alignment.
 //     Nat. Methods, epub Dec 25, doi: 10.1038/NMETH.1818 (2011).
 
-#include <iostream>   // cin, cout, cerr
 #include <fstream>    // ofstream, ifstream
 #include <stdio.h>    // printf
 #include <stdlib.h>   // exit
@@ -131,7 +130,7 @@ void help() {
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
-//// Processing input options from command line and .hhconfig file
+//// Processing input options from command line
 /////////////////////////////////////////////////////////////////////////////////////
 void ProcessArguments(int argc, char** argv) {
   // Read command line options
@@ -194,8 +193,6 @@ void ProcessArguments(int argc, char** argv) {
       else
         HH_LOG(WARNING) << "Ignoring unknown argument: -M " << argv[i] << std::endl;
     }
-    else if (!strcmp(argv[i], "-def"))
-      par.readdefaultsfile = 1;
     else if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help")) {
       help();
       exit(0);
@@ -212,9 +209,6 @@ void ProcessArguments(int argc, char** argv) {
 //// MAIN PROGRAM
 /////////////////////////////////////////////////////////////////////////////////////
 int main(int argc, char **argv) {
-  char* argv_conf[MAXOPT]; // Input arguments from .hhconfig file (first=1: argv_conf[0] is not used)
-  int argc_conf;                  // Number of arguments in argv_conf
-
   strcpy(par.infile, "");
   strcpy(par.outfile, "");
 
@@ -226,29 +220,7 @@ int main(int argc, char **argv) {
   par.argc = argc;
   RemovePathAndExtension(program_name, argv[0]);
 
-  // Enable changing verbose mode before defaults file and command line are processed
-	int v = 2;
-	for (int i = 1; i < argc; i++) {
-		if (!strcmp(argv[i], "-def"))
-		  par.readdefaultsfile = 1;
-		else if (strcmp(argv[i], "-v") == 0) {
-			v = atoi(argv[i + 1]);
-			break;
-		}
-	}
-	par.v = Log::from_int(v);
-	Log::reporting_level() = par.v;
-
   par.SetDefaultPaths();
-
-  // Read .hhdefaults file?
-  if (par.readdefaultsfile) {
-    // Process default otpions from .hhconfig file
-    ReadDefaultsFile(argc_conf, argv_conf);
-    ProcessArguments(argc_conf, argv_conf);
-  }
-
-  // Process command line options (they override defaults from .hhconfig file)
   ProcessArguments(argc, argv);
 
   // Check command line input and default values
@@ -300,18 +272,4 @@ int main(int argc, char **argv) {
 
   // Write filtered alignment WITH insert states (lower case) to alignment file
   qali.WriteToFile(par.outfile, par.append);
-
-  // Print 'Done!'
-  FILE* outf = NULL;
-  if (v >= 2 && !strcmp(par.outfile, "stdout"))
-    printf("Done!\n");
-  else {
-    if (!*par.outfile) {
-      outf = fopen(par.outfile, "a"); //open for append
-      fprintf(outf, "Done!\n");
-      fclose(outf);
-    }
-    if (v >= 2)
-      printf("Done\n");
-  }
 }

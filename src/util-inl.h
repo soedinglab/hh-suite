@@ -736,9 +736,4 @@ inline bool file_exists(const char* name) {
   }
 }
 
-//Return random number in the range [0,1]
-inline float frand() {
-  return rand() / (RAND_MAX + 1.0);
-}
-
 #endif /* UTIL_INL_H_ */

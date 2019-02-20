@@ -2,13 +2,6 @@
 
 #include "hhhit.h"
 
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::ios;
-using std::ifstream;
-using std::ofstream;
-
 /////////////////////////////////////////////////////////////////////////////////////
 //// Constructor
 /////////////////////////////////////////////////////////////////////////////////////
@@ -129,19 +122,6 @@ void Hit::Delete() {
   }
 
   longname = name = file = NULL;
-}
-
-/////////////////////////////////////////////////////////////////////////////////////
-//// Allocate/delete memory for indices by given alignment
-/////////////////////////////////////////////////////////////////////////////////////
-void Hit::AllocateIndices(int len) {
-  i = new int[len];
-  j = new int[len];
-}
-
-void Hit::DeleteIndices() {
-  delete[] i;
-  delete[] j;
 }
 
 float Hit::calculateSimilarity(HMM* q, const float S[20][20]) {

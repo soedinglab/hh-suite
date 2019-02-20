@@ -3,7 +3,6 @@
 #ifndef HHALIGNMENT_H_
 #define HHALIGNMENT_H_
 
-#include <iostream>  // cin, cout, cerr
 #include <fstream>   // ofstream, ifstream
 #include <cstdio>    // printf
 #include <cstdlib>   // exit
@@ -120,9 +119,6 @@ public:
   // Determine matrix of position-specific weights w[k][i] for multiple alignment
   void GetPositionSpecificWeights(float* w[], char use_global_weights);
 
-  // Set keep[] and display[] arrays to 0 to mark seqs as non-printable
-  void MarkSeqsAsNonPrintable();
-
   char readCommentLine;   // Set to 1, if a comment line with '#' is read
 
 private:
@@ -137,7 +133,6 @@ private:
   int* ksort;             // index for sorting sequences: X[ksort[k]]
   int maxseq;
   int maxres;
-  int FilterWithCoreHMM(char in[], float coresc, HMM* qcore, const float* pb);
   char * initX(int len);
   
 };

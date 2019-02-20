@@ -1,5 +1,7 @@
 #include "a3m_compress.h"
 
+#include <iostream>
+#include <getopt.h>
 #include <sstream>
 
 void usage() {

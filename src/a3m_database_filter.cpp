@@ -4,13 +4,13 @@
  *  Created on: Feb 27, 2014
  *      Author: meiermark
  */
+#include "a3m_compress.h"
 
+#include <iostream>
+#include <getopt.h>
 #include <set>
-#include <string.h>
 #include <fstream>
 #include <sstream>
-
-#include "a3m_compress.h"
 
 extern "C" {
   #include "ffindex.h"

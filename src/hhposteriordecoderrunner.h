@@ -4,14 +4,13 @@
  *  Created on: 22/03/2014
  *      Author: Stefan Haunsberger
  */
+#ifndef HHPOSTERIORDECODERRUNNER_H_
+#define HHPOSTERIORDECODERRUNNER_H_
 
 #include "hhposteriordecoder.h"
 #include "hhposteriormatrix.h"
 #include "hhviterbimatrix.h"
 #include "hhfunc.h"
-
-#ifndef HHPOSTERIORDECODERRUNNER_H_
-#define HHPOSTERIORDECODERRUNNER_H_
 
 class PosteriorDecoderRunner {
 public:

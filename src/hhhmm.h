@@ -3,8 +3,6 @@
 #ifndef HHHMM_H_
 #define HHHMM_H_
 
-#include <iostream>
-
 class HMM;
 
 #include "util.h"
@@ -17,16 +15,14 @@ class HMM;
 #include "hhutil.h"
 #include "log.h"
 
-class CSCounts;
-
 class HMM {
  public:
   HMM(int maxseqdis, int maxres);
   ~HMM();
   HMM& operator=(HMM&);
 
-  int maxres;
-  int maxseqdis;
+  const int maxres;
+  const int maxseqdis;
 
   int n_display;  // number of sequences stored for display of alignment (INCLUDING >ss_ and >cf_ sequences)
   int n_seqs;  // number of sequences read in (INCLUDING >ss_ and >cf_ sequences)
@@ -62,8 +58,6 @@ class HMM {
   const static int PRED_DSSP = 1;
   const static int DSSP_PRED = 2;
   const static int PRED_PRED = 4;
-  // Make a flat copy of q
-  void FlatCopyTo(HMM* t);
 
   // Read an HMM from a HHsearch .hhm file and return 0 at end of file
   int Read(FILE* dbf, const int maxcol, const int nseqdis, float* pb,
@@ -179,7 +173,6 @@ class HMM {
 
   friend class Hit;
   friend class Alignment;
-  friend class CSCounts;
   friend class Viterbi;
   friend class HMMSimd;
   friend class PosteriorDecoderRunner;

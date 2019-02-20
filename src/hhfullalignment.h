@@ -12,7 +12,7 @@
 class FullAlignment
 {
 public:
-  FullAlignment(int maxseqdis=MAXSEQDIS);
+  explicit FullAlignment(int maxseqdis);
   ~FullAlignment();
   void FreeMemory();
   void Build(HMM* q, Hit& hit, const int nseqdis, const float S[20][20]);
