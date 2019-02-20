@@ -1,105 +1,71 @@
-# Ubuntu 14.04 Trusty support
-sudo: required
-dist: trusty
-
-addons:
-  apt:
-    packages:
-    - cmake
-
-before_install:
-- git submodule update --init --recursive
+language: minimal
 
 script:
 - mkdir build
 - cd build
 - cmake .. && make
+-
+before_install:
+  - export CC
+  - export CXX
 
 matrix:
   include:
-    - compiler: gcc
+    - os: linux
+      dist: trusty
       addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
           packages:
-            - g++-4.9
+            - cmake
+            - gcc-4.8
+            - g++-4.8
             - mpi-default-dev
-      env: CXX=g++-4.9
-    - compiler: gcc
+      env: CC=gcc-4.8 CXX=g++-4.8
+    - os: linux
+      dist: trusty
       addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
           packages:
-            - g++-5
-            - mpi-default-dev
-      env: CXX=g++-5
-    - compiler: gcc
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
+            - cmake
             - g++-6
             - mpi-default-dev
-      env: CXX=g++-6
-    - compiler: gcc
+      env: CC=gcc-6 CXX=g++-6
+    - os: linux
+      dist: trusty
       addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
           packages:
+            - cmake
             - g++-7
             - mpi-default-dev
-      env: CXX=g++-7
-    - compiler: clang
+      env: CC=gcc-7 CXX=g++-7
+    - os: linux
+      dist: trusty
       addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
             - llvm-toolchain-precise-3.6
           packages:
+            - cmake
             - clang-3.6
             - mpi-default-dev
-      env: CXX=clang++-3.6
-    - compiler: clang
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-            - llvm-toolchain-precise-3.7
-          packages:
-            - clang-3.7
-            - mpi-default-dev
-      env: CXX=clang++-3.7
-    - compiler: clang
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-            - llvm-toolchain-precise-3.8
-          packages:
-            - clang-3.8
-            - mpi-default-dev
-      env: CXX=clang++-3.8
-    - compiler: clang
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-            - llvm-toolchain-trusty-3.9
-          packages:
-            - clang-3.9
-            - mpi-default-dev
-      env: CXX=clang++-3.9
-    - compiler: clang
+      env: CC=clang-3.6 CXX=clang++-3.6
+    - os: linux
+      dist: trusty
       addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
             - llvm-toolchain-trusty-4.0
           packages:
+            - cmake
             - clang-4.0
             - mpi-default-dev
-      env: CXX=clang++-4.0
+      env: CC=clang-4.0 CXX=clang++-4.0
