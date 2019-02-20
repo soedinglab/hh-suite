@@ -167,6 +167,10 @@ void ProcessArguments(int argc, char** argv) {
 		par.v = Log::from_int(v);
 		Log::reporting_level() = par.v;
     }
+    else if (!strcmp(argv[i], "-maxseq") && (i < argc - 1))
+      par.maxseq = atoi(argv[++i]);
+    else if (!strcmp(argv[i], "-maxres") && (i < argc - 1))
+      par.maxres = par.maxcol = atoi(argv[++i]);
     else if (!strcmp(argv[i], "-id") && (i < argc - 1))
       par.max_seqid = atoi(argv[++i]);
     else if (!strcmp(argv[i], "-qid") && (i < argc - 1))

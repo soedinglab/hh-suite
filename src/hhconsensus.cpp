@@ -259,6 +259,8 @@ void ProcessArguments(int argc, char** argv) {
       par.gaph = atof(argv[++i]);
     else if (!strcmp(argv[i], "-gapi") && (i < argc - 1))
       par.gapi = atof(argv[++i]);
+    else if (!strcmp(argv[i], "-maxseq") && (i < argc - 1))
+      par.maxseq = atoi(argv[++i]);
     else if (!strcmp(argv[i], "-maxres") && (i < argc - 1))
         par.maxres = par.maxcol = atoi(argv[++i]);
     else if (!strcmp(argv[i], "-nocontxt"))
