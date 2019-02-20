@@ -288,9 +288,10 @@ void ProcessArguments(int argc, char** argv) {
       else
         HH_LOG(WARNING) << "Ignoring unknown option " << argv[i] << std::endl;
     }
-    else if (!strcmp(argv[i], "-wg")) {
+    else if (!strcmp(argv[i], "-wg"))
       par.wg = 1;
-    }
+    else if (!strcmp(argv[i], "-maxseq") && (i < argc - 1))
+      par.maxseq = atoi(argv[++i]);
     else if (!strcmp(argv[i], "-maxres") && (i < argc - 1)) {
       par.maxres = atoi(argv[++i]);
       par.maxcol = 2 * par.maxres;

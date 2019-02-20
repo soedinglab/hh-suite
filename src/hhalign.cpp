@@ -536,6 +536,8 @@ void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
     }
     else if (!strcmp(argv[i], "-sc") && (i < argc - 1))
       par.columnscore = atoi(argv[++i]);
+    else if (!strcmp(argv[i], "-maxseq") && (i < argc - 1))
+      par.maxseq = atoi(argv[++i]);
     else if (!strcmp(argv[i], "-maxres") && (i < argc - 1)) {
       par.maxres = atoi(argv[++i]);
       par.maxcol = 2 * par.maxres;
