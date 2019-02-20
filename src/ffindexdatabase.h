@@ -7,14 +7,14 @@ extern "C" {
 
 class FFindexDatabase {
 public:
-    FFindexDatabase(char* data_filename, char* index_filename, bool isCompressed);
+    FFindexDatabase(const char* data_filename, const char* index_filename, bool isCompressed);
     virtual ~FFindexDatabase();
 
     ffindex_index_t* db_index;
     char* db_data;
-    char* data_filename;
 
-    bool isCompressed;
+    char* data_filename;
+    const bool isCompressed;
 
 private:
     size_t data_size;
