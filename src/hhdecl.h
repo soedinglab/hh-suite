@@ -18,8 +18,6 @@ class Parameters;
 #include "library_pseudocounts-inl.h"
 #include "log.h"
 
-
-
 /////////////////////////////////////////////////////////////////////////////////////
 //// Global variable declarations
 /////////////////////////////////////////////////////////////////////////////////////
@@ -265,7 +263,7 @@ public:
   // parameters for context-specific pseudocounts
   float csb;
   float csw;
-  char clusterfile[NAMELEN];
+  std::string clusterfile;
   bool nocontxt;
 
   // HHblits
@@ -285,7 +283,7 @@ public:
   int Ndiff_db;
 
   // HHblits context state prefilter
-  char cs_library[NAMELEN];
+  std::string cs_library;
 
   // HHblits prefilter
   bool prefilter;             // perform prefiltering in HHblits?
@@ -319,7 +317,6 @@ public:
 
   InterimFilterStates interim_filter;
 
-  void SetDefaultPaths();
   void SetDefaults();
   Parameters();
 };

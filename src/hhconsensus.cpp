@@ -57,7 +57,7 @@ char program_name[NAMELEN];
 /////////////////////////////////////////////////////////////////////////////////////
 void help() {
   printf("\n");
-  printf("HHconsensus %i.%i.%i (%s)\n", HHSUITE_VERSION_MAJOR, HHSUITE_VERSION_MINOR, HHSUITE_VERSION_PATCH, HHSUITE_DATE);
+  printf("HHconsensus %i.%i.%i\n", HHSUITE_VERSION_MAJOR, HHSUITE_VERSION_MINOR, HHSUITE_VERSION_PATCH);
   printf("Calculate the consensus sequence for an A3M/FASTA input file.   \n");
   printf("%s", COPYRIGHT);
   printf("%s", REFERENCE);
@@ -276,7 +276,7 @@ void ProcessArguments(int argc, char** argv) {
         exit(4);
       }
       else
-        strcpy(par.clusterfile, argv[i]);
+        par.clusterfile = argv[i];
     }
     else if (!strcmp(argv[i], "-name")) {
         // skip this, its handled somewhere else
@@ -314,7 +314,6 @@ int main(int argc, char **argv) {
   par.argc = argc;
   RemovePathAndExtension(program_name, argv[0]);
 
-  par.SetDefaultPaths();
   ProcessArguments(argc, argv);
 
   Alignment* qali = new Alignment(par.maxseq, par.maxres);
@@ -345,7 +344,7 @@ int main(int argc, char **argv) {
   }
 
   // Prepare CS pseudocounts lib
-  if (!par.nocontxt && *par.clusterfile) {
+  if (!par.nocontxt) {
     InitializePseudocountsEngine(par, context_lib, crf, pc_hhm_context_engine,
         pc_hhm_context_mode, pc_prefilter_context_engine,
         pc_prefilter_context_mode);

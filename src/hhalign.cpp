@@ -41,7 +41,7 @@ HHalign::~HHalign() {
 
 void HHalign::help(Parameters& par, char all) {
   printf("\n");
-  printf("HHalign %i.%i.%i (%s)\n", HHSUITE_VERSION_MAJOR, HHSUITE_VERSION_MINOR, HHSUITE_VERSION_PATCH, HHSUITE_DATE);
+  printf("HHalign %i.%i.%i\n", HHSUITE_VERSION_MAJOR, HHSUITE_VERSION_MINOR, HHSUITE_VERSION_PATCH);
   printf("Align a query alignment/HMM to a template alignment/HMM by HMM-HMM alignment\n");
   printf("If only one alignment/HMM is given it is compared to itself and the best\n");
   printf("off-diagonal alignment plus all further non-overlapping alignments above \n");
@@ -176,7 +176,7 @@ void HHalign::help(Parameters& par, char all) {
 
     printf(" Context-specific pseudo-counts:                                                  \n");
     printf("  -nocontxt      use substitution-matrix instead of context-specific pseudocounts \n");
-    printf("  -contxt <file> context file for computing context-specific pseudocounts (default=%s)\n", par.clusterfile);
+    printf("  -contxt <file> context file for computing context-specific pseudocounts (default=%s)\n", par.clusterfile.c_str());
     printf("  -csw  [0,inf]  weight of central position in cs pseudocount mode (def=%.1f)\n", par.csw);
     printf("  -csb  [0,1]    weight decay parameter for positions in cs pc mode (def=%.1f)\n", par.csb);
   }
@@ -220,7 +220,6 @@ void HHalign::ProcessAllArguments(int argc, char** argv, Parameters& par) {
 
   par.num_rounds = 1;
 
-  par.SetDefaultPaths();
   ProcessArguments(argc, argv, par);
 
   // Check needed files
@@ -566,7 +565,7 @@ void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
         exit(4);
       }
       else
-        strcpy(par.clusterfile, argv[i]);
+        par.clusterfile = argv[i];
     }
     else if (!strcmp(argv[i],"-excl")) {
       if (++i>=argc) {

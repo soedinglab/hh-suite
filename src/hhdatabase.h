@@ -39,7 +39,7 @@ class HHblitsDatabase: HHDatabase {
     HHblitsDatabase(const char* base, bool initCs219 = true);
     ~HHblitsDatabase();
 
-    void initPrefilter(const char* cs_library);
+    void initPrefilter(const std::string& cs_library);
     void initNoPrefilter(std::vector<HHEntry*>& new_prefilter_hits);
     void initSelected(std::vector<std::string>& selected_templates,
         std::vector<HHEntry*>& new_entries);

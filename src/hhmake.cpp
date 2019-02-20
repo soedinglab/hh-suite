@@ -88,7 +88,7 @@ char longname[DESCLEN];
 /////////////////////////////////////////////////////////////////////////////////////
 void help(char all = 0) {
   printf("\n");
-  printf("HHmake %i.%i.%i (%s)\n", HHSUITE_VERSION_MAJOR, HHSUITE_VERSION_MINOR, HHSUITE_VERSION_PATCH, HHSUITE_DATE);
+  printf("HHmake %i.%i.%i\n", HHSUITE_VERSION_MAJOR, HHSUITE_VERSION_MINOR, HHSUITE_VERSION_PATCH);
   printf(
       "Build an HMM from an input alignment in A2M, A3M, or FASTA format,   \n");
   printf(
@@ -177,8 +177,7 @@ void help(char all = 0) {
     printf(
         "  -nocontxt      use substitution-matrix instead of context-specific pseudocounts \n");
     printf(
-        "  -contxt <file> context file for computing context-specific pseudocounts (default=%s)\n\n",
-        par.clusterfile);
+        "  -contxt <file> context file for computing context-specific pseudocounts (default=%s)\n\n", par.clusterfile.c_str());
     printf("Other options:                                                                   \n");
     printf(" -maxres <int>  max number of HMM columns (def=%5i)             \n", par.maxres);
     printf("\n");
@@ -339,7 +338,7 @@ void ProcessArguments(int argc, char** argv) {
         exit(4);
       }
       else
-        strcpy(par.clusterfile, argv[i]);
+        par.clusterfile = argv[i];
     }
 	else {
 		HH_LOG(WARNING) << "Ignoring unknown option " << argv[i] << std::endl;
@@ -378,10 +377,7 @@ int main(int argc, char **argv) {
   par.argc = argc;
   RemovePathAndExtension(program_name, argv[0]);
 
-  par.SetDefaultPaths();
   ProcessArguments(argc, argv);
-
-
 
   // Check command line input and default values
   if (!*par.infile) {
@@ -407,7 +403,7 @@ int main(int argc, char **argv) {
   }
 
   // Prepare CS pseudocounts lib
-  if (!par.nocontxt && *par.clusterfile) {
+  if (!par.nocontxt) {
     InitializePseudocountsEngine(par, context_lib, crf, pc_hhm_context_engine, pc_hhm_context_mode, pc_prefilter_context_engine, pc_prefilter_context_mode);
   }
 

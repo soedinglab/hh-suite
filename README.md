@@ -109,10 +109,6 @@ It might be good to do the following steps in a fresh VM with Ubuntu.
 			set (HHSUITE_VERSION_MINOR 0)
 			set (HHSUITE_VERSION_PATCH 3)
 
-	1. Update the release date
-
-			set (HHSUITE_DATE "14-07-2017")
-
 	1. Check the package version
 
   			set (CPACK_PACKAGE_VERSION_MAJOR "${HHSUITE_VERSION_MAJOR}")

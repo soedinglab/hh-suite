@@ -1,6 +1,6 @@
-// hhfunc.C
-
 #include "hhfunc.h"
+#include "ext/fmemopen.h"
+#include "context_data.crf.h"
 
 #include <sstream>
 
@@ -198,8 +198,6 @@ void PrepareTemplateHMM(Parameters& par, HMM* q, HMM* t, int format, float linea
   // ATTENTION! t->p[i][a] is divided by pnul[a] (for reasons of efficiency) => do not reuse t->p
   t->IncludeNullModelInHMM(q, t, par.columnscore,
       par.half_window_size_local_aa_bg_freqs, pb); // Can go BEFORE the loop if not dependent on template
-
-  return;
 }
 
 void InitializePseudocountsEngine(Parameters& par,
@@ -209,13 +207,19 @@ void InitializePseudocountsEngine(Parameters& par,
     cs::Pseudocounts<cs::AA>* pc_prefilter_context_engine,
     cs::Admix* pc_prefilter_context_mode) {
   // Prepare pseudocounts engine
-  FILE* fin = fopen(par.clusterfile, "r");
-  if (!fin) {
-    HH_LOG(ERROR) << "Could not open file \'" << par.clusterfile << "\'\n";
-    exit(2);
-  }
+  FILE* fin;
   char ext[100];
-  Extension(ext, par.clusterfile);
+  if (par.clusterfile != "") {
+    fin = fopen(par.clusterfile.c_str(), "r");
+    if (!fin) {
+      HH_LOG(ERROR) << "Could not open file \'" << par.clusterfile << "\'\n";
+      exit(2);
+    }
+    Extension(ext, par.clusterfile.c_str());
+  } else {
+    fin = fmemopen((void*)context_data_crf, context_data_crf_len, "r");
+    strcpy(ext, "crf");
+  }
   if (strcmp(ext, "crf") == 0) {
     crf = new cs::Crf<cs::AA>(fin);
     pc_hhm_context_engine = new cs::CrfPseudocounts<cs::AA>(*crf);

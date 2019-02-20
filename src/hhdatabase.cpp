@@ -145,7 +145,7 @@ HHblitsDatabase::~HHblitsDatabase() {
   }
 }
 
-void HHblitsDatabase::initPrefilter(const char* cs_library) {
+void HHblitsDatabase::initPrefilter(const std::string& cs_library) {
   prefilter = new Prefilter(cs_library, cs219_database);
 }
 

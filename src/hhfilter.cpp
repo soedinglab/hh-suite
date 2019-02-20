@@ -75,7 +75,7 @@ char program_name[NAMELEN];
 /////////////////////////////////////////////////////////////////////////////////////
 void help() {
   printf("\n");
-  printf("HHfilter %i.%i.%i (%s)\n", HHSUITE_VERSION_MAJOR, HHSUITE_VERSION_MINOR, HHSUITE_VERSION_PATCH, HHSUITE_DATE);
+  printf("HHfilter %i.%i.%i\n", HHSUITE_VERSION_MAJOR, HHSUITE_VERSION_MINOR, HHSUITE_VERSION_PATCH);
   printf(
       "Filter an alignment by maximum pairwise sequence identity, minimum coverage,\n");
   printf(
@@ -224,7 +224,6 @@ int main(int argc, char **argv) {
   par.argc = argc;
   RemovePathAndExtension(program_name, argv[0]);
 
-  par.SetDefaultPaths();
   ProcessArguments(argc, argv);
 
   // Check command line input and default values

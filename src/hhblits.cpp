@@ -36,38 +36,8 @@ HHblits::HHblits(Parameters& parameters,
       SetSecStrucSubstitutionMatrix(par.ssa, S73, S37, S33);
 
   // Prepare pseudocounts
-  if (!par.nocontxt && *par.clusterfile) {
-    FILE* fin = fopen(par.clusterfile, "r");
-    if (!fin) {
-      HH_LOG(ERROR) << "Could not open file \'" << par.clusterfile << "\'" << std::endl;
-      exit(2);
-    }
-
-    char ext[100];
-    Extension(ext, par.clusterfile);
-
-    if (strcmp(ext, "crf") == 0) {
-      crf = new cs::Crf<cs::AA>(fin);
-      pc_hhm_context_engine = new cs::CrfPseudocounts<cs::AA>(*crf);
-      pc_prefilter_context_engine = new cs::CrfPseudocounts<cs::AA>(*crf);
-    } else {
-      context_lib = new cs::ContextLibrary<cs::AA>(fin);
-      cs::TransformToLog(*context_lib);
-      pc_hhm_context_engine = new cs::LibraryPseudocounts<cs::AA>(*context_lib,
-                                                                  par.csw,
-                                                                  par.csb);
-      pc_prefilter_context_engine = new cs::LibraryPseudocounts<cs::AA>(
-          *context_lib, par.csw, par.csb);
-    }
-
-    fclose(fin);
-    pc_hhm_context_engine->SetTargetNeff(par.pc_hhm_context_engine.target_neff);
-    pc_prefilter_context_engine->SetTargetNeff(
-        par.pc_prefilter_context_engine.target_neff);
-
-    // Prepare pseudocounts admixture method
-    pc_hhm_context_mode = par.pc_hhm_context_engine.CreateAdmix();
-    pc_prefilter_context_mode = par.pc_prefilter_context_engine.CreateAdmix();
+  if (!par.nocontxt) {
+    InitializePseudocountsEngine(par, context_lib, crf, pc_hhm_context_engine, pc_hhm_context_mode, pc_prefilter_context_engine, pc_prefilter_context_mode);
   }
 
   // Prepare multi-threading - reserve memory for threads, intialize, etc.
@@ -85,9 +55,7 @@ HHblits::~HHblits() {
     delete posteriorMatrices[bin];
   }
 
-  DeletePseudocountsEngine(context_lib, crf, pc_hhm_context_engine,
-                           pc_hhm_context_mode, pc_prefilter_context_engine,
-                           pc_prefilter_context_mode);
+  DeletePseudocountsEngine(context_lib, crf, pc_hhm_context_engine, pc_hhm_context_mode, pc_prefilter_context_engine, pc_prefilter_context_mode);
 }
 
 void HHblits::prepareDatabases(Parameters& par,
@@ -119,7 +87,6 @@ void HHblits::ProcessAllArguments(int argc, char** argv, Parameters& par) {
   par.early_stopping_filter = true;
   par.filter_thresh = 0.01;
 
-  par.SetDefaultPaths();
   ProcessArguments(argc, argv, par);
 
   // Check needed files
@@ -133,18 +100,7 @@ void HHblits::ProcessAllArguments(int argc, char** argv, Parameters& par) {
     HH_LOG(ERROR) << "Database is missing! (see -d)" << std::endl;
     exit(4);
   }
-  if (!par.nocontxt) {
-    if (!strcmp(par.clusterfile, "")) {
-      help(par);
-      HH_LOG(ERROR) << "Context-specific library is missing (see -contxt)" << std::endl;
-      exit(4);
-    }
-    if (!strcmp(par.cs_library, "")) {
-      help(par);
-      HH_LOG(ERROR) << "Column state library is missing (see -cslib)" << std::endl;
-      exit(4);
-    }
-  }
+
   if (par.loc == 0 && par.num_rounds >= 2) {
     HH_LOG(WARNING)
         << "In " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << "\n"
@@ -231,7 +187,7 @@ void HHblits::help(Parameters& par, char all) {
   RemovePathAndExtension(program_name, par.argv[0]);
 
   printf("\n");
-  printf("HHblits %i.%i.%i (%s):\nHMM-HMM-based lightning-fast iterative sequence search\n", HHSUITE_VERSION_MAJOR, HHSUITE_VERSION_MINOR, HHSUITE_VERSION_PATCH, HHSUITE_DATE);
+  printf("HHblits %i.%i.%i:\nHMM-HMM-based lightning-fast iterative sequence search\n", HHSUITE_VERSION_MAJOR, HHSUITE_VERSION_MINOR, HHSUITE_VERSION_PATCH);
   printf("HHblits is a sensitive, general-purpose, iterative sequence search tool that represents\n");
   printf("both query and database sequences by HMMs. You can search HHblits databases starting\n");
   printf("with a single query sequence, a multiple sequence alignment (MSA), or an HMM. HHblits\n");
@@ -419,7 +375,7 @@ void HHblits::help(Parameters& par, char all) {
 
     printf(" Context-specific pseudo-counts:                                                  \n");
     printf("  -nocontxt      use substitution-matrix instead of context-specific pseudocounts \n");
-    printf("  -contxt <file> context file for computing context-specific pseudocounts (default=%s)\n", par.clusterfile);
+    printf("  -contxt <file> context file for computing context-specific pseudocounts (default=%s)\n", par.clusterfile.c_str());
     printf("  -csw  [0,inf]  weight of central position in cs pseudocount mode (def=%.1f)\n", par.csw);
     printf("  -csb  [0,1]    weight decay parameter for positions in cs pc mode (def=%.1f)\n", par.csb);
     printf("\n");
@@ -486,14 +442,14 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
         HH_LOG(ERROR) << "No lib following -contxt" << std::endl;
         exit(4);
       } else
-        strcpy(par.clusterfile, argv[i]);
+        par.clusterfile = argv[i];
     } else if (!strcmp(argv[i], "-cslib") || !strcmp(argv[i], "-cs_lib")) {
       if (++i >= argc || argv[i][0] == '-') {
         help(par);
         HH_LOG(ERROR) << "No lib following -cslib" << std::endl;
         exit(4);
       } else
-        strcpy(par.cs_library, argv[i]);
+        par.cs_library = argv[i];
     } else if (!strcmp(argv[i], "-o")) {
       if (++i >= argc || argv[i][0] == '-') {
         help(par);

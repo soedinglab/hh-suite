@@ -23,7 +23,6 @@ void HHsearch::ProcessAllArguments(int argc, char** argv, Parameters& par) {
     par.prefilter = false;
 	par.num_rounds = 1;
 
-	par.SetDefaultPaths();
 	ProcessArguments(argc, argv, par);
 
 	// Check needed files
@@ -43,19 +42,6 @@ void HHsearch::ProcessAllArguments(int argc, char** argv, Parameters& par) {
 		help(par);
 		HH_LOG(ERROR) << "Database is missing (see -d)!" << std::endl;
 		exit(4);
-	}
-
-	if (!par.nocontxt) {
-		if (!strcmp(par.clusterfile, "")) {
-			help(par);
-			HH_LOG(ERROR) << "Context-specific library missing (see -contxt)" << std::endl;
-			exit(4);
-		}
-		if (!strcmp(par.cs_library, "")) {
-			help(par);
-			HH_LOG(ERROR) << "Column state library (see -cslib)\n";
-			exit(4);
-		}
 	}
 
 	// Check option compatibilities
@@ -81,7 +67,7 @@ void HHsearch::ProcessAllArguments(int argc, char** argv, Parameters& par) {
 
 void HHsearch::help(Parameters& par, char all) {
 	printf("\n");
-  printf("HHsearch %i.%i.%i (%s)\n", HHSUITE_VERSION_MAJOR, HHSUITE_VERSION_MINOR, HHSUITE_VERSION_PATCH, HHSUITE_DATE);
+  printf("HHsearch %i.%i.%i\n", HHSUITE_VERSION_MAJOR, HHSUITE_VERSION_MINOR, HHSUITE_VERSION_PATCH);
 	printf("Search a database of HMMs with a query alignment or query HMM\n");
 	printf("%s", COPYRIGHT);
 	printf("%s", HHSEARCH_REFERENCE);
@@ -214,7 +200,7 @@ void HHsearch::help(Parameters& par, char all) {
 
     printf(" Context-specific pseudo-counts:                                                  \n");
     printf("  -nocontxt      use substitution-matrix instead of context-specific pseudocounts \n");
-    printf("  -contxt <file> context file for computing context-specific pseudocounts (default=%s)\n", par.clusterfile);
+    printf("  -contxt <file> context file for computing context-specific pseudocounts (default=%s)\n", par.clusterfile.c_str());
     printf("  -csw  [0,inf]  weight of central position in cs pseudocount mode (def=%.1f)\n", par.csw);
     printf("  -csb  [0,1]    weight decay parameter for positions in cs pc mode (def=%.1f)\n", par.csb);
     printf("\n");
@@ -545,7 +531,7 @@ void HHsearch::ProcessArguments(int argc, char** argv, Parameters& par) {
 				HH_LOG(ERROR) << "No query file following -contxt" << std::endl;
 				exit(4);
 			} else
-				strcpy(par.clusterfile, argv[i]);
+				par.clusterfile = argv[i];
 		}
     else if (!strcmp(argv[i],"-excl")) {
       if (++i>=argc) {

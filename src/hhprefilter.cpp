@@ -6,19 +6,23 @@
  */
 
 #include "hhprefilter.h"
+#include "ext/fmemopen.h"
+#include "cs219.lib.h"
 
 #define SWAP(tmp, arg1, arg2) tmp = arg1; arg1 = arg2; arg2 = tmp;
 
-Prefilter::Prefilter(const char* cs_library,
-    FFindexDatabase* cs219_database) {
-
+Prefilter::Prefilter(const std::string& cs_library, FFindexDatabase* cs219_database) {
   num_dbs = 0;
 
-  // Prepare column state lib (context size =1 )
-  FILE* fin = fopen(cs_library, "r");
-  if (!fin)
-    OpenFileError(cs_library, __FILE__, __LINE__, __func__);
-
+  FILE* fin;
+  if (cs_library == "") {
+    fin = fmemopen((void*)cs219_lib, cs219_lib_len, "r");
+  } else {
+    // Prepare column state lib (context size =1 )
+    fin = fopen(cs_library.c_str(), "r");
+    if (!fin)
+      OpenFileError(cs_library.c_str(), __FILE__, __LINE__, __func__);
+  }
   cs_lib = new cs::ContextLibrary<cs::AA>(fin);
   fclose(fin);
 

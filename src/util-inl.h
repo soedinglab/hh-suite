@@ -686,9 +686,9 @@ inline char* RemovePathAndExtension(char outname[], char filename[]) {
   return outname;
 }
 
-inline char* Extension(char extension[], char filename[]) {
-  char* ptr;
-  ptr = strrchr(filename, '.');      //return adress for LAST '.' in name
+inline char* Extension(char extension[], const char* filename) {
+  //return adress for LAST '.' in name
+  const char* ptr = strrchr(filename, '.');
   if (ptr)
     strcpy(extension, ptr + 1);
   else

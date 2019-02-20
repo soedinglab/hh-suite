@@ -99,6 +99,7 @@ set(HH_SOURCE
         )
 
 add_library(HH_OBJECTS ${HH_SOURCE})
+add_dependencies(HH_OBJECTS generated)
 
 add_library(hhviterbialgorithm_with_celloff hhviterbialgorithm.cpp)
 set_property(TARGET hhviterbialgorithm_with_celloff PROPERTY COMPILE_FLAGS "-DVITERBI_CELLOFF=1")

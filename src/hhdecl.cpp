@@ -4,62 +4,6 @@
 //// Global variable declarations
 /////////////////////////////////////////////////////////////////////////////////////
 
-void Parameters::SetDefaultPaths() {
-    char hhlib[PATH_MAX];   // lib base path e.g. /usr/lib64/hh
-    char hhdata[PATH_MAX];  // data base path e.g. /usr/lib64/hh/data
-
-	// set hhlib
-	FILE* testf = NULL;
-	if (getenv("HHLIB"))
-		strcpy(hhlib, getenv("HHLIB"));
-	else
-		strcpy(hhlib, "/usr/lib/hhsuite");
-
-	strcat(strcpy(hhdata, hhlib), "/data");
-	strcat(strcpy(clusterfile, hhdata), "/context_data.crf");
-	strcat(strcpy(cs_library, hhdata), "/cs219.lib");
-
-	testf = fopen(cs_library, "r");
-	if (testf)
-		fclose(testf);
-	else {
-		HH_LOG(DEBUG) << "WARNING in HHsuite: Could not open " << cs_library << "\n";
-
-		char program_path[NAMELEN];
-		Pathname(program_path, argv[0]);
-
-		/* we did not find HHLIB, if called with full path or in dist dir, we can try relative to program path */
-		strcat(strcpy(hhlib, program_path), "../lib/hhsuite");
-		strcat(strcpy(hhdata, hhlib), "/data");
-		strcat(strcpy(clusterfile, hhdata), "/context_data.crf");
-		strcat(strcpy(cs_library, hhdata), "/cs219.lib");
-		testf = fopen(cs_library, "r");
-		if (testf)
-			fclose(testf);
-		else {
-			HH_LOG(DEBUG) << "WARNING in HHsuite: Could not open " << cs_library << "\n";
-
-			strcat(strcpy(hhlib, program_path), "..");
-			strcat(strcpy(hhdata, hhlib), "/data");
-			strcat(strcpy(clusterfile, hhdata), "/context_data.crf");
-			strcat(strcpy(cs_library, hhdata), "/cs219.lib");
-			testf = fopen(cs_library, "r");
-			if (testf)
-				fclose(testf);
-			else
-				HH_LOG(DEBUG) << "WARNING in HHsuite: Could not open " << cs_library << "\n";
-		}
-	}
-	if (!testf) {
-	  HH_LOG(ERROR) << "Could not find context_data.crf and cs219.lib in '" << hhlib << std::endl;
-	  HH_LOG(ERROR) << "Please set the HHLIB environment variable to the HH-suite directory" << std::endl;
-	  HH_LOG(ERROR) << "(Linux bash: export HHLIB=<hh_dir>, csh/tcsh: setenv HHLIB=<hh_dir>)." << std::endl;
-	  HH_LOG(ERROR) << "The missing files should be in $HHLIB/data/." << std::endl;
-		exit(2);
-	}
-	return;
-}
-
 void Parameters::SetDefaults() {
 	v = INFO;
 
@@ -205,8 +149,11 @@ void Parameters::SetDefaults() {
 	strcpy(psifile, "");
 	strcpy(alitabfile, "");
 	strcpy(alisbasename, "");
+	clusterfile = "";
+	cs_library = "";
+
 	exclstr = NULL;
-  template_exclstr = NULL;
+	template_exclstr = NULL;
 
 	max_number_matrices = 100;
 

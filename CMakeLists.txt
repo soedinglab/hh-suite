@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.12)
-project(hhsuite CXX)
+project(hhsuite C CXX)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 set(HAVE_SSE2 0 CACHE BOOL "Have SSE2")
@@ -29,20 +29,17 @@ if (${HAVE_SANITIZER})
 endif ()
 
 set(HHSUITE_VERSION_MAJOR 3)
-set(HHSUITE_VERSION_MINOR 0)
-set(HHSUITE_VERSION_PATCH 3)
-set(HHSUITE_DATE "14-07-2017")
+set(HHSUITE_VERSION_MINOR 1)
+set(HHSUITE_VERSION_PATCH 0)
 
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-
+include_directories(${CMAKE_BINARY_DIR}/generated)
+include_directories(${PROJECT_BINARY_DIR}/generated)
 include_directories(src)
 include_directories(lib/ffindex/src)
 
 add_subdirectory(lib/ffindex)
-add_subdirectory(src)
 add_subdirectory(data)
+add_subdirectory(src)
 add_subdirectory(scripts)
 
 set(CPACK_GENERATOR "DEB;TGZ;ZIP;RPM")
@@ -59,13 +56,12 @@ set(CPACK_SOURCE_IGNORE_FILES
         "^${PROJECT_SOURCE_DIR}/.project"
         "^${PROJECT_SOURCE_DIR}/.cproject"
         "^${PROJECT_SOURCE_DIR}/lib/ffindex/.git"
-        "^${PROJECT_SOURCE_DIR}/lib/ffindex/.git"
         "^${PROJECT_SOURCE_DIR}/.autotools"
         "^${PROJECT_SOURCE_DIR}/README.md"
         )
 
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
 set(CPACK_PACKAGE_VERSION_MAJOR "${HHSUITE_VERSION_MAJOR}")
-set(CPACK_PACKAGE_VERSION_MINOR "${HHSUITE_VERSION_MINOR}-beta")
+set(CPACK_PACKAGE_VERSION_MINOR "${HHSUITE_VERSION_MINOR}")
 set(CPACK_PACKAGE_VERSION_MINOR "${HHSUITE_VERSION_PATCH}")
 include(CPack)

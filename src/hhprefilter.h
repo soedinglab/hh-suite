@@ -52,12 +52,9 @@
 //     Many thanks posthumously for your great code!
 //     Johannes
 
-class FFindexDatabase;
-
-
 class Prefilter {
 public:
-	Prefilter(const char* cs_library, FFindexDatabase* cs219_database);
+	Prefilter(const std::string& cs_library, FFindexDatabase* cs219_database);
 	virtual ~Prefilter();
 
 	static void init_no_prefiltering(FFindexDatabase* cs219_database, std::vector<std::pair<int, std::string> >& prefiltered_entries);
