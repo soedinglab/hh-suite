@@ -10,7 +10,7 @@ The HH-suite is an open-source software package for sensitive protein sequence s
 We recommend compiling HH-suite on the machine that should run the computations so that it can be optimized for the appropriate CPU architecture.
 
 ### Compilation
-To compile from source, you will need a recent C/C++ compiler (at least GCC 4.8 or Clang 3.6) and [CMake (http://cmake.org/) 2.8.12 or later.
+To compile from source, you will need a recent C/C++ compiler (at least GCC 4.8 or Clang 3.6) and [CMake] (http://cmake.org/) 2.8.12 or later.
 
 To download the source code and compile the HH-suite execute the following commands:
 ```
