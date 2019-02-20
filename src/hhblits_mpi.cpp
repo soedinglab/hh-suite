@@ -14,10 +14,8 @@ extern "C" {
 }
 
 #ifdef OPENMP
-    #include <omp.h>
+#include <omp.h>
 #endif
-
-
 
 struct OutputFFIndex {
     char base[NAMELEN];
@@ -134,11 +132,8 @@ int main(int argc, char **argv) {
   Parameters par;
   HHblits::ProcessAllArguments(argc, argv, par);
 
-  //hhblits_mpi will be parallelized with openmpi, no other parallelization
+  // hhblits_mpi will be parallelized with openmpi, no other parallelization
   par.threads = 1;
-  #ifdef OPENMP
-    omp_set_num_threads(par.threads);
-  #endif
 
   char data_filename[NAMELEN];
   char index_filename[NAMELEN];
