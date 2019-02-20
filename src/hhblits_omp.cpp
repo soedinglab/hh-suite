@@ -7,6 +7,8 @@
 
 #include "hhblits.h"
 
+#include <sys/mman.h>
+
 #ifdef OPENMP
 #include <omp.h>
 #endif

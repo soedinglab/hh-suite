@@ -1,5 +1,9 @@
 #include "hhviterbirunner.h"
 
+#ifdef OPENMP
+#include <omp.h>
+#endif
+
 void ViterbiConsumerThread::clear() {
     hits.clear();
     excludeAlignments.clear();

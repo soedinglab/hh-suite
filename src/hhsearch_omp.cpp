@@ -2,7 +2,9 @@
  * hhsearch_omp.cpp
  */
 
-#include "hhblits.h"
+#include "hhsearch.h"
+
+#include <sys/mman.h>
 
 struct OutputFFIndex {
     char base[NAMELEN];
