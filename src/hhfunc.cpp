@@ -221,11 +221,13 @@ void InitializePseudocountsEngine(Parameters& par,
     strcpy(ext, "crf");
   }
   if (strcmp(ext, "crf") == 0) {
+    // Newer discriminative approach by Angermueller & Soeding Bioinformatics 2012
     crf = new cs::Crf<cs::AA>(fin);
     pc_hhm_context_engine = new cs::CrfPseudocounts<cs::AA>(*crf);
     pc_prefilter_context_engine = new cs::CrfPseudocounts<cs::AA>(*crf);
   }
   else {
+    // Older generative approach by Biegert & Soeding PNAS 2009
     context_lib = new cs::ContextLibrary<cs::AA>(fin);
     cs::TransformToLog(*context_lib);
     pc_hhm_context_engine = new cs::LibraryPseudocounts<cs::AA>(*context_lib, par.csw, par.csb);

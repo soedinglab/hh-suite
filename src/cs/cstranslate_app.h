@@ -30,20 +30,16 @@
 #include "pssm.h"
 #include "sequence-inl.h"
 #include "a3m_compress.h"
-#include "hhdatabase.h"
+#include "ffindexdatabase.h"
+
+#include "context_data.crf.h"
+#include "cs219.lib.h"
 
 #ifdef OPENMP
 #include <omp.h>
 #endif
 
 #include <sstream>
-
-extern "C" {
-#include <ffindex.h>     // fast index-based database reading
-#include <ffutil.h>
-#include <ext/fmemopen.h>
-}
-
 
 using namespace GetOpt;
 using std::string;
@@ -61,9 +57,10 @@ namespace cs {
     void Init() {
       informat = "auto";
       outformat = "seq";
+      modelfile = "internal";
+      alphabetfile = "internal";
       pc_admix = 0.90;
       pc_ali = 12.0;
-      pc_engine = "auto";
       match_assign = kAssignMatchColsByQuery;
       weight_center = 1.6;
       weight_decay = 0.85;
@@ -97,8 +94,6 @@ namespace cs {
     double pc_admix;
     // Constant in pseudocount calculation for alignments
     double pc_ali;
-    // Pseudocount engine
-    string pc_engine;
     // Match column assignment for FASTA alignments
     int match_assign;
     // Weight of central column in multinomial emission
@@ -382,7 +377,6 @@ namespace cs {
       ops >> Option('c', "pc-ali", opts_.pc_ali, opts_.pc_ali);
       ops >> Option('A', "alphabet", opts_.alphabetfile, opts_.alphabetfile);
       ops >> Option('D', "context-data", opts_.modelfile, opts_.modelfile);
-      ops >> Option('p', "pc-engine", opts_.pc_engine, opts_.pc_engine);
       ops >> Option('w', "weight", opts_.weight_as, opts_.weight_as);
       ops >> OptionPresent('b', "binary", opts_.binary);
       ops >> OptionPresent('f', "ffindex", opts_.ffindex);
@@ -397,8 +391,6 @@ namespace cs {
         opts_.outfile = GetBasename(opts_.infile, false) + ".as";
       if (opts_.informat == "auto")
         opts_.informat = GetFileExt(opts_.infile);
-      if (opts_.pc_engine == "auto" && !opts_.modelfile.empty())
-        opts_.pc_engine = GetFileExt(opts_.modelfile);
     };
 
     // Prints options summary to stream.
@@ -415,11 +407,10 @@ namespace cs {
       fprintf(out_, "  %-30s %s\n", "-M, --match-assign [0:100]",
               "Make all FASTA columns with less than X% gaps match columns");
       fprintf(out_, "  %-30s %s\n", "", "(def: make columns with residue in first sequence match columns)");
-      fprintf(out_, "  %-30s %s (def=off)\n", "-A, --alphabet <file>",
+      fprintf(out_, "  %-30s %s (def=internal)\n", "-A, --alphabet <file>",
               "Abstract state alphabet consisting of exactly 219 states");
-      fprintf(out_, "  %-30s %s (def=off)\n", "-D, --context-data <file>",
+      fprintf(out_, "  %-30s %s (def=internal)\n", "-D, --context-data <file>",
               "Add context-specific pseudocounts using given context-data");
-      // fprintf(out_, "  %-30s %s (def=%s)\n", "-p, --pc-engine lib|crf", "Specify engine for pseudocount generation", opts_.pc_engine.c_str());
       fprintf(out_, "  %-30s %s (def=%-.2f)\n", "-x, --pc-admix [0,1]",
               "Pseudocount admix for context-specific pseudocounts", opts_.pc_admix);
       fprintf(out_, "  %-30s %s (def=%-.1f)\n", "-c, --pc-ali [0,inf[",
@@ -438,7 +429,7 @@ namespace cs {
 
     // Prints usage banner to stream.
     virtual void PrintUsage() const {
-      fputs("Usage: cstranslate -i <infile> -A <alphabetlib> [options]\n", out_);
+      fputs("Usage: cstranslate -i <infile> [options]\n", out_);
     };
 
     // Setup pseudocount engine
@@ -446,38 +437,50 @@ namespace cs {
       if (opts_.modelfile.empty())
         return;
 
-      FILE *fin = fopen(opts_.modelfile.c_str(), "r");
-      if (!fin) {
-        fprintf(out_, "Unable to read file '%s'!\n", opts_.modelfile.c_str());
-        exit(1);
+      std::string engine;
+      FILE *fin;
+      if (opts_.modelfile == "internal") {
+        fin = fmemopen((void*)context_data_crf, context_data_crf_len, "r");
+        engine = "crf";
+      } else {
+        fin = fopen(opts_.modelfile.c_str(), "r");
+        engine = GetFileExt(opts_.modelfile);
       }
-      if (opts_.pc_engine == "lib") {
+      if (!fin) {
+        throw Exception("Unable to read file '" + opts_.modelfile  + "'!\n");
+      }
+
+      if (engine == "lib") {
+        // Older generative approach by Biegert & Soeding PNAS 2009
         if (opts_.verbose) {
           fprintf(out_, "Reading context library for pseudocounts from %s ...\n", GetBasename(opts_.modelfile).c_str());
         }
-
         pc_lib_.reset(new ContextLibrary<Abc>(fin));
         TransformToLog(*pc_lib_);
-        pc_.reset(new LibraryPseudocounts<Abc>(*pc_lib_, opts_.weight_center,
-                                               opts_.weight_decay));
-
-      } else if (opts_.pc_engine == "crf") {
+        pc_.reset(new LibraryPseudocounts<Abc>(*pc_lib_, opts_.weight_center,opts_.weight_decay));
+      } else if (engine == "crf") {
+        // Newer discriminative approach by Angermueller & Soeding Bioinformatics 2012
         if (opts_.verbose) {
           fprintf(out_, "Reading CRF for pseudocounts from %s ...\n", GetBasename(opts_.modelfile).c_str());
         }
-
         pc_crf_.reset(new Crf<Abc>(fin));
         pc_.reset(new CrfPseudocounts<Abc>(*pc_crf_));
+      } else {
+        throw Exception("Invalid pseudocount engine: " + engine);
       }
       fclose(fin);
     };
 
     // Setup abstract state engine
     void SetupAbstractStateEngine() {
-      FILE *fin = fopen(opts_.alphabetfile.c_str(), "r");
+      FILE *fin;
+      if (opts_.alphabetfile == "internal") {
+        fin = fmemopen((void*)cs219_lib, cs219_lib_len, "r");
+      } else {
+        fin = fopen(opts_.alphabetfile.c_str(), "r");
+      }
       if (!fin) {
-        fprintf(out_, "Unable to read file '%s'!\n", opts_.alphabetfile.c_str());
-        exit(1);
+        throw Exception("Unable to read file '" + opts_.alphabetfile  + "'!\n");
       }
       if (opts_.verbose) {
         fprintf(out_, "Reading abstract state alphabet from %s ...\n", GetBasename(opts_.alphabetfile).c_str());
@@ -486,14 +489,12 @@ namespace cs {
       as_lib_.reset(new ContextLibrary<Abc>(fin));
 
       if (as_lib_->size() != AS219::kSize) {
-        fprintf(out_, "Abstract state alphabet should have %zu states but actually has %zu states!\n", AS219::kSize,
-                as_lib_->size());
+        fprintf(out_, "Abstract state alphabet should have %zu states but actually has %zu states!\n", AS219::kSize, as_lib_->size());
         exit(1);
       }
 
       if (static_cast<int>(as_lib_->wlen()) != 1) {
-        fprintf(out_, "Abstract state alphabet should have a window length of %d but actually has %zu!\n", 1,
-                as_lib_->wlen());
+        fprintf(out_, "Abstract state alphabet should have a window length of %d but actually has %zu!\n", 1, as_lib_->wlen());
         exit(1);
       }
 

@@ -15,13 +15,14 @@ Prefilter::Prefilter(const std::string& cs_library, FFindexDatabase* cs219_datab
   num_dbs = 0;
 
   FILE* fin;
-  if (cs_library == "") {
+  if (cs_library.empty()) {
     fin = fmemopen((void*)cs219_lib, cs219_lib_len, "r");
   } else {
-    // Prepare column state lib (context size =1 )
+    // Prepare column state lib (context size = 1)
     fin = fopen(cs_library.c_str(), "r");
-    if (!fin)
-      OpenFileError(cs_library.c_str(), __FILE__, __LINE__, __func__);
+  }
+  if (!fin) {
+    OpenFileError(cs_library.c_str(), __FILE__, __LINE__, __func__);
   }
   cs_lib = new cs::ContextLibrary<cs::AA>(fin);
   fclose(fin);

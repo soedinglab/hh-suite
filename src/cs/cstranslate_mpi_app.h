@@ -263,7 +263,6 @@ namespace cs {
       ops >> Option('c', "pc-ali", this->opts_.pc_ali, this->opts_.pc_ali);
       ops >> Option('A', "alphabet", this->opts_.alphabetfile, this->opts_.alphabetfile);
       ops >> Option('D', "context-data", this->opts_.modelfile, this->opts_.modelfile);
-      ops >> Option('p', "pc-engine", this->opts_.pc_engine, this->opts_.pc_engine);
       ops >> Option('w', "weight", this->opts_.weight_as, this->opts_.weight_as);
       ops >> OptionPresent('b', "binary", this->opts_.binary);
       ops >> OptionPresent('f', "ffindex", this->opts_.ffindex);
@@ -274,8 +273,6 @@ namespace cs {
 
       if (this->opts_.informat == "auto")
         this->opts_.informat = GetFileExt(this->opts_.infile);
-      if (this->opts_.pc_engine == "auto" && !this->opts_.modelfile.empty())
-        this->opts_.pc_engine = GetFileExt(this->opts_.modelfile);
     };
 
     // Prints options summary to stream.
@@ -295,7 +292,6 @@ namespace cs {
               "Abstract state alphabet consisting of exactly 219 states");
       fprintf(this->out_, "  %-30s %s (def=off)\n", "-D, --context-data <file>",
               "Add context-specific pseudocounts using given context-data");
-      // fprintf(this->out_, "  %-30s %s (def=%s)\n", "-p, --pc-engine lib|crf", "Specify engine for pseudocount generation", this->opts_.pc_engine.c_str());
       fprintf(this->out_, "  %-30s %s (def=%-.2f)\n", "-x, --pc-admix [0,1]",
               "Pseudocount admix for context-specific pseudocounts", this->opts_.pc_admix);
       fprintf(this->out_, "  %-30s %s (def=%-.1f)\n", "-c, --pc-ali [0,inf[",
