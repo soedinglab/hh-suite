@@ -77,14 +77,14 @@ void makeOutputFFIndex(char *par, void (*print)(HHblits &, std::stringstream &),
     }
 }
 
-int main(int argc, char **argv) {
-    Parameters par;
+int main(int argc, const char **argv) {
+    Parameters par(argc, argv);
 #ifdef HHSEARCH
-    HHsearch::ProcessAllArguments(argc, argv, par);
+    HHsearch::ProcessAllArguments(par);
 #elif HHALIGN
-    HHalign::ProcessAllArguments(argc, argv, par);
+    HHalign::ProcessAllArguments(par);
 #else
-    HHblits::ProcessAllArguments(argc, argv, par);
+    HHblits::ProcessAllArguments(par);
 #endif
 
     std::string data_filename(par.infile);

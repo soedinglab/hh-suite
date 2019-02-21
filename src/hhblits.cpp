@@ -8,11 +8,7 @@
 #include "hhblits.h"
 #include "hhsuite_config.h"
 
-//TODO: get rid of exit(1)... throw errors ... better for parallelization over several queries
-
-HHblits::HHblits(Parameters& parameters,
-                 std::vector<HHblitsDatabase*>& databases) {
-  par = parameters;
+HHblits::HHblits(Parameters& par, std::vector<HHblitsDatabase*>& databases) : par(par) {
   dbs = databases;
 
   context_lib = NULL;
@@ -77,9 +73,9 @@ void HHblits::prepareDatabases(Parameters& par,
   }
 }
 
-void HHblits::ProcessAllArguments(int argc, char** argv, Parameters& par) {
-  par.argv = argv;
-  par.argc = argc;
+void HHblits::ProcessAllArguments(Parameters& par) {
+  const int argc = par.argc;
+  const char** argv = par.argv;
 
   par.Ndiff = 1000;
   par.prefilter = true;
@@ -87,7 +83,7 @@ void HHblits::ProcessAllArguments(int argc, char** argv, Parameters& par) {
   par.early_stopping_filter = true;
   par.filter_thresh = 0.01;
 
-  ProcessArguments(argc, argv, par);
+  ProcessArguments(par);
 
   // Check needed files
   if (!*par.infile || !strcmp(par.infile, "")) {
@@ -183,10 +179,6 @@ void HHblits::Reset() {
 // Help functions
 /////////////////////////////////////////////////////////////////////////////////////
 void HHblits::help(Parameters& par, char all) {
-  char program_name[NAMELEN];
-  RemovePathAndExtension(program_name, par.argv[0]);
-
-  printf("\n");
   printf("HHblits %i.%i.%i:\nHMM-HMM-based lightning-fast iterative sequence search\n", HHSUITE_VERSION_MAJOR, HHSUITE_VERSION_MINOR, HHSUITE_VERSION_PATCH);
   printf("HHblits is a sensitive, general-purpose, iterative sequence search tool that represents\n");
   printf("both query and database sequences by HMMs. You can search HHblits databases starting\n");
@@ -197,7 +189,7 @@ void HHblits::help(Parameters& par, char all) {
   printf("%s", HHBLITS_REFERENCE);
   printf("%s", COPYRIGHT);
   printf("\n");
-  printf("Usage: %s -i query [options] \n", program_name);
+  printf("Usage: %s -i query [options] \n", par.program_name);
   printf(" -i <file>      input/query: single sequence or multiple sequence alignment (MSA)\n");
   printf("                in a3m, a2m, or FASTA format, or HMM in hhm format\n");
 
@@ -408,9 +400,9 @@ void HHblits::help(Parameters& par, char all) {
 }
 
 
-void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
-  char program_name[NAMELEN];
-  RemovePathAndExtension(program_name, par.argv[0]);
+void HHblits::ProcessArguments(Parameters& par) {
+  const int argc = par.argc;
+  const char** argv = par.argv;
 
   //Processing command line input
   for (int i = 1; i < argc; i++) {

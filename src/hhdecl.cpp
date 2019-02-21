@@ -4,8 +4,13 @@
 //// Global variable declarations
 /////////////////////////////////////////////////////////////////////////////////////
 
+Parameters::Parameters(const int argc, const char** argv) : argc(argc), argv(argv) {
+    RemovePathAndExtension(program_name, argv[0]);
+    SetDefaults();
+}
+
 void Parameters::SetDefaults() {
-	v = INFO;
+	Log::reporting_level() = v = INFO;
 
 	maxcol = 32765; // max number of columns in sequence/MSA input files; must be <= LINELEN and >= maxres
 	maxres = 20001;           // max number of states in HMM; must be <= LINELEN
@@ -171,9 +176,4 @@ void Parameters::SetDefaults() {
 
 	interim_filter = INTERIM_FILTER_FULL;
 }
-
-Parameters::Parameters() {
-	SetDefaults();
-}
-
 

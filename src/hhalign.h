@@ -18,12 +18,12 @@ public:
 
     virtual void run(FILE *query_fh, char *query_path);
 
-    static void ProcessAllArguments(int argc, char **argv, Parameters &par);
+    static void ProcessAllArguments(Parameters &par);
 
 private:
     static void help(Parameters &par, char all = 0);
 
-    static void ProcessArguments(int argc, char **argv, Parameters &par);
+    static void ProcessArguments(Parameters &par);
 
     std::vector<std::string>& tfiles;
 };

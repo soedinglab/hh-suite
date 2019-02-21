@@ -10,13 +10,12 @@
 
 #include <unistd.h>
 
-class Parameters;
-
 #include "crf.h"
 #include "aa.h"
 #include "crf_pseudocounts-inl.h"
 #include "library_pseudocounts-inl.h"
 #include "log.h"
+#include "util.h"
 
 /////////////////////////////////////////////////////////////////////////////////////
 //// Global variable declarations
@@ -99,9 +98,6 @@ const pair_states MI = pair_states(DEPRECATED_MI);
 //states for the interim filter of the query msa during merging
 enum InterimFilterStates {INTERIM_FILTER_NONE=0, INTERIM_FILTER_FULL=1};
 
-#include "util.h"
-#include "hhdatabase.h"
-
 // Pseudocounts
 namespace Pseudocounts {
 enum Admix {
@@ -147,8 +143,12 @@ struct Params {
 class Parameters          // Parameters for gap penalties and pseudocounts
 {
 public:
-  char** argv;            //command line parameters
-  char argc;              //dimension of argv
+  Parameters(const int argc, const char** argv);
+  void SetDefaults();
+
+  const char** argv;            //command line parameters
+  const char argc;              //dimension of argv
+  char program_name[NAMELEN];
 
   LogLevel v;
 
@@ -316,9 +316,6 @@ public:
   int threads;
 
   InterimFilterStates interim_filter;
-
-  void SetDefaults();
-  Parameters();
 };
 
 

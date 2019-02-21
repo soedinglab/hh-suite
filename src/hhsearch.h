@@ -39,10 +39,10 @@ const char HHSEARCH_REFERENCE[] =
 class HHsearch {
 public:
     static void prepareDatabases(Parameters& par, std::vector<HHblitsDatabase*>& databases);
-    static void ProcessAllArguments(int argc, char** argv, Parameters& par);
+    static void ProcessAllArguments(Parameters& par);
 private:
     static void help(Parameters& par, char all = 0);
-    static void ProcessArguments(int argc, char** argv, Parameters& par);
+    static void ProcessArguments(Parameters& par);
 
 };
 

@@ -16,14 +16,14 @@ void HHsearch::prepareDatabases(Parameters& par,
     }
 }
 
-void HHsearch::ProcessAllArguments(int argc, char** argv, Parameters& par) {
-	par.argv = argv;
-	par.argc = argc;
+void HHsearch::ProcessAllArguments(Parameters& par) {
+	const int argc = par.argc;
+	const char** argv = par.argv;
 
     par.prefilter = false;
 	par.num_rounds = 1;
 
-	ProcessArguments(argc, argv, par);
+	ProcessArguments(par);
 
 	// Check needed files
 	if (!*par.infile || !strcmp(par.infile, "")) {
@@ -66,14 +66,13 @@ void HHsearch::ProcessAllArguments(int argc, char** argv, Parameters& par) {
 }
 
 void HHsearch::help(Parameters& par, char all) {
-	printf("\n");
   printf("HHsearch %i.%i.%i\n", HHSUITE_VERSION_MAJOR, HHSUITE_VERSION_MINOR, HHSUITE_VERSION_PATCH);
-	printf("Search a database of HMMs with a query alignment or query HMM\n");
-	printf("%s", COPYRIGHT);
-	printf("%s", HHSEARCH_REFERENCE);
-	printf("\n");
-	printf("Usage: hhsearch -i query -d database [options]                       \n");
-	printf(" -i <file>      input/query multiple sequence alignment (a2m, a3m, FASTA) or HMM\n");
+  printf("Search a database of HMMs with a query alignment or query HMM\n");
+  printf("%s", COPYRIGHT);
+  printf("%s", HHSEARCH_REFERENCE);
+  printf("\n");
+  printf("Usage: hhsearch -i query -d database [options]                       \n");
+  printf(" -i <file>      input/query multiple sequence alignment (a2m, a3m, FASTA) or HMM\n");
 
 	if (all) {
 		printf("\n");
@@ -230,9 +229,9 @@ void HHsearch::help(Parameters& par, char all) {
 /////////////////////////////////////////////////////////////////////////////////////
 //// Processing input options from command line
 /////////////////////////////////////////////////////////////////////////////////////
-void HHsearch::ProcessArguments(int argc, char** argv, Parameters& par) {
-	char program_name[NAMELEN];
-	RemovePathAndExtension(program_name, par.argv[0]);
+void HHsearch::ProcessArguments(Parameters& par) {
+	const int argc = par.argc;
+	const char** argv = par.argv;
 
 	//Processing command line input
 	for (int i = 1; i < argc; i++) {

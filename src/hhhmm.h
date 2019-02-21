@@ -7,6 +7,7 @@ class HMM;
 
 #include "util.h"
 #include "simd.h"
+#include "hhdatabase.h"
 
 //from cs
 #include "pseudocounts.h"
@@ -113,11 +114,11 @@ class HMM {
   // Write HMM to output file
   void WriteToFile(char* outfile, const char append, const int max_seqid,
                    const int coverage, const int qid, const int Ndiff,
-                   const float qsc, const int argc, char** argv,
+                   const float qsc, const int argc, const char** argv,
                    const float* pb);
   void WriteToFile(std::stringstream& out, const int max_seqid,
                    const int coverage, const int qid, const int Ndiff,
-                   const float qsc, const int argc, char** argv,
+                   const float qsc, const int argc, const char** argv,
                    const float* pb);
 
   // Transform log to lin transition probs

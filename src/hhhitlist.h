@@ -39,8 +39,8 @@ public:
   ~HitList() {if (blast_logPvals) delete blast_logPvals;}
 
   // Print summary listing of hits
-  void PrintHitList(HMM* q, std::stringstream& out, const unsigned int maxdbstrlen, const int z, const int Z, const float p, const double E, const int argc, char** argv);
-  void PrintHitList(HMM* q, char* outfile, const unsigned int maxdbstrlen, const int z, const int Z, const float p, const double E, const int argc, char** argv);
+  void PrintHitList(HMM* q, std::stringstream& out, const unsigned int maxdbstrlen, const int z, const int Z, const float p, const double E, const int argc, const char** argv);
+  void PrintHitList(HMM* q, char* outfile, const unsigned int maxdbstrlen, const int z, const int Z, const float p, const double E, const int argc, const char** argv);
 
   // Print alignments of query sequences against hit sequences 
   void PrintAlignments(HMM* q, char* outfile, const char showconf, const char showcons,
@@ -53,11 +53,11 @@ public:
   void PrintHHR(HMM* q, char* outfile, const unsigned int maxdbstrlen,
 			const char showconf, const char showcons, const char showdssp, const char showpred,
 			const int b, const int B, const int z, const int Z, const int aliwidth, const int nseqdis,
-			const float p, const double E, const int argc, char** argv, const float S[20][20], const int maxseq);
+			const float p, const double E, const int argc, const char** argv, const float S[20][20], const int maxseq);
   void PrintHHR(HMM* q, std::stringstream& out, const unsigned int maxdbstrlen,
 			const char showconf, const char showcons, const char showdssp, const char showpred,
 			const int b, const int B, const int z, const int Z, const int aliwidth, const int nseqdis,
-			const float p, const double E, const int argc, char** argv, const float S[20][20], const int maxseq);
+			const float p, const double E, const int argc, const char** argv, const float S[20][20], const int maxseq);
 
   // Print score distribution into file score_dist
   void PrintScoreFile(HMM* q, char* outputfile);

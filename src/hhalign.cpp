@@ -202,10 +202,7 @@ void HHalign::help(Parameters& par, char all) {
 /////////////////////////////////////////////////////////////////////////////////////
 //// Processing input options from command line
 /////////////////////////////////////////////////////////////////////////////////////
-void HHalign::ProcessAllArguments(int argc, char** argv, Parameters& par) {
-  par.argv = argv;
-  par.argc = argc;
-
+void HHalign::ProcessAllArguments(Parameters& par) {
   par.tfiles.resize(0);
   strcpy(par.alnfile, "");
   par.p = 0.0; // minimum threshold for inclusion in hit list and alignment listing
@@ -221,7 +218,7 @@ void HHalign::ProcessAllArguments(int argc, char** argv, Parameters& par) {
 
   par.num_rounds = 1;
 
-  ProcessArguments(argc, argv, par);
+  ProcessArguments(par);
 
   // Check needed files
   // Check command line input and default values
@@ -254,7 +251,10 @@ void HHalign::ProcessAllArguments(int argc, char** argv, Parameters& par) {
     par.mact = 0.0;
 }
 
-void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
+void HHalign::ProcessArguments(Parameters& par) {
+  const int argc = par.argc;
+  const char** argv = par.argv;
+
   for (int i = 1; i < argc; i++) {
     HH_LOG(DEBUG1) << i << "  " << argv[i] << std::endl;
     if (!strcmp(argv[i], "-i")) {

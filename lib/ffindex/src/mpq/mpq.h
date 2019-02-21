@@ -53,7 +53,7 @@ enum {
 
 typedef void (*MPQ_Payload_t) (void* pEnv, const size_t start, const size_t end);
 
-int MPQ_Init (int argc, char** argv, const size_t num_jobs);
+int MPQ_Init (int argc, const char** argv, const size_t num_jobs);
 
 void MPQ_Master (const size_t split_size);
 void MPQ_Worker (MPQ_Payload_t payload, void* env);

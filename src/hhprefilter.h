@@ -8,6 +8,7 @@
 #ifndef HHPREFILTER_H_
 #define HHPREFILTER_H_
 
+#include <sstream>
 #include <vector>
 #ifdef OPENMP
 #include <omp.h>
@@ -17,7 +18,6 @@
 #include "hash.h"
 #include "hhhit.h"
 #include "simd.h"
-#include "sstream"
 #include "ffindexdatabase.h"
 
 //////////////////////////////////////////////////////////////////////////////////////////

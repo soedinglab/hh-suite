@@ -77,9 +77,9 @@ void makeOutputFFIndex(char* par, void (*print)(HHblits&, std::stringstream&),
   }
 }
 
-int main(int argc, char **argv) {
-  Parameters par;
-  HHblits::ProcessAllArguments(argc, argv, par);
+int main(int argc, const char **argv) {
+  Parameters par(argc, argv);
+  HHblits::ProcessAllArguments(par);
 
   char data_filename[NAMELEN];
   char index_filename[NAMELEN];

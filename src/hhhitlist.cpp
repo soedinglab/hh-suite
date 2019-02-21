@@ -14,7 +14,7 @@
 /////////////////////////////////////////////////////////////////////////////////////
 void HitList::PrintHitList(HMM* q, std::stringstream& out,
     const unsigned int maxdbstrlen, const int z, const int Z, const float p,
-    const double E, const int argc, char** argv) {
+    const double E, const int argc, const char** argv) {
   int nhits = 0;
 
   out << "Query         " << q->longname << std::endl;
@@ -97,7 +97,7 @@ void HitList::PrintHitList(HMM* q, std::stringstream& out,
 
 void HitList::PrintHitList(HMM* q, char* outfile,
     const unsigned int maxdbstrlen, const int z, const int Z, const float p,
-    const double E, const int argc, char** argv) {
+    const double E, const int argc, const char** argv) {
   std::stringstream out;
   PrintHitList(q, out, maxdbstrlen, z, Z, p, E, argc, argv);
 
@@ -119,7 +119,7 @@ void HitList::PrintHHR(HMM* q, char* outfile, const unsigned int maxdbstrlen,
     const char showconf, const char showcons, const char showdssp,
     const char showpred, const int b, const int B, const int z, const int Z,
     const int aliwidth, const int nseqdis, const float p, const double E,
-    const int argc, char** argv, const float S[20][20], const int maxseq) {
+    const int argc, const char** argv, const float S[20][20], const int maxseq) {
   std::stringstream out;
   PrintHHR(q, out, maxdbstrlen, showconf, showcons, showdssp, showpred, b, B, z, Z, aliwidth, nseqdis, p, E, argc, argv, S, maxseq);
 
@@ -141,7 +141,7 @@ void HitList::PrintHHR(HMM* q, std::stringstream& out,
     const unsigned int maxdbstrlen, const char showconf, const char showcons,
     const char showdssp, const char showpred, const int b, const int B,
     const int z, const int Z, const int aliwidth, const int nseqdis,
-    const float p, const double E, const int argc, char** argv,
+    const float p, const double E, const int argc, const char** argv,
     const float S[20][20], const int maxseq) {
   PrintHitList(q, out, maxdbstrlen, z, Z, p, E, argc, argv);
   PrintAlignments(q, out, showconf, showcons, showdssp, showpred, p, aliwidth, nseqdis, b, B, E, S, maxseq, 0);

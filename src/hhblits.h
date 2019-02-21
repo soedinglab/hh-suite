@@ -78,7 +78,7 @@ public:
 
   void Reset();
 
-  static void ProcessAllArguments(int argc, char** argv, Parameters& par);
+  static void ProcessAllArguments(Parameters& par);
 
   //print methods for hhalign and hhblits
   void printHitList();
@@ -127,7 +127,7 @@ protected:
 	float S37[NSSPRED][MAXCF][NDSSP];
 	float S33[NSSPRED][MAXCF][NSSPRED][MAXCF];
 
-	Parameters par;
+	Parameters& par;
 
 	cs::ContextLibrary<cs::AA>* context_lib;
 	cs::Crf<cs::AA>* crf;
@@ -162,7 +162,7 @@ protected:
 
 private:
 	static void help(Parameters& par, char all = 0);
-	static void ProcessArguments(int argc, char** argv, Parameters& par);
+	static void ProcessArguments(Parameters& par);
 	void RescoreWithViterbiKeepAlignment(HMMSimd& q_vec, Hash<Hit>* previous_hits);
 };
 

@@ -31,39 +31,16 @@
 #include "hhalignment.h" // class Alignment
 #include "hhhalfalignment.h" // class HalfAlignment
 #include "hhfunc.h"      // some functions common to hh programs
-/////////////////////////////////////////////////////////////////////////////////////
-// Global variables
-/////////////////////////////////////////////////////////////////////////////////////
-Parameters par;
 
-cs::ContextLibrary<cs::AA>* context_lib = NULL;
-cs::Crf<cs::AA>* crf = NULL;
-cs::Pseudocounts<cs::AA>* pc_hhm_context_engine = NULL;
-cs::Admix* pc_hhm_context_mode = NULL;
-cs::Pseudocounts<cs::AA>* pc_prefilter_context_engine = NULL;
-cs::Admix* pc_prefilter_context_mode = NULL;
-
-// substitution matrix flavours
-float __attribute__((aligned(16))) P[20][20];
-float __attribute__((aligned(16))) R[20][20];
-float __attribute__((aligned(16))) Sim[20][20];
-float __attribute__((aligned(16))) S[20][20];
-float __attribute__((aligned(16))) pb[21];
-
-char program_name[NAMELEN];
-
-/////////////////////////////////////////////////////////////////////////////////////
 // Help functions
-/////////////////////////////////////////////////////////////////////////////////////
-void help() {
+void help(Parameters& par) {
   printf("\n");
   printf("HHconsensus %i.%i.%i\n", HHSUITE_VERSION_MAJOR, HHSUITE_VERSION_MINOR, HHSUITE_VERSION_PATCH);
   printf("Calculate the consensus sequence for an A3M/FASTA input file.   \n");
   printf("%s", COPYRIGHT);
   printf("%s", REFERENCE);
   printf("\n");
-  printf("Usage: %s -i <file> [options]                           \n",
-      program_name);
+  printf("Usage: %s -i <file> [options]                           \n", par.program_name);
   printf(
       " -i <file>     query alignment (A2M, A3M, or FASTA), or query HMM          \n");
   printf("\n");
@@ -115,20 +92,23 @@ void help() {
       " -maxres <int> max number of HMM columns (def=%5i)                           \n",
             par.maxres);
   printf("\n");
-  printf("Example: %s -i stdin -s stdout\n", program_name);
+  printf("Example: %s -i stdin -s stdout\n", par.program_name);
   printf("\n");
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
 //// Processing input options from command line
 /////////////////////////////////////////////////////////////////////////////////////
-void ProcessArguments(int argc, char** argv) {
+void ProcessArguments(Parameters& par) {
+  const int argc = par.argc;
+  const char** argv = par.argv;
+
   // Read command line options
   for (int i = 1; i <= argc - 1; i++) {
     HH_LOG(DEBUG1) << i << "  " << argv[i] << std::endl;
     if (!strcmp(argv[i], "-i")) {
       if (++i >= argc || argv[i][0] == '-') {
-        help();
+        help(par);
         HH_LOG(ERROR) << "No input file following -i" << std::endl;
         exit(4);
       }
@@ -137,7 +117,7 @@ void ProcessArguments(int argc, char** argv) {
     }
     else if (!strcmp(argv[i], "-s")) {
       if (++i >= argc) {
-        help();
+        help(par);
         HH_LOG(ERROR) << "No output file following -s" << std::endl;
         exit(4);
       }
@@ -147,7 +127,7 @@ void ProcessArguments(int argc, char** argv) {
     else if (!strcmp(argv[i], "-o")) {
       par.outformat = 3;
       if (++i >= argc) {
-        help();
+        help(par);
         HH_LOG(ERROR) << "No output file following -o" << std::endl;
         exit(4);
       }
@@ -157,7 +137,7 @@ void ProcessArguments(int argc, char** argv) {
     else if (!strcmp(argv[i], "-ofas")) {
       par.outformat = 1;
       if (++i >= argc || argv[i][0] == '-') {
-        help();
+        help(par);
         HH_LOG(ERROR) << "No output file following -o" << std::endl;
         exit(4);
       }
@@ -167,7 +147,7 @@ void ProcessArguments(int argc, char** argv) {
     else if (!strcmp(argv[i], "-oa2m")) {
       par.outformat = 2;
       if (++i >= argc || argv[i][0] == '-') {
-        help();
+        help(par);
         HH_LOG(ERROR) << "No output file following -o" << std::endl;
         exit(4);
       }
@@ -177,7 +157,7 @@ void ProcessArguments(int argc, char** argv) {
     else if (!strcmp(argv[i], "-oa3m")) {
       par.outformat = 3;
       if (++i >= argc || argv[i][0] == '-') {
-        help();
+        help(par);
         HH_LOG(ERROR) << "No output file following -o" << std::endl;
         exit(4);
       }
@@ -185,7 +165,7 @@ void ProcessArguments(int argc, char** argv) {
         strcpy(par.alnfile, argv[i]);
     }
     else if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help")) {
-      help();
+      help(par);
       exit(0);
     }
     else if (!strcmp(argv[i], "-v") && (i < argc - 1) && argv[i + 1][0] != '-') {
@@ -272,7 +252,7 @@ void ProcessArguments(int argc, char** argv) {
       par.csw = atof(argv[++i]);
     else if (!strcmp(argv[i], "-cs")) {
       if (++i >= argc || argv[i][0] == '-') {
-        help();
+        help(par);
         HH_LOG(ERROR) << "No query file following -cs" << std::endl;
         exit(4);
       }
@@ -294,7 +274,9 @@ void ProcessArguments(int argc, char** argv) {
 /////////////////////////////////////////////////////////////////////////////////////
 //// MAIN PROGRAM
 /////////////////////////////////////////////////////////////////////////////////////
-int main(int argc, char **argv) {
+int main(int argc, const char **argv) {
+  Parameters par(argc, argv);
+
   strcpy(par.infile, "");
   strcpy(par.outfile, "");
   strcpy(par.alnfile, "");
@@ -310,12 +292,7 @@ int main(int argc, char **argv) {
   par.pc_hhm_nocontext_a = 0.0;  // no amino acid pseudocounts
   par.gapb = 0.0; // no transition pseudocounts
 
-  // Make command line input globally available
-  par.argv = argv;
-  par.argc = argc;
-  RemovePathAndExtension(program_name, argv[0]);
-
-  ProcessArguments(argc, argv);
+  ProcessArguments(par);
 
   Alignment* qali = new Alignment(par.maxseq, par.maxres);
   HMM* q = new HMM(MAXSEQDIS, par.maxres);        //Create a HMM with maximum of par.maxres match states
@@ -330,7 +307,7 @@ int main(int argc, char **argv) {
 
   // Check command line input and default values
   if (!*par.infile) {
-    help();
+    help(par);
     HH_LOG(ERROR) << "Input file is missing!" << std::endl;
     exit(4);
   }
@@ -344,12 +321,26 @@ int main(int argc, char **argv) {
     strcat(par.outfile, ".seq");
   }
 
+  cs::ContextLibrary<cs::AA>* context_lib = NULL;
+  cs::Crf<cs::AA>* crf = NULL;
+  cs::Pseudocounts<cs::AA>* pc_hhm_context_engine = NULL;
+  cs::Admix* pc_hhm_context_mode = NULL;
+  cs::Pseudocounts<cs::AA>* pc_prefilter_context_engine = NULL;
+  cs::Admix* pc_prefilter_context_mode = NULL;
+
   // Prepare CS pseudocounts lib
   if (!par.nocontxt) {
     InitializePseudocountsEngine(par, context_lib, crf, pc_hhm_context_engine,
         pc_hhm_context_mode, pc_prefilter_context_engine,
         pc_prefilter_context_mode);
   }
+
+  // substitution matrix flavours
+  float __attribute__((aligned(16))) P[20][20];
+  float __attribute__((aligned(16))) R[20][20];
+  float __attribute__((aligned(16))) Sim[20][20];
+  float __attribute__((aligned(16))) S[20][20];
+  float __attribute__((aligned(16))) pb[21];
 
   // Set substitution matrix; adjust to query aa distribution if par.pcm==3
   SetSubstitutionMatrix(par.matrix, pb, P, R, S, Sim);

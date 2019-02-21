@@ -132,14 +132,14 @@ void static payload(void *env, const size_t start, const size_t end) {
     hhblits_wrapper->Payload(start, end);
 }
 
-int main(int argc, char **argv) {
-    Parameters par;
+int main(int argc, const char **argv) {
+    Parameters par(argc, argv);
 #ifdef HHSEARCH
-    HHsearch::ProcessAllArguments(argc, argv, par);
+    HHsearch::ProcessAllArguments(par);
 #elif HHALIGN
-    HHalign::ProcessAllArguments(argc, argv, par);
+    HHalign::ProcessAllArguments(par);
 #else
-    HHblits::ProcessAllArguments(argc, argv, par);
+    HHblits::ProcessAllArguments(par);
 #endif
 
     // hhblits_mpi will be parallelized with openmpi, no other parallelization

@@ -664,8 +664,9 @@ inline char* RemoveExtension(char outname[], char filename[]) {
   return outname;
 }
 
-inline char* RemovePathAndExtension(char outname[], char filename[]) {
-  char *ptr, *ptr1;
+inline char* RemovePathAndExtension(char outname[], const char* filename) {
+  const char *ptr;
+  char *ptr1;
 #ifdef WINDOWS
   ptr=strrchr(filename,92);  //return adress for LAST \ (backslash) in name
 #else

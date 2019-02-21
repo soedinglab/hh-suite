@@ -18,12 +18,12 @@ enum {
     MSG_FINISHED
 };
 
-int MPQ_Init(int argc, char **argv, const size_t num_jobs) {
+int MPQ_Init(int argc, const char **argv, const size_t num_jobs) {
     if (MPQ_is_init == 1) {
         return MPQ_ERROR_REINIT;
     }
 
-    MPI_Init(&argc, &argv);
+    MPI_Init(&argc, (char***)&argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &MPQ_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &MPQ_size);
 

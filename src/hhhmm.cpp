@@ -2139,7 +2139,7 @@ void HMM::IncludeNullModelInHMM(HMM* q, HMM* t, int columnscore,
 
 void HMM::WriteToFile(char* outfile, const char append, const int max_seqid,
 		const int coverage, const int qid, const int Ndiff, const float qsc,
-		const int argc, char** argv, const float* pb) {
+		const int argc, const char** argv, const float* pb) {
 	std::stringstream out;
 	WriteToFile(out, max_seqid, coverage, qid, Ndiff, qsc, argc, argv, pb);
 
@@ -2166,7 +2166,7 @@ void HMM::WriteToFile(char* outfile, const char append, const int max_seqid,
 /////////////////////////////////////////////////////////////////////////////////////
 void HMM::WriteToFile(std::stringstream& out, const int max_seqid,
 		const int coverage, const int qid, const int Ndiff, const float qsc,
-		const int argc, char** argv, const float* pb) {
+		const int argc, const char** argv, const float* pb) {
 	const int SEQLEN = 100; // number of residues per line for sequences to be displayed
 	char line[LINELEN];
 

@@ -62,7 +62,7 @@ namespace cs {
         index_filename_out[0] = this->opts_.outfile + ".ffindex";
       }
 
-      int mpq_status = MPQ_Init(this->argc_, this->argv_, input.db_index->n_entries);
+      int mpq_status = MPQ_Init(this->argc_, (const char**) this->argv_, input.db_index->n_entries);
       if (mpq_status == MPQ_SUCCESS) {
         if (MPQ_rank == MPQ_MASTER) {
           MPQ_Master(1);

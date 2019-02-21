@@ -4,7 +4,6 @@
 #include "hhhmmsimd.h"
 #include "hhviterbimatrix.h"
 #include "hhviterbi.h"
-#include "hhhitlist.h"
 #include "hhfunc.h"
 #include <vector>
 #include <map>
@@ -13,7 +12,6 @@ class ViterbiConsumerThread
 {
 	int thread_id;
 	Viterbi * viterbiAlgo;
-	Parameters par;
 	HMMSimd* q_simd;
 	HMMSimd* t_hmm_simd;
 	ViterbiMatrix* viterbiMatrix;
@@ -26,7 +24,6 @@ public:
 			HMMSimd* t_hmm_simd, ViterbiMatrix* pviterbiMatrix, const int ssm_mode, const float S73[NDSSP][NSSPRED][MAXCF],
 			const float S33[NSSPRED][MAXCF][NSSPRED][MAXCF], const float S37[NSSPRED][MAXCF][NDSSP]) :
 			thread_id(pthread_id),
-			par(par),
 			q_simd(q_simd),
 			t_hmm_simd(t_hmm_simd),
 			viterbiMatrix(pviterbiMatrix),
