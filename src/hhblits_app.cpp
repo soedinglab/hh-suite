@@ -53,6 +53,7 @@
  */
 
 #include "hhsearch.h"
+#include "hhalign.h"
 
 void checkOutput(Parameters& par) {
   if (!*par.outfile) {
@@ -66,6 +67,8 @@ int main(int argc, char **argv) {
   Parameters par;
 #ifdef HHSEARCH
   HHsearch::ProcessAllArguments(argc, argv, par);
+#elif HHALIGN
+  HHalign::ProcessAllArguments(argc, argv, par);
 #else
   HHblits::ProcessAllArguments(argc, argv, par);
 #endif
@@ -74,6 +77,7 @@ int main(int argc, char **argv) {
   std::vector<HHblitsDatabase*> databases;
 #ifdef HHSEARCH
   HHsearch::prepareDatabases(par, databases);
+#elif HHALIGN
 #else
   HHblits::prepareDatabases(par, databases);
 #endif

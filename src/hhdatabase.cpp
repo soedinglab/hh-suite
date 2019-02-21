@@ -291,8 +291,7 @@ bool HHblitsDatabase::checkAndBuildCompressedDatabase(const char* base) {
   return use_compressed;
 }
 
-HHEntry::HHEntry(int sequence_length) {
-  this->sequence_length = sequence_length;
+HHEntry::HHEntry(int sequence_length) : sequence_length(sequence_length) {
 }
 
 HHEntry::~HHEntry() {

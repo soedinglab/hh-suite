@@ -6,6 +6,7 @@
  */
 
 #include "hhsearch.h"
+#include "hhalign.h"
 
 #ifdef OPENMP
 #include <omp.h>
@@ -80,6 +81,8 @@ int main(int argc, char **argv) {
     Parameters par;
 #ifdef HHSEARCH
     HHsearch::ProcessAllArguments(argc, argv, par);
+#elif HHALIGN
+    HHalign::ProcessAllArguments(argc, argv, par);
 #else
     HHblits::ProcessAllArguments(argc, argv, par);
 #endif
@@ -96,6 +99,7 @@ int main(int argc, char **argv) {
     std::vector<HHblitsDatabase*> databases;
 #ifdef HHSEARCH
     HHsearch::prepareDatabases(par, databases);
+#elif HHALIGN
 #else
     HHblits::prepareDatabases(par, databases);
 #endif
@@ -119,7 +123,14 @@ int main(int argc, char **argv) {
     size_t range_end = reader.db_index->n_entries;
 #pragma omp parallel num_threads(threads)
     {
-        HHblits hhblits_runner(par, databases);
+#ifdef HHSEARCH
+        HHblits app(par, databases);
+#elif HHALIGN
+        HHalign app(par);
+#else
+        HHblits app(par, databases);
+#endif
+
         int bin = 0;
 #ifdef OPENMP
         bin = omp_get_thread_num();
@@ -141,16 +152,16 @@ int main(int argc, char **argv) {
             }
 
             HH_LOG(INFO) << "Thread " << bin << "\t" << entry->name << std::endl;
-            hhblits_runner.run(inf, entry->name);
+            app.run(inf, entry->name);
 
 #pragma omp critical
             {
                 for (size_t i = 0; i < outputDatabases.size(); ++i) {
-                    outputDatabases[i].saveOutput(hhblits_runner, entry->name);
+                    outputDatabases[i].saveOutput(app, entry->name);
                 }
             }
 
-            hhblits_runner.Reset();
+            app.Reset();
         }
     }
 

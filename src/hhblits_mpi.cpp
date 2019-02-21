@@ -6,6 +6,7 @@
  */
 
 #include "hhsearch.h"
+#include "hhalign.h"
 
 #include <mpi.h>
 
@@ -135,6 +136,8 @@ int main(int argc, char **argv) {
     Parameters par;
 #ifdef HHSEARCH
     HHsearch::ProcessAllArguments(argc, argv, par);
+#elif HHALIGN
+    HHalign::ProcessAllArguments(argc, argv, par);
 #else
     HHblits::ProcessAllArguments(argc, argv, par);
 #endif
@@ -183,12 +186,15 @@ int main(int argc, char **argv) {
             std::vector<HHblitsDatabase*> databases;
 #ifdef HHSEARCH
             HHsearch::prepareDatabases(par, databases);
+            HHblits app(par, databases);
+#elif HHalign
+            HHalign app(par);
 #else
             HHblits::prepareDatabases(par, databases);
+            HHblits app(par, databases);
 #endif
 
-            HHblits hhblits(par, databases);
-            HHblits_MPQ_Wrapper wrapper(reader.db_data, reader.db_index, hhblits, outputDatabases);
+            HHblits_MPQ_Wrapper wrapper(reader.db_data, reader.db_index, app, outputDatabases);
             MPQ_Worker(payload, &wrapper);
 
             for (size_t i = 0; i < outputDatabases.size(); i++) {

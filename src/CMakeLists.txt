@@ -131,8 +131,9 @@ add_executable(hhsearch hhblits_app.cpp)
 target_link_libraries(hhsearch HH_OBJECTS)
 set_property(TARGET hhsearch PROPERTY COMPILE_FLAGS "-DHHSEARCH=1")
 
-add_executable(hhalign hhalign_app.cpp)
+add_executable(hhalign hhblits_app.cpp)
 target_link_libraries(hhalign HH_OBJECTS)
+set_property(TARGET hhalign PROPERTY COMPILE_FLAGS "-DHHALIGN=1")
 
 add_executable(hhconsensus hhconsensus.cpp)
 target_link_libraries(hhconsensus HH_OBJECTS)
@@ -181,10 +182,14 @@ if (OPENMP_FOUND)
     target_link_libraries(hhsearch_omp HH_OBJECTS)
     set_property(TARGET hhsearch_omp PROPERTY COMPILE_FLAGS "-DHHSEARCH=1")
 
+    add_executable(hhalign_omp hhblits_omp.cpp)
+    target_link_libraries(hhalign_omp HH_OBJECTS)
+    set_property(TARGET hhalign_omp PROPERTY COMPILE_FLAGS "-DHHALIGN=1")
+
     add_executable(hhblits_ca3m hhblits_ca3m.cpp)
     target_link_libraries (hhblits_ca3m HH_OBJECTS)
 
-    INSTALL(TARGETS hhblits_omp hhsearch_omp hhblits_ca3m DESTINATION bin)
+    INSTALL(TARGETS hhblits_omp hhsearch_omp hhalign_omp hhblits_ca3m DESTINATION bin)
 endif ()
 
 find_package(MPI QUIET)
@@ -201,10 +206,15 @@ if (MPI_CXX_FOUND)
     set_target_properties(hhsearch_mpi PROPERTIES COMPILE_FLAGS "${MPI_CXX_COMPILE_FLAGS} -DHHSEARCH=1")
     set_target_properties(hhsearch_mpi PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
 
+    add_executable(hhalign_mpi hhblits_mpi.cpp)
+    target_link_libraries(hhalign_mpi HH_OBJECTS mpq ${MPI_CXX_LIBRARIES})
+    set_target_properties(hhalign_mpi PROPERTIES COMPILE_FLAGS "${MPI_CXX_COMPILE_FLAGS} -DHHALIGN=1")
+    set_target_properties(hhalign_mpi PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
+
     add_executable(cstranslate_mpi cs/cstranslate_mpi_app.cc)
     target_link_libraries(cstranslate_mpi HH_OBJECTS A3M_COMPRESS mpq ${MPI_CXX_LIBRARIES})
     set_target_properties(cstranslate_mpi PROPERTIES COMPILE_FLAGS "${MPI_CXX_COMPILE_FLAGS}")
     set_target_properties(cstranslate_mpi PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
 
-    install(TARGETS hhblits_mpi cstranslate_mpi DESTINATION bin)
+    install(TARGETS hhblits_mpi hhsearch_mpi hhalign_mpi cstranslate_mpi DESTINATION bin)
 endif ()
