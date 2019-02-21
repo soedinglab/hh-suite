@@ -32,7 +32,8 @@
 #include "a3m_compress.h"
 #include "ffindexdatabase.h"
 
-#include "context_data.crf.h"
+#include "context_data.lib.h"
+//include "context_data.crf.h"
 #include "cs219.lib.h"
 
 #ifdef OPENMP
@@ -440,8 +441,10 @@ namespace cs {
       std::string engine;
       FILE *fin;
       if (opts_.modelfile == "internal") {
-        fin = fmemopen((void*)context_data_crf, context_data_crf_len, "r");
-        engine = "crf";
+//        fin = fmemopen((void*)context_data_crf, context_data_crf_len, "r");
+//        engine = "crf";
+          fin = fmemopen((void*)context_data_lib, context_data_lib_len, "r");
+          engine = "lib";
       } else {
         fin = fopen(opts_.modelfile.c_str(), "r");
         engine = GetFileExt(opts_.modelfile);

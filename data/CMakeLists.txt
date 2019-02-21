@@ -13,6 +13,7 @@ INSTALL(FILES
 include(ResourceCompiler)
 set(COMPILED_RESOURCES
         context_data.crf
+        context_data.lib
         cs219.lib
         )
 
