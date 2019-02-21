@@ -15,11 +15,11 @@ Please add your name here if you distribute modified versions.
 * Martin Steinegger <martin.steinegger@mpibpc.mpg.de>
 * Markus Meier <markus.meier@mpibpc.mpg.de>
 
-FFindex is provided under the Create Commons license "Attribution-ShareAlike 3.0",
+FFindex is provided under the Create Commons license "Attribution-ShareAlike 4.0",
 which basically captures the spirit of the Gnu Public License (GPL).
 
 See:
-http://creativecommons.org/licenses/by-sa/3.0/
+http://creativecommons.org/licenses/by-sa/4.0/
 
 ## Thanks
 

@@ -4,10 +4,10 @@
  * Please add your name here if you distribute modified versions.
  * 
  * Ffindex is provided under the Create Commons license "Attribution-ShareAlike
- * 3.0", which basically captures the spirit of the Gnu Public License (GPL).
+ * 4.0", which basically captures the spirit of the Gnu Public License (GPL).
  * 
  * See:
- * http://creativecommons.org/licenses/by-sa/3.0/
+ * http://creativecommons.org/licenses/by-sa/4.0/
 */
 
 #define _GNU_SOURCE 1
