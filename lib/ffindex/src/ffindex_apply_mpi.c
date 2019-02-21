@@ -21,6 +21,7 @@
 #include <limits.h> // PIPE_BUF
 #include <stdlib.h> // EXIT_*, system, malloc, free
 #include <unistd.h> // pipe, fork, close, dup2, execvp, write, read, opt*
+#include <stdint.h>
 
 #include <sys/time.h>
 #include <sys/wait.h>
@@ -168,7 +169,7 @@ ffindex_apply_by_entry(char *data, ffindex_entry_t *entry, char *program_name, c
             struct timeval tv;
             gettimeofday(&tv, NULL);
             int64_t end = (tv.tv_sec) * 1000LL + (tv.tv_usec) / 1000;
-            fprintf(log_file_out, "%s\t%ld\t%ld\t%ld\t%d\n", entry->name, entry->offset, entry->length, end - start, WEXITSTATUS(status));
+            fprintf(log_file_out, "%s\t%ld\t%ld\t%lld\t%d\n", entry->name, entry->offset, entry->length, end - start, WEXITSTATUS(status));
         }
     }
 

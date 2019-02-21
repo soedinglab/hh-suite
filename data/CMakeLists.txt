@@ -11,7 +11,6 @@ INSTALL(FILES
         )
 
 include(ResourceCompiler)
-
 set(COMPILED_RESOURCES
         context_data.crf
         cs219.lib

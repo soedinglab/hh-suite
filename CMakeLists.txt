@@ -40,13 +40,7 @@ set(CPACK_SOURCE_IGNORE_FILES
         "^${PROJECT_SOURCE_DIR}/.git/"
         "^${PROJECT_SOURCE_DIR}/.gitignore"
         "^${PROJECT_SOURCE_DIR}/.gitattributes"
-        "^${PROJECT_SOURCE_DIR}/.gitmodules"
-        "^${PROJECT_SOURCE_DIR}/.pydevproject"
-        "^${PROJECT_SOURCE_DIR}/.project"
-        "^${PROJECT_SOURCE_DIR}/.cproject"
         "^${PROJECT_SOURCE_DIR}/lib/ffindex/.git"
-        "^${PROJECT_SOURCE_DIR}/.autotools"
-        "^${PROJECT_SOURCE_DIR}/README.md"
         )
 
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")

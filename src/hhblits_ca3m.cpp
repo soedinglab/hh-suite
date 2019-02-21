@@ -77,16 +77,6 @@ void makeOutputFFIndex(char* par, void (*print)(HHblits&, std::stringstream&),
   }
 }
 
-
-void checkOutput(Parameters& par) {
-  if (!*par.outfile) {
-    RemoveExtension(par.outfile, par.infile);
-    strcat(par.outfile, "_hhr");
-    HH_LOG(INFO) << "Search results will be written to " << par.outfile << "!\n";
-  }
-}
-
-
 int main(int argc, char **argv) {
   Parameters par;
   HHblits::ProcessAllArguments(argc, argv, par);

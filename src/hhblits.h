@@ -28,10 +28,6 @@
 #include <omp.h>
 #endif
 
-#ifdef SSE
-#include <emmintrin.h>
-#endif
-
 #include <sys/time.h>
 
 extern "C" {
@@ -62,8 +58,6 @@ extern "C" {
 #include "hhdatabase.h"
 
 #include "hhprefilter.h"
-
-class HHblits;
 
 #include "log.h"
 #include "simd.h"
@@ -115,8 +109,8 @@ public:
 
   static void prepareDatabases(Parameters& par, std::vector<HHblitsDatabase*>& databases);
 
-	void run(FILE* query_fh, char* query_path);
-    void run(ffindex_entry_t* entry, char* data,
+  virtual void run(FILE* query_fh, char* query_path);
+  void run(ffindex_entry_t* entry, char* data,
       ffindex_index_t* sequence_index, char* seq,
       ffindex_index_t* header_index, char* header);
 

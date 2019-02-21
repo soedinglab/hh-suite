@@ -169,9 +169,10 @@ void ProcessArguments(int argc, char** argv) {
     }
     else if (!strcmp(argv[i], "-maxseq") && (i < argc - 1))
       par.maxseq = atoi(argv[++i]);
-    else if (!strcmp(argv[i], "-maxres") && (i < argc - 1))
-      par.maxres = par.maxcol = atoi(argv[++i]);
-    else if (!strcmp(argv[i], "-id") && (i < argc - 1))
+    else if (!strcmp(argv[i], "-maxres") && (i < argc - 1)) {
+      par.maxres = atoi(argv[++i]);
+      par.maxcol = par.maxres * 2;
+    } else if (!strcmp(argv[i], "-id") && (i < argc - 1))
       par.max_seqid = atoi(argv[++i]);
     else if (!strcmp(argv[i], "-qid") && (i < argc - 1))
       par.qid = atoi(argv[++i]);

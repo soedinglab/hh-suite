@@ -501,6 +501,8 @@ void HHsearch::ProcessArguments(int argc, char** argv, Parameters& par) {
 			par.columnscore = 5;
 			par.half_window_size_local_aa_bg_freqs = imax(1, atoi(argv[++i]));
 		}
+		else if (!strcmp(argv[i], "-maxseq") && (i < argc - 1))
+			par.maxseq = atoi(argv[++i]);
 		else if (!strcmp(argv[i], "-maxres") && (i < argc - 1)) {
 			par.maxres = atoi(argv[++i]);
 			par.maxcol = 2 * par.maxres;

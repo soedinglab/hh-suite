@@ -30,8 +30,9 @@
 #include "hhalign.h"
 #include "hhsuite_config.h"
 
-HHalign::HHalign(Parameters& par, std::vector<HHblitsDatabase*>& databases) :
-        HHblits(par, databases) {
+std::vector<HHblitsDatabase*> empty;
+HHalign::HHalign(Parameters& par) : HHblits(par, empty), tfiles(par.tfiles) {
+
 }
 
 HHalign::~HHalign() {
@@ -536,6 +537,8 @@ void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
     }
     else if (!strcmp(argv[i], "-sc") && (i < argc - 1))
       par.columnscore = atoi(argv[++i]);
+    else if (!strcmp(argv[i], "-maxseq") && (i < argc - 1))
+      par.maxseq = atoi(argv[++i]);
     else if (!strcmp(argv[i], "-maxres") && (i < argc - 1)) {
       par.maxres = atoi(argv[++i]);
       par.maxcol = 2 * par.maxres;
@@ -592,11 +595,11 @@ void HHalign::ProcessArguments(int argc, char** argv, Parameters& par) {
   } // end of for-loop for command line input
 }
 
-void HHalign::run(FILE* query_fh, char* query_path, std::vector<std::string>& template_paths) {
+void HHalign::run(FILE* query_fh, char* query_path) {
   HH_LOG(DEBUG) << "Query file : " << query_path << "\n";
   HH_LOG(DEBUG) << "Template files:";
-  for (size_t i = 0; i < template_paths.size(); ++i) {
-    HH_LOG(DEBUG) << " " << template_paths[i];
+  for (size_t i = 0; i < tfiles.size(); ++i) {
+    HH_LOG(DEBUG) << " " << tfiles[i];
   }
   HH_LOG(DEBUG) << "\n";
 
@@ -628,8 +631,8 @@ void HHalign::run(FILE* query_fh, char* query_path, std::vector<std::string>& te
     q->NeutralizeTags(pb);
 
   std::vector<HHEntry*> new_entries;
-  for (size_t i = 0; i < template_paths.size(); i++) {
-    HHEntry* template_entry = new HHFileEntry(template_paths[i].c_str(), par.maxres);
+  for (size_t i = 0; i < tfiles.size(); i++) {
+    HHEntry* template_entry = new HHFileEntry(tfiles[i].c_str(), par.maxres);
     new_entries.push_back(template_entry);
   }
 

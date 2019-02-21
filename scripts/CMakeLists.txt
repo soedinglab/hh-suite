@@ -1,30 +1,25 @@
 INSTALL(PROGRAMS
-	Align.pm  
-	HHPaths.pm  
-	PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
-	DESTINATION scripts
-)
-
-INSTALL(PROGRAMS 
-	addss.pl  
-	create_profile_from_hhm.pl	
-	hhmakemodel.pl	
-	hhsuitedb.py  
-	mergeali.pl
-	multithread.pl  
-	pdbfilter.pl  
-	renumberpdb.pl
-	create_profile_from_hmmer.pl	
-	pdb2fasta.pl    
-	reformat.pl   
-	splitfasta.pl
-	check_a3m.py	  
-	ffindex.py
-	a3m.py
-	get_a3m_size.py
-	pdbfilter.py
-	cif2fasta.py
-	hhmakemodel.py
-	hh_reader.py
-	DESTINATION scripts
-)
+        a3m.py
+        addss.pl
+        Align.pm
+        check_a3m.py
+        cif2fasta.py
+        create_profile_from_hhm.pl
+        create_profile_from_hmmer.pl
+        ffindex.py
+        get_a3m_size.py
+        hh_reader.py
+        hhmakemodel.pl
+        hhmakemodel.py
+        HHPaths.pm
+        hhsuitedb.py
+        mergeali.pl
+        multithread.pl
+        pdb2fasta.pl
+        pdbfilter.pl
+        pdbfilter.py
+        reformat.pl
+        renumberpdb.pl
+        splitfasta.pl
+        DESTINATION scripts
+        )

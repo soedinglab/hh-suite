@@ -737,9 +737,11 @@ void HHblits::ProcessArguments(int argc, char** argv, Parameters& par) {
       par.ssw = atof(argv[++i]);
     else if (!strcmp(argv[i], "-ssa") && (i < argc - 1))
       par.ssa = atof(argv[++i]);
-    else if (!strcmp(argv[i], "-wg")) {
+    else if (!strcmp(argv[i], "-wg"))
       par.wg = 1;
-    } else if (!strcmp(argv[i], "-maxres") && (i < argc - 1)) {
+    else if (!strcmp(argv[i], "-maxseq") && (i < argc - 1))
+        par.maxseq = atoi(argv[++i]);
+    else if (!strcmp(argv[i], "-maxres") && (i < argc - 1)) {
       par.maxres = atoi(argv[++i]);
       par.maxcol = 2 * par.maxres;
     } else if (!strncmp(argv[i], "-glob", 5)) {

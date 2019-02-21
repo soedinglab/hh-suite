@@ -1,11 +1,12 @@
 language: minimal
 
 script:
-- mkdir build
-- cd build
-- cmake .. && make
--
+  - mkdir build
+  - cd build
+  - cmake .. && make -j $(nproc --all || sysctl -n hw.ncpu)
+
 before_install:
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew link gcc@8 --force; fi
   - export CC
   - export CXX
 
@@ -31,20 +32,9 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - cmake
-            - g++-6
+            - g++-8
             - mpi-default-dev
-      env: CC=gcc-6 CXX=g++-6
-    - os: linux
-      dist: trusty
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - cmake
-            - g++-7
-            - mpi-default-dev
-      env: CC=gcc-7 CXX=g++-7
+      env: CC=gcc-8 CXX=g++-8
     - os: linux
       dist: trusty
       addons:
@@ -63,9 +53,62 @@ matrix:
         apt:
           sources:
             - ubuntu-toolchain-r-test
-            - llvm-toolchain-trusty-4.0
+            - llvm-toolchain-trusty-7
+          packages:
+            - clang-7
+            - libc++-7-dev
+            - libc++abi-7-dev
+            - mpi-default-dev
+      env: CC=clang-7 CXX=clang++-7
+    - os: linux
+      dist: trusty
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
           packages:
             - cmake
-            - clang-4.0
-            - mpi-default-dev
-      env: CC=clang-4.0 CXX=clang++-4.0
+            - gcc-4.8
+            - g++-4.8
+      env: CC=gcc-4.8 CXX=g++-4.8
+    - os: linux
+      dist: trusty
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - cmake
+            - g++-8
+      env: CC=gcc-8 CXX=g++-8
+    - os: linux
+      dist: trusty
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-precise-3.6
+          packages:
+            - cmake
+            - clang-3.6
+      env: CC=clang-3.6 CXX=clang++-3.6
+    - os: linux
+      dist: trusty
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-trusty-7
+          packages:
+            - clang-7
+            - libc++-7-dev
+            - libc++abi-7-dev
+      env: CC=clang-7 CXX=clang++-7
+    - os: osx
+      osx_image: xcode10.1
+      addons:
+        homebrew:
+          packages:
+            - cmake
+            - gcc@8
+      env: CC=gcc-8 CXX=g++-8
