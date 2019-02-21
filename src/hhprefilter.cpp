@@ -44,149 +44,144 @@ namespace hh {
       unsigned char *dbSeq, int dbLength, unsigned short gapOpen,
       unsigned short gapExtend, simd_int *pvHLoad, simd_int *pvHStore,
       simd_int *pvE, unsigned short bias) {
-    int i, j;
+      const int element_count = (VECSIZE_INT * 4);
 
-    unsigned int cmp;
-    int element_count = (VECSIZE_INT * 4);
+      uint8_t max = 0;		                     /* the max alignment score */
+      int32_t end_query = queryLength - 1;
+      int32_t end_db = -1; /* 0_based best alignment ending point; Initialized as isn't aligned -1. */
+      int32_t segLen = (queryLength + element_count-1) / element_count; /* number of segment */
+      /* array to record the largest score of each reference position */
+      simd_int *pvQueryProf = (simd_int*) querySeq;
 
-    int iter = (queryLength + (element_count - 1)) / element_count; // width of bands in query and score matrix = hochgerundetes LQ/16
+      /* Define 16 byte 0 vector. */
+      simd_int vZero = simdi32_set(0);
+      memset(pvHStore,0,segLen*sizeof(simd_int));
+      memset(pvHLoad,0,segLen*sizeof(simd_int));
+      memset(pvE,0,segLen*sizeof(simd_int));
 
-    simd_int *pv;
+      int32_t i, j;
+      /* 16 byte insertion begin vector */
+      simd_int vGapO = simdi8_set(gapOpen);
 
-    simd_int vE, vF, vH;
+      /* 16 byte insertion extension vector */
+      simd_int vGapE = simdi8_set(gapExtend);
 
-    simd_int vMaxScore;
-    simd_int vBias;
-    simd_int vGapOpen;
-    simd_int vGapExtend;
+      /* 16 byte bias vector */
+      simd_int vBias = simdi8_set(bias);
 
-    simd_int vTemp;
-    simd_int vZero;
+      simd_int vMaxScore = vZero; /* Trace the highest score of the whole SW matrix. */
+      simd_int vMaxMark = vZero; /* Trace the highest score till the previous column. */
+      simd_int vTemp;
+      int32_t edge, begin = 0, end = dbLength, step = 1;
+      //	int32_t distance = query_length * 2 / 3;
+      //	int32_t distance = query_length / 2;
+      //	int32_t distance = query_length;
 
-    simd_int *pvScore;
+      /* outer loop to process the reference sequence */
 
-    simd_int *pvQueryProf = (simd_int*) querySeq;
+      for (i = begin; i != end; i += step) {
+          simd_int e, vF = vZero, vMaxColumn = vZero; /* Initialize F value to 0.
+                                                    Any errors to vH values will be corrected in the Lazy_F loop.
+                                                    */
+          //		max16(maxColumn[i], vMaxColumn);
+          //		fprintf(stderr, "middle[%d]: %d\n", i, maxColumn[i]);
 
-    /* Load the bias to all elements of a constant */
-    vBias = simdi8_set(bias);
+          simd_int vH = pvHStore[segLen - 1];
+          vH = simdi8_shiftl (vH, 1); /* Shift the 128-bit value in vH left by 1 byte. */
+          const simd_int* vP = pvQueryProf + dbSeq[i] * segLen; /* Right part of the query_profile_byte */
+          //	int8_t* t;
+          //	int32_t ti;
+          //        fprintf(stderr, "i: %d of %d:\t ", i,segLen);
+          //for (t = (int8_t*)vP, ti = 0; ti < segLen; ++ti) fprintf(stderr, "%d\t", *t++);
+          //fprintf(stderr, "\n");
 
-    /* Load gap opening penalty to all elements of a constant */
-    vGapOpen = simdi8_set(gapOpen);
+          /* Swap the 2 H buffers. */
+          simd_int* pv = pvHLoad;
+          pvHLoad = pvHStore;
+          pvHStore = pv;
 
-    /* Load gap extension penalty to all elements of a constant */
-    vGapExtend = simdi8_set(gapExtend);
+          /* inner loop to process the query sequence */
+          for (j = 0; j < segLen; ++j) {
+              vH = simdui8_adds(vH, simdi_load(vP + j));
+              vH = simdui8_subs(vH, vBias); /* vH will be always > 0 */
+              //	max16(maxColumn[i], vH);
+              //	fprintf(stderr, "H[%d]: %d\n", i, maxColumn[i]);
+              //	int8_t* t;
+              //	int32_t ti;
+              //for (t = (int8_t*)&vH, ti = 0; ti < 16; ++ti) fprintf(stderr, "%d\t", *t++);
 
-    vMaxScore = simdi_setzero();
-    vZero = simdi_setzero();
+              /* Get max from vH, vE and vF. */
+              e = simdi_load(pvE + j);
+              vH = simdui8_max(vH, e);
+              vH = simdui8_max(vH, vF);
+              vMaxColumn = simdui8_max(vMaxColumn, vH);
 
-    /* Zero out the storage vector */
-    for (i = 0; i < iter; ++i) {
-      simdi_store(pvE + i, vMaxScore);
-      simdi_store(pvHStore + i, vMaxScore);
-    }
+              //	max16(maxColumn[i], vMaxColumn);
+              //	fprintf(stderr, "middle[%d]: %d\n", i, maxColumn[i]);
+              //	for (t = (int8_t*)&vMaxColumn, ti = 0; ti < 16; ++ti) fprintf(stderr, "%d\t", *t++);
 
-    for (i = 0; i < dbLength; ++i) {
-      /* fetch first data asap. */
-      pvScore = pvQueryProf + dbSeq[i] * iter;
+              /* Save vH values. */
+              simdi_store(pvHStore + j, vH);
 
-      /* zero out F. */
-      vF = simdi_setzero();
+              /* Update vE value. */
+              vH = simdui8_subs(vH, vGapO); /* saturation arithmetic, result >= 0 */
+              e = simdui8_subs(e, vGapE);
+              e = simdui8_max(e, vH);
+              simdi_store(pvE + j, e);
 
-      /* load the next h value */
-      vH = simdi_load(pvHStore + iter - 1);
-      vH = simdi8_shiftl(vH, 1);
+              /* Update vF value. */
+              vF = simdui8_subs(vF, vGapE);
+              vF = simdui8_max(vF, vH);
 
-      pv = pvHLoad;
-      pvHLoad = pvHStore;
-      pvHStore = pv;
+              /* Load the next vH. */
+              vH = simdi_load(pvHLoad + j);
+          }
 
-      for (j = 0; j < iter; ++j) {
-        /* load values of vF and vH from previous row (one unit up) */
-        vE = simdi_load(pvE + j);
-
-        /* add score to vH */
-        vH = simdui8_adds(vH, *(pvScore++));
-        vH = simdui8_subs(vH, vBias);
-
-        /* Update highest score encountered this far */
-        vMaxScore = simdui8_max(vMaxScore, vH);
-
-        /* get max from vH, vE and vF */
-        vH = simdui8_max(vH, vE);
-        vH = simdui8_max(vH, vF);
-
-        /* save vH values */
-        simdi_store(pvHStore + j, vH);
-
-        /* update vE value */
-        vH = simdui8_subs(vH, vGapOpen);
-        vE = simdui8_subs(vE, vGapExtend);
-        vE = simdui8_max(vE, vH);
-
-        /* update vF value */
-        vF = simdui8_subs(vF, vGapExtend);
-        vF = simdui8_max(vF, vH);
-
-        /* save vE values */
-        simdi_store(pvE + j, vE);
-
-        /* load the next h value */
-        vH = simdi_load(pvHLoad + j);
-      }
-
-      /* reset pointers to the start of the saved data */
-      j = 0;
-      vH = simdi_load(pvHStore);
-
-      /*  the computed vF value is for the given column.  since */
-      /*  we are at the end, we need to shift the vF value over */
-      /*  to the next column. */
-      vF = simdi8_shiftl(vF, 1);
-      vTemp = simdui8_subs(vH, vGapOpen);
-      vTemp = simdui8_subs(vF, vTemp);
-      vTemp = simdi8_eq(vTemp, vZero);
-      cmp = simdi8_movemask(vTemp);
-#ifdef AVX2
-      while (cmp != 0xffffffff)
-#else
-      while (cmp != 0xffff)
-#endif
-      {
-        vE = simdi_load(pvE + j);
-
-        vH = simdui8_max(vH, vF);
-
-        /* save vH values */
-        simdi_store(pvHStore + j, vH);
-
-        /*  update vE incase the new vH value would change it */
-        vH = simdui8_subs(vH, vGapOpen);
-        vE = simdui8_max(vE, vH);
-        simdi_store(pvE + j, vE);
-
-        /* update vF value */
-        vF = simdui8_subs(vF, vGapExtend);
-
-        ++j;
-        if (j >= iter) {
+          /* Lazy_F loop: has been revised to disallow adjecent insertion and then deletion, so don't update E(i, j), learn from SWPS3 */
+          /* reset pointers to the start of the saved data */
           j = 0;
-          vF = simdi8_shiftl(vF, 1);
-        }
+          vH = simdi_load (pvHStore + j);
 
-        vH = simdi_load(pvHStore + j);
+          /*  the computed vF value is for the given column.  since */
+          /*  we are at the end, we need to shift the vF value over */
+          /*  to the next column. */
+          vF = simdi8_shiftl (vF, 1);
+          vTemp = simdui8_subs (vH, vGapO);
+          vTemp = simdui8_subs (vF, vTemp);
+          vTemp = simdi8_eq (vTemp, vZero);
+          uint32_t cmp = simdi8_movemask (vTemp);
+#ifdef AVX2
+          while (cmp != 0xffffffff)
+#else
+              while (cmp != 0xffff)
+#endif
+          {
+              vH = simdui8_max (vH, vF);
+              vMaxColumn = simdui8_max(vMaxColumn, vH);
+              simdi_store (pvHStore + j, vH);
+              vF = simdui8_subs (vF, vGapE);
+              j++;
+              if (j >= segLen)
+              {
+                  j = 0;
+                  vF = simdi8_shiftl (vF, 1);
+              }
+              vH = simdi_load (pvHStore + j);
 
-        vTemp = simdui8_subs(vH, vGapOpen);
-        vTemp = simdui8_subs(vF, vTemp);
-        vTemp = simdi8_eq(vTemp, vZero);
-        cmp = simdi8_movemask(vTemp);
+              vTemp = simdui8_subs (vH, vGapO);
+              vTemp = simdui8_subs (vF, vTemp);
+              vTemp = simdi8_eq (vTemp, vZero);
+              cmp  = simdi8_movemask (vTemp);
+          }
+
+          vMaxScore = simdui8_max(vMaxScore, vMaxColumn);
+
       }
-    }
 
-    /* find largest score in the vMaxScore vector */
-    int score = simd_hmax((unsigned char *) &vMaxScore, element_count);
 
-    /* return largest score */
-    return score;
+      int score = simd_hmax((unsigned char *) &vMaxScore, element_count);
+
+      return score;
   }
 
   int Prefilter::ungapped_sse_score(const unsigned char* query_profile,
@@ -586,3 +581,4 @@ namespace hh {
   }
 
 } /* namespace hh */
+
