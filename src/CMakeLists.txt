@@ -156,7 +156,7 @@ target_link_libraries(a3m_database_filter ffindex A3M_COMPRESS)
 add_executable(cstranslate cs/cstranslate_app.cc)
 target_link_libraries(cstranslate HH_OBJECTS A3M_COMPRESS)
 
-INSTALL(PROGRAMS
+INSTALL(TARGETS
         hhblits
         hhmake
         hhfilter
@@ -182,7 +182,7 @@ if (OPENMP_FOUND)
     add_executable(hhblits_ca3m hhblits_ca3m.cpp)
     target_link_libraries (hhblits_ca3m HH_OBJECTS)
 
-    INSTALL(PROGRAMS hhblits_omp hhsearch_omp hhblits_ca3m DESTINATION bin)
+    INSTALL(TARGETS hhblits_omp hhsearch_omp hhblits_ca3m DESTINATION bin)
 endif ()
 
 find_package(MPI QUIET)
@@ -199,5 +199,5 @@ if (MPI_CXX_FOUND)
     set_target_properties(cstranslate_mpi PROPERTIES COMPILE_FLAGS "${MPI_CXX_COMPILE_FLAGS}")
     set_target_properties(cstranslate_mpi PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
 
-    install(PROGRAMS hhblits_mpi cstranslate_mpi DESTINATION bin)
+    install(TARGETS hhblits_mpi cstranslate_mpi DESTINATION bin)
 endif ()

@@ -89,7 +89,7 @@ add_executable(ffindex_from_fasta_with_split
 target_link_libraries (ffindex_from_fasta_with_split ffindex)
 
 
-install(PROGRAMS 
+install(FILES
         ffindex.h 
         ffutil.h
         DESTINATION include
