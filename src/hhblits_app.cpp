@@ -52,7 +52,7 @@
      Many thanks posthumously for your great code!
  */
 
-#include "hhblits.h"
+#include "hhsearch.h"
 
 void checkOutput(Parameters& par) {
   if (!*par.outfile) {
@@ -64,11 +64,20 @@ void checkOutput(Parameters& par) {
 
 int main(int argc, char **argv) {
   Parameters par;
+#ifdef HHSEARCH
+  HHsearch::ProcessAllArguments(argc, argv, par);
+#else
   HHblits::ProcessAllArguments(argc, argv, par);
+#endif
   checkOutput(par);
 
   std::vector<HHblitsDatabase*> databases;
+#ifdef HHSEARCH
+  HHsearch::prepareDatabases(par, databases);
+#else
   HHblits::prepareDatabases(par, databases);
+#endif
+
 #ifdef OPENMP
   omp_set_num_threads(par.threads);
 #endif

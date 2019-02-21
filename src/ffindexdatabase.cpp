@@ -28,6 +28,10 @@ FFindexDatabase::FFindexDatabase(const char* data_filename, const char* index_fi
     db_data = ffindex_mmap_data(db_data_fh, &data_size);
 }
 
+void FFindexDatabase::ensureLinearAccess() {
+    std::sort(db_index->entries, db_index->entries + db_index->n_entries, compareEntryByOffset());
+}
+
 FFindexDatabase::~FFindexDatabase() {
     free(data_filename);
     munmap(db_data, data_size);

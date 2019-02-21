@@ -127,8 +127,9 @@ target_link_libraries(hhmake HH_OBJECTS)
 add_executable(hhfilter hhfilter.cpp)
 target_link_libraries(hhfilter HH_OBJECTS)
 
-add_executable(hhsearch hhsearch_app.cpp)
+add_executable(hhsearch hhblits_app.cpp)
 target_link_libraries(hhsearch HH_OBJECTS)
+set_property(TARGET hhsearch PROPERTY COMPILE_FLAGS "-DHHSEARCH=1")
 
 add_executable(hhalign hhalign_app.cpp)
 target_link_libraries(hhalign HH_OBJECTS)
@@ -176,8 +177,9 @@ if (OPENMP_FOUND)
     add_executable(hhblits_omp hhblits_omp.cpp)
     target_link_libraries(hhblits_omp HH_OBJECTS)
 
-    add_executable(hhsearch_omp hhsearch_omp.cpp)
+    add_executable(hhsearch_omp hhblits_omp.cpp)
     target_link_libraries(hhsearch_omp HH_OBJECTS)
+    set_property(TARGET hhsearch_omp PROPERTY COMPILE_FLAGS "-DHHSEARCH=1")
 
     add_executable(hhblits_ca3m hhblits_ca3m.cpp)
     target_link_libraries (hhblits_ca3m HH_OBJECTS)
@@ -193,6 +195,11 @@ if (MPI_CXX_FOUND)
     target_link_libraries(hhblits_mpi HH_OBJECTS mpq ${MPI_CXX_LIBRARIES})
     set_target_properties(hhblits_mpi PROPERTIES COMPILE_FLAGS "${MPI_CXX_COMPILE_FLAGS}")
     set_target_properties(hhblits_mpi PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
+
+    add_executable(hhsearch_mpi hhblits_mpi.cpp)
+    target_link_libraries(hhsearch_mpi HH_OBJECTS mpq ${MPI_CXX_LIBRARIES})
+    set_target_properties(hhsearch_mpi PROPERTIES COMPILE_FLAGS "${MPI_CXX_COMPILE_FLAGS} -DHHSEARCH=1")
+    set_target_properties(hhsearch_mpi PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
 
     add_executable(cstranslate_mpi cs/cstranslate_mpi_app.cc)
     target_link_libraries(cstranslate_mpi HH_OBJECTS A3M_COMPRESS mpq ${MPI_CXX_LIBRARIES})

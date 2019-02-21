@@ -28,10 +28,6 @@
 #include <omp.h>
 #endif
 
-#ifdef SSE
-#include <emmintrin.h>
-#endif
-
 #include <sys/time.h>
 
 extern "C" {
@@ -62,8 +58,6 @@ extern "C" {
 #include "hhdatabase.h"
 
 #include "hhprefilter.h"
-
-class HHblits;
 
 #include "log.h"
 #include "simd.h"

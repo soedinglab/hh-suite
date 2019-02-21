@@ -459,8 +459,7 @@ namespace cs {
 
         pc_lib_.reset(new ContextLibrary<Abc>(fin));
         TransformToLog(*pc_lib_);
-        pc_.reset(new LibraryPseudocounts<Abc>(*pc_lib_, opts_.weight_center,
-                                               opts_.weight_decay));
+        pc_.reset(new LibraryPseudocounts<Abc>(*pc_lib_, opts_.weight_center, opts_.weight_decay));
 
       } else if (opts_.pc_engine == "crf") {
         if (opts_.verbose) {
