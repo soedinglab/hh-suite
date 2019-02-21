@@ -27,7 +27,6 @@
 #include "count_profile-inl.h"
 #include "getopt_pp.h"
 #include "library_pseudocounts-inl.h"
-#include "matrix_pseudocounts-inl.h"
 #include "pssm.h"
 #include "sequence-inl.h"
 #include "a3m_compress.h"
