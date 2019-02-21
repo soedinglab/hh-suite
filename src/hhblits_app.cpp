@@ -85,7 +85,14 @@ int main(int argc, char **argv) {
 #ifdef OPENMP
   omp_set_num_threads(par.threads);
 #endif
-  HHblits hhblits(par, databases);
+
+#ifdef HHSEARCH
+  HHblits app(par, databases);
+#elif HHALIGN
+  HHalign app(par);
+#else
+  HHblits app(par, databases);
+#endif
 
   FILE* inf;
   if(strcmp(par.infile, "stdin") == 0) {
@@ -100,23 +107,23 @@ int main(int argc, char **argv) {
 	  exit(1);
   }
 
-  hhblits.run(inf, par.infile);
+  app.run(inf, par.infile);
   fclose(inf);
 
   if(Log::reporting_level() >= INFO) {
-    hhblits.printHitList();
+    app.printHitList();
   }
 
-  hhblits.writeHHRFile(par.outfile);
-  hhblits.writeAlisFile(par.alisbasename);
-  hhblits.writeScoresFile(par.scorefile);
-  hhblits.writeM8(par.m8file);
-  hhblits.writePairwiseAlisFile(par.pairwisealisfile, par.outformat);
-  hhblits.writeAlitabFile(par.alitabfile);
-  hhblits.writePsiFile(par.psifile);
-  hhblits.writeHMMFile(par.hhmfile);
-  hhblits.writeA3MFile(par.alnfile);
-  hhblits.writeMatricesFile(par.matrices_output_file);
+  app.writeHHRFile(par.outfile);
+  app.writeAlisFile(par.alisbasename);
+  app.writeScoresFile(par.scorefile);
+  app.writeM8(par.m8file);
+  app.writePairwiseAlisFile(par.pairwisealisfile, par.outformat);
+  app.writeAlitabFile(par.alitabfile);
+  app.writePsiFile(par.psifile);
+  app.writeHMMFile(par.hhmfile);
+  app.writeA3MFile(par.alnfile);
+  app.writeMatricesFile(par.matrices_output_file);
 
   for(size_t i = 0; i < databases.size(); i++) {
     delete databases[i];
