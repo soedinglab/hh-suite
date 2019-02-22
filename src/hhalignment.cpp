@@ -1009,11 +1009,14 @@ void Alignment::Compress(const char infile[], const char cons, const int maxcol,
       float* percent_gaps = new float[maxcol];  //percentage of gaps in column k (with weighted sequences)
 
       //determine number of columns L in alignment
-      size_t L = strlen(seq[kfirst]) - 1;
+      L = strlen(seq[kfirst]) - 1;
 
       // Conversion to integer representation, checking for unequal lengths and initialization
-      int *nres = new int[N_in];
-      for (int k = 0; k < N_in; ++k) {
+       if (nres == NULL)
+         nres = new int[N_in];
+       for (k = 0; k < N_in; ++k) {
+         if (!keep[k])
+           continue;
         int nr = 0;
         wg[k] = 0;
         nres[k] = 0;
@@ -1031,7 +1034,7 @@ void Alignment::Compress(const char infile[], const char cons, const int maxcol,
 
       // Quick and dirty calculation of the weight per sequence wg[k]
         // for all positions l in alignment
-      for (size_t l = 1; l <= L; l++) {
+      for (l = 1; l <= L; l++) {
           //number of different amino acids
         int naa = 0;
         for (a = 0; a < 20; ++a) {
@@ -1260,8 +1263,6 @@ void Alignment::Compress(const char infile[], const char cons, const int maxcol,
     exit(1);
   }
 
-  delete [] h;
-
   if (L == 0) {
     HH_LOG(ERROR) << "Error in " << __FILE__ << ":" << __LINE__
                             << ": " << __func__ << ":" << std::endl;
@@ -1281,7 +1282,8 @@ void Alignment::Compress(const char infile[], const char cons, const int maxcol,
       }
   }
 
-  // DEBUG
+  delete[] h;
+
   for (k = 0; k < N_in; ++k) {
     if (!display[k])
       continue;
