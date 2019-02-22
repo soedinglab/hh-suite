@@ -41,7 +41,6 @@ HHalign::~HHalign() {
 
 
 void HHalign::help(Parameters& par, char all) {
-  printf("\n");
   printf("HHalign %i.%i.%i\n", HHSUITE_VERSION_MAJOR, HHSUITE_VERSION_MINOR, HHSUITE_VERSION_PATCH);
   printf("Align a query alignment/HMM to a template alignment/HMM by HMM-HMM alignment\n");
   printf("If only one alignment/HMM is given it is compared to itself and the best\n");

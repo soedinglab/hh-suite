@@ -53,7 +53,6 @@
 
 // Help functions
 void help(Parameters& par, char all = 0) {
-  printf("\n");
   printf("HHmake %i.%i.%i\n", HHSUITE_VERSION_MAJOR, HHSUITE_VERSION_MINOR, HHSUITE_VERSION_PATCH);
   printf(
       "Build an HMM from an input alignment in A2M, A3M, or FASTA format,   \n");

@@ -24,7 +24,7 @@
 #include "hash.h"        // hash data structure
 #include "util.h"        // imax, fmax, iround, iceil, ifloor, strint, strscn, strcut, substr, uprstr, uprchr, Basename etc.
 #include "hhdecl.h"      // Constants, global variables, struct Parameters
-#include "hhutil.h"      // MatchChr, InsertChr, aa2i, i2aa, log2, fast_log2, ScopID, WriteToScreen,
+#include "hhutil.h"      // MatchChr, InsertChr, aa2i, i2aa, log2, fast_log2, ScopID
 #include "hhmatrices.h"  // BLOSUM50, GONNET, HSDM
 #include "hhhmm.h"       // class HMM
 #include "hhhit.h"       // class Hit
@@ -34,7 +34,6 @@
 
 // Help functions
 void help(Parameters& par) {
-  printf("\n");
   printf("HHconsensus %i.%i.%i\n", HHSUITE_VERSION_MAJOR, HHSUITE_VERSION_MINOR, HHSUITE_VERSION_PATCH);
   printf("Calculate the consensus sequence for an A3M/FASTA input file.   \n");
   printf("%s", COPYRIGHT);
