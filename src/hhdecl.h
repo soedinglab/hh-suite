@@ -144,7 +144,6 @@ class Parameters          // Parameters for gap penalties and pseudocounts
 {
 public:
   Parameters(const int argc, const char** argv);
-  void SetDefaults();
 
   const char** argv;            //command line parameters
   const char argc;              //dimension of argv

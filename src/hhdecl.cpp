@@ -5,15 +5,11 @@
 /////////////////////////////////////////////////////////////////////////////////////
 
 Parameters::Parameters(const int argc, const char** argv) : argc(argc), argv(argv) {
-    SetDefaults();
-}
-
-void Parameters::SetDefaults() {
 	Log::reporting_level() = v = INFO;
 
 	maxcol = 32765; // max number of columns in sequence/MSA input files; must be <= LINELEN and >= maxres
 	maxres = 20001;           // max number of states in HMM; must be <= LINELEN
-	maxseq = 65000;
+	maxseq = 65535;
 	maxnumdb = 20000;          // max number of hits allowed past prefilter
 
 	append = 0;                // overwrite output file
