@@ -377,7 +377,7 @@ int main(int argn, char **argv) {
         goto cleanup_3;
     }
 
-    int mpq_status = MPQ_Init(argn, argv, index->n_entries);
+    int mpq_status = MPQ_Init(argn, (const char**)argv, index->n_entries);
     if (mpq_status == MPQ_SUCCESS) {
         if (MPQ_rank != MPQ_MASTER) {
             ffindex_apply_mpi_data_t *env = malloc(sizeof(ffindex_apply_mpi_data_t));
