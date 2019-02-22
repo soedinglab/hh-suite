@@ -54,67 +54,41 @@
 // Help functions
 void help(Parameters& par, char all = 0) {
   printf("HHmake %i.%i.%i\n", HHSUITE_VERSION_MAJOR, HHSUITE_VERSION_MINOR, HHSUITE_VERSION_PATCH);
-  printf(
-      "Build an HMM from an input alignment in A2M, A3M, or FASTA format,   \n");
-  printf(
-      "or convert between HMMER format (.hmm) and HHsearch format (.hhm).   \n");
+  printf("Build an HMM from an input alignment in A2M, A3M, or FASTA format,\n");
+  printf("or convert between HMMER format (.hmm) and HHsearch format (.hhm).\n");
   printf("%s", REFERENCE);
   printf("%s", COPYRIGHT);
   printf("\n");
-  printf("Usage: %s -i file [options]                                       \n", par.program_name);
+  printf("Usage: %s -i <file> -o <file> [options]                                       \n", par.program_name);
   printf(" -i <file>     query alignment (A2M, A3M, or FASTA), or query HMM         \n");
   if (all) {
     printf("\n");
     printf("<file> may be 'stdin' or 'stdout' throughout.\n");
   }
   printf("\n");
-  printf(
-      "Output options:                                                           \n");
-  printf(
-      " -o <file>     HMM file to be written to  (default=<infile.hhm>)          \n");
-  printf(
-      " -a <file>     HMM file to be appended to                                 \n");
-  printf(
-      " -v <int>      verbose mode: 0:no screen output  1:only warings  2: verbose\n");
-  printf(
-      " -seq <int>    max. number of query/template sequences displayed (def=%i)  \n",
-      par.nseqdis);
-  printf(
-      "               Beware of overflows! All these sequences are stored in memory.\n");
-  printf(
-      " -add_cons         make consensus sequence master sequence of query MSA \n");
-  printf(
-      " -name <name>  use this name for HMM (default: use name of first sequence)   \n");
+  printf("Output options:                                                           \n");
+  printf(" -o <file>     HMM file to be written to  (default=<infile.hhm>)          \n");
+  printf(" -a <file>     HMM file to be appended to                                 \n");
+  printf(" -v <int>      verbose mode: 0:no screen output  1:only warings  2: verbose\n");
+  printf(" -seq <int>    max. number of query/template sequences displayed (def=%i)  \n", par.nseqdis);
+  printf("               Beware of overflows! All these sequences are stored in memory.\n");
+  printf(" -add_cons     make consensus sequence master sequence of query MSA \n");
+  printf(" -name <name>  use this name for HMM (default: use name of first sequence)   \n");
   printf("\n");
-  printf(
-      "Filter query multiple sequence alignment                                     \n");
-  printf(
-      " -id   [0,100]  maximum pairwise sequence identity (%%) (def=%i)   \n",
-      par.max_seqid);
-  printf(
-      " -diff [0,inf[  filter MSA by selecting most diverse set of sequences, keeping \n");
-  printf(
-      "                at least this many seqs in each MSA block of length 50 (def=%i) \n",
-      par.Ndiff);
-  printf(" -cov  [0,100]  minimum coverage with query (%%) (def=%i) \n",
-      par.coverage);
-  printf(
-      " -qid  [0,100]  minimum sequence identity with query (%%) (def=%i) \n",
-      par.qid);
-  printf(" -qsc  [0,100]  minimum score per column with query  (def=%.1f)\n",
-      par.qsc);
+  printf("Filter query multiple sequence alignment                                     \n");
+  printf(" -id   [0,100]  maximum pairwise sequence identity (%%) (def=%i)   \n", par.max_seqid);
+  printf(" -diff [0,inf[  filter MSA by selecting most diverse set of sequences, keeping \n");
+  printf("                at least this many seqs in each MSA block of length 50 (def=%i) \n", par.Ndiff);
+  printf(" -cov  [0,100]  minimum coverage with query (%%) (def=%i) \n", par.coverage);
+  printf(" -qid  [0,100]  minimum sequence identity with query (%%) (def=%i) \n", par.qid);
+  printf(" -qsc  [0,100]  minimum score per column with query  (def=%.1f)\n", par.qsc);
   printf(" -neff [1,inf]  target diversity of alignment (default=off)\n");
   printf("\n");
-  printf(
-      "Input alignment format:                                                    \n");
-  printf(
-      " -M a2m        use A2M/A3M (default): upper case = Match; lower case = Insert;\n");
-  printf(
-      "               '-' = Delete; '.' = gaps aligned to inserts (may be omitted)   \n");
-  printf(
-      " -M first      use FASTA: columns with residue in 1st sequence are match states\n");
-  printf(
-      " -M [0,100]    use FASTA: columns with fewer than X%% gaps are match states   \n");
+  printf("Input alignment format:                                                    \n");
+  printf(" -M a2m        use A2M/A3M (default): upper case = Match; lower case = Insert;\n");
+  printf("               '-' = Delete; '.' = gaps aligned to inserts (may be omitted)   \n");
+  printf(" -M first      use FASTA: columns with residue in 1st sequence are match states\n");
+  printf(" -M [0,100]    use FASTA: columns with fewer than X%% gaps are match states   \n");
   printf("\n");
   if (all) {
     printf("Pseudocount (pc) options:                                                        \n");
@@ -139,18 +113,16 @@ void help(Parameters& par, char all = 0) {
     printf("  -pc_hhm_nocontxt_a  [0,1]        overall pseudocount admixture (def=%-.1f)                        \n",par.pc_hhm_nocontext_a);
     printf("  -pc_hhm_nocontxt_b  [1,inf[      Neff threshold value for mode 2 (def=%-.1f)                      \n",par.pc_hhm_nocontext_b);
     printf("  -pc_hhm_nocontxt_c  [0,3]        extinction exponent c for mode 2 (def=%-.1f)                     \n\n",par.pc_hhm_nocontext_c);
-    printf(
-        " Context-specific pseudo-counts:                                                  \n");
-    printf(
-        "  -nocontxt      use substitution-matrix instead of context-specific pseudocounts \n");
-    printf(
-        "  -contxt <file> context file for computing context-specific pseudocounts (default=%s)\n\n", par.clusterfile.c_str());
-    printf("Other options:                                                                   \n");
-    printf(" -maxres <int>  max number of HMM columns (def=%5i)             \n", par.maxres);
+    printf(" Context-specific pseudo-counts:                                                  \n");
+    printf("  -nocontxt      use substitution-matrix instead of context-specific pseudocounts \n");
+    printf("  -contxt <file> context file for computing context-specific pseudocounts (default=%s)\n\n", par.clusterfile.c_str());
+    printf("Other options:\n");
+    printf(" -maxseq <int>  max number of input rows (def=%5i)\n", par.maxseq);
+    printf(" -maxres <int>  max number of HMM columns (def=%5i)\n", par.maxres);
     printf("\n");
   }
 
-  printf("Example: %s -i test.a3m \n", par.program_name);
+  printf("Example: %s -i test.a3m -o stdout \n", par.program_name);
   printf("\n");
 }
 
@@ -355,14 +327,6 @@ int main(int argc, const char **argv) {
     par.nseqdis = MAXSEQDIS - 3;
   }
 
-  HMM* q = new HMM(par.nseqdis, par.maxres);
-  strmcpy(q->name, name.c_str(), NAMELEN - 1);
-  strmcpy(q->longname, name.c_str(), DESCLEN - 1);
-
-
-  // Get basename
-  RemoveExtension(q->file, par.infile); //Get basename of infile (w/o extension):
-
   // Outfile not given? Name it basename.hhm
   if (!*par.outfile) {
     RemoveExtension(par.outfile, par.infile);
@@ -398,15 +362,18 @@ int main(int argc, const char **argv) {
 
   // Read input file (HMM, HHM, or alignment format), and add pseudocounts etc.
   char input_format = 0;
-  Alignment* Qali = new Alignment(par.maxseq, par.maxres);
-  ReadQueryFile(par, par.infile, input_format, par.wg, q, Qali, pb, S, Sim);
-  PrepareQueryHMM(par, input_format, q, pc_hhm_context_engine, pc_hhm_context_mode, pb, R);
+  Alignment Qali(par.maxseq, par.maxres);
 
   // Write HMM to output file in HHsearch format
-  q->WriteToFile(par.outfile, par.append, par.max_seqid, par.coverage, par.qid, par.Ndiff, par.qsc, par.argc, par.argv, pb);
+  HMM q(par.nseqdis, par.maxres);
+  strmcpy(q.name, name.c_str(), NAMELEN - 1);
+  strmcpy(q.longname, name.c_str(), DESCLEN - 1);
+  //Get basename of infile (w/o extension)
+  RemoveExtension(q.file, par.infile);
 
+  ReadQueryFile(par, par.infile, input_format, par.wg, &q, &Qali, pb, S, Sim);
+  PrepareQueryHMM(par, input_format, &q, pc_hhm_context_engine, pc_hhm_context_mode, pb, R);
+  q.WriteToFile(par.outfile, par.append, par.max_seqid, par.coverage, par.qid, par.Ndiff, par.qsc, par.argc, par.argv, pb);
 
-  delete q;
-  delete Qali;
   DeletePseudocountsEngine(context_lib, crf, pc_hhm_context_engine, pc_hhm_context_mode, pc_prefilter_context_engine, pc_prefilter_context_mode);
 }
