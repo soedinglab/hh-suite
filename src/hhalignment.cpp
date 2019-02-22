@@ -2610,7 +2610,6 @@ void Alignment::Amino_acid_frequencies_and_transitions_from_M_state(HMM* q, char
     delete[] (w_contrib);
   }
   delete [] wi;
-  delete [] Neff;
   // Delete f[j]
   free(f);
   delete[] naa;
@@ -2662,6 +2661,7 @@ void Alignment::Amino_acid_frequencies_and_transitions_from_M_state(HMM* q, char
   }
 
   // printf("Neff = %g\n",q->Neff_HMM);
+  delete[] Neff;
 
   return;
 }
@@ -2955,8 +2955,8 @@ void Alignment::Transitions_from_I_state(HMM* q, char* in) {
   int a;                      // amino acid (0..19)
   int naa;                    // number of different amino acids
   int** n;  // n[j][a] = number of seq's with some residue at column i AND a at position j
-  float * wi = new float[maxseq];  // weight of sequence k in column i, calculated from subalignment i
-  float Neff[maxres];         // diversity of subalignment i
+  float* wi = new float[maxseq];  // weight of sequence k in column i, calculated from subalignment i
+  float* Neff = new float[maxres];         // diversity of subalignment i
   int nseqi;                  // number of sequences in subalignment i
   int ncol;                  // number of columns j that contribute to Neff[i]
   float fj[NAA + 3];            // to calculate entropy
@@ -3138,6 +3138,8 @@ void Alignment::Transitions_from_I_state(HMM* q, char* in) {
   // Assign Neff_I[i]
   for (i = 1; i <= L; ++i)  // Calculate wi[k] at position i as well as Neff[i] and Neff[i]
     q->Neff_I[i] = Neff[i];
+
+  delete[] Neff;
   return;
 }
 
