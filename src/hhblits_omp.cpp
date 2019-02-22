@@ -115,12 +115,10 @@ int main(int argc, const char **argv) {
     makeOutputFFIndex(par.matrices_output_file, &HHblits::writeMatricesFile, outputDatabases);
     makeOutputFFIndex(par.m8file, &HHblits::writeM8, outputDatabases);
 
-    //need to save for cleanup in the end
+    // only parallelize over queries, not per query
     int threads = par.threads;
     par.threads = 1;
 
-    size_t range_start = 0;
-    size_t range_end = reader.db_index->n_entries;
 #pragma omp parallel num_threads(threads)
     {
 #ifdef HHSEARCH
@@ -138,7 +136,7 @@ int main(int argc, const char **argv) {
 #endif
 
 #pragma omp for schedule(dynamic, 1)
-        for (size_t entry_index = range_start; entry_index < range_end; entry_index++) {
+        for (size_t entry_index = 0; entry_index < reader.db_index->n_entries; entry_index++) {
             ffindex_entry_t *entry = ffindex_get_entry_by_index(reader.db_index, entry_index);
             if (entry == NULL) {
                 HH_LOG(WARNING) << "Could not open entry " << entry_index << " from input ffindex!" << std::endl;
