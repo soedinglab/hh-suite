@@ -220,20 +220,6 @@ void HHalign::ProcessAllArguments(Parameters& par) {
 
   ProcessArguments(par);
 
-  // Check needed files
-  // Check command line input and default values
-  if (!*par.infile) {
-    help(par);
-    HH_LOG(ERROR) << "No query alignment file given (-i file)!" << std::endl;
-    exit(4);
-  }
-
-  if (!*par.outfile) {
-    RemoveExtension(par.outfile, par.infile);
-    strcat(par.outfile, ".hhr");
-    HH_LOG(INFO) << "Search results will be written to " << par.outfile << "!\n";
-  }
-
   // Check option compatibilities
   if (par.nseqdis > MAXSEQDIS - 3 - par.showcons)
     par.nseqdis = MAXSEQDIS - 3 - par.showcons; //3 reserved for secondary structure

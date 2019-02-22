@@ -25,19 +25,6 @@ void HHsearch::ProcessAllArguments(Parameters& par) {
 
 	ProcessArguments(par);
 
-	// Check needed files
-	if (!*par.infile || !strcmp(par.infile, "")) {
-		help(par);
-		HH_LOG(ERROR) << "Input file is missing!" << std::endl;
-		exit(4);
-	}
-
-	if (!*par.outfile) {
-		RemoveExtension(par.outfile, par.infile);
-		strcat(par.outfile, ".hhr");
-		HH_LOG(INFO) << "Search results will be written to " << par.outfile << "!\n";
-	}
-
 	if (par.db_bases.size() == 0) {
 		help(par);
 		HH_LOG(ERROR) << "Database is missing (see -d)!" << std::endl;
