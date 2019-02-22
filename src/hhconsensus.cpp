@@ -87,9 +87,8 @@ void help(Parameters& par) {
   printf("\n");
   printf(
       "Other options:                                                               \n");
-  printf(
-      " -maxres <int> max number of HMM columns (def=%5i)                           \n",
-            par.maxres);
+  printf(" -maxseq <int>  max number of input rows (def=%5i)\n", par.maxseq);
+  printf(" -maxres <int> max number of HMM columns (def=%5i)\n", par.maxres);
   printf("\n");
   printf("Example: %s -i stdin -s stdout\n", par.program_name);
   printf("\n");

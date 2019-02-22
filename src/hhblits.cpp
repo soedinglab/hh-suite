@@ -382,7 +382,8 @@ void HHblits::help(Parameters& par, char all) {
 	printf(" -scores <file> write scores for all pairwise comparisons to file               \n");
 	  printf(" -filter_matrices filter matrices for similarity to output at most 100 matrices\n");
     printf(" -atab   <file> write all alignments in tabular layout to file                   \n");
-    printf(" -maxres <int>  max number of HMM columns (def=%5i)             \n", par.maxres);
+    printf(" -maxseq <int>  max number of input rows (def=%5i)\n", par.maxseq);
+    printf(" -maxres <int>  max number of HMM columns (def=%5i)\n", par.maxres);
     printf(" -maxmem [1,inf[ limit memory for realignment (in GB) (def=%.1f)          \n", par.maxmem);
   }
   printf("\n");

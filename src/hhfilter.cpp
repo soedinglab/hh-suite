@@ -59,6 +59,9 @@ void help(Parameters& par) {
   printf(" -M first       use FASTA: columns with residue in 1st sequence are match states\n");
   printf(" -M [0,100]     use FASTA: columns with fewer than X%% gaps are match states   \n");
   printf("                                                                          \n");
+  printf("Other options:\n");
+  printf(" -maxseq <int>  max number of input rows (def=%5i)\n", par.maxseq);
+  printf(" -maxres <int>  max number of HMM columns (def=%5i)\n", par.maxres);
   printf("Example: hhfilter -id 50 -i d1mvfd_.a2m -o d1mvfd_.fil.a2m          \n\n");
 }
 

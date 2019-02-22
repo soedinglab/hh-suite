@@ -186,7 +186,8 @@ void HHalign::help(Parameters& par, char all) {
   printf(" -v <int>       verbose mode: 0:no screen output  1:only warings  2: verbose (def=%i)\n", par.v);
   if (all) {
     printf(" -atab   <file> write all alignments in tabular layout to file                   \n");
-    printf(" -maxres <int>  max number of HMM columns (def=%5i)             \n", par.maxres);
+    printf(" -maxseq <int>  max number of input rows (def=%5i)\n", par.maxseq);
+    printf(" -maxres <int>  max number of HMM columns (def=%5i)\n", par.maxres);
     printf(" -maxmem [1,inf[ limit memory for realignment (in GB) (def=%.1f)          \n", par.maxmem);
   }
   printf("\n");
