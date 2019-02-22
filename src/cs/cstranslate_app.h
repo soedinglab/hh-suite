@@ -251,6 +251,7 @@ namespace cs {
 
         FFindexDatabase input(const_cast<char *>(input_data_file.c_str()),
                               const_cast<char *>(input_index_file.c_str()), isCa3m);
+        input.ensureLinearAccess();
 
         //prepare output ffindex cs219 database
         std::string output_data_file = opts_.outfile + ".ffdata";
