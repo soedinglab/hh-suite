@@ -664,29 +664,6 @@ inline char* RemoveExtension(char outname[], char filename[]) {
   return outname;
 }
 
-inline char* RemovePathAndExtension(char outname[], const char* filename) {
-  const char *ptr;
-  char *ptr1;
-#ifdef WINDOWS
-  ptr=strrchr(filename,92);  //return adress for LAST \ (backslash) in name
-#else
-  ptr = strrchr(filename, '/'); //return adress for LAST / in name
-#endif
-  if (!ptr)
-    ptr = filename;
-  else
-    ptr++;
-  ptr1 = strrchr(filename, '.');       //return adress for LAST '.' in name
-  if (ptr1) {
-    *ptr1 = '\0';
-    strcpy(outname, ptr);
-    *ptr1 = '.';
-  }
-  else
-    strcpy(outname, ptr);
-  return outname;
-}
-
 inline char* Extension(char extension[], const char* filename) {
   //return adress for LAST '.' in name
   const char* ptr = strrchr(filename, '.');

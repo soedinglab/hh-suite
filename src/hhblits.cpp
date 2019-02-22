@@ -189,7 +189,7 @@ void HHblits::help(Parameters& par, char all) {
   printf("%s", HHBLITS_REFERENCE);
   printf("%s", COPYRIGHT);
   printf("\n");
-  printf("Usage: %s -i query [options] \n", par.program_name);
+  printf("Usage: hhblits -i query [options] \n");
   printf(" -i <file>      input/query: single sequence or multiple sequence alignment (MSA)\n");
   printf("                in a3m, a2m, or FASTA format, or HMM in hhm format\n");
 

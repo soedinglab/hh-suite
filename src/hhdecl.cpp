@@ -5,7 +5,6 @@
 /////////////////////////////////////////////////////////////////////////////////////
 
 Parameters::Parameters(const int argc, const char** argv) : argc(argc), argv(argv) {
-    RemovePathAndExtension(program_name, argv[0]);
     SetDefaults();
 }
 

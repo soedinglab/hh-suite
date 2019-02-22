@@ -148,7 +148,6 @@ public:
 
   const char** argv;            //command line parameters
   const char argc;              //dimension of argv
-  char program_name[NAMELEN];
 
   LogLevel v;
 

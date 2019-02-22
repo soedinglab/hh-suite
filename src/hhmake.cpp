@@ -59,7 +59,7 @@ void help(Parameters& par, char all = 0) {
   printf("%s", REFERENCE);
   printf("%s", COPYRIGHT);
   printf("\n");
-  printf("Usage: %s -i <file> -o <file> [options]                                       \n", par.program_name);
+  printf("Usage: hhmake -i <file> -o <file> [options]\n");
   printf(" -i <file>     query alignment (A2M, A3M, or FASTA), or query HMM         \n");
   if (all) {
     printf("\n");
@@ -122,7 +122,7 @@ void help(Parameters& par, char all = 0) {
     printf("\n");
   }
 
-  printf("Example: %s -i test.a3m -o stdout \n", par.program_name);
+  printf("Example: hhmake -i test.a3m -o stdout \n");
   printf("\n");
 }
 

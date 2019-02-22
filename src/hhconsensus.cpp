@@ -39,7 +39,7 @@ void help(Parameters& par) {
   printf("%s", COPYRIGHT);
   printf("%s", REFERENCE);
   printf("\n");
-  printf("Usage: %s -i <file> [options]                           \n", par.program_name);
+  printf("Usage: hhconsensus -i <file> [options]                           \n");
   printf(
       " -i <file>     query alignment (A2M, A3M, or FASTA), or query HMM          \n");
   printf("\n");
@@ -90,7 +90,7 @@ void help(Parameters& par) {
   printf(" -maxseq <int>  max number of input rows (def=%5i)\n", par.maxseq);
   printf(" -maxres <int> max number of HMM columns (def=%5i)\n", par.maxres);
   printf("\n");
-  printf("Example: %s -i stdin -s stdout\n", par.program_name);
+  printf("Example: hhconsensus -i stdin -s stdout\n");
   printf("\n");
 }
 
