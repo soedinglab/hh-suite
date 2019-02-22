@@ -889,8 +889,7 @@ void HHblits::add_hits_to_hitlist(std::vector<Hit>& hits, HitList& hitlist) {
 
   // Calculate E-values as combination of P-value for Viterbi HMM-HMM comparison and prefilter E-value: E = Ndb P (Epre/Ndb)^alpha
   if (par.prefilter)
-    hitlist.CalculateHHblitsEvalues(q, par.dbsize, par.alphaa, par.alphab,
-                                    par.alphac, par.prefilter_evalue_thresh);
+    hitlist.CalculateHHblitsEvalues(q, par.dbsize, par.alphaa, par.alphab, par.alphac, par.prefilter_evalue_thresh);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1182,22 +1181,18 @@ void HHblits::run(FILE* query_fh, char* query_path) {
     hitlist.N_searched = search_counter.size();
 
     if (new_entries.size() == 0) {
-      HH_LOG(INFO) << "No HMMs pass prefilter => Stop searching!"
-                             << std::endl;
+      HH_LOG(INFO) << "No HMMs pass prefilter => Stop searching!" << std::endl;
       break;
     }
 
-    // Search datbases
-    HH_LOG(INFO)
-        << "HMMs passed 2nd prefilter (gapped profile-profile alignment)   : "
-        << new_entries.size() + old_entries.size() << std::endl;
-    HH_LOG(INFO)
-        << "HMMs passed 2nd prefilter and not found in previous iterations : "
-        << new_entries.size() << std::endl;
-    HH_LOG(INFO) << "Scoring " << new_entries.size()
-                           << " HMMs using HMM-HMM Viterbi alignment"
-                           << std::endl;
-
+    if (par.prefilter) {
+      // Search datbases
+      HH_LOG(INFO)
+        << "HMMs passed 2nd prefilter (gapped profile-profile alignment)   : " << new_entries.size() + old_entries.size() << std::endl;
+      HH_LOG(INFO)
+        << "HMMs passed 2nd prefilter and not found in previous iterations : " << new_entries.size() << std::endl;
+    }
+    HH_LOG(INFO) << "Scoring " << new_entries.size() << " HMMs using HMM-HMM Viterbi alignment" << std::endl;
     // Main Viterbi HMM-HMM search
     ViterbiRunner viterbirunner(viterbiMatrices, dbs, par.threads);
     std::vector<Hit> hits_to_add = viterbirunner.alignment(par, &q_vec,
