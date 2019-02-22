@@ -23,9 +23,6 @@ int SyntaxError(const char* file, const int line, const char* func, const char d
 
 int InternalError(const char errstr[], const char* file, const int line, const char* func);
 
-// Read up to n lines of outfile and write to screen (STDERR)
-void WriteToScreen(char* outfile, int n);
-
 // Count number of lines in <file>
 int CountLinesInFile(const char* file);
 

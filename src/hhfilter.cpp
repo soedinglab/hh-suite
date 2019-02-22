@@ -26,13 +26,12 @@
 
 #include "util.h"        // imax, fmax, iround, iceil, ifloor, strint, strscn, strcut, substr, uprstr, uprchr, Basename etc.
 #include "hhdecl.h"      // Constants, global variables, struct Parameters
-#include "hhutil.h"      // MatchChr, InsertChr, aa2i, i2aa, log2, fast_log2, ScopID, WriteToScreen,
+#include "hhutil.h"      // MatchChr, InsertChr, aa2i, i2aa, log2, fast_log2, ScopID
 #include "hhmatrices.h"  // BLOSUM50, GONNET, HSDM
 #include "hhalignment.h" // class Alignment
 #include "hhfunc.h"      // some functions common to hh programs
 
 void help(Parameters& par) {
-  printf("\n");
   printf("HHfilter %i.%i.%i\n", HHSUITE_VERSION_MAJOR, HHSUITE_VERSION_MINOR, HHSUITE_VERSION_PATCH);
   printf("Filter an alignment by maximum pairwise sequence identity, minimum coverage,\n");
   printf("minimum sequence identity, or score per column to the first (seed) sequence.n");

@@ -36,22 +36,6 @@ int InternalError(const char errstr[], const char* file, const int line, const c
   exit(6);
 }
 
-
-/////////////////////////////////////////////////////////////////////////////////////
-// Read up to n lines of outfile and write to screen (STDERR)
-/////////////////////////////////////////////////////////////////////////////////////
-void WriteToScreen(char* outfile, int n)
-{
-  char line[LINELEN]="";
-  std::ifstream outf;
-  outf.open(outfile, std::ios::in);
-  if (!outf) {OpenFileError(outfile, __FILE__, __LINE__, __func__);}
-  std::cout<<"\n";
-  for(; n>0 && outf.getline(line,LINELEN); n--) std::cout<<line<<"\n";
-  outf.close();
-  std::cout<<"\n";
-}
-
 /////////////////////////////////////////////////////////////////////////////////////
 // Count number of lines in <file>
 /////////////////////////////////////////////////////////////////////////////////////

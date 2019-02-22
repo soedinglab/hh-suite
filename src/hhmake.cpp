@@ -44,7 +44,7 @@
 #include "hash.h"        // hash data structure
 #include "util.h"        // imax, fmax, iround, iceil, ifloor, strint, strscn, strcut, substr, uprstr, uprchr, Basename etc.
 #include "hhdecl.h"      // Constants, global variables, struct Parameters
-#include "hhutil.h"      // MatchChr, InsertChr, aa2i, i2aa, log2, fast_log2, ScopID, WriteToScreen,
+#include "hhutil.h"      // MatchChr, InsertChr, aa2i, i2aa, log2, fast_log2, ScopID
 #include "hhmatrices.h"  // BLOSUM50, GONNET, HSDM
 #include "hhhmm.h"       // class HMM
 #include "hhhit.h"       // class Hit
@@ -62,8 +62,11 @@ void help(Parameters& par, char all = 0) {
   printf("%s", COPYRIGHT);
   printf("\n");
   printf("Usage: %s -i file [options]                                       \n", par.program_name);
-  printf(
-      " -i <file>     query alignment (A2M, A3M, or FASTA), or query HMM         \n");
+  printf(" -i <file>     query alignment (A2M, A3M, or FASTA), or query HMM         \n");
+  if (all) {
+    printf("\n");
+    printf("<file> may be 'stdin' or 'stdout' throughout.\n");
+  }
   printf("\n");
   printf(
       "Output options:                                                           \n");
@@ -402,8 +405,6 @@ int main(int argc, const char **argv) {
   // Write HMM to output file in HHsearch format
   q->WriteToFile(par.outfile, par.append, par.max_seqid, par.coverage, par.qid, par.Ndiff, par.qsc, par.argc, par.argv, pb);
 
-  if (par.v >= 3)
-    WriteToScreen(par.outfile, 1000); // (max 1000 lines)
 
   delete q;
   delete Qali;
