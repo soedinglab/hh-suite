@@ -1284,6 +1284,11 @@ void Alignment::Compress(const char infile[], const char cons, const int maxcol,
 
   delete[] h;
 
+  // Skip looping over debug output if we are not in debug mode
+  if (Log::reporting_level() <= INFO) {
+      return;
+  }
+
   for (k = 0; k < N_in; ++k) {
     if (!display[k])
       continue;
