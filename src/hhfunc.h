@@ -31,9 +31,9 @@ void PrepareTemplateHMM(Parameters& par, HMM* q, HMM* t, int format, float linea
 int SequencesInCluster(char* name);
 
 void InitializePseudocountsEngine(Parameters& par,
-    cs::ContextLibrary<cs::AA>* context_lib, cs::Crf<cs::AA>* crf,
-    cs::Pseudocounts<cs::AA>* pc_hhm_context_engine, cs::Admix* pc_hhm_context_mode,
-    cs::Pseudocounts<cs::AA>* pc_prefilter_context_engine, cs::Admix* pc_prefilter_context_mode);
+    cs::ContextLibrary<cs::AA>*& context_lib, cs::Crf<cs::AA>*& crf,
+    cs::Pseudocounts<cs::AA>*& pc_hhm_context_engine, cs::Admix*& pc_hhm_context_mode,
+    cs::Pseudocounts<cs::AA>*& pc_prefilter_context_engine, cs::Admix*& pc_prefilter_context_mode);
 
 void DeletePseudocountsEngine(
     cs::ContextLibrary<cs::AA>* context_lib, cs::Crf<cs::AA>* crf,
