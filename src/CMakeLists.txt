@@ -1,4 +1,5 @@
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+set(HAVE_MPI 0 CACHE BOOL "Have MPI")
 
 if (${HAVE_AVX2})
     ADD_DEFINITIONS("-DAVX2")
@@ -192,6 +193,7 @@ if (OPENMP_FOUND)
     INSTALL(TARGETS hhblits_omp hhsearch_omp hhalign_omp hhblits_ca3m DESTINATION bin)
 endif ()
 
+if (${HAVE_MPI})
 find_package(MPI QUIET)
 if (MPI_CXX_FOUND)
     include_directories(${MPI_CXX_INCLUDE_PATH})
@@ -218,3 +220,5 @@ if (MPI_CXX_FOUND)
 
     install(TARGETS hhblits_mpi hhsearch_mpi hhalign_mpi cstranslate_mpi DESTINATION bin)
 endif ()
+endif ()
+
