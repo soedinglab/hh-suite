@@ -527,6 +527,7 @@ void ffmerge_splits(const char* data_filename, const char* index_filename,
 
     rewind(data_file_to_add);
 
+    size_t entries = ffcount_lines(index_file_name_to_add);
     FILE* index_file_to_add = fopen(index_file_name_to_add, "r");
     if (index_file_to_add == NULL) {
       char error_message[2*FILENAME_MAX];
@@ -537,11 +538,9 @@ void ffmerge_splits(const char* data_filename, const char* index_filename,
 
     size_t data_size;
     char *data_to_add = ffindex_mmap_data(data_file_to_add, &data_size);
-    ffindex_index_t* index_to_add = ffindex_index_parse(index_file_to_add,
-        0);
+    ffindex_index_t* index_to_add = ffindex_index_parse(index_file_to_add, entries);
 
-    for(size_t entry_i = 0; entry_i < index_to_add->n_entries; entry_i++)
-    {
+    for(size_t entry_i = 0; entry_i < index_to_add->n_entries; entry_i++) {
       ffindex_entry_t *entry = ffindex_get_entry_by_index(index_to_add, entry_i);
       ffindex_insert_memory(data_file, index_file, &offset,
                             ffindex_get_data_by_entry(data_to_add, entry),
