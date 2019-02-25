@@ -42,6 +42,11 @@ hhblits -i <input-file> -o <result-file> -oa3m <result-alignment> -d <database-b
 
 A detailed list of options for HHblits is available by running HHblits with the `-h` parameter.
 
+## Reference
+
+Steinegger M, Meier M, Mirdita M, Vöhringer H, Haunsberger S J, and Söding J (2019)
+HH-suite3 for fast remote homology detection and deep protein annotation, *bioRxiv*, 560029. [doi: 10.1101/560029](https://doi.org/10.1101/560029)
+
 ## Links
 
 * [Soeding lab](http://www.mpibpc.mpg.de/soeding)
