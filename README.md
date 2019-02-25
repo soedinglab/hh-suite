@@ -6,8 +6,12 @@
 
 The HH-suite is an open-source software package for sensitive protein sequence searching based on the pairwise alignment of hidden Markov models (HMMs).
 
+## Documentation
+
+We provide an extensive [user guide](https://github.com/milot-mirdita/hh-suite/wiki) with many usage examples, frequently asked questions and guides to build your own databases. 
+
 ## Installation
-We recommend compiling HH-suite on the machine that should run the computations so that it can be optimized for the appropriate CPU architecture.
+We recommend compiling HH-suite on the machine that should run the computations so that it can be optimized for the available CPU instruction sets.
 
 ### Compilation
 To compile from source, you will need a recent C/C++ compiler (at least GCC 4.8 or Clang 3.6) and [CMake](http://cmake.org/) 2.8.12 or later.
@@ -16,13 +20,14 @@ To download the source code and compile the HH-suite execute the following comma
 ```
 git clone https://github.com/soedinglab/hh-suite.git
 cd hh-suite && mkdir build && cd build
-cmake -DCMAKE_INSTALL_PREFIX=${INSTALL_BASE_DIR} ..
-make && make install
+cmake -DCMAKE_INSTALL_PREFIX=. ..
+make -j 4 && make install
+export PATH="$(pwd)/bin:$(pwd)/scripts:$PATH"
 ```
 
 ### Download Databases
 Download current databases from our [download server](http://wwwuser.gwdg.de/~compbiol/data/hhsuite/databases/hhsuite_dbs/).
-To build up multiple sequences alignments using HHblits Uniclust30 is sufficient.
+To build up multiple sequences alignments using HHblits, the Uniclust30 database is sufficient.
 
 ## Usage
 For performing a single search iteration of HHblits, run HHblits with the following command:
@@ -35,26 +40,9 @@ For generating an alignment of homologous sequences:
 hhblits -i <input-file> -o <result-file> -oa3m <result-alignment> -d <database-basename>
 ```
 
-You can get a detailed list of options for HHblits by running HHblits with the "-h" option.
-
-### Specify BLAST, PSIPRED, PDB, DSSP and Script Paths
-
-The HH-suite scripts also the `HHLIB` environment variable to locate the HH-suite binaries and context state support files in `${HHLIB}/data`. In your shell set the environment variable `HHLIB` to ${INSTALL\_BASE\_DIR}, e.g for bash:
-
-```
-export HHLIB="${INSTALL_BASE_DIR}"
-```
-
-Add the location of HHsuite binaries and scripts to your search PATH variable
-```
-export PATH="${HHLIB}/bin:${HHLIB}/scripts:${PATH}"
-```
-
-Specify paths in `${HHLIB}/scripts/HHPaths.pm` where they are read by HH-suite's Perl scripts.
+A detailed list of options for HHblits is available by running HHblits with the `-h` parameter.
 
 ## Links
 
 * [Soeding lab](http://www.mpibpc.mpg.de/soeding)
 * [Databases for the HH-suite](http://wwwuser.gwdg.de/~compbiol/data/hhsuite/)
-
-
