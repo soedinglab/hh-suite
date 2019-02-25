@@ -68,9 +68,6 @@ extern "C" {
 #include "hhposteriormatrix.h"
 #include "hhposteriordecoderrunner.h"
 
-const char HHBLITS_REFERENCE[] =
-		"Remmert M., Biegert A., Hauser A., and Soding J.\nHHblits: Lightning-fast iterative protein sequence searching by HMM-HMM alignment.\nNat. Methods 9:173-175 (2011)\n";
-
 class HHblits {
 public:
   HHblits(Parameters& parameters, std::vector<HHblitsDatabase*>& databases);

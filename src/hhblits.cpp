@@ -186,7 +186,7 @@ void HHblits::help(Parameters& par, char all) {
   printf("prints out a ranked list of database HMMs/MSAs and can also generate an MSA by merging\n");
   printf("the significant database HMMs/MSAs onto the query MSA.\n");
   printf("\n");
-  printf("%s", HHBLITS_REFERENCE);
+  printf("%s", REFERENCE);
   printf("%s", COPYRIGHT);
   printf("\n");
   printf("Usage: hhblits -i query [options] \n");

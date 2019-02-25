@@ -21,8 +21,8 @@
 //// Global variable declarations
 /////////////////////////////////////////////////////////////////////////////////////
 
-const char REFERENCE[]="Remmert M, Biegert A, Hauser A, and Soding J.\nHHblits: Lightning-fast iterative protein sequence searching by HMM-HMM alignment.\nNat. Methods 9:173-175 (2011).\n";
-const char COPYRIGHT[]="(C) Johannes Soeding, Michael Remmert, Andreas Biegert, Andreas Hauser\n";
+const char REFERENCE[] = "Steinegger M, Meier M, Mirdita M, Vöhringer H, Haunsberger S J, and Söding J\nHH-suite3 for fast remote homology detection and deep protein annotation.\nbioRxiv (2019).\n";
+const char COPYRIGHT[] = "(c) The HH-suite development team\n";
 
 const int LINELEN=524288; //max length of line read in from input files; must be >= MAXCOL
 const int MAXSEQDIS=10238;//max number of sequences stored in 'hit' objects and displayed in output alignment
