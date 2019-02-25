@@ -57,13 +57,4 @@ Specify paths in `${HHLIB}/scripts/HHPaths.pm` where they are read by HH-suite's
 * [Soeding lab](http://www.mpibpc.mpg.de/soeding)
 * [Databases for the HH-suite](http://wwwuser.gwdg.de/~compbiol/data/hhsuite/)
 
-## Acknowledgements
-
-The HH-suite contains in file `hhprefilter.cpp` code adapted from Michael
-Farrar (http://sites.google.com/site/farrarmichael/smith-waterman).
-His code is marked in the file hhprefilter.cpp. For the copyright of that
-code, please see the LICENSE file that comes with HH-suite.
-Reference: Farrar M. Striped Smith-Waterman speeds database searches six
-times over other SIMD implementations. Bioinformatics. 2007, 23:156-61.
-Many posthumous thanks to Michael Farrar for his great code!
 

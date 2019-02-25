@@ -4,12 +4,12 @@
  *  Created on: Apr 17, 2014
  *      Author: meiermark
  */
-
 #ifndef HHPREFILTER_H_
 #define HHPREFILTER_H_
 
 #include <sstream>
 #include <vector>
+
 #ifdef OPENMP
 #include <omp.h>
 #endif
@@ -21,36 +21,31 @@
 #include "ffindexdatabase.h"
 
 //////////////////////////////////////////////////////////////////////////////////////////
-//     This file contains code adapted from Michael Farrar
-//     (http://sites.google.com/site/farrarmichael/smith-waterman). His code is marked.
-//     The copy right of his code is shown below:
-
-//     Copyright 2006, by Michael Farrar.  All rights reserved. The SWSSE2
-//     program and documentation may not be sold or incorporated into a
-//     commercial product, in whole or in part, without written consent of
-//     Michael Farrar.
+//   The function swStripedByte contains code adapted from Mengyao Zhao
+//   The MIT License
+//   Copyright (c) 2012-1015 Boston College.
+//   Permission is hereby granted, free of charge, to any person obtaining
+//   a copy of this software and associated documentation files (the
+//   "Software"), to deal in the Software without restriction, including
+//   without limitation the rights to use, copy, modify, merge, publish,
+//   distribute, sublicense, and/or sell copies of the Software, and to
+//   permit persons to whom the Software is furnished to do so, subject to
+//   the following conditions:
+//   The above copyright notice and this permission notice shall be
+//   included in all copies or substantial portions of the Software.
+//   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+//   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+//   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+//   NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+//   BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+//   ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+//   CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+//   SOFTWARE.
 //
-//     For further information regarding permission for use or reproduction,
-//     please contact Michael Farrar at:
-//
-//         farrar.michael@gmail.com
-//
-//
-//     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-//     EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-//     MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-//     IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-//     CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-//     TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-//     SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
 //     Reference:
-//     Farrar M. Striped Smith-Waterman speeds database searches
-//     six times over other SIMD implementations. Bioinformatics. 2007, 23:156-61.
-//
-//     Michael Farrar died unexpectedly in December 2010.
-//     Many thanks posthumously for your great code!
-//     Johannes
+//     SSW Library: An SIMD Smith-Waterman C/C++ Library for Use in Genomic Applications i
+//     Mengyao Zhao , Wan-Ping Lee, Erik P. Garrison, Gabor T. Marth, PLOS ONE, December 4, 2013
+//     https://doi.org/10.1371/journal.pone.0082138
 
 class Prefilter {
 public:
