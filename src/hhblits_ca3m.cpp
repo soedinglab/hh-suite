@@ -237,7 +237,7 @@ int main(int argc, const char **argv) {
 
   //no openmp parallelization in hhblits methods
 
-  HHblits* hhblits_instances = new HHblits[par.threads];
+  HHblits** hhblits_instances = new HHblits*[par.threads];
   par.threads = 1;
 
   for(int i = 0; i < threads; i++) {
