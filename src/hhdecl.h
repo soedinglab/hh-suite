@@ -49,9 +49,6 @@ const float LOG1000=log(1000.0);
 const float POSTERIOR_PROBABILITY_THRESHOLD = 0.01;
 const int VITERBI_PATH_WIDTH=40;
 
-//maximum number of bins (positions in thread queue)
-const int MAXBINS = 384;
-
 // Secondary structure
 const int NDSSP=8;      //number of different ss states determined by dssp: 0-7 (0: no state available)
 const int NSSPRED=4;    //number of different ss states predicted by psipred: 0-3 (0: no prediction availabe)

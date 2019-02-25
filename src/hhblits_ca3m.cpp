@@ -237,7 +237,7 @@ int main(int argc, const char **argv) {
 
   //no openmp parallelization in hhblits methods
 
-  HHblits* hhblits_instances[MAXBINS];
+  HHblits* hhblits_instances = new HHblits[par.threads];
   par.threads = 1;
 
   for(int i = 0; i < threads; i++) {
@@ -347,6 +347,7 @@ int main(int argc, const char **argv) {
   for(int i = 0; i < threads; i++) {
     delete hhblits_instances[i];
   }
+  delete[] hhblits_instances;
 
   for (size_t i = 0; i < databases.size(); i++) {
     delete databases[i];

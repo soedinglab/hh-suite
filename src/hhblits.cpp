@@ -37,6 +37,8 @@ HHblits::HHblits(Parameters& par, std::vector<HHblitsDatabase*>& databases) : pa
   }
 
   // Prepare multi-threading - reserve memory for threads, intialize, etc.
+  viterbiMatrices = new ViterbiMatrix*[par.threads];
+  posteriorMatrices = new PosteriorMatrix*[par.threads];
   for (int bin = 0; bin < par.threads; bin++) {
     viterbiMatrices[bin] = new ViterbiMatrix();
     posteriorMatrices[bin] = new PosteriorMatrix();
@@ -50,6 +52,8 @@ HHblits::~HHblits() {
     delete viterbiMatrices[bin];
     delete posteriorMatrices[bin];
   }
+  delete[] viterbiMatrices;
+  delete[] posteriorMatrices;
 
   DeletePseudocountsEngine(context_lib, crf, pc_hhm_context_engine, pc_hhm_context_mode, pc_prefilter_context_engine, pc_prefilter_context_mode);
 }
@@ -761,11 +765,6 @@ void HHblits::ProcessArguments(Parameters& par) {
       par.half_window_size_local_aa_bg_freqs = std::max(1, atoi(argv[++i]));
     } else if (!strncmp(argv[i], "-cpu", 4) && (i < argc - 1)) {
       par.threads = atoi(argv[++i]);
-
-      if(par.threads > MAXBINS) {
-		  HH_LOG(WARNING) << "Reduced threads to max. allowed threads " << MAXBINS << "!" << std::endl;
-		  par.threads = MAXBINS;
-      }
     } else if (!strcmp(argv[i], "-maxmem") && (i < argc - 1)) {
       par.maxmem = atof(argv[++i]);
     }

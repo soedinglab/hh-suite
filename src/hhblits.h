@@ -146,8 +146,8 @@ protected:
 	// output A3M alignment with no sequence filtered out (only active with -all option)
 	Alignment* Qali_allseqs;
 
-	ViterbiMatrix* viterbiMatrices[MAXBINS];
-	PosteriorMatrix* posteriorMatrices[MAXBINS];
+	ViterbiMatrix** viterbiMatrices;
+	PosteriorMatrix** posteriorMatrices;
 
 	HitList hitlist; // list of hits with one Hit object for each pairwise comparison done
 	std::map<int, Alignment*> alis;
