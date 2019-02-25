@@ -3,7 +3,13 @@ language: minimal
 script:
   - mkdir build
   - cd build
-  - cmake .. && make -j $(nproc --all || sysctl -n hw.ncpu)
+  - cmake $CMAKE_EXTRA .. && make -j $(nproc --all || sysctl -n hw.ncpu)
+  - |
+    if [[ "$CMAKE_EXTRA" != "" ]]; then \ 
+        make install; \
+        export PATH="$(pwd)/bin:$(pwd)/scripts:$PATH"; \
+        ./data/test.sh; \
+    fi
 
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew link gcc@8 --force; fi
@@ -35,6 +41,17 @@ matrix:
             - g++-8
             - mpi-default-dev
       env: CC=gcc-8 CXX=g++-8
+    - os: linux
+      dist: trusty
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - cmake
+            - g++-8
+            - mpi-default-dev
+      env: CC=gcc-8 CXX=g++-8 CMAKE_EXTRA="-DENABLE_SANITIZERS=1 -DCMAKE_BUILD_TYPE=ASan -DCMAKE_INSTALL_PREFIX=."
     - os: linux
       dist: trusty
       addons:
