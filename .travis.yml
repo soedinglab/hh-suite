@@ -8,7 +8,7 @@ script:
     if [[ "$CMAKE_EXTRA" != "" ]]; then \ 
         make install; \
         export PATH="$(pwd)/bin:$(pwd)/scripts:$PATH"; \
-        ./data/test.sh; \
+        ../data/test.sh; \
     fi
 
 before_install:
