@@ -8,7 +8,7 @@ The HH-suite is an open-source software package for sensitive protein sequence s
 
 ## Documentation
 
-We provide an extensive [user guide](https://github.com/milot-mirdita/hh-suite/wiki) with many usage examples, frequently asked questions and guides to build your own databases. 
+We provide an extensive [user guide](https://github.com/soedinglab/hh-suite/wiki) with many usage examples, frequently asked questions and guides to build your own databases. 
 
 ## Installation
 We recommend compiling HH-suite on the machine that should run the computations so that it can be optimized for the available CPU instruction sets.
