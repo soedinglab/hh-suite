@@ -235,6 +235,8 @@ void HHalign::ProcessAllArguments(Parameters& par) {
     par.mact = 0.999;
   else if (par.mact < 0)
     par.mact = 0.0;
+  if (par.altali < 1)
+    par.altali = 1;
 }
 
 void HHalign::ProcessArguments(Parameters& par) {
