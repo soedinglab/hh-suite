@@ -66,7 +66,6 @@ namespace cs {
       weight_center = 1.6;
       weight_decay = 0.85;
       weight_as = 1000.0;
-      binary = false;
       ffindex = false;
       verbose = true;
     }
@@ -103,14 +102,10 @@ namespace cs {
     double weight_decay;
     // Weight in emission calculation of abstract states
     double weight_as;
-    // Output binary sequence
-    bool binary;
     // verbose output
     bool verbose;
     // ffindex
     bool ffindex;
-    // binary and not binary output
-    bool both;
   };  // CSTranslateAppOptions
 
   char GetMatchSymbol(double pp) {
@@ -334,7 +329,7 @@ namespace cs {
           std::stringstream out_buffer;
 
           if (opts_.outformat == "seq") {
-            WriteStateSequence(as_seq, out_buffer, opts_.binary);
+            WriteStateSequence(as_seq, out_buffer);
           } else {
             WriteStateProfile(as_profile, out_buffer);
           }
@@ -380,7 +375,6 @@ namespace cs {
       ops >> Option('A', "alphabet", opts_.alphabetfile, opts_.alphabetfile);
       ops >> Option('D', "context-data", opts_.modelfile, opts_.modelfile);
       ops >> Option('w', "weight", opts_.weight_as, opts_.weight_as);
-      ops >> OptionPresent('b', "binary", opts_.binary);
       ops >> OptionPresent('f', "ffindex", opts_.ffindex);
       ops >> Option('v', "verbose", opts_.verbose, opts_.verbose);
 
@@ -419,7 +413,6 @@ namespace cs {
               "Constant in pseudocount calculation for alignments", opts_.pc_ali);
       fprintf(out_, "  %-30s %s (def=%-.2f)\n", "-w, --weight [0,inf[",
               "Weight of abstract state column in emission calculation", opts_.weight_as);
-      fprintf(out_, "  %-30s %s (def=off)\n", "-b, --binary", "Write binary instead of character sequence");
       fprintf(out_, "  %-30s %s (def=off)\n", "-f, --ffindex",
               "Read from -i <ffindex>, write to -o <ffindex> (do not include _ca3m suffix for ca3m informat); enables openmp if possible");
     };
@@ -511,32 +504,24 @@ namespace cs {
     }
 
     // Writes abstract state sequence to outfile
-    void WriteStateSequence(const Sequence<AS219> &seq, string outfile, bool binary, bool append = false) const {
+    void WriteStateSequence(const Sequence<AS219> &seq, string outfile, bool append = false) const {
       FILE *fout;
       if (outfile.compare("stdout") == 0)
         fout = stdout;
       else
         fout = fopen(outfile.c_str(), append ? "a" : "w");
       if (!fout) throw Exception("Can't %s to file '%s'!", append ? "append" : "write", outfile.c_str());
-      if (binary) {
-        for (size_t i = 0; i < seq.length(); ++i) {
-          fputc((char) seq[i], fout);
-        }
-      } else {
-        seq.Write(fout);
+      for (size_t i = 0; i < seq.length(); ++i) {
+        fputc((char) seq[i], fout);
       }
       fclose(fout);
       if (opts_.verbose)
         fprintf(out_, "%s abstract state sequence to %s\n", append ? "Appended" : "Wrote", outfile.c_str());
     };
 
-    void WriteStateSequence(const Sequence<AS219> &seq, std::stringstream &ss, bool binary) {
-      if (binary) {
-        for (size_t i = 0; i < seq.length(); ++i) {
-          ss.put((char) seq[i]);
-        }
-      } else {
-        seq.Write(ss);
+    void WriteStateSequence(const Sequence<AS219> &seq, std::stringstream &ss) {
+      for (size_t i = 0; i < seq.length(); ++i) {
+        ss.put((char) seq[i]);
       }
     };
 

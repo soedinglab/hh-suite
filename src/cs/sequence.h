@@ -88,12 +88,6 @@ class Sequence {
     // Initializes the sequence object with a sequence in FASTA format
     void Read(FILE* in);
 
-    // Prints the sequence in FASTA format to output stream.
-    void Write(FILE* fout, size_t width = 100) const;
-
-    void Write(std::stringstream& ss, size_t width = 100) const;
-
-
     // Resizes current sequence to new length (Note: old sequence is NOT preserved!)
     void Resize(size_t newlen);
 

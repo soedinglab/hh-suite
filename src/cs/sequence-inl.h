@@ -138,66 +138,6 @@ void Sequence<Abc>::Read(FILE* fin) {
     Init(sequence, header);
 }
 
-//template<>
-//void Sequence<AS219>::Read(FILE* fin) {
-//    delete [] seq_;
-//    const size_t kBuffSize = MB;
-//    char buffer[kBuffSize];
-//    int c = '\0';
-//    std::string header;
-//    std::string sequence;
-//
-//    // Read header
-//    while (cs::fgetline(buffer, kBuffSize, fin)) {
-//        if (!strscn(buffer)) continue;
-//        if (buffer[0] == '>') {
-//            header.append(buffer + 1);
-//            break;
-//        } else {
-//            throw Exception("Sequence header does not start with '>'!");
-//        }
-//    }
-//    // Read sequence and stop if either a new header or delimiter is found
-//    while (fgets(buffer, kBuffSize, fin) != NULL) {
-//        if (strscn(buffer)) {
-//            sequence.append(buffer);
-//        }
-//
-//        c = getc(fin);
-//        if (c == EOF) break;
-//        ungetc(c, fin);
-//        if (static_cast<char>(c) == '>') break;
-//    }
-//    Init(sequence, header);
-//}
-
-template<class Abc>
-void Sequence<Abc>::Write(FILE* fout, size_t width) const {
-    fprintf(fout, ">%s\n", header_.c_str());
-    for (size_t i = 0; i < length(); ++i) {
-        unsigned char c = chr(i);
-        assert(Abc::kValidChar[c]);
-        fputc(c, fout);
-        if ((i+1) % width == 0) fputc('\n', fout);
-    }
-    if (length() % width != 0) fputc('\n', fout);
-}
-
-template<class Abc>
-void Sequence<Abc>::Write(std::stringstream& ss, size_t width) const {
-    ss.put('>');
-    ss.write(header_.c_str(), header_.length());
-    ss.put('\n');
-    for (size_t i = 0; i < length(); ++i) {
-        unsigned char c = chr(i);
-        assert(Abc::kValidChar[c]);
-        ss.put(c);
-        if ((i+1) % width == 0) ss.put('\n');
-    }
-    if (length() % width != 0) ss.put('\n');
-}
-
-
 template<class Abc>
 std::string Sequence<Abc>::ToString() const {
     std::string s(length_, '\0');

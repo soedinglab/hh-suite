@@ -51,17 +51,8 @@ namespace cs {
       input.ensureLinearAccess();
 
       //prepare output ffindex cs219 database
-      std::string data_filename_out[2];
-      std::string index_filename_out[2];
-      if (this->opts_.both) {
-        data_filename_out[0] = this->opts_.outfile + "_binary.ffdata";
-        index_filename_out[0] = this->opts_.outfile + "_binary.ffindex";
-        data_filename_out[1] = this->opts_.outfile + "_plain.ffdata";
-        index_filename_out[1] = this->opts_.outfile + "_plain.ffindex";
-      } else {
-        data_filename_out[0] = this->opts_.outfile + ".ffdata";
-        index_filename_out[0] = this->opts_.outfile + ".ffindex";
-      }
+      std::string data_filename_out = this->opts_.outfile + ".ffdata";
+      std::string index_filename_out = this->opts_.outfile + ".ffindex";
 
       int mpq_status = MPQ_Init(this->argc_, (const char**) this->argv_, input.db_index->n_entries);
       if (mpq_status == MPQ_SUCCESS) {
@@ -97,15 +88,9 @@ namespace cs {
           this->input_sequence_index = sequence_db ? sequence_db->db_index : NULL;
           this->input_sequence_data = sequence_db ? sequence_db->db_data : NULL;
 
-          this->data_file_out[0] = openWrite(data_filename_out[0].c_str());
-          this->index_file_out[0] = openWrite(index_filename_out[0].c_str());
-          this->offset[0] = 0;
-
-          if (this->opts_.both) {
-            this->data_file_out[1] = openWrite(data_filename_out[1].c_str());
-            this->index_file_out[1] = openWrite(index_filename_out[1].c_str());
-            this->offset[1] = 0;
-          }
+          this->data_file_out = openWrite(data_filename_out.c_str());
+          this->index_file_out = openWrite(index_filename_out.c_str());
+          this->offset = 0;
 
           std::string log_filename_out = this->opts_.outfile + ".log";
           this->log_file = openWrite(log_filename_out.c_str());
@@ -119,20 +104,18 @@ namespace cs {
             fclose(this->log_file);
           }
 
-          for (size_t i = 0; i < (this->opts_.both ? 2 : 1); i++) {
-            if (this->index_file_out[i]) {
-              int fd = fileno(this->index_file_out[i]);
-              fflush(this->index_file_out[i]);
-              fsync(fd);
-              fclose(this->index_file_out[i]);
-            }
+          if (this->index_file_out) {
+            int fd = fileno(this->index_file_out);
+            fflush(this->index_file_out);
+            fsync(fd);
+            fclose(this->index_file_out);
+          }
 
-            if (this->data_file_out[i]) {
-              int fd = fileno(this->data_file_out[i]);
-              fflush(this->data_file_out[i]);
-              fsync(fd);
-              fclose(this->data_file_out[i]);
-            }
+          if (this->data_file_out) {
+            int fd = fileno(this->data_file_out);
+            fflush(this->data_file_out);
+            fsync(fd);
+            fclose(this->data_file_out);
           }
 
           if (isCa3m) {
@@ -143,10 +126,7 @@ namespace cs {
 
         MPI_Barrier(MPI_COMM_WORLD);
         if (MPQ_rank == MPQ_MASTER) {
-          ffmerge_splits(data_filename_out[0].c_str(), index_filename_out[0].c_str(), 1, MPQ_size - 1, true);
-          if (this->opts_.both) {
-            ffmerge_splits(data_filename_out[1].c_str(), index_filename_out[1].c_str(), 1, MPQ_size - 1, true);
-          }
+          ffmerge_splits(data_filename_out.c_str(), index_filename_out.c_str(), 1, MPQ_size - 1, true);
         }
       } else {
         if (mpq_status == MPQ_ERROR_NO_WORKERS) {
@@ -214,41 +194,23 @@ namespace cs {
         as_seq.set_header(header);
         this->BuildSequence(as_profile, profile_counts_length, as_seq);
 
-        std::stringstream out_buffer[2];
+        std::stringstream out_buffer;
         if (this->opts_.outformat == "seq") {
-          if(this->opts_.both) {
-            this->WriteStateSequence(as_seq, out_buffer[0], true);
-            this->WriteStateSequence(as_seq, out_buffer[1], false);
-          } else {
-            this->WriteStateSequence(as_seq, out_buffer[0], this->opts_.binary);
-          }
+          this->WriteStateSequence(as_seq, out_buffer);
         } else {
-          this->WriteStateProfile(as_profile, out_buffer[0]);
+          this->WriteStateProfile(as_profile, out_buffer);
         }
-        std::string out_string = out_buffer[0].str();
-        ffindex_insert_memory(this->data_file_out[0], this->index_file_out[0],
-                              &(this->offset[0]), const_cast<char *>(out_string.c_str()),
-                              out_string.size(), entry->name);
+        std::string out_string = out_buffer.str();
+        ffindex_insert_memory(this->data_file_out, this->index_file_out,
+                              &(this->offset), const_cast<char *>(out_string.c_str()), out_string.size(), entry->name);
 
-        if(this->opts_.both) {
-          out_string = out_buffer[1].str();
-          ffindex_insert_memory(this->data_file_out[1], this->index_file_out[1],
-                                &(this->offset[1]), const_cast<char *>(out_string.c_str()),
-                                out_string.size(), entry->name);
-        }
         // FIXME: we are leaking inf, but if we fclose we get weird crashes
         //fclose(inf);
 
         if (entry_index % 1000 == 0) {
-          fflush(this->data_file_out[0]);
-          fflush(this->index_file_out[0]);
-
-          if(this->opts_.both) {
-            fflush(this->data_file_out[1]);
-            fflush(this->index_file_out[1]);
-          }
+          fflush(this->data_file_out);
+          fflush(this->index_file_out);
         }
-
       }
     };
 
@@ -264,9 +226,6 @@ namespace cs {
       ops >> Option('A', "alphabet", this->opts_.alphabetfile, this->opts_.alphabetfile);
       ops >> Option('D', "context-data", this->opts_.modelfile, this->opts_.modelfile);
       ops >> Option('w', "weight", this->opts_.weight_as, this->opts_.weight_as);
-      ops >> OptionPresent('b', "binary", this->opts_.binary);
-      ops >> OptionPresent('f', "ffindex", this->opts_.ffindex);
-      ops >> OptionPresent('2', "both", this->opts_.both);
       ops >> Option('v', "verbose", this->opts_.verbose, this->opts_.verbose);
 
       this->opts_.Validate();
@@ -298,8 +257,6 @@ namespace cs {
               "Constant in pseudocount calculation for alignments", this->opts_.pc_ali);
       fprintf(this->out_, "  %-30s %s (def=%-.2f)\n", "-w, --weight [0,inf[",
               "Weight of abstract state column in emission calculation", this->opts_.weight_as);
-      fprintf(this->out_, "  %-30s %s (def=off)\n", "-b, --binary", "Write binary instead of character sequence");
-      fprintf(this->out_, "  %-30s %s (def=off)\n", "-2, --both", "Write both binary and plain character sequence");
     };
 
     // Prints usage banner to stream.
@@ -329,9 +286,9 @@ namespace cs {
     ffindex_index_t *input_header_index;
     char *input_header_data;
 
-    FILE *data_file_out[2];
-    FILE *index_file_out[2];
-    size_t offset[2];
+    FILE *data_file_out;
+    FILE *index_file_out;
+    size_t offset;
 
     FILE *log_file;
   };
