@@ -258,9 +258,9 @@ bool HHblitsDatabase::checkAndBuildCompressedDatabase(const char* base) {
       && file_exists(sequence_index_filename) && file_exists(sequence_data_filename)) {
     use_compressed = true;
 
-    ca3m_database = new FFindexDatabase(ca3m_data_filename, ca3m_index_filename, use_compressed);
-    sequence_database = new FFindexDatabase(sequence_data_filename, sequence_index_filename, use_compressed);
-    header_database = new FFindexDatabase(header_data_filename, header_index_filename, use_compressed);
+    ca3m_database = new FFindexDatabase(ca3m_data_filename, ca3m_index_filename, true);
+    sequence_database = new FFindexDatabase(sequence_data_filename, sequence_index_filename, true);
+    header_database = new FFindexDatabase(header_data_filename, header_index_filename, true);
 
     char hhm_index_filename[NAMELEN];
     char hhm_data_filename[NAMELEN];
@@ -269,13 +269,12 @@ bool HHblitsDatabase::checkAndBuildCompressedDatabase(const char* base) {
     buildDatabaseName(base, "hhm", ".ffindex", hhm_index_filename);
 
     if (file_exists(hhm_data_filename) && file_exists(hhm_index_filename)) {
-      hhm_database = new FFindexDatabase(hhm_data_filename, hhm_index_filename, use_compressed);
+      hhm_database = new FFindexDatabase(hhm_data_filename, hhm_index_filename, false);
     }
-  } else {
-    use_compressed = false;
+    return true;
   }
-
-  return use_compressed;
+  use_compressed = false;
+  return false;
 }
 
 HHEntry::HHEntry(int sequence_length) : sequence_length(sequence_length) {
