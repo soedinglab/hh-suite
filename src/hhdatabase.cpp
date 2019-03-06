@@ -82,8 +82,7 @@ HHblitsDatabase::HHblitsDatabase(const char* base, bool initCs219) {
       buildDatabaseName(base, "cs219", ".ffdata", cs219_data_filename);
       buildDatabaseName(base, "cs219", ".ffindex", cs219_index_filename);
 
-      cs219_database = new FFindexDatabase(cs219_data_filename,
-                                           cs219_index_filename, use_compressed);
+      cs219_database = new FFindexDatabase(cs219_data_filename, cs219_index_filename, use_compressed);
   }
 
   if (!checkAndBuildCompressedDatabase(base)) {
@@ -94,8 +93,7 @@ HHblitsDatabase::HHblitsDatabase(const char* base, bool initCs219) {
     buildDatabaseName(base, "a3m", ".ffindex", a3m_index_filename);
 
     if (file_exists(a3m_data_filename) && file_exists(a3m_index_filename)) {
-      a3m_database = new FFindexDatabase(a3m_data_filename, a3m_index_filename,
-                                         use_compressed);
+      a3m_database = new FFindexDatabase(a3m_data_filename, a3m_index_filename, use_compressed);
     }
 
     char hhm_index_filename[NAMELEN];
@@ -105,8 +103,7 @@ HHblitsDatabase::HHblitsDatabase(const char* base, bool initCs219) {
     buildDatabaseName(base, "hhm", ".ffindex", hhm_index_filename);
 
     if (file_exists(hhm_data_filename) && file_exists(hhm_index_filename)) {
-      hhm_database = new FFindexDatabase(hhm_data_filename, hhm_index_filename,
-                                         use_compressed);
+      hhm_database = new FFindexDatabase(hhm_data_filename, hhm_index_filename, use_compressed);
     }
 
     if (a3m_database == NULL && hhm_database == NULL) {
@@ -195,58 +192,44 @@ void HHblitsDatabase::prefilter_db(HMM* q_tmp, Hash<Hit>* previous_hits,
   getEntriesFromNames(prefiltered_old_entry_names, old_entries);
 }
 
-void HHblitsDatabase::getEntriesFromNames(
-    std::vector<std::pair<int, std::string> >& hits,
-    std::vector<HHEntry*>& entries) {
+void HHblitsDatabase::getEntriesFromNames(std::vector<std::pair<int, std::string>>& hits, std::vector<HHEntry*>& entries) {
   for (size_t i = 0; i < hits.size(); i++) {
     ffindex_entry_t* entry;
 
+    if (hhm_database != NULL) {
+      entry = ffindex_get_entry_by_name(hhm_database->db_index, const_cast<char*>(hits[i].second.c_str()));
+
+      if (entry != NULL) {
+        HHEntry* hhentry = new HHDatabaseEntry(hits[i].first, this, hhm_database, entry);
+        entries.push_back(hhentry);
+        continue;
+      }
+    }
+
     if (use_compressed) {
-      entry = ffindex_get_entry_by_name(
-          ca3m_database->db_index, const_cast<char*>(hits[i].second.c_str()));
+      entry = ffindex_get_entry_by_name(ca3m_database->db_index, const_cast<char *>(hits[i].second.c_str()));
       if (entry == NULL) {
         //TODO: error
         HH_LOG(WARNING) << "Could not fetch entry from compressed a3m!" << std::endl;
         HH_LOG(WARNING) << "\tentry: " << hits[i].second << std::endl;
-        HH_LOG(WARNING) << "\tdb: " << ca3m_database->data_filename
-                                  << std::endl;
+        HH_LOG(WARNING) << "\tdb: " << ca3m_database->data_filename << std::endl;
         continue;
       }
 
-      HHEntry* hhentry = new HHDatabaseEntry(hits[i].first, this, ca3m_database,
-                                             entry);
+      HHEntry *hhentry = new HHDatabaseEntry(hits[i].first, this, ca3m_database, entry);
       entries.push_back(hhentry);
     } else {
-      if (hhm_database != NULL) {
-        entry = ffindex_get_entry_by_name(
-            hhm_database->db_index, const_cast<char*>(hits[i].second.c_str()));
-
-        if (entry != NULL) {
-          HHEntry* hhentry = new HHDatabaseEntry(hits[i].first, this,
-                                                 hhm_database, entry);
-          entries.push_back(hhentry);
-          continue;
-        }
-      }
-
-      entry = ffindex_get_entry_by_name(
-          a3m_database->db_index, const_cast<char*>(hits[i].second.c_str()));
-
-      if (entry != NULL) {
-        HHEntry* hhentry = new HHDatabaseEntry(hits[i].first, this,
-                                               a3m_database, entry);
-        entries.push_back(hhentry);
-      } else {
+      entry = ffindex_get_entry_by_name(a3m_database->db_index, const_cast<char*>(hits[i].second.c_str()));
+      if (entry == NULL) {
         //TODO: error
-        HH_LOG(WARNING)
-            << "Could not fetch entry from a3m or hhm!" << std::endl;
+        HH_LOG(WARNING) << "Could not fetch entry from a3m or hhm!" << std::endl;
         HH_LOG(WARNING) << "\tentry: " << hits[i].second << std::endl;
-        HH_LOG(WARNING) << "\ta3m_db: " << a3m_database->data_filename
-                                  << std::endl;
-        HH_LOG(WARNING) << "\thhm_db: " << hhm_database->data_filename
-                                  << std::endl;
+        HH_LOG(WARNING) << "\ta3m_db: " << a3m_database->data_filename << std::endl;
+        HH_LOG(WARNING) << "\thhm_db: " << hhm_database->data_filename << std::endl;
         continue;
       }
+      HHEntry* hhentry = new HHDatabaseEntry(hits[i].first, this, a3m_database, entry);
+      entries.push_back(hhentry);
     }
   }
 }
@@ -272,18 +255,22 @@ bool HHblitsDatabase::checkAndBuildCompressedDatabase(const char* base) {
 
   if (file_exists(ca3m_index_filename) && file_exists(ca3m_data_filename)
       && file_exists(header_index_filename) && file_exists(header_data_filename)
-      && file_exists(sequence_index_filename)
-      && file_exists(sequence_data_filename)) {
+      && file_exists(sequence_index_filename) && file_exists(sequence_data_filename)) {
     use_compressed = true;
 
-    ca3m_database = new FFindexDatabase(ca3m_data_filename, ca3m_index_filename,
-                                        use_compressed);
-    sequence_database = new FFindexDatabase(sequence_data_filename,
-                                            sequence_index_filename,
-                                            use_compressed);
-    header_database = new FFindexDatabase(header_data_filename,
-                                          header_index_filename,
-                                          use_compressed);
+    ca3m_database = new FFindexDatabase(ca3m_data_filename, ca3m_index_filename, use_compressed);
+    sequence_database = new FFindexDatabase(sequence_data_filename, sequence_index_filename, use_compressed);
+    header_database = new FFindexDatabase(header_data_filename, header_index_filename, use_compressed);
+
+    char hhm_index_filename[NAMELEN];
+    char hhm_data_filename[NAMELEN];
+
+    buildDatabaseName(base, "hhm", ".ffdata", hhm_data_filename);
+    buildDatabaseName(base, "hhm", ".ffindex", hhm_index_filename);
+
+    if (file_exists(hhm_data_filename) && file_exists(hhm_index_filename)) {
+      hhm_database = new FFindexDatabase(hhm_data_filename, hhm_index_filename, use_compressed);
+    }
   } else {
     use_compressed = false;
   }
