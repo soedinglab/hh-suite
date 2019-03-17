@@ -23,7 +23,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////
 //   The function swStripedByte contains code adapted from Mengyao Zhao
 //   The MIT License
-//   Copyright (c) 2012-1015 Boston College.
+//   Copyright (c) 2012-2015 Boston College.
 //   Permission is hereby granted, free of charge, to any person obtaining
 //   a copy of this software and associated documentation files (the
 //   "Software"), to deal in the Software without restriction, including
@@ -41,11 +41,33 @@
 //   ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 //   CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //   SOFTWARE.
-//
-//     Reference:
-//     SSW Library: An SIMD Smith-Waterman C/C++ Library for Use in Genomic Applications i
-//     Mengyao Zhao , Wan-Ping Lee, Erik P. Garrison, Gabor T. Marth, PLOS ONE, December 4, 2013
-//     https://doi.org/10.1371/journal.pone.0082138
+
+
+// The 2-clause BSD License
+//   Copyright 2006 Michael Farrar.  
+//   Redistribution and use in source and binary forms, with or without
+//   modification, are permitted provided that the following conditions are
+//   met:
+//   
+//   1. Redistributions of source code must retain the above copyright
+//      notice, this list of conditions and the following disclaimer.
+//   
+//   2. Redistributions in binary form must reproduce the above copyright
+//      notice, this list of conditions and the following disclaimer in the
+//      documentation and/or other materials provided with the distribution.
+//   
+//   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+//   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+//   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+//   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+//   HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+//   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+//   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+//   DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+//   THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+//   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+//   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 
 class Prefilter {
 public:
