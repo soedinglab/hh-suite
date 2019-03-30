@@ -32,6 +32,7 @@
 #include "a3m_compress.h"
 #include "ffindexdatabase.h"
 
+#include "ext/fmemopen.h"
 #include "context_data.lib.h"
 //include "context_data.crf.h"
 #include "cs219.lib.h"
