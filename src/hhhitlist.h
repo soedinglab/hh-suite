@@ -63,8 +63,8 @@ public:
   void PrintScoreFile(HMM* q, char* outputfile);
   void PrintScoreFile(HMM* q, std::stringstream& outputstream);
     
-  void PrintM8File(HMM* q, char* outputfile);
-  void PrintM8File(HMM* q, std::stringstream& outputstream);
+  void PrintM8File(HMM* q, char* outputfile, const int nhits, const float p, const int b, const double E);
+  void PrintM8File(HMM* q, std::stringstream& outputstream, const int nhits, const float p, const int b, const double E);
 
   void PrintMatrices(HMM* q, const char* matricesOutputFileName, const bool filter_matrices, const size_t max_number_matrices, const float S[20][20]);
   void PrintMatrices(HMM* q, std::stringstream& out, const bool filter_matrices, const size_t max_number_matrices, const float S[20][20]);

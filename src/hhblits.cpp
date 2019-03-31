@@ -232,6 +232,7 @@ void HHblits::help(Parameters& par, char all) {
     printf(" -ohhm <file>   write HHM file for result MSA of significant matches\n");
   }
   printf(" -oalis <name>  write MSAs in A3M format after each iteration\n");
+  printf(" -blasttab <name> write a blast tab format\n");
   printf(" -add_cons      generate consensus sequence as master sequence of query MSA (default=don't)\n");
   printf(" -hide_cons     don't show consensus sequence in alignments (default=show)     \n");
   printf(" -hide_pred     don't show predicted 2ndary structure in alignments (default=show)\n");
@@ -1813,7 +1814,7 @@ void HHblits::writeScoresFile(char* scoresFile) {
 
 void HHblits::writeM8(char* m8File) {
     if (*m8File) {
-        hitlist.PrintM8File(q, m8File);
+        hitlist.PrintM8File(q, m8File, par.nseqdis, par.p, par.b, par.E);
     }
 }
 
@@ -1896,7 +1897,7 @@ void HHblits::writeScoresFile(HHblits& hhblits, std::stringstream& out) {
 }
 
 void HHblits::writeM8(HHblits& hhblits, std::stringstream& out) {
-  hhblits.hitlist.PrintM8File(hhblits.q, out);
+  hhblits.hitlist.PrintM8File(hhblits.q, out, hhblits.par.nseqdis, hhblits.par.p, hhblits.par.b, hhblits.par.E);
 }
 
 void HHblits::writePairwiseAlisFile(HHblits& hhblits, std::stringstream& out) {

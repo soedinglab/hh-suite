@@ -250,9 +250,9 @@ void HitList::PrintScoreFile(HMM* q, char* outputfile) {
 /////////////////////////////////////////////////////////////////////////////////////
 // Print score distribution into a blast tab file
 /////////////////////////////////////////////////////////////////////////////////////
-void HitList::PrintM8File(HMM* q, char* outputfile) {
+void HitList::PrintM8File(HMM* q, char* outputfile, const int nhits, const float p,  const int b,  const double E) {
     std::stringstream outbuffer;
-    PrintM8File(q, outbuffer);
+    PrintM8File(q, outbuffer, nhits, p, b, E);
     
     if (strcmp(outputfile, "stdout") == 0) {
         std::cout << outbuffer.str();
@@ -272,13 +272,13 @@ void HitList::PrintM8File(HMM* q, char* outputfile) {
 }
 
 
-void HitList::PrintM8File(HMM* q, std::stringstream& outbuffer) {
+void HitList::PrintM8File(HMM* q, std::stringstream& outbuffer, const int nhits, const float p,  const int b,  const double E) {
     Hash<int> twice(10000); // make sure only one hit per HMM is listed
     twice.Null(-1);
     
     Reset();
 
-    
+
     //Blast tab format
     // query target evalue score
     // d1c8da_	Q32Z53	0.618	547	334	0	1	548	1	542	3.11E-185	646
@@ -287,6 +287,10 @@ void HitList::PrintM8File(HMM* q, std::stringstream& outbuffer) {
     while (!End()) {
         i++;
         Hit hit = ReadNext();
+        if (nhits >= b && hit.Probab < p)
+          break;
+        if (nhits >= b && hit.Eval > E)
+          continue;
         char line[LINELEN];
         int gapOpenCount = 0;
         int missMatchCount = 0;
