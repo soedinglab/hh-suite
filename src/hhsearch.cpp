@@ -86,6 +86,8 @@ void HHsearch::help(Parameters& par, char all) {
   printf("Output options: \n");
   printf(" -o <file>      write results in standard format to file (default=<infile.hhr>)\n");
   printf(" -oa3m <file>   write result MSA with significant matches in a3m format\n");
+  printf(" -blasttab <name> write result in blast tabular format (similar to -outfmt 6 or -m8)\n");
+  printf("                  'query target matchCnt/targetLen misMatchCnt gapOpenCnt qstart qend tstart tend eval score'\n");
   if (all) {
     printf(" -opsi <file>   write result MSA of significant matches in PSI-BLAST format\n");
     printf(" -ohhm <file>   write HHM file for result MSA of significant matches\n");

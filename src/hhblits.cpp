@@ -232,7 +232,8 @@ void HHblits::help(Parameters& par, char all) {
     printf(" -ohhm <file>   write HHM file for result MSA of significant matches\n");
   }
   printf(" -oalis <name>  write MSAs in A3M format after each iteration\n");
-  printf(" -blasttab <name> write a blast tab format\n");
+  printf(" -blasttab <name> write result in blast tabular format (similar to -outfmt 6 or -m8)\n");
+  printf("                  'query target matchCnt/targetLen misMatchCnt gapOpenCnt qstart qend tstart tend eval score'\n");
   printf(" -add_cons      generate consensus sequence as master sequence of query MSA (default=don't)\n");
   printf(" -hide_cons     don't show consensus sequence in alignments (default=show)     \n");
   printf(" -hide_pred     don't show predicted 2ndary structure in alignments (default=show)\n");
