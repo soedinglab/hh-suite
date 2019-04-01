@@ -118,6 +118,9 @@ target_link_libraries(HH_OBJECTS
         hhviterbialgorithm_with_celloff
         hhviterbialgorithm_and_ss
         hhviterbialgorithm_with_celloff_and_ss)
+if (NOT HAVE_FMEMOPEN)
+target_link_libraries(HH_OBJECTS ext)
+endif()
 
 add_executable(hhblits hhblits_app.cpp)
 target_link_libraries(hhblits HH_OBJECTS)
