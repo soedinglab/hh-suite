@@ -6,7 +6,8 @@ Created on Mon Jun 15 21:49:32 2015
 @author: Harald Voehringer
 """
 
-import sys, os, glob, textwrap, itertools
+from __future__ import print_function
+import sys, os, glob, gzip, textwrap, itertools
 from optparse import OptionParser
 from collections import defaultdict
 from os.path import splitext
@@ -43,17 +44,22 @@ class CIF2FASTA(object):
         self.block = self.open_cif()
             
     def open_cif(self):
-        """ Assumes a mmCif file and returns a data block used for subsequent procedures. """
+        """ Assumes a mmCIF or gzipped mmCIF file and returns a data block used for subsequent procedures. """
         # The "usual" procedure to open a mmCIF with pdbX/mmCIF
 
-        with open(self.cif_path) as cif_fh:
-            data = []
-            reader = PdbxReader(cif_fh)
-            reader.read(data)
-            if len(data) == 0:
-                return None
-            else:
-                return data[0]
+        data = []
+        try:
+            with gzip.open(self.cif_path) as cif_fh:
+                reader = PdbxReader(cif_fh)
+                reader.read(data)
+        except IOError:
+            with open(self.cif_path) as cif_fh:
+                reader = PdbxReader(cif_fh)
+                reader.read(data)
+        if len(data) == 0:
+            return None
+        else:
+            return data[0]
 
     def is_valid(self):
         return self.block is not None
@@ -496,7 +502,7 @@ def get_paths(in_folder, out_folder):
     
     for root, dirs, files in os.walk(in_folder):
         for fname in files:
-            if fname.endswith(".cif"):
+            if fname.endswith(".cif") or fname.endswith(".cif.gz"):
                 in_path = os.path.join(root, fname)
                 out_file = in_path.split('/')[-1].split('.')[0] + ".fasta"
                 out_path = os.path.join(out_folder, out_file)
