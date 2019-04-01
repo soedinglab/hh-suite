@@ -5,7 +5,7 @@ How to install hhpred:
 
 2) download hhpred databases:
 	- hhpred needs hhm, a3m and pdb files for each template, all in the same folder
-	- goto http://wwwuser.gwdg.de/~compbiol/data/hhsuite/databases/hhsearch_dbs/
+	- goto http://wwwuser.gwdg.de/~compbiol/data/hhsuite/databases/hhsuite_dbs/
 	   and download the latest
 		pdb70*.a3m.tar.gz, pdb70*.hhm.tar.gz, pdb70*.a3m.tar.gz
 	   and extract them into your hhpred database folder
