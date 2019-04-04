@@ -1,6 +1,6 @@
 # HH-suite3 for sensitive sequence searching
 
-(C) Johannes Soeding, Markus Meier, Martin Steinegger, Milot, Mirdita, Michael Remmert, Andreas Hauser, Andreas Biegert
+(C) Johannes Soeding, Markus Meier, Martin Steinegger, Milot Mirdita, Michael Remmert, Andreas Hauser, Andreas Biegert
 
 [![Travis Build Status](https://travis-ci.org/soedinglab/hh-suite.svg?branch=master)](https://travis-ci.org/soedinglab/hh-suite)[![Codeship Status for soedinglab/hh-suite](https://codeship.com/projects/0936c290-2248-0133-bcb4-52bb0fef976f/status?branch=master)](https://codeship.com/projects/96085)
 
@@ -19,7 +19,7 @@ To compile from source, you will need a recent C/C++ compiler (at least GCC 4.8 
 To download the source code and compile the HH-suite execute the following commands:
 ```
 git clone https://github.com/soedinglab/hh-suite.git
-cd hh-suite && mkdir build && cd build
+mkdir -p hh-suite/build && cd hh-suite/build
 cmake -DCMAKE_INSTALL_PREFIX=. ..
 make -j 4 && make install
 export PATH="$(pwd)/bin:$(pwd)/scripts:$PATH"
