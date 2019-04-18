@@ -17,7 +17,8 @@ void usage() {
 }
 
 int main(int argc, char **argv) {
-  bool iflag, dflag, oflag = false;
+  bool iflag, dflag, oflag;
+  iflag = dflag = oflag = false;
 
   std::string ffindex_sequence_db_prefix;
   std::string ffindex_ca3m_db_prefix;
