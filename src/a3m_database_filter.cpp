@@ -40,7 +40,7 @@ int main(int argc, char **argv) {
         set_file = optarg;
         break;
       case 'o':
-        oflag = optarg;
+        oflag = 1;
         ffindex_oa3m_db_prefix = optarg;
         break;
       case 'h':

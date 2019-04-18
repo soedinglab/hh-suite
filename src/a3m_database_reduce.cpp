@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
         ffindex_sequence_db_prefix = optarg;
         break;
       case 'o':
-        oflag = optarg;
+        oflag = 1;
         ffindex_ca3m_db_prefix = optarg;
         break;
       case 'h':
