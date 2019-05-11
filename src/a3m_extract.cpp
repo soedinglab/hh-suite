@@ -43,7 +43,7 @@ int main(int argc, char **argv) {
         ffindex_header_db_prefix = optarg;
         break;
       case 'o':
-        oflag = optarg;
+        oflag = 1;
         output = optarg;
         break;
       case 'h':

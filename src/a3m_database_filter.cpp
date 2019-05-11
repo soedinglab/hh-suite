@@ -21,7 +21,8 @@ void usage() {
 }
 
 int main(int argc, char **argv) {
-  bool iflag, sflag, oflag = false;
+  bool iflag, sflag, oflag;
+  iflag = sflag = oflag = false;
 
   std::string set_file;
   std::string ffindex_oa3m_db_prefix;
@@ -39,7 +40,7 @@ int main(int argc, char **argv) {
         set_file = optarg;
         break;
       case 'o':
-        oflag = optarg;
+        oflag = 1;
         ffindex_oa3m_db_prefix = optarg;
         break;
       case 'h':
