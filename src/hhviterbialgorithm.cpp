@@ -474,7 +474,7 @@ void Viterbi::AlignWithOutCellOff(HMMSimd* q, HMMSimd* t,ViterbiMatrix * viterbi
             //  MAX MAX MAX 0
 
             
-            simd_int curr_pos_j   = simdi32_set(j);
+            simd_int curr_pos_j   = simdi32_set(j-1);
             simd_int new_j_pos_hi = simdi_and(lookup_mask_hi,curr_pos_j);
             simd_int old_j_pos_lo = simdi_and(lookup_mask_lo,j2_vec);
             j2_vec = simdi32_add(new_j_pos_hi,old_j_pos_lo);
