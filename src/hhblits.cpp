@@ -1173,8 +1173,8 @@ void HHblits::run(FILE* query_fh, char* query_path) {
     int max_template_length = getMaxTemplateLength(new_entries);
     if (max_template_length > par.maxres) {
       HH_LOG(WARNING)
-          << "database contains sequences that exceeds maximum allowed size (maxres = "
-          << par.maxres << "). Maxres can be increased with parameter -maxres."
+          << "database contains sequences that exceed maximum allowed size (maxres = "
+          << par.maxres << "). Max sequence length can be increased with parameter -maxres."
           << std::endl;
     }
     max_template_length = std::min(max_template_length, par.maxres);
