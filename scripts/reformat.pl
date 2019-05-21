@@ -65,7 +65,7 @@ Options:
   -num      add number prefix to sequence names: 'name', '1:name' '2:name' etc
   -noss     remove secondary structure sequences (beginning with >ss_)
   -sa       do not remove solvent accessibility sequences (beginning with >sa_)
-  -M first  make all columns with residue in first seuqence match columns 
+  -M first  make all columns with residue in first sequence match columns 
             (default for output format a2m or a3m)
   -M int    make all columns with less than X% gaps match columns 
             (for output format a2m or a3m)
