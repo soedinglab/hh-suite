@@ -6,6 +6,11 @@ set(HAVE_SSE2 0 CACHE BOOL "Have SSE2")
 set(HAVE_AVX2 0 CACHE BOOL "Have AVX2")
 set(ENABLE_SANITIZERS 0 CACHE BOOL "Enable Sanitizers")
 
+if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+    message("-- Compiler is clang(++)")
+    set(CMAKE_COMPILER_IS_CLANG 1)
+endif ()
+
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif (NOT CMAKE_BUILD_TYPE)
