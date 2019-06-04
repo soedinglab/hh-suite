@@ -116,7 +116,7 @@ void PosteriorDecoder::backtraceMAC(HMM & q, HMM & t, PosteriorMatrix & p_mm, Vi
 	int step;      // counts steps in path through 5-layered dynamic programming matrix
 	int i,j;       // query and template match state indices
 
-	initializeBacktrace(t,hit);
+	initializeBacktrace(q,t,hit);
 
 	// Make sure that backtracing stops when t:M1 or q:M1 is reached (Start state), e.g. sMM[i][1], or sIM[i][1] (M:MM, B:IM)
 	for (i = 0; i <= q.L; ++i) backtrace_matrix.setMatMat(i, 1, elem, ViterbiMatrix::STOP);	// b[i][1] = STOP;
@@ -270,22 +270,23 @@ void PosteriorDecoder::backtraceMAC(HMM & q, HMM & t, PosteriorMatrix & p_mm, Vi
 /////////////////////////////////////////////////////////////////////////////////////
 // Allocate memory for data of new alignment (sequence names, alignment, scores,...)
 /////////////////////////////////////////////////////////////////////////////////////
-void PosteriorDecoder::initializeBacktrace(HMM & t, Hit & hit) {
+void PosteriorDecoder::initializeBacktrace(HMM & q, HMM & t, Hit & hit) {
+	int maxlen = q.L + t.L + 1;
 	// Allocate new space
     if(hit.i) {
       delete[] hit.i;
     }
-	hit.i = new int[hit.i2 + hit.j2 + 2];
+	hit.i = new int[maxlen];
 
 	if(hit.j) {
 	  delete[] hit.j;
 	}
-	hit.j = new int[hit.i2 + hit.j2 + 2];
+	hit.j = new int[maxlen];
 
 	if(hit.states) {
 	  delete[] hit.states;
 	}
-	hit.states = new char[hit.i2 + hit.j2 + 2];
+	hit.states = new char[maxlen];
 
 	if(hit.S) {
 	  delete[] hit.S;
