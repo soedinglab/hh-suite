@@ -85,6 +85,7 @@ Parameters::Parameters(const int argc, const char** argv) : argc(argc), argv(arg
 	ssa = 1.0f;                // weight of ss evolution matrix
 	shift = -0.03f;            // Shift match score up
 	mact = 0.3501f; // Probability threshold for MAC alignment in local mode for alignment ends (set to 0.3501 to track user modification)
+	mac_min_length = 0.9f;   // Minimum length of MAC hit in comparison with the original Viterbi hit (in terms of matched_cols)
 	corr = 0.1f;               // Weight of correlations of scores for |i-j|<=4
 
 	egq = 0.0f;                // no charge for end gaps as default

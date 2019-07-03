@@ -108,7 +108,64 @@ void PosteriorDecoder::writeProfilesToHits(HMM &q, HMM &t, PosteriorMatrix &p_mm
 	}
 }
 
-void PosteriorDecoder::backtraceMAC(HMM & q, HMM & t, PosteriorMatrix & p_mm, ViterbiMatrix & backtrace_matrix, const int elem, Hit & hit, float corr) {
+void PosteriorDecoder::findBacktraceMAC(ViterbiMatrix & backtrace_matrix, const int elem,
+		int & i1, int & j1, int i2, int j2, std::vector<int> & vi, std::vector<int> & vj, std::vector<char> & states,
+		int & matched_cols, int & nsteps,
+		LogLevel & actual_level) {
+	// Back-tracing loop
+	// In contrast to the Viterbi-Backtracing, STOP signifies the first Match-Match state, NOT the state before the first MM state
+	matched_cols = 1; // for each MACTH (or STOP) state matched_col is incremented by 1
+	char state = ViterbiMatrix::MM; // lowest state with maximum score must be match-match state
+	int step = 0; // steps through the matrix correspond to alignment columns (from 1 to nsteps)
+	int i = i2; // last aligned pair is (i2,j2)
+	int j = j2;
+
+	// arrays start from 1
+	vi.push_back(0);
+	vj.push_back(0);
+	states.push_back((char) ViterbiMatrix::STOP); // note: static cast is needed for avoiding "undefined" ViterbiMatrix::MM object error
+
+	if (backtrace_matrix.getMatMat(i, j, elem) != ViterbiMatrix::MM) {		// b[i][j] != MM
+		if (Log::reporting_level() > DEBUG)
+		  fprintf(stderr,"Error: backtrace does not start in match-match state, but in state %i, (i,j)=(%i,%i)\n",backtrace_matrix.getMatMat(i, j, elem),i,j);
+
+		step = 0;
+		vi[0] = i;
+		vj[0] = j;
+		state = ViterbiMatrix::STOP;
+	} else {
+		while (state != ViterbiMatrix::STOP) {
+			step++;
+			state = backtrace_matrix.getMatMat(i, j, elem); // b[i][j];
+			states.push_back(state);
+			vi.push_back(i);
+			vj.push_back(j);
+
+			if (state == ViterbiMatrix::MM) matched_cols++;
+
+			switch (state) {
+				case ViterbiMatrix::MM: i--; j--; break;
+				case ViterbiMatrix::IM: j--; break;
+				case ViterbiMatrix::MI: i--; break;
+				case ViterbiMatrix::STOP: break;
+				default:
+					fprintf(stderr,"Error: unallowed state value %i occurred during backtracing at step %i, (i,j)=(%i,%i)\n", state, step, i, j);
+					state = 0;
+					actual_level = DEBUG1;
+					break;
+			} //end switch (state)
+		} //end while (state)
+	}
+	// first state (STOP state) is set to MM state
+	states.push_back((char) ViterbiMatrix::MM); // note: static cast is needed for avoiding "undefined" ViterbiMatrix::MM object error
+	nsteps = step;
+	i1 = i2;
+	j1 = j2;
+	i1 = vi[nsteps];
+	j1 = vj[nsteps];
+}
+
+void PosteriorDecoder::backtraceMAC(HMM & q, HMM & t, PosteriorMatrix & p_mm, ViterbiMatrix & backtrace_matrix, const int elem, Hit & hit, float corr, float mac_min_length) {
 
 	// Trace back trough the matrix b[i][j] until STOP state is found
 
@@ -122,56 +179,88 @@ void PosteriorDecoder::backtraceMAC(HMM & q, HMM & t, PosteriorMatrix & p_mm, Vi
 	for (i = 0; i <= q.L; ++i) backtrace_matrix.setMatMat(i, 1, elem, ViterbiMatrix::STOP);	// b[i][1] = STOP;
 	for (j = 1; j <= t.L; ++j) backtrace_matrix.setMatMat(1, j, elem, ViterbiMatrix::STOP);	// b[1][j] = STOP;
 
-	// Back-tracing loop
-	// In contrast to the Viterbi-Backtracing, STOP signifies the first Match-Match state, NOT the state before the first MM state
-	hit.matched_cols = 1; // for each MACTH (or STOP) state matched_col is incremented by 1
-	hit.state = ViterbiMatrix::MM;       // lowest state with maximum score must be match-match state
-	step = 0;         // steps through the matrix correspond to alignment columns (from 1 to nsteps)
-	i = hit.i2; j = hit.j2;     // last aligned pair is (i2,j2)
-	if (backtrace_matrix.getMatMat(i, j, elem) != ViterbiMatrix::MM) {		// b[i][j] != MM
-		if (Log::reporting_level() > DEBUG)
-		  fprintf(stderr,"Error: backtrace does not start in match-match state, but in state %i, (i,j)=(%i,%i)\n",backtrace_matrix.getMatMat(i, j, elem),i,j);
+	std::vector<int> vi;
+	std::vector<int> vj;
+	std::vector<char> states;
+	int matched_cols, nsteps;
+	int i2 = hit.i2;
+	int j2 = hit.j2;
+	int i1, j1;
 
-		step = 0;
+	findBacktraceMAC(backtrace_matrix, elem, i1, j1, i2, j2, vi, vj, states, matched_cols, nsteps, actual_level);
+
+	char msg[512];
+	if (i2 < m_temp_hit->i1 || j2 < m_temp_hit->j1 || i1 > m_temp_hit->i2 || j1 > m_temp_hit->j2) {
+		snprintf(msg, sizeof(msg), "The main MAC hit (%d,%d)-(%d,%d) is outside the Viterbi hit scope (%d,%d)-(%d,%d), looking for the alternative...\n",
+			i1, j1, i2, j2, m_temp_hit->i1, m_temp_hit->j1, m_temp_hit->i2, m_temp_hit->j2);
+		HH_LOG(WARNING) << msg;
+		// find first hit from mac_hit_end_positions which overlaps with Viterbi hit
+		int no = 1;
+		int found = 0;
+		int i2_0 = i2, j2_0 = j2;
+		for(std::multimap<double, std::pair<int, int> >::iterator it = hit.mac_hit_end_positions.begin();
+			it != hit.mac_hit_end_positions.end(); it++, no++) {
+			double score = -it->first;
+			i2 = it->second.first;
+			j2 = it->second.second;
+			vi.clear();
+			vj.clear();
+			states.clear();
+			findBacktraceMAC(backtrace_matrix, elem, i1, j1, i2, j2, vi, vj, states, matched_cols, nsteps, actual_level);
+			if (!(i2 < m_temp_hit->i1 || j2 < m_temp_hit->j1 || i1 > m_temp_hit->i2 || j1 > m_temp_hit->j2)) {
+				snprintf(msg, sizeof(msg), "Found the alternative MAC hit #%d (%d,%d)-(%d,%d) (score=%f) inside the Viterbi hit scope (%d,%d)-(%d,%d)\n",
+					no, i1, j1, i2, j2, score, m_temp_hit->i1, m_temp_hit->j1, m_temp_hit->i2, m_temp_hit->j2);
+				HH_LOG(WARNING) << msg;
+				found = no;
+				break;
+			}
+		}
+		if (found == 0) {
+			nsteps = 0;
+		}
+	}
+	int mac_is_valid = 1;
+	if (matched_cols < hit.matched_cols * mac_min_length) {
+		snprintf(msg, sizeof(msg), "MAC alignment is too short, matched_cols=%d, the threshold is %f of the original matched_cols=%d: restoring the original Viterbi hit (%d,%d)-(%d,%d). You can consider using lower -mact value in order to avoid such cases.\n", matched_cols, mac_min_length, hit.matched_cols, m_temp_hit->i1, m_temp_hit->j1, m_temp_hit->i2, m_temp_hit->j2);
+		HH_LOG(WARNING) << msg;
+		mac_is_valid = 0;
+	}
+	if (!nsteps) {
+		snprintf(msg, sizeof(msg), "Could not find valid MAC alternative hit for the original Viterbi hit scope: restoring the original Viterbi hit (%d,%d)-(%d,%d). You can consider using lower -mact value in order to avoid such cases.\n", m_temp_hit->i1, m_temp_hit->j1, m_temp_hit->i2, m_temp_hit->j2);
+		HH_LOG(WARNING) << msg;
+		mac_is_valid = 0;
+	}
+	if (!mac_is_valid) {
+		restoreHitPath(hit);
+		return;
+	}
+
+	// register the checked hit
+	for (step = 1; step <= nsteps; step++) {
+		hit.states[step] = hit.state = states[step];
+		i = vi[step]; j = vj[step];
 		hit.i[step] = i;
 		hit.j[step] = j;
 		hit.alt_i->push_back(i);
 		hit.alt_j->push_back(j);
-		hit.state = ViterbiMatrix::STOP;
-	} else {
-		while (hit.state != ViterbiMatrix::STOP) {
-			step++;
-			hit.states[step] = hit.state = backtrace_matrix.getMatMat(i, j, elem); // b[i][j];
-			hit.i[step] = i;
-			hit.j[step] = j;
-			hit.alt_i->push_back(i);
-			hit.alt_j->push_back(j);
-			// Exclude cells in direct neighbourhood from all further alignments
-			for (int ii = imax(i-2,1); ii <= imin(i+2, q.L); ++ii)
-//				hit.cell_off[ii][j] = 1;
-				backtrace_matrix.setCellOff(ii, j, elem, true);
-			for (int jj = imax(j-2,1); jj <= imin(j+2, t.L); ++jj)
-				backtrace_matrix.setCellOff(i, jj, elem, true);
-
-			if (hit.state == ViterbiMatrix::MM) hit.matched_cols++;
-
-			switch (hit.state) {
-				case ViterbiMatrix::MM: i--; j--; break;
-				case ViterbiMatrix::IM: j--; break;
-				case ViterbiMatrix::MI: i--; break;
-				case ViterbiMatrix::STOP: break;
-				default:
-					fprintf(stderr,"Error: unallowed state value %i occurred during backtracing at step %i, (i,j)=(%i,%i)\n", hit.state, step, i, j);
-					hit.state = 0;
-					actual_level = DEBUG1;
-					break;
-			} //end switch (state)
-		} //end while (state)
+		// Exclude cells in direct neighbourhood from all further alignments
+		for (int ii = imax(i-2,1); ii <= imin(i+2, q.L); ++ii)
+			backtrace_matrix.setCellOff(ii, j, elem, true);
+		for (int jj = imax(j-2,1); jj <= imin(j+2, t.L); ++jj)
+			backtrace_matrix.setCellOff(i, jj, elem, true);
 	}
-	hit.i1 = hit.i[step];
-	hit.j1 = hit.j[step];
-	hit.states[step] = ViterbiMatrix::MM;  // first state (STOP state) is set to MM state
-	hit.nsteps = step;
+	if (nsteps == 0) {
+		hit.i[0] = vi[0];
+		hit.j[0] = vj[0];
+		hit.alt_i->push_back(vi[0]);
+		hit.alt_j->push_back(vj[0]);
+		hit.state = ViterbiMatrix::STOP;
+	}
+	hit.i1 = hit.i[nsteps];
+	hit.j1 = hit.j[nsteps];
+	hit.states[nsteps] = ViterbiMatrix::MM;  // first state (STOP state) is set to MM state
+	hit.nsteps = nsteps;
+	hit.matched_cols = matched_cols;
 
 	// Allocate new space for alignment scores
 	hit.S    = new float[hit.nsteps+1];

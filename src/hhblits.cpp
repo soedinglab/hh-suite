@@ -292,6 +292,8 @@ void HHblits::help(Parameters& par, char all) {
   printf(" -realign_old_hits    realign hits from previous iterations                          \n");
   printf(" -mact [0,1[          posterior prob threshold for MAC realignment controlling greedi- \n");
   printf("                      ness at alignment ends: 0:global >0.1:local (default=%.2f)       \n", par.mact);
+  printf(" -mac_min_length      minimum length of MAC hit in comparison with the Viterbi hit\n");
+  printf("                      (in terms of matched_cols, default=%.2f)\n", par.mac_min_length);
   printf(" -glob/-loc           use global/local alignment mode for searching/ranking (def=local)\n");
   if (all) {
     printf(" -realign             realign displayed hits with max. accuracy (MAC) algorithm \n");
@@ -762,6 +764,9 @@ void HHblits::ProcessArguments(Parameters& par) {
     else if ((!strcmp(argv[i], "-mact") || !strcmp(argv[i], "-mapt"))
         && (i < argc - 1))
       par.mact = atof(argv[++i]);
+    else if (!strcmp(argv[i], "-mac_min_length")
+        && (i < argc - 1))
+      par.mac_min_length = atof(argv[++i]);
     else if (!strcmp(argv[i], "-sc") && (i < argc - 1))
       par.columnscore = atoi(argv[++i]);
     //no help required
