@@ -9,7 +9,7 @@ void ViterbiConsumerThread::clear() {
     excludeAlignments.clear();
 }
 
-void ViterbiConsumerThread::align(int maxres, int nseqdis, const float smin) {
+void ViterbiConsumerThread::align(int maxres, int nseqdis, const float smin, const char ssm) {
 
     int consensus_ss_hmm_mode = 0xFF;
     for(size_t i = 0; i < maxres; i++){
@@ -24,6 +24,7 @@ void ViterbiConsumerThread::align(int maxres, int nseqdis, const float smin) {
     Viterbi::ViterbiResult* viterbiResult = viterbiAlgo->Align(q_simd, t_hmm_simd, viterbiMatrix, maxres, ss_hmm_mode);
     for (int elem = 0; elem < maxres; elem++) {
         HMM * curr_t_hmm = t_hmm_simd->GetHMM(elem);
+        HMM * curr_q_hmm = q_simd->GetHMM(elem);
         Viterbi::BacktraceResult backtraceResult = Viterbi::Backtrace(viterbiMatrix,
                                                                       elem, viterbiResult->i, viterbiResult->j);
 
@@ -34,7 +35,7 @@ void ViterbiConsumerThread::align(int maxres, int nseqdis, const float smin) {
         Hit hit_cur;
         hit_cur.lastrep = (backtraceScore.score <= smin) ? 1 : 0;
 
-        hit_cur.initHitFromHMM(curr_t_hmm, nseqdis);
+        hit_cur.initHitFromHMM(curr_q_hmm, curr_t_hmm, nseqdis, ssm);
 
         hit_cur.realign_around_viterbi = false;
         hit_cur.score = backtraceScore.score;
@@ -164,7 +165,7 @@ std::vector<Hit> ViterbiRunner::alignment(Parameters& par, HMMSimd * q_simd,
                 }
 
                 // start next job
-                threads[current_thread_id]->align(maxResElem, par.nseqdis, par.smin);
+                threads[current_thread_id]->align(maxResElem, par.nseqdis, par.smin, par.ssm);
             } // idb loop
             // merge thread results
             // search hits for next alignment
