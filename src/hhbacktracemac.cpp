@@ -224,6 +224,9 @@ void PosteriorDecoder::backtraceMAC(HMM & q, HMM & t, PosteriorMatrix & p_mm, Vi
 		snprintf(msg, sizeof(msg), "MAC alignment is too short, matched_cols=%d, the threshold is %f of the original matched_cols=%d: restoring the original Viterbi hit (%d,%d)-(%d,%d). You can consider using lower -mact value in order to avoid such cases.\n", matched_cols, mac_min_length, hit.matched_cols, m_temp_hit->i1, m_temp_hit->j1, m_temp_hit->i2, m_temp_hit->j2);
 		HH_LOG(WARNING) << msg;
 		mac_is_valid = 0;
+	} else if (matched_cols < hit.matched_cols) {
+		snprintf(msg, sizeof(msg), "MAC alignment is shorter (matched_cols=%d) than the Viterbi hit (matched_cols=%d). You can consider using lower -mact value in order to avoid such cases.\n", matched_cols, hit.matched_cols);
+		HH_LOG(WARNING) << msg;
 	}
 	if (!nsteps) {
 		snprintf(msg, sizeof(msg), "Could not find valid MAC alternative hit for the original Viterbi hit scope: restoring the original Viterbi hit (%d,%d)-(%d,%d). You can consider using lower -mact value in order to avoid such cases.\n", m_temp_hit->i1, m_temp_hit->j1, m_temp_hit->i2, m_temp_hit->j2);
