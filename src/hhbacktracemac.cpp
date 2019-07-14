@@ -225,7 +225,7 @@ void PosteriorDecoder::backtraceMAC(HMM & q, HMM & t, PosteriorMatrix & p_mm, Vi
 		HH_LOG(WARNING) << msg;
 		mac_is_valid = 0;
 	} else if (matched_cols < hit.matched_cols) {
-		snprintf(msg, sizeof(msg), "MAC alignment is shorter (matched_cols=%d) than the Viterbi hit (matched_cols=%d). You can consider using lower -mact value in order to avoid such cases.\n", matched_cols, hit.matched_cols);
+		snprintf(msg, sizeof(msg), "MAC alignment is shorter (matched_cols=%d) than the Viterbi hit (matched_cols=%d). You can consider using lower -mact value or higher -mac_min_length value in order to avoid such cases.\n", matched_cols, hit.matched_cols);
 		HH_LOG(WARNING) << msg;
 	}
 	if (!nsteps) {
