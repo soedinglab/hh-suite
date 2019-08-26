@@ -53,7 +53,7 @@ wget https://github.com/soedinglab/hh-suite/releases/download/v3.2.0/hhsuite-3.2
 
 ### Download Databases
 Download current databases from our [download server](http://wwwuser.gwdg.de/~compbiol/data/hhsuite/databases/hhsuite_dbs/).
-To build up multiple sequences alignments using HHblits, the Uniclust30 database is sufficient.
+To build up multiple sequences alignments using HHblits, the Uniclust30 database is sufficient. A large collection of HMMs build from enviromental sequences can be downloaded [here](https://bfd.mmseqs.com/).  
 
 ## Usage
 For performing a single search iteration of HHblits, run HHblits with the following command:
