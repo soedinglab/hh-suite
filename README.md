@@ -71,7 +71,7 @@ A detailed list of options for HHblits is available by running HHblits with the 
 ## Reference
 
 Steinegger M, Meier M, Mirdita M, Vöhringer H, Haunsberger S J, and Söding J (2019)
-HH-suite3 for fast remote homology detection and deep protein annotation, *bioRxiv*, 560029. [doi: 10.1101/560029](https://doi.org/10.1101/560029)
+HH-suite3 for fast remote homology detection and deep protein annotation, *BMC Bioinformatics*, 473. [doi: 10.1186/s12859-019-3019-7](https://doi.org/10.1186/s12859-019-3019-7)
 
 ## Links
 
