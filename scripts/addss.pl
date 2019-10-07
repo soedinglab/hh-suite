@@ -191,15 +191,8 @@ if ( $informat ne "hmm" ) {
 	my $i = 0;
 	$qseq   = "";
 	$header = <INFILE>;
-	# if > is inside header, fix the line by appending the rest
-	while ($header =~ />$/ && $header !~ /\n>$/) {
-		$header .= <INFILE>;
-	}
 	$header =~ s />$//;
 	while ( $line = <INFILE> ) {
-		while ($line =~ />$/ && $line !~ /\n>$/) {
-			$line .= <INFILE>;
-		}
 		$line =~ s/>$//;
 		if ( $line =~ /^ss_/ || $line =~ /^aa_/ ) { next; }
 		$seqs[ $i++ ] = ">$line";
