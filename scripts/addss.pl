@@ -619,8 +619,15 @@ sub AppendDsspSequences() {
 		if ( $line =~ />(\S+)/ ) {
 			$name = $1;
 
-			# SCOP ID? (d3lkfa_,d3grs_3,d3pmga1,g1m26.1)
-			if ( $line =~
+			# SCOPe ID? (d3lkfa_,d3grs_3,d3pmg.1)
+			if ( $line =~ /^>(d[a-z0-9]{4}[a-z0-9_.][a-z0-9_])/ )
+			{
+				$pdbcode = $1;
+				$qrange  = "";
+			}
+
+                        # SCOP ID? (d3lkfa_,d3grs_3,d3pmga1,g1m26.1)
+			elsif ( $line =~
 /^>[defgh](\d[a-z0-9]{3})[a-z0-9_.][a-z0-9_]\s+[a-z]\.\d+\.\d+\.\d+\s+\((\S+)\)/
 			  )
 			{
@@ -896,7 +903,8 @@ sub OpenPDBfile() {
         if ( $pdbdir =~ /divided.?$/ ) {
 		$pdbfile .= substr( $pdbcode, 1, 2 ) . "/";
 	}
-	if ( -e $pdbfile . "pdb$pdbcode.ent" ) { $pdbfile .= "pdb$pdbcode.ent"; }
+	if ( -e $pdbfile . "$pdbcode.ent" ) { $pdbfile .= "$pdbcode.ent"; }
+	elsif ( -e $pdbfile . "pdb$pdbcode.ent" ) { $pdbfile .= "pdb$pdbcode.ent"; }
 	elsif ( -e $pdbfile . "pdb$pdbcode.ent.gz" ) {
 		$pdbfile .= "pdb$pdbcode.ent.gz";
 	}
