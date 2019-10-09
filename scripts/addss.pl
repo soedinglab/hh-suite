@@ -177,12 +177,24 @@ if ( $informat ne "hmm" ) {
 	# Use first sequence to define match states and reformat input file to a3m and psi
 	if ( $informat ne "a3m" ) {
 		&HHPaths::System(
-			"$hhscripts/reformat.pl -v $v2 -M first $informat a3m $infile $tmpfile.in.a3m"
+			"$hhscripts/reformat.pl -v $v2 -M first $informat a3m $infile $tmpfile.1.in.a3m"
 		);
 	}
 	else {
-		&HHPaths::System("cp $infile $tmpfile.in.a3m");
+		&HHPaths::System("cp $infile $tmpfile.1.in.a3m");
 	}
+
+	# Sanitise the input file - remove all '>' characters, except the one at the start of the string
+	# Note that this will corrupt the file if the "header" is not separated by a newline from the
+	# first line that starts with '>'
+	open( INFILE, "<$tmpfile.1.in.a3m" );
+	open( OUTFILE, ">$tmpfile.in.a3m" );
+	while ( $line = <INFILE> ) {
+		$line =~ s/([^>]+)>/$1/g;
+		print OUTFILE $line;
+	}
+	close(INFILE);
+	close(OUTFILE);
 
 	# Read query sequence
 	open( INFILE, "<$tmpfile.in.a3m" )
@@ -1043,4 +1055,3 @@ sub readDSSP() {
 	close DSSPFILE;
 	return ( $aa_dssp, $ss_dssp, $sa_dssp );
 }
-
