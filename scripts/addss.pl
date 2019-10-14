@@ -177,12 +177,24 @@ if ( $informat ne "hmm" ) {
 	# Use first sequence to define match states and reformat input file to a3m and psi
 	if ( $informat ne "a3m" ) {
 		&HHPaths::System(
-			"$hhscripts/reformat.pl -v $v2 -M first $informat a3m $infile $tmpfile.in.a3m"
+			"$hhscripts/reformat.pl -v $v2 -M first $informat a3m $infile $tmpfile.1.in.a3m"
 		);
 	}
 	else {
-		&HHPaths::System("cp $infile $tmpfile.in.a3m");
+		&HHPaths::System("cp $infile $tmpfile.1.in.a3m");
 	}
+
+	# Sanitise the input file - remove all '>' characters, except the one at the start of the string
+	# Note that this will corrupt the file if the "header" is not separated by a newline from the
+	# first line that starts with '>'
+	open( INFILE, "<$tmpfile.1.in.a3m" );
+	open( OUTFILE, ">$tmpfile.in.a3m" );
+	while ( $line = <INFILE> ) {
+		$line =~ s/([^>]+)>/$1/g;
+		print OUTFILE $line;
+	}
+	close(INFILE);
+	close(OUTFILE);
 
 	# Read query sequence
 	open( INFILE, "<$tmpfile.in.a3m" )
@@ -191,15 +203,8 @@ if ( $informat ne "hmm" ) {
 	my $i = 0;
 	$qseq   = "";
 	$header = <INFILE>;
-	# if > is inside header, fix the line by appending the rest
-	while ($header =~ />$/ && $header !~ /\n>$/) {
-		$header .= <INFILE>;
-	}
 	$header =~ s />$//;
 	while ( $line = <INFILE> ) {
-		while ($line =~ />$/ && $line !~ /\n>$/) {
-			$line .= <INFILE>;
-		}
 		$line =~ s/>$//;
 		if ( $line =~ /^ss_/ || $line =~ /^aa_/ ) { next; }
 		$seqs[ $i++ ] = ">$line";
@@ -626,8 +631,15 @@ sub AppendDsspSequences() {
 		if ( $line =~ />(\S+)/ ) {
 			$name = $1;
 
-			# SCOP ID? (d3lkfa_,d3grs_3,d3pmga1,g1m26.1)
-			if ( $line =~
+			# SCOPe ID? (d3lkfa_,d3grs_3,d3pmg.1)
+			if ( $line =~ /^>(d[a-z0-9]{4}[a-z0-9_.][a-z0-9_])/ )
+			{
+				$pdbcode = $1;
+				$qrange  = "";
+			}
+
+                        # SCOP ID? (d3lkfa_,d3grs_3,d3pmga1,g1m26.1)
+			elsif ( $line =~
 /^>[defgh](\d[a-z0-9]{3})[a-z0-9_.][a-z0-9_]\s+[a-z]\.\d+\.\d+\.\d+\s+\((\S+)\)/
 			  )
 			{
@@ -903,7 +915,8 @@ sub OpenPDBfile() {
         if ( $pdbdir =~ /divided.?$/ ) {
 		$pdbfile .= substr( $pdbcode, 1, 2 ) . "/";
 	}
-	if ( -e $pdbfile . "pdb$pdbcode.ent" ) { $pdbfile .= "pdb$pdbcode.ent"; }
+	if ( -e $pdbfile . "$pdbcode.ent" ) { $pdbfile .= "$pdbcode.ent"; }
+	elsif ( -e $pdbfile . "pdb$pdbcode.ent" ) { $pdbfile .= "pdb$pdbcode.ent"; }
 	elsif ( -e $pdbfile . "pdb$pdbcode.ent.gz" ) {
 		$pdbfile .= "pdb$pdbcode.ent.gz";
 	}
@@ -1042,4 +1055,3 @@ sub readDSSP() {
 	close DSSPFILE;
 	return ( $aa_dssp, $ss_dssp, $sa_dssp );
 }
-
