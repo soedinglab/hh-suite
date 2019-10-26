@@ -58,7 +58,7 @@ void HHsearch::help(Parameters& par, char all) {
   printf("HHsearch %i.%i.%i\n", HHSUITE_VERSION_MAJOR, HHSUITE_VERSION_MINOR, HHSUITE_VERSION_PATCH);
   printf("Search a database of HMMs with a query alignment or query HMM\n");
   printf("%s", COPYRIGHT);
-  printf("%s", HHSEARCH_REFERENCE);
+  printf("%s", REFERENCE);
   printf("\n");
   printf("Usage: hhsearch -i query -d database [options]                       \n");
   printf(" -i <file>      input/query multiple sequence alignment (a2m, a3m, FASTA) or HMM\n");

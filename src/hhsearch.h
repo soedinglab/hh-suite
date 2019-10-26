@@ -33,8 +33,8 @@
 
 #include "hhblits.h"
 
-const char HHSEARCH_REFERENCE[] =
-    "Soding, J. Protein homology detection by HMM-HMM comparison. Bioinformatics 21:951-960 (2005).\n";
+//const char HHSEARCH_REFERENCE[] =
+//    "Soding, J. Protein homology detection by HMM-HMM comparison. Bioinformatics 21:951-960 (2005).\n";
 
 class HHsearch {
 public:

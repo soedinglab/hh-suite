@@ -21,7 +21,7 @@
 //// Global variable declarations
 /////////////////////////////////////////////////////////////////////////////////////
 
-const char REFERENCE[] = "Steinegger M, Meier M, Mirdita M, Vöhringer H, Haunsberger S J, and Söding J (2019)\nHH-suite3 for fast remote homology detection and deep protein annotation.\nbioRxiv, 560029. doi:10.1101/560029\n";
+const char REFERENCE[] = "Steinegger M, Meier M, Mirdita M, Vöhringer H, Haunsberger S J, and Söding J (2019)\nHH-suite3 for fast remote homology detection and deep protein annotation.\nBMC Bioinformatics, doi:10.1186/s12859-019-3019-7\n";
 const char COPYRIGHT[] = "(c) The HH-suite development team\n";
 
 const int LINELEN=524288; //max length of line read in from input files; must be >= MAXCOL
