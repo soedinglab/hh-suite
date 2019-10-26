@@ -232,7 +232,7 @@ float Hit::calculateSimilarity(HMM* q, const float S[20][20]) {
 //  Probab = 1.0;
 //}
 
-void Hit::initHitFromHMM(HMM * t, const int par_nseqdis){
+void Hit::initHitFromHMM(HMM * q, HMM * t, const int par_nseqdis, const char ssm){
     this->alt_i = NULL;
     this->alt_j = NULL;
     this->P_posterior = NULL;
@@ -284,4 +284,35 @@ void Hit::initHitFromHMM(HMM * t, const int par_nseqdis){
     this->logPval = 0.0;
     this->logPvalt= 0.0;
     this->Probab = 1.0;
+
+    // CalcProbab needs ssm1 and ssm2 as a confirmation that SS was actually used in this hit
+    switch (ssm)
+    {
+        case 0:
+            this->ssm1 = 0;
+            this->ssm2 = 0;
+            break;
+        case 1:
+            this->ssm2 = 0;  // SS scoring after alignment
+            if (t->nss_dssp >= 0 && q->nss_pred >= 0) this->ssm1 = 1;
+            else if (q->nss_dssp >= 0 && t->nss_pred >= 0) this->ssm1 = 2;
+            else if (q->nss_pred >= 0 && t->nss_pred >= 0) this->ssm1 = 3;
+            else this->ssm1 = 0;
+            break;
+        case 2:
+            this->ssm1 = 0;  // SS scoring during alignment
+            if (t->nss_dssp >= 0 && q->nss_pred >= 0) this->ssm2 = 1;
+            else if (q->nss_dssp >= 0 && t->nss_pred >= 0) this->ssm2 = 2;
+            else if (q->nss_pred >= 0 && t->nss_pred >= 0) this->ssm2 = 3;
+            else this->ssm2 = 0;
+            break;
+        case 3:
+            this->ssm2 = 0;  // SS scoring after alignment
+            if (q->nss_pred >= 0 && t->nss_pred >= 0) this->ssm1 = 3; else this->ssm1 = 0;
+            break;
+        case 4:
+            this->ssm1 = 0;  // SS scoring during alignment
+            if (q->nss_pred >= 0 && t->nss_pred >= 0) this->ssm2 = 3; else this->ssm2 = 0;
+            break;
+    }
 }

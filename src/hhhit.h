@@ -117,7 +117,7 @@ class Hit
   // Comparison (used to sort list of hits)
   int operator<(const Hit& hit2)  {return score_sort < hit2.score_sort;}
 
-  void initHitFromHMM(HMM * t, const int nseqdis);
+  void initHitFromHMM(HMM * q, HMM * t, const int nseqdis, const char ssm);
 
   float calculateSimilarity(HMM* q, const float S[20][20]);
 

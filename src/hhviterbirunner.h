@@ -41,7 +41,7 @@ public:
 	std::vector<std::pair<char *,Viterbi::BacktraceResult> > excludeAlignments;
 
 	void clear();
-	void align(int maxres, int nseqdis, const float smin);
+	void align(int maxres, int nseqdis, const float smin, const char ssm);
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
