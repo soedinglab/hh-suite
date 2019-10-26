@@ -85,8 +85,7 @@ private:
 
 	//	sec. structure data
 	float ssw;
-	//  SCORE_ALIGNMENT SCORE_BACKTRACE
-	int ss_mode;
+
 	//    float S73[NDSSP][NSSPRED][MAXCF];
 	const float (*S73)[NSSPRED][MAXCF];
 	//    float S33[NSSPRED][MAXCF][NSSPRED][MAXCF];

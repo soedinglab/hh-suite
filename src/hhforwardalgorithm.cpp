@@ -73,7 +73,9 @@ void PosteriorDecoder::forwardAlgorithm(HMM & q, HMM & t, Hit & hit,
 			m_curr[jmin].mm = m_curr[jmin].mi = m_curr[jmin].dg = m_curr[jmin].im =
 					m_curr[jmin].gd = 0.0;
 		else {
-			m_curr[jmin].mm = scale_prod * ProbFwd(q.p[i], t.p[jmin]) * Cshift;
+			m_curr[jmin].mm = scale_prod
+                            * fpow2(Viterbi::ScoreSS(&q, &t, 1, j, ssw, hit.ssm2, S73, S37, S33))
+			                * ProbFwd(q.p[i], t.p[jmin]) * Cshift;
 			m_curr[jmin].im = m_curr[jmin].gd = 0.0;
 			m_curr[jmin].mi = scale[i]
 					* (m_prev[jmin].mm * q.tr[i - 1][M2M] * t.tr[jmin][M2I]
@@ -95,6 +97,7 @@ void PosteriorDecoder::forwardAlgorithm(HMM & q, HMM & t, Hit & hit,
 			if (!(celloff_matrix.getCellOff(i, j, elem)))
 			{
 				m_curr[j].mm = ProbFwd(q.p[i], t.p[j]) * Cshift
+				        * fpow2(Viterbi::ScoreSS(&q, &t, i, j, ssw, hit.ssm2, S73, S37, S33))
 						* scale[i]
 						* (pmin
 						+ m_prev[j - 1].mm * q.tr[i - 1][M2M] * t.tr[j - 1][M2M] // BB -> MM (BB = Begin/Begin, for local alignment)
