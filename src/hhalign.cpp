@@ -640,10 +640,10 @@ void HHalign::run(FILE* query_fh, char* query_path) {
 
   // Realign hits with MAC algorithm
   if (par.realign) {
-      perform_realign(q_vec, input_format, new_entries);
+      perform_realign(q_vec, input_format, new_entries, 1);
   }
 
-  mergeHitsToQuery(previous_hits, seqs_found, cluster_found);
+  mergeHitsToQuery(previous_hits, seqs_found, cluster_found, 1);
 
   // Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
   Qali->FrequenciesAndTransitions(q, par.wg, par.mark, par.cons, par.showcons, pb, Sim, NULL, true);

@@ -815,7 +815,7 @@ void HHblits::ProcessArguments(Parameters& par) {
 }
 
 void HHblits::mergeHitsToQuery(Hash<Hit>* previous_hits,
-                               int& seqs_found, int& cluster_found) {
+                               int& seqs_found, int& cluster_found, int min_col_realign) {
 
   // Remove sequences with seq. identity larger than seqid percent (remove the shorter of two)
   const float COV_ABS = 25;     // min. number of aligned residues
@@ -830,7 +830,7 @@ void HHblits::mergeHitsToQuery(Hash<Hit>* previous_hits,
       break;  // E-value much too large
     if (hit_cur.Eval > par.e)
       continue;  // E-value too large
-    if (hit_cur.matched_cols < MINCOLS_REALIGN)
+    if (hit_cur.matched_cols < min_col_realign)
       continue;  // leave out too short alignments
 
     // Already in alignment
@@ -963,7 +963,7 @@ void HHblits::RescoreWithViterbiKeepAlignment(HMMSimd& q_vec,
 // Realign hits with MAC algorithm
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void HHblits::perform_realign(HMMSimd& q_vec, const char input_format,
-                              std::vector<HHEntry*>& hits_to_realign) {
+                              std::vector<HHEntry*>& hits_to_realign, int min_col_realign) {
 
   // 19/02/2014: F/B-algos are calculated in log-space
   //  q->Log2LinTransitionProbs(1.0); // transform transition freqs to lin space if not already done
@@ -1029,8 +1029,8 @@ void HHblits::perform_realign(HMMSimd& q_vec, const char input_format,
   hitlist.Reset();
   while (!hitlist.End()) {
     Hit hit_cur = hitlist.ReadNext();
-    //printf("Deleting alignment of %s with length %i? irep=%i nhits=%-2i  par.B=%-3i  par.Z=%-3i par.e=%.2g par.b=%-3i  par.z=%-3i par.p=%.2g\n",hit_cur.name,hit_cur.matched_cols,hit_cur.irep,nhits,par.B,par.Z,par.e,par.b,par.z,par.p);
-
+//    printf("Deleting alignment of %s with length %i? irep=%i nhits=%-2i  par.B=%-3i  par.Z=%-3i par.e=%.2g par.b=%-3i  par.z=%-3i par.p=%.2g\n",hit_cur.name,hit_cur.matched_cols,hit_cur.irep,nhits,par.B,par.Z,par.e,par.b,par.z,par.p);
+//    std::cout << hit_cur.Eval << std::endl;
     if (nhits > par.realign_max && nhits >= imax(par.B, par.Z))
       break;
     if (hit_cur.Eval > par.e) {
@@ -1042,7 +1042,7 @@ void HHblits::perform_realign(HMMSimd& q_vec, const char input_format,
         continue;
     }
 
-    if (hit_cur.matched_cols < MINCOLS_REALIGN) {
+    if (hit_cur.matched_cols < min_col_realign) {
       HH_LOG(DEBUG) << "Deleting alignment of " << hit_cur.name
           << " with length " << hit_cur.matched_cols << std::endl;
       hitlist.Delete().Delete();        // delete the list record and hit object
@@ -1248,12 +1248,12 @@ void HHblits::run(FILE* query_fh, char* query_path) {
 
     // Realign hits with MAC algorithm
     if (par.realign)
-      perform_realign(q_vec, input_format, new_entries);
+      perform_realign(q_vec, input_format, new_entries, MINCOLS_REALIGN);
 
     // Generate alignment for next iteration
     if (round < par.num_rounds || *par.alnfile || *par.psifile || *par.hhmfile || *par.alisbasename) {
       if (new_hits > 0) {
-        mergeHitsToQuery(previous_hits, seqs_found, cluster_found);
+        mergeHitsToQuery(previous_hits, seqs_found, cluster_found, MINCOLS_REALIGN);
       }
 
       // Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
@@ -1635,12 +1635,12 @@ void HHblits::run(ffindex_entry_t* entry, char* data,
 
     // Realign hits with MAC algorithm
     if (par.realign)
-      perform_realign(q_vec, input_format, new_entries);
+      perform_realign(q_vec, input_format, new_entries, MINCOLS_REALIGN);
 
     // Generate alignment for next iteration
     if (round < par.num_rounds || *par.alnfile || *par.psifile || *par.hhmfile || *par.alisbasename) {
       if (new_hits > 0) {
-        mergeHitsToQuery(previous_hits, seqs_found, cluster_found);
+        mergeHitsToQuery(previous_hits, seqs_found, cluster_found, MINCOLS_REALIGN);
       }
 
       // Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
