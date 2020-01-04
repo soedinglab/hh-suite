@@ -1,4 +1,4 @@
-#!/bin/sh -x
+#!/bin/sh -e
 INPUT="$1"
 OUTPUT="$2"
 THREADS=""
