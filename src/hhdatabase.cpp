@@ -466,7 +466,7 @@ HHFileEntry::HHFileEntry(const char* file, int sequence_length)
 }
 
 HHFileEntry::~HHFileEntry() {
-  delete[] file;
+  free(file);
 }
 
 void HHFileEntry::getTemplateHMM(Parameters& par, char use_global_weights,
