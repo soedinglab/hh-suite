@@ -148,7 +148,7 @@ void HHblitsDatabase::initPrefilter(const std::string& cs_library) {
 
 void HHblitsDatabase::initNoPrefilter(std::vector<HHEntry*>& new_entries) {
   std::vector<std::pair<int, std::string> > new_entry_names;
-  Prefilter::init_no_prefiltering(query_database, new_entry_names);
+  Prefilter::init_no_prefiltering(cs219_database, new_entry_names);
 
   getEntriesFromNames(new_entry_names, new_entries);
 }

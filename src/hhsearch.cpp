@@ -6,7 +6,7 @@
 void HHsearch::prepareDatabases(Parameters& par,
                                 std::vector<HHblitsDatabase*>& databases) {
     for (size_t i = 0; i < par.db_bases.size(); i++) {
-        HHblitsDatabase* db = new HHblitsDatabase(par.db_bases[i].c_str(), false);
+        HHblitsDatabase* db = new HHblitsDatabase(par.db_bases[i].c_str(), true);
         databases.push_back(db);
     }
 
