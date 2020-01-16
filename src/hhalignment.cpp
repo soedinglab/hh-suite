@@ -1916,7 +1916,7 @@ int Alignment::Filter2(char keep[], int coverage, int qid, float qsc,
         }
 
         //dissimilarity < acceptace threshold? Reject!
-        if (diff < diff_suff && float(diff) <= diff_min_frac * cov_kj)
+        if (diff < diff_suff && float(diff) < diff_min_frac * cov_kj)
           break;
       }
 
