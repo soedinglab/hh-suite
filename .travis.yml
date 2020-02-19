@@ -11,8 +11,8 @@ script:
     if [[ "$CMAKE_EXTRA" != "" ]]; then \ 
         make install; \
         export PATH="$(pwd)/bin:$(pwd)/scripts:$PATH"; \
-        echo -e "leak:libmpi\nleak:libhwloc\nleak:libopen-pal\nleak:mca_db_hash\nleak:mca_bml_r2\nleak:libltdl\nleak:__strdup\nleak:realloc" > "$(pwd)/ASan.supp"; \
-        export ASAN_OPTIONS=suppressions=$(pwd)/ASan.supp; \
+        echo -e "leak:libmpi\nleak:libhwloc\nleak:libopen-pal\nleak:mca_db_hash\nleak:mca_bml_r2\nleak:libltdl\nleak:mca_mtl_psm2\nleak:mca_btl_openib\nleak:mca_rml_ofi\nleak:__strdup\nleak:realloc" > "$(pwd)/LSan.supp"; \
+        export LSAN_OPTIONS="suppressions=$(pwd)/LSan.supp"; \
         (cd ../data && ./test.sh); \
     fi
 
