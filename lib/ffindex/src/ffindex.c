@@ -477,6 +477,7 @@ void ffsort_index(const char* index_filename) {
   if(index_fh == NULL) { perror(index_filename); }
   ffindex_write(index, index_fh);
   fclose(index_fh);
+  ffindex_index_free(index);
 }
 
 void ffmerge_splits(const char* data_filename, const char* index_filename,

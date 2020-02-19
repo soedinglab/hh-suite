@@ -200,6 +200,9 @@ int main(int argc, const char **argv) {
             for (size_t i = 0; i < outputDatabases.size(); i++) {
                 outputDatabases[i].close();
             }
+            for (size_t i = 0; i < databases.size(); i++) {
+                delete databases[i];
+            }
         }
 
         MPI_Barrier(MPI_COMM_WORLD);
