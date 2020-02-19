@@ -78,6 +78,8 @@ ffindex_entry_t* ffindex_get_entry_by_name(ffindex_index_t *index, char *name);
 
 ffindex_index_t* ffindex_index_parse(FILE *index_file, size_t num_max_entries);
 
+void ffindex_index_free(ffindex_index_t* index);
+
 ffindex_entry_t* ffindex_bsearch_get_entry(ffindex_index_t *index, char *name);
 
 void ffindex_sort_index_file(ffindex_index_t *index);

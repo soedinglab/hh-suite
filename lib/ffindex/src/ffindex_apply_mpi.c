@@ -530,8 +530,7 @@ int main(int argn, char **argv) {
     }
 #endif
 
-    munmap(index->index_data, index->index_data_size);
-    free(index);
+    ffindex_index_free(index);
 
     cleanup_3:
     munmap(data, data_size);

@@ -329,6 +329,11 @@ ffindex_index_t* ffindex_index_parse(FILE *index_file, size_t num_max_entries)
   return index;
 }
 
+void ffindex_index_free(ffindex_index_t* index) {
+    munmap(index->index_data, index->index_data_size);
+    free(index);
+}
+
 ffindex_entry_t* ffindex_get_entry_by_index(ffindex_index_t *index, size_t entry_index)
 {
   if(index != NULL && entry_index < index->n_entries)
@@ -546,6 +551,7 @@ void ffmerge_splits(const char* data_filename, const char* index_filename,
                             ffindex_get_data_by_entry(data_to_add, entry),
                             entry->length - 1, entry->name);
     }
+    ffindex_index_free(index_to_add);
 
     fclose(data_file_to_add);
     fclose(index_file_to_add);

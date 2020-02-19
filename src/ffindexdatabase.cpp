@@ -34,7 +34,7 @@ void FFindexDatabase::ensureLinearAccess() {
 
 FFindexDatabase::~FFindexDatabase() {
     free(data_filename);
+    ffindex_index_free(db_index);
     munmap(db_data, data_size);
-    free(db_index);
     fclose(db_data_fh);
 }

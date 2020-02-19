@@ -20,6 +20,7 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/mman.h>
 
 #include <getopt.h>
 
@@ -207,6 +208,8 @@ int main(int argn, char** argv)
         ffindex_entry_t *entry = ffindex_get_entry_by_index(index_to_add, entry_i);
         ffindex_insert_memory(data_file, index_file, &offset, ffindex_get_data_by_entry(data_to_add, entry), entry->length - 1, entry->name); // skip \0 suffix
       }
+      ffindex_index_free(index_to_add);
+      munmap(data_to_add, data_size);
     }
   }
 

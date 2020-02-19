@@ -180,6 +180,7 @@ int main(int argn, char **argv)
     index_file = fopen(index_filename, "w");
     if(index_file == NULL) { perror(index_filename); return EXIT_FAILURE; }
     err += ffindex_write(index, index_file);
+    ffindex_index_free(index);
   }
 
   return err;
