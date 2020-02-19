@@ -569,6 +569,12 @@ void ffmerge_splits(const char* data_filename, const char* index_filename,
   ffsort_index(index_filename);
 }
 
+#ifdef SANITIZER_DLCLOSE
+int dlclose(void *handle) {
+	;
+}
+#endif
+
 
 /* vim: ts=2 sw=2 et
 */

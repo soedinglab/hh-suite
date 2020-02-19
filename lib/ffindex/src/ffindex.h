@@ -99,4 +99,9 @@ void ffmerge_splits(const char* data_filename, const char* index_filename,
 
 char* ffindex_copyright();
 
+#ifdef SANITIZER_DLCLOSE
+#include <stdio.h>
+int dlclose(void *handle);
+#endif
+
 #endif
