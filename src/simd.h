@@ -365,10 +365,10 @@ typedef __vector double simd_double;
 #define ALIGN_FLOAT     16
 #define VECSIZE_FLOAT   4
 typedef __vector float simd_float;
-#define simdf32_add(x,y)    (x + y)  //vec_add(x,y)
-#define simdf32_sub(x,y)    (x - y)  //vec_sub(x,y)
-#define simdf32_mul(x,y)    (x * y)  //vec_mul(x,y)
-#define simdf32_div(x,y)    (x / y)  //vec_div(x,y)
+#define simdf32_add(x,y)    ((x) + (y))  //vec_add(x,y)
+#define simdf32_sub(x,y)    ((x) - (y))  //vec_sub(x,y)
+#define simdf32_mul(x,y)    ((x) * (y))  //vec_mul(x,y)
+#define simdf32_div(x,y)    ((x) / (y))  //vec_div(x,y)
 #define simdf32_max(x,y)    vec_max(x,y)
 #define simdf32_min(x,y)    vec_min(x,y)
 #define simdf32_rcp(x)      vec_re(x)
@@ -425,8 +425,8 @@ typedef __vector unsigned char simd_u8;
 #define simdui8_max(x,y)    (simd_int)vec_max((vector unsigned char)(x), (vector unsigned char)(y))
 #define simdui8_adds(x,y)   (simd_int)vec_adds((simd_u8)(x),(simd_u8)(y))
 #define simdui8_subs(x,y)   (simd_int)vec_subs((simd_u8)(x),(simd_u8)(y))
-#define simdi8_shiftl(x,y)   (simd_int)vec_slo(x,vec_splats((char)(y << 3))) // shift integers in a left by y
-#define simdi8_shiftr(x,y)   (simd_int)vec_sro(x,vec_splats((char)(y << 3))) // shift integers in a right by y
+#define simdi8_shiftl(x,y)  (simd_int)vec_slo(x,vec_splats((char)(y << 3))) // shift integers in a left by y
+#define simdi8_shiftr(x,y)  (simd_int)vec_sro(x,vec_splats((char)(y << 3))) // shift integers in a right by y
 #define simdi8_movemask(x)  v_movemask(x)
 
 
