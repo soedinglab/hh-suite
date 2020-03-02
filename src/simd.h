@@ -425,8 +425,8 @@ typedef __vector unsigned char simd_u8;
 #define simdui8_max(x,y)    (simd_int)vec_max((vector unsigned char)(x), (vector unsigned char)(y))
 #define simdui8_adds(x,y)   (simd_int)vec_adds((simd_u8)(x),(simd_u8)(y))
 #define simdui8_subs(x,y)   (simd_int)vec_subs((simd_u8)(x),(simd_u8)(y))
-#define simdi8_shiftl(x,y)  (simd_int)vec_slo(x,vec_splats((char)(y << 3))) // shift integers in a left by y
-#define simdi8_shiftr(x,y)  (simd_int)vec_sro(x,vec_splats((char)(y << 3))) // shift integers in a right by y
+#define simdi8_shiftl(x,y)  (simd_int)vec_slo((simd_u8)(x),(simd_u8)vec_splats((char)(y << 3))) // shift integers in a left by y
+#define simdi8_shiftr(x,y)  (simd_int)vec_sro((simd_u8)(x),(simd_u8)vec_splats((char)(y << 3))) // shift integers in a right by y
 #define simdi8_movemask(x)  v_movemask(x)
 
 
