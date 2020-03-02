@@ -41,7 +41,7 @@ HH-suite3 can also be installed by downloading a statically compiled version, [c
 
 ```
 # install via conda
-conda install -c bioconda hhsuite 
+conda install -c conda-forge -c bioconda hhsuite 
 # install docker
 docker pull soedinglab/hh-suite
 # static SSE2 build
