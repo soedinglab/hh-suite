@@ -78,7 +78,7 @@ typedef __m512  simd_float;
 #define simdf32_and(x,y)    _mm512_and_si512(x,y)
 #define simdf32_andnot(x,y) _mm512_andnot_si512(x,y)
 #define simdf32_xor(x,y)    _mm512_xor_si512(x,y)
-#define simdf32_f2i(x) 	    _mm512_cvtps_epi32(x)  // convert s.p. float to integer
+#define simdf32_f2i(x)      _mm512_cvtps_epi32(x)  // convert s.p. float to integer
 #define simdf_f2icast(x)    _mm512_castps_si512 (x)
 #endif //SIMD_FLOAT
 // integer support 
@@ -113,9 +113,9 @@ typedef __m512i simd_int;
 #define simdi8_shiftl(x,y)  NOT_YET_IMP()
 #define simdi8_shiftr(x,y)  NOT_YET_IMP()
 #define simdi8_movemask(x)  NOT_YET_IMP()
-#define simdi32_slli(x,y)	_mm512_slli_epi32(x,y) // shift integers in a left by y
-#define simdi32_srli(x,y)	_mm512_srli_epi32(x,y) // shift integers in a right by y
-#define simdi32_i2f(x) 	    _mm512_cvtepi32_ps(x)  // convert integer to s.p. float
+#define simdi32_slli(x,y)   _mm512_slli_epi32(x,y) // shift integers in a left by y
+#define simdi32_srli(x,y)   _mm512_srli_epi32(x,y) // shift integers in a right by y
+#define simdi32_i2f(x)      _mm512_cvtepi32_ps(x)  // convert integer to s.p. float
 #define simdi_i2fcast(x)    _mm512_castsi512_ps(x)
 
 #endif //SIMD_INT
@@ -166,7 +166,7 @@ typedef __m256i simd_int;
 #define simdi8_movemask(x)  _mm256_movemask_epi8(x)
 #define simdi32_slli(x,y)   _mm256_slli_epi32(x,y) // shift integers in a left by y
 #define simdi32_srli(x,y)   _mm256_srli_epi32(x,y) // shift integers in a right by y
-#define simdi32_i2f(x) 	    _mm256_cvtepi32_ps(x)  // convert integer to s.p. float
+#define simdi32_i2f(x)      _mm256_cvtepi32_ps(x)  // convert integer to s.p. float
 #define simdi_i2fcast(x)    _mm256_castsi256_ps(x)
 #endif //SIMD_INT
 #endif //AVX2
@@ -224,7 +224,7 @@ typedef __m256 simd_float;
 #define simdf32_and(x,y)    _mm256_and_ps(x,y)
 #define simdf32_andnot(x,y) _mm256_andnot_ps(x,y)
 #define simdf32_xor(x,y)    _mm256_xor_ps(x,y)
-#define simdf32_f2i(x) 	    _mm256_cvtps_epi32(x)  // convert s.p. float to integer
+#define simdf32_f2i(x)      _mm256_cvtps_epi32(x)  // convert s.p. float to integer
 #define simdf32_extract(x,imm) _mm_extract_ps(_mm256_castps256_ps128(x),imm)
 #define simdf_f2icast(x)    _mm256_castps_si256(x) // compile time cast
 #endif //SIMD_FLOAT
@@ -284,7 +284,7 @@ typedef __m128  simd_float;
 #define simdf32_and(x,y)    _mm_and_ps(x,y)
 #define simdf32_andnot(x,y) _mm_andnot_ps(x,y)
 #define simdf32_xor(x,y)    _mm_xor_ps(x,y)
-#define simdf32_f2i(x) 	    _mm_cvtps_epi32(x)  // convert s.p. float to integer
+#define simdf32_f2i(x)      _mm_cvtps_epi32(x)  // convert s.p. float to integer
 #define simdf32_extract(x,imm) _mm_extract_ps(x,imm)
 #define simdf_f2icast(x)    _mm_castps_si128(x) // compile time cast
 #endif //SIMD_FLOAT
@@ -317,9 +317,9 @@ typedef __m128i simd_int;
 #define simdi8_shiftl(x,y)  _mm_slli_si128(x,y)
 #define simdi8_shiftr(x,y)  _mm_srli_si128(x,y)
 #define simdi8_movemask(x)  _mm_movemask_epi8(x)
-#define simdi32_slli(x,y)	_mm_slli_epi32(x,y) // shift integers in a left by y
-#define simdi32_srli(x,y)	_mm_srli_epi32(x,y) // shift integers in a right by y
-#define simdi32_i2f(x) 	    _mm_cvtepi32_ps(x)  // convert integer to s.p. float
+#define simdi32_slli(x,y)   _mm_slli_epi32(x,y) // shift integers in a left by y
+#define simdi32_srli(x,y)   _mm_srli_epi32(x,y) // shift integers in a right by y
+#define simdi32_i2f(x)      _mm_cvtepi32_ps(x)  // convert integer to s.p. float
 #define simdi_i2fcast(x)    _mm_castsi128_ps(x)
 
 #define simdi32_set4(x,y,z,t) _mm_set_epi32(x,y,z,t)  // Added with Power8, hhviterbialgorithm needs _set4
@@ -355,7 +355,7 @@ typedef __vector double simd_double;
 #define simdf64_lt(x,y)     vec_cmplt(x,y)
 #define simdf64_or(x,y)     vec_or(x,y)
 #define simdf64_and(x,y)    vec_and(x,y)
-#define simdf64_andnot(x,y) vec_nand(x,y)
+#define simdf64_andnot(x,y) vec_andc(y,x)
 #define simdf64_xor(x,y)    vec_xor(x,y)
 #endif // SIMD_DOUBLE
 
@@ -365,16 +365,16 @@ typedef __vector double simd_double;
 #define ALIGN_FLOAT     16
 #define VECSIZE_FLOAT   4
 typedef __vector float simd_float;
-#define simdf32_add(x,y)    x + y  //vec_add(x,y)
-#define simdf32_sub(x,y)    x - y  //vec_sub(x,y)
-#define simdf32_mul(x,y)    x * y  //vec_mul(x,y)
-#define simdf32_div(x,y)    x / y  //vec_div(x,y)
+#define simdf32_add(x,y)    ((x) + (y))  //vec_add(x,y)
+#define simdf32_sub(x,y)    ((x) - (y))  //vec_sub(x,y)
+#define simdf32_mul(x,y)    ((x) * (y))  //vec_mul(x,y)
+#define simdf32_div(x,y)    ((x) / (y))  //vec_div(x,y)
 #define simdf32_max(x,y)    vec_max(x,y)
 #define simdf32_min(x,y)    vec_min(x,y)
 #define simdf32_rcp(x)      vec_re(x)
 #define simdf32_load(x)     vec_vsx_ld(0,x)   // vec_ld
 #define simdf32_store(x,y)  vec_vsx_st(y,0,x) // vec_st
-#define simdf32_set(x)      vec_splats((float)x)
+#define simdf32_set(x)      vec_splats((float)(x))
 //#define simdf32_set2(x,y)   _mm_set_ps(x,y)
 //#define simdf32_set4(x,y,z,t)
 #define simdf32_setzero(x)  vec_splats(0)
@@ -383,7 +383,7 @@ typedef __vector float simd_float;
 #define simdf32_lt(x,y)     (simd_float)vec_cmplt(x,y)
 #define simdf32_or(x,y)     vec_or(x,y)
 #define simdf32_and(x,y)    vec_and(x,y)
-#define simdf32_andnot(x,y) vec_nand(x,y)
+#define simdf32_andnot(x,y) vec_andc(y, x)
 #define simdf32_xor(x,y)    vec_xor(x,y)
 #define simdf32_extract(x,imm) vec_extract(x,imm)
 
@@ -399,6 +399,8 @@ typedef __vector float simd_float;
 typedef __vector int simd_int;
 typedef __vector   signed char simd_s8;
 typedef __vector unsigned char simd_u8;
+typedef __vector   signed short simd_s16;
+typedef __vector unsigned short simd_u16;
 
 #define simdi32_add(x,y)    vec_add(x,y)
 #define simdi32_sub(x,y)    vec_sub(x,y)
@@ -406,27 +408,27 @@ typedef __vector unsigned char simd_u8;
 #define simdi32_max(x,y)    vec_max(x,y)
 #define simdi_load(x)       vec_vsx_ld(0,x)
 #define simdi_store(x,y)    vec_vsx_st(y,0,x)
-#define simdi32_set(x)      vec_splats((signed int)x)
+#define simdi32_set(x)      vec_splats((signed int)(x))
 #define simdi32_set4(x,y,z,t) (simd_int){x,y,z,t}
 #define simdi_setzero(x)    vec_splats(0)
 #define simdi32_gt(x,y)     (simd_int)vec_cmpgt(x,y)
 #define simdi32_lt(x,y)     (simd_int)vec_cmplt(x,y)
 #define simdi_or(x,y)       vec_or(x,y)
 #define simdi_and(x,y)      vec_and(x,y)
-#define simdi_andnot(x,y)   vec_nand(x,y)
+#define simdi_andnot(x,y)   vec_andc(y,x)
 #define simdi_xor(x,y)      vec_xor(x,y)
-#define simdi32_slli(x,y)   vec_sl(x,vec_splats((unsigned int)y)) // shift integers in a left by y
-#define simdi32_srli(x,y)   vec_sr(x,vec_splats((unsigned int)y)) // shift integers in a right by y
+#define simdi32_slli(x,y)   vec_sl(x,vec_splats((unsigned int)(y))) // shift integers in a left by y
+#define simdi32_srli(x,y)   vec_sr(x,vec_splats((unsigned int)(y))) // shift integers in a right by y
 #define simdi32_i2f(x)      vec_ctf(x,0)  // convert integer to s.p. float
 #define simdi_i2fcast(x)    (simd_float)(x)
-#define simdi8_set(x)       (simd_int)vec_splats((unsigned char)x)
-#define simdi8_gt(x,y)      (simd_int)vec_cmpgt((simd_s8)x,(simd_s8)y)
-#define simdi8_eq(x,y)      (simd_int)vec_cmpeq((simd_s8)x,(simd_s8)y)
-#define simdui8_max(x,y)    (simd_int)vec_max((vector unsigned char)x, (vector unsigned char)y)
-#define simdui8_adds(x,y)   (simd_int)vec_adds((simd_u8)x,(simd_u8)y)
-#define simdui8_subs(x,y)   (simd_int)vec_subs((simd_u8)x,(simd_u8)y)
-#define simdi8_shiftl(x,y)   (simd_int)vec_slo(x,vec_splats((char)(y << 3))) // shift integers in a left by y
-#define simdi8_shiftr(x,y)   (simd_int)vec_sro(x,vec_splats((char)(y << 3))) // shift integers in a right by y
+#define simdi8_set(x)       (simd_int)vec_splats((unsigned char)(x))
+#define simdi8_gt(x,y)      (simd_int)vec_cmpgt((simd_s8)(x),(simd_s8)(y))
+#define simdi8_eq(x,y)      (simd_int)vec_cmpeq((simd_s8)(x),(simd_s8)(y))
+#define simdui8_max(x,y)    (simd_int)vec_max((vector unsigned char)(x), (vector unsigned char)(y))
+#define simdui8_adds(x,y)   (simd_int)vec_adds((simd_u8)(x),(simd_u8)(y))
+#define simdui8_subs(x,y)   (simd_int)vec_subs((simd_u8)(x),(simd_u8)(y))
+#define simdi8_shiftl(x,y)  (simd_int)vec_slo((simd_u8)(x),(simd_u8)vec_splats((char)(y << 3))) // shift integers in a left by y
+#define simdi8_shiftr(x,y)  (simd_int)vec_sro((simd_u8)(x),(simd_u8)vec_splats((char)(y << 3))) // shift integers in a right by y
 #define simdi8_movemask(x)  v_movemask(x)
 
 
@@ -508,19 +510,19 @@ inline void *mem_align(size_t boundary, size_t size)
 #ifdef SIMD_FLOAT
 inline simd_float * malloc_simd_float(const size_t size)
 {
-	return (simd_float *) mem_align(ALIGN_FLOAT,size);
+    return (simd_float *) mem_align(ALIGN_FLOAT,size);
 }
 #endif
 #ifdef SIMD_DOUBLE
 inline simd_double * malloc_simd_double(const size_t size)
 {
-	return (simd_double *) mem_align(ALIGN_DOUBLE,size);
+    return (simd_double *) mem_align(ALIGN_DOUBLE,size);
 }
 #endif
 #ifdef SIMD_INT
 inline simd_int * malloc_simd_int(const size_t size)
 {
-	return (simd_int *) mem_align(ALIGN_INT,size);
+    return (simd_int *) mem_align(ALIGN_INT,size);
 }
 #endif
 #endif //SIMD_H
