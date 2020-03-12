@@ -4,7 +4,7 @@ script:
   - |
     mkdir build && cd build; \
     cmake $CMAKE_EXTRA .. && make -j $(nproc --all || sysctl -n hw.ncpu); \
-    if [[ "$CMAKE_EXTRA" != "" ]]; then \ 
+    if [[ "$(command -v mpirun)" != "" ]]; then \
         make install; \
         export PATH="$(pwd)/bin:$(pwd)/scripts:$PATH"; \
         echo -e "leak:libmpi\nleak:libhwloc\nleak:libopen-pal\nleak:mca_db_hash\nleak:mca_bml_r2\nleak:libltdl\nleak:mca_mtl_psm2\nleak:mca_btl_openib\nleak:mca_rml_ofi\nleak:__strdup\nleak:realloc" > "$(pwd)/LSan.supp"; \
@@ -28,56 +28,7 @@ matrix:
             - cmake
             - gcc-4.8
             - g++-4.8
-            - mpi-default-dev
       env: CC=gcc-4.8 CXX=g++-4.8
-    - os: linux
-      dist: xenial
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - cmake
-            - g++-8
-            - mpi-default-dev
-      env: CC=gcc-8 CXX=g++-8
-    - os: linux
-      dist: xenial
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - cmake
-            - g++-8
-            - mpi-default-bin
-            - mpi-default-dev
-      env: CC=gcc-8 CXX=g++-8 CMAKE_EXTRA="-DENABLE_SANITIZERS=1 -DCMAKE_BUILD_TYPE=ASan -DCMAKE_INSTALL_PREFIX=."
-    - os: linux
-      dist: xenial
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-            - llvm-toolchain-xenial-3.8
-          packages:
-            - cmake
-            - clang-3.8
-            - mpi-default-dev
-      env: CC=clang-3.8 CXX=clang++-3.8
-    - os: linux
-      dist: xenial
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-            - llvm-toolchain-xenial-7
-          packages:
-            - clang-7
-            - libc++-7-dev
-            - libc++abi-7-dev
-            - mpi-default-dev
-      env: CC=clang-7 CXX=clang++-7
     - os: linux
       dist: xenial
       addons:
@@ -88,6 +39,8 @@ matrix:
             - cmake
             - gcc-4.8
             - g++-4.8
+            - mpi-default-bin
+            - mpi-default-dev
       env: CC=gcc-4.8 CXX=g++-4.8
     - os: linux
       dist: xenial
@@ -97,8 +50,33 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - cmake
+            - gcc-8
             - g++-8
       env: CC=gcc-8 CXX=g++-8
+    - os: linux
+      dist: xenial
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - cmake
+            - gcc-8
+            - g++-8
+            - mpi-default-bin
+            - mpi-default-dev
+      env: CC=gcc-8 CXX=g++-8 CMAKE_EXTRA="-DENABLE_SANITIZERS=1 -DCMAKE_BUILD_TYPE=ASan -DCMAKE_INSTALL_PREFIX=."
+    - os: linux
+        dist: xenial
+        addons:
+          apt:
+            sources:
+              - ubuntu-toolchain-r-test
+              - llvm-toolchain-xenial-3.8
+            packages:
+              - cmake
+              - clang-3.8
+        env: CC=clang-3.8 CXX=clang++-3.8
     - os: linux
       dist: xenial
       addons:
@@ -109,6 +87,8 @@ matrix:
           packages:
             - cmake
             - clang-3.8
+            - mpi-default-bin
+            - mpi-default-dev
       env: CC=clang-3.8 CXX=clang++-3.8
     - os: linux
       dist: xenial
@@ -118,10 +98,36 @@ matrix:
             - ubuntu-toolchain-r-test
             - llvm-toolchain-xenial-7
           packages:
+            - cmake
             - clang-7
             - libc++-7-dev
             - libc++abi-7-dev
       env: CC=clang-7 CXX=clang++-7
+    - os: linux
+      dist: xenial
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-xenial-7
+          packages:
+            - cmake
+            - clang-7
+            - libc++-7-dev
+            - libc++abi-7-dev
+            - mpi-default-bin
+            - mpi-default-dev
+      env: CC=clang-7 CXX=clang++-7
+    - os: linux
+      dist: xenial
+      arch: ppc64le
+      addons:
+        apt:
+          packages:
+            - cmake
+            - build-essential
+            - mpi-default-bin
+            - mpi-default-dev
     - os: osx
       osx_image: xcode10.3
       addons:
@@ -129,16 +135,5 @@ matrix:
           packages:
             - cmake
             - libomp
+            - open-mpi
       env: CC=clang CXX=clang++ CMAKE_EXTRA='-DOpenMP_C_FLAGS="-Xpreprocessor -fopenmp -I/usr/local/opt/libomp/include" -DOpenMP_C_LIB_NAMES=omp -DOpenMP_CXX_FLAGS="-Xpreprocessor -fopenmp -I/usr/local/opt/libomp/include" -DOpenMP_CXX_LIB_NAMES=omp -DOpenMP_omp_LIBRARY=/usr/local/opt/libomp/lib/libomp.a'
-    - os: linux
-      dist: xenial
-      arch: ppc64le
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - cmake
-            - gcc-8
-            - g++-8
-      env: CC=gcc-8 CXX=g++-8 CMAKE_EXTRA=" "
