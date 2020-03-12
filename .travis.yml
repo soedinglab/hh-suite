@@ -2,10 +2,6 @@ language: minimal
 
 script:
   - |
-    if [[ -n "$QEMU_PPC64LE" ]]; then \
-        docker build --build-arg NAMESPACE=ppc64le/ -t hhsuite .; \
-        exit 0; \
-    fi
     mkdir build && cd build; \
     cmake $CMAKE_EXTRA .. && make -j $(nproc --all || sysctl -n hw.ncpu); \
     if [[ "$CMAKE_EXTRA" != "" ]]; then \ 
@@ -136,12 +132,13 @@ matrix:
       env: CC=clang CXX=clang++ CMAKE_EXTRA='-DOpenMP_C_FLAGS="-Xpreprocessor -fopenmp -I/usr/local/opt/libomp/include" -DOpenMP_C_LIB_NAMES=omp -DOpenMP_CXX_FLAGS="-Xpreprocessor -fopenmp -I/usr/local/opt/libomp/include" -DOpenMP_CXX_LIB_NAMES=omp -DOpenMP_omp_LIBRARY=/usr/local/opt/libomp/lib/libomp.a'
     - os: linux
       dist: xenial
+      arch: ppc64le
       addons:
         apt:
+          sources:
+            - ubuntu-toolchain-r-test
           packages:
-            - qemu-user-static
-            - binfmt-support
-      env: QEMU_PPC64LE=1
-
-services:
-  - docker
+            - cmake
+            - gcc-8
+            - g++-8
+      env: CC=gcc-8 CXX=g++-8 CMAKE_EXTRA=" "
