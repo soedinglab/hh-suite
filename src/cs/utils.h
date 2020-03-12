@@ -312,22 +312,6 @@ inline void Assign(double* array, size_t length, double value) {
   for (size_t i = 0; i < length; ++i) array[i] = value;
 }
 
-// Gets a good random seed from /dev/random
-inline unsigned int GetRandomSeed() {
- unsigned int seed;
- struct timeval tv;
- FILE *devrandom;
-
- if ((devrandom = fopen("/dev/urandom","r")) != NULL &&
-     fread(&seed, sizeof(seed), 1, devrandom) == 1) {
-   fclose(devrandom);
- } else {
-   gettimeofday(&tv,0);
-   seed = tv.tv_sec + tv.tv_usec;
- }
- return(seed);
-}
-
 // Splits a string into multiple strings with character delimiter removed.
 static inline void Tokenize(const std::string& s,
                             const std::string& delims,
@@ -358,26 +342,6 @@ static inline void Tokenize(const std::string& s, char c, std::vector<std::strin
   }
 }
 
-// Stringifies the range elemeents delimited by given character.
-template<typename Fwd>
-inline std::string StringifyRange(Fwd first, Fwd last, char delim = ',') {
-  std::ostringstream out;
-  out << "{";
-  while (first != last) {
-    out << *first;
-    if (++first != last)
-      out << delim << ' ';
-  }
-  out << "}";
-  return out.str();
-}
-
-// Stringifies the provided container delimited by given character.
-template<typename C>
-inline std::string StringifyContainer(const C& c, char delim = ',') {
-  return StringifyRange(c.begin(), c.end(), delim);
-}
-
 // sprintf-like helper that returns a string.
 inline std::string strprintf(const char* str, ...) {
   char *buffer = new char[1000];
@@ -388,24 +352,6 @@ inline std::string strprintf(const char* str, ...) {
   std::string rv(buffer);
   delete [] buffer;
   return rv;
-}
-
-// Returns true if given file name is a regular file
-inline bool IsRegularFile(const std::string& filepath) {
-  bool ret = false;
-  struct stat fstats;
-  if (stat(filepath.c_str(), &fstats ) == 0)
-    if (S_ISREG(fstats.st_mode)) ret=true;
-  return ret;
-}
-
-// Returns true if given file name is a directory
-inline bool IsDirectory(const std::string& filepath) {
-  bool ret = false;
-  struct stat fstats;
-  if (stat(filepath.c_str(), &fstats) == 0)
-    if (S_ISDIR(fstats.st_mode)) ret = true;
-  return ret;
 }
 
 // Returns the file extension of the given file name.
@@ -447,20 +393,6 @@ inline std::string GetDirname(const std::string& s) {
   }
   return "";
 }
-
-// Concatenates pathname and a filename.
-inline const char* PathCat(const std::string& path, const std::string& file) {
-  std::string cat = path;
-  if (*(cat.rbegin()) != kDirSep) cat += kDirSep;
-  cat += file;
-  return cat.c_str();
-}
-
-// Reads all files in 'path' and pushes them onto given vector.
-void GetAllFiles(const std::string& path, std::vector<std::string>& files,
-                 const std::string& ext = "");
-
-
 
 }  // namespace cs
 
