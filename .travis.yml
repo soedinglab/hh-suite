@@ -5,7 +5,7 @@ dist: xenial
 script:
   - |
     mkdir build && cd build; \
-    cmake $CMAKE_EXTRA .. && make -j $(nproc --all || sysctl -n hw.ncpu); \
+    cmake -DCMAKE_INSTALL_PREFIX=. $CMAKE_EXTRA .. && make -j $(nproc --all || sysctl -n hw.ncpu); \
     if [[ "$(command -v mpirun)" != "" ]]; then \
         make install; \
         export PATH="$(pwd)/bin:$(pwd)/scripts:$PATH"; \
@@ -59,7 +59,7 @@ jobs:
             - g++-8
             - mpi-default-bin
             - mpi-default-dev
-      env: CC=gcc-8 CXX=g++-8 CMAKE_EXTRA="-DENABLE_SANITIZERS=1 -DCMAKE_BUILD_TYPE=ASan -DCMAKE_INSTALL_PREFIX=."
+      env: CC=gcc-8 CXX=g++-8 CMAKE_EXTRA="-DENABLE_SANITIZERS=1 -DCMAKE_BUILD_TYPE=ASan"
     - addons:
         apt:
           sources:
