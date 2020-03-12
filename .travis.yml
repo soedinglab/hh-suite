@@ -17,7 +17,6 @@ script:
     fi
 
 before_install:
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew link gcc@8 --force; fi
   - export CC
   - export CXX
 
@@ -128,13 +127,13 @@ matrix:
             - libc++abi-7-dev
       env: CC=clang-7 CXX=clang++-7
     - os: osx
-      osx_image: xcode10.1
+      osx_image: xcode10.3
       addons:
         homebrew:
           packages:
             - cmake
-            - gcc@8
-      env: CC=gcc-8 CXX=g++-8
+            - libomp
+      env: CC=clang CXX=clang++ CMAKE_EXTRA='-DOpenMP_C_FLAGS="-Xpreprocessor -fopenmp -I/usr/local/opt/libomp/include" -DOpenMP_C_LIB_NAMES=omp -DOpenMP_CXX_FLAGS="-Xpreprocessor -fopenmp -I/usr/local/opt/libomp/include" -DOpenMP_CXX_LIB_NAMES=omp -DOpenMP_omp_LIBRARY=/usr/local/opt/libomp/lib/libomp.a'
     - os: linux
       dist: xenial
       addons:

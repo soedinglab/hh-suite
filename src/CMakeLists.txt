@@ -137,6 +137,9 @@ target_link_libraries(HH_OBJECTS
         hhviterbialgorithm_with_celloff
         hhviterbialgorithm_and_ss
         hhviterbialgorithm_with_celloff_and_ss)
+if (OPENMP_FOUND AND NOT CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    target_link_libraries(HH_OBJECTS ${OpenMP_CXX_LIBRARIES})
+endif()
 
 add_executable(hhblits hhblits_app.cpp)
 target_link_libraries(hhblits HH_OBJECTS)
@@ -159,6 +162,9 @@ add_executable(hhconsensus hhconsensus.cpp)
 target_link_libraries(hhconsensus HH_OBJECTS)
 
 add_library(A3M_COMPRESS a3m_compress.cpp)
+if (OPENMP_FOUND AND NOT CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    target_link_libraries(A3M_COMPRESS ${OpenMP_CXX_LIBRARIES})
+endif()
 
 add_executable(a3m_extract a3m_extract.cpp)
 target_link_libraries(a3m_extract ffindex A3M_COMPRESS)
