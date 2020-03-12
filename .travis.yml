@@ -5,7 +5,12 @@ dist: xenial
 script:
   - |
     mkdir build && cd build; \
-    cmake -DCMAKE_INSTALL_PREFIX=. $CMAKE_EXTRA .. && make -j $(nproc --all || sysctl -n hw.ncpu); \
+    if [ -n "$MAC_LIBOMP" ]; then \
+        cmake -DCMAKE_INSTALL_PREFIX=. -DOpenMP_C_FLAGS="-Xpreprocessor -fopenmp -I/usr/local/opt/libomp/include" -DOpenMP_CXX_FLAGS="-Xpreprocessor -fopenmp -I/usr/local/opt/libomp/include" -DOpenMP_C_LIB_NAMES=omp -DOpenMP_CXX_LIB_NAMES=omp -DOpenMP_omp_LIBRARY=/usr/local/opt/libomp/lib/libomp.a ..; \
+    else \
+        cmake -DCMAKE_INSTALL_PREFIX=. $CMAKE_EXTRA ..; \
+    fi; \
+    make -j $(nproc --all || sysctl -n hw.ncpu); \
     if [[ "$(command -v mpirun)" != "" ]]; then \
         make install; \
         export PATH="$(pwd)/bin:$(pwd)/scripts:$PATH"; \
@@ -68,6 +73,7 @@ jobs:
           packages:
             - cmake
             - clang-3.8
+            - libomp-dev
       env: CC=clang-3.8 CXX=clang++-3.8
     - addons:
         apt:
@@ -77,6 +83,7 @@ jobs:
           packages:
             - cmake
             - clang-3.8
+            - libomp-dev
             - mpi-default-bin
             - mpi-default-dev
       env: CC=clang-3.8 CXX=clang++-3.8
@@ -90,6 +97,7 @@ jobs:
             - clang-7
             - libc++-7-dev
             - libc++abi-7-dev
+            - libomp-7-dev
       env: CC=clang-7 CXX=clang++-7
     - addons:
         apt:
@@ -101,6 +109,7 @@ jobs:
             - clang-7
             - libc++-7-dev
             - libc++abi-7-dev
+            - libomp-7-dev
             - mpi-default-bin
             - mpi-default-dev
       env: CC=clang-7 CXX=clang++-7
@@ -120,4 +129,4 @@ jobs:
             - cmake
             - libomp
             - open-mpi
-      env: CC=clang CXX=clang++ CMAKE_EXTRA="'-DOpenMP_C_FLAGS=\"-Xpreprocessor -fopenmp -I/usr/local/opt/libomp/include\"' -DOpenMP_C_LIB_NAMES=omp '-DOpenMP_CXX_FLAGS=\"-Xpreprocessor -fopenmp -I/usr/local/opt/libomp/include\"' -DOpenMP_CXX_LIB_NAMES=omp -DOpenMP_omp_LIBRARY=/usr/local/opt/libomp/lib/libomp.a"
+      env: CC=clang CXX=clang++ MAC_LIBOMP=1
