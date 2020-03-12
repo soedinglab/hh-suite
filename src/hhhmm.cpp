@@ -16,6 +16,8 @@ HMM::HMM(int maxseqdis, int maxres) : maxseqdis(maxseqdis), maxres(maxres) {
 	Neff_I = new float[maxres]; // Neff_I[i] = diversity of subalignment of seqs that have insert in col i
 	Neff_D = new float[maxres]; // Neff_D[i] = diversity of subalignment of seqs that have delete in col i
 	longname = new char[DESCLEN]; // Full name of first sequence of original alignment (NAME field)
+	// Make Clang memory sanitizer happy, avoid copying uninitialized values in HMM::operator=()
+	name[0] = file[0] = fam[0] = sfam[0] = fold[0] = cl[0] = '\0';
 	ss_dssp = new char[maxres]; // secondary structure determined by dssp 0:-  1:H  2:E  3:C  4:S  5:T  6:G  7:B
 	sa_dssp = new char[maxres]; // solvent accessibility state determined by dssp 0:-  1:A (absolutely buried) 2:B  3:C  4:D  5:E (exposed)
 	ss_pred = new char[maxres]; // predicted secondary structure          0:-  1:H  2:E  3:C
