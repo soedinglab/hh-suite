@@ -103,16 +103,17 @@ jobs:
         apt:
           sources:
             - ubuntu-toolchain-r-test
-            - llvm-toolchain-xenial-7
+            - sourceline: 'deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-10 main'
+              key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
           packages:
             - cmake
-            - clang-7
-            - libc++-7-dev
-            - libc++abi-7-dev
-            - libomp-7-dev
+            - clang-10
+            - libc++-10-dev
+            - libc++abi-10-dev
+            - libomp-10-dev
             - mpi-default-bin
             - mpi-default-dev
-      env: CC=clang-7 CXX=clang++-7
+      env: CC=clang-10 CXX=clang++-10
     - arch: ppc64le
       addons:
         apt:
