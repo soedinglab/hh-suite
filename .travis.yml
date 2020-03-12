@@ -6,17 +6,17 @@ script:
   - |
     mkdir build && cd build; \
     if [ -n "$MAC_LIBOMP" ]; then \
-        cmake -DCMAKE_INSTALL_PREFIX=. -DOpenMP_C_FLAGS="-Xpreprocessor -fopenmp -I/usr/local/opt/libomp/include" -DOpenMP_CXX_FLAGS="-Xpreprocessor -fopenmp -I/usr/local/opt/libomp/include" -DOpenMP_C_LIB_NAMES=omp -DOpenMP_CXX_LIB_NAMES=omp -DOpenMP_omp_LIBRARY=/usr/local/opt/libomp/lib/libomp.a ..; \
+        cmake -DCMAKE_INSTALL_PREFIX=. -DOpenMP_C_FLAGS="-Xpreprocessor -fopenmp -I/usr/local/opt/libomp/include" -DOpenMP_CXX_FLAGS="-Xpreprocessor -fopenmp -I/usr/local/opt/libomp/include" -DOpenMP_C_LIB_NAMES=omp -DOpenMP_CXX_LIB_NAMES=omp -DOpenMP_omp_LIBRARY=/usr/local/opt/libomp/lib/libomp.a .. || exit 1; \
     else \
-        cmake -DCMAKE_INSTALL_PREFIX=. $CMAKE_EXTRA ..; \
+        cmake -DCMAKE_INSTALL_PREFIX=. $CMAKE_EXTRA .. || exit 1; \
     fi; \
-    make -j $(nproc --all || sysctl -n hw.ncpu); \
+    make -j $(nproc --all || sysctl -n hw.ncpu) || exit 1; \
     if [[ "$(command -v mpirun)" != "" ]]; then \
-        make install; \
+        make install || exit 1; \
         export PATH="$(pwd)/bin:$(pwd)/scripts:$PATH"; \
         echo -e "leak:libmpi\nleak:libhwloc\nleak:libopen-pal\nleak:mca_db_hash\nleak:mca_bml_r2\nleak:libltdl\nleak:mca_mtl_psm2\nleak:mca_btl_openib\nleak:mca_rml_ofi\nleak:__strdup\nleak:realloc" > "$(pwd)/LSan.supp"; \
         export LSAN_OPTIONS="suppressions=$(pwd)/LSan.supp"; \
-        (cd ../data && ./test.sh); \
+        (cd ../data && ./test.sh) || exit 1; \
     fi
 
 before_install:
@@ -130,4 +130,5 @@ jobs:
             - cmake
             - libomp
             - open-mpi
+          update: true
       env: CC=clang CXX=clang++ MAC_LIBOMP=1
