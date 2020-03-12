@@ -1,4 +1,6 @@
-language: minimal
+language: shell
+os: linux
+dist: xenial
 
 script:
   - |
@@ -16,11 +18,9 @@ before_install:
   - export CC
   - export CXX
 
-matrix:
+jobs:
   include:
-    - os: linux
-      dist: xenial
-      addons:
+    - addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
@@ -29,9 +29,7 @@ matrix:
             - gcc-4.8
             - g++-4.8
       env: CC=gcc-4.8 CXX=g++-4.8
-    - os: linux
-      dist: xenial
-      addons:
+    - addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
@@ -42,9 +40,7 @@ matrix:
             - mpi-default-bin
             - mpi-default-dev
       env: CC=gcc-4.8 CXX=g++-4.8
-    - os: linux
-      dist: xenial
-      addons:
+    - addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
@@ -53,9 +49,7 @@ matrix:
             - gcc-8
             - g++-8
       env: CC=gcc-8 CXX=g++-8
-    - os: linux
-      dist: xenial
-      addons:
+    - addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
@@ -66,20 +60,16 @@ matrix:
             - mpi-default-bin
             - mpi-default-dev
       env: CC=gcc-8 CXX=g++-8 CMAKE_EXTRA="-DENABLE_SANITIZERS=1 -DCMAKE_BUILD_TYPE=ASan -DCMAKE_INSTALL_PREFIX=."
-    - os: linux
-        dist: xenial
-        addons:
-          apt:
-            sources:
-              - ubuntu-toolchain-r-test
-              - llvm-toolchain-xenial-3.8
-            packages:
-              - cmake
-              - clang-3.8
-        env: CC=clang-3.8 CXX=clang++-3.8
-    - os: linux
-      dist: xenial
-      addons:
+    - addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-xenial-3.8
+          packages:
+            - cmake
+            - clang-3.8
+      env: CC=clang-3.8 CXX=clang++-3.8
+    - addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
@@ -90,9 +80,7 @@ matrix:
             - mpi-default-bin
             - mpi-default-dev
       env: CC=clang-3.8 CXX=clang++-3.8
-    - os: linux
-      dist: xenial
-      addons:
+    - addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
@@ -103,9 +91,7 @@ matrix:
             - libc++-7-dev
             - libc++abi-7-dev
       env: CC=clang-7 CXX=clang++-7
-    - os: linux
-      dist: xenial
-      addons:
+    - addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
@@ -118,9 +104,7 @@ matrix:
             - mpi-default-bin
             - mpi-default-dev
       env: CC=clang-7 CXX=clang++-7
-    - os: linux
-      dist: xenial
-      arch: ppc64le
+    - arch: ppc64le
       addons:
         apt:
           packages:
