@@ -106,7 +106,7 @@ int Application::main(int argc, char* argv[], FILE* fout, const string& name) {
 }
 
 void Application::PrintHelp() const {
-  fprintf(out_, "%s version %d.%d.%d\n", app_name_.c_str(), HHSUITE_VERSION_MAJOR, HHSUITE_VERSION_MINOR, HHSUITE_VERSION_PATCH);
+  fprintf(out_, "%s %i.%i.%i\n", app_name_.c_str(), HHSUITE_VERSION_MAJOR, HHSUITE_VERSION_MINOR, HHSUITE_VERSION_PATCH);
   PrintBanner();
   fprintf(out_, "%s\n\n", kCopyright);
   PrintUsage();
