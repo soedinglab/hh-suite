@@ -20,14 +20,13 @@
 #include "cs.h"
 #include "application.h"
 #include "getopt_pp.h"
+#include "hhsuite_config.h"
 
 using std::string;
 
 namespace cs {
 
 Application* Application::instance_;
-
-const char* Application::kVersionNumber = "2.2.26";
 
 const char* Application::kCopyright =
   "Copyright (c) 2010-2012 Andreas Biegert, Christof Angermueller, Johannes Soeding, and LMU Munich";
@@ -107,7 +106,7 @@ int Application::main(int argc, char* argv[], FILE* fout, const string& name) {
 }
 
 void Application::PrintHelp() const {
-  fprintf(out_, "%s version %s\n", app_name_.c_str(), kVersionNumber);
+  fprintf(out_, "%s version %d.%d.%d\n", app_name_.c_str(), HHSUITE_VERSION_MAJOR, HHSUITE_VERSION_MINOR, HHSUITE_VERSION_PATCH);
   PrintBanner();
   fprintf(out_, "%s\n\n", kCopyright);
   PrintUsage();

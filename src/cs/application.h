@@ -52,8 +52,6 @@ class Application {
            );
 
  protected:
-  // Version number for usage output.
-  static const char* kVersionNumber;
   // Copyright string for usage output.
   static const char* kCopyright;
 
