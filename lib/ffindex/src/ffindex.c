@@ -292,6 +292,7 @@ ffindex_index_t* ffindex_index_parse(FILE *index_file, size_t num_max_entries)
     fferror_print(__FILE__, __LINE__, __func__, "malloc failed");
     return NULL;
   }
+  memset(index, 0, nbytes); // make clang memory sanitizer happy
   index->num_max_entries = num_max_entries;
 
   index->file = index_file;

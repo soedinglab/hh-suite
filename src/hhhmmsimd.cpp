@@ -129,8 +129,10 @@ void HMMSimd::MapHMMVector(std::vector<HMM *> hmms){
             for(int aa_i=0; aa_i < NAA;aa_i++){
                 p[i][aa_i*VECSIZE_FLOAT+seq_i]=curr->p[i][aa_i];
             }
-            pred_index[i * VECSIZE_FLOAT + seq_i] = (unsigned char) curr->ss_pred[i] * MAXCF + curr->ss_conf[i];
-            dssp_index[i * VECSIZE_FLOAT + seq_i] = (unsigned char) curr->ss_dssp[i];
+            if (i > 0){
+                pred_index[(i - 1) * VECSIZE_FLOAT + seq_i] = (unsigned char) curr->ss_pred[i] * MAXCF + curr->ss_conf[i];
+                dssp_index[(i - 1) * VECSIZE_FLOAT + seq_i] = (unsigned char) curr->ss_dssp[i];
+            }
         }
         for(int i = curr->L+1; i < this->L+1; i++){
             const unsigned int start_pos = i * VECSIZE_FLOAT * 7;
@@ -145,8 +147,14 @@ void HMMSimd::MapHMMVector(std::vector<HMM *> hmms){
             for(int aa_i=0; aa_i < NAA;aa_i++){
                 p[i][aa_i*VECSIZE_FLOAT+seq_i] = 0;
             }
-            pred_index[i * VECSIZE_FLOAT + seq_i] = 0;
-            dssp_index[i * VECSIZE_FLOAT + seq_i] = 0;
+            pred_index[(i - 1) * VECSIZE_FLOAT + seq_i] = 0;
+            dssp_index[(i - 1) * VECSIZE_FLOAT + seq_i] = 0;
+        }
+    }
+    for(unsigned int seq_i = hmms.size(); seq_i < VECSIZE_FLOAT; seq_i++){
+        for(int i = 1; i < this->L+1; i++){
+            pred_index[(i - 1) * VECSIZE_FLOAT + seq_i] = 0;
+            dssp_index[(i - 1) * VECSIZE_FLOAT + seq_i] = 0;
         }
     }
 }

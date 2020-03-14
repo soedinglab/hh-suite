@@ -205,7 +205,7 @@ void Viterbi::AlignWithOutCellOff(HMMSimd* q, HMMSimd* t,ViterbiMatrix * viterbi
                 score = &S37[ (int)q_s->ss_pred[i]][ (int)q_s->ss_conf[i]][0];
             }
             // access SS scores and write them to the ss_score array
-            for (j = 0; j <= (targetLength+1)*VECSIZE_FLOAT; j++) // Loop through template positions j
+            for (j = 0; j < targetLength*VECSIZE_FLOAT; j++) // Loop through template positions j
             {
                 ss_score[j + VECSIZE_FLOAT] = ssw * score[t_index[j]];
             }
