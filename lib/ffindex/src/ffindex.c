@@ -285,14 +285,13 @@ ffindex_index_t* ffindex_index_parse(FILE *index_file, size_t num_max_entries)
   if(num_max_entries == 0)
     num_max_entries = FFINDEX_MAX_INDEX_ENTRIES_DEFAULT;
   size_t nbytes = sizeof(ffindex_index_t) + (sizeof(ffindex_entry_t) * num_max_entries);
-  ffindex_index_t *index = (ffindex_index_t *)malloc(nbytes);
+  ffindex_index_t *index = (ffindex_index_t *) calloc(nbytes,sizeof(char)); 
   if(index == NULL)
   {
     fprintf(stderr, "Failed to allocate %ld bytes\n", nbytes);
     fferror_print(__FILE__, __LINE__, __func__, "malloc failed");
     return NULL;
   }
-  memset(index, 0, nbytes); // make clang memory sanitizer happy
   index->num_max_entries = num_max_entries;
 
   index->file = index_file;
