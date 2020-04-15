@@ -2253,9 +2253,12 @@ void Alignment::FrequenciesAndTransitions(HMM* q, char use_global_weights,
 
       if (showcons) {
         maxw = 0.0;
-        for (int b = 0; b < 20; b++)
-          maxw += q->f[i][b] * Sim[maxa][b] * Sim[maxa][b];
-        maxw *= q->Neff_M[i] / (q->Neff_HMM + 1);  // columns with many gaps don't get consensus symbol
+        if (maxa < NAA) {
+          for (int b = 0; b < 20; b++) {
+            maxw += q->f[i][b] * Sim[maxa][b] * Sim[maxa][b];
+          }
+          maxw *= q->Neff_M[i] / (q->Neff_HMM + 1);  // columns with many gaps don't get consensus symbol
+        }
         if (maxw > 0.6)
           q->seq[q->ncons][i] = uprchr(i2aa(maxa));
         else if (maxw > 0.4)

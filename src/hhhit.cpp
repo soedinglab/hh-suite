@@ -154,7 +154,7 @@ float Hit::calculateSimilarity(HMM* q, const float S[20][20]) {
 		if (state == MM) {
 		  char qc = query_mapping[this->i[step]];
 		  char tc = template_mapping[this->j[step]];
-		  alignment_similarity += S[aa2i(qc)][aa2i(tc)];
+		  alignment_similarity += (aa2i(qc) < NAA && aa2i(tc) < NAA) ? S[aa2i(qc)][aa2i(tc)] : 0.0f;
 		}
 	}
 

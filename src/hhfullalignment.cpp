@@ -156,7 +156,7 @@ void FullAlignment::Build(HMM* q, Hit& hit, const int nseqdis, const float S[20]
       char tc = ta->seq[hit.nfirst][ta->m[hit.nfirst][hit.j[step]]];
       if (qc == tc && qc != '-')
         identities++;  // count identical amino acids
-      score_sim += S[(int) aa2i(qc)][(int) aa2i(tc)];
+      score_sim += (aa2i(qc) < NAA && aa2i(tc) < NAA) ? S[(int) aa2i(qc)][(int) aa2i(tc)] : 0.0f;
       //fprintf(stderr,"%3i %3i  %3i %3i  %3i %1c %1c %6.2f %6.2f %6.2f %6.2f  \n",step,hit.nsteps,hit.i[step],hit.j[step],int(state),qc,tc,S[(int)aa2i(qc)][(int)aa2i(tc)],score_sim,hit.P_posterior[step],hit.sum_of_probs); //DEBUG (P_posterior not defined for Viterbi!)
     }
   }
