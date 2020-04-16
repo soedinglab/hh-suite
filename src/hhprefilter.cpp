@@ -11,6 +11,20 @@
 
 #define SWAP(tmp, arg1, arg2) tmp = arg1; arg1 = arg2; arg2 = tmp;
 
+struct comparePair {
+    bool operator() (const std::pair<int, int>& lhs, const std::pair<int, int>& rhs) const {
+        if (lhs.first < rhs.first)
+            return true;
+        if (rhs.first < lhs.first)
+            return false;
+        if (lhs.second < rhs.second)
+            return true;
+        if (rhs.second < lhs.second)
+            return false;
+        return false;
+    }
+};
+
 Prefilter::Prefilter(const std::string& cs_library, FFindexDatabase* cs219_database) {
   num_dbs = 0;
 
@@ -459,7 +473,7 @@ void Prefilter::prefilter_db(HMM* q_tmp, Hash<Hit>* previous_hits,
   //filter after calculation of ungapped sse score to include at least min_prefilter_hits
   std::vector<std::pair<int, int> >::iterator it;
 
-  sort(first_prefilter.begin(), first_prefilter.end());
+  std::sort(first_prefilter.begin(), first_prefilter.end(), comparePair());
   std::reverse(first_prefilter.begin(), first_prefilter.end());
 
   std::vector<std::pair<int, int> >::iterator first_prefilter_begin_erase =
@@ -510,7 +524,7 @@ void Prefilter::prefilter_db(HMM* q_tmp, Hash<Hit>* previous_hits,
   }
 
   //filter after calculation of evalues to include at least min_prefilter_hits
-  sort(hits.begin(), hits.end());
+  std::sort(hits.begin(), hits.end(), comparePair());
 
   std::vector<std::pair<double, int> >::iterator second_prefilter_begin_erase =
       hits.end();

@@ -227,7 +227,7 @@ void PosteriorDecoder::backtraceMAC(HMM & q, HMM & t, PosteriorMatrix & p_mm, Vi
 	}
 
 	// Set score, P-value etc.
-	hit.score_sort = hit.score_aass = -hit.score;
+	hit.score_aass = -hit.score;
 	hit.logPval = 0; hit.Pval = 1;
 	if (t.mu) {
 		hit.logPvalt = logPvalue(hit.score, t.lamda, t.mu);

@@ -53,7 +53,6 @@ class Hit
   float** posterior_matrix;
 
   float score;          // Score of alignment (i.e. of Viterbi path)
-  float score_sort;     // score to sort hits in output list (negative means first/best!)
   float score_aass;     // first: just hit.score, then hit.logPval-SSSCORE2NATLOG*hit.score_ss;(negative means best!)
   float score_ss;       // Part of score due to secondary structure
   double Pval;           // P-value for whole protein based on score distribution of query
@@ -115,7 +114,17 @@ class Hit
   void Delete();
 
   // Comparison (used to sort list of hits)
-  int operator<(const Hit& hit2)  {return score_sort < hit2.score_sort;}
+  int operator<(const Hit& hit2) {
+      if (score_aass < hit2.score_aass)
+          return true;
+      if (hit2.score_aass < score_aass)
+          return false;
+      if (strcmp(file, hit2.file) < 0)
+          return true;
+      if (strcmp(file, hit2.file) > 0)
+          return false;
+      return false;
+  }
 
   void initHitFromHMM(HMM * q, HMM * t, const int nseqdis, const char ssm);
 
@@ -129,7 +138,6 @@ class Hit
     // P-value = 1 - exp(-exp(-lamda*(Saa-mu))) => -lamda*(Saa-mu) = log(-log(1-Pvalue))
     score_aass = (logPval < -10.0 ? logPval : log(-log(1 - Pval))) / 0.45
         - fmin(lamda * score_ss, fmax(0.0, 0.2 * (score - 8.0))) / 0.45 - 3.0;
-    score_sort = score_aass;
     Probab = CalcProbab(loc, ssm, ssw);
   }
 

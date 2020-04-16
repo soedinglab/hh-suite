@@ -41,7 +41,6 @@ void ViterbiConsumerThread::align(int maxres, int nseqdis, const float smin, con
         hit_cur.score = backtraceScore.score;
         hit_cur.score_ss = backtraceScore.score_ss;
         hit_cur.score_aass = backtraceScore.score_aass;
-        hit_cur.score_sort = backtraceScore.score_sort;
         hit_cur.S = backtraceScore.S;
         hit_cur.S_ss = backtraceScore.S_ss;
 

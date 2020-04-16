@@ -271,7 +271,6 @@ void PosteriorDecoder::memorizeHitValues(Hit &curr_hit) {
 	m_temp_hit->score      = curr_hit.score;
 	m_temp_hit->score_ss   = curr_hit.score_ss;
 	m_temp_hit->score_aass = curr_hit.score_aass;
-	m_temp_hit->score_sort = curr_hit.score_sort;
 	m_temp_hit->Pval       = curr_hit.Pval;
 	m_temp_hit->Pvalt      = curr_hit.Pvalt;
 	m_temp_hit->logPval    = curr_hit.logPval;
@@ -288,7 +287,6 @@ void PosteriorDecoder::restoreHitValues(Hit &curr_hit) {
 	curr_hit.score = m_temp_hit->score;
 	curr_hit.score_ss = m_temp_hit->score_ss;
 	curr_hit.score_aass = m_temp_hit->score_aass;
-	curr_hit.score_sort = m_temp_hit->score_sort;
 	curr_hit.Pval = m_temp_hit->Pval;
 	curr_hit.Pvalt = m_temp_hit->Pvalt;
 	curr_hit.logPval = m_temp_hit->logPval;
