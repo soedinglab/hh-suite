@@ -14,8 +14,28 @@ The HH-suite is an open-source software package for sensitive protein sequence s
 
 We provide an extensive [user guide](https://github.com/soedinglab/hh-suite/wiki) with many usage examples, frequently asked questions and guides to build your own databases. 
 
-## Installation
-We recommend compiling HH-suite on the machine that should run the computations so that it can be optimized for the available CPU instruction sets.
+### Installation
+
+HH-suite3 can also be installed by downloading a statically compiled version, [conda](https://github.com/conda/conda) or [Docker](https://github.com/moby/moby). HH-suite3 requires a 64-bit system (check with `uname -a | grep x86_64`) with at least the SSE2 instruction set (check by executing `cat /proc/cpuinfo | grep sse2` on Linux or `sysctl -a | grep machdep.cpu.features | grep SSE2` on macOS). `AVX2` is roughly 2x faster compared to SSE2.
+
+```
+# install via conda
+conda install -c conda-forge -c bioconda hhsuite 
+# install docker
+docker pull soedinglab/hh-suite
+# static SSE2 build
+wget https://github.com/soedinglab/hh-suite/releases/download/v3.2.0/hhsuite-3.2.0-SSE2-Linux.tar.gz; tar xvfz hhsuite-3.2.0-SSE2-Linux.tar.gz; export PATH="$(pwd)/bin:$(pwd)/scripts:$PATH"
+# static AVX2 build
+wget https://github.com/soedinglab/hh-suite/releases/download/v3.2.0/hhsuite-3.2.0-AVX2-Linux.tar.gz; tar xvfz hhsuite-3.2.0-AVX2-Linux.tar.gz; export PATH="$(pwd)/bin:$(pwd)/scripts:$PATH"
+```
+:exclamation: Only the self-compiled HH-suite3 version includes MPI support, since MPI configuration is specific to the local environment.
+
+### Available Databases
+List of available database for HH-suite3: 
+  - [Uniclust30](https://uniclust.mmseqs.com) [[pub]](https://doi.org/10.1093/nar/gkw1081)
+  - [BFD](https://bfd.mmseqs.com) (consists of 2.5 billion, mostly enviromental, protein sequences) [[pub]](https://doi.org/10.1038/s41592-019-0437-4)
+  - [Pfam/SCOP/PDB70](http://wwwuser.gwdg.de/~compbiol/data/hhsuite/databases/hhsuite_dbs/)
+
 
 ### Compilation
 To compile from source, you will need a recent C/C++ compiler (at least GCC 4.8 or Clang 3.6) and [CMake](http://cmake.org/) 2.8.12 or later.
@@ -35,25 +55,6 @@ export PATH="$(pwd)/bin:$(pwd)/scripts:$PATH"
 CC="$(brew --prefix)/bin/gcc-8" CXX="$(brew --prefix)/bin/g++-8" cmake -DCMAKE_INSTALL_PREFIX=. ..
 ```    
 
-### Download
-
-HH-suite3 can also be installed by downloading a statically compiled version, [conda](https://github.com/conda/conda) or [Docker](https://github.com/moby/moby). HH-suite3 requires a 64-bit system (check with `uname -a | grep x86_64`) with at least the SSE2 instruction set (check by executing `cat /proc/cpuinfo | grep sse2` on Linux or `sysctl -a | grep machdep.cpu.features | grep SSE2` on macOS).
-
-```
-# install via conda
-conda install -c conda-forge -c bioconda hhsuite 
-# install docker
-docker pull soedinglab/hh-suite
-# static SSE2 build
-wget https://github.com/soedinglab/hh-suite/releases/download/v3.2.0/hhsuite-3.2.0-SSE2-Linux.tar.gz; tar xvfz hhsuite-3.2.0-SSE2-Linux.tar.gz; export PATH="$(pwd)/bin:$(pwd)/scripts:$PATH"
-# static AVX2 build
-wget https://github.com/soedinglab/hh-suite/releases/download/v3.2.0/hhsuite-3.2.0-AVX2-Linux.tar.gz; tar xvfz hhsuite-3.2.0-AVX2-Linux.tar.gz; export PATH="$(pwd)/bin:$(pwd)/scripts:$PATH"
-```
-:exclamation: Only the self-compiled HH-suite3 version includes MPI support, since MPI configuration is specific to the local environment.
-
-### Download Databases
-Download current databases from our [download server](http://wwwuser.gwdg.de/~compbiol/data/hhsuite/databases/hhsuite_dbs/).
-To build up multiple sequences alignments using HHblits, the Uniclust30 database is sufficient. A large collection of HMMs build from enviromental sequences can be downloaded [here](https://bfd.mmseqs.com/).  
 
 ## Usage
 For performing a single search iteration of HHblits, run HHblits with the following command:
