@@ -296,6 +296,7 @@ void PosteriorDecoder::restoreHitValues(Hit &curr_hit) {
 	curr_hit.Probab = m_temp_hit->Probab;
 }
 
+#ifndef __ALTIVEC__
 void PosteriorDecoder::printVector(float * vec) {
 
 	for (int i = 0; i < VEC_SIZE; i++) {
@@ -324,4 +325,4 @@ void PosteriorDecoder::printVector(simd_int * vec) {
 	printf("\n");
 
 }
-
+#endif

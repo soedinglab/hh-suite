@@ -134,9 +134,11 @@ private:
 	void memorizeHitValues(Hit & curr_hit);
 	void restoreHitValues(Hit &curr_hit);
 
+#ifndef __ALTIVEC__
 	void printVector(simd_float * vec);
 	void printVector(simd_int * vec);
 	void printVector(float * vec);
+#endif
 
 	void exclude_regions(char *exclstr, HMM &q_hmm, HMM &t_hmm, ViterbiMatrix &viterbiMatrix);
         void exclude_template_regions(char* exclstr, HMM & q_hmm, HMM & t_hmm, ViterbiMatrix& viterbiMatrix);
