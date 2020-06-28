@@ -34,7 +34,7 @@ wget https://github.com/soedinglab/hh-suite/releases/download/v3.2.0/hhsuite-3.2
 List of available database for HH-suite3: 
   - [Uniclust30](https://uniclust.mmseqs.com) [[pub]](https://doi.org/10.1093/nar/gkw1081)
   - [BFD](https://bfd.mmseqs.com) (consists of 2.5 billion, mostly enviromental, protein sequences) [[pub]](https://doi.org/10.1038/s41592-019-0437-4)
-  - [Pfam/SCOP/PDB70](http://wwwuser.gwdg.de/~compbiol/data/hhsuite/databases/hhsuite_dbs/)
+  - [Pfam/SCOP/PDB70/dbCAN](http://wwwuser.gwdg.de/~compbiol/data/hhsuite/databases/hhsuite_dbs/)
 
 
 ### Compilation
