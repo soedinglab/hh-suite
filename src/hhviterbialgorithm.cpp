@@ -409,17 +409,10 @@ void Viterbi::AlignWithOutCellOff(HMMSimd* q, HMMSimd* t,ViterbiMatrix * viterbi
             /* efgh                                            0000  0000  HGFE  0000 */
             const __m128i efgh     = _mm256_extracti128_si256(abcdefgh, 1);
             _mm_storel_epi64((__m128i*)&sCO_MI_DG_IM_GD_MM_vec[j], _mm_or_si128(abcd, efgh));
-#elif defined(SSE)
-
+#else
             byte_result_vec = _mm_packs_epi32(byte_result_vec, byte_result_vec);
             byte_result_vec = _mm_packus_epi16(byte_result_vec, byte_result_vec);
             int int_result  = _mm_cvtsi128_si32(byte_result_vec);
-            sCO_MI_DG_IM_GD_MM_vec[j] = int_result;
-#elif defined(__ALTIVEC__)
-
-            simd_s16 s16    = vec_packs(byte_result_vec, byte_result_vec);
-            simd_u8  u8     = vec_packsu(s16, s16);
-            int int_result  = vec_extract((simd_int)u8, 0);
             sCO_MI_DG_IM_GD_MM_vec[j] = int_result;
 #endif
             
