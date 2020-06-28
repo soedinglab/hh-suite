@@ -20,7 +20,6 @@ class Hit;
 #include "hhdecl.h"
 #include "hhutil.h"
 #include "util.h"
-#include "hhdatabase.h"
 #include "log.h"
 
 #include "hhhit-inl.h"

@@ -118,7 +118,7 @@ void Viterbi::AlignWithOutCellOff(HMMSimd* q, HMMSimd* t,ViterbiMatrix * viterbi
                                                           3, 2,  1, 0,
                                                           3, 2,  1, 0);
 #else // SSE case
-    const simd_int tmp_vec = simdi32_set4(0x40000000,0x00400000,0x00004000,0x00000040);
+    const simd_int tmp_vec = _mm_set_epi32(0x40000000,0x00400000,0x00004000,0x00000040);
     const simd_int co_vec = tmp_vec;
     const simd_int float_min_vec = (simd_int) simdf32_set(-FLT_MAX);
 #endif

@@ -27,6 +27,26 @@ jobs:
   include:
     - addons:
         apt:
+          packages:
+            - cmake
+            - build-essential
+            - g++-8
+            - gcc-8
+      arch: arm64
+      env: CC=gcc-8 CXX=g++-8
+      dist: bionic
+    - addons:
+        apt:
+          packages:
+            - cmake
+            - build-essential
+            - g++-8
+            - gcc-8
+      arch: ppc64le
+      dist: bionic
+      env: CC=gcc-8 CXX=g++-8
+    - addons:
+        apt:
           sources:
             - ubuntu-toolchain-r-test
           packages:
@@ -114,14 +134,6 @@ jobs:
             - mpi-default-bin
             - mpi-default-dev
       env: CC=clang-10 CXX=clang++-10
-    - arch: ppc64le
-      addons:
-        apt:
-          packages:
-            - cmake
-            - build-essential
-            - mpi-default-bin
-            - mpi-default-dev
     - os: osx
       osx_image: xcode10.3
       addons:

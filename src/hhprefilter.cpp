@@ -57,6 +57,16 @@ Prefilter::~Prefilter() {
   delete cs_lib;
 }
 
+template <typename F>
+inline F simd_hmax(const F * in, unsigned int n) {
+    F current = std::numeric_limits<F>::min();
+    do {
+        current = std::max(current, *in++);
+    } while(--n);
+
+    return current;
+}
+
 int Prefilter::swStripedByte(unsigned char *querySeq, int queryLength,
                              unsigned char *dbSeq, int dbLength, unsigned short gapOpen,
                              unsigned short gapExtend, simd_int *pvHLoad, simd_int *pvHStore,
