@@ -32,6 +32,8 @@ jobs:
             - build-essential
             - g++-8
             - gcc-8
+            - mpi-default-bin
+            - mpi-default-dev
       arch: arm64
       env: CC=gcc-8 CXX=g++-8
       dist: bionic
@@ -42,6 +44,8 @@ jobs:
             - build-essential
             - g++-8
             - gcc-8
+            - mpi-default-bin
+            - mpi-default-dev
       arch: ppc64le
       dist: bionic
       env: CC=gcc-8 CXX=g++-8
