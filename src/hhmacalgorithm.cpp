@@ -50,6 +50,7 @@ void PosteriorDecoder::macAlgorithm(HMM & q, HMM & t, Hit & hit,
     //	char * c_ptr = new char;
     char val;
     hit.min_overlap = 0;
+    hit.initMACHitEndPositions(imax(q.L, t.L)); // reasonable limit on the number of alternative MAC hits
     // Dynamic programming
     for (i = 1; i <= q.L; ++i) { // Loop through query positions i
         // If q is compared to t, exclude regions where overlap of q with t < min_overlap residues
@@ -128,6 +129,13 @@ void PosteriorDecoder::macAlgorithm(HMM & q, HMM & t, Hit & hit,
                     hit.i2 = i; hit.j2 = j;
                     score_MAC = S_curr[j];
                 }
+                if((m_local || i == q.L) && val == ViterbiMatrix::MM) { // local alignment path ends with MM state
+                    hit.storeMACHitEndPosition(S_curr[j], i, j);
+                    if (val == ViterbiMatrix::MM) {
+                        // delete suboptimal previous position
+                        hit.eraseMACHitEndPosition(S_prev[j-1], i - 1, j - 1);
+                    }
+                }
 
             } // end if
 
@@ -144,6 +152,9 @@ void PosteriorDecoder::macAlgorithm(HMM & q, HMM & t, Hit & hit,
             hit.i2 = i;
             hit.j2 = jmax;
             score_MAC = S_curr[jmax];
+        }
+        if (!m_local) {
+            hit.storeMACHitEndPosition(S_curr[jmax], i, jmax);
         }
 
         for (j = 0; j <= t.L; ++j)

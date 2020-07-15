@@ -111,6 +111,8 @@ void HHalign::help(Parameters& par, char all) {
   printf(" -norealign     do NOT realign displayed hits with MAC algorithm (def=realign)   \n");
   printf(" -mact [0,1[    posterior prob threshold for MAC realignment controlling greedi- \n");
   printf("                ness at alignment ends: 0:global >0.1:local (default=%.2f)       \n", par.mact);
+  printf(" -mac_min_length      minimum length of MAC hit in comparison with the Viterbi hit\n");
+  printf("                      (in terms of matched_cols, default=%.2f)\n", par.mac_min_length);
   printf(" -glob/-loc     use global/local alignment mode for searching/ranking (def=local)\n");
 
   if (all) {
@@ -518,6 +520,9 @@ void HHalign::ProcessArguments(Parameters& par) {
     else if (!strcmp(argv[i], "-mact") && (i < argc - 1)) {
       par.mact = atof(argv[++i]);
     }
+    else if (!strcmp(argv[i], "-mac_min_length")
+        && (i < argc - 1))
+      par.mac_min_length = atof(argv[++i]);
     //not in the help - but intended
     else if (!strcmp(argv[i], "-scwin") && (i < argc - 1)) {
       par.columnscore = 5;

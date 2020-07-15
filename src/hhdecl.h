@@ -239,6 +239,7 @@ public:
   float corr;             // Weight of correlations between scores with |i-j|<=4
   float shift;            // Score offset for match-match states
   double mact;            // Probability threshold (negative offset) in MAC alignment determining greediness at ends of alignment
+  float mac_min_length;   // Minimum length of MAC hit in comparison with the original Viterbi hit (in terms of matched_cols)
   int realign_max;        // Realign max ... hits
   float maxmem;           // maximum available memory in GB for realignment (approximately)
 

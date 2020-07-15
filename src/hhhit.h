@@ -12,6 +12,7 @@
 #include <time.h>
 #include <ctype.h>
 #include <vector>
+#include <map>
 
 class Hit;
 
@@ -145,6 +146,39 @@ class Hit
   char state;          // 0: Start/STOP state  1: MM state  2: GD state (-D)  3: IM state  4: DG state (D-)  5 MI state
   int min_overlap;
   
+  /* macAlgorithm() method stores here all the possible MAC path end positions (it's needed by backtraceMAC()) */
+  std::multimap<double, std::pair<int, int> > mac_hit_end_positions;
+  int max_mac_hit_end_positions;
+
+  void initMACHitEndPositions(int max) {
+      if (mac_hit_end_positions.size() > 0) {
+          mac_hit_end_positions.erase(mac_hit_end_positions.begin(), mac_hit_end_positions.end());
+      }
+      max_mac_hit_end_positions = max;
+  }
+
+  void storeMACHitEndPosition(double score, int i2, int j2) {
+    std::pair<int, int> p = std::pair<int, int>(i2, j2);
+    mac_hit_end_positions.insert(std::pair<double, std::pair<int, int> >(-score, p));
+    // store no more than max_mac_hit_end_positions for the best MAC hits
+    while (mac_hit_end_positions.size() > max_mac_hit_end_positions) {
+        mac_hit_end_positions.erase(std::next(mac_hit_end_positions.rbegin()).base());
+    }
+  }
+
+  void eraseMACHitEndPosition(double score, int i2, int j2) {
+    typedef std::multimap<double, std::pair<int, int> >::iterator mapIterator;
+
+    std::pair<mapIterator, mapIterator> its = mac_hit_end_positions.equal_range(-score);
+    std::pair<int, int> p = std::pair<int, int>(i2, j2);
+    for(mapIterator it = its.first; it != its.second; it++) {
+        if (it->second == p) {
+            mac_hit_end_positions.erase(it);
+            return;
+        }
+    }
+  }
+
 private:
   // Calculate probability of true positive : p_TP(score)/( p_TP(score)+p_FP(score) )
   // TP: same superfamily OR MAXSUB score >=0.1

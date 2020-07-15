@@ -86,7 +86,7 @@ PosteriorDecoder::~PosteriorDecoder() {
 void PosteriorDecoder::realign(HMM &q, HMM &t, Hit &hit,
 							   PosteriorMatrix &p_mm, ViterbiMatrix &viterbi_matrix,
 							   std::vector<PosteriorDecoder::MACBacktraceResult> alignment_to_exclude,
-							   char * exclstr, char* template_exclstr, int par_min_overlap, float shift, float mact, float corr) {
+							   char * exclstr, char* template_exclstr, int par_min_overlap, float shift, float mact, float corr, float mac_min_length) {
 
 	HMM & curr_q_hmm = q;
 	HMM & curr_t_hmm = t;
@@ -112,7 +112,7 @@ void PosteriorDecoder::realign(HMM &q, HMM &t, Hit &hit,
 
 	backwardAlgorithm(curr_q_hmm, curr_t_hmm, hit, p_mm, viterbi_matrix, shift, 0);
 	macAlgorithm(curr_q_hmm, curr_t_hmm, hit, p_mm, viterbi_matrix, mact, 0);
-	backtraceMAC(curr_q_hmm, curr_t_hmm, p_mm, viterbi_matrix, 0, hit, corr);
+	backtraceMAC(curr_q_hmm, curr_t_hmm, p_mm, viterbi_matrix, 0, hit, corr, mac_min_length);
 	restoreHitValues(hit);
 	writeProfilesToHits(curr_q_hmm, curr_t_hmm, p_mm, viterbi_matrix, hit);
 	// add result to exclution paths (needed to align 2nd, 3rd, ... best alignment)
@@ -278,6 +278,41 @@ void PosteriorDecoder::memorizeHitValues(Hit &curr_hit) {
 	m_temp_hit->Eval       = curr_hit.Eval;
 	m_temp_hit->logEval    = curr_hit.logEval;
 	m_temp_hit->Probab     = curr_hit.Probab;
+	m_temp_hit->i1         = curr_hit.i1;
+	m_temp_hit->i2         = curr_hit.i2;
+	m_temp_hit->j1         = curr_hit.j1;
+	m_temp_hit->j2         = curr_hit.j2;
+	m_temp_hit->nsteps     = curr_hit.nsteps;
+	if (curr_hit.i) {
+		m_temp_hit->i = new int[curr_hit.nsteps + 1];
+		for(int step = 1; step <= curr_hit.nsteps; step++) {
+			m_temp_hit->i[step] = curr_hit.i[step];
+		}
+	}
+	if (curr_hit.j) {
+		m_temp_hit->j = new int[curr_hit.nsteps + 1];
+		for(int step = 1; step <= curr_hit.nsteps; step++) {
+			m_temp_hit->j[step] = curr_hit.j[step];
+		}
+	}
+	if (curr_hit.S) {
+		m_temp_hit->S = new float[curr_hit.nsteps + 1];
+		for(int step = 1; step <= curr_hit.nsteps; step++) {
+			m_temp_hit->S[step] = curr_hit.S[step];
+		}
+	}
+	if (curr_hit.S_ss) {
+		m_temp_hit->S_ss = new float[curr_hit.nsteps + 1];
+		for(int step = 1; step <= curr_hit.nsteps; step++) {
+			m_temp_hit->S_ss[step] = curr_hit.S_ss[step];
+		}
+	}
+	if (curr_hit.states) {
+		m_temp_hit->states = new char[curr_hit.nsteps + 1];
+		for(int step = 1; step <= curr_hit.nsteps; step++) {
+			m_temp_hit->states[step] = curr_hit.states[step];
+		}
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -294,6 +329,58 @@ void PosteriorDecoder::restoreHitValues(Hit &curr_hit) {
 	curr_hit.Eval = m_temp_hit->Eval;
 	curr_hit.logEval = m_temp_hit->logEval;
 	curr_hit.Probab = m_temp_hit->Probab;
+	if (m_temp_hit->i) {
+	    delete[] m_temp_hit->i;
+	}
+	if (m_temp_hit->j) {
+	    delete[] m_temp_hit->j;
+	}
+	if (m_temp_hit->S) {
+	    delete[] m_temp_hit->S;
+	}
+	if (m_temp_hit->S_ss) {
+	    delete[] m_temp_hit->S_ss;
+	}
+	if (m_temp_hit->states) {
+	    delete[] m_temp_hit->states;
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// Restore the current hit with Viterbi alignment path
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void PosteriorDecoder::restoreHitPath(Hit &curr_hit) {
+	curr_hit.nsteps = m_temp_hit->nsteps;
+	if (curr_hit.S) {
+		delete[] curr_hit.S;
+	}
+	curr_hit.S = new float[curr_hit.nsteps + 1];
+	if (curr_hit.S_ss) {
+		delete[] curr_hit.S_ss;
+		curr_hit.S_ss = NULL;
+	}
+	if (m_temp_hit->S_ss) {
+		curr_hit.S_ss = new float[curr_hit.nsteps + 1];
+	}
+	if (curr_hit.states) {
+		delete[] curr_hit.states;
+	}
+	curr_hit.states = new char[curr_hit.nsteps + 1];
+	for(int step = 1; step <= curr_hit.nsteps; step++) {
+		curr_hit.i[step] = m_temp_hit->i[step];
+		curr_hit.j[step] = m_temp_hit->j[step];
+		curr_hit.S[step] = m_temp_hit->S[step];
+		if (m_temp_hit->S_ss) {
+			curr_hit.S_ss[step] = m_temp_hit->S_ss[step];
+		}
+		curr_hit.states[step] = m_temp_hit->states[step];
+		curr_hit.alt_i->push_back(curr_hit.i[step]);
+		curr_hit.alt_j->push_back(curr_hit.j[step]);
+	}
+	curr_hit.i1 = curr_hit.i[curr_hit.nsteps];
+	curr_hit.j1 = curr_hit.j[curr_hit.nsteps];
+	curr_hit.i2 = curr_hit.i[1];
+	curr_hit.j2 = curr_hit.j[1];
 }
 
 #ifndef __ALTIVEC__
