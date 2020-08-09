@@ -2004,12 +2004,12 @@ void HHblits::premerge(Hash<Hit>* previous_hits, Hash<Hit>* premerged_hits,
     }
     PosteriorDecoderRunner runner(posteriorMatrices, viterbiMatrices, par.threads, par.ssw, S73, S33, S37);
 
-    std::vector<Hit *> tmpHits;
     int prermergedHits = 0;
-    HitList tmpHitList;
-    hitlist.Reset();
+    std::vector<Hit *> tmpHits;
+
     while (!hitlist.End() && prermergedHits<par.premerge)
     {
+        HitList tmpHitList;
         Hit hit_cur = hitlist.ReadNext();
         if (hit_cur.L > Lmaxmem) {
             continue;
@@ -2028,7 +2028,7 @@ void HHblits::premerge(Hash<Hit>* previous_hits, Hash<Hit>* premerged_hits,
         runner.executeComputation(*q, tmpHits, par, par.qsc_db, pb, S, Sim, R);
         hitlist.Delete();
         hitlist.Insert(*tmpHits[0]);
-        tmpHitList.Insert(*tmpHits[0]);
+        tmpHitList.Push(*tmpHits[0]);
         mergeHitsToQuery(tmpHitList, previous_hits, premerged_hits, seqs_found, cluster_found, min_col_realign);
         std::stringstream ss_tmp;
         ss_tmp << hit_cur.file << "__" << hit_cur.irep;
