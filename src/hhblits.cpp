@@ -1983,11 +1983,18 @@ void HHblits::writeMatricesFile(HHblits& hhblits, std::stringstream& out) {
 void HHblits::premerge(Hash<Hit>* previous_hits, Hash<Hit>* premerged_hits,
                        int& seqs_found, int& cluster_found, int min_col_realign) {
     int Lmax = 0;      // length of longest HMM to be realigned
+    long int Lmaxmem = ((par.maxmem - 0.5) * 1024 * 1024 * 1024)
+                       / (2 * sizeof(double) + 8) / q->L / par.threads;
+
     // Initialize a Null-value as a return value if not items are available anymore
+    hitlist.Reset();
     while (!hitlist.End()) {
         Hit hit_cur = hitlist.ReadNext();
         if (hit_cur.L > Lmax) {
             Lmax = hit_cur.L;
+        }
+        if (hit_cur.L > Lmaxmem) {
+            continue;
         }
     }
     int t_maxres = Lmax + 2;
@@ -2002,6 +2009,10 @@ void HHblits::premerge(Hash<Hit>* previous_hits, Hash<Hit>* premerged_hits,
     while (!hitlist.End() && prermergedHits<par.premerge)
     {
         Hit hit_cur = hitlist.ReadNext();
+        if (hit_cur.L > Lmaxmem) {
+            continue;
+        }
+
         tmpHits.clear();
         tmpHits.push_back(&hit_cur);
         if (prermergedHits>=imax(par.B,par.Z)) break;
