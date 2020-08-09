@@ -215,7 +215,7 @@ void HHalign::ProcessAllArguments(Parameters& par) {
   par.altali = 1;           // find only ONE (possibly overlapping) subalignment
   par.outformat = 3;             // default output format for alignment is a3m
   par.realign = 1;               // default: realign
-
+  par.premerge = 0;
   par.num_rounds = 1;
 
   ProcessArguments(par);
