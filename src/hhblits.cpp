@@ -818,7 +818,7 @@ void HHblits::ProcessArguments(Parameters& par) {
     }  // end of for-loop for command line input
 }
 
-void HHblits::mergeHitsToQuery(Hash<Hit>* previous_hits,Hash<Hit>*  premerged_hits,
+void HHblits::mergeHitsToQuery(HitList &hitlist, Hash<Hit>* previous_hits,Hash<Hit>*  premerged_hits,
                                int& seqs_found, int& cluster_found, int min_col_realign) {
 
     // Remove sequences with seq. identity larger than seqid percent (remove the shorter of two)
@@ -848,7 +848,8 @@ void HHblits::mergeHitsToQuery(Hash<Hit>* previous_hits,Hash<Hit>*  premerged_hi
         cluster_found++;
 
         // Skip merging this hit if hit alignment was already merged during premerging
-        if (premerged_hits->Contains((char*)ss_tmp.str().c_str())) continue;
+        if (premerged_hits->Contains((char*)ss_tmp.str().c_str()))
+            continue;
 
         // Read a3m alignment of hit from <file>.a3m file
         // Reading in next db MSA and merging it onto Qali
@@ -1268,7 +1269,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
         // Generate alignment for next iteration
         if (round < par.num_rounds || *par.alnfile || *par.psifile || *par.hhmfile || *par.alisbasename) {
             if (new_hits > 0) {
-                mergeHitsToQuery(previous_hits, premerged_hits, seqs_found, cluster_found, MINCOLS_REALIGN);
+                mergeHitsToQuery(hitlist, previous_hits, premerged_hits, seqs_found, cluster_found, MINCOLS_REALIGN);
             }
 
             // Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
@@ -1665,7 +1666,7 @@ void HHblits::run(ffindex_entry_t* entry, char* data,
         // Generate alignment for next iteration
         if (round < par.num_rounds || *par.alnfile || *par.psifile || *par.hhmfile || *par.alisbasename) {
             if (new_hits > 0) {
-                mergeHitsToQuery(previous_hits, premerged_hits, seqs_found, cluster_found, MINCOLS_REALIGN);
+                mergeHitsToQuery(hitlist, previous_hits, premerged_hits, seqs_found, cluster_found, MINCOLS_REALIGN);
             }
 
             // Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
@@ -2005,6 +2006,7 @@ void HHblits::premerge(Hash<Hit>* previous_hits, Hash<Hit>* premerged_hits,
 
     std::vector<Hit *> tmpHits;
     int prermergedHits = 0;
+    HitList tmpHitList;
     hitlist.Reset();
     while (!hitlist.End() && prermergedHits<par.premerge)
     {
@@ -2026,7 +2028,8 @@ void HHblits::premerge(Hash<Hit>* previous_hits, Hash<Hit>* premerged_hits,
         runner.executeComputation(*q, tmpHits, par, par.qsc_db, pb, S, Sim, R);
         hitlist.Delete();
         hitlist.Insert(*tmpHits[0]);
-        mergeHitsToQuery(previous_hits, premerged_hits, seqs_found, cluster_found, min_col_realign);
+        tmpHitList.Insert(*tmpHits[0]);
+        mergeHitsToQuery(tmpHitList, previous_hits, premerged_hits, seqs_found, cluster_found, min_col_realign);
         std::stringstream ss_tmp;
         ss_tmp << hit_cur.file << "__" << hit_cur.irep;
         premerged_hits->Add((char*)ss_tmp.str().c_str());

@@ -151,7 +151,7 @@ protected:
 
 	HitList hitlist; // list of hits with one Hit object for each pairwise comparison done
 	std::map<int, Alignment*> alis;
-    void mergeHitsToQuery(Hash<Hit>* previous_hits, Hash<Hit>* premerged_hits, int& seqs_found, int& cluster_found, int min_col_realign);
+    void mergeHitsToQuery(HitList &hitlist, Hash<Hit>* previous_hits, Hash<Hit>* premerged_hits, int& seqs_found, int& cluster_found, int min_col_realign);
     void perform_realign(HMMSimd& q_vec, const char input_format, std::vector<HHEntry*>& hits_to_realign, int min_col_realign);
 
 
