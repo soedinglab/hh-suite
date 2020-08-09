@@ -94,7 +94,7 @@ Parameters::Parameters(const int argc, const char** argv) : argc(argc), argv(arg
 	altali = 4;                // find up to four (possibly overlapping) subalignments // JS:02 Mar 13: changed from 2 to avoid loosing domain predictions of repeated modules
 	smin = 20.;                //Minimum score of hit needed to search for another repeat of same profile: p=exp(-(4-mu)/lamda)=0.01
 	realign = 1;               // realign with MAC algorithm
-
+    premerge = 3;              // premerge iteratively profiles to the query to improve alignment
 	columnscore = 1; // Default column score is 1: null model pnul = 1/2 * (q_av(a)+p_av(a))
 	half_window_size_local_aa_bg_freqs = 40;
 	min_overlap = 0;           // automatic minimum overlap used

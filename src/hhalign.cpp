@@ -596,6 +596,7 @@ void HHalign::run(FILE* query_fh, char* query_path) {
 
   Hit hit_cur;
   Hash<Hit>* previous_hits = new Hash<Hit>(1631, hit_cur);
+  Hash<Hit>* premerged_hits = new Hash<Hit>(1631, hit_cur);
 
   Qali = new Alignment(par.maxseq, par.maxres);
   Qali_allseqs = new Alignment(par.maxseq, par.maxres);
@@ -643,7 +644,7 @@ void HHalign::run(FILE* query_fh, char* query_path) {
       perform_realign(q_vec, input_format, new_entries, 1);
   }
 
-  mergeHitsToQuery(previous_hits, seqs_found, cluster_found, 1);
+  mergeHitsToQuery(previous_hits, premerged_hits, seqs_found, cluster_found, 1);
 
   // Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
   Qali->FrequenciesAndTransitions(q, par.wg, par.mark, par.cons, par.showcons, pb, Sim, NULL, true);
@@ -660,4 +661,5 @@ void HHalign::run(FILE* query_fh, char* query_path) {
   while (!previous_hits->End())
     previous_hits->ReadNext().Delete(); // Delete hit object
   delete previous_hits;
+  delete premerged_hits;
 }

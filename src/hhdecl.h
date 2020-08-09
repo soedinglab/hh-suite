@@ -232,6 +232,7 @@ public:
 
   char loc;               // 0: local alignment (wrt. query), 1: global alignement
   char realign;           // realign database hits to be displayed with MAC algorithm
+  int premerge;           // permerge up to N hits before realign
   int altali;             // find up to this many possibly overlapping alignments
   float smin;             //Minimum score of hit needed to search for another repeat of same profile: p=exp(-(4-mu)/lamda)=0.01
   int columnscore;        // 0: no aa comp corr  1: 1/2(qav+tav) 2: template av freqs 3: query av freqs 4:...
