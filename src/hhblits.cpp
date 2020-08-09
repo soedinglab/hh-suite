@@ -1118,7 +1118,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
         HH_LOG(INFO) << "Iteration " << round << std::endl;
         if (par.premerge > 0 && round > 1 && previous_hits->Size() >= par.premerge)
         {
-            HH_LOG(INFO) << "Set premerge to 0! (premerge: " << par.premerge << " iteration: " <<round << " hits.Size: " << previous_hits->Size() << "\n";
+            HH_LOG(INFO) << "Set premerge to 0! (premerge: " << par.premerge << " iteration: " <<round << " hits.Size: " << previous_hits->Size() << ")\n";
             par.premerge = 0;
         } else{
             par.premerge -= previous_hits->Size();
@@ -1511,7 +1511,7 @@ void HHblits::run(ffindex_entry_t* entry, char* data,
         // Settings for different rounds
         if (par.premerge > 0 && round > 1 && previous_hits->Size() >= par.premerge)
         {
-            HH_LOG(INFO) << "Set premerge to 0! (premerge: " << par.premerge << " iteration: " <<round << " hits.Size: " << previous_hits->Size() << "\n";
+            HH_LOG(INFO) << "Set premerge to 0! (premerge: " << par.premerge << " iteration: " <<round << " hits.Size: " << previous_hits->Size() << ")\n";
             par.premerge = 0;
         } else{
             par.premerge -= previous_hits->Size();
