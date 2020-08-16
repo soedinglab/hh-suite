@@ -2006,6 +2006,7 @@ void HHblits::premerge(Hash<Hit>* previous_hits, Hash<Hit>* premerged_hits,
 
     int prermergedHits = 0;
     std::vector<Hit *> tmpHits;
+    hitlist.Reset();
 
     while (!hitlist.End() && prermergedHits<par.premerge)
     {
