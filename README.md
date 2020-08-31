@@ -3,6 +3,7 @@
 (C) Johannes Soeding, Markus Meier, Martin Steinegger, Milot Mirdita, Michael Remmert, Andreas Hauser, Andreas Biegert
 
 [![BioConda Install](https://img.shields.io/conda/dn/bioconda/hhsuite.svg?style=flag&label=BioConda%20install)](https://anaconda.org/bioconda/hhsuite)
+[![Biocontainer Pulls](https://img.shields.io/endpoint?url=https%3A%2F%2Fmmseqs.com%2Fbiocontainer.php%3Fcontainer%3Dhhsuite)](https://biocontainers.pro/#/tools/hhsuite)
 [![Github All Releases](https://img.shields.io/github/downloads/soedinglab/hh-suite/total.svg)](https://github.com/soedinglab/hh-suite/releases/latest)
 [![Docker Pulls](https://img.shields.io/docker/pulls/soedinglab/hh-suite.svg)](https://hub.docker.com/r/soedinglab/hh-suite)
 [![Travis Build Status](https://travis-ci.org/soedinglab/hh-suite.svg?branch=master)](https://travis-ci.org/soedinglab/hh-suite)
