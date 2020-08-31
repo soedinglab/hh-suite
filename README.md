@@ -24,9 +24,9 @@ conda install -c conda-forge -c bioconda hhsuite
 # install docker
 docker pull soedinglab/hh-suite
 # static SSE2 build
-wget https://github.com/soedinglab/hh-suite/releases/download/v3.2.0/hhsuite-3.2.0-SSE2-Linux.tar.gz; tar xvfz hhsuite-3.2.0-SSE2-Linux.tar.gz; export PATH="$(pwd)/bin:$(pwd)/scripts:$PATH"
+wget https://github.com/soedinglab/hh-suite/releases/download/v3.3.0/hhsuite-3.3.0-SSE2-Linux.tar.gz; tar xvfz hhsuite-3.3.0-SSE2-Linux.tar.gz; export PATH="$(pwd)/bin:$(pwd)/scripts:$PATH"
 # static AVX2 build
-wget https://github.com/soedinglab/hh-suite/releases/download/v3.2.0/hhsuite-3.2.0-AVX2-Linux.tar.gz; tar xvfz hhsuite-3.2.0-AVX2-Linux.tar.gz; export PATH="$(pwd)/bin:$(pwd)/scripts:$PATH"
+wget https://github.com/soedinglab/hh-suite/releases/download/v3.3.0/hhsuite-3.3.0-AVX2-Linux.tar.gz; tar xvfz hhsuite-3.3.0-AVX2-Linux.tar.gz; export PATH="$(pwd)/bin:$(pwd)/scripts:$PATH"
 ```
 :exclamation: Only the self-compiled HH-suite3 version includes MPI support, since MPI configuration is specific to the local environment.
 
