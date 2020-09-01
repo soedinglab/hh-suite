@@ -6,6 +6,7 @@ set(HAVE_POWER9 0 CACHE BOOL "Have POWER9 CPU")
 set(HAVE_POWER8 0 CACHE BOOL "Have POWER8 CPU")
 set(HAVE_ARM8 0 CACHE BOOL "Have ARMv8 CPU")
 set(NATIVE_ARCH 1 CACHE BOOL "Assume native architecture for SIMD. Use one of the HAVE_* options or set CMAKE_CXX_FLAGS to the appropriate flags if you disable this.")
+set(EXE_SUFFIX "" CACHE STRING "Optional executable suffix, can be used to to indicate SIMD level corresponding to manually specified build flags.")
 
 # see https://wiki.debian.org/ArchitectureSpecificsMemo for char signedness
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -fsigned-char")
