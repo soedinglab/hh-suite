@@ -247,6 +247,22 @@ void ProcessArguments(Parameters& par, std::string& name) {
       if (par.gapb <= 0.01)
         par.gapb = 0.01;
     }
+    else if (!strcmp(argv[i], "-pc_hhm_contxt_mode") && (i < argc - 1))
+        par.pc_hhm_context_engine.admix = (Pseudocounts::Admix) atoi(argv[++i]);
+    else if (!strcmp(argv[i], "-pc_hhm_contxt_a") && (i < argc - 1))
+        par.pc_hhm_context_engine.pca = atof(argv[++i]);
+    else if (!strcmp(argv[i], "-pc_hhm_contxt_b") && (i < argc - 1))
+        par.pc_hhm_context_engine.pcb = atof(argv[++i]);
+    else if (!strcmp(argv[i], "-pc_hhm_contxt_c") && (i < argc - 1))
+        par.pc_hhm_context_engine.pcc = atof(argv[++i]);
+    else if (!strcmp(argv[i], "-pc_hhm_nocontxt_mode") && (i < argc - 1))
+        par.pc_hhm_nocontext_mode = atoi(argv[++i]);
+    else if (!strcmp(argv[i], "-pc_hhm_nocontxt_a") && (i < argc - 1))
+        par.pc_hhm_nocontext_a = atof(argv[++i]);
+    else if (!strcmp(argv[i], "-pc_hhm_nocontxt_b") && (i < argc - 1))
+        par.pc_hhm_nocontext_b = atof(argv[++i]);
+    else if (!strcmp(argv[i], "-pc_hhm_nocontxt_c") && (i < argc - 1))
+        par.pc_hhm_nocontext_c = atof(argv[++i]);
     else if (!strcmp(argv[i], "-gapd") && (i < argc - 1))
       par.gapd = atof(argv[++i]);
     else if (!strcmp(argv[i], "-gape") && (i < argc - 1))
@@ -332,15 +348,14 @@ int main(int argc, const char **argv) {
     RemoveExtension(par.outfile, par.infile);
     strcat(par.outfile, ".hhm");
   }
+    cs::ContextLibrary<cs::AA>* context_lib = NULL;
+    cs::Crf<cs::AA>* crf = NULL;
+    cs::Pseudocounts<cs::AA>* pc_hhm_context_engine = NULL;
+    cs::Admix* pc_hhm_context_mode = NULL;
+    cs::Pseudocounts<cs::AA>* pc_prefilter_context_engine = NULL;
+    cs::Admix* pc_prefilter_context_mode = NULL;
 
-  cs::ContextLibrary<cs::AA>* context_lib = NULL;
-  cs::Crf<cs::AA>* crf = NULL;
-  cs::Pseudocounts<cs::AA>* pc_hhm_context_engine = NULL;
-  cs::Admix* pc_hhm_context_mode = NULL;
-  cs::Pseudocounts<cs::AA>* pc_prefilter_context_engine = NULL;
-  cs::Admix* pc_prefilter_context_mode = NULL;
-
-  // Prepare CS pseudocounts lib
+    // Prepare CS pseudocounts lib
   if (!par.nocontxt) {
     InitializePseudocountsEngine(par, context_lib, crf, pc_hhm_context_engine, pc_hhm_context_mode, pc_prefilter_context_engine, pc_prefilter_context_mode);
   }
