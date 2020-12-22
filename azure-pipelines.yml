@@ -146,7 +146,7 @@ jobs:
           make install
           cd ${BUILD_SOURCESDIRECTORY}
           cp LICENSE README.md hhsuite
-          tar -czvf hhsuite-linux-universal.tar.gz hhsuite
+          tar -czvf hhsuite-linux-${ARCHIVE_NAME}.tar.gz hhsuite
         displayName: Build HHsuite
       - task: PublishPipelineArtifact@0
         inputs:
