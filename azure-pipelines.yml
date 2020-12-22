@@ -16,26 +16,31 @@ jobs:
       matrix:
         avx2:
           SIMD: 'AVX2'
+          ARCHIVE_NAME: 'avx2'
           STATIC: 1
           MPI: 0
           BUILD_TYPE: Release
         sse41:
           SIMD: 'SSE4_1'
+          ARCHIVE_NAME: 'sse41'
           STATIC: 1
           MPI: 0
           BUILD_TYPE: Release
         sse2:
           SIMD: 'SSE2'
+          ARCHIVE_NAME: 'sse2'
           STATIC: 1
           MPI: 0
           BUILD_TYPE: Release
         avx2_mpi:
           SIMD: 'AVX2'
+          ARCHIVE_NAME: 'avx2-mpi'
           STATIC: 0
           MPI: 1
           BUILD_TYPE: RelWithDebInfo
         asan:
           SIMD: 'AVX2'
+          ARCHIVE_NAME: 'avx2-asan'
           STATIC: 0
           MPI: 1
           BUILD_TYPE: ASanOpt
@@ -75,6 +80,9 @@ jobs:
           fi
           make -j $(nproc --all)
           make install
+          cd ${BUILD_SOURCESDIRECTORY}
+          cp LICENSE README.md hhsuite
+          tar -xzvf hhsuite-linux-${ARCHIVE_NAME}.tar.gz hhsuite
         displayName: Build HHsuite
       - script: |
           if [ "${BUILD_TYPE}" = "ASanOpt" ]; then
@@ -86,6 +94,11 @@ jobs:
           ./test.sh
         displayName: Run regression
         condition: eq(variables['regression'], 1)
+      - task: PublishPipelineArtifact@0
+        inputs:
+          targetPath: $(Build.SourcesDirectory)/hhsuite-linux-${ARCHIVE_NAME}.tar.gz
+          artifactName: hhsuite-linux-$(ARCHIVE_NAME)
+        condition: eq(variables['STATIC'], 1)
 
   - job: build_ubuntu_cross_2004
     displayName: Ubuntu 2004 cross-compile
@@ -96,14 +109,17 @@ jobs:
         power8:
           SIMD: POWER8
           ARCH: ppc64el
+          ARCHIVE_NAME: ppc64el-power8
           CPREF: powerpc64le
         power9:
           SIMD: POWER9
           ARCH: ppc64el
+          ARCHIVE_NAME: ppc64el-power9
           CPREF: powerpc64le
         arm64:
           SIMD: ARM8
           ARCH: arm64
+          ARCHIVE_NAME: arm64
           CPREF: aarch64
     steps:
       - script: |
@@ -134,7 +150,14 @@ jobs:
             ..
           make -j $(nproc --all)
           make install
+          cd ${BUILD_SOURCESDIRECTORY}
+          cp LICENSE README.md hhsuite
+          tar -xzvf hhsuite-linux-universal.tar.gz hhsuite
         displayName: Build HHsuite
+      - task: PublishPipelineArtifact@0
+        inputs:
+          targetPath: $(Build.SourcesDirectory)/hhsuite-linux-${ARCHIVE_NAME}.tar.gz
+          artifactName: hhsuite-linux-$(ARCHIVE_NAME)
 
   - job: build_macos_1015
     displayName: macOS 1015
@@ -144,6 +167,8 @@ jobs:
       - script: |
           cd ${BUILD_SOURCESDIRECTORY}
           ./scripts/build_darwin_universal.sh . build_osx
+          cp ${BUILD_SOURCESDIRECTORY}/LICENSE ${BUILD_SOURCESDIRECTORY}/README.md ${BUILD_SOURCESDIRECTORY}/build_osx/hhsuite/
+          tar -xzvf ${BUILD_SOURCESDIRECTORY}/hhsuite-osx-universal.tar.gz -C ${BUILD_SOURCESDIRECTORY}/build_osx hhsuite
         displayName: Build HHsuite
       - script: |
           cd ${BUILD_SOURCESDIRECTORY}/data
@@ -151,3 +176,34 @@ jobs:
           ./test.sh
         displayName: Run regression
         condition: eq(variables['regression'], 1)
+      - task: PublishPipelineArtifact@0
+        inputs:
+          targetPath: $(Build.SourcesDirectory)/hhsuite-osx-universal.tar.gz
+          artifactName: hhsuite-osx-universal
+
+  - job: upload_artifacts
+    displayName: Upload Artifacts
+    condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
+    pool:
+      vmImage: 'Ubuntu-18.04'
+    dependsOn:
+      - build_macos_1015
+      - build_ubuntu_1804
+      - build_ubuntu_cross_2004
+    steps:
+      - checkout: none
+      - task: DownloadPipelineArtifact@1
+        inputs:
+          targetPath: $(Build.SourcesDirectory)
+      - task: DownloadSecureFile@1
+        inputs:
+          secureFile: secretKeyPleaseDontSteal
+        displayName: Get Deployment Key
+      - script: |
+          mkdir ~/.ssh && mv $DOWNLOADSECUREFILE_SECUREFILEPATH ~/.ssh/id_rsa
+          chmod 700 ~/.ssh && chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -t rsa uniclust.mmseqs.com >> ~/.ssh/known_hosts
+          cd "${BUILD_SOURCESDIRECTORY}"
+          ssh codeship@uniclust.mmseqs.com "mkdir -p \"/home/mirdita/repositories/mmseqs-webserver/archive/${BUILD_SOURCEVERSION}\""
+          scp *.tar.gz codeship@uniclust.mmseqs.com:"/home/mirdita/repositories/mmseqs-webserver/archive/${BUILD_SOURCEVERSION}"
+          ssh codeship@uniclust.mmseqs.com "update-latest-hhsuite.sh \"${BUILD_SOURCEVERSION}\""
