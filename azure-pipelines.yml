@@ -1,0 +1,138 @@
+# https://aka.ms/yaml
+
+trigger:
+  - master
+
+variables:
+    regression: 1
+
+jobs:
+  - job: build_ubuntu_1804
+    displayName: Ubuntu 1804
+    pool:
+      vmImage: 'Ubuntu-18.04'
+    timeoutInMinutes: 120
+    strategy:
+      matrix:
+        avx2:
+          SIMD: 'AVX2'
+          MPI: 0
+          BUILD_TYPE: Release
+        sse41:
+          SIMD: 'SSE4_1'
+          MPI: 0
+          BUILD_TYPE: Release
+        sse2:
+          SIMD: 'SSE2'
+          MPI: 0
+          BUILD_TYPE: Release
+        avx2_mpi:
+          SIMD: 'AVX2'
+          MPI: 1
+          BUILD_TYPE: RelWithDebInfo
+        asan:
+          SIMD: 'AVX2'
+          MPI: 1
+          BUILD_TYPE: ASanOpt
+    steps:
+      - script: |
+          sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+          sudo apt-get update
+          sudo apt-get install -y g++-10
+        displayName: Install newer GCC
+        condition: eq(variables['BUILD_TYPE'], 'ASanOpt')
+      - script: |
+          sudo apt-get update
+          sudo apt-get -y install mpi-default-dev mpi-default-bin
+        displayName: Install MPI dependencies
+        condition: eq(variables['MPI'], 1)
+      - script: |
+          mkdir build && cd build
+          if [ "${BUILD_TYPE}" = "ASanOpt" ]; then
+              export CC=gcc-10 ; export CXX=g++-10
+          fi
+          cmake -DCMAKE_INSTALL_PREFIX=${BUILD_SOURCESDIRECTORY}/hhsuite \
+            -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
+            -DBUILD_SHARED_LIBS=OFF \
+            -DCMAKE_EXE_LINKER_FLAGS="-static -static-libgcc -static-libstdc++" \
+            -DCMAKE_FIND_LIBRARY_SUFFIXES=".a" \
+            -DHAVE_${SIMD}=1 \
+            -DCHECK_MPI=${MPI} \
+            ..
+          make -j $(nproc --all)
+          make install
+        displayName: Build HHsuite
+      - script: |
+          if [ "${BUILD_TYPE}" = "ASanOpt" ]; then
+              echo "leak:libgomp1" > ${BUILD_SOURCESDIRECTORY}/ASan.supp
+              export ASAN_OPTIONS=suppressions=${BUILD_SOURCESDIRECTORY}/ASan.supp
+          fi
+          cd ${BUILD_SOURCESDIRECTORY}/data
+          PATH="${BUILD_SOURCESDIRECTORY}/hhsuite/bin:$PATH"
+          ./test.sh
+        displayName: Run regression
+        condition: eq(variables['regression'], 1)
+
+  - job: build_ubuntu_cross_2004
+    displayName: Ubuntu 2004 cross-compile
+    pool:
+      vmImage: 'Ubuntu-20.04'
+    strategy:
+      matrix:
+        power8:
+          SIMD: POWER8
+          ARCH: ppc64el
+          CPREF: powerpc64le
+        power9:
+          SIMD: POWER9
+          ARCH: ppc64el
+          CPREF: powerpc64le
+        arm64:
+          SIMD: ARM8
+          ARCH: arm64
+          CPREF: aarch64
+    steps:
+      - script: |
+          sudo dpkg --add-architecture $ARCH
+          cat << HEREDOC | sudo tee /etc/apt/sources.list
+          deb [arch=amd64,i386] http://archive.ubuntu.com/ubuntu/ focal main universe multiverse
+          deb [arch=amd64,i386] http://archive.ubuntu.com/ubuntu/ focal-updates main universe multiverse
+          deb [arch=amd64,i386] http://archive.ubuntu.com/ubuntu/ focal-backports main universe multiverse
+          deb [arch=amd64,i386] http://security.ubuntu.com/ubuntu/ focal-security main universe multiverse
+          deb [arch=$ARCH] http://ports.ubuntu.com/ubuntu-ports/ focal main  universe multiverse
+          deb [arch=$ARCH] http://ports.ubuntu.com/ubuntu-ports/ focal-updates main universe multiverse
+          deb [arch=$ARCH] http://ports.ubuntu.com/ubuntu-ports/ focal-backports main universe multiverse
+          deb [arch=$ARCH] http://ports.ubuntu.com/ubuntu-ports/ focal-security main universe multiverse
+          HEREDOC
+          sudo apt-get update
+          sudo apt-get -y install -o APT::Immediate-Configure=false crossbuild-essential-$ARCH
+        displayName: Install crossbuild toolchain
+      - script: |
+          mkdir build && cd build
+          CC=${CPREF}-linux-gnu-gcc CXX=${CPREF}-linux-gnu-g++ \
+          cmake -DCMAKE_INSTALL_PREFIX=${BUILD_SOURCESDIRECTORY}/hhsuite \
+            -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
+            -DBUILD_SHARED_LIBS=OFF \
+            -DCMAKE_EXE_LINKER_FLAGS="-static -static-libgcc -static-libstdc++" \
+            -DCMAKE_FIND_LIBRARY_SUFFIXES=".a" \
+            -DHAVE_${SIMD}=1 \
+            -DCHECK_MPI=0 \
+            ..
+          make -j $(nproc --all)
+          make install
+        displayName: Build HHsuite
+
+  - job: build_macos_1015
+    displayName: macOS 1015
+    pool:
+      vmImage: 'macos-10.15'
+    steps:
+      - script: |
+          cd ${BUILD_SOURCESDIRECTORY}
+          ./scripts/build_darwin_universal.sh . build_osx
+        displayName: Build HHsuite
+      - script: |
+          cd ${BUILD_SOURCESDIRECTORY}/data
+          ./test.sh
+        displayName: Run regression
+        condition: eq(variables['regression'], 1)
