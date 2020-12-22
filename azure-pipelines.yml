@@ -133,6 +133,7 @@ jobs:
         displayName: Build HHsuite
       - script: |
           cd ${BUILD_SOURCESDIRECTORY}/data
+          PATH="${BUILD_SOURCESDIRECTORY}/build_osx/hhsuite/bin:$PATH"
           ./test.sh
         displayName: Run regression
         condition: eq(variables['regression'], 1)
