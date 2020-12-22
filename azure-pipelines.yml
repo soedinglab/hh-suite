@@ -153,7 +153,7 @@ jobs:
           PATH="${BUILD_SOURCESDIRECTORY}/hhsuite/bin:$PATH"
           ./test.sh
         displayName: Run regression in QEMU
-        condition: eq(variables['regression'], 1)
+        condition: and(eq(variables['regression'], 1), ne(variables['SIMD'], 'POWER9'))
       - task: PublishPipelineArtifact@0
         inputs:
           targetPath: $(Build.SourcesDirectory)/hhsuite-linux-$(ARCHIVE_NAME).tar.gz
