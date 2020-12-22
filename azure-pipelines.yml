@@ -82,7 +82,7 @@ jobs:
           make install
           cd ${BUILD_SOURCESDIRECTORY}
           cp LICENSE README.md hhsuite
-          tar -xzvf hhsuite-linux-${ARCHIVE_NAME}.tar.gz hhsuite
+          tar -czvf hhsuite-linux-${ARCHIVE_NAME}.tar.gz hhsuite
         displayName: Build HHsuite
       - script: |
           if [ "${BUILD_TYPE}" = "ASanOpt" ]; then
@@ -152,7 +152,7 @@ jobs:
           make install
           cd ${BUILD_SOURCESDIRECTORY}
           cp LICENSE README.md hhsuite
-          tar -xzvf hhsuite-linux-universal.tar.gz hhsuite
+          tar -czvf hhsuite-linux-universal.tar.gz hhsuite
         displayName: Build HHsuite
       - task: PublishPipelineArtifact@0
         inputs:
@@ -168,7 +168,7 @@ jobs:
           cd ${BUILD_SOURCESDIRECTORY}
           ./scripts/build_darwin_universal.sh . build_osx
           cp ${BUILD_SOURCESDIRECTORY}/LICENSE ${BUILD_SOURCESDIRECTORY}/README.md ${BUILD_SOURCESDIRECTORY}/build_osx/hhsuite/
-          tar -xzvf ${BUILD_SOURCESDIRECTORY}/hhsuite-osx-universal.tar.gz -C ${BUILD_SOURCESDIRECTORY}/build_osx hhsuite
+          tar -czvf ${BUILD_SOURCESDIRECTORY}/hhsuite-osx-universal.tar.gz -C ${BUILD_SOURCESDIRECTORY}/build_osx hhsuite
         displayName: Build HHsuite
       - script: |
           cd ${BUILD_SOURCESDIRECTORY}/data
