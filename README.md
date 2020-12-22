@@ -16,7 +16,7 @@ We provide an extensive [user guide](https://github.com/soedinglab/hh-suite/wiki
 
 ### Installation
 
-HH-suite3 can also be installed by downloading a statically compiled version, [conda](https://github.com/conda/conda) or [Docker](https://github.com/moby/moby). HH-suite3 requires a 64-bit system (check with `uname -a | grep x86_64`) with at least the SSE2 instruction set (check by executing `cat /proc/cpuinfo | grep sse2` on Linux or `sysctl -a | grep machdep.cpu.features | grep SSE2` on macOS). `AVX2` is roughly 2x faster compared to SSE2.
+HH-suite3 can also be installed by downloading a statically compiled version, [conda](https://github.com/conda/conda) or [Docker](https://github.com/moby/moby). HH-suite3 requires a 64-bit system (check with `uname -a | grep x86_64`). On AMD/Intel CPUs it requires at least support for the SSE2 instruction set (check by executing `cat /proc/cpuinfo | grep sse2` on Linux or `sysctl -a | grep machdep.cpu.features | grep SSE2` on macOS). `AVX2` is roughly 2x faster compared to SSE2. HH-suite3 also works on Linux systems with ARM64 and PPC64LE CPUs. Precompiled binaries for all supported systems can be found at [mmseqs.com/hhsuite](https://mmseqs.com/hhsuite).
 
 ```
 # install via conda
@@ -52,7 +52,7 @@ export PATH="$(pwd)/bin:$(pwd)/scripts:$PATH"
 :exclamation: To compile HH-suite3 on macOS, first install the `gcc` compiler from [Homebrew](https://brew.sh). The default macOS `clang` compiler does not support OpenMP and HH-suite3 will only be able to use a single thread. Then replace the `cmake` call above with the following one:
 
 ```
-CC="$(brew --prefix)/bin/gcc-8" CXX="$(brew --prefix)/bin/g++-8" cmake -DCMAKE_INSTALL_PREFIX=. ..
+CC="$(brew --prefix)/bin/gcc-10" CXX="$(brew --prefix)/bin/g++-10" cmake -DCMAKE_INSTALL_PREFIX=. ..
 ```    
 
 
