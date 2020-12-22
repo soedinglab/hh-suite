@@ -129,7 +129,7 @@ jobs:
           deb [arch=$ARCH] http://ports.ubuntu.com/ubuntu-ports/ focal-security main universe multiverse
           HEREDOC
           sudo apt-get update
-          sudo apt-get -y install -o APT::Immediate-Configure=false crossbuild-essential-$ARCH
+          sudo apt-get -y install -o APT::Immediate-Configure=false crossbuild-essential-$ARCH qemu-user-static
         displayName: Install crossbuild toolchain
       - script: |
           mkdir build && cd build
@@ -148,6 +148,12 @@ jobs:
           cp LICENSE README.md hhsuite
           tar -czvf hhsuite-linux-${ARCHIVE_NAME}.tar.gz hhsuite
         displayName: Build HHsuite
+      - script: |
+          cd ${BUILD_SOURCESDIRECTORY}/data
+          PATH="${BUILD_SOURCESDIRECTORY}/hhsuite/bin:$PATH"
+          ./test.sh
+        displayName: Run regression in QEMU
+        condition: eq(variables['regression'], 1)
       - task: PublishPipelineArtifact@0
         inputs:
           targetPath: $(Build.SourcesDirectory)/hhsuite-linux-$(ARCHIVE_NAME).tar.gz
