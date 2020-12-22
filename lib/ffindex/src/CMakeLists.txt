@@ -1,7 +1,7 @@
 set(CMAKE_C_FLAGS "-std=c99 ${CMAKE_C_FLAGS}")
 
 # see https://github.com/google/sanitizers/issues/89
-if (${ENABLE_SANITIZERS})
+if (ENABLE_SANITIZERS)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DSANITIZER_DLCLOSE")
 endif ()
 

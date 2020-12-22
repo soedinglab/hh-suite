@@ -260,7 +260,7 @@ if (OPENMP_FOUND)
     INSTALL(TARGETS hhblits_omp${EXE_SUFFIX} hhsearch_omp${EXE_SUFFIX} hhalign_omp${EXE_SUFFIX} hhblits_ca3m${EXE_SUFFIX} DESTINATION bin)
 endif ()
 
-if (${CHECK_MPI})
+if (CHECK_MPI)
 find_package(MPI QUIET)
 if (MPI_CXX_FOUND)
     include_directories(${MPI_CXX_INCLUDE_PATH})
