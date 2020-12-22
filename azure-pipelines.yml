@@ -20,12 +20,6 @@ jobs:
           STATIC: 1
           MPI: 0
           BUILD_TYPE: Release
-        sse41:
-          SIMD: 'SSE4_1'
-          ARCHIVE_NAME: 'sse41'
-          STATIC: 1
-          MPI: 0
-          BUILD_TYPE: Release
         sse2:
           SIMD: 'SSE2'
           ARCHIVE_NAME: 'sse2'
