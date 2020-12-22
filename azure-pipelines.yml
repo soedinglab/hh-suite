@@ -90,7 +90,7 @@ jobs:
         condition: eq(variables['regression'], 1)
       - task: PublishPipelineArtifact@0
         inputs:
-          targetPath: $(Build.SourcesDirectory)/hhsuite-linux-${ARCHIVE_NAME}.tar.gz
+          targetPath: $(Build.SourcesDirectory)/hhsuite-linux-$(ARCHIVE_NAME).tar.gz
           artifactName: hhsuite-linux-$(ARCHIVE_NAME)
         condition: eq(variables['STATIC'], 1)
 
@@ -150,7 +150,7 @@ jobs:
         displayName: Build HHsuite
       - task: PublishPipelineArtifact@0
         inputs:
-          targetPath: $(Build.SourcesDirectory)/hhsuite-linux-${ARCHIVE_NAME}.tar.gz
+          targetPath: $(Build.SourcesDirectory)/hhsuite-linux-$(ARCHIVE_NAME).tar.gz
           artifactName: hhsuite-linux-$(ARCHIVE_NAME)
 
   - job: build_macos_1015
