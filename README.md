@@ -6,8 +6,7 @@
 [![Biocontainer Pulls](https://img.shields.io/endpoint?url=https%3A%2F%2Fmmseqs.com%2Fbiocontainer.php%3Fcontainer%3Dhhsuite)](https://biocontainers.pro/#/tools/hhsuite)
 [![Github All Releases](https://img.shields.io/github/downloads/soedinglab/hh-suite/total.svg)](https://github.com/soedinglab/hh-suite/releases/latest)
 [![Docker Pulls](https://img.shields.io/docker/pulls/soedinglab/hh-suite.svg)](https://hub.docker.com/r/soedinglab/hh-suite)
-[![Travis Build Status](https://travis-ci.org/soedinglab/hh-suite.svg?branch=master)](https://travis-ci.org/soedinglab/hh-suite)
-[![Codeship Status](https://codeship.com/projects/0936c290-2248-0133-bcb4-52bb0fef976f/status?branch=master)](https://codeship.com/projects/96085)
+[![Build Status](https://dev.azure.com/themartinsteinegger/hhsuite/_apis/build/status/soedinglab.hh-suite?branchName=master)](https://dev.azure.com/themartinsteinegger/hhsuite/_build/latest?definitionId=4&branchName=master)
 
 The HH-suite is an open-source software package for sensitive protein sequence searching based on the pairwise alignment of hidden Markov models (HMMs).
 
