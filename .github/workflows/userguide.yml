@@ -23,7 +23,7 @@ jobs:
           sudo mv -f pandoc tectonic /usr/local/bin
       - name: Build PDF
         run: |
-          cat Home.md | sed '1,/<!--- TOC END -->/d' | cat .pandoc/meta.yaml - | pandoc --from=gfm --template=.pandoc/eisvogel.tex --toc --pdf-engine tectonic -o userguide.pdf
+          cat Home.md | sed '1,/<!--- TOC END -->/d' | cat .pandoc/meta.yaml - | pandoc --from=markdown --template=.pandoc/eisvogel.tex --toc --pdf-engine tectonic -o userguide.pdf
       - name: Get User Guide upload_url
         run: |
           echo "UPLOAD_URL=$(curl -sL https://api.github.com/repos/soedinglab/hh-suite/releases/tags/userguide | jq -r '.upload_url')" >> $GITHUB_ENV
