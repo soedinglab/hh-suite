@@ -24,15 +24,10 @@ jobs:
       - name: Build PDF
         run: |
           cat Home.md | sed '1,/<!--- TOC END -->/d' | cat .pandoc/meta.yaml - | pandoc --from=markdown --template=.pandoc/eisvogel.tex --toc --pdf-engine tectonic -o userguide.pdf
-      - name: Get User Guide upload_url
-        run: |
-          echo "UPLOAD_URL=$(curl -sL https://api.github.com/repos/soedinglab/hh-suite/releases/tags/userguide | jq -r '.upload_url')" >> $GITHUB_ENV
-      - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload PDF to release assets
+        uses: svenstaro/upload-release-action@483c1e56f95e88835747b1c7c60581215016cbf2
         with:
-          upload_url: ${{ env.UPLOAD_URL }}
-          asset_path: ./userguide.pdf
-          asset_name: userguide.pdf
-          asset_content_type: application/pdf
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: userguide.pdf
+          tag: userguide
+          overwrite: true
