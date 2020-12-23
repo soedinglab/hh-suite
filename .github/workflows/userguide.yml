@@ -1,0 +1,40 @@
+name: Wiki PDF
+
+on:
+  gollum
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          repository: ${{ github.repository }}.wiki
+      - name: Cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cache/Tectonic/
+          key: ${{ runner.os }}-${{ env.cache-name }}-tectonic
+      - name: Download pandoc+tectonic
+        run: |
+          wget -qO- https://github.com/tectonic-typesetting/tectonic/releases/download/tectonic%400.3.3/tectonic-0.3.3-x86_64-unknown-linux-gnu.tar.gz | tar xzvf - tectonic
+          wget -qO- https://github.com/jgm/pandoc/releases/download/2.11.3.1/pandoc-2.11.3.1-linux-amd64.tar.gz | tar --strip-components=2 -xzvf - pandoc-2.11.3.1/bin/pandoc
+          sudo mv -f pandoc tectonic /usr/local/bin
+      - name: Build PDF
+        run: |
+          cat Home.md | sed '1,/<!--- TOC END -->/d' | cat .pandoc/meta.yaml - | pandoc --from=gfm --template=.pandoc/eisvogel.tex --toc --pdf-engine tectonic -o userguide.pdf
+      - name: Get User Guide upload_url
+        shell: bash
+        run: |
+          upload_url=$(curl -sL https://api.github.com/repos/soedinglab/hh-suite/releases/tags/userguide | jq -r '.upload_url')
+          echo ::set-env name=UPLOAD_URL::$upload_url
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ env.UPLOAD_URL }}
+          asset_path: ./userguide.pdf
+          asset_name: userguide.pdf
+          asset_content_type: application/pdf
