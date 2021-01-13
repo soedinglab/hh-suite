@@ -153,6 +153,8 @@ jobs:
           PATH="${BUILD_SOURCESDIRECTORY}/hhsuite/bin:$PATH"
           ./test.sh
         displayName: Run regression in QEMU
+        # POWER9 test needs at least qemu 5.2 as GCC emits lxvwsx instructions
+        # https://bugs.launchpad.net/qemu/+bug/1793608
         condition: and(eq(variables['regression'], 1), ne(variables['SIMD'], 'POWER9'))
       - task: PublishPipelineArtifact@0
         inputs:
