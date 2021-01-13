@@ -206,7 +206,6 @@ jobs:
           chmod 700 ~/.ssh && chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -t rsa uniclust.mmseqs.com >> ~/.ssh/known_hosts
           cd "${BUILD_SOURCESDIRECTORY}"
-          ls -lah
           ssh codeship@uniclust.mmseqs.com "mkdir -p \"/home/mirdita/repositories/mmseqs-webserver/archive/${BUILD_SOURCEVERSION}\""
           scp hhsuite-*/*.tar.gz codeship@uniclust.mmseqs.com:"/home/mirdita/repositories/mmseqs-webserver/archive/${BUILD_SOURCEVERSION}"
           ssh codeship@uniclust.mmseqs.com "update-latest-hhsuite.sh \"${BUILD_SOURCEVERSION}\""
