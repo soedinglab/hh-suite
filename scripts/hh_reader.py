@@ -73,7 +73,7 @@ def parse_result(lines):
             if query_start is not None:
                 result = hhr_alignment(query_id, query_length, query_neff,
                                        template_id, template_length, template_info, template_neff,
-                                       query_seq, template_seq, (query_start, template_start),
+                                       "".join(query_seq), "".join(template_seq), (query_start, template_start),
                                        (query_end, template_end), probability, evalue, score,
                                        aligned_cols, identity, similarity, sum_probs)
                 results.append(result)
