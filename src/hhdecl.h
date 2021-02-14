@@ -143,7 +143,7 @@ public:
   Parameters(const int argc, const char** argv);
 
   const char** argv;            //command line parameters
-  const char argc;              //dimension of argv
+  const int argc;              //dimension of argv
 
   LogLevel v;
 
