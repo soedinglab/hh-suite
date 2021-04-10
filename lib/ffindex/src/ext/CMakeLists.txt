@@ -1,4 +1,4 @@
-include(${CMAKE_ROOT}/Modules/CheckFunctionExists.cmake)
+include(CheckFunctionExists)
 check_function_exists(fmemopen HAVE_FMEMOPEN)
 
 if (NOT HAVE_FMEMOPEN)

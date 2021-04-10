@@ -4,6 +4,8 @@ rm -f single* search_* blits_*
 
 if $(command -v "ffindex_apply_mpi" >/dev/null 2>&1); then
     MPI=1
+else
+    unset MPI
 fi
 
 hhalign -i query.a3m -t query.a3m

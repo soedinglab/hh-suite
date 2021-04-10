@@ -1,0 +1,211 @@
+# https://aka.ms/yaml
+
+trigger:
+  - master
+
+variables:
+    regression: 1
+
+jobs:
+  - job: build_ubuntu_1804
+    displayName: Ubuntu 1804
+    pool:
+      vmImage: 'Ubuntu-18.04'
+    timeoutInMinutes: 120
+    strategy:
+      matrix:
+        avx2:
+          SIMD: 'AVX2'
+          ARCHIVE_NAME: 'avx2'
+          STATIC: 1
+          MPI: 0
+          BUILD_TYPE: Release
+        sse2:
+          SIMD: 'SSE2'
+          ARCHIVE_NAME: 'sse2'
+          STATIC: 1
+          MPI: 0
+          BUILD_TYPE: Release
+        avx2_mpi:
+          SIMD: 'AVX2'
+          ARCHIVE_NAME: 'avx2-mpi'
+          STATIC: 0
+          MPI: 1
+          BUILD_TYPE: RelWithDebInfo
+        asan:
+          SIMD: 'AVX2'
+          ARCHIVE_NAME: 'avx2-asan'
+          STATIC: 0
+          MPI: 1
+          BUILD_TYPE: ASanOpt
+    steps:
+      - script: |
+          sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+          sudo apt-get update
+          sudo apt-get install -y g++-10
+        displayName: Install newer GCC
+        condition: eq(variables['BUILD_TYPE'], 'ASanOpt')
+      - script: |
+          sudo apt-get update
+          sudo apt-get -y install mpi-default-dev mpi-default-bin
+        displayName: Install MPI dependencies
+        condition: eq(variables['MPI'], 1)
+      - script: |
+          mkdir build && cd build
+          if [ "${BUILD_TYPE}" = "ASanOpt" ]; then
+              export CC=gcc-10 ; export CXX=g++-10
+          fi
+          if [ "${STATIC}" -eq "1" ]; then
+              cmake -DCMAKE_INSTALL_PREFIX=${BUILD_SOURCESDIRECTORY}/hhsuite \
+                    -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
+                    -DBUILD_SHARED_LIBS=OFF \
+                    -DCMAKE_EXE_LINKER_FLAGS="-static -static-libgcc -static-libstdc++" \
+                    -DCMAKE_FIND_LIBRARY_SUFFIXES=".a" \
+                    -DHAVE_${SIMD}=1 \
+                    -DCHECK_MPI=${MPI} \
+                    ..
+          else
+              cmake -DCMAKE_INSTALL_PREFIX=${BUILD_SOURCESDIRECTORY}/hhsuite \
+                    -DHAVE_SANITIZER=1 \
+                    -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
+                    -DHAVE_${SIMD}=1 \
+                    -DCHECK_MPI=${MPI} \
+                    ..
+          fi
+          make -j $(nproc --all)
+          make install
+          cd ${BUILD_SOURCESDIRECTORY}
+          cp LICENSE README.md hhsuite
+          tar -czvf hhsuite-linux-${ARCHIVE_NAME}.tar.gz hhsuite
+        displayName: Build HHsuite
+      - script: |
+          if [ "${BUILD_TYPE}" = "ASanOpt" ]; then
+              echo "leak:libgomp1" > ${BUILD_SOURCESDIRECTORY}/ASan.supp
+              export ASAN_OPTIONS=suppressions=${BUILD_SOURCESDIRECTORY}/ASan.supp
+          fi
+          cd ${BUILD_SOURCESDIRECTORY}/data
+          PATH="${BUILD_SOURCESDIRECTORY}/hhsuite/bin:$PATH"
+          ./test.sh
+        displayName: Run regression
+        condition: eq(variables['regression'], 1)
+      - task: PublishPipelineArtifact@0
+        inputs:
+          targetPath: $(Build.SourcesDirectory)/hhsuite-linux-$(ARCHIVE_NAME).tar.gz
+          artifactName: hhsuite-linux-$(ARCHIVE_NAME)
+        condition: eq(variables['STATIC'], 1)
+
+  - job: build_ubuntu_cross_2004
+    displayName: Ubuntu 2004 cross-compile
+    pool:
+      vmImage: 'Ubuntu-20.04'
+    strategy:
+      matrix:
+        power8:
+          SIMD: POWER8
+          ARCH: ppc64el
+          ARCHIVE_NAME: ppc64el-power8
+          CPREF: powerpc64le
+        power9:
+          SIMD: POWER9
+          ARCH: ppc64el
+          ARCHIVE_NAME: ppc64el-power9
+          CPREF: powerpc64le
+        arm64:
+          SIMD: ARM8
+          ARCH: arm64
+          ARCHIVE_NAME: arm64
+          CPREF: aarch64
+    steps:
+      - script: |
+          sudo dpkg --add-architecture $ARCH
+          cat << HEREDOC | sudo tee /etc/apt/sources.list
+          deb [arch=amd64,i386] http://archive.ubuntu.com/ubuntu/ focal main universe multiverse
+          deb [arch=amd64,i386] http://archive.ubuntu.com/ubuntu/ focal-updates main universe multiverse
+          deb [arch=amd64,i386] http://archive.ubuntu.com/ubuntu/ focal-backports main universe multiverse
+          deb [arch=amd64,i386] http://security.ubuntu.com/ubuntu/ focal-security main universe multiverse
+          deb [arch=$ARCH] http://ports.ubuntu.com/ubuntu-ports/ focal main  universe multiverse
+          deb [arch=$ARCH] http://ports.ubuntu.com/ubuntu-ports/ focal-updates main universe multiverse
+          deb [arch=$ARCH] http://ports.ubuntu.com/ubuntu-ports/ focal-backports main universe multiverse
+          deb [arch=$ARCH] http://ports.ubuntu.com/ubuntu-ports/ focal-security main universe multiverse
+          HEREDOC
+          sudo apt-get update
+          sudo apt-get -y install -o APT::Immediate-Configure=false crossbuild-essential-$ARCH qemu-user-static
+        displayName: Install crossbuild toolchain
+      - script: |
+          mkdir build && cd build
+          CC=${CPREF}-linux-gnu-gcc CXX=${CPREF}-linux-gnu-g++ \
+          cmake -DCMAKE_INSTALL_PREFIX=${BUILD_SOURCESDIRECTORY}/hhsuite \
+            -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
+            -DBUILD_SHARED_LIBS=OFF \
+            -DCMAKE_EXE_LINKER_FLAGS="-static -static-libgcc -static-libstdc++" \
+            -DCMAKE_FIND_LIBRARY_SUFFIXES=".a" \
+            -DHAVE_${SIMD}=1 \
+            -DCHECK_MPI=0 \
+            ..
+          make -j $(nproc --all)
+          make install
+          cd ${BUILD_SOURCESDIRECTORY}
+          cp LICENSE README.md hhsuite
+          tar -czvf hhsuite-linux-${ARCHIVE_NAME}.tar.gz hhsuite
+        displayName: Build HHsuite
+      - script: |
+          cd ${BUILD_SOURCESDIRECTORY}/data
+          PATH="${BUILD_SOURCESDIRECTORY}/hhsuite/bin:$PATH"
+          ./test.sh
+        displayName: Run regression in QEMU
+        # POWER9 test needs at least qemu 5.2 as GCC emits lxvwsx instructions
+        # https://bugs.launchpad.net/qemu/+bug/1793608
+        condition: and(eq(variables['regression'], 1), ne(variables['SIMD'], 'POWER9'))
+      - task: PublishPipelineArtifact@0
+        inputs:
+          targetPath: $(Build.SourcesDirectory)/hhsuite-linux-$(ARCHIVE_NAME).tar.gz
+          artifactName: hhsuite-linux-$(ARCHIVE_NAME)
+
+  - job: build_macos_1015
+    displayName: macOS 1015
+    pool:
+      vmImage: 'macos-10.15'
+    steps:
+      - script: |
+          cd ${BUILD_SOURCESDIRECTORY}
+          ./scripts/build_darwin_universal.sh . build_osx
+          cp ${BUILD_SOURCESDIRECTORY}/LICENSE ${BUILD_SOURCESDIRECTORY}/README.md ${BUILD_SOURCESDIRECTORY}/build_osx/hhsuite/
+          tar -czvf ${BUILD_SOURCESDIRECTORY}/hhsuite-osx-universal.tar.gz -C ${BUILD_SOURCESDIRECTORY}/build_osx hhsuite
+        displayName: Build HHsuite
+      - script: |
+          cd ${BUILD_SOURCESDIRECTORY}/data
+          PATH="${BUILD_SOURCESDIRECTORY}/build_osx/hhsuite/bin:$PATH"
+          ./test.sh
+        displayName: Run regression
+        condition: eq(variables['regression'], 1)
+      - task: PublishPipelineArtifact@0
+        inputs:
+          targetPath: $(Build.SourcesDirectory)/hhsuite-osx-universal.tar.gz
+          artifactName: hhsuite-osx-universal
+
+  - job: upload_artifacts
+    displayName: Upload Artifacts
+    condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
+    pool:
+      vmImage: 'Ubuntu-18.04'
+    dependsOn:
+      - build_macos_1015
+      - build_ubuntu_1804
+      - build_ubuntu_cross_2004
+    steps:
+      - checkout: none
+      - task: DownloadPipelineArtifact@1
+        inputs:
+          targetPath: $(Build.SourcesDirectory)
+      - task: DownloadSecureFile@1
+        inputs:
+          secureFile: secretKeyPleaseDontSteal
+        displayName: Get Deployment Key
+      - script: |
+          mkdir ~/.ssh && mv $DOWNLOADSECUREFILE_SECUREFILEPATH ~/.ssh/id_rsa
+          chmod 700 ~/.ssh && chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -t rsa uniclust.mmseqs.com >> ~/.ssh/known_hosts
+          cd "${BUILD_SOURCESDIRECTORY}"
+          ssh codeship@uniclust.mmseqs.com "mkdir -p \"/home/mirdita/repositories/mmseqs-webserver/archive/${BUILD_SOURCEVERSION}\""
+          scp hhsuite-*/*.tar.gz codeship@uniclust.mmseqs.com:"/home/mirdita/repositories/mmseqs-webserver/archive/${BUILD_SOURCEVERSION}"
+          ssh codeship@uniclust.mmseqs.com "update-latest-hhsuite.sh \"${BUILD_SOURCEVERSION}\""

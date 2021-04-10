@@ -1,7 +1,7 @@
 set(CMAKE_C_FLAGS "-std=c99 ${CMAKE_C_FLAGS}")
 
 # see https://github.com/google/sanitizers/issues/89
-if (${ENABLE_SANITIZERS})
+if (ENABLE_SANITIZERS)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DSANITIZER_DLCLOSE")
 endif ()
 
@@ -17,6 +17,7 @@ add_executable(ffindex_apply ffindex_apply_mpi.c)
 target_link_libraries(ffindex_apply ffindex)
 set_property(TARGET ffindex_apply PROPERTY COMPILE_FLAGS "-UHAVE_MPI")
 
+if (CHECK_MPI)
 find_package(MPI)
 if (MPI_C_FOUND AND HAVE_MPI)
     add_executable(ffindex_apply_mpi ffindex_apply_mpi.c)
@@ -29,6 +30,7 @@ if (MPI_C_FOUND AND HAVE_MPI)
     target_include_directories(ffindex_apply_mpi PUBLIC ${MPI_C_INCLUDE_PATH})
     target_link_libraries(ffindex_apply_mpi mpq ${MPI_C_LIBRARIES})
     install(TARGETS ffindex_apply_mpi DESTINATION bin)
+endif ()
 endif ()
 
 

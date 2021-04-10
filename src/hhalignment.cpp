@@ -1978,7 +1978,7 @@ void Alignment::FilterNeff(char use_global_weights, const char mark,
   for (int k = 0; k < N_in; ++k)
     keep_orig[k] = keep[k];
   float x0 = -1.0;
-  float x1 = +1.0;
+  float x1 = +4.0;
   float x = 0.0;
   float y0;
   float y1 = 1.0;
@@ -2004,6 +2004,10 @@ void Alignment::FilterNeff(char use_global_weights, const char mark,
 
   // Contract interval (x0,x1) for par.sc around target value: Neff(x0) > Neff_target > Neff(x1)
   do {
+    if (y1 == y0) {
+      HH_LOG(WARNING) << "Could not reduce diversity. Neff=" << y << " at filter threshold qsc=" << x << std::endl;
+      return;
+    }
     const float w = 0.5;  // mixture coefficient
     x = w * (0.5 * (x0 + x1))
         + (1 - w) * (x0 + (Neff - y0) * (x1 - x0) / (y1 - y0));  // mixture of bisection and linear interpolation
