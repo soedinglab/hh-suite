@@ -22,7 +22,7 @@
  *
  * Copyright:
  *   2020      Evan Nemerson <evan@nemerson.com>
- *   2020      Sean Maher <seanptmaher@gmail.com>
+ *   2020      Sean Maher <seanptmaher@gmail.com> (Copyright owned by Google, LLC)
  */
 
 #if !defined(SIMDE_ARM_NEON_UZP1_H)
@@ -39,6 +39,9 @@ simde_float32x2_t
 simde_vuzp1_f32(simde_float32x2_t a, simde_float32x2_t b) {
   #if defined(SIMDE_ARM_NEON_A64V8_NATIVE)
     return vuzp1_f32(a, b);
+  #elif defined(SIMDE_ARM_NEON_A32V7_NATIVE)
+    float32x2x2_t t = vuzp_f32(a, b);
+    return t.val[0];
   #else
     simde_float32x2_private
       r_,
@@ -70,6 +73,9 @@ simde_int8x8_t
 simde_vuzp1_s8(simde_int8x8_t a, simde_int8x8_t b) {
   #if defined(SIMDE_ARM_NEON_A64V8_NATIVE)
     return vuzp1_s8(a, b);
+  #elif defined(SIMDE_ARM_NEON_A32V7_NATIVE)
+    int8x8x2_t t = vuzp_s8(a, b);
+    return t.val[0];
   #else
     simde_int8x8_private
       r_,
@@ -101,6 +107,9 @@ simde_int16x4_t
 simde_vuzp1_s16(simde_int16x4_t a, simde_int16x4_t b) {
   #if defined(SIMDE_ARM_NEON_A64V8_NATIVE)
     return vuzp1_s16(a, b);
+  #elif defined(SIMDE_ARM_NEON_A32V7_NATIVE)
+    int16x4x2_t t = vuzp_s16(a, b);
+    return t.val[0];
   #else
     simde_int16x4_private
       r_,
@@ -132,6 +141,9 @@ simde_int32x2_t
 simde_vuzp1_s32(simde_int32x2_t a, simde_int32x2_t b) {
   #if defined(SIMDE_ARM_NEON_A64V8_NATIVE)
     return vuzp1_s32(a, b);
+  #elif defined(SIMDE_ARM_NEON_A32V7_NATIVE)
+    int32x2x2_t t = vuzp_s32(a, b);
+    return t.val[0];
   #else
     simde_int32x2_private
       r_,
@@ -163,6 +175,9 @@ simde_uint8x8_t
 simde_vuzp1_u8(simde_uint8x8_t a, simde_uint8x8_t b) {
   #if defined(SIMDE_ARM_NEON_A64V8_NATIVE)
     return vuzp1_u8(a, b);
+  #elif defined(SIMDE_ARM_NEON_A32V7_NATIVE)
+    uint8x8x2_t t = vuzp_u8(a, b);
+    return t.val[0];
   #else
     simde_uint8x8_private
       r_,
@@ -194,6 +209,9 @@ simde_uint16x4_t
 simde_vuzp1_u16(simde_uint16x4_t a, simde_uint16x4_t b) {
   #if defined(SIMDE_ARM_NEON_A64V8_NATIVE)
     return vuzp1_u16(a, b);
+  #elif defined(SIMDE_ARM_NEON_A32V7_NATIVE)
+    uint16x4x2_t t = vuzp_u16(a, b);
+    return t.val[0];
   #else
     simde_uint16x4_private
       r_,
@@ -225,6 +243,9 @@ simde_uint32x2_t
 simde_vuzp1_u32(simde_uint32x2_t a, simde_uint32x2_t b) {
   #if defined(SIMDE_ARM_NEON_A64V8_NATIVE)
     return vuzp1_u32(a, b);
+  #elif defined(SIMDE_ARM_NEON_A32V7_NATIVE)
+    uint32x2x2_t t = vuzp_u32(a, b);
+    return t.val[0];
   #else
     simde_uint32x2_private
       r_,
@@ -256,13 +277,20 @@ simde_float32x4_t
 simde_vuzp1q_f32(simde_float32x4_t a, simde_float32x4_t b) {
   #if defined(SIMDE_ARM_NEON_A64V8_NATIVE)
     return vuzp1q_f32(a, b);
+  #elif defined(SIMDE_ARM_NEON_A32V7_NATIVE)
+    float32x4x2_t t = vuzpq_f32(a, b);
+    return t.val[0];
   #else
     simde_float32x4_private
       r_,
       a_ = simde_float32x4_to_private(a),
       b_ = simde_float32x4_to_private(b);
 
-    #if defined(SIMDE_SHUFFLE_VECTOR_)
+    #if defined(SIMDE_WASM_SIMD128_NATIVE)
+      r_.v128 = wasm_i32x4_shuffle(a_.v128, b_.v128, 0, 2, 4, 6);
+    #elif defined(SIMDE_X86_SSE_NATIVE)
+      r_.m128 = _mm_shuffle_ps(a_.m128, b_.m128, 0x88);
+    #elif defined(SIMDE_SHUFFLE_VECTOR_)
       r_.values = SIMDE_SHUFFLE_VECTOR_(32, 16, a_.values, b_.values, 0, 2, 4, 6);
     #else
       const size_t halfway_point = sizeof(r_.values) / sizeof(r_.values[0]) / 2;
@@ -293,7 +321,11 @@ simde_vuzp1q_f64(simde_float64x2_t a, simde_float64x2_t b) {
       a_ = simde_float64x2_to_private(a),
       b_ = simde_float64x2_to_private(b);
 
-    #if defined(SIMDE_SHUFFLE_VECTOR_)
+    #if defined(SIMDE_WASM_SIMD128_NATIVE)
+      r_.v128 = wasm_i64x2_shuffle(a_.v128, b_.v128, 0, 2);
+    #elif defined(SIMDE_X86_SSE2_NATIVE)
+      r_.m128d = _mm_castps_pd(_mm_movelh_ps(_mm_castpd_ps(a_.m128d), _mm_castpd_ps(b_.m128d)));
+    #elif defined(SIMDE_SHUFFLE_VECTOR_)
       r_.values = SIMDE_SHUFFLE_VECTOR_(64, 16, a_.values, b_.values, 0, 2);
     #else
       const size_t halfway_point = sizeof(r_.values) / sizeof(r_.values[0]) / 2;
@@ -318,13 +350,18 @@ simde_int8x16_t
 simde_vuzp1q_s8(simde_int8x16_t a, simde_int8x16_t b) {
   #if defined(SIMDE_ARM_NEON_A64V8_NATIVE)
     return vuzp1q_s8(a, b);
+  #elif defined(SIMDE_ARM_NEON_A32V7_NATIVE)
+    int8x16x2_t t = vuzpq_s8(a, b);
+    return t.val[0];
   #else
     simde_int8x16_private
       r_,
       a_ = simde_int8x16_to_private(a),
       b_ = simde_int8x16_to_private(b);
 
-    #if defined(SIMDE_SHUFFLE_VECTOR_)
+    #if defined(SIMDE_WASM_SIMD128_NATIVE)
+      r_.v128 = wasm_i8x16_shuffle(a_.v128, b_.v128, 0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30);
+    #elif defined(SIMDE_SHUFFLE_VECTOR_)
       r_.values = SIMDE_SHUFFLE_VECTOR_(8, 16, a_.values, b_.values, 0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30);
     #else
       const size_t halfway_point = sizeof(r_.values) / sizeof(r_.values[0]) / 2;
@@ -349,13 +386,18 @@ simde_int16x8_t
 simde_vuzp1q_s16(simde_int16x8_t a, simde_int16x8_t b) {
   #if defined(SIMDE_ARM_NEON_A64V8_NATIVE)
     return vuzp1q_s16(a, b);
+  #elif defined(SIMDE_ARM_NEON_A32V7_NATIVE)
+    int16x8x2_t t = vuzpq_s16(a, b);
+    return t.val[0];
   #else
     simde_int16x8_private
       r_,
       a_ = simde_int16x8_to_private(a),
       b_ = simde_int16x8_to_private(b);
 
-    #if defined(SIMDE_SHUFFLE_VECTOR_)
+    #if defined(SIMDE_WASM_SIMD128_NATIVE)
+      r_.v128 = wasm_i16x8_shuffle(a_.v128, b_.v128, 0, 2, 4, 6, 8, 10, 12, 14);
+    #elif defined(SIMDE_SHUFFLE_VECTOR_)
       r_.values = SIMDE_SHUFFLE_VECTOR_(16, 16, a_.values, b_.values, 0, 2, 4, 6, 8, 10, 12, 14);
     #else
       const size_t halfway_point = sizeof(r_.values) / sizeof(r_.values[0]) / 2;
@@ -380,13 +422,20 @@ simde_int32x4_t
 simde_vuzp1q_s32(simde_int32x4_t a, simde_int32x4_t b) {
   #if defined(SIMDE_ARM_NEON_A64V8_NATIVE)
     return vuzp1q_s32(a, b);
+  #elif defined(SIMDE_ARM_NEON_A32V7_NATIVE)
+    int32x4x2_t t = vuzpq_s32(a, b);
+    return t.val[0];
   #else
     simde_int32x4_private
       r_,
       a_ = simde_int32x4_to_private(a),
       b_ = simde_int32x4_to_private(b);
 
-    #if defined(SIMDE_SHUFFLE_VECTOR_)
+    #if defined(SIMDE_WASM_SIMD128_NATIVE)
+      r_.v128 = wasm_i32x4_shuffle(a_.v128, b_.v128, 0, 2, 4, 6);
+    #elif defined(SIMDE_X86_SSE2_NATIVE)
+      r_.m128i = _mm_castps_si128(_mm_shuffle_ps(_mm_castsi128_ps(a_.m128i), _mm_castsi128_ps(b_.m128i), 0x88));
+    #elif defined(SIMDE_SHUFFLE_VECTOR_)
       r_.values = SIMDE_SHUFFLE_VECTOR_(32, 16, a_.values, b_.values, 0, 2, 4, 6);
     #else
       const size_t halfway_point = sizeof(r_.values) / sizeof(r_.values[0]) / 2;
@@ -417,7 +466,11 @@ simde_vuzp1q_s64(simde_int64x2_t a, simde_int64x2_t b) {
       a_ = simde_int64x2_to_private(a),
       b_ = simde_int64x2_to_private(b);
 
-    #if defined(SIMDE_SHUFFLE_VECTOR_)
+    #if defined(SIMDE_WASM_SIMD128_NATIVE)
+      r_.v128 = wasm_i64x2_shuffle(a_.v128, b_.v128, 0, 2);
+    #elif defined(SIMDE_X86_SSE2_NATIVE)
+      r_.m128i = _mm_castps_si128(_mm_movelh_ps(_mm_castsi128_ps(a_.m128i), _mm_castsi128_ps(b_.m128i)));
+    #elif defined(SIMDE_SHUFFLE_VECTOR_)
       r_.values = SIMDE_SHUFFLE_VECTOR_(64, 16, a_.values, b_.values, 0, 2);
     #else
       const size_t halfway_point = sizeof(r_.values) / sizeof(r_.values[0]) / 2;
@@ -443,13 +496,18 @@ simde_uint8x16_t
 simde_vuzp1q_u8(simde_uint8x16_t a, simde_uint8x16_t b) {
   #if defined(SIMDE_ARM_NEON_A64V8_NATIVE)
     return vuzp1q_u8(a, b);
+  #elif defined(SIMDE_ARM_NEON_A32V7_NATIVE)
+    uint8x16x2_t t = vuzpq_u8(a, b);
+    return t.val[0];
   #else
     simde_uint8x16_private
       r_,
       a_ = simde_uint8x16_to_private(a),
       b_ = simde_uint8x16_to_private(b);
 
-    #if defined(SIMDE_SHUFFLE_VECTOR_)
+    #if defined(SIMDE_WASM_SIMD128_NATIVE)
+      r_.v128 = wasm_i8x16_shuffle(a_.v128, b_.v128, 0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30);
+    #elif defined(SIMDE_SHUFFLE_VECTOR_)
       r_.values = SIMDE_SHUFFLE_VECTOR_(8, 16, a_.values, b_.values, 0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30);
     #else
       const size_t halfway_point = sizeof(r_.values) / sizeof(r_.values[0]) / 2;
@@ -474,13 +532,18 @@ simde_uint16x8_t
 simde_vuzp1q_u16(simde_uint16x8_t a, simde_uint16x8_t b) {
   #if defined(SIMDE_ARM_NEON_A64V8_NATIVE)
     return vuzp1q_u16(a, b);
+  #elif defined(SIMDE_ARM_NEON_A32V7_NATIVE)
+    uint16x8x2_t t = vuzpq_u16(a, b);
+    return t.val[0];
   #else
     simde_uint16x8_private
       r_,
       a_ = simde_uint16x8_to_private(a),
       b_ = simde_uint16x8_to_private(b);
 
-    #if defined(SIMDE_SHUFFLE_VECTOR_)
+    #if defined(SIMDE_WASM_SIMD128_NATIVE)
+      r_.v128 = wasm_i16x8_shuffle(a_.v128, b_.v128, 0, 2, 4, 6, 8, 10, 12, 14);
+    #elif defined(SIMDE_SHUFFLE_VECTOR_)
       r_.values = SIMDE_SHUFFLE_VECTOR_(16, 16, a_.values, b_.values, 0, 2, 4, 6, 8, 10, 12, 14);
     #else
       const size_t halfway_point = sizeof(r_.values) / sizeof(r_.values[0]) / 2;
@@ -505,13 +568,20 @@ simde_uint32x4_t
 simde_vuzp1q_u32(simde_uint32x4_t a, simde_uint32x4_t b) {
   #if defined(SIMDE_ARM_NEON_A64V8_NATIVE)
     return vuzp1q_u32(a, b);
+  #elif defined(SIMDE_ARM_NEON_A32V7_NATIVE)
+    uint32x4x2_t t = vuzpq_u32(a, b);
+    return t.val[0];
   #else
     simde_uint32x4_private
       r_,
       a_ = simde_uint32x4_to_private(a),
       b_ = simde_uint32x4_to_private(b);
 
-    #if defined(SIMDE_SHUFFLE_VECTOR_)
+    #if defined(SIMDE_WASM_SIMD128_NATIVE)
+      r_.v128 = wasm_i32x4_shuffle(a_.v128, b_.v128, 0, 2, 4, 6);
+    #elif defined(SIMDE_X86_SSE2_NATIVE)
+      r_.m128i = _mm_castps_si128(_mm_shuffle_ps(_mm_castsi128_ps(a_.m128i), _mm_castsi128_ps(b_.m128i), 0x88));
+    #elif defined(SIMDE_SHUFFLE_VECTOR_)
       r_.values = SIMDE_SHUFFLE_VECTOR_(32, 16, a_.values, b_.values, 0, 2, 4, 6);
     #else
       const size_t halfway_point = sizeof(r_.values) / sizeof(r_.values[0]) / 2;
@@ -542,7 +612,12 @@ simde_vuzp1q_u64(simde_uint64x2_t a, simde_uint64x2_t b) {
       a_ = simde_uint64x2_to_private(a),
       b_ = simde_uint64x2_to_private(b);
 
-    #if defined(SIMDE_SHUFFLE_VECTOR_)
+    #if defined(SIMDE_WASM_SIMD128_NATIVE)
+      r_.v128 = wasm_i64x2_shuffle(a_.v128, b_.v128, 0, 2);
+    #elif defined(SIMDE_X86_SSE2_NATIVE)
+      /* _mm_movelh_ps?!?! SSE is weird. */
+      r_.m128i = _mm_castps_si128(_mm_movelh_ps(_mm_castsi128_ps(a_.m128i), _mm_castsi128_ps(b_.m128i)));
+    #elif defined(SIMDE_SHUFFLE_VECTOR_)
       r_.values = SIMDE_SHUFFLE_VECTOR_(64, 16, a_.values, b_.values, 0, 2);
     #else
       const size_t halfway_point = sizeof(r_.values) / sizeof(r_.values[0]) / 2;

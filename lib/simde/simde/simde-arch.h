@@ -69,39 +69,31 @@
 
 /* AMD64 / x86_64
    <https://en.wikipedia.org/wiki/X86-64> */
-#if defined(__amd64__) || defined(__amd64) || defined(__x86_64__) || defined(__x86_64) || defined(_M_X66) || defined(_M_AMD64)
+#if defined(__amd64__) || defined(__amd64) || defined(__x86_64__) || defined(__x86_64) || defined(_M_X64) || defined(_M_AMD64)
 #  define SIMDE_ARCH_AMD64 1000
 #endif
 
 /* ARM
    <https://en.wikipedia.org/wiki/ARM_architecture> */
-#if defined(__ARM_ARCH_8A__)
-#  define SIMDE_ARCH_ARM 82
-#elif defined(__ARM_ARCH_8R__)
-#  define SIMDE_ARCH_ARM 81
-#elif defined(__ARM_ARCH_8__)
-#  define SIMDE_ARCH_ARM 80
-#elif defined(__ARM_ARCH_7S__)
-#  define SIMDE_ARCH_ARM 74
-#elif defined(__ARM_ARCH_7M__)
-#  define SIMDE_ARCH_ARM 73
-#elif defined(__ARM_ARCH_7R__)
-#  define SIMDE_ARCH_ARM 72
-#elif defined(__ARM_ARCH_7A__)
-#  define SIMDE_ARCH_ARM 71
-#elif defined(__ARM_ARCH_7__)
-#  define SIMDE_ARCH_ARM 70
-#elif defined(__ARM_ARCH)
-#  define SIMDE_ARCH_ARM (__ARM_ARCH * 10)
+#if defined(__ARM_ARCH)
+#  if __ARM_ARCH > 100
+#    define SIMDE_ARCH_ARM (__ARM_ARCH)
+#  else
+#    define SIMDE_ARCH_ARM (__ARM_ARCH * 100)
+#  endif
 #elif defined(_M_ARM)
-#  define SIMDE_ARCH_ARM (_M_ARM * 10)
+#  if _M_ARM > 100
+#    define SIMDE_ARCH_ARM (_M_ARM)
+#  else
+#    define SIMDE_ARCH_ARM (_M_ARM * 100)
+#  endif
 #elif defined(__arm__) || defined(__thumb__) || defined(__TARGET_ARCH_ARM) || defined(_ARM) || defined(_M_ARM) || defined(_M_ARM)
 #  define SIMDE_ARCH_ARM 1
 #endif
-#if defined(SIMDE_ARCH_ARM  )
-#  define SIMDE_ARCH_ARM_CHECK(version) ((version) <= SIMDE_ARCH_ARM)
+#if defined(SIMDE_ARCH_ARM)
+#  define SIMDE_ARCH_ARM_CHECK(major, minor) (((major * 100) + (minor)) <= SIMDE_ARCH_ARM)
 #else
-#  define SIMDE_ARCH_ARM_CHECK(version) (0)
+#  define SIMDE_ARCH_ARM_CHECK(major, minor) (0)
 #endif
 
 /* AArch64
@@ -122,6 +114,9 @@
 #  elif defined(SIMDE_ARCH_ARM)
 #    define SIMDE_ARCH_ARM_NEON SIMDE_ARCH_ARM
 #  endif
+#endif
+#if defined(__ARM_FEATURE_SVE)
+#  define SIMDE_ARCH_ARM_SVE
 #endif
 
 /* Blackfin
@@ -175,6 +170,12 @@
 #  define SIMDE_ARCH_H8300
 #endif
 
+/* Elbrus (8S, 8SV and successors)
+   <https://en.wikipedia.org/wiki/Elbrus-8S> */
+#if defined(__e2k__)
+#  define SIMDE_ARCH_E2K
+#endif
+
 /* HP/PA / PA-RISC
    <https://en.wikipedia.org/wiki/PA-RISC> */
 #if defined(__PA8000__) || defined(__HPPA20__) || defined(__RISC2_0__) || defined(_PA_RISC2_0)
@@ -215,8 +216,8 @@
 #  define SIMDE_ARCH_X86_CHECK(version) (0)
 #endif
 
-/* SIMD ISA extensions for x86/x86_64 */
-#if defined(SIMDE_ARCH_X86) || defined(SIMDE_ARCH_AMD64)
+/* SIMD ISA extensions for x86/x86_64 and Elbrus */
+#if defined(SIMDE_ARCH_X86) || defined(SIMDE_ARCH_AMD64) || defined(SIMDE_ARCH_E2K)
 #  if defined(_M_IX86_FP)
 #    define SIMDE_ARCH_X86_MMX
 #    if (_M_IX86_FP >= 1)
@@ -251,6 +252,9 @@
 #  if defined(__SSE4_2__)
 #    define SIMDE_ARCH_X86_SSE4_2 1
 #  endif
+#  if defined(__XOP__)
+#    define SIMDE_ARCH_X86_XOP 1
+#  endif
 #  if defined(__AVX__)
 #    define SIMDE_ARCH_X86_AVX 1
 #    if !defined(SIMDE_ARCH_X86_SSE3)
@@ -272,6 +276,15 @@
 #      define SIMDE_ARCH_X86_AVX 1
 #    endif
 #  endif
+#  if defined(__AVX512VP2INTERSECT__)
+#    define SIMDE_ARCH_X86_AVX512VP2INTERSECT 1
+#  endif
+#  if defined(__AVX512BITALG__)
+#    define SIMDE_ARCH_X86_AVX512BITALG 1
+#  endif
+#  if defined(__AVX512VBMI__)
+#    define SIMDE_ARCH_X86_AVX512VBMI 1
+#  endif
 #  if defined(__AVX512BW__)
 #    define SIMDE_ARCH_X86_AVX512BW 1
 #  endif
@@ -289,6 +302,15 @@
 #  endif
 #  if defined(__GFNI__)
 #    define SIMDE_ARCH_X86_GFNI 1
+#  endif
+#  if defined(__PCLMUL__)
+#    define SIMDE_ARCH_X86_PCLMUL 1
+#  endif
+#  if defined(__VPCLMULQDQ__)
+#    define SIMDE_ARCH_X86_VPCLMULQDQ 1
+#  endif
+#  if defined(__F16C__)
+#    define SIMDE_ARCH_X86_F16C 1
 #  endif
 #endif
 
@@ -356,6 +378,10 @@
 #  define SIMDE_ARCH_MIPS_CHECK(version) ((version) <= SIMDE_ARCH_MIPS)
 #else
 #  define SIMDE_ARCH_MIPS_CHECK(version) (0)
+#endif
+
+#if defined(__mips_loongson_mmi)
+#  define SIMDE_ARCH_MIPS_LOONGSON_MMI 1
 #endif
 
 /* Matsushita MN10300
@@ -460,7 +486,16 @@
 /* IBM System z
    <https://en.wikipedia.org/wiki/IBM_System_z> */
 #if defined(__370__) || defined(__THW_370__) || defined(__s390__) || defined(__s390x__) || defined(__zarch__) || defined(__SYSC_ZARCH__)
-#  define SIMDE_ARCH_SYSTEMZ
+#  define SIMDE_ARCH_ZARCH __ARCH__
+#endif
+#if defined(SIMDE_ARCH_ZARCH)
+  #define SIMDE_ARCH_ZARCH_CHECK(version) ((version) <= SIMDE_ARCH_ZARCH)
+#else
+  #define SIMDE_ARCH_ZARCH_CHECK(version) (0)
+#endif
+
+#if defined(SIMDE_ARCH_ZARCH) && defined(__VEC__)
+  #define SIMDE_ARCH_ZARCH_ZVECTOR SIMDE_ARCH_ZARCH
 #endif
 
 /* TMS320 DSP
