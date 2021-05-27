@@ -148,7 +148,7 @@ simde_vshl_n_s64 (const simde_int64x1_t a, const int n)
 #endif
 #if defined(SIMDE_ARM_NEON_A32V7_ENABLE_NATIVE_ALIASES)
   #undef vshl_n_s64
-  #define vshl_n_s64(a, n) simde_vshl_n_s64((a), (n))
+  #define vshl_n_s64(a, n) simde_vshl_n_u64((a), (n))
 #endif
 
 SIMDE_FUNCTION_ATTRIBUTES
@@ -272,10 +272,7 @@ SIMDE_FUNCTION_ATTRIBUTES
 simde_int8x16_t
 simde_vshlq_n_s8 (const simde_int8x16_t a, const int n)
     SIMDE_REQUIRE_CONSTANT_RANGE(n, 0, 7) {
-  #if defined(SIMDE_X86_GFNI_NATIVE)
-    /* https://wunkolo.github.io/post/2020/11/gf2p8affineqb-int8-shifting/ */
-    return _mm_gf2p8affine_epi64_epi8(a, _mm_set1_epi64x(INT64_C(0x0102040810204080) >> (n * 8)), 0);
-  #elif defined(SIMDE_X86_SSE2_NATIVE)
+  #if defined(SIMDE_X86_SSE2_NATIVE)
     return _mm_andnot_si128(_mm_set1_epi8(HEDLEY_STATIC_CAST(int8_t, (1 << n) - 1)), _mm_slli_epi64(a, n));
   #elif defined(SIMDE_WASM_SIMD128_NATIVE)
     return wasm_i8x16_shl(a, n);
@@ -298,7 +295,7 @@ simde_vshlq_n_s8 (const simde_int8x16_t a, const int n)
 }
 #if defined(SIMDE_ARM_NEON_A32V7_NATIVE)
   #define simde_vshlq_n_s8(a, n) vshlq_n_s8((a), (n))
-#elif defined(SIMDE_POWER_ALTIVEC_P6_NATIVE)
+#elif defined(SIMDE_POWER_ALTIVEC_P5_NATIVE)
   #define simde_vshlq_n_s8(a, n) vec_sl((a), vec_splats(SIMDE_CHECKED_STATIC_CAST(unsigned char, int, (n))))
 #endif
 #if defined(SIMDE_ARM_NEON_A32V7_ENABLE_NATIVE_ALIASES)
@@ -333,7 +330,7 @@ simde_vshlq_n_s16 (const simde_int16x8_t a, const int n)
 }
 #if defined(SIMDE_ARM_NEON_A32V7_NATIVE)
   #define simde_vshlq_n_s16(a, n) vshlq_n_s16((a), (n))
-#elif defined(SIMDE_POWER_ALTIVEC_P6_NATIVE)
+#elif defined(SIMDE_POWER_ALTIVEC_P5_NATIVE)
   #define simde_vshlq_n_s16(a, n) vec_sl((a), vec_splats(SIMDE_CHECKED_STATIC_CAST(unsigned short, int, (n))))
 #endif
 #if defined(SIMDE_ARM_NEON_A32V7_ENABLE_NATIVE_ALIASES)
@@ -368,7 +365,7 @@ simde_vshlq_n_s32 (const simde_int32x4_t a, const int n)
 }
 #if defined(SIMDE_ARM_NEON_A32V7_NATIVE)
   #define simde_vshlq_n_s32(a, n) vshlq_n_s32((a), (n))
-#elif defined(SIMDE_POWER_ALTIVEC_P6_NATIVE)
+#elif defined(SIMDE_POWER_ALTIVEC_P5_NATIVE)
   #define simde_vshlq_n_s32(a, n) vec_sl((a), vec_splats(HEDLEY_STATIC_CAST(unsigned int, (n))))
 #endif
 #if defined(SIMDE_ARM_NEON_A32V7_ENABLE_NATIVE_ALIASES)
@@ -415,10 +412,7 @@ SIMDE_FUNCTION_ATTRIBUTES
 simde_uint8x16_t
 simde_vshlq_n_u8 (const simde_uint8x16_t a, const int n)
     SIMDE_REQUIRE_CONSTANT_RANGE(n, 0, 7) {
-  #if defined(SIMDE_X86_GFNI_NATIVE)
-    /* https://wunkolo.github.io/post/2020/11/gf2p8affineqb-int8-shifting/ */
-    return _mm_gf2p8affine_epi64_epi8(a, _mm_set1_epi64x(INT64_C(0x0102040810204080) >> (n * 8)), 0);
-  #elif defined(SIMDE_X86_SSE2_NATIVE)
+  #if defined(SIMDE_X86_SSE2_NATIVE)
     return _mm_andnot_si128(_mm_set1_epi8(HEDLEY_STATIC_CAST(int8_t, (1 << n) - 1)), _mm_slli_epi64((a), (n)));
   #elif defined(SIMDE_WASM_SIMD128_NATIVE)
     return wasm_i8x16_shl((a), (n));
@@ -441,7 +435,7 @@ simde_vshlq_n_u8 (const simde_uint8x16_t a, const int n)
 }
 #if defined(SIMDE_ARM_NEON_A32V7_NATIVE)
   #define simde_vshlq_n_u8(a, n) vshlq_n_u8((a), (n))
-#elif defined(SIMDE_POWER_ALTIVEC_P6_NATIVE)
+#elif defined(SIMDE_POWER_ALTIVEC_P5_NATIVE)
   #define simde_vshlq_n_u8(a, n) vec_sl((a), vec_splat_u8(n))
 #endif
 #if defined(SIMDE_ARM_NEON_A32V7_ENABLE_NATIVE_ALIASES)
@@ -476,7 +470,7 @@ simde_vshlq_n_u16 (const simde_uint16x8_t a, const int n)
 }
 #if defined(SIMDE_ARM_NEON_A32V7_NATIVE)
   #define simde_vshlq_n_u16(a, n) vshlq_n_u16((a), (n))
-#elif defined(SIMDE_POWER_ALTIVEC_P6_NATIVE)
+#elif defined(SIMDE_POWER_ALTIVEC_P5_NATIVE)
   #define simde_vshlq_n_u16(a, n) vec_sl((a), vec_splat_u16(n))
 #endif
 #if defined(SIMDE_ARM_NEON_A32V7_ENABLE_NATIVE_ALIASES)
@@ -511,7 +505,7 @@ simde_vshlq_n_u32 (const simde_uint32x4_t a, const int n)
 }
 #if defined(SIMDE_ARM_NEON_A32V7_NATIVE)
   #define simde_vshlq_n_u32(a, n) vshlq_n_u32((a), (n))
-#elif defined(SIMDE_POWER_ALTIVEC_P6_NATIVE)
+#elif defined(SIMDE_POWER_ALTIVEC_P5_NATIVE)
   #define simde_vshlq_n_u32(a, n) vec_sl((a), vec_splats(HEDLEY_STATIC_CAST(unsigned int, (n))))
 #endif
 #if defined(SIMDE_ARM_NEON_A32V7_ENABLE_NATIVE_ALIASES)
@@ -547,7 +541,7 @@ simde_vshlq_n_u64 (const simde_uint64x2_t a, const int n)
 #if defined(SIMDE_ARM_NEON_A32V7_NATIVE)
   #define simde_vshlq_n_u64(a, n) vshlq_n_u64((a), (n))
 #elif defined(SIMDE_POWER_ALTIVEC_P8_NATIVE)
-  #define simde_vshlq_n_u64(a, n) vec_sl((a), vec_splats(HEDLEY_STATIC_CAST(unsigned long long, (n))))
+  #define simde_vshlq_n_u64(a, n) vec_sl((a), vec_splats(HEDLEY_STATIC_CAST(unsigned long long, (n))));
 #endif
 #if defined(SIMDE_ARM_NEON_A32V7_ENABLE_NATIVE_ALIASES)
   #undef vshlq_n_u64

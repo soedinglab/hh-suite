@@ -22,7 +22,7 @@
  *
  * Copyright:
  *   2020      Evan Nemerson <evan@nemerson.com>
- *   2020      Sean Maher <seanptmaher@gmail.com> (Copyright owned by Google, LLC)
+ *   2020      Sean Maher <seanptmaher@gmail.com>
  */
 
 #if !defined(SIMDE_ARM_NEON_TRN_H) && !defined(SIMDE_BUG_INTEL_857088)

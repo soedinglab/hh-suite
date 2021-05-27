@@ -151,7 +151,7 @@ simde_vshr_n_s64 (const simde_int64x1_t a, const int n)
 #endif
 #if defined(SIMDE_ARM_NEON_A32V7_ENABLE_NATIVE_ALIASES)
   #undef vshr_n_s64
-  #define vshr_n_s64(a, n) simde_vshr_n_s64((a), (n))
+  #define vshr_n_s64(a, n) simde_vshr_n_u64((a), (n))
 #endif
 
 SIMDE_FUNCTION_ATTRIBUTES
@@ -291,12 +291,7 @@ SIMDE_FUNCTION_ATTRIBUTES
 simde_int8x16_t
 simde_vshrq_n_s8 (const simde_int8x16_t a, const int n)
     SIMDE_REQUIRE_CONSTANT_RANGE(n, 1, 8) {
-  #if defined(SIMDE_X86_GFNI_NATIVE)
-    /* https://wunkolo.github.io/post/2020/11/gf2p8affineqb-int8-shifting/ */
-    const int shift = (n <= 7) ? n : 7;
-    const uint64_t matrix = (UINT64_C(0x8182848890A0C000) << (shift * 8)) ^ UINT64_C(0x8080808080808080);
-    return _mm_gf2p8affine_epi64_epi8(a, _mm_set1_epi64x(HEDLEY_STATIC_CAST(int64_t, matrix)), 0);
-  #elif defined(SIMDE_X86_SSE4_1_NATIVE)
+  #if defined(SIMDE_X86_SSE4_1_NATIVE)
     return
       _mm_blendv_epi8(_mm_srai_epi16((a), (n)),
                       _mm_srai_epi16(_mm_slli_epi16((a), 8), 8 + (n)),
@@ -327,7 +322,7 @@ simde_vshrq_n_s8 (const simde_int8x16_t a, const int n)
 }
 #if defined(SIMDE_ARM_NEON_A32V7_NATIVE)
   #define simde_vshrq_n_s8(a, n) vshrq_n_s8((a), (n))
-#elif defined(SIMDE_POWER_ALTIVEC_P6_NATIVE)
+#elif defined(SIMDE_POWER_ALTIVEC_P5_NATIVE)
   #define simde_vshrq_n_s8(a, n) vec_sra((a), vec_splat_u8(((n) == 8) ? 7 : (n)))
 #endif
 #if defined(SIMDE_ARM_NEON_A32V7_ENABLE_NATIVE_ALIASES)
@@ -363,7 +358,7 @@ simde_vshrq_n_s16 (const simde_int16x8_t a, const int n)
 }
 #if defined(SIMDE_ARM_NEON_A32V7_NATIVE)
   #define simde_vshrq_n_s16(a, n) vshrq_n_s16((a), (n))
-#elif defined(SIMDE_POWER_ALTIVEC_P6_NATIVE)
+#elif defined(SIMDE_POWER_ALTIVEC_P5_NATIVE)
   #define simde_vshrq_n_s16(a, n) vec_sra((a), vec_splat_u16(((n) == 16) ? 15 : (n)))
 #endif
 #if defined(SIMDE_ARM_NEON_A32V7_ENABLE_NATIVE_ALIASES)
@@ -399,7 +394,7 @@ simde_vshrq_n_s32 (const simde_int32x4_t a, const int n)
 }
 #if defined(SIMDE_ARM_NEON_A32V7_NATIVE)
   #define simde_vshrq_n_s32(a, n) vshrq_n_s32((a), (n))
-#elif defined(SIMDE_POWER_ALTIVEC_P6_NATIVE)
+#elif defined(SIMDE_POWER_ALTIVEC_P5_NATIVE)
   #define simde_vshrq_n_s32(a, n) \
     vec_sra((a), vec_splats(HEDLEY_STATIC_CAST(unsigned int, ((n) == 32) ? 31 : (n))))
 #endif
@@ -447,10 +442,7 @@ SIMDE_FUNCTION_ATTRIBUTES
 simde_uint8x16_t
 simde_vshrq_n_u8 (const simde_uint8x16_t a, const int n)
     SIMDE_REQUIRE_CONSTANT_RANGE(n, 1, 8) {
-  #if defined(SIMDE_X86_GFNI_NATIVE)
-    /* https://wunkolo.github.io/post/2020/11/gf2p8affineqb-int8-shifting/ */
-    return (n > 7) ? _mm_setzero_si128() : _mm_gf2p8affine_epi64_epi8(a, _mm_set1_epi64x(INT64_C(0x0102040810204080) << (n * 8)), 0);
-  #elif defined(SIMDE_X86_SSE2_NATIVE)
+  #if defined(SIMDE_X86_SSE2_NATIVE)
     return _mm_and_si128(_mm_srli_epi64((a), (n)), _mm_set1_epi8(HEDLEY_STATIC_CAST(int8_t, (1 << (8 - (n))) - 1)));
   #elif defined(SIMDE_WASM_SIMD128_NATIVE)
     return (((n) == 8) ? wasm_i8x16_splat(0) : wasm_u8x16_shr((a), (n)));
@@ -477,7 +469,7 @@ simde_vshrq_n_u8 (const simde_uint8x16_t a, const int n)
 }
 #if defined(SIMDE_ARM_NEON_A32V7_NATIVE)
   #define simde_vshrq_n_u8(a, n) vshrq_n_u8((a), (n))
-#elif defined(SIMDE_POWER_ALTIVEC_P6_NATIVE)
+#elif defined(SIMDE_POWER_ALTIVEC_P5_NATIVE)
   #define simde_vshrq_n_u8(a, n) \
     (((n) == 8) ? vec_splat_u8(0) : vec_sr((a), vec_splat_u8(n)))
 #endif
@@ -517,7 +509,7 @@ simde_vshrq_n_u16 (const simde_uint16x8_t a, const int n)
 }
 #if defined(SIMDE_ARM_NEON_A32V7_NATIVE)
   #define simde_vshrq_n_u16(a, n) vshrq_n_u16((a), (n))
-#elif defined(SIMDE_POWER_ALTIVEC_P6_NATIVE)
+#elif defined(SIMDE_POWER_ALTIVEC_P5_NATIVE)
   #define simde_vshrq_n_u16(a, n) \
     (((n) == 16) ? vec_splat_u16(0) : vec_sr((a), vec_splat_u16(n)))
 #endif
@@ -557,7 +549,7 @@ simde_vshrq_n_u32 (const simde_uint32x4_t a, const int n)
 }
 #if defined(SIMDE_ARM_NEON_A32V7_NATIVE)
   #define simde_vshrq_n_u32(a, n) vshrq_n_u32((a), (n))
-#elif defined(SIMDE_POWER_ALTIVEC_P6_NATIVE)
+#elif defined(SIMDE_POWER_ALTIVEC_P5_NATIVE)
   #define simde_vshrq_n_u32(a, n) \
     (((n) == 32) ? vec_splat_u32(0) : vec_sr((a), vec_splats(HEDLEY_STATIC_CAST(unsigned int, (n)))))
 #endif

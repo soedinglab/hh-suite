@@ -40,7 +40,14 @@
  * added in specific versions of clang to identify which version of
  * clang the compiler is based on.
  *
- * Right now it only goes back to 3.6, but I'm happy to accept patches
+ * There are two function-like macros which I suggest you use;
+ * SIMDE_DETECT_CLANG_VERSION_CHECK will return true if you are running
+ * a particular version of clang or older.
+ * SIMDE_DETECT_CLANG_VERSION_NOT will return true if you are not using
+ * clang or if the version you are using is greater than or equal to the
+ * version specified.
+ *
+ * Right now it only goes back to 3.8, but I'm happy to accept patches
  * to go back further.  And, of course, newer versions are welcome if
  * they're not already present, and if you find a way to detect a point
  * release that would be great, too!
@@ -49,17 +56,8 @@
 #if !defined(SIMDE_DETECT_CLANG_H)
 #define SIMDE_DETECT_CLANG_H 1
 
-/* Attempt to detect the upstream clang version number.  I usually only
- * worry about major version numbers (at least for 4.0+), but if you
- * need more resolution I'm happy to accept patches that are able to
- * detect minor versions as well.  That said, you'll probably have a
- * hard time with detection since AFAIK most minor releases don't add
- * anything we can detect. */
-
 #if defined(__clang__) && !defined(SIMDE_DETECT_CLANG_VERSION)
-#  if __has_warning("-Wformat-insufficient-args")
-#    define SIMDE_DETECT_CLANG_VERSION 120000
-#  elif __has_warning("-Wimplicit-const-int-float-conversion")
+#  if __has_warning("-Wimplicit-const-int-float-conversion")
 #    define SIMDE_DETECT_CLANG_VERSION 110000
 #  elif __has_warning("-Wmisleading-indentation")
 #    define SIMDE_DETECT_CLANG_VERSION 100000
@@ -71,36 +69,22 @@
 #    define SIMDE_DETECT_CLANG_VERSION 70000
 #  elif __has_warning("-Wpragma-pack")
 #    define SIMDE_DETECT_CLANG_VERSION 60000
-#  elif __has_warning("-Wbitfield-enum-conversion")
+#  elif __has_warning("-Wasm-ignored-qualifier")
 #    define SIMDE_DETECT_CLANG_VERSION 50000
 #  elif __has_attribute(diagnose_if)
 #    define SIMDE_DETECT_CLANG_VERSION 40000
-#  elif __has_warning("-Wcast-calling-convention")
+#  elif __has_warning("-Wcomma")
 #    define SIMDE_DETECT_CLANG_VERSION 30900
-#  elif __has_warning("-WCL4")
+#  elif __has_warning("-Wmicrosoft")
 #    define SIMDE_DETECT_CLANG_VERSION 30800
-#  elif __has_warning("-WIndependentClass-attribute")
-#    define SIMDE_DETECT_CLANG_VERSION 30700
-#  elif __has_warning("-Wambiguous-ellipsis")
-#    define SIMDE_DETECT_CLANG_VERSION 30600
 #  else
 #    define SIMDE_DETECT_CLANG_VERSION 1
 #  endif
 #endif /* defined(__clang__) && !defined(SIMDE_DETECT_CLANG_VERSION) */
 
-/* The SIMDE_DETECT_CLANG_VERSION_CHECK macro is pretty
- * straightforward; it returns true if the compiler is a derivative
- * of clang >= the specified version.
- *
- * Since this file is often (primarily?) useful for working around bugs
- * it is also helpful to have a macro which returns true if only if the
- * compiler is a version of clang *older* than the specified version to
- * make it a bit easier to ifdef regions to add code for older versions,
- * such as pragmas to disable a specific warning. */
-
 #if defined(SIMDE_DETECT_CLANG_VERSION)
 #  define SIMDE_DETECT_CLANG_VERSION_CHECK(major, minor, revision) (SIMDE_DETECT_CLANG_VERSION >= ((major * 10000) + (minor * 1000) + (revision)))
-#  define SIMDE_DETECT_CLANG_VERSION_NOT(major, minor, revision) (SIMDE_DETECT_CLANG_VERSION < ((major * 10000) + (minor * 1000) + (revision)))
+#  define SIMDE_DETECT_CLANG_VERSION_NOT(major, minor, revision) SIMDE_DETECT_CLANG_VERSION_CHECK(major, minor, revision)
 #else
 #  define SIMDE_DETECT_CLANG_VERSION_CHECK(major, minor, revision) (0)
 #  define SIMDE_DETECT_CLANG_VERSION_NOT(major, minor, revision) (1)

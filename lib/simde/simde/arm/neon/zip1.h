@@ -22,7 +22,7 @@
  *
  * Copyright:
  *   2020      Evan Nemerson <evan@nemerson.com>
- *   2020      Sean Maher <seanptmaher@gmail.com> (Copyright owned by Google, LLC)
+ *   2020      Sean Maher <seanptmaher@gmail.com>
  */
 
 #if !defined(SIMDE_ARM_NEON_ZIP1_H)
@@ -39,24 +39,18 @@ simde_float32x2_t
 simde_vzip1_f32(simde_float32x2_t a, simde_float32x2_t b) {
   #if defined(SIMDE_ARM_NEON_A64V8_NATIVE)
     return vzip1_f32(a, b);
-  #elif defined(SIMDE_X86_MMX_NATIVE)
-    return _mm_unpacklo_pi32(a, b);
   #else
     simde_float32x2_private
       r_,
       a_ = simde_float32x2_to_private(a),
       b_ = simde_float32x2_to_private(b);
 
-    #if defined(SIMDE_SHUFFLE_VECTOR_)
-      r_.values = SIMDE_SHUFFLE_VECTOR_(32, 8, a_.values, b_.values, 0, 2);
-    #else
-      const size_t halfway_point = sizeof(r_.values) / sizeof(r_.values[0]) / 2;
-      SIMDE_VECTORIZE
-      for (size_t i = 0 ; i < halfway_point ; i++) {
-        r_.values[2 * i    ] = a_.values[i];
-        r_.values[2 * i + 1] = b_.values[i];
-      }
-    #endif
+    const size_t halfway_point = sizeof(r_.values) / sizeof(r_.values[0]) / 2;
+    SIMDE_VECTORIZE
+    for (size_t i = 0 ; i < halfway_point ; i++) {
+      r_.values[2 * i    ] = a_.values[i];
+      r_.values[2 * i + 1] = b_.values[i];
+    }
 
     return simde_float32x2_from_private(r_);
   #endif
@@ -71,24 +65,18 @@ simde_int8x8_t
 simde_vzip1_s8(simde_int8x8_t a, simde_int8x8_t b) {
   #if defined(SIMDE_ARM_NEON_A64V8_NATIVE)
     return vzip1_s8(a, b);
-  #elif defined(SIMDE_X86_MMX_NATIVE)
-    return _mm_unpacklo_pi8(a, b);
   #else
     simde_int8x8_private
       r_,
       a_ = simde_int8x8_to_private(a),
       b_ = simde_int8x8_to_private(b);
 
-    #if defined(SIMDE_SHUFFLE_VECTOR_)
-      r_.values = SIMDE_SHUFFLE_VECTOR_(8, 8, a_.values, b_.values, 0, 8, 1, 9, 2, 10, 3, 11);
-    #else
-      const size_t halfway_point = sizeof(r_.values) / sizeof(r_.values[0]) / 2;
-      SIMDE_VECTORIZE
-      for (size_t i = 0 ; i < halfway_point ; i++) {
-        r_.values[2 * i    ] = a_.values[i];
-        r_.values[2 * i + 1] = b_.values[i];
-      }
-    #endif
+    const size_t halfway_point = sizeof(r_.values) / sizeof(r_.values[0]) / 2;
+    SIMDE_VECTORIZE
+    for (size_t i = 0 ; i < halfway_point ; i++) {
+      r_.values[2 * i    ] = a_.values[i];
+      r_.values[2 * i + 1] = b_.values[i];
+    }
 
     return simde_int8x8_from_private(r_);
   #endif
@@ -103,24 +91,18 @@ simde_int16x4_t
 simde_vzip1_s16(simde_int16x4_t a, simde_int16x4_t b) {
   #if defined(SIMDE_ARM_NEON_A64V8_NATIVE)
     return vzip1_s16(a, b);
-  #elif defined(SIMDE_X86_MMX_NATIVE)
-    return _mm_unpacklo_pi16(a, b);
   #else
     simde_int16x4_private
       r_,
       a_ = simde_int16x4_to_private(a),
       b_ = simde_int16x4_to_private(b);
 
-    #if defined(SIMDE_SHUFFLE_VECTOR_)
-      r_.values = SIMDE_SHUFFLE_VECTOR_(16, 8, a_.values, b_.values, 0, 4, 1, 5);
-    #else
-      const size_t halfway_point = sizeof(r_.values) / sizeof(r_.values[0]) / 2;
-      SIMDE_VECTORIZE
-      for (size_t i = 0 ; i < halfway_point ; i++) {
-        r_.values[2 * i    ] = a_.values[i];
-        r_.values[2 * i + 1] = b_.values[i];
-      }
-    #endif
+    const size_t halfway_point = sizeof(r_.values) / sizeof(r_.values[0]) / 2;
+    SIMDE_VECTORIZE
+    for (size_t i = 0 ; i < halfway_point ; i++) {
+      r_.values[2 * i    ] = a_.values[i];
+      r_.values[2 * i + 1] = b_.values[i];
+    }
 
     return simde_int16x4_from_private(r_);
   #endif
@@ -135,24 +117,18 @@ simde_int32x2_t
 simde_vzip1_s32(simde_int32x2_t a, simde_int32x2_t b) {
   #if defined(SIMDE_ARM_NEON_A64V8_NATIVE)
     return vzip1_s32(a, b);
-  #elif defined(SIMDE_X86_MMX_NATIVE)
-    return _mm_unpacklo_pi32(a, b);
   #else
     simde_int32x2_private
       r_,
       a_ = simde_int32x2_to_private(a),
       b_ = simde_int32x2_to_private(b);
 
-    #if defined(SIMDE_SHUFFLE_VECTOR_)
-      r_.values = SIMDE_SHUFFLE_VECTOR_(32, 8, a_.values, b_.values, 0, 2);
-    #else
-      const size_t halfway_point = sizeof(r_.values) / sizeof(r_.values[0]) / 2;
-      SIMDE_VECTORIZE
-      for (size_t i = 0 ; i < halfway_point ; i++) {
-        r_.values[2 * i    ] = a_.values[i];
-        r_.values[2 * i + 1] = b_.values[i];
-      }
-    #endif
+    const size_t halfway_point = sizeof(r_.values) / sizeof(r_.values[0]) / 2;
+    SIMDE_VECTORIZE
+    for (size_t i = 0 ; i < halfway_point ; i++) {
+      r_.values[2 * i    ] = a_.values[i];
+      r_.values[2 * i + 1] = b_.values[i];
+    }
 
     return simde_int32x2_from_private(r_);
   #endif
@@ -167,24 +143,18 @@ simde_uint8x8_t
 simde_vzip1_u8(simde_uint8x8_t a, simde_uint8x8_t b) {
   #if defined(SIMDE_ARM_NEON_A64V8_NATIVE)
     return vzip1_u8(a, b);
-  #elif defined(SIMDE_X86_MMX_NATIVE)
-    return _mm_unpacklo_pi8(a, b);
   #else
     simde_uint8x8_private
       r_,
       a_ = simde_uint8x8_to_private(a),
       b_ = simde_uint8x8_to_private(b);
 
-    #if defined(SIMDE_SHUFFLE_VECTOR_)
-      r_.values = SIMDE_SHUFFLE_VECTOR_(8, 8, a_.values, b_.values, 0, 8, 1, 9, 2, 10, 3, 11);
-    #else
-      const size_t halfway_point = sizeof(r_.values) / sizeof(r_.values[0]) / 2;
-      SIMDE_VECTORIZE
-      for (size_t i = 0 ; i < halfway_point ; i++) {
-        r_.values[2 * i    ] = a_.values[i];
-        r_.values[2 * i + 1] = b_.values[i];
-      }
-    #endif
+    const size_t halfway_point = sizeof(r_.values) / sizeof(r_.values[0]) / 2;
+    SIMDE_VECTORIZE
+    for (size_t i = 0 ; i < halfway_point ; i++) {
+      r_.values[2 * i    ] = a_.values[i];
+      r_.values[2 * i + 1] = b_.values[i];
+    }
 
     return simde_uint8x8_from_private(r_);
   #endif
@@ -199,24 +169,18 @@ simde_uint16x4_t
 simde_vzip1_u16(simde_uint16x4_t a, simde_uint16x4_t b) {
   #if defined(SIMDE_ARM_NEON_A64V8_NATIVE)
     return vzip1_u16(a, b);
-  #elif defined(SIMDE_X86_MMX_NATIVE)
-    return _mm_unpacklo_pi16(a, b);
   #else
     simde_uint16x4_private
       r_,
       a_ = simde_uint16x4_to_private(a),
       b_ = simde_uint16x4_to_private(b);
 
-    #if defined(SIMDE_SHUFFLE_VECTOR_)
-      r_.values = SIMDE_SHUFFLE_VECTOR_(16, 8, a_.values, b_.values, 0, 4, 1, 5);
-    #else
-      const size_t halfway_point = sizeof(r_.values) / sizeof(r_.values[0]) / 2;
-      SIMDE_VECTORIZE
-      for (size_t i = 0 ; i < halfway_point ; i++) {
-        r_.values[2 * i    ] = a_.values[i];
-        r_.values[2 * i + 1] = b_.values[i];
-      }
-    #endif
+    const size_t halfway_point = sizeof(r_.values) / sizeof(r_.values[0]) / 2;
+    SIMDE_VECTORIZE
+    for (size_t i = 0 ; i < halfway_point ; i++) {
+      r_.values[2 * i    ] = a_.values[i];
+      r_.values[2 * i + 1] = b_.values[i];
+    }
 
     return simde_uint16x4_from_private(r_);
   #endif
@@ -231,24 +195,18 @@ simde_uint32x2_t
 simde_vzip1_u32(simde_uint32x2_t a, simde_uint32x2_t b) {
   #if defined(SIMDE_ARM_NEON_A64V8_NATIVE)
     return vzip1_u32(a, b);
-  #elif defined(SIMDE_X86_MMX_NATIVE)
-    return _mm_unpacklo_pi32(a, b);
   #else
     simde_uint32x2_private
       r_,
       a_ = simde_uint32x2_to_private(a),
       b_ = simde_uint32x2_to_private(b);
 
-    #if defined(SIMDE_SHUFFLE_VECTOR_)
-      r_.values = SIMDE_SHUFFLE_VECTOR_(32, 8, a_.values, b_.values, 0, 2);
-    #else
-      const size_t halfway_point = sizeof(r_.values) / sizeof(r_.values[0]) / 2;
-      SIMDE_VECTORIZE
-      for (size_t i = 0 ; i < halfway_point ; i++) {
-        r_.values[2 * i    ] = a_.values[i];
-        r_.values[2 * i + 1] = b_.values[i];
-      }
-    #endif
+    const size_t halfway_point = sizeof(r_.values) / sizeof(r_.values[0]) / 2;
+    SIMDE_VECTORIZE
+    for (size_t i = 0 ; i < halfway_point ; i++) {
+      r_.values[2 * i    ] = a_.values[i];
+      r_.values[2 * i + 1] = b_.values[i];
+    }
 
     return simde_uint32x2_from_private(r_);
   #endif
@@ -264,27 +222,20 @@ simde_vzip1q_f32(simde_float32x4_t a, simde_float32x4_t b) {
   #if defined(SIMDE_ARM_NEON_A64V8_NATIVE)
     return vzip1q_f32(a, b);
   #elif defined(SIMDE_WASM_SIMD128_NATIVE)
-    return wasm_v32x4_shuffle(a, b, 0, 4, 1, 5);
-  #elif defined(SIMDE_X86_SSE_NATIVE)
-    return _mm_unpacklo_ps(a, b);
-  #elif defined(SIMDE_POWER_ALTIVEC_P6_NATIVE)
-    return vec_mergeh(a, b);
+    return wasm_v8x16_shuffle(a, b,
+                             0, 1, 2, 3, 16, 17, 18, 19, 4, 5, 6, 7, 20, 21, 22, 23);
   #else
     simde_float32x4_private
       r_,
       a_ = simde_float32x4_to_private(a),
       b_ = simde_float32x4_to_private(b);
 
-    #if defined(SIMDE_SHUFFLE_VECTOR_)
-      r_.values = SIMDE_SHUFFLE_VECTOR_(32, 16, a_.values, b_.values, 0, 4, 1, 5);
-    #else
-      const size_t halfway_point = sizeof(r_.values) / sizeof(r_.values[0]) / 2;
-      SIMDE_VECTORIZE
-      for (size_t i = 0 ; i < halfway_point ; i++) {
-        r_.values[2 * i    ] = a_.values[i];
-        r_.values[2 * i + 1] = b_.values[i];
-      }
-    #endif
+    const size_t halfway_point = sizeof(r_.values) / sizeof(r_.values[0]) / 2;
+    SIMDE_VECTORIZE
+    for (size_t i = 0 ; i < halfway_point ; i++) {
+      r_.values[2 * i    ] = a_.values[i];
+      r_.values[2 * i + 1] = b_.values[i];
+    }
 
     return simde_float32x4_from_private(r_);
   #endif
@@ -300,27 +251,20 @@ simde_vzip1q_f64(simde_float64x2_t a, simde_float64x2_t b) {
   #if defined(SIMDE_ARM_NEON_A64V8_NATIVE)
     return vzip1q_f64(a, b);
   #elif defined(SIMDE_WASM_SIMD128_NATIVE)
-    return wasm_v64x2_shuffle(a, b, 0, 2);
-  #elif defined(SIMDE_X86_SSE2_NATIVE)
-    return _mm_unpacklo_pd(a, b);
-  #elif defined(SIMDE_POWER_ALTIVEC_P7_NATIVE)
-    return vec_mergeh(a, b);
+    return wasm_v8x16_shuffle(a, b,
+                             0, 1, 2, 3, 4, 5, 6, 7, 16, 17, 18, 19, 20, 21, 22, 23);
   #else
     simde_float64x2_private
       r_,
       a_ = simde_float64x2_to_private(a),
       b_ = simde_float64x2_to_private(b);
 
-    #if defined(SIMDE_SHUFFLE_VECTOR_)
-      r_.values = SIMDE_SHUFFLE_VECTOR_(64, 16, a_.values, b_.values, 0, 2);
-    #else
-      const size_t halfway_point = sizeof(r_.values) / sizeof(r_.values[0]) / 2;
-      SIMDE_VECTORIZE
-      for (size_t i = 0 ; i < halfway_point ; i++) {
-        r_.values[2 * i    ] = a_.values[i];
-        r_.values[2 * i + 1] = b_.values[i];
-      }
-    #endif
+    const size_t halfway_point = sizeof(r_.values) / sizeof(r_.values[0]) / 2;
+    SIMDE_VECTORIZE
+    for (size_t i = 0 ; i < halfway_point ; i++) {
+      r_.values[2 * i    ] = a_.values[i];
+      r_.values[2 * i + 1] = b_.values[i];
+    }
 
     return simde_float64x2_from_private(r_);
   #endif
@@ -336,27 +280,20 @@ simde_vzip1q_s8(simde_int8x16_t a, simde_int8x16_t b) {
   #if defined(SIMDE_ARM_NEON_A64V8_NATIVE)
     return vzip1q_s8(a, b);
   #elif defined(SIMDE_WASM_SIMD128_NATIVE)
-    return wasm_v8x16_shuffle(a, b, 0, 16, 1, 17, 2, 18, 3, 19, 4, 20, 5, 21, 6, 22, 7, 23);
-  #elif defined(SIMDE_X86_SSE2_NATIVE)
-    return _mm_unpacklo_epi8(a, b);
-  #elif defined(SIMDE_POWER_ALTIVEC_P6_NATIVE)
-    return vec_mergeh(a, b);
+    return wasm_v8x16_shuffle(a, b,
+                             0, 16, 1, 17, 2, 18, 3, 19, 4, 20, 5, 21, 6, 22, 7, 23);
   #else
     simde_int8x16_private
       r_,
       a_ = simde_int8x16_to_private(a),
       b_ = simde_int8x16_to_private(b);
 
-    #if defined(SIMDE_SHUFFLE_VECTOR_)
-      r_.values = SIMDE_SHUFFLE_VECTOR_(8, 16, a_.values, b_.values, 0, 16, 1, 17, 2, 18, 3, 19, 4, 20, 5, 21, 6, 22, 7, 23);
-    #else
-      const size_t halfway_point = sizeof(r_.values) / sizeof(r_.values[0]) / 2;
-      SIMDE_VECTORIZE
-      for (size_t i = 0 ; i < halfway_point ; i++) {
-        r_.values[2 * i    ] = a_.values[i];
-        r_.values[2 * i + 1] = b_.values[i];
-      }
-    #endif
+    const size_t halfway_point = sizeof(r_.values) / sizeof(r_.values[0]) / 2;
+    SIMDE_VECTORIZE
+    for (size_t i = 0 ; i < halfway_point ; i++) {
+      r_.values[2 * i    ] = a_.values[i];
+      r_.values[2 * i + 1] = b_.values[i];
+    }
 
     return simde_int8x16_from_private(r_);
   #endif
@@ -372,27 +309,20 @@ simde_vzip1q_s16(simde_int16x8_t a, simde_int16x8_t b) {
   #if defined(SIMDE_ARM_NEON_A64V8_NATIVE)
     return vzip1q_s16(a, b);
   #elif defined(SIMDE_WASM_SIMD128_NATIVE)
-    return wasm_v16x8_shuffle(a, b, 0, 8, 1, 9, 2, 10, 3, 11);
-  #elif defined(SIMDE_X86_SSE2_NATIVE)
-    return _mm_unpacklo_epi16(a, b);
-  #elif defined(SIMDE_POWER_ALTIVEC_P6_NATIVE)
-    return vec_mergeh(a, b);
+    return wasm_v8x16_shuffle(a, b,
+                             0, 1, 16, 17, 2, 3, 18, 19, 4, 5, 20, 21, 6, 7, 22, 23);
   #else
     simde_int16x8_private
       r_,
       a_ = simde_int16x8_to_private(a),
       b_ = simde_int16x8_to_private(b);
 
-    #if defined(SIMDE_SHUFFLE_VECTOR_)
-      r_.values = SIMDE_SHUFFLE_VECTOR_(16, 16, a_.values, b_.values, 0, 8, 1, 9, 2, 10, 3, 11);
-    #else
-      const size_t halfway_point = sizeof(r_.values) / sizeof(r_.values[0]) / 2;
-      SIMDE_VECTORIZE
-      for (size_t i = 0 ; i < halfway_point ; i++) {
-        r_.values[2 * i    ] = a_.values[i];
-        r_.values[2 * i + 1] = b_.values[i];
-      }
-    #endif
+    const size_t halfway_point = sizeof(r_.values) / sizeof(r_.values[0]) / 2;
+    SIMDE_VECTORIZE
+    for (size_t i = 0 ; i < halfway_point ; i++) {
+      r_.values[2 * i    ] = a_.values[i];
+      r_.values[2 * i + 1] = b_.values[i];
+    }
 
     return simde_int16x8_from_private(r_);
   #endif
@@ -408,27 +338,20 @@ simde_vzip1q_s32(simde_int32x4_t a, simde_int32x4_t b) {
   #if defined(SIMDE_ARM_NEON_A64V8_NATIVE)
     return vzip1q_s32(a, b);
   #elif defined(SIMDE_WASM_SIMD128_NATIVE)
-    return wasm_v32x4_shuffle(a, b, 0, 4, 1, 5);
-  #elif defined(SIMDE_X86_SSE2_NATIVE)
-    return _mm_unpacklo_epi32(a, b);
-  #elif defined(SIMDE_POWER_ALTIVEC_P6_NATIVE)
-    return vec_mergeh(a, b);
+    return wasm_v8x16_shuffle(a, b,
+                             0, 1, 2, 3, 16, 17, 18, 19, 4, 5, 6, 7, 20, 21, 22, 23);
   #else
     simde_int32x4_private
       r_,
       a_ = simde_int32x4_to_private(a),
       b_ = simde_int32x4_to_private(b);
 
-    #if defined(SIMDE_SHUFFLE_VECTOR_)
-      r_.values = SIMDE_SHUFFLE_VECTOR_(32, 16, a_.values, b_.values, 0, 4, 1, 5);
-    #else
-      const size_t halfway_point = sizeof(r_.values) / sizeof(r_.values[0]) / 2;
-      SIMDE_VECTORIZE
-      for (size_t i = 0 ; i < halfway_point ; i++) {
-        r_.values[2 * i    ] = a_.values[i];
-        r_.values[2 * i + 1] = b_.values[i];
-      }
-    #endif
+    const size_t halfway_point = sizeof(r_.values) / sizeof(r_.values[0]) / 2;
+    SIMDE_VECTORIZE
+    for (size_t i = 0 ; i < halfway_point ; i++) {
+      r_.values[2 * i    ] = a_.values[i];
+      r_.values[2 * i + 1] = b_.values[i];
+    }
 
     return simde_int32x4_from_private(r_);
   #endif
@@ -444,27 +367,20 @@ simde_vzip1q_s64(simde_int64x2_t a, simde_int64x2_t b) {
   #if defined(SIMDE_ARM_NEON_A64V8_NATIVE)
     return vzip1q_s64(a, b);
   #elif defined(SIMDE_WASM_SIMD128_NATIVE)
-    return wasm_v64x2_shuffle(a, b, 0, 2);
-  #elif defined(SIMDE_X86_SSE2_NATIVE)
-    return _mm_unpacklo_epi64(a, b);
-  #elif defined(SIMDE_POWER_ALTIVEC_P7_NATIVE)
-    return vec_mergeh(a, b);
+    return wasm_v8x16_shuffle(a, b,
+                             0, 1, 2, 3, 4, 5, 6, 7, 16, 17, 18, 19, 20, 21, 22, 23);
   #else
     simde_int64x2_private
       r_,
       a_ = simde_int64x2_to_private(a),
       b_ = simde_int64x2_to_private(b);
 
-    #if defined(SIMDE_SHUFFLE_VECTOR_)
-      r_.values = SIMDE_SHUFFLE_VECTOR_(64, 16, a_.values, b_.values, 0, 2);
-    #else
-      const size_t halfway_point = sizeof(r_.values) / sizeof(r_.values[0]) / 2;
-      SIMDE_VECTORIZE
-      for (size_t i = 0 ; i < halfway_point ; i++) {
-        r_.values[2 * i    ] = a_.values[i];
-        r_.values[2 * i + 1] = b_.values[i];
-      }
-    #endif
+    const size_t halfway_point = sizeof(r_.values) / sizeof(r_.values[0]) / 2;
+    SIMDE_VECTORIZE
+    for (size_t i = 0 ; i < halfway_point ; i++) {
+      r_.values[2 * i    ] = a_.values[i];
+      r_.values[2 * i + 1] = b_.values[i];
+    }
 
     return simde_int64x2_from_private(r_);
   #endif
@@ -481,27 +397,20 @@ simde_vzip1q_u8(simde_uint8x16_t a, simde_uint8x16_t b) {
   #if defined(SIMDE_ARM_NEON_A64V8_NATIVE)
     return vzip1q_u8(a, b);
   #elif defined(SIMDE_WASM_SIMD128_NATIVE)
-    return wasm_v8x16_shuffle(a, b, 0, 16, 1, 17, 2, 18, 3, 19, 4, 20, 5, 21, 6, 22, 7, 23);
-  #elif defined(SIMDE_X86_SSE2_NATIVE)
-    return _mm_unpacklo_epi8(a, b);
-  #elif defined(SIMDE_POWER_ALTIVEC_P6_NATIVE)
-    return vec_mergeh(a, b);
+    return wasm_v8x16_shuffle(a, b,
+                             0, 16, 1, 17, 2, 18, 3, 19, 4, 20, 5, 21, 6, 22, 7, 23);
   #else
     simde_uint8x16_private
       r_,
       a_ = simde_uint8x16_to_private(a),
       b_ = simde_uint8x16_to_private(b);
 
-    #if defined(SIMDE_SHUFFLE_VECTOR_)
-      r_.values = SIMDE_SHUFFLE_VECTOR_(8, 16, a_.values, b_.values, 0, 16, 1, 17, 2, 18, 3, 19, 4, 20, 5, 21, 6, 22, 7, 23);
-    #else
-      const size_t halfway_point = sizeof(r_.values) / sizeof(r_.values[0]) / 2;
-      SIMDE_VECTORIZE
-      for (size_t i = 0 ; i < halfway_point ; i++) {
-        r_.values[2 * i    ] = a_.values[i];
-        r_.values[2 * i + 1] = b_.values[i];
-      }
-    #endif
+    const size_t halfway_point = sizeof(r_.values) / sizeof(r_.values[0]) / 2;
+    SIMDE_VECTORIZE
+    for (size_t i = 0 ; i < halfway_point ; i++) {
+      r_.values[2 * i    ] = a_.values[i];
+      r_.values[2 * i + 1] = b_.values[i];
+    }
 
     return simde_uint8x16_from_private(r_);
   #endif
@@ -517,27 +426,20 @@ simde_vzip1q_u16(simde_uint16x8_t a, simde_uint16x8_t b) {
   #if defined(SIMDE_ARM_NEON_A64V8_NATIVE)
     return vzip1q_u16(a, b);
   #elif defined(SIMDE_WASM_SIMD128_NATIVE)
-    return wasm_v16x8_shuffle(a, b, 0, 8, 1, 9, 2, 10, 3, 11);
-  #elif defined(SIMDE_X86_SSE2_NATIVE)
-    return _mm_unpacklo_epi16(a, b);
-  #elif defined(SIMDE_POWER_ALTIVEC_P6_NATIVE)
-    return vec_mergeh(a, b);
+    return wasm_v8x16_shuffle(a, b,
+                             0, 1, 16, 17, 2, 3, 18, 19, 4, 5, 20, 21, 6, 7, 22, 23);
   #else
     simde_uint16x8_private
       r_,
       a_ = simde_uint16x8_to_private(a),
       b_ = simde_uint16x8_to_private(b);
 
-    #if defined(SIMDE_SHUFFLE_VECTOR_)
-      r_.values = SIMDE_SHUFFLE_VECTOR_(16, 16, a_.values, b_.values, 0, 8, 1, 9, 2, 10, 3, 11);
-    #else
-      const size_t halfway_point = sizeof(r_.values) / sizeof(r_.values[0]) / 2;
-      SIMDE_VECTORIZE
-      for (size_t i = 0 ; i < halfway_point ; i++) {
-        r_.values[2 * i    ] = a_.values[i];
-        r_.values[2 * i + 1] = b_.values[i];
-      }
-    #endif
+    const size_t halfway_point = sizeof(r_.values) / sizeof(r_.values[0]) / 2;
+    SIMDE_VECTORIZE
+    for (size_t i = 0 ; i < halfway_point ; i++) {
+      r_.values[2 * i    ] = a_.values[i];
+      r_.values[2 * i + 1] = b_.values[i];
+    }
 
     return simde_uint16x8_from_private(r_);
   #endif
@@ -553,27 +455,20 @@ simde_vzip1q_u32(simde_uint32x4_t a, simde_uint32x4_t b) {
   #if defined(SIMDE_ARM_NEON_A64V8_NATIVE)
     return vzip1q_u32(a, b);
   #elif defined(SIMDE_WASM_SIMD128_NATIVE)
-    return wasm_v32x4_shuffle(a, b, 0, 4, 1, 5);
-  #elif defined(SIMDE_X86_SSE2_NATIVE)
-    return _mm_unpacklo_epi32(a, b);
-  #elif defined(SIMDE_POWER_ALTIVEC_P6_NATIVE)
-    return vec_mergeh(a, b);
+    return wasm_v8x16_shuffle(a, b,
+                             0, 1, 2, 3, 16, 17, 18, 19, 4, 5, 6, 7, 20, 21, 22, 23);
   #else
     simde_uint32x4_private
       r_,
       a_ = simde_uint32x4_to_private(a),
       b_ = simde_uint32x4_to_private(b);
 
-    #if defined(SIMDE_SHUFFLE_VECTOR_)
-      r_.values = SIMDE_SHUFFLE_VECTOR_(32, 16, a_.values, b_.values, 0, 4, 1, 5);
-    #else
-      const size_t halfway_point = sizeof(r_.values) / sizeof(r_.values[0]) / 2;
-      SIMDE_VECTORIZE
-      for (size_t i = 0 ; i < halfway_point ; i++) {
-        r_.values[2 * i    ] = a_.values[i];
-        r_.values[2 * i + 1] = b_.values[i];
-      }
-    #endif
+    const size_t halfway_point = sizeof(r_.values) / sizeof(r_.values[0]) / 2;
+    SIMDE_VECTORIZE
+    for (size_t i = 0 ; i < halfway_point ; i++) {
+      r_.values[2 * i    ] = a_.values[i];
+      r_.values[2 * i + 1] = b_.values[i];
+    }
 
     return simde_uint32x4_from_private(r_);
   #endif
@@ -589,27 +484,20 @@ simde_vzip1q_u64(simde_uint64x2_t a, simde_uint64x2_t b) {
   #if defined(SIMDE_ARM_NEON_A64V8_NATIVE)
     return vzip1q_u64(a, b);
   #elif defined(SIMDE_WASM_SIMD128_NATIVE)
-    return wasm_v64x2_shuffle(a, b, 0, 2);
-  #elif defined(SIMDE_X86_SSE2_NATIVE)
-    return _mm_unpacklo_epi64(a, b);
-  #elif defined(SIMDE_POWER_ALTIVEC_P7_NATIVE)
-    return vec_mergeh(a, b);
+    return wasm_v8x16_shuffle(a, b,
+                             0, 1, 2, 3, 4, 5, 6, 7, 16, 17, 18, 19, 20, 21, 22, 23);
   #else
     simde_uint64x2_private
       r_,
       a_ = simde_uint64x2_to_private(a),
       b_ = simde_uint64x2_to_private(b);
 
-    #if defined(SIMDE_SHUFFLE_VECTOR_)
-      r_.values = SIMDE_SHUFFLE_VECTOR_(64, 16, a_.values, b_.values, 0, 2);
-    #else
-      const size_t halfway_point = sizeof(r_.values) / sizeof(r_.values[0]) / 2;
-      SIMDE_VECTORIZE
-      for (size_t i = 0 ; i < halfway_point ; i++) {
-        r_.values[2 * i    ] = a_.values[i];
-        r_.values[2 * i + 1] = b_.values[i];
-      }
-    #endif
+    const size_t halfway_point = sizeof(r_.values) / sizeof(r_.values[0]) / 2;
+    SIMDE_VECTORIZE
+    for (size_t i = 0 ; i < halfway_point ; i++) {
+      r_.values[2 * i    ] = a_.values[i];
+      r_.values[2 * i + 1] = b_.values[i];
+    }
 
     return simde_uint64x2_from_private(r_);
   #endif
