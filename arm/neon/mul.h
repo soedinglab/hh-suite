@@ -22,7 +22,7 @@
  *
  * Copyright:
  *   2020      Evan Nemerson <evan@nemerson.com>
- *   2020      Sean Maher <seanptmaher@gmail.com>
+ *   2020      Sean Maher <seanptmaher@gmail.com> (Copyright owned by Google, LLC)
  */
 
 #if !defined(SIMDE_ARM_NEON_MUL_H)
@@ -123,15 +123,15 @@ simde_int16x4_t
 simde_vmul_s16(simde_int16x4_t a, simde_int16x4_t b) {
   #if defined(SIMDE_ARM_NEON_A32V7_NATIVE)
     return vmul_s16(a, b);
-  #elif defined(SIMDE_X86_MMX_NATIVE)
-    return _m_pmullw(a, b);
   #else
     simde_int16x4_private
       r_,
       a_ = simde_int16x4_to_private(a),
       b_ = simde_int16x4_to_private(b);
 
-    #if defined(SIMDE_VECTOR_SUBSCRIPT_OPS)
+    #if defined(SIMDE_X86_MMX_NATIVE)
+      r_.m64 = _m_pmullw(a_.m64, b_.m64);
+    #elif defined(SIMDE_VECTOR_SUBSCRIPT_OPS)
       r_.values = a_.values * b_.values;
     #else
       SIMDE_VECTORIZE
@@ -175,6 +175,26 @@ simde_vmul_s32(simde_int32x2_t a, simde_int32x2_t b) {
   #undef vmul_s32
   #define vmul_s32(a, b) simde_vmul_s32((a), (b))
 #endif
+
+SIMDE_FUNCTION_ATTRIBUTES
+simde_int64x1_t
+simde_x_vmul_s64(simde_int64x1_t a, simde_int64x1_t b) {
+  simde_int64x1_private
+    r_,
+    a_ = simde_int64x1_to_private(a),
+    b_ = simde_int64x1_to_private(b);
+
+  #if defined(SIMDE_VECTOR_SUBSCRIPT_OPS)
+    r_.values = a_.values * b_.values;
+  #else
+    SIMDE_VECTORIZE
+    for (size_t i = 0 ; i < (sizeof(r_.values) / sizeof(r_.values[0])) ; i++) {
+      r_.values[i] = a_.values[i] * b_.values[i];
+    }
+  #endif
+
+  return simde_int64x1_from_private(r_);
+}
 
 SIMDE_FUNCTION_ATTRIBUTES
 simde_uint8x8_t
@@ -261,21 +281,41 @@ simde_vmul_u32(simde_uint32x2_t a, simde_uint32x2_t b) {
 #endif
 
 SIMDE_FUNCTION_ATTRIBUTES
+simde_uint64x1_t
+simde_x_vmul_u64(simde_uint64x1_t a, simde_uint64x1_t b) {
+  simde_uint64x1_private
+    r_,
+    a_ = simde_uint64x1_to_private(a),
+    b_ = simde_uint64x1_to_private(b);
+
+  #if defined(SIMDE_VECTOR_SUBSCRIPT_OPS)
+    r_.values = a_.values * b_.values;
+  #else
+    SIMDE_VECTORIZE
+    for (size_t i = 0 ; i < (sizeof(r_.values) / sizeof(r_.values[0])) ; i++) {
+      r_.values[i] = a_.values[i] * b_.values[i];
+    }
+  #endif
+
+  return simde_uint64x1_from_private(r_);
+}
+
+SIMDE_FUNCTION_ATTRIBUTES
 simde_float32x4_t
 simde_vmulq_f32(simde_float32x4_t a, simde_float32x4_t b) {
   #if defined(SIMDE_ARM_NEON_A32V7_NATIVE)
     return vmulq_f32(a, b);
-  #elif defined(SIMDE_X86_SSE_NATIVE)
-    return _mm_mul_ps(a, b);
-  #elif defined(SIMDE_WASM_SIMD128_NATIVE)
-    return wasm_f32x4_mul(a, b);
   #else
     simde_float32x4_private
       r_,
       a_ = simde_float32x4_to_private(a),
       b_ = simde_float32x4_to_private(b);
 
-    #if defined(SIMDE_VECTOR_SUBSCRIPT_OPS)
+    #if defined(SIMDE_X86_SSE_NATIVE)
+      r_.m128 = _mm_mul_ps(a_.m128, b_.m128);
+    #elif defined(SIMDE_WASM_SIMD128_NATIVE)
+      r_.v128 = wasm_f32x4_mul(a_.v128, b_.v128);
+    #elif defined(SIMDE_VECTOR_SUBSCRIPT_OPS)
       r_.values = a_.values * b_.values;
     #else
       SIMDE_VECTORIZE
@@ -297,17 +337,17 @@ simde_float64x2_t
 simde_vmulq_f64(simde_float64x2_t a, simde_float64x2_t b) {
   #if defined(SIMDE_ARM_NEON_A64V8_NATIVE)
     return vmulq_f64(a, b);
-  #elif defined(SIMDE_X86_SSE2_NATIVE)
-    return _mm_mul_pd(a, b);
-  #elif defined(SIMDE_WASM_SIMD128_NATIVE)
-    return wasm_f64x2_mul(a, b);
   #else
     simde_float64x2_private
       r_,
       a_ = simde_float64x2_to_private(a),
       b_ = simde_float64x2_to_private(b);
 
-    #if defined(SIMDE_VECTOR_SUBSCRIPT_OPS)
+    #if defined(SIMDE_X86_SSE2_NATIVE)
+      r_.m128d = _mm_mul_pd(a_.m128d, b_.m128d);
+    #elif defined(SIMDE_WASM_SIMD128_NATIVE)
+      r_.v128 = wasm_f64x2_mul(a_.v128, b_.v128);
+    #elif defined(SIMDE_VECTOR_SUBSCRIPT_OPS)
       r_.values = a_.values * b_.values;
     #else
       SIMDE_VECTORIZE
@@ -357,15 +397,15 @@ simde_int16x8_t
 simde_vmulq_s16(simde_int16x8_t a, simde_int16x8_t b) {
   #if defined(SIMDE_ARM_NEON_A32V7_NATIVE)
     return vmulq_s16(a, b);
-  #elif defined(SIMDE_X86_SSE2_NATIVE)
-    return _mm_mullo_epi16(a, b);
   #else
     simde_int16x8_private
       r_,
       a_ = simde_int16x8_to_private(a),
       b_ = simde_int16x8_to_private(b);
 
-    #if defined(SIMDE_VECTOR_SUBSCRIPT_OPS)
+    #if defined(SIMDE_X86_SSE2_NATIVE)
+      r_.m128i = _mm_mullo_epi16(a_.m128i, b_.m128i);
+    #elif defined(SIMDE_VECTOR_SUBSCRIPT_OPS)
       r_.values = a_.values * b_.values;
     #else
       SIMDE_VECTORIZE
@@ -387,15 +427,15 @@ simde_int32x4_t
 simde_vmulq_s32(simde_int32x4_t a, simde_int32x4_t b) {
   #if defined(SIMDE_ARM_NEON_A32V7_NATIVE)
     return vmulq_s32(a, b);
-  #elif defined(SIMDE_WASM_SIMD128_NATIVE)
-    return wasm_i32x4_mul(a, b);
   #else
     simde_int32x4_private
       r_,
       a_ = simde_int32x4_to_private(a),
       b_ = simde_int32x4_to_private(b);
 
-    #if defined(SIMDE_VECTOR_SUBSCRIPT_OPS)
+    #if defined(SIMDE_WASM_SIMD128_NATIVE)
+      r_.v128 = wasm_i32x4_mul(a_.v128, b_.v128);
+    #elif defined(SIMDE_VECTOR_SUBSCRIPT_OPS)
       r_.values = a_.values * b_.values;
     #else
       SIMDE_VECTORIZE
@@ -412,6 +452,27 @@ simde_vmulq_s32(simde_int32x4_t a, simde_int32x4_t b) {
   #define vmulq_s32(a, b) simde_vmulq_s32((a), (b))
 #endif
 
+SIMDE_FUNCTION_ATTRIBUTES
+simde_int64x2_t
+simde_x_vmulq_s64(simde_int64x2_t a, simde_int64x2_t b) {
+  simde_int64x2_private
+    r_,
+    a_ = simde_int64x2_to_private(a),
+    b_ = simde_int64x2_to_private(b);
+
+  #if defined(SIMDE_WASM_SIMD128_NATIVE)
+    r_.v128 = wasm_i64x2_mul(a_.v128, b_.v128);
+  #elif defined(SIMDE_VECTOR_SUBSCRIPT_OPS)
+    r_.values = a_.values * b_.values;
+  #else
+    SIMDE_VECTORIZE
+    for (size_t i = 0 ; i < (sizeof(r_.values) / sizeof(r_.values[0])) ; i++) {
+      r_.values[i] = a_.values[i] * b_.values[i];
+    }
+  #endif
+
+  return simde_int64x2_from_private(r_);
+}
 
 SIMDE_FUNCTION_ATTRIBUTES
 simde_uint8x16_t
@@ -446,15 +507,15 @@ simde_uint16x8_t
 simde_vmulq_u16(simde_uint16x8_t a, simde_uint16x8_t b) {
   #if defined(SIMDE_ARM_NEON_A32V7_NATIVE)
     return vmulq_u16(a, b);
-  #elif defined(SIMDE_WASM_SIMD128_NATIVE)
-    return wasm_i16x8_mul(a, b);
   #else
     simde_uint16x8_private
       r_,
       a_ = simde_uint16x8_to_private(a),
       b_ = simde_uint16x8_to_private(b);
 
-    #if defined(SIMDE_VECTOR_SUBSCRIPT_OPS)
+    #if defined(SIMDE_WASM_SIMD128_NATIVE)
+      r_.v128 = wasm_i16x8_mul(a_.v128, b_.v128);
+    #elif defined(SIMDE_VECTOR_SUBSCRIPT_OPS)
       r_.values = a_.values * b_.values;
     #else
       SIMDE_VECTORIZE
@@ -476,15 +537,15 @@ simde_uint32x4_t
 simde_vmulq_u32(simde_uint32x4_t a, simde_uint32x4_t b) {
   #if defined(SIMDE_ARM_NEON_A32V7_NATIVE)
     return vmulq_u32(a, b);
-  #elif defined(SIMDE_WASM_SIMD128_NATIVE)
-    return wasm_i32x4_mul(a, b);
   #else
     simde_uint32x4_private
       r_,
       a_ = simde_uint32x4_to_private(a),
       b_ = simde_uint32x4_to_private(b);
 
-    #if defined(SIMDE_VECTOR_SUBSCRIPT_OPS)
+    #if defined(SIMDE_WASM_SIMD128_NATIVE)
+      r_.v128 = wasm_i32x4_mul(a_.v128, b_.v128);
+    #elif defined(SIMDE_VECTOR_SUBSCRIPT_OPS)
       r_.values = a_.values * b_.values;
     #else
       SIMDE_VECTORIZE
@@ -500,6 +561,28 @@ simde_vmulq_u32(simde_uint32x4_t a, simde_uint32x4_t b) {
   #undef vmulq_u32
   #define vmulq_u32(a, b) simde_vmulq_u32((a), (b))
 #endif
+
+SIMDE_FUNCTION_ATTRIBUTES
+simde_uint64x2_t
+simde_x_vmulq_u64(simde_uint64x2_t a, simde_uint64x2_t b) {
+  simde_uint64x2_private
+    r_,
+    a_ = simde_uint64x2_to_private(a),
+    b_ = simde_uint64x2_to_private(b);
+
+  #if defined(SIMDE_WASM_SIMD128_NATIVE)
+    r_.v128 = wasm_i64x2_mul(a_.v128, b_.v128);
+  #elif defined(SIMDE_VECTOR_SUBSCRIPT_OPS)
+    r_.values = a_.values * b_.values;
+  #else
+    SIMDE_VECTORIZE
+    for (size_t i = 0 ; i < (sizeof(r_.values) / sizeof(r_.values[0])) ; i++) {
+      r_.values[i] = a_.values[i] * b_.values[i];
+    }
+  #endif
+
+  return simde_uint64x2_from_private(r_);
+}
 
 SIMDE_END_DECLS_
 HEDLEY_DIAGNOSTIC_POP
