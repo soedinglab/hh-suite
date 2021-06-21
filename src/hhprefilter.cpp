@@ -463,22 +463,22 @@ void Prefilter::prefilter_db(HMM* q_tmp, Hash<Hit>* previous_hits,
     workspace[i] = (simd_int*) malloc_simd_int(
         3 * (LQ + element_count) * sizeof(char));
 
-#pragma omp parallel for schedule(static)
-  // Loop over all database sequences
-  for (size_t n = 0; n < num_dbs; n++) {
+#pragma omp parallel
+  {
     int thread_id = 0;
 #ifdef OPENMP
     thread_id = omp_get_thread_num();
 #endif
-    // Perform search step
-    int score = ungapped_sse_score(qc, LQ, first[n], length[n],
-        prefilter_score_offset, workspace[thread_id]);
-
-    score = score
-        - (int) (prefilter_bit_factor * (log_qlen + flog2(length[n])));
-
+    std::vector<std::pair<int, int>> first_prefilter_local;
+    first_prefilter_local.reserve(300);
+#pragma omp for schedule(static) nowait
+    for (size_t n = 0; n < num_dbs; n++) {
+      int score = ungapped_sse_score(qc, LQ, first[n], length[n], prefilter_score_offset, workspace[thread_id]);
+      score = score - (int) (prefilter_bit_factor * (log_qlen + flog2(length[n])));
+      first_prefilter_local.emplace_back(score, n);
+    }
 #pragma omp critical
-    first_prefilter.push_back(std::pair<int, int>(score, n));
+    first_prefilter.insert(first_prefilter.end(), first_prefilter_local.begin(), first_prefilter_local.end());
   }
   //filter after calculation of ungapped sse score to include at least min_prefilter_hits
   std::vector<std::pair<int, int> >::iterator it;
@@ -509,30 +509,31 @@ void Prefilter::prefilter_db(HMM* q_tmp, Hash<Hit>* previous_hits,
       << "HMMs passed 1st prefilter (gapless profile-profile alignment)  : "
       << count_dbs << std::endl;
 
-#pragma omp parallel for schedule(static)
-  // Loop over all database sequences
-//  for (int n = 0; n < count_dbs; n++) {
-  for (size_t i = 0; i < first_prefilter.size(); i++) {
+#pragma omp parallel
+  {
     int thread_id = 0;
 #ifdef OPENMP
     thread_id = omp_get_thread_num();
 #endif
-
-    int n = first_prefilter[i].second;
-
-    // Perform search step
-    int score = swStripedByte(qc, LQ, first[n], length[n], gap_init,
+    std::vector<std::pair<double, int>> hits_local;
+    hits_local.reserve(300);
+  // Loop over all database sequences
+//  for (int n = 0; n < count_dbs; n++) {
+#pragma omp for schedule(static) nowait
+    for (size_t i = 0; i < first_prefilter.size(); i++) {
+      int n = first_prefilter[i].second;
+      int score = swStripedByte(qc, LQ, first[n], length[n], gap_init,
         gap_extend, workspace[thread_id], workspace[thread_id] + W,
         workspace[thread_id] + 2 * W, prefilter_score_offset);
 
-    double evalue = factor * length[n] * fpow2(-score / prefilter_bit_factor);
-
-    if (evalue < prefilter_evalue_coarse_thresh) {
-#pragma omp critical
-      hits.push_back(std::pair<double, int>(evalue, n));
+      double evalue = factor * length[n] * fpow2(-score / prefilter_bit_factor);
+      if (evalue < prefilter_evalue_coarse_thresh) {
+        hits_local.emplace_back(evalue, n);
+      }
     }
+#pragma omp critical
+    hits.insert(hits.end(), hits_local.begin(), hits_local.end());
   }
-
   //filter after calculation of evalues to include at least min_prefilter_hits
   std::sort(hits.begin(), hits.end(), comparePair());
 
