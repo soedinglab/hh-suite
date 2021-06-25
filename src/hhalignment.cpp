@@ -181,7 +181,8 @@ void Alignment::Read(FILE* inf, char infile[], const char mark, const int maxcol
   int l;                  // Postion in alignment incl. gaps (first=1)
   int h;                  // Position in input line (first=0)
   int k;                  // Index of sequence being read currently (first=0)
-  char line[LINELEN] = "";  // input line
+  std::unique_ptr<char[]> line_ptr(new char[LINELEN]);
+  char* line = line_ptr.get();
   char cur_seq[maxcol];   // Sequence currently read in
   char* cur_name;         // Sequence currently read in
   int linenr = 0;           // current line number in input file
@@ -3459,7 +3460,8 @@ void Alignment::WriteToFile(std::stringstream& out, const char format[]) {
         out << ">" << sname[k] << std::endl << seq[k] + 1 << std::endl;
   } else  // PSI-BLAST format
   {
-    char line[LINELEN];
+    std::unique_ptr<char[]> line_ptr(new char[LINELEN]);
+    char* line = line_ptr.get();
     char tmp_name[NAMELEN];
     for (int k = 0; k < N_in; ++k)  // skip sequences before kfirst!!
       if (!(k == kss_pred || k == kss_conf || k == kss_dssp || k == ksa_dssp)

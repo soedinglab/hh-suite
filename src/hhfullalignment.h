@@ -27,8 +27,8 @@ public:
 private:
   HalfAlignment* qa; // query and template parts of the alignment
   HalfAlignment* ta; // query and template parts of the alignment
-  char symbol[LINELEN];         // symbol[h] = symbol (= - . + |) indicating match score for col h of alignment    
-  char posterior[LINELEN];      // posterior probability for pair of aligned columns 
+  char* symbol;         // symbol[h] = symbol (= - . + |) indicating match score for col h of alignment
+  char* posterior;      // posterior probability for pair of aligned columns
   void ClearSymbols() {for (int h=0; h<LINELEN-1; h++) symbol[h]=posterior[h]=' ';}
   void AddColumns(int i, int j, char prev_state, char state, float S, float PP);
   void AddGaps();

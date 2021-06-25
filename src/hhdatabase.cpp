@@ -371,7 +371,8 @@ void HHDatabaseEntry::getTemplateA3M(Parameters& par, float* pb,
       exit(4);
     }
 
-    char line[LINELEN];
+    std::unique_ptr<char[]> line_ptr(new char[LINELEN]);
+    char* line = line_ptr.get();
     if (!fgetline(line, LINELEN, dbf)) {
       //TODO: throw error
       HH_LOG(ERROR) << "In " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
@@ -398,7 +399,8 @@ void HHEntry::getTemplateHMM(FILE* dbf, char* name, Parameters& par,
                              int& format, float* pb, const float S[20][20],
                              const float Sim[20][20], HMM* t) {
   if (dbf != NULL) {
-    char line[LINELEN];
+    std::unique_ptr<char[]> line_ptr(new char[LINELEN]);
+    char* line = line_ptr.get();
     if (!fgetline(line, LINELEN, dbf)) {
       //TODO: throw error
       HH_LOG(ERROR) << "In " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
@@ -490,7 +492,8 @@ void HHFileEntry::getTemplateA3M(Parameters& par, float* pb,
                                  const float S[20][20], const float Sim[20][20],
                                  Alignment& tali) {
 
-  char line[LINELEN];
+  std::unique_ptr<char[]> line_ptr(new char[LINELEN]);
+  char* line = line_ptr.get();
   HMM* t = new HMM(MAXSEQDIS, par.maxres);
 
   FILE* inf = fopen(file, "r");

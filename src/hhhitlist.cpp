@@ -48,7 +48,8 @@ void HitList::PrintHitList(HMM* q, std::stringstream& out,
       << std::endl;
 #endif
 
-  char line[LINELEN];
+  std::unique_ptr<char[]> line_ptr(new char[LINELEN]);
+  char* line = line_ptr.get();
   Reset();
   while (!End()) {
     Hit hit = ReadNext();
@@ -284,6 +285,8 @@ void HitList::PrintM8File(HMM* q, std::stringstream& outbuffer, const int nhits,
     // d1c8da_	Q32Z53	0.618	547	334	0	1	548	1	542	3.11E-185	646
     
     int i = 0;
+    std::unique_ptr<char[]> line_ptr(new char[LINELEN]);
+    char* line = line_ptr.get();
     while (!End()) {
         i++;
         Hit hit = ReadNext();
@@ -291,7 +294,6 @@ void HitList::PrintM8File(HMM* q, std::stringstream& outbuffer, const int nhits,
           break;
         if (nhits >= b && hit.Eval > E)
           continue;
-        char line[LINELEN];
         int gapOpenCount = 0;
         int missMatchCount = 0;
         int matchCount  = 0;
@@ -340,6 +342,8 @@ void HitList::PrintScoreFile(HMM* q, std::stringstream& outbuffer) {
   //              d1qsaa2               3 168 124  145.55  239.22  57.36
 
   int i = 0;
+  std::unique_ptr<char[]> line_ptr(new char[LINELEN]);
+  char* line = line_ptr.get();
   while (!End()) {
     i++;
     Hit hit = ReadNext();
@@ -361,8 +365,6 @@ void HitList::PrintScoreFile(HMM* q, std::stringstream& outbuffer) {
       n = 1;
     else
       n = 0;
-
-    char line[LINELEN];
 
     sprintf(line, "%-20s %-10s %1i %5i %3i %8.3f %7.2f %6.2f %7.2f %8.3f\n",
         hit.name, hit.fam, n, hit.L, hit.matched_cols, -1.443 * hit.logPval,
@@ -397,7 +399,8 @@ void HitList::WriteToAlifile(HMM* q, char* alitabfile,
 void HitList::WriteToAlifile(HMM* q, std::stringstream& out,
     const int b, const int B, const int z, const int Z,
     const float p, const double E) {
-  char line[LINELEN];
+  std::unique_ptr<char[]> line_ptr(new char[LINELEN]);
+  char* line = line_ptr.get();
 
   // Store all dbfiles and ftell positions of templates to be displayed and realigned
   int nhits = 0;

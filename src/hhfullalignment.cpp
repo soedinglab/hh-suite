@@ -34,6 +34,8 @@ FullAlignment::FullAlignment(int maxseqdis) {
   ta = new HalfAlignment(maxseqdis);
   if (!qa || !ta)
     MemoryError("space for formatting HMM-HMM alignment", __FILE__, __LINE__, __func__);
+  symbol = new char[LINELEN];
+  posterior = new char[LINELEN];
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -41,6 +43,8 @@ FullAlignment::FullAlignment(int maxseqdis) {
 FullAlignment::~FullAlignment() {
   delete qa;
   delete ta;
+  delete[] symbol;
+  delete[] posterior;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -194,7 +198,8 @@ void FullAlignment::Build(HMM* q, Hit& hit, const int nseqdis, const float S[20]
 /////////////////////////////////////////////////////////////////////////////////////
 void FullAlignment::PrintHeader(std::stringstream& out, HMM* q, Hit& hit) {
   out << ">" << hit.longname << std::endl;
-  char line[LINELEN];
+  std::unique_ptr<char[]> line_ptr(new char[LINELEN]);
+  char* line = line_ptr.get();
 
   sprintf(line,
       "Probab=%-.2f  E-value=%-.2g  Score=%-.2f  Aligned_cols=%i  Identities=%i%%  Similarity=%-.3f  Sum_probs=%.1f  Template_Neff=%-.3f\n\n",
@@ -222,7 +227,8 @@ void FullAlignment::PrintHHR(std::stringstream& out, Hit& hit, const char showco
   for (k = 0; k < ta->n; k++)
     lt[k] = ta->l[k][hit.j1];
   
-  char line[LINELEN];
+  std::unique_ptr<char[]> line_ptr(new char[LINELEN]);
+  char* line = line_ptr.get();
   while (hh < ta->pos - 1) // print alignment block
   {
     // Print query secondary structure sequences

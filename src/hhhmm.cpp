@@ -200,7 +200,8 @@ HMM& HMM::operator=(HMM& q) {
 /////////////////////////////////////////////////////////////////////////////////////
 int HMM::Read(FILE* dbf, const int maxcol, const int nseqdis, float* pb,
 		char* path) {
-	char line[LINELEN] = "";    // input line
+    std::unique_ptr<char[]> line_ptr(new char[LINELEN]);
+    char* line = line_ptr.get();
 	char str3[8] = "", str4[8] = ""; // first 3 and 4 letters of input line
 	char* ptr;                // pointer for string manipulation
 	int i = 0;                  // index for match state (first=1)
@@ -692,8 +693,9 @@ int HMM::Read(FILE* dbf, const int maxcol, const int nseqdis, float* pb,
 //// Read an HMM from a HMMer .hmm file; return 0 at end of file
 /////////////////////////////////////////////////////////////////////////////////////
 int HMM::ReadHMMer(FILE* dbf, const char showcons, float* pb, char* filestr) {
-	char line[LINELEN] = "";    // input line
-	char desc[DESCLEN] = "";    // description of family
+    std::unique_ptr<char[]> line_ptr(new char[LINELEN]);
+    char* line = line_ptr.get();
+    char desc[DESCLEN] = "";    // description of family
 	char str4[5] = "";          // first 4 letters of input line
 	char* ptr;                // pointer for string manipulation
 	int i = 0;                  // index for match state (first=1)
@@ -1203,7 +1205,8 @@ int HMM::ReadHMMer(FILE* dbf, const char showcons, float* pb, char* filestr) {
 //// Read an HMM from a HMMER3 .hmm file; return 0 at end of file
 /////////////////////////////////////////////////////////////////////////////////////
 int HMM::ReadHMMer3(FILE* dbf, const char showcons, float* pb, char* filestr) {
-	char line[LINELEN] = "";    // input line
+    std::unique_ptr<char[]> line_ptr(new char[LINELEN]);
+    char* line = line_ptr.get();
 	char desc[DESCLEN] = "";    // description of family
 	char str4[5] = "";          // first 4 letters of input line
 	char* ptr;                // pointer for string manipulation
@@ -2170,7 +2173,8 @@ void HMM::WriteToFile(std::stringstream& out, const int max_seqid,
 		const int coverage, const int qid, const int Ndiff, const float qsc,
 		const int argc, const char** argv, const float* pb) {
 	const int SEQLEN = 100; // number of residues per line for sequences to be displayed
-	char line[LINELEN];
+    std::unique_ptr<char[]> line_ptr(new char[LINELEN]);
+    char* line = line_ptr.get();
 
 	if (trans_lin == 1)
 		InternalError(

@@ -10,8 +10,8 @@
 void ReadQueryFile(Parameters& par, FILE* inf, char& input_format,
     char use_global_weights, HMM* q, Alignment* qali, char infile[], float* pb,
     const float S[20][20], const float Sim[20][20]) {
-  char line[LINELEN];
-
+  std::unique_ptr<char[]> line_ptr(new char[LINELEN]);
+  char* line = line_ptr.get();
   if (!fgetline(line, LINELEN, inf)) {
 	HH_LOG(ERROR) << "Error in " << __FILE__ << ":" << __LINE__ << ": " << __func__ << ":" << std::endl;
 	HH_LOG(ERROR) << "\t" << infile << " is empty!\n";
