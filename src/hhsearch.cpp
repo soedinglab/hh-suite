@@ -136,6 +136,7 @@ void HHsearch::help(Parameters& par, char all) {
     printf(" -excl <range>       exclude query positions from the alignment, e.g. '1-33,97-168' \n");
     printf(" -realign_max <int>  realign max. <int> hits (default=%i)                        \n", par.realign_max);
     printf(" -alt <int>          show up to this many alternative alignments with raw score > smin(def=%i)  \n", par.altali);
+    printf(" -premerge <int> merge <int> hits to query MSA before aligning remaining hits (def=%i)\n", par.premerge);
     printf(" -smin <float>       minimum raw score for alternative alignments (def=%.1f)  \n", par.smin);
     printf(" -shift [-1,1]       profile-profile score offset (def=%-.2f)                         \n", par.shift);
     printf(" -corr [0,1]         weight of term for pair correlations (def=%.2f)                \n", par.corr);
@@ -501,8 +502,10 @@ void HHsearch::ProcessArguments(Parameters& par) {
 		} else if (!strncmp(argv[i], "-cpu", 4) && (i < argc - 1))
 			par.threads = atoi(argv[++i]);
 		else if (!strcmp(argv[i], "-maxmem") && (i < argc - 1)) {
-			par.maxmem = atof(argv[++i]);
-		} else if (!strcmp(argv[i], "-corr") && (i < argc - 1))
+            par.maxmem = atof(argv[++i]);
+        } else if (!strncmp(argv[i],"-premerge",9) && (i<argc-1)) {
+            par.premerge=atoi(argv[++i]);
+        } else if (!strcmp(argv[i], "-corr") && (i < argc - 1))
 			par.corr = atof(argv[++i]);
 		else if (!strcmp(argv[i], "-ovlp") && (i < argc - 1))
 			par.min_overlap = atoi(argv[++i]);
