@@ -2,18 +2,19 @@
 
 from hh_reader import read_result
 from copy import deepcopy
+from glob import glob
 from pdbx.reader.PdbxReader import PdbxReader
 from pdbx.writer.PdbxWriter import PdbxWriter
-import re, os, sys, tempfile, glob
+import re, os, sys, tempfile
 
 from operator import itemgetter  # hzhu
 from itertools import groupby    # hzhu
 
-EMPTY = '*'
+EMPTY = '.'
 GAP = '-'
 DEBUG_MODE = False
 
-class Gap: 
+class Gap:
     """ A gap is a continuous stretch of indels.
         It is defined by a opening position and a size/length
     """
@@ -23,27 +24,27 @@ class Gap:
 
     def __repr__(self):
         return 'Gap opening pos = %d, size = %d' % (self.open_pos, self.size)
-        
+
 class Grid:
     """
     Implementation of 2D grid of cells
     Includes boundary handling
     """
-    
+
     def __init__(self, grid_height, grid_width):
         """
         Initializes grid to be empty, take height and width of grid as parameters
         Indexed by rows (left to right), then by columns (top to bottom)
         """
-        
+
         self._grid_height = grid_height
         self._grid_width = grid_width
         self._cells = [ [ EMPTY for dummy_col in range(self._grid_width) ]
                        for dummy_row in range(self._grid_height)]
-                
+
     def __str__(self):
         """ Return multi-line string represenation for grid """
-        
+
         ans = ''
         for row in range(self._grid_height):
             ans += ''.join(self._cells[row])
@@ -52,29 +53,29 @@ class Grid:
 
     def clear(self):
         """ Clears grid to be empty """
-        
+
         self._cells = [[EMPTY for dummy_col in range(self._grid_width)]
                        for dummy_row in range(self._grid_height)]
-    
+
     def get_grid_height(self):
         """ Return the height of the grid """
-        
+
         return self._grid_height
 
     def get_grid_width(self):
         """ Return the width of the grid """
-        
+
         return self._grid_width
-    
+
     def get_cell(self, row, col):
         return self._cells[row][col]
 
     def get_seq_start(self, row):
         """ Returns the start position of the sequence """
-        
+
         index = 0
         for pos in self._cells[row]:
-            if pos != EMPTY: 
+            if pos != EMPTY:
                 return index
             index += 1
 
@@ -82,23 +83,23 @@ class Grid:
 
     def get_seq_end(self, row):
         """ Returns the end position of the sequence """
-        
+
         index = 0
         for pos in reversed(self._cells[row]):
-            if pos != EMPTY: 
+            if pos != EMPTY:
                 return self.get_grid_width() - index
             index += 1
 
         return None
 
-    def get_gaps(self, row): 
+    def get_gaps(self, row):
         """ Return the position of gaps in a row """
-        
+
         gaps = list()
 
         index = 0
         for pos in self._cells[row]:
-            if pos == GAP: 
+            if pos == GAP:
                 gaps.append(index)
             index += 1
 
@@ -109,7 +110,7 @@ class Grid:
             The opening positions of the gaps are wrt. the gapless seq
         """
         # get all the indels
-        indels = self.get_gaps(row)  
+        indels = self.get_gaps(row)
         gaps = []
         # combine continuous indels into a gap
         for k,i in groupby( enumerate(indels), lambda x: x[0]-x[1] ):
@@ -120,9 +121,9 @@ class Grid:
         for i in range(1, len(gaps)):
             # offset by total gap number before
             gaps[i].open_pos -= sum([gaps[j].size for j in range(i)])
-            
+
         return gaps  # a list of Gap instances
-    
+
     def get_seq_indeces(self, row):
 
         seq = list()
@@ -131,7 +132,7 @@ class Grid:
                 seq.append(pos)
 
         return seq
-            
+
     ## def get_gap_list(self):  # hzhu commented this out. wrote a new version
     ##     """ Returns a list of list of all gap positions in the sequence grid. """
     ##     gap_pos = set()
@@ -142,17 +143,17 @@ class Grid:
 
     ##     gap_pos = list(sorted(gap_pos))
     ##     boundaries = [ (x + 1) for x, y in zip(gap_pos, gap_pos[1:]) if y - x != 1 ]
- 
+
     ##     gap_list = list()
     ##     prev = 0
- 
+
     ##     for boundary in boundaries:
     ##         sub_list = [ pos for pos in gap_pos[prev:] if pos < boundary ]
     ##         gap_list.append(sub_list)
     ##         prev += len(sub_list)
- 
+
     ##     gap_list.append([ x for x in gap_pos[prev:]])
-    
+
     ##     return gap_list
 
     def get_gap_list(self):
@@ -165,52 +166,51 @@ class Grid:
         for row in range(self.get_grid_height()):
             gap_pos = []
             gaps = self.get_gaps_ref_gapless(row)
-             
+
             for g in gaps:
                 if g.open_pos in gap_dict: # if there is already gaps at this open pos
                     if g.size > gap_dict[g.open_pos].size: # if new gap is bigger
                         gap_dict[g.open_pos] = g  # keep the larger gap as they overlap
                 else:
                     gap_dict[g.open_pos] = g
-                    
+
         gap_list = sorted(list(gap_dict.values()), key=lambda x: x.open_pos) # sort according to start position
         return gap_list  # a list of Gap instances
-        
+
     def set_gap(self, row, col):
         """ Set cell with index (row, col) to be a gap """
-        
+
         self._cells[row][col] = GAP
 
     def set_empty(self, row, col):
         """ Set cell with index (row, col) to be a gap """
-        
+
         self._cells[row][col] = EMPTY
-    
+
     def set_cell(self, row, col, res):
         """ Set cell with index (row, col) to be full """
-        
+
         self._cells[row][col] = res
 
     def is_empty(self, row, col):
         """ Checks whether cell with index (row, col) is empty """
-        
         return self._cells[row][col] == EMPTY
 
     def is_gap(self, row, col):
         """ Checks whetehr cell with indxex (row, col) is a gap """
-        
+
         return self._cells[row][col] == GAP
 
     def insert_gaps(self, cols):
         """ Inserts a gaps into a column of the template grid """
-        
+
         for col in cols:
             for row in range(self._grid_height):
                 if col >= self.get_seq_start(row) and col < self.get_seq_end(row):
                     self._cells[row].insert(col, GAP)
                 else:
                     self._cells[row].insert(col, EMPTY)
-            
+
             self._grid_width += 1
 
     def insert_gaps_row(self, cols, row):
@@ -220,7 +220,7 @@ class Grid:
                 self._cells[row].insert(col, GAP)
             else:
                 self._cells[row].insert(col, EMPTY)
-            # NOTE: grid_with should not be changed after every row is updated.    
+            # NOTE: grid_with should not be changed after every row is updated.
             #self._grid_width += 1
 
     def clean_trail_empty(self):
@@ -233,8 +233,8 @@ class Grid:
                     break
             if i+1 > max_width:
                 max_width = i+1
-                
-        # delete excessive EMPTY        
+
+        # delete excessive EMPTY
         for row in range(self._grid_height):
             del self._cells[row][max_width:]
 
@@ -243,7 +243,7 @@ class Grid:
                                  for row in range(self._grid_height) if len(self._cells[row]) < max_width]
         self._grid_width = max_width
         return
-    
+
     def remove_gaps(self, keep_width=True): # hzhu add keep_width option
         """ Removes all gaps from the grid. """
 
@@ -261,32 +261,31 @@ class Grid:
 
         if not keep_width: # hzhu if width is not kept, make sure width is consistent
             self.clean_trail_empty()
-                    
+
         return
-                
+
 
 class QueryGrid(Grid):
 
     def __init__(self, grid_height, grid_width):
         Grid.__init__(self, grid_height, grid_width)
-    
+
     def get_query_start(self, row):
         """ Returns the query start position """
         return self.get_seq_start(row) + 1
 
     def get_query_end(self, row):
         """ Returns the query end postion """
-        
+
         return self.get_seq_end(row) - len(self.get_gaps(row))
 
     def get_col_residue(self, col):
         """ Tries to find a the query residue in a given column. Used by derive_global_seq() to
         identify the global query sequence """
-        
+
         for row in range(self.get_grid_height()):
             if not self.is_empty(row, col):
                 return self._cells[row][col]
-
         return GAP
 
 class TemplateGrid(Grid):
@@ -300,20 +299,33 @@ class TemplateGrid(Grid):
         self._chain = list()
         self._organism = list()
         self._resolution = list()
-        
-    def display(self):
+
+    def display(self, noduplicates):
         """ Return multi-line string represenation for grid """
-        
         ans = ''
-        for row in range(self._grid_height):
-            ans += '>P1;{p}\nstructure:{p}:{s}:{c}:{e}:{c}::{o}:{r}:\n{a}*\n'.format(
-                p = self._pdb_code[row],
-                s = add_white_space_end(self.get_template_start(row), 4),
-                e = add_white_space_end(self.get_template_end(row), 4),
-                c = self._chain[row],
-                o = self._organism[row],
-                r = self._resolution[row], 
-                a = ''.join(self._cells[row]).replace(EMPTY, GAP).replace('#', GAP))
+        if noduplicates:
+            for row in range(self._grid_height):
+                ans += '>P1;{p}_{c}_{line}{start}{end}\nstructure:{p}:{s}:{c}:{e}:{c}::{o}:{r}:\n{a}*\n'.format(
+                    p = self._pdb_code[row],
+                    s = add_white_space_end(self.get_template_start(row), 4),
+                    e = add_white_space_end(self.get_template_end(row), 4),
+                    c = self._chain[row],
+                    o = self._organism[row],
+                    r = self._resolution[row],
+                    a = ''.join(self._cells[row]).replace(EMPTY, GAP).replace('#', GAP),
+    		        line = str(row),
+    		        start = self.get_template_start(row),
+    		        end = self.get_template_end(row))
+        else:
+            for row in range(self._grid_height):
+                ans += '>P1;{p}\nstructure:{p}:{s}:{c}:{e}:{c}::{o}:{r}:\n{a}*\n'.format(
+                    p = self._pdb_code[row],
+                    s = add_white_space_end(self.get_template_start(row), 4),
+                    e = add_white_space_end(self.get_template_end(row), 4),
+                    c = self._chain[row],
+                    o = self._organism[row],
+                    r = self._resolution[row],
+                    a = ''.join(self._cells[row]).replace(EMPTY, GAP).replace('#', GAP))
 
         return ans
 
@@ -330,11 +342,11 @@ class TemplateGrid(Grid):
             g2 = ', '.join([str(gap) for gap in self.get_gaps(row)]),
             seq = ''.join(self._cells[row]))
 
-        return ans 
+        return ans
 
     def set_metadata(self, row, start, end, pdb_code, chain, organism, resolution):
         """ Used by create_template_grid() to setup metadata of pir template """
-        
+
         self._start.append(start)
         self._end.append(end)
         self._pdb_code.append(pdb_code)
@@ -343,23 +355,23 @@ class TemplateGrid(Grid):
         self._resolution.append(resolution)
 
     def set_map(self, row, start, end):
-        
+
         self._start[row] = start
         self._end[row] = end
 
     def get_template_start(self, row):
         """ Returns the template start position """
-        
+
         return self._start[row]
 
     def get_template_end(self, row):
         """ Return sthe template end position """
-        
+
         return self._end[row]
 
     def del_row(self, row):
         """ Removes a complete template entry from the grid """
-        
+
         del self._cells[row]
         del self._start[row]
         del self._end[row]
@@ -373,45 +385,45 @@ class TemplateGrid(Grid):
 
 def add_white_space_end(string, length):
     """ Adds whitespaces to a string until it has the wished length"""
-    
+
     edited_string = str(string)
-    
+
     if len(edited_string) >= length:
         return string
     else:
         while len(edited_string) != length:
             edited_string += ' '
-    
+
     return edited_string
 
 def convert_aa_code(three_letter, convert):
     """
     Assumes a string that contains a three letter aminoacid code and
     returns the corresponding one letter code.
-    """    
-    
+    """
+
     aa_code = {
-        'CYS': 'C', 
-        'ASP': 'D', 
-        'SER': 'S', 
-        'GLN': 'Q', 
+        'CYS': 'C',
+        'ASP': 'D',
+        'SER': 'S',
+        'GLN': 'Q',
         'LYS': 'K',
-        'ILE': 'I', 
-        'PRO': 'P', 
-        'THR': 'T', 
-        'PHE': 'F', 
-        'ASN': 'N', 
-        'GLY': 'G', 
-        'HIS': 'H', 
-        'LEU': 'L', 
-        'ARG': 'R', 
-        'TRP': 'W', 
-        'ALA': 'A', 
-        'VAL': 'V', 
-        'GLU': 'E', 
-        'TYR': 'Y', 
+        'ILE': 'I',
+        'PRO': 'P',
+        'THR': 'T',
+        'PHE': 'F',
+        'ASN': 'N',
+        'GLY': 'G',
+        'HIS': 'H',
+        'LEU': 'L',
+        'ARG': 'R',
+        'TRP': 'W',
+        'ALA': 'A',
+        'VAL': 'V',
+        'GLU': 'E',
+        'TYR': 'Y',
         'MET': 'M',
-      } 
+      }
 
     non_canonical = {
         'MSE': 1,
@@ -501,12 +513,12 @@ def get_query_name(hhr_file):
         for line in fh:
             if line.startswith('Query'):
                 # match the PDB Code
-                m = re.search('(\d[A-Z0-9]{3})_(\S)', line) 
+                m = re.search(r'(\d[A-Z0-9]{3})_(\S)', line)
 
-                if m: 
+                if m:
                     pdb_code = m.group(1)
                     chain = m.group(2)
-                else: 
+                else:
                     pdb_code = 'UKNP'
                     chain = 'A'
                     # raise ValueError('Input HHR-File Does not seem to be a PDB-Structure')
@@ -517,7 +529,7 @@ def get_query_name(hhr_file):
 
 def get_cif_files(folder):
     """ Gets all cif files located in folder. """
-    
+
     return glob(os.path.join(folder, '*.cif'))
 
 def open_cif(cif_file):
@@ -529,7 +541,7 @@ def open_cif(cif_file):
         reader.read(data)
 
     block = data[0]
-    
+
     return block
 
 def get_pdb_entry_id(block):
@@ -537,7 +549,7 @@ def get_pdb_entry_id(block):
 
     entry = block.getObj('entry')
     entry_id = entry.getValue('id')
-    
+
     return entry_id
 
 
@@ -549,7 +561,7 @@ def template_id_to_pdb(template_id):
     m = re.match(r'/^(\d[A-Za-z0-9]{3})$', template_id)
     if m:
         return m.group(1).upper(), 'A'
-    
+
     # PDB CODE with chain Identifier
     m = re.match(r'^(\d[A-Za-z0-9]{3})_(\S)$', template_id)
     if m:
@@ -559,7 +571,7 @@ def template_id_to_pdb(template_id):
     m = re.match(r'^(\d[A-Za-z0-9]{3})([A-Za-z0-9]?)_\d+$', template_id)
     if m:
         return m.group(1).upper(), m.group(2).upper()
-    
+
     # No PDB code and chain identified
     return None, None
 
@@ -585,17 +597,17 @@ def create_template_grid(hhr_data):
         # Get pdb_code and chain identifier of template
         pdb_code, chain =  template_id_to_pdb(template.template_id)
 
-        m = re.search("(\d+.\d+)A", template.template_info) # try to extract resolution of the structure
-        
-        if m: 
+        m = re.search(r"(\d+.\d+)A", template.template_info) # try to extract resolution of the structure
+
+        if m:
             resolution = m.group(1)
-        else: 
+        else:
             resolution = ""
 
-        m = re.search("\{(.*)\}", template.template_info) # try to extract the organism
-        if m: 
+        m = re.search(r"\{(.*)\}", template.template_info) # try to extract the organism
+        if m:
             organism = m.group(1).replace(":", " ") # make sure that no colons are in the organism
-        else: 
+        else:
             organism = ""
 
         template_grid.set_metadata(row, start, end, pdb_code, chain, organism, resolution)
@@ -612,11 +624,11 @@ def to_seq(ali):
         return ''.join(ali)
     else:
         return ali
-    
+
 
 def create_query_grid(hhr_data):
     """ Creates a Query Grid """
-    
+
     total_seq = len(hhr_data)
     query_max = max( [ hhr.start[0] + len(to_seq(hhr.query_ali)) for hhr in hhr_data ] ) - 1
 
@@ -639,7 +651,7 @@ def create_gapless_grid(grid):
     """ Returns a gapless grid """
 
     gapless = deepcopy(grid)
-    gapless.remove_gaps(keep_width=False)  # hzhu:  shrink grid
+    gapless.remove_gaps(keep_width=True)  # hzhu:  shrink grid
 
     return gapless
 
@@ -648,23 +660,20 @@ def process_query_grid(query_grid, gapless_grid):
     """
     gaplist = query_grid.get_gap_list()
     off_set = 0
-    
+
     for g in gaplist:
         gapless_grid.insert_gaps([ p + off_set for p in range(g.open_pos, g.open_pos+g.size) ])
         off_set += g.size
-        
+
     return gapless_grid
 
-def derive_global_seq(processed_query_grid, query_name, query_chain):
-
+def derive_global_seq(processed_query_grid, query_name, query_chain, processed_grid_length_max):
     global_seq = list()
-
-    for col in range(processed_query_grid.get_grid_width()):
+    for col in range(processed_grid_length_max):
         global_seq.append(processed_query_grid.get_col_residue(col))
-
     # this is the query entry
     header = '>P1;{q}\nsequence:{q}:1    :{c}:{l}  :{c}::::\n'.format(
-        q = query_name, 
+        q = query_name,
         l = len(global_seq),
         c = query_chain)
 
@@ -675,9 +684,9 @@ def process_template_grid(query_grid, template_grid):
         Only add gaps from **other** query_grids into template grid (NOT gapless)
     """
     gaplist = query_grid.get_gap_list()  # use this to keep the offset
-    
+
     for row in range(template_grid.get_grid_height()):
-        # do NOT consider gaps in current query row         
+        # do NOT consider gaps in current query row
         gaplist_row = query_grid.get_gaps_ref_gapless(row)
         gapdict_row = dict(zip([g.open_pos for g in gaplist_row],
                                [g.size     for g in gaplist_row]))
@@ -686,35 +695,35 @@ def process_template_grid(query_grid, template_grid):
             # if there is a gap with same opening position in the current row,
             # only consider g if it is larger than the on in the current row
             if g.open_pos in gapdict_row:
-                if g.size > gapdict_row[g.open_pos]: 
+                if g.size > gapdict_row[g.open_pos]:
                     template_grid.insert_gaps_row([ p + off_set for p in range(g.open_pos,
                                                                               g.open_pos+g.size-gapdict_row[g.open_pos]) ], row)
             else:
                 template_grid.insert_gaps_row([ p + off_set for p in range(g.open_pos, g.open_pos+g.size) ], row)
-                 
+
             off_set += g.size  # even if the gaps are not inserted, the offset should be adjusted
 
     template_grid.clean_trail_empty()  # clean the redundant trailing EMPTY char
-    
+
     return template_grid
 
 def compare_with_cifs(template_grid, folder, output_path, convert, threshold):
     """
-    Compare the PIR Alignment with Atomsection of a mmCIF file. To make the ATOM-Section of 
+    Compare the PIR Alignment with Atomsection of a mmCIF file. To make the ATOM-Section of
     a mmCIF file compatible with MODELLER, each residue has in the ATOM-Section has to match
     corresponding positions in the PIR-Alignment
     """
 
     # glob the mmCif files from given directory and map the PDB identifier to the path
-    cif_files = glob.glob(os.path.join(folder, '*.cif'))
+    cif_files = glob(os.path.join(folder, '*.cif'))
     cif_paths = { path.split('/')[-1].split('.')[0].upper() : path for path in cif_files }
     cif_edits = dict()
-    
+
 
     # create the path where renumbered cifs are saved to
     if not os.path.exists(output_path):
         os.mkdir(output_path)
-    
+
     # if the cif does not contain any residue of the por alignment we delete it
     del_row = list()
 
@@ -745,16 +754,17 @@ def compare_with_cifs(template_grid, folder, output_path, convert, threshold):
 
         cif_seq = dict()
         # For the case that we have to rename a chain
-        cif_chains = set([]) 
+        cif_chains = set([])
 
         # Iterate through the atomsection of the cif file
         for atom_row in range(0, atom_site.getRowCount()):
-            
+
             try:
                 if atom_site.getValue('label_comp_id', atom_row) == 'HOH':
                     continue
                 cif_chain = atom_site.getValue('label_asym_id', atom_row)
                 pdb_chain = atom_site.getValue('auth_asym_id', atom_row)   # use PDB chain ID
+                #cif_chain = pdb_chain
             except IndexError:
                 pass
 
@@ -763,19 +773,19 @@ def compare_with_cifs(template_grid, folder, output_path, convert, threshold):
             # We do not care about the residues apart from the chain
             #if cif_chain != chain: # hzhu
             if pdb_chain != chain:  # hhr uses PDB chain, not the cif chain! hzhu
-                continue     
+                continue
             # and update the chain id from pdb_chain to cif_chain
             if atom_site.getValue('group_PDB', atom_row).startswith('ATOM'):  # hzhu in case HETATM ruins ch id
                 template_grid._chain[row] = cif_chain
-                
-            # get the residue and the residue number 
+
+            # get the residue and the residue number
             try:
                 res_num = int(atom_site.getValue("label_seq_id", atom_row))
             except ValueError:
                 continue
 
             residue = atom_site.getValue('label_comp_id', atom_row)
-            residue = convert_aa_code(residue, convert)         
+            residue = convert_aa_code(residue, convert)
 
 
             if res_num not in cif_seq.keys():
@@ -784,7 +794,7 @@ def compare_with_cifs(template_grid, folder, output_path, convert, threshold):
                 continue
             elif res_num in cif_seq.keys() and cif_seq[res_num] != residue:
                 cif_seq[res_num] = '-'
-                
+
                 if DEBUG_MODE:
                     print ('! {p} {c}: mmCIF contains a residue position that is assigned {cr} to two residues. Removing it.'.format(
                         p = pdb_code,
@@ -795,35 +805,35 @@ def compare_with_cifs(template_grid, folder, output_path, convert, threshold):
         ## Rename chain if necessary                                          ##
         ########################################################################
 
-        chain_idx = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-
-        if len(template_grid._chain[row]) != 1:
-            i = 0
-            new_chain = 0
-            
-            while i < len(chain_idx):
-                if chain_idx[i] in cif_chains:
-                    if DEBUG_MODE:
-                        print ('! {p} {c}: Chain identifier {i} is already taken.'.format(
-                            p = pdb_code,
-                            c = chain,
-                            i = chain_idx[i]))
-                    i += 1
-                else:
-                    new_chain = chain_idx[i]
-                    break
-
-            if new_chain == 0:
-                if DEBUG_MODE:
-                    print ('! {p} {c}: Could not use {p}. The chain identifier {c} is not compatible with MODELLER (2 letters) and could not be renanmed.'.format(
-                        p = pdb_code, 
-                        c = chain))
-                
-                del_row.append(row)
-                continue
-
-            if new_chain != 0:
-                print ('Selected new chain name {c}'.format(c = new_chain))
+        # chain_idx = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+        #
+        # if len(template_grid._chain[row]) != 1:
+        #     i = 0
+        #     new_chain = 0
+        #
+        #     while i < len(chain_idx):
+        #         if chain_idx[i] in cif_chains:
+        #             if DEBUG_MODE:
+        #                 print ('! {p} {c}: Chain identifier {i} is already taken.'.format(
+        #                     p = pdb_code,
+        #                     c = chain,
+        #                     i = chain_idx[i]))
+        #             i += 1
+        #         else:
+        #             new_chain = chain_idx[i]
+        #             break
+        #
+        #     if new_chain == 0:
+        #         if DEBUG_MODE:
+        #             print ('! {p} {c}: Could not use {p}. The chain identifier {c} is not compatible with MODELLER (2 letters) and could not be renanmed.'.format(
+        #                 p = pdb_code,
+        #                 c = chain))
+        #
+        #         del_row.append(row)
+        #         continue
+        #
+        #     if new_chain != 0:
+        #         print ('Selected new chain name {c}'.format(c = new_chain))
 
             #TODO
 
@@ -835,7 +845,7 @@ def compare_with_cifs(template_grid, folder, output_path, convert, threshold):
         mod_pos = dict()
         mapping = dict()
 
-        for pos_cif, pos_tem in zip(range(template_grid.get_template_start(row), 
+        for pos_cif, pos_tem in zip(range(template_grid.get_template_start(row),
             template_grid.get_template_end(row) + 1), template_grid.get_seq_indeces(row)):
 
             res_tem = template_grid.get_cell(row, pos_tem)
@@ -844,7 +854,7 @@ def compare_with_cifs(template_grid, folder, output_path, convert, threshold):
                 res_cif = cif_seq[pos_cif]
             except KeyError:
                 res_cif = -1
-                
+
 
             match = True if res_tem == res_cif else False
 
@@ -1127,7 +1137,7 @@ def compare_with_cifs(template_grid, folder, output_path, convert, threshold):
 
                     mod_pos[pos_cif] = 56
                     mapping[(pos_tem, res_tem)] = (pos_cif, 'E')
-                
+
                 elif res_cif == 57 and res_tem == 'F':
 
                     mod_pos[pos_cif] = 57
@@ -1207,16 +1217,16 @@ def compare_with_cifs(template_grid, folder, output_path, convert, threshold):
                     # insert a gap
                     template_grid.set_empty(row, pos_tem)
                     mapping[(pos_tem, res_tem)] = (pos_cif, res_cif)
-                    
+
                     if DEBUG_MODE:
-                        print ('! {p} {c}: template pos {pt} ({rt}) does not match cif pos {pc} ({rc}). Replacing with gap.'.format( 
-                            p = pdb_code, 
+                        print ('! {p} {c}: template pos {pt} ({rt}) does not match cif pos {pc} ({rc}). Replacing with gap.'.format(
+                            p = pdb_code,
                             c = chain,
-                            pt = pos_tem, 
-                            rt = res_tem, 
-                            pc = pos_cif, 
+                            pt = pos_tem,
+                            rt = res_tem,
+                            pc = pos_cif,
                             rc = res_cif if res_cif != -1 else 'DNE'))
-                    
+
                     if res_cif != -1:
                         del_pos.append(pos_cif)
             else:
@@ -1233,8 +1243,8 @@ def compare_with_cifs(template_grid, folder, output_path, convert, threshold):
         except IndexError:
             # This exception handles cases in which all residues were deleted
             if DEBUG_MODE:
-                print ('! {p} {c}: Removing {p} from alignment. No residues matched the alignment sequence.'.format( 
-                    p = pdb_code, 
+                print ('! {p} {c}: Removing {p} from alignment. No residues matched the alignment sequence.'.format(
+                    p = pdb_code,
                     c = chain))
 
             del_row.append(row)
@@ -1245,7 +1255,7 @@ def compare_with_cifs(template_grid, folder, output_path, convert, threshold):
         ########################################################################
 
         if threshold > 0:
-            
+
             gaps = 0
             res = 0
 
@@ -1259,18 +1269,18 @@ def compare_with_cifs(template_grid, folder, output_path, convert, threshold):
                     res += 1
 
             ratio = res/float(gaps + res)
-        
+
             if ratio > threshold:
-                print ('! Template {p} successfully passed residue ratio ({r:.2f} / {t}).'.format( 
+                print ('! Template {p} successfully passed residue ratio ({r:.2f} / {t}).'.format(
                     p = pdb_code,
                     r = ratio,
                     t = threshold ))
             else:
-                print ('! Template {p} did not passed residue ratio ({r:.2f} / {t}). Removing it from pir Alignment.'.format( 
+                print ('! Template {p} did not passed residue ratio ({r:.2f} / {t}). Removing it from pir Alignment.'.format(
                     p = pdb_code,
                     r = ratio,
-                    t = threshold ))            
-            
+                    t = threshold ))
+
                 if row not in del_row:
                     del_row.append(row)
                     continue
@@ -1281,10 +1291,10 @@ def compare_with_cifs(template_grid, folder, output_path, convert, threshold):
 
         rem_row = list() # verbosity: saves information about removed residues
         mod_row = list() # verbosity: saves information about modified residues
-        cha_row = list() # verbosity: saves any other changes 
+        cha_row = list() # verbosity: saves any other changes
 
         for atom_row in reversed(range(0, atom_site.getRowCount())):
-            
+
             try:
                 cif_chain = atom_site.getValue('label_asym_id', atom_row)
             except IndexError:
@@ -1292,9 +1302,9 @@ def compare_with_cifs(template_grid, folder, output_path, convert, threshold):
 
             # We do not care about the residues apart from the chain
             if cif_chain != chain:
-                continue    
+                continue
 
-            # get the residue number 
+            # get the residue number
             try:
                 res_num = int(atom_site.getValue("label_seq_id", atom_row))
             except ValueError:
@@ -1313,21 +1323,21 @@ def compare_with_cifs(template_grid, folder, output_path, convert, threshold):
 
             group_PDB = atom_site.getValue('group_PDB', atom_row)
             residue = atom_site.getValue('label_comp_id', atom_row)
-            residue = convert_aa_code(residue, convert)         
+            residue = convert_aa_code(residue, convert)
 
-            # MODELLER accepts only structures if pdbx_PDB_model_num is set to 1   
+            # MODELLER accepts only structures if pdbx_PDB_model_num is set to 1
             if model_num != 1:
 
                 if (res_num, residue, 'model_num') not in cha_row:
-                    cha_row.append((res_num, residue, 'model_num'))             
-                
+                    cha_row.append((res_num, residue, 'model_num'))
+
                 atom_site.setValue(1, "pdbx_PDB_model_num", atom_row)
 
             if ins_code != '?':
-                
+
                 if (res_num, residue, 'ins_code') not in cha_row:
                     cha_row.append((res_num, residue, 'ins_code'))
-                
+
                 atom_site.setValue('?', "pdbx_PDB_ins_code", atom_row)
 
             if group_PDB != 'ATOM':
@@ -1335,7 +1345,7 @@ def compare_with_cifs(template_grid, folder, output_path, convert, threshold):
                 if (res_num, residue, 'group_PDB') not in cha_row:
                     cha_row.append((res_num, residue, 'group_PDB'))
 
-                atom_site.setValue('ATOM', 'group_PDB', atom_row)               
+                atom_site.setValue('ATOM', 'group_PDB', atom_row)
 
             ########################################################################
             ## Delete residues                                                    ##
@@ -1344,7 +1354,7 @@ def compare_with_cifs(template_grid, folder, output_path, convert, threshold):
             if res_num in del_pos:
                 if (res_num, residue) not in rem_row:
                     rem_row.append((res_num, residue))
-                
+
                 atom_site.removeRow(atom_row)
 
             ########################################################################
@@ -1352,16 +1362,16 @@ def compare_with_cifs(template_grid, folder, output_path, convert, threshold):
             ########################################################################
 
             if res_num in mod_pos.keys():
-                
+
                 # Get the data
                 type_symbol = atom_site.getValue('type_symbol', atom_row)
                 label_atom_id = atom_site.getValue('label_atom_id', atom_row)
                 auth_atom_id = atom_site.getValue('auth_atom_id', atom_row)
 
-                if mod_pos[res_num] == 1: # try to convert MSE to M 
-                                        
+                if mod_pos[res_num] == 1: # try to convert MSE to M
+
                     atom_site.setValue('MET', 'label_comp_id', atom_row)
-                    
+
                     try:
                         atom_site.setValue('MET', 'auth_comp_id', atom_row)
                     except IndexError:
@@ -1378,11 +1388,11 @@ def compare_with_cifs(template_grid, folder, output_path, convert, threshold):
                         mod_row.append((res_num, residue, 'MSE -> MET'))
 
                 elif mod_pos[res_num] == 2: # try to convert HYP to PRO
-                    # apparently it is enough to rename the label_comp_id to PRO to get 
+                    # apparently it is enough to rename the label_comp_id to PRO to get
                     # MODELLER working with Hydroxyprolines (HYP)
 
                     atom_site.setValue('PRO', 'label_comp_id', atom_row)
-                    
+
                     try:
                         atom_site.setValue('PRO', 'auth_comp_id', atom_row)
                     except IndexError:
@@ -1394,7 +1404,7 @@ def compare_with_cifs(template_grid, folder, output_path, convert, threshold):
                 elif mod_pos[res_num] == 3: # try to convert MLY to LYS
 
                     atom_site.setValue('LYS', 'label_comp_id', atom_row)
-                    
+
                     try:
                         atom_site.setValue('LYS', 'auth_comp_id', atom_row)
                     except IndexError:
@@ -2227,7 +2237,7 @@ def compare_with_cifs(template_grid, folder, output_path, convert, threshold):
             mod_model_num = len([ msg for msg in cha_row if msg[2] == 'model_num' ])
             mod_ins_code = len([ msg for msg in cha_row if msg[2] == 'ins_code' ])
             mod_group_PDB = len([ msg for msg in cha_row if msg[2] == 'group_PDB' ])
-            
+
             if mod_model_num != 0:
                 print ('! {p} {c}: modified atom_site.pdbx_PDB_model_num for {cr} residues to 1.'.format(
                         p = pdb_code,
@@ -2248,7 +2258,7 @@ def compare_with_cifs(template_grid, folder, output_path, convert, threshold):
 
             for residue in reversed(mod_row):
                 print ('! {p} {c}: modified cif pos {cr} ({nr}).'.format(
-                    p = pdb_code, 
+                    p = pdb_code,
                     c = chain,
                     cr = residue[0],
                     ca = residue[1],
@@ -2257,7 +2267,7 @@ def compare_with_cifs(template_grid, folder, output_path, convert, threshold):
 
             for residue in reversed(rem_row):
                 print ('! {p} {c}: removed cif pos {cr} ({ca})'.format(
-                    p = pdb_code, 
+                    p = pdb_code,
                     c = chain,
                     cr = residue[0],
                     ca = residue[1]))
@@ -2278,9 +2288,9 @@ def compare_with_cifs(template_grid, folder, output_path, convert, threshold):
 
 def remove_self_alignment(template_grid, query_name):
     """ Removes a self alignment from the final pir alignment to prevent clashes with MODELLER """
-    
+
     to_delete = list()
-    
+
     for row in range(template_grid.get_grid_height()):
         if template_grid._pdb_code[row] == query_name:
             to_delete.append(row)
@@ -2292,7 +2302,7 @@ def remove_self_alignment(template_grid, query_name):
 
 def write_to_file(line_list, fname):
     """ Writes the final pir file """
-    
+
     with open(fname, 'w+') as fout:
         for line in line_list:
             fout.write(line + "\n")
@@ -2303,9 +2313,9 @@ def arg():
     epilog= '2016 Harald Voehringer.'
     # Initiate a ArgumentParser Class
     parser = argparse.ArgumentParser(description = description, epilog = epilog)
-    
+
     # Call add_options to the parser
-    parser.add_argument('input', help = 'results file from HHsearch with hit list and alignment', metavar = 'FILE')    
+    parser.add_argument('input', help = 'results file from HHsearch with hit list and alignment', metavar = 'FILE')
     parser.add_argument('cifs', help = 'path to the folder containing cif files', metavar = 'DIR')
     parser.add_argument('pir', help = 'output file (PIR-formatted multiple alignment)', metavar = 'FILE')
     parser.add_argument('output', help = 'path to the folder where modified cif files should be written to', metavar = 'DIR')
@@ -2316,8 +2326,9 @@ def arg():
     parser.add_argument('-r', type = float, help = 'residue ratio (filter alignments that have contribute at least residues according to the specified ratio).',
         default = 0, metavar = 'FLOAT')
 
-    parser.add_argument('-c', help = 'convert non-canonical residues (default = True)', action = 'store_true', default = True)
-    
+    parser.add_argument('-c', help = 'convert non-canonical residues (default = True)', action = 'store_true', default = True),
+    parser.add_argument('-noduplicates', help='modify the header name to avoid name duplicates (default = False)', action= 'store_true', default = False)
+
 
     return parser
 
@@ -2326,9 +2337,9 @@ def main():
     import sys
     parser = arg()
     args = parser.parse_args(sys.argv[1:])
-    
+
     global DEBUG_MODE
-    
+
     if args.verbose:
         DEBUG_MODE = True
 
@@ -2340,7 +2351,7 @@ def main():
     if args.m and not args.e:
         selection = map(lambda x: int(x), args.m)
         print ('Selected templates {st}.'.format(st = ', '.join(args.m)))
-        
+
         for i in selection:
             tmp_info = str(data[i - 1].template_info.split('>')[1])
             print ('{i}: {t}'.format(
@@ -2351,7 +2362,7 @@ def main():
 
     elif args.e and not args.m:
         print ('Selected templates satisfying E-val <= {e}'.format(e = args.e))
-        
+
         e_values = { float(j.evalue):i for i, j in enumerate(data) }
         selection = sorted([ val for key, val in e_values.items() if key <= args.e ])
 
@@ -2368,32 +2379,37 @@ def main():
         sys.exit()
     else:
         selected_templates = data
-        
+
         print ('Creating pir file using all templates ({n})'.format(
             n = len(selected_templates)))
-
     query_grid = create_query_grid(selected_templates) # load query grid
-    print ('query_grid')
-    print(query_grid)
+    #print ('query_grid')
+    #print(query_grid)
     gapless_query_grid = create_gapless_grid(query_grid) # remove gaps
-    print ('gapless_query_grid')
-    print(gapless_query_grid)
+    #print ('gapless_query_grid')
+    #print(gapless_query_grid)
     processed_query_grid = process_query_grid(query_grid, gapless_query_grid) # insert gaps
     ##processed_query_grid = process_query_grid(query_grid, query_grid) # insert gaps
-    print ('processed_query_grid')
-    print (processed_query_grid)
-    glob_seq = derive_global_seq(processed_query_grid, query_name, query_chain) # derive query sequence
+    #print ('processed_query_grid')
+    #print (processed_query_grid)
     template_grid = create_template_grid(selected_templates) # create template grid
-    print ('template_grid')
-    print (template_grid)
-    processed_template_grid = process_template_grid(query_grid, template_grid) # insert gaps to template sequnces
-    print ('processed_query_grid')
-    print (processed_query_grid)
-    print ('hzhu processed_template_grid')
-    print (processed_template_grid)
+    #print(glob_seq)
+    #print ('template_grid')
+    #print (template_grid)
+    processed_template_grid = process_template_grid(query_grid, template_grid) # insert gaps to template sequences
+    #print ('processed_query_grid')
+    #print (processed_query_grid)
+    #print ('hzhu processed_template_grid')
+    #print (processed_template_grid)
     final_grid = compare_with_cifs(processed_template_grid, args.cifs, args.output, args.c, args.r) # compare with atom section of cifs
+    processed_grid_lengths = []
+    for row in range(final_grid.get_grid_height()):
+        processed_grid_lengths.append(len(final_grid._cells[row]))
+        if len(final_grid._cells[row][-1]) != 1:
+            final_grid._cells[row][-1] = (len(final_grid._cells[row][-1])) * '-'
     remove_self_alignment(final_grid, query_name) # remove self alignment if any
-    write_to_file([glob_seq, final_grid.display()], args.pir)
+    glob_seq = derive_global_seq(processed_query_grid, query_name, query_chain, max(processed_grid_lengths)) # derive query sequence
+    write_to_file([glob_seq.replace(EMPTY, GAP), final_grid.display(args.noduplicates)], args.pir)
 
 
 if __name__ == "__main__":
