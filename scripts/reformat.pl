@@ -745,8 +745,9 @@ sub reformat()
 
 	    # Write reference annotation line for match states (-M first)
 	    if (!$lname) {$lname=32;}
-	    $names[$nquery]=~/^\S+\s+(.*)/;
-	    printf(OUTFILE "%-$lname.$lname"."s %s\n","#=GF DE",$1);
+	    if ($names[$nquery] =~ /^\S+\s+(.*)/) {
+            printf(OUTFILE "%-$lname.$lname"."s %s\n","#=GF DE", $1);
+        }
 	    $refline=$seqs[$nquery];  
 	    $refline=~s/[a-z]/-/g;
 	    printf(OUTFILE "%-$lname.$lname"."s %s\n","#=GC RF",$refline);
