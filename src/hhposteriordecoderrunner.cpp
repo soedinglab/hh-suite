@@ -74,7 +74,7 @@ void PosteriorDecoderRunner::executeComputation(HMM &q, std::vector<Hit *>  hits
     /////////////////////////////////////////////////////////////////////////////////////////////////
     // Iterate over all alignment vectors.
     // Each vector contains all alternative alignments for one Target
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) num_threads(m_n_threads)
     for (size_t idx = 0; idx < alignment.size(); idx++) {
         std::vector<Hit *> hits = alignment[idx];
         // find next free worker thread

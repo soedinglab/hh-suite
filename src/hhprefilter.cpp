@@ -463,7 +463,7 @@ void Prefilter::prefilter_db(HMM* q_tmp, Hash<Hit>* previous_hits,
     workspace[i] = (simd_int*) malloc_simd_int(
         3 * (LQ + element_count) * sizeof(char));
 
-#pragma omp parallel
+#pragma omp parallel num_threads(threads)
   {
     int thread_id = 0;
 #ifdef OPENMP
@@ -509,7 +509,7 @@ void Prefilter::prefilter_db(HMM* q_tmp, Hash<Hit>* previous_hits,
       << "HMMs passed 1st prefilter (gapless profile-profile alignment)  : "
       << count_dbs << std::endl;
 
-#pragma omp parallel
+#pragma omp parallel num_threads(threads)
   {
     int thread_id = 0;
 #ifdef OPENMP

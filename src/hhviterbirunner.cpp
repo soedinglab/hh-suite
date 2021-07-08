@@ -119,7 +119,7 @@ std::vector<Hit> ViterbiRunner::alignment(Parameters& par, HMMSimd * q_simd,
                  HHDatabaseEntryCompare());
 
             // read in data for thread
-#pragma omp parallel for schedule(dynamic, 1)
+#pragma omp parallel for schedule(dynamic, 1) num_threads(thread_count)
             for (unsigned int idb = seqJunkStart; idb < (seqJunkStart + seqJunkSize); idb +=VECSIZE_FLOAT) {
                 int current_thread_id = 0;
                 #ifdef OPENMP
