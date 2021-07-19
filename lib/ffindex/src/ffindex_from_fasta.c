@@ -148,6 +148,18 @@ int main(int argn, char **argv)
         name[seq_id_length++] = *(fasta_data + fasta_offset);
       }
 
+      if(seq_id_length >= FFINDEX_MAX_ENTRY_NAME_LENTH)
+      {
+        fprintf(stderr, "Error: The id of entry %d is longer than the maximum of %d characters\n", seq_id, FFINDEX_MAX_ENTRY_NAME_LENTH);
+        // Those files are bogus because they are half filled, so we remove them
+        // No error handling since abort anyway
+        fclose(data_file);
+        fclose(index_file);
+        remove(data_filename);
+        remove(index_filename);
+        exit(EXIT_FAILURE);
+      }
+
       entry[entry_length++] = input;
 
       fasta_offset++;
