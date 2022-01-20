@@ -1677,7 +1677,7 @@ int Alignment::Filter2(char keep[], int coverage, int qid, float qsc,
     ksort = new int[N_in];  // never reuse alignment object for new alignment with more sequences
     for (k = 0; k < N_in; ++k)
       ksort[k] = k;
-    QSortInt(nres, ksort, kfirst + 1, N_in - 1, -1);  //Sort sequences after kfirst (query) in descending order
+    std::sort(ksort + kfirst + 1 , ksort+ N_in, [this](int a, int b){ return nres[a] > nres[b];});  //Sort sequences after kfirst (query) in descending order
   }
   for (kk = 0; kk < N_in; ++kk) {
     inkk[kk] = in[ksort[kk]];
