@@ -1589,7 +1589,7 @@ void Alignment::Shrink() {
 //     This ensures that in multi-domain proteins sequences covering one domain are not
 //     removed completely because sequences covering other domains are more diverse.
 //
-// Allways the shorter of two compared sequences is removed (=> sort sequences by length first).
+// Always the shorter of two compared sequences is removed (=> sort sequences by length first).
 // Please note: sequence identity of sequence x with y when filtering x is calculated as
 // number of residues in sequence x that are identical to an aligned residue in y / number of residues in x
 // Example: two sequences x and y are 100% identical in their overlapping region but one overlaps by 10% of its
