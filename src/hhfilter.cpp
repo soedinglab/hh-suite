@@ -46,7 +46,7 @@ void help(Parameters& par) {
   printf("Options:                                                                  \n");
   printf(" -v <int>       verbose mode: 0:no screen output  1:only warings  2: verbose\n");
   printf(" -id   [0,100]  maximum pairwise sequence identity (%%) (def=%i)   \n", par.max_seqid);
-  printf(" -diff [0,inf[  filter MSA by selecting most diverse set of sequences, keeping \n");
+  printf(" -diff [0,inf]  filter MSA by selecting most diverse set of sequences, keeping \n");
   printf("                at least this many seqs in each MSA block of length 50 (def=%i) \n", par.Ndiff);
   printf(" -cov  [0,100]  minimum coverage with query (%%) (def=%i) \n", par.coverage);
   printf(" -qid  [0,100]  minimum sequence identity with query (%%) (def=%i) \n", par.qid);
