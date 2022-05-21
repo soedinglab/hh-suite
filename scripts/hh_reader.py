@@ -158,7 +158,7 @@ def parse_result(lines):
             template_end = max(template_end, token_4)
 
             try:
-                token_5 = tokens[4].replace("(", "").replace(")", "")
+                token_5 = tokens[5].replace("(", "").replace(")", "")
                 token_5 = int(token_5)
             except:
                 raise HHRFormatError(("Converting failure of template length ({}) "
