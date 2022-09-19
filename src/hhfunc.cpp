@@ -22,9 +22,24 @@ void ReadQueryFile(Parameters& par, FILE* inf, char& input_format,
     fgetline(line, LINELEN, inf); // skip lines that contain only white space
 
   // Is infile a HMMER file?
-  if (!strncmp(line, "HMMER", 5)) {
-    // Uncomment this line to allow HMMER2/HMMER3 models as queries:
-    HH_LOG(ERROR) << "Use of HMMER format as input will result in severe loss of sensitivity!\n";
+  if (!strncmp(line, "HMMER3", 6)) {
+    char path[NAMELEN];
+    Pathname(path, infile);
+
+    HH_LOG(INFO) << "Query file is in HMM format\n";
+
+    // Rewind to beginning of line and read query hhm file
+    rewind(inf);
+    q->ReadHMMer3(inf, par.showcons, pb, path);
+
+    if (input_format == 0) {
+      HH_LOG(INFO) << "Extracting representative sequences from " << infile << " to merge later with matched database sequences\n";
+    }
+
+    Alignment ali_tmp(par.maxseq, par.maxres);
+    ali_tmp.GetSeqsFromHMM(q);
+    ali_tmp.Compress(infile, par.cons, par.maxcol, par.M, par.Mgaps);
+    *qali = ali_tmp;
   }
   // ... or is it an hhm file?
   else if (!strncmp(line, "NAME", 4) || !strncmp(line, "HH", 2)) {
