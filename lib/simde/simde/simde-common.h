@@ -31,7 +31,7 @@
 
 #define SIMDE_VERSION_MAJOR 0
 #define SIMDE_VERSION_MINOR 7
-#define SIMDE_VERSION_MICRO 3
+#define SIMDE_VERSION_MICRO 4
 #define SIMDE_VERSION HEDLEY_VERSION_ENCODE(SIMDE_VERSION_MAJOR, SIMDE_VERSION_MINOR, SIMDE_VERSION_MICRO)
 // Also update meson.build in the root directory of the repository
 
@@ -177,11 +177,24 @@
       HEDLEY_INTEL_VERSION_CHECK(13,0,0) || \
       defined(_Static_assert) \
     )
-#  define SIMDE_STATIC_ASSERT(expr, message) _Static_assert(expr, message)
+  /* Sometimes _Static_assert is defined (in cdefs.h) using a symbol which
+   * starts with a double-underscore. This is a system header so we have no
+   * control over it, but since it's a macro it will emit a diagnostic which
+   * prevents compilation with -Werror. */
+  #if HEDLEY_HAS_WARNING("-Wreserved-identifier")
+    #define SIMDE_STATIC_ASSERT(expr, message) (__extension__({ \
+      HEDLEY_DIAGNOSTIC_PUSH \
+      _Pragma("clang diagnostic ignored \"-Wreserved-identifier\"") \
+      _Static_assert(expr, message); \
+      HEDLEY_DIAGNOSTIC_POP \
+    }))
+  #else
+    #define SIMDE_STATIC_ASSERT(expr, message) _Static_assert(expr, message)
+  #endif
 #elif \
   (defined(__cplusplus) && (__cplusplus >= 201103L)) || \
   HEDLEY_MSVC_VERSION_CHECK(16,0,0)
-#  define SIMDE_STATIC_ASSERT(expr, message) HEDLEY_DIAGNOSTIC_DISABLE_CPP98_COMPAT_WRAP_(static_assert(expr, message))
+  #define SIMDE_STATIC_ASSERT(expr, message) HEDLEY_DIAGNOSTIC_DISABLE_CPP98_COMPAT_WRAP_(static_assert(expr, message))
 #endif
 
 /* Statement exprs */
@@ -194,6 +207,18 @@
     HEDLEY_IBM_VERSION_CHECK(11,1,0) || \
     HEDLEY_MCST_LCC_VERSION_CHECK(1,25,10)
   #define SIMDE_STATEMENT_EXPR_(expr) (__extension__ expr)
+#endif
+
+/* This is just a convenience macro to make it easy to call a single
+ * function with a specific diagnostic disabled. */
+#if defined(SIMDE_STATEMENT_EXPR_)
+  #define SIMDE_DISABLE_DIAGNOSTIC_EXPR_(diagnostic, expr) \
+    SIMDE_STATEMENT_EXPR_(({ \
+      HEDLEY_DIAGNOSTIC_PUSH \
+      diagnostic \
+      (expr); \
+      HEDLEY_DIAGNOSTIC_POP \
+    }))
 #endif
 
 #if defined(SIMDE_CHECK_CONSTANT_) && defined(SIMDE_STATIC_ASSERT)
@@ -378,6 +403,14 @@
 #  define SIMDE_FUNCTION_ATTRIBUTES HEDLEY_NEVER_INLINE static
 #else
 #  define SIMDE_FUNCTION_ATTRIBUTES HEDLEY_ALWAYS_INLINE static
+#endif
+
+#if defined(SIMDE_NO_INLINE)
+#  define SIMDE_HUGE_FUNCTION_ATTRIBUTES HEDLEY_NEVER_INLINE static
+#elif defined(SIMDE_CONSTRAINED_COMPILATION)
+#  define SIMDE_HUGE_FUNCTION_ATTRIBUTES static
+#else
+#  define SIMDE_HUGE_FUNCTION_ATTRIBUTES HEDLEY_ALWAYS_INLINE static
 #endif
 
 #if \
@@ -679,6 +712,36 @@ typedef SIMDE_FLOAT64_TYPE simde_float64;
   #endif
 #endif
 
+/*** Functions that quiet a signaling NaN ***/
+
+static HEDLEY_INLINE
+double
+simde_math_quiet(double x) {
+  uint64_t tmp, mask;
+  if (!simde_math_isnan(x)) {
+    return x;
+  }
+  simde_memcpy(&tmp, &x, 8);
+  mask = 0x7ff80000;
+  mask <<= 32;
+  tmp |= mask;
+  simde_memcpy(&x, &tmp, 8);
+  return x;
+}
+
+static HEDLEY_INLINE
+float
+simde_math_quietf(float x) {
+  uint32_t tmp;
+  if (!simde_math_isnanf(x)) {
+    return x;
+  }
+  simde_memcpy(&tmp, &x, 4);
+  tmp |= 0x7fc00000lu;
+  simde_memcpy(&x, &tmp, 4);
+  return x;
+}
+
 #if defined(FE_ALL_EXCEPT)
   #define SIMDE_HAVE_FENV_H
 #elif defined(__has_include)
@@ -872,6 +935,7 @@ SIMDE_DIAGNOSTIC_DISABLE_CPP98_COMPAT_PEDANTIC_
 #    if !HEDLEY_GCC_VERSION_CHECK(10,0,0)
 #      define SIMDE_BUG_GCC_REV_274313
 #      define SIMDE_BUG_GCC_91341
+#      define SIMDE_BUG_GCC_92035
 #    endif
 #    if !HEDLEY_GCC_VERSION_CHECK(9,0,0) && defined(SIMDE_ARCH_AARCH64)
 #      define SIMDE_BUG_GCC_ARM_SHIFT_SCALAR
@@ -889,8 +953,11 @@ SIMDE_DIAGNOSTIC_DISABLE_CPP98_COMPAT_PEDANTIC_
 #      if HEDLEY_GCC_VERSION_CHECK(4,3,0) /* -Wsign-conversion */
 #        define SIMDE_BUG_GCC_95144
 #      endif
-#      if !HEDLEY_GCC_VERSION_CHECK(11,0,0)
+#      if !HEDLEY_GCC_VERSION_CHECK(11,2,0)
 #        define SIMDE_BUG_GCC_95483
+#      endif
+#      if defined(__OPTIMIZE__)
+#        define SIMDE_BUG_GCC_100927
 #      endif
 #      define SIMDE_BUG_GCC_98521
 #    endif
@@ -906,21 +973,39 @@ SIMDE_DIAGNOSTIC_DISABLE_CPP98_COMPAT_PEDANTIC_
 #    elif defined(SIMDE_ARCH_POWER)
 #      define SIMDE_BUG_GCC_95227
 #      define SIMDE_BUG_GCC_95782
+#      if !HEDLEY_GCC_VERSION_CHECK(12,0,0)
+#        define SIMDE_BUG_VEC_CPSGN_REVERSED_ARGS
+#      endif
 #    elif defined(SIMDE_ARCH_X86) || defined(SIMDE_ARCH_AMD64)
 #      if !HEDLEY_GCC_VERSION_CHECK(10,2,0) && !defined(__OPTIMIZE__)
 #        define SIMDE_BUG_GCC_96174
 #      endif
 #    elif defined(SIMDE_ARCH_ZARCH)
-#      if !HEDLEY_GCC_VERSION_CHECK(9,0,0)
-#        define SIMDE_BUG_GCC_95782
+#      define SIMDE_BUG_GCC_95782
+#      if HEDLEY_GCC_VERSION_CHECK(10,0,0)
+#        define SIMDE_BUG_GCC_101614
+#      endif
+#    endif
+#    if defined(SIMDE_ARCH_MIPS_MSA)
+#      define SIMDE_BUG_GCC_97248
+#      if !HEDLEY_GCC_VERSION_CHECK(12,1,0)
+#        define SIMDE_BUG_GCC_100760
+#        define SIMDE_BUG_GCC_100761
+#        define SIMDE_BUG_GCC_100762
 #      endif
 #    endif
 #    define SIMDE_BUG_GCC_95399
+#    if !defined(__OPTIMIZE__)
+#      define SIMDE_BUG_GCC_105339
+#    endif
 #  elif defined(__clang__)
 #    if defined(SIMDE_ARCH_AARCH64)
 #      define SIMDE_BUG_CLANG_45541
-#      define SIMDE_BUG_CLANG_46844
 #      define SIMDE_BUG_CLANG_48257
+#      if !SIMDE_DETECT_CLANG_VERSION_CHECK(12,0,0)
+#        define SIMDE_BUG_CLANG_46840
+#        define SIMDE_BUG_CLANG_46844
+#      endif
 #      if SIMDE_DETECT_CLANG_VERSION_CHECK(10,0,0) && SIMDE_DETECT_CLANG_VERSION_NOT(11,0,0)
 #        define SIMDE_BUG_CLANG_BAD_VI64_OPS
 #      endif
@@ -937,8 +1022,20 @@ SIMDE_DIAGNOSTIC_DISABLE_CPP98_COMPAT_PEDANTIC_
 #    if defined(SIMDE_ARCH_POWER) && !SIMDE_DETECT_CLANG_VERSION_CHECK(12,0,0)
 #      define SIMDE_BUG_CLANG_46770
 #    endif
+#    if defined(SIMDE_ARCH_POWER) && (SIMDE_ARCH_POWER == 700) && (SIMDE_DETECT_CLANG_VERSION_CHECK(11,0,0))
+#      if !SIMDE_DETECT_CLANG_VERSION_CHECK(13,0,0)
+#        define SIMDE_BUG_CLANG_50893
+#        define SIMDE_BUG_CLANG_50901
+#      endif
+#    endif
 #    if defined(_ARCH_PWR9) && !SIMDE_DETECT_CLANG_VERSION_CHECK(12,0,0) && !defined(__OPTIMIZE__)
 #      define SIMDE_BUG_CLANG_POWER9_16x4_BAD_SHIFT
+#    endif
+#    if defined(SIMDE_ARCH_POWER)
+#      define SIMDE_BUG_CLANG_50932
+#      if !SIMDE_DETECT_CLANG_VERSION_CHECK(12,0,0)
+#        define SIMDE_BUG_VEC_CPSGN_REVERSED_ARGS
+#      endif
 #    endif
 #    if defined(SIMDE_ARCH_X86) || defined(SIMDE_ARCH_AMD64)
 #      if SIMDE_DETECT_CLANG_VERSION_NOT(5,0,0)
@@ -965,6 +1062,9 @@ SIMDE_DIAGNOSTIC_DISABLE_CPP98_COMPAT_PEDANTIC_
 #      define SIMDE_BUG_CLANG_48673
 #    endif
 #    define SIMDE_BUG_CLANG_45959
+#    if defined(SIMDE_ARCH_WASM_SIMD128)
+#      define SIMDE_BUG_CLANG_60655
+#    endif
 #  elif defined(HEDLEY_MSVC_VERSION)
 #    if defined(SIMDE_ARCH_X86)
 #      define SIMDE_BUG_MSVC_ROUND_EXTRACT
@@ -992,10 +1092,9 @@ SIMDE_DIAGNOSTIC_DISABLE_CPP98_COMPAT_PEDANTIC_
     HEDLEY_GCC_VERSION_CHECK(4,3,0)
 #  define SIMDE_BUG_IGNORE_SIGN_CONVERSION(expr) (__extension__ ({ \
        HEDLEY_DIAGNOSTIC_PUSH  \
-       HEDLEY_DIAGNOSTIC_POP  \
        _Pragma("GCC diagnostic ignored \"-Wsign-conversion\"") \
        __typeof__(expr) simde_bug_ignore_sign_conversion_v_= (expr); \
-       HEDLEY_DIAGNOSTIC_PUSH  \
+       HEDLEY_DIAGNOSTIC_POP  \
        simde_bug_ignore_sign_conversion_v_; \
      }))
 #else

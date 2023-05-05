@@ -72,9 +72,9 @@ SIMDE_BEGIN_DECLS_
     * clang will define the constants even if _Float16 is not
     * supported.  Ideas welcome. */
     #define SIMDE_FLOAT16_API SIMDE_FLOAT16_API_FLOAT16
-  #elif defined(__ARM_FP16_FORMAT_IEEE)
+  #elif defined(__ARM_FP16_FORMAT_IEEE) && defined(SIMDE_ARM_NEON_FP16)
     #define SIMDE_FLOAT16_API SIMDE_FLOAT16_API_FP16
-  #elif defined(__clang__) && defined(__FLT16_MIN__)
+  #elif defined(__FLT16_MIN__) && (defined(__clang__) && (!defined(SIMDE_ARCH_AARCH64) || SIMDE_DETECT_CLANG_VERSION_CHECK(7,0,0)))
     #define SIMDE_FLOAT16_API SIMDE_FLOAT16_API_FP16_NO_ABI
   #else
     #define SIMDE_FLOAT16_API SIMDE_FLOAT16_API_PORTABLE
@@ -86,7 +86,11 @@ SIMDE_BEGIN_DECLS_
   #define SIMDE_FLOAT16_C(value) value##f16
 #elif SIMDE_FLOAT16_API == SIMDE_FLOAT16_API_FP16_NO_ABI
   typedef struct { __fp16 value; } simde_float16;
-  #define SIMDE_FLOAT16_C(value) ((simde_float16) { HEDLEY_STATIC_CAST(__fp16, (value)) })
+  #if defined(SIMDE_STATEMENT_EXPR_)
+    #define SIMDE_FLOAT16_C(value) (__extension__({ ((simde_float16) { HEDLEY_DIAGNOSTIC_PUSH SIMDE_DIAGNOSTIC_DISABLE_C99_EXTENSIONS_ HEDLEY_STATIC_CAST(__fp16, (value)) }); HEDLEY_DIAGNOSTIC_POP }))
+  #else
+    #define SIMDE_FLOAT16_C(value) ((simde_float16) { HEDLEY_STATIC_CAST(__fp16, (value)) })
+  #endif
 #elif SIMDE_FLOAT16_API == SIMDE_FLOAT16_API_FP16
   typedef __fp16 simde_float16;
   #define SIMDE_FLOAT16_C(value) HEDLEY_STATIC_CAST(__fp16, (value))
@@ -96,12 +100,22 @@ SIMDE_BEGIN_DECLS_
   #error No 16-bit floating point API.
 #endif
 
+#if \
+    defined(SIMDE_VECTOR_OPS) && \
+    (SIMDE_FLOAT16_API != SIMDE_FLOAT16_API_PORTABLE) && \
+    (SIMDE_FLOAT16_API != SIMDE_FLOAT16_API_FP16_NO_ABI)
+  #define SIMDE_FLOAT16_VECTOR
+#endif
+
 /* Reinterpret -- you *generally* shouldn't need these, they're really
  * intended for internal use.  However, on x86 half-precision floats
  * get stuffed into a __m128i/__m256i, so it may be useful. */
 
 SIMDE_DEFINE_CONVERSION_FUNCTION_(simde_float16_as_uint16,      uint16_t, simde_float16)
 SIMDE_DEFINE_CONVERSION_FUNCTION_(simde_uint16_as_float16, simde_float16,      uint16_t)
+
+#define SIMDE_NANHF simde_uint16_as_float16(0x7E00)
+#define SIMDE_INFINITYHF simde_uint16_as_float16(0x7C00)
 
 /* Conversion -- convert between single-precision and half-precision
  * floats. */
@@ -197,8 +211,10 @@ simde_float16_to_float32 (simde_float16 value) {
   return res;
 }
 
-#if !defined(SIMDE_FLOAT16_C)
-  #define SIMDE_FLOAT16_C(value) simde_float16_from_float32(SIMDE_FLOAT32_C(value))
+#ifdef SIMDE_FLOAT16_C
+  #define SIMDE_FLOAT16_VALUE(value) SIMDE_FLOAT16_C(value)
+#else
+  #define SIMDE_FLOAT16_VALUE(value) simde_float16_from_float32(SIMDE_FLOAT32_C(value))
 #endif
 
 SIMDE_END_DECLS_
