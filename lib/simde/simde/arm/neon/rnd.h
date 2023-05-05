@@ -115,7 +115,7 @@ simde_float64x2_t
 simde_vrndq_f64(simde_float64x2_t a) {
   #if defined(SIMDE_ARM_NEON_A64V8_NATIVE)
     return vrndq_f64(a);
-  #elif defined(SIMDE_POWER_ALTIVEC_P8_NATIVE)
+  #elif defined(SIMDE_POWER_ALTIVEC_P7_NATIVE)
     return vec_trunc(a);
   #else
     simde_float64x2_private
@@ -125,7 +125,7 @@ simde_vrndq_f64(simde_float64x2_t a) {
     #if defined(SIMDE_X86_SSE4_1_NATIVE)
       r_.m128d = _mm_round_pd(a_.m128d, _MM_FROUND_TO_ZERO);
     #elif defined(SIMDE_X86_SVML_NATIVE) && defined(SIMDE_X86_SSE_NATIVE)
-      r_.m128d = _mm_trunc_ps(a_.m128d);
+      r_.m128d = _mm_trunc_pd(a_.m128d);
     #else
       SIMDE_VECTORIZE
       for (size_t i = 0 ; i < (sizeof(r_.values) / sizeof(r_.values[0])) ; i++) {
