@@ -72,7 +72,7 @@ jobs:
                     -DCHECK_MPI=${MPI} \
                     ..
           fi
-          make -j $(nproc --all)
+          make -j $(nproc --all) VERBOSE=1
           make install
           cd ${BUILD_SOURCESDIRECTORY}
           cp LICENSE README.md hhsuite
@@ -142,7 +142,7 @@ jobs:
             -DHAVE_${SIMD}=1 \
             -DCHECK_MPI=0 \
             ..
-          make -j $(nproc --all)
+          make -j $(nproc --all) VERBOSE=1
           make install
           cd ${BUILD_SOURCESDIRECTORY}
           cp LICENSE README.md hhsuite
