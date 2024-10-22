@@ -16,10 +16,14 @@
 #include <algorithm>
 #include <cstring>
 #include <climits>
+#include <cstdint>
 
 extern "C" {
   #include <ffindex.h>     // fast index-based database reading
 }
+
+using std::uint16_t;
+using std::uint32_t;
 
 namespace compressed_a3m {
   int compress_a3m(std::istream* input, ffindex_index_t* ffindex_sequence_database_index, char* ffindex_sequence_database_data, std::ostream* output);
