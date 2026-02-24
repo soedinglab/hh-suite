@@ -36,7 +36,7 @@ List of available database for HH-suite3:
   - [BFD](https://bfd.mmseqs.com) (consists of 2.5 billion, mostly enviromental, protein sequences) [[pub]](https://doi.org/10.1038/s41592-019-0437-4)
   - [Pfam/SCOP/PDB70/dbCAN](http://wwwuser.gwdg.de/~compbiol/data/hhsuite/databases/hhsuite_dbs/)
 
-Also checkout the [databases (COG/ECOG/CD/...)](http://ftp.tuebingen.mpg.de/pub/protevo/toolkit/databases/hhsuite_dbs) maintained by the [MPI Bioinformatics Toolkit](https://toolkit.tuebingen.mpg.de) [[pub]](https://doi.org/10.1002/cpbi.108).
+Also checkout the [databases (COG/ECOG/CD/...)](http://ftp.tuebingen.mpg.de/pub/ebio/protevo/toolkit/databases/hhsuite_dbs/) maintained by the [MPI Bioinformatics Toolkit](https://toolkit.tuebingen.mpg.de) [[pub]](https://doi.org/10.1002/cpbi.108).
 
 
 ### Compilation
