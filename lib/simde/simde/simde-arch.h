@@ -42,6 +42,8 @@
 #if !defined(SIMDE_ARCH_H)
 #define SIMDE_ARCH_H
 
+#include "hedley.h"
+
 /* Alpha
    <https://en.wikipedia.org/wiki/DEC_Alpha> */
 #if defined(__alpha__) || defined(__alpha) || defined(_M_ALPHA)
@@ -70,7 +72,9 @@
 /* AMD64 / x86_64
    <https://en.wikipedia.org/wiki/X86-64> */
 #if defined(__amd64__) || defined(__amd64) || defined(__x86_64__) || defined(__x86_64) || defined(_M_X64) || defined(_M_AMD64)
-#  define SIMDE_ARCH_AMD64 1000
+#  if !defined(_M_ARM64EC)
+#     define SIMDE_ARCH_AMD64 1000
+#  endif
 #endif
 
 /* ARM
@@ -87,6 +91,8 @@
 #  else
 #    define SIMDE_ARCH_ARM (_M_ARM * 100)
 #  endif
+#elif defined(_M_ARM64) || defined(_M_ARM64EC)
+#  define SIMDE_ARCH_ARM 800
 #elif defined(__arm__) || defined(__thumb__) || defined(__TARGET_ARCH_ARM) || defined(_ARM) || defined(_M_ARM) || defined(_M_ARM)
 #  define SIMDE_ARCH_ARM 1
 #endif
@@ -98,7 +104,7 @@
 
 /* AArch64
    <https://en.wikipedia.org/wiki/ARM_architecture> */
-#if defined(__aarch64__) || defined(_M_ARM64)
+#if defined(__aarch64__) || defined(_M_ARM64) || defined(_M_ARM64EC)
 #  define SIMDE_ARCH_AARCH64 1000
 #endif
 #if defined(SIMDE_ARCH_AARCH64)
@@ -108,7 +114,7 @@
 #endif
 
 /* ARM SIMD ISA extensions */
-#if defined(__ARM_NEON)
+#if defined(__ARM_NEON) || defined(SIMDE_ARCH_AARCH64)
 #  if defined(SIMDE_ARCH_AARCH64)
 #    define SIMDE_ARCH_ARM_NEON SIMDE_ARCH_AARCH64
 #  elif defined(SIMDE_ARCH_ARM)
@@ -269,6 +275,9 @@
 #  endif
 #  if defined(__AVX2__)
 #    define SIMDE_ARCH_X86_AVX2 1
+#    if defined(_MSC_VER)
+#      define SIMDE_ARCH_X86_FMA 1
+#    endif
 #  endif
 #  if defined(__FMA__)
 #    define SIMDE_ARCH_X86_FMA 1
@@ -282,11 +291,26 @@
 #  if defined(__AVX512BITALG__)
 #    define SIMDE_ARCH_X86_AVX512BITALG 1
 #  endif
+#  if defined(__AVX512VPOPCNTDQ__)
+#    define SIMDE_ARCH_X86_AVX512VPOPCNTDQ 1
+#  endif
 #  if defined(__AVX512VBMI__)
 #    define SIMDE_ARCH_X86_AVX512VBMI 1
 #  endif
+#  if defined(__AVX512VBMI2__)
+#    define SIMDE_ARCH_X86_AVX512VBMI2 1
+#  endif
+#  if defined(__AVX512VNNI__)
+#    define SIMDE_ARCH_X86_AVX512VNNI 1
+#  endif
+#  if defined(__AVX5124VNNIW__)
+#    define SIMDE_ARCH_X86_AVX5124VNNIW 1
+#  endif
 #  if defined(__AVX512BW__)
 #    define SIMDE_ARCH_X86_AVX512BW 1
+#  endif
+#  if defined(__AVX512BF16__)
+#    define SIMDE_ARCH_X86_AVX512BF16 1
 #  endif
 #  if defined(__AVX512CD__)
 #    define SIMDE_ARCH_X86_AVX512CD 1
@@ -309,7 +333,9 @@
 #  if defined(__VPCLMULQDQ__)
 #    define SIMDE_ARCH_X86_VPCLMULQDQ 1
 #  endif
-#  if defined(__F16C__)
+#  if defined(__F16C__) || \
+       (defined(HEDLEY_MSVC_VERSION) && HEDLEY_MSVC_VERSION_CHECK(19,30,0) \
+	&& defined(SIMDE_ARCH_X86_AVX2) )
 #    define SIMDE_ARCH_X86_F16C 1
 #  endif
 #endif
@@ -384,6 +410,10 @@
 #  define SIMDE_ARCH_MIPS_LOONGSON_MMI 1
 #endif
 
+#if defined(__mips_msa)
+#  define SIMDE_ARCH_MIPS_MSA 1
+#endif
+
 /* Matsushita MN10300
    <https://en.wikipedia.org/wiki/MN103> */
 #if defined(__MN10300__) || defined(__mn10300__)
@@ -431,8 +461,6 @@
 
 #if defined(__ALTIVEC__)
 #  define SIMDE_ARCH_POWER_ALTIVEC SIMDE_ARCH_POWER
-#endif
-#if defined(SIMDE_ARCH_POWER)
   #define SIMDE_ARCH_POWER_ALTIVEC_CHECK(version) ((version) <= SIMDE_ARCH_POWER)
 #else
   #define SIMDE_ARCH_POWER_ALTIVEC_CHECK(version) (0)
@@ -540,6 +568,29 @@
    <https://en.wikipedia.org/wiki/> */
 #if defined(__xtensa__) || defined(__XTENSA__)
 #  define SIMDE_ARCH_XTENSA 1
+#endif
+
+/* Availability of 16-bit floating-point arithmetic intrinsics */
+#if defined(__ARM_FEATURE_FP16_VECTOR_ARITHMETIC)
+#  define SIMDE_ARCH_ARM_NEON_FP16
+#endif
+
+/* LoongArch
+   <https://en.wikipedia.org/wiki/Loongson#LoongArch> */
+#if defined(__loongarch32)
+#  define SIMDE_ARCH_LOONGARCH 1
+#elif defined(__loongarch64)
+#  define SIMDE_ARCH_LOONGARCH 2
+#endif
+
+/* LSX: LoongArch 128-bits SIMD extension */
+#if defined(__loongarch_sx)
+#  define SIMDE_ARCH_LOONGARCH_LSX 1
+#endif
+
+/* LASX: LoongArch 256-bits SIMD extension */
+#if defined(__loongarch_asx)
+#  define SIMDE_ARCH_LOONGARCH_LASX 2
 #endif
 
 #endif /* !defined(SIMDE_ARCH_H) */

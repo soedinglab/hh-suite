@@ -21,7 +21,7 @@
  * SOFTWARE.
  *
  * Copyright:
- *   2020      Evan Nemerson <evan@nemerson.com>
+ *   2020-2021 Evan Nemerson <evan@nemerson.com>
  *   2020      Himanshi Mathur <himanshi18037@iiitd.ac.in>
  *   2020      Hidayat Khan <huk2209@gmail.com>
  *   2021      Andrew Rodriguez <anrodriguez@linkedin.com>
@@ -32,6 +32,7 @@
 
 #include "types.h"
 #include "mov.h"
+#include "../f16c.h"
 
 HEDLEY_DIAGNOSTIC_PUSH
 SIMDE_DISABLE_UNWANTED_DIAGNOSTICS
@@ -190,6 +191,32 @@ simde_mm512_cvtepi8_epi16 (simde__m256i a) {
 #endif
 
 SIMDE_FUNCTION_ATTRIBUTES
+simde__m512
+simde_mm512_cvtepi32_ps (simde__m512i a) {
+  #if defined(SIMDE_X86_AVX512F_NATIVE)
+    return _mm512_cvtepi32_ps(a);
+  #else
+    simde__m512_private r_;
+    simde__m512i_private a_ = simde__m512i_to_private(a);
+
+    #if defined(SIMDE_CONVERT_VECTOR_)
+      SIMDE_CONVERT_VECTOR_(r_.f32, a_.i32);
+    #else
+      SIMDE_VECTORIZE
+      for (size_t i = 0 ; i < (sizeof(r_.i32) / sizeof(r_.i32[0])) ; i++) {
+        r_.f32[i] = HEDLEY_STATIC_CAST(simde_float32, a_.i32[i]);
+      }
+    #endif
+
+    return simde__m512_from_private(r_);
+  #endif
+}
+#if defined(SIMDE_X86_AVX512F_ENABLE_NATIVE_ALIASES)
+  #undef _mm512_cvtepi32_ps
+  #define _mm512_cvtepi32_ps(a) simde_mm512_cvtepi32_ps(a)
+#endif
+
+SIMDE_FUNCTION_ATTRIBUTES
 simde__m256i
 simde_mm512_cvtepi64_epi32 (simde__m512i a) {
   #if defined(SIMDE_X86_AVX512F_NATIVE)
@@ -214,6 +241,64 @@ simde_mm512_cvtepi64_epi32 (simde__m512i a) {
   #undef _mm512_cvtepi64_epi32
   #define _mm512_cvtepi64_epi32(a) simde_mm512_cvtepi64_epi32(a)
 #endif
+
+SIMDE_FUNCTION_ATTRIBUTES
+simde__m512
+simde_mm512_cvtepu32_ps (simde__m512i a) {
+  #if defined(SIMDE_X86_AVX512F_NATIVE)
+    return _mm512_cvtepu32_ps(a);
+  #else
+    simde__m512_private r_;
+    simde__m512i_private a_ = simde__m512i_to_private(a);
+
+    #if defined(SIMDE_X86_SSE2_NATIVE)
+      for (size_t i = 0 ; i < (sizeof(r_.m128) / sizeof(r_.m128[0])) ; i++) {
+        /* https://stackoverflow.com/a/34067907/501126 */
+        const __m128 tmp = _mm_cvtepi32_ps(_mm_srli_epi32(a_.m128i[i], 1));
+        r_.m128[i] =
+          _mm_add_ps(
+            _mm_add_ps(tmp, tmp),
+            _mm_cvtepi32_ps(_mm_and_si128(a_.m128i[i], _mm_set1_epi32(1)))
+          );
+      }
+    #elif defined(SIMDE_CONVERT_VECTOR_)
+      SIMDE_CONVERT_VECTOR_(r_.f32, a_.u32);
+    #else
+      SIMDE_VECTORIZE
+      for (size_t i = 0 ; i < (sizeof(r_.u32) / sizeof(r_.u32[0])) ; i++) {
+        r_.f32[i] = HEDLEY_STATIC_CAST(float, a_.u32[i]);
+      }
+    #endif
+
+    return simde__m512_from_private(r_);
+  #endif
+}
+#if defined(SIMDE_X86_AVX512F_ENABLE_NATIVE_ALIASES)
+  #undef _mm512_cvtepu32_ps
+  #define _mm512_cvtepu32_ps(a) simde_mm512_cvtepu32_ps(a)
+#endif
+
+SIMDE_FUNCTION_ATTRIBUTES
+simde__m512
+simde_mm512_cvtph_ps(simde__m256i a) {
+  #if defined(SIMDE_X86_AVX512F_NATIVE)
+    return _mm512_cvtph_ps(a);
+  #endif
+  simde__m256i_private a_ = simde__m256i_to_private(a);
+  simde__m512_private r_;
+
+  SIMDE_VECTORIZE
+  for (size_t i = 0 ; i < (sizeof(r_.f32) / sizeof(r_.f32[0])) ; i++) {
+    r_.f32[i] = simde_float16_to_float32(simde_uint16_as_float16(a_.u16[i]));
+  }
+
+  return simde__m512_from_private(r_);
+}
+#if defined(SIMDE_X86_AVX512F_ENABLE_NATIVE_ALIASES)
+  #undef _mm512_cvtph_ps
+  #define _mm512_cvtph_ps(a) simde_mm512_cvtph_ps(a)
+#endif
+
 
 SIMDE_END_DECLS_
 HEDLEY_DIAGNOSTIC_POP

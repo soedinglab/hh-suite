@@ -7,10 +7,10 @@ variables:
     regression: 1
 
 jobs:
-  - job: build_ubuntu_1804
-    displayName: Ubuntu 1804
+  - job: build_ubuntu_2004
+    displayName: Ubuntu 2004
     pool:
-      vmImage: 'Ubuntu-18.04'
+      vmImage: 'Ubuntu-20.04'
     timeoutInMinutes: 120
     strategy:
       matrix:
@@ -72,7 +72,7 @@ jobs:
                     -DCHECK_MPI=${MPI} \
                     ..
           fi
-          make -j $(nproc --all)
+          make -j $(nproc --all) VERBOSE=1
           make install
           cd ${BUILD_SOURCESDIRECTORY}
           cp LICENSE README.md hhsuite
@@ -142,7 +142,7 @@ jobs:
             -DHAVE_${SIMD}=1 \
             -DCHECK_MPI=0 \
             ..
-          make -j $(nproc --all)
+          make -j $(nproc --all) VERBOSE=1
           make install
           cd ${BUILD_SOURCESDIRECTORY}
           cp LICENSE README.md hhsuite
@@ -161,10 +161,10 @@ jobs:
           targetPath: $(Build.SourcesDirectory)/hhsuite-linux-$(ARCHIVE_NAME).tar.gz
           artifactName: hhsuite-linux-$(ARCHIVE_NAME)
 
-  - job: build_macos_1015
-    displayName: macOS 1015
+  - job: build_macos_11
+    displayName: macOS 11
     pool:
-      vmImage: 'macos-10.15'
+      vmImage: 'macos-11'
     steps:
       - script: |
           cd ${BUILD_SOURCESDIRECTORY}
@@ -187,10 +187,10 @@ jobs:
     displayName: Upload Artifacts
     condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
     pool:
-      vmImage: 'Ubuntu-18.04'
+      vmImage: 'Ubuntu-20.04'
     dependsOn:
-      - build_macos_1015
-      - build_ubuntu_1804
+      - build_macos_11
+      - build_ubuntu_2004
       - build_ubuntu_cross_2004
     steps:
       - checkout: none

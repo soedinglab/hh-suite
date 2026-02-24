@@ -6328,7 +6328,6 @@ simde_mm512_cdfnorminv_ps (simde__m512 a) {
 
       /* else */
       simde__mmask16 mask_el = ~matched;
-      mask = mask | mask_el;
 
       /* r = a - 0.5f */
       simde__m512 r = simde_mm512_sub_ps(a, simde_mm512_set1_ps(SIMDE_FLOAT32_C(0.5)));
@@ -6437,7 +6436,6 @@ simde_mm512_cdfnorminv_pd (simde__m512d a) {
 
       /* else */
       simde__mmask8 mask_el = ~matched;
-      mask = mask | mask_el;
 
       /* r = a - 0.5f */
       simde__m512d r = simde_mm512_sub_pd(a, simde_mm512_set1_pd(SIMDE_FLOAT64_C(0.5)));
@@ -8827,7 +8825,7 @@ simde_mm_clog_ps (simde__m128 a) {
 SIMDE_FUNCTION_ATTRIBUTES
 simde__m256
 simde_mm256_clog_ps (simde__m256 a) {
-  #if defined(SIMDE_X86_SVML_NATIVE) && defined(SIMDE_X86_SSE_NATIVE)
+  #if defined(SIMDE_X86_SVML_NATIVE) && defined(SIMDE_X86_AVX_NATIVE)
     return _mm256_clog_ps(a);
   #else
     simde__m256_private
@@ -8882,7 +8880,7 @@ simde_mm_csqrt_ps (simde__m128 a) {
 SIMDE_FUNCTION_ATTRIBUTES
 simde__m256
 simde_mm256_csqrt_ps (simde__m256 a) {
-  #if defined(SIMDE_X86_SVML_NATIVE) && defined(SIMDE_X86_SSE_NATIVE)
+  #if defined(SIMDE_X86_SVML_NATIVE) && defined(SIMDE_X86_AVX_NATIVE)
     return _mm256_csqrt_ps(a);
   #else
     simde__m256_private

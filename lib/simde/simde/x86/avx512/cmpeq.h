@@ -60,7 +60,7 @@ simde_mm512_cmpeq_epi8_mask (simde__m512i a, simde__m512i b) {
     #elif defined(SIMDE_VECTOR_SUBSCRIPT_OPS)
       simde__m512i_private tmp;
 
-      tmp.i8 = HEDLEY_STATIC_CAST(__typeof__(tmp.i8), a_.i8 == b_.i8);
+      tmp.i8 = HEDLEY_REINTERPRET_CAST(__typeof__(tmp.i8), a_.i8 == b_.i8);
       r = simde_mm512_movepi8_mask(simde__m512i_from_private(tmp));
     #else
       r = 0;
@@ -165,6 +165,54 @@ simde_mm512_mask_cmpeq_epi64_mask (simde__mmask8 k1, simde__m512i a, simde__m512
 #if defined(SIMDE_X86_AVX512F_ENABLE_NATIVE_ALIASES)
   #undef _mm512_mask_cmpeq_epi64_mask
   #define _mm512_mask_cmpeq_epi64_mask(k1, a, b) simde_mm512_mask_cmpeq_epi64_mask(k1, a, b)
+#endif
+
+SIMDE_FUNCTION_ATTRIBUTES
+simde__mmask32
+simde_mm512_cmpeq_epu16_mask (simde__m512i a, simde__m512i b) {
+  #if defined(SIMDE_X86_AVX512BW_NATIVE)
+    return _mm512_cmpeq_epu16_mask(a, b);
+  #else
+    simde__m512i_private
+      a_ = simde__m512i_to_private(a),
+      b_ = simde__m512i_to_private(b);
+    simde__mmask32 r;
+
+    #if defined(SIMDE_VECTOR_SUBSCRIPT_OPS)
+      simde__m512i_private tmp;
+
+      tmp.u16 = HEDLEY_REINTERPRET_CAST(__typeof__(tmp.u16), a_.u16 == b_.u16);
+      r = simde_mm512_movepi16_mask(simde__m512i_from_private(tmp));
+    #else
+      r = 0;
+
+      SIMDE_VECTORIZE_REDUCTION(|:r)
+      for (size_t i = 0 ; i < (sizeof(a_.u16) / sizeof(a_.u16[0])) ; i++) {
+        r |= (a_.u16[i] == b_.u16[i]) ? (UINT16_C(1) << i) : 0;
+      }
+    #endif
+
+    return r;
+  #endif
+}
+#if defined(SIMDE_X86_AVX512BW_ENABLE_NATIVE_ALIASES)
+  #undef _mm512_cmpeq_epu31_mask
+  #define _mm512_cmpeq_epu32_mask(a, b) simde_mm512_cmpeq_epu32_mask(a, b)
+#endif
+
+
+SIMDE_FUNCTION_ATTRIBUTES
+simde__mmask32
+simde_mm512_mask_cmpeq_epu16_mask(simde__mmask32 k1, simde__m512i a, simde__m512i b) {
+  #if defined(SIMDE_X86_AVX512BW_NATIVE)
+    return _mm512_mask_cmpeq_epu16_mask(k1, a, b);
+  #else
+    return k1 & simde_mm512_cmpeq_epu16_mask(a, b);
+  #endif
+}
+#if defined(SIMDE_X86_AVX512BW_ENABLE_NATIVE_ALIASES)
+  #undef _mm512_mask_cmpeq_epu16_mask
+  #define _mm512_mask_cmpeq_epu16_mask(k1, a, b) simde_mm512_mask_cmpeq_epu16_mask(k1, a, b)
 #endif
 
 SIMDE_FUNCTION_ATTRIBUTES
