@@ -64,13 +64,13 @@ private:
 
 	void merge_thread_results(std::vector<Hit> &all_hits,
 			std::vector<HHEntry*> &dbfiles_to_align,
-			std::map<std::string ,std::vector<Viterbi::BacktraceResult > >  &excludeAlignments,
+			std::map<HHEntry *, std::vector<Viterbi::BacktraceResult > >  &excludeAlignments,
 			std::vector<ViterbiConsumerThread *> &threads,
 			int alignment, const float smin);
 
 
 	void exclude_alignments(int maxResElem, HMMSimd* q_simd, HMMSimd* t_hmm_simd,
-			std::map<std::string ,std::vector<Viterbi::BacktraceResult > >  &excludeAlignments,
+			std::map<HHEntry *, std::vector<Viterbi::BacktraceResult > >  &excludeAlignments,
 			ViterbiMatrix* viterbiMatrix);
 
 	void exclude_regions(char* exclstr, int maxResElem, HMMSimd* q_hmm_simd, HMMSimd* t_hmm_simd, ViterbiMatrix* viterbiMatrix);

@@ -50,14 +50,16 @@ void PosteriorDecoderRunner::executeComputation(HMM &q, std::vector<Hit *>  hits
     initializeQueryHMMTransitions(*q_hmm);
     // prepeare data structure
     size_t target_max_length = 0;
-    std::map<std::string, std::vector<Hit *> > alignments_map;
+    // Entry names are only unique within one database. Keep hits from
+    // identically named entries in different databases in separate groups.
+    std::map<HHEntry *, std::vector<Hit *> > alignments_map;
     for(size_t i = 0; i < hits.size(); i++){
-        alignments_map[hits[i]->entry->getName()].push_back(hits[i]);
+        alignments_map[hits[i]->entry].push_back(hits[i]);
         target_max_length = std::max(target_max_length, (size_t) hits[i]->L);
     }
     // sort each std::vector<Hit *> by irep
     std::vector<std::vector<Hit *> > alignment;
-    for (std::map<std::string, std::vector<Hit *> >::iterator alignment_vec =
+    for (std::map<HHEntry *, std::vector<Hit *> >::iterator alignment_vec =
             alignments_map.begin(); alignment_vec != alignments_map.end(); alignment_vec++) {
         std::sort(alignment_vec->second.begin(), alignment_vec->second.end(), compareIrep);
         alignment.push_back(alignment_vec->second);

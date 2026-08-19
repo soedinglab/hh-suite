@@ -96,7 +96,9 @@ std::vector<Hit> ViterbiRunner::alignment(Parameters& par, HMMSimd * q_simd,
 
     std::vector<Hit> ret_hits;
     std::vector<HHEntry*> dbfiles_to_align;
-    std::map<std::string, std::vector<Viterbi::BacktraceResult> > excludeAlignments;
+    // Entry names can collide across databases. Alternative paths belong to
+    // the concrete entry whose HMM produced them.
+    std::map<HHEntry *, std::vector<Viterbi::BacktraceResult> > excludeAlignments;
     // For all the databases comming through prefilter
     std::copy(dbfiles.begin(), dbfiles.end(), std::back_inserter(dbfiles_to_align));
 
@@ -248,7 +250,7 @@ float ViterbiRunner::calculateEarlyStop(Parameters& par, HMM * q, std::vector<Hi
 
 void ViterbiRunner::merge_thread_results(std::vector<Hit> &all_hits,
                                          std::vector<HHEntry*> &dbfiles_to_align,
-                                         std::map<std::string, std::vector<Viterbi::BacktraceResult> > &excludeAlignments,
+                                         std::map<HHEntry *, std::vector<Viterbi::BacktraceResult> > &excludeAlignments,
                                          std::vector<ViterbiConsumerThread *> &threads, int alignment, const float smin) {
     for (unsigned int thread = 0; thread < threads.size(); thread++) {
         ViterbiConsumerThread * current_thread = threads[thread];
@@ -263,8 +265,7 @@ void ViterbiRunner::merge_thread_results(std::vector<Hit> &all_hits,
                 backtraceResult.i_steps = current_hit.i;
                 backtraceResult.j_steps = current_hit.j;
                 backtraceResult.count = current_hit.nsteps;
-                excludeAlignments[std::string(current_hit.entry->getName())].push_back(
-                                                                                         backtraceResult);
+                excludeAlignments[current_hit.entry].push_back(backtraceResult);
             }
         }
     }
@@ -272,12 +273,12 @@ void ViterbiRunner::merge_thread_results(std::vector<Hit> &all_hits,
 
 void ViterbiRunner::exclude_alignments(int maxResElem, HMMSimd* q_simd,
                                        HMMSimd* t_hmm_simd,
-                                       std::map<std::string, std::vector<Viterbi::BacktraceResult> > &excludeAlignments,
+                                       std::map<HHEntry *, std::vector<Viterbi::BacktraceResult> > &excludeAlignments,
                                        ViterbiMatrix* viterbiMatrix) {
     for (int elem = 0; elem < maxResElem; elem++) {
         HMM * curr_t_hmm = t_hmm_simd->GetHMM(elem);
-        if (excludeAlignments.find(std::string(curr_t_hmm->entry->getName())) != excludeAlignments.end() && excludeAlignments[std::string(curr_t_hmm->entry->getName())].size() > 0) {
-            std::vector<Viterbi::BacktraceResult> to_exclude = excludeAlignments[std::string(curr_t_hmm->entry->getName())];
+        if (excludeAlignments.find(curr_t_hmm->entry) != excludeAlignments.end() && excludeAlignments[curr_t_hmm->entry].size() > 0) {
+            std::vector<Viterbi::BacktraceResult> to_exclude = excludeAlignments[curr_t_hmm->entry];
             for (unsigned int i = 0; i < to_exclude.size(); i++) {
                 Viterbi::BacktraceResult backtraceResult = to_exclude[i];
                 Viterbi::ExcludeAlignment(viterbiMatrix, q_simd, t_hmm_simd, elem,
