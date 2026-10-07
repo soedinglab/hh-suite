@@ -95,6 +95,8 @@ ffindex_apply_by_entry(char *data, ffindex_entry_t *entry, char *program_name, c
     gettimeofday(&tv, NULL);
     int64_t start = (tv.tv_sec) * 1000LL + (tv.tv_usec) / 1000;
     int err = posix_spawnp(&child_pid, program_name, &factions, &attr, program_argv, environ);
+    posix_spawn_file_actions_destroy(&factions);
+    posix_spawnattr_destroy(&attr);
     if (err) {
         fprintf(stderr, "ERROR in fork()\n");
         perror(entry->name);
