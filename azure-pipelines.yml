@@ -75,6 +75,7 @@ jobs:
               echo "leak:libgomp.so.1" > ${BUILD_SOURCESDIRECTORY}/LSan.supp
               export LSAN_OPTIONS=suppressions=${BUILD_SOURCESDIRECTORY}/LSan.supp
           fi
+          export OMPI_MCA_rmaps_base_oversubscribe=1
           cd ${BUILD_SOURCESDIRECTORY}/data
           PATH="${BUILD_SOURCESDIRECTORY}/hhsuite/bin:$PATH"
           ./test.sh
