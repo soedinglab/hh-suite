@@ -6,6 +6,7 @@
  */
 
 #include "hhprefilter.h"
+#include "hhdatabase.h"
 #include "ext/fmemopen.h"
 #include "cs219.lib.h"
 
@@ -434,6 +435,7 @@ void Prefilter::prefilter_db(HMM* q_tmp, Hash<Hit>* previous_hits,
     const double prefilter_evalue_coarse_thresh,
     const int preprefilter_smax_thresh, const int min_prefilter_hits, const int maxnumdb,
     const float R[20][20],
+    const char* database_name,
     std::vector<std::pair<int, std::string> >& new_prefilter_hits,
     std::vector<std::pair<int, std::string> >& old_prefilter_hits) {
 
@@ -577,10 +579,9 @@ void Prefilter::prefilter_db(HMM* q_tmp, Hash<Hit>* previous_hits,
 
       // check, if DB was searched in previous rounds
 
-      std::stringstream ss_tmp;
-      ss_tmp << name << "__" << 1;
+      std::string key = getHitKey(database_name, name, 1);
 
-      if (previous_hits->Contains((char*) ss_tmp.str().c_str())) {
+      if (previous_hits->Contains((char*) key.c_str())) {
         old_prefilter_hits.push_back(result);
       }
       else {

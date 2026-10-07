@@ -82,6 +82,7 @@ public:
 			const int prefilter_score_offset, const int prefilter_bit_factor, const double prefilter_evalue_thresh,
 			const double prefilter_evalue_coarse_thresh, const int preprefilter_smax_thresh,
             const int min_prefilter_hits, const int maxnumdb, const float R[20][20],
+			const char* database_name,
 			std::vector<std::pair<int, std::string> >& new_prefilter_hits, std::vector<std::pair<int, std::string> >& old_prefilter_hits);
 
 private:

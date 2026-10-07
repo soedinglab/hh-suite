@@ -186,7 +186,7 @@ void HHblitsDatabase::prefilter_db(HMM* q_tmp, Hash<Hit>* previous_hits,
                           prefilter_bit_factor, prefilter_evalue_thresh,
                           prefilter_evalue_coarse_thresh,
                           preprefilter_smax_thresh, min_prefilter_hits,
-                          maxnumbdb, R, prefiltered_new_entry_names,
+                          maxnumbdb, R, basename, prefiltered_new_entry_names,
                           prefiltered_old_entry_names);
 
   getEntriesFromNames(prefiltered_new_entry_names, new_entries);
@@ -464,6 +464,10 @@ char* HHDatabaseEntry::getName() {
   return entry->name;
 }
 
+const char* HHDatabaseEntry::getDatabaseName() {
+  return hhdatabase->basename;
+}
+
 HHFileEntry::HHFileEntry(const char* file, int sequence_length)
     : HHEntry(sequence_length), file(strdup(file)) {
 }
@@ -569,5 +573,25 @@ int getMaxTemplateLength(std::vector<HHEntry*>& entries) {
   }
 
   return max_template_length;
+}
+
+std::string getEntryKey(const char* database, const char* name) {
+  std::string key(database);
+  key.append(1, '\t');
+  key.append(name);
+  return key;
+}
+
+std::string getHitKey(const char* database, const char* name, int irep) {
+  char irep_str[16];
+  snprintf(irep_str, sizeof(irep_str), "%d", irep);
+  std::string key = getEntryKey(database, name);
+  key.append("__");
+  key.append(irep_str);
+  return key;
+}
+
+std::string getHitKey(const Hit& hit) {
+  return getHitKey(hit.entry->getDatabaseName(), hit.file, hit.irep);
 }
 

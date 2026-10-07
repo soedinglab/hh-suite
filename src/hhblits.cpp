@@ -838,9 +838,8 @@ void HHblits::mergeHitsToQuery(HitList &hitlist, Hash<Hit>* previous_hits,Hash<H
             continue;  // leave out too short alignments
 
         // Already in alignment
-        std::stringstream ss_tmp;
-        ss_tmp << hit_cur.file << "__" << hit_cur.irep;
-        if (previous_hits->Contains((char*) ss_tmp.str().c_str()))
+        std::string key = getHitKey(hit_cur);
+        if (previous_hits->Contains((char*) key.c_str()))
             continue;
 
         // Add number of sequences in this cluster to total found
@@ -848,7 +847,7 @@ void HHblits::mergeHitsToQuery(HitList &hitlist, Hash<Hit>* previous_hits,Hash<H
         cluster_found++;
 
         // Skip merging this hit if hit alignment was already merged during premerging
-        if (premerged_hits->Contains((char*)ss_tmp.str().c_str()))
+        if (premerged_hits->Contains((char*) key.c_str()))
             continue;
 
         // Read a3m alignment of hit from <file>.a3m file
@@ -933,11 +932,10 @@ void HHblits::RescoreWithViterbiKeepAlignment(HMMSimd& q_vec,
                                                            R, par.ssm, S73, S33, S37);
 
     for (std::vector<Hit>::size_type i = 0; i != hits_to_add.size(); i++) {
-        std::stringstream ss_tmp;
-        ss_tmp << hits_to_add[i].file << "__" << hits_to_add[i].irep;
-        if (previous_hits->Contains((char*) ss_tmp.str().c_str())) {
-            Hit hit_cur = previous_hits->Remove((char*) ss_tmp.str().c_str());
-            previous_hits->Add((char*) ss_tmp.str().c_str(), hits_to_add[i]);
+        std::string key = getHitKey(hits_to_add[i]);
+        if (previous_hits->Contains((char*) key.c_str())) {
+            Hit hit_cur = previous_hits->Remove((char*) key.c_str());
+            previous_hits->Add((char*) key.c_str(), hits_to_add[i]);
             // Overwrite *hit[bin] with alignment, etc. of hit_cur
             hit_cur.score = hits_to_add[i].score;
             hit_cur.score_aass = hits_to_add[i].score_aass;
@@ -1107,7 +1105,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
                            new_entries.end());
 
         for (size_t i = 0; i < all_entries.size(); i++) {
-            search_counter.insert(all_entries[i]->getName());
+            search_counter.insert(getEntryKey(all_entries[i]->getDatabaseName(), all_entries[i]->getName()));
         }
     }
 
@@ -1175,7 +1173,7 @@ void HHblits::run(FILE* query_fh, char* query_path) {
             }
 
             for (size_t i = 0; i < new_entries.size(); i++) {
-                search_counter.insert(new_entries[i]->getName());
+                search_counter.insert(getEntryKey(new_entries[i]->getDatabaseName(), new_entries[i]->getName()));
             }
 
             all_entries.insert(all_entries.end(), new_entries.begin(),
@@ -1303,10 +1301,9 @@ void HHblits::run(FILE* query_fh, char* query_path) {
                 if (hit_cur.Eval > par.e)
                     continue;
 
-                std::stringstream ss_tmp;
-                ss_tmp << hit_cur.file << "__" << hit_cur.irep;
+                std::string key = getHitKey(hit_cur);
                 // Already in alignment?
-                if (previous_hits->Contains((char*) ss_tmp.str().c_str()))
+                if (previous_hits->Contains((char*) key.c_str()))
                     continue;
 
                 // Add number of sequences in this cluster to total found
@@ -1378,14 +1375,13 @@ void HHblits::run(FILE* query_fh, char* query_path) {
         while (!hitlist.End()) {
             Hit hit_cur = hitlist.ReadNext();
 
-            std::stringstream ss_tmp;
-            ss_tmp << hit_cur.file << "__" << hit_cur.irep;
+            std::string key = getHitKey(hit_cur);
 
             if (!par.already_seen_filter || hit_cur.Eval > par.e
-                || previous_hits->Contains((char*) ss_tmp.str().c_str()))
+                || previous_hits->Contains((char*) key.c_str()))
                 hit_cur.Delete();  // Delete hit object (deep delete with Hit::Delete())
             else {
-                previous_hits->Add((char*) ss_tmp.str().c_str(), hit_cur);
+                previous_hits->Add((char*) key.c_str(), hit_cur);
             }
 
             hitlist.Delete();  // Delete list record (flat delete)
@@ -1499,7 +1495,7 @@ void HHblits::run(ffindex_entry_t* entry, char* data,
                            new_entries.end());
 
         for (size_t i = 0; i < all_entries.size(); i++) {
-            search_counter.insert(all_entries[i]->getName());
+            search_counter.insert(getEntryKey(all_entries[i]->getDatabaseName(), all_entries[i]->getName()));
         }
     }
 
@@ -1568,7 +1564,7 @@ void HHblits::run(ffindex_entry_t* entry, char* data,
             }
 
             for (size_t i = 0; i < new_entries.size(); i++) {
-                search_counter.insert(new_entries[i]->getName());
+                search_counter.insert(getEntryKey(new_entries[i]->getDatabaseName(), new_entries[i]->getName()));
             }
 
             all_entries.insert(all_entries.end(), new_entries.begin(),
@@ -1700,10 +1696,9 @@ void HHblits::run(ffindex_entry_t* entry, char* data,
                 if (hit_cur.Eval > par.e)
                     continue;
 
-                std::stringstream ss_tmp;
-                ss_tmp << hit_cur.file << "__" << hit_cur.irep;
+                std::string key = getHitKey(hit_cur);
                 // Already in alignment?
-                if (previous_hits->Contains((char*) ss_tmp.str().c_str()))
+                if (previous_hits->Contains((char*) key.c_str()))
                     continue;
 
                 // Add number of sequences in this cluster to total found
@@ -1776,14 +1771,13 @@ void HHblits::run(ffindex_entry_t* entry, char* data,
         while (!hitlist.End()) {
             Hit hit_cur = hitlist.ReadNext();
 
-            std::stringstream ss_tmp;
-            ss_tmp << hit_cur.file << "__" << hit_cur.irep;
+            std::string key = getHitKey(hit_cur);
 
             if (!par.already_seen_filter || hit_cur.Eval > par.e
-                || previous_hits->Contains((char*) ss_tmp.str().c_str()))
+                || previous_hits->Contains((char*) key.c_str()))
                 hit_cur.Delete();  // Delete hit object (deep delete with Hit::Delete())
             else {
-                previous_hits->Add((char*) ss_tmp.str().c_str(), hit_cur);
+                previous_hits->Add((char*) key.c_str(), hit_cur);
             }
 
             hitlist.Delete();  // Delete list record (flat delete)
@@ -2031,9 +2025,8 @@ void HHblits::premerge(Hash<Hit>* previous_hits, Hash<Hit>* premerged_hits,
         hitlist.Insert(*tmpHits[0]);
         tmpHitList.Push(*tmpHits[0]);
         mergeHitsToQuery(tmpHitList, previous_hits, premerged_hits, seqs_found, cluster_found, min_col_realign);
-        std::stringstream ss_tmp;
-        ss_tmp << hit_cur.file << "__" << hit_cur.irep;
-        premerged_hits->Add((char*)ss_tmp.str().c_str());
+        std::string key = getHitKey(hit_cur);
+        premerged_hits->Add((char*) key.c_str());
 
         // Calculate pos-specific weights, AA frequencies and transitions -> f[i][a], tr[i][a]
         Qali->FrequenciesAndTransitions(q, par.wg, par.mark, par.cons,par.showcons, pb, Sim, NULL,true);

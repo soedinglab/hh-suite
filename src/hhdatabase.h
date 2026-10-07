@@ -88,6 +88,7 @@ class HHEntry {
         float* pb, const float S[20][20], const float Sim[20][20], HMM* t) {};
 
     virtual char* getName() {return NULL;};
+    virtual const char* getDatabaseName() {return "";};
 
   protected:
     void getTemplateHMM(FILE* inf, char* name, Parameters& par, char use_global_weights,
@@ -106,6 +107,7 @@ class HHDatabaseEntry : public HHEntry {
         float* pb, const float S[20][20], const float Sim[20][20], HMM* t);
 
     char* getName();
+    const char* getDatabaseName();
 
   private:
     HHblitsDatabase* hhdatabase;
@@ -136,5 +138,9 @@ struct HHDatabaseEntryCompare {
 };
 
 int getMaxTemplateLength(std::vector<HHEntry*>& entries);
+
+std::string getEntryKey(const char* database, const char* name);
+std::string getHitKey(const char* database, const char* name, int irep);
+std::string getHitKey(const Hit& hit);
 
 #endif /* HHDATABASE_H_ */

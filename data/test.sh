@@ -85,3 +85,13 @@ hhblits -i "$MULTIDB_TEST_DIR/query.a3m" \
 test -s "$MULTIDB_TEST_DIR/result.a3m"
 awk '$2 == "db2_target" && $8 == 300 { found = 1 } END { exit !found }' \
     "$MULTIDB_TEST_DIR/result.hhr"
+
+# Identically named entries of both databases must be counted and premerged.
+hhblits -i "$MULTIDB_TEST_DIR/query.a3m" \
+    -d "$MULTIDB_TEST_DIR/db1" -d "$MULTIDB_TEST_DIR/db2" \
+    -oa3m "$MULTIDB_TEST_DIR/premerge.a3m" -o "$MULTIDB_TEST_DIR/premerge.hhr" \
+    -n 1 -all -cpu 1 -v 1
+
+grep -q '^Searched_HMMs 2$' "$MULTIDB_TEST_DIR/premerge.hhr"
+grep -q '^>db1_target' "$MULTIDB_TEST_DIR/premerge.a3m"
+grep -q '^>db2_target' "$MULTIDB_TEST_DIR/premerge.a3m"
