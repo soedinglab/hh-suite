@@ -9,6 +9,7 @@
 #ifndef HHVITERBIMATRIX_c
 #define HHVITERBIMATRIX_c
 #include "hhviterbimatrix.h"
+#include <cstring>
 
 ViterbiMatrix::ViterbiMatrix(){
     this->bCO_MI_DG_IM_GD_MM_vec=NULL;
@@ -47,6 +48,17 @@ void ViterbiMatrix::AllocateBacktraceMatrix(int Nq, int Nt)
 }
 
 
+
+void ViterbiMatrix::resetCellOff() {
+    if (!cellOff || max_query_length == 0) {
+        return;
+    }
+
+    // malloc_matrix stores all rows contiguously after the row pointers
+    size_t row_size = ICEIL(max_template_length + (2 * VECSIZE_FLOAT), ALIGN_FLOAT);
+    memset(bCO_MI_DG_IM_GD_MM_vec[0], 0, (max_query_length + 2) * row_size);
+    cellOff = false;
+}
 
 /////////////////////////////////////////////////////////////////////////////////////
 //// Delete memory for dynamic programming matrix

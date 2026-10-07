@@ -68,6 +68,7 @@ public:
     
     bool hasCellOff();
     void setCellOff(bool value);
+    void resetCellOff();
 
     void printCellOff(int row_size,int col_size,int elem);
 

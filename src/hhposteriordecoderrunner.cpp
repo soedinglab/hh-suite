@@ -115,6 +115,10 @@ void PosteriorDecoderRunner::executeComputation(HMM &q, std::vector<Hit *>  hits
     }
     delete[] t_hmm;
 
+    for (int i = 0; i < m_n_threads; i++) {
+        m_backtrace_matrix[i]->resetCellOff();
+    }
+
     cleanupThread(threads);
 }
 
