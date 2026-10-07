@@ -1198,25 +1198,27 @@ void HHblits::run(FILE* query_fh, char* query_path) {
 
         if (new_entries.size() == 0) {
             HH_LOG(INFO) << "No HMMs pass prefilter => Stop searching!" << std::endl;
-            break;
-        }
+            if (previous_hits->Size() == 0) {
+                break;
+            }
+        } else {
+            if (par.prefilter) {
+                // Search datbases
+                HH_LOG(INFO)
+                    << "HMMs passed 2nd prefilter (gapped profile-profile alignment)   : " << new_entries.size() + old_entries.size() << std::endl;
+                HH_LOG(INFO)
+                    << "HMMs passed 2nd prefilter and not found in previous iterations : " << new_entries.size() << std::endl;
+            }
+            HH_LOG(INFO) << "Scoring " << new_entries.size() << " HMMs using HMM-HMM Viterbi alignment" << std::endl;
+            // Main Viterbi HMM-HMM search
+            ViterbiRunner viterbirunner(viterbiMatrices, dbs, par.threads);
+            std::vector<Hit> hits_to_add = viterbirunner.alignment(par, &q_vec,
+                                                                   new_entries,
+                                                                   par.qsc_db, pb, S,
+                                                                   Sim, R, par.ssm, S73, S33, S37);
 
-        if (par.prefilter) {
-            // Search datbases
-            HH_LOG(INFO)
-                << "HMMs passed 2nd prefilter (gapped profile-profile alignment)   : " << new_entries.size() + old_entries.size() << std::endl;
-            HH_LOG(INFO)
-                << "HMMs passed 2nd prefilter and not found in previous iterations : " << new_entries.size() << std::endl;
+            add_hits_to_hitlist(hits_to_add, hitlist);
         }
-        HH_LOG(INFO) << "Scoring " << new_entries.size() << " HMMs using HMM-HMM Viterbi alignment" << std::endl;
-        // Main Viterbi HMM-HMM search
-        ViterbiRunner viterbirunner(viterbiMatrices, dbs, par.threads);
-        std::vector<Hit> hits_to_add = viterbirunner.alignment(par, &q_vec,
-                                                               new_entries,
-                                                               par.qsc_db, pb, S,
-                                                               Sim, R, par.ssm, S73, S33, S37);
-
-        add_hits_to_hitlist(hits_to_add, hitlist);
 
         // check for new hits or end with iteration
         int new_hits = 0;
@@ -1590,28 +1592,30 @@ void HHblits::run(ffindex_entry_t* entry, char* data,
         if (new_entries.size() == 0) {
             HH_LOG(INFO) << "No HMMs pass prefilter => Stop searching!"
                          << std::endl;
-            break;
+            if (previous_hits->Size() == 0) {
+                break;
+            }
+        } else {
+            // Search datbases
+            HH_LOG(INFO)
+                << "HMMs passed 2nd prefilter (gapped profile-profile alignment)   : "
+                << new_entries.size() + old_entries.size() << std::endl;
+            HH_LOG(INFO)
+                << "HMMs passed 2nd prefilter and not found in previous iterations : "
+                << new_entries.size() << std::endl;
+            HH_LOG(INFO) << "Scoring " << new_entries.size()
+                         << " HMMs using HMM-HMM Viterbi alignment"
+                         << std::endl;
+
+            // Main Viterbi HMM-HMM search
+            ViterbiRunner viterbirunner(viterbiMatrices, dbs, par.threads);
+            std::vector<Hit> hits_to_add = viterbirunner.alignment(par, &q_vec,
+                                                                   new_entries,
+                                                                   par.qsc_db, pb, S,
+                                                                   Sim, R, par.ssm, S73, S33, S37);
+
+            add_hits_to_hitlist(hits_to_add, hitlist);
         }
-
-        // Search datbases
-        HH_LOG(INFO)
-            << "HMMs passed 2nd prefilter (gapped profile-profile alignment)   : "
-            << new_entries.size() + old_entries.size() << std::endl;
-        HH_LOG(INFO)
-            << "HMMs passed 2nd prefilter and not found in previous iterations : "
-            << new_entries.size() << std::endl;
-        HH_LOG(INFO) << "Scoring " << new_entries.size()
-                     << " HMMs using HMM-HMM Viterbi alignment"
-                     << std::endl;
-
-        // Main Viterbi HMM-HMM search
-        ViterbiRunner viterbirunner(viterbiMatrices, dbs, par.threads);
-        std::vector<Hit> hits_to_add = viterbirunner.alignment(par, &q_vec,
-                                                               new_entries,
-                                                               par.qsc_db, pb, S,
-                                                               Sim, R, par.ssm, S73, S33, S37);
-
-        add_hits_to_hitlist(hits_to_add, hitlist);
 
         // check for new hits or end with iteration
         int new_hits = 0;
