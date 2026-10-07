@@ -271,7 +271,7 @@ class CIF2FASTA(object):
             
             return protein_description.strip(',')
         
-        except AttributeError:
+        except (AttributeError, ValueError):
             if DEBUG_MODE > 1:
                 print ('! {pdb} Could not extract pdbx_descriptor from struct table.'.format(
                     pdb = self.pdb_entry()))
